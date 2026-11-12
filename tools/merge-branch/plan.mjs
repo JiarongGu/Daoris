@@ -57,6 +57,9 @@ export const STAGE_REHEARSALS = Object.freeze(['rehearse:family', 'rehearse:depl
 /** Whether a gate runs a rehearsal of `STAGE_REHEARSALS`, read from its command as the lanes are. */
 export const isStageRehearsal = (gate) => STAGE_REHEARSALS.includes(scriptNamed(gate.run) ?? '');
 
+/** The gates a stage requires: all, or with `light` all but the stage's rehearsals, which the CI runs on the staged commit after the install is built. */
+export const stagePlan = (plan, { light = false } = {}) => (light ? plan.filter((gate) => !isStageRehearsal(gate)) : plan);
+
 /**
  * The heavy light gates: the suites that load the CPU for minutes (the CLI's verify, the .NET test suites, the web's
  * build and end-to-end run, and its unit run). A Process half started beside them failed timing tests that passed alone. A Process gate starts after these, not only after its own component's.
@@ -113,6 +116,14 @@ export const SHARED_PROJECTS = new Map([
 ]);
 
 /**
+ * The tools that start `dotnet test` themselves, with the components they build: the reached checks run the filtered
+ * classes of the desktop's and the service's test projects, so no other gate builds either beside them.
+ */
+export const TOOL_COMPONENTS = new Map([
+  ['tools/reached-checks.mjs', ['src/Daoris.Desktop', 'src/Daoris.Service']],
+]);
+
+/**
  * The .NET components a gate builds: its command's (`dotnetComponent`), and each one a root script it names
  * builds, read through the scripts those name in turn. The CLI's `npm run verify` ends in the devkit's universal gates
  * and `npm run test:web` builds the HTTP host, so each shares a component with a .NET gate, and no two gates that build
@@ -123,6 +134,10 @@ export function gateComponents(gate, scripts = {}) {
   const read = (command, seen) => {
     const own = dotnetComponent(command);
     if (own) found.add(own);
+    for (const component of TOOL_COMPONENTS.get(/^node (tools\/\S+\.mjs)/.exec(command.trim())?.[1]) ?? []) {
+      found.add(component);
+      for (const shared of SHARED_PROJECTS.get(component) ?? []) found.add(shared);
+    }
     for (const shared of SHARED_PROJECTS.get(own) ?? []) found.add(shared);
     const script = scriptNamed(command);
     if (!script || seen.has(script) || typeof scripts[script] !== 'string') return;

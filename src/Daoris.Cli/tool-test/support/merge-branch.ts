@@ -19,7 +19,7 @@ export interface Lane { id: string; title: string; summary: string; steward: boo
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
-  full: boolean; gated: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
+  full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
   /** The full set in a worktree of its own, at this commit (main's tip when null). */
   beside: boolean; besideCommit: string | null;
   /** The declared runner (`--full --beside --daoris-verify`). */
@@ -94,6 +94,13 @@ export interface Trees { ended: string | null; hold: (pid: number) => void; rele
 export type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
 export interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
+/** A unit of the census of test units that a change reaches, with the path that reached it. */
+export interface ReachedUnit { suite: string; kind: string; unit: string; name: string; file: string; by: string; project?: string }
+export interface ReachedPlan {
+  groups: { runner: 'dotnet' | 'vitest' | 'node'; suite: string; project?: string; units: ReachedUnit[] }[];
+  left: Record<string, number>;
+  reached: number;
+}
 export interface Verdict {
   gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null;
   /** A Process half's classes: how many ran, how many it kept by reach, and the oldest verdict it kept (its own start when none). */
@@ -174,6 +181,7 @@ export const tool = await import(
   /** The rehearsals a plain CI run owes a stage, and the stage's path that runs them. */
   STAGE_REHEARSALS: readonly string[];
   isStageRehearsal: (gate: { name: string; run: string }) => boolean;
+  stagePlan: <T extends { name: string; run: string }>(plan: T[], options?: { light?: boolean }) => T[];
   stageCommand: (commit: string) => string;
   dotnetComponent: (run: string) => string | null;
   SHARED_PROJECTS: ReadonlyMap<string | null, readonly (string | null)[]>;
@@ -283,6 +291,9 @@ export const tool = await import(
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
   selectionLines: (gates: Selected[]) => string[];
+  reachedPlan: (units: ReachedUnit[], changed: string[], options?: { bounds?: Partial<Record<'dotnet' | 'vitest' | 'node', number>> }) => ReachedPlan;
+  reachedCommands: (plan: ReachedPlan) => { label: string; cwd: string; command: string; args: string[] }[];
+  reachedLines: (plan: ReachedPlan) => string[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; gated?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
   pathsReaching: (gate: string, paths: string[], options?: { lanes?: Lane[]; reach?: readonly Rule[] }) => string[];

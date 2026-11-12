@@ -45,7 +45,7 @@ export const REACH = Object.freeze([
   {
     paths: [
       'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reach-rows.mjs', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
-      'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+      'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/reached-checks.mjs', 'tools/worktree-setup.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
     why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",

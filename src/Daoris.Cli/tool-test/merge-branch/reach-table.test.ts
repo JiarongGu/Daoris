@@ -160,8 +160,8 @@ test("every file outside the page a page's vitest reads is one whose change reac
   assert.equal(without.length, tool.REACH.length - 1, "MOD9e's rule names each source by its name under the driver's folder");
   for (const path of PAGE_PARSED) {
     const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
-    assert.deepEqual(reached(without), ['universal', 'code-map', 'test-map', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family'], path);
-    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'test-map', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family', 'web-unit'], path);
+    assert.deepEqual(reached(without), ['universal', 'code-map', 'test-map', 'reached', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family'], path);
+    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'test-map', 'reached', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family', 'web-unit'], path);
   }
 });
 

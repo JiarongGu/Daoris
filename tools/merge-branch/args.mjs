@@ -13,7 +13,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --stop',
-  '       node tools/merge-branch.mjs --passed',
+  '       node tools/merge-branch.mjs --passed [--light]',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs <branch> --preview',
   '       node tools/merge-branch.mjs <branch> --message <file under local/> [--one-at-a-time] [--no-commit-check]',
@@ -35,7 +35,7 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
+    full: false, gated: false, rerun: [], passed: false, light: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
     preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   };
@@ -104,6 +104,7 @@ export function parseArgs(argv) {
     else if (arg === '--full') options.full = true;
     else if (arg === '--gated') options.gated = true;
     else if (arg === '--passed') options.passed = true;
+    else if (arg === '--light') options.light = true;
     else if (arg === '--stale') options.stale = true;
     else if (arg === '--rerun') rerun = true;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
@@ -184,6 +185,7 @@ export function parseArgs(argv) {
   if (verbs.filter(Boolean).length > 1) {
     throw usageError('give one of --continue, --rerun, --stale, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
   }
+  if (options.light && !options.passed) throw usageError('--light is for --passed: the light stage asks whether the gates before the rehearsals passed');
   if (options.full && options.gated) throw usageError('--full and --gated are alternatives: --full runs every gate, --gated the reached ones');
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
   if (rerun) {
@@ -199,7 +201,7 @@ export function parseArgs(argv) {
     }
   } else if (options.passed) {
     if (options.branches.length) throw usageError('--passed takes no branch: it asks about the checkout as it stands');
-    if (flags.length > 1) throw usageError('--passed takes nothing else: it only reads the verdicts');
+    if (flags.filter((flag) => flag !== '--light').length > 1) throw usageError('--passed takes nothing else: it only reads the verdicts');
   } else if (options.prune) {
     if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
     if (options.full) throw usageError('--full is for a merge or the checkout; --prune runs no gate');

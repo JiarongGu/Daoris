@@ -2141,12 +2141,12 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   const { suite, process: half, rehearsal } = tool.MEMORY_NEEDS;
   assert.deepEqual(needs, {
     universal: 0, 'code-map': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0, comments: 0,
-    cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
+    reached: suite, cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
     'service-process': half, 'driver-process': half, 'driver-process-git': half, 'driver-process-git-pinned': half, 'modules-process': half,
     rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,
   });
-  assert.ok(suite! > 0 && half! >= suite! && rehearsal! >= half!, 'a heavier class needs no less');
-  assert.ok(tool.MEMORY_NEEDS['again']! > 0, 'a light gate that died of memory needs some to run again');
+  assert.ok(suite! > 0 && half! >= suite! && rehearsal! >= half!, 'a heavier class needs more');
+  assert.ok(tool.MEMORY_NEEDS['again']! > 0, 'a light gate that died of memory needs some');
 
   // `"memoryGb"` on a declared gate is its need, whatever its class: more, less, or none at all.
   const fx = makeFixture('merge-branch-memory-declared');

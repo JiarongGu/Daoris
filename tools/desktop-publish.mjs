@@ -149,7 +149,8 @@ async function main() {
     try {
       const asked = ungatedRefusal(to, source.tree, {
         force: flag('--force-ungated'),
-        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci --stage ${sha}` },
+        light: flag('--light'),
+        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci${flag('--light') ? '' : ' --stage'} ${sha}` },
       });
       if (asked.refusal) {
         console.error(asked.refusal);
@@ -187,7 +188,7 @@ async function main() {
     process.exit(2);
   }
   // Only a tree the full set passed is built into an install, before anything is built.
-  const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated') });
+  const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated'), light: flag('--light') });
   if (gated.refusal) {
     console.error(gated.refusal);
     process.exit(2);

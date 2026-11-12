@@ -38,6 +38,12 @@ docs/FIX-LOG.md merge=union
 # file as ordinary text, which conflicts rather than duplicates.
 docs/README.md merge=rows
 
+# The backlog is not append-only either: builders add, finish and edit rows at the same few places, and git's line merge read
+# neighbouring rows as a conflict at almost every merge. `tools/merge-backlog.mjs` merges it by its rows' ids, the merge tool's own
+# rule (`tools/merge-branch/backlog-merge.mjs`); a row both sides edited is a conflict marked in git's form. `npm ci` configures
+# it (`--install`), as does `tools/worktree-setup.mjs`; a clone without it merges the file as ordinary text.
+TASKS.md merge=backlog
+
 # The decisions merge by union plus one thing (NOTEBREAK1): union coalesced the blank line two branches each added before
 # their `**Note, ` line, leaving the second note glued to the line above. `tools/index-hook.mjs --merge-notes` is union
 # followed by a blank line before every glued note; `npm ci` configures it (`--install`). A clone without it merges these

@@ -11,7 +11,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
         "tools/ci-background.mjs", "tools/desktop-publish.mjs", "tools/doc-duplicates.mjs", "tools/fsx.mjs",
         "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
-        "tools/process-reach.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
+        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/worktree-setup.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
         "tools/stand-ins.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",
@@ -62,6 +62,11 @@
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
+      ] },
+    { "name": "reached", "run": "node tools/reached-checks.mjs --check", "memoryGb": 6,
+      "paths": [
+        ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
+        "src/", "tools/", "examples/", "canon/"
       ] },
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process",
       "paths": [

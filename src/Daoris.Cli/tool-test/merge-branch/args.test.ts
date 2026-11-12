@@ -5,7 +5,7 @@ import { tool, refusal } from '../support/merge-branch.ts';
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
+    full: false, gated: false, rerun: [], passed: false, light: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
     preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   });
@@ -39,6 +39,9 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   const alone = tool.parseArgs(['--full']);
   assert.deepEqual([alone.full, alone.branches], [true, []]);
   assert.equal(tool.parseArgs(['--passed']).passed, true);
+  assert.equal(tool.parseArgs(['--passed']).light, false);
+  assert.equal(tool.parseArgs(['--passed', '--light']).light, true);
+  assert.throws(() => tool.parseArgs(['--light']), /--light is for --passed/);
   // The named gates again, on the merge in place.
   assert.deepEqual(tool.parseArgs(['--rerun', 'web', 'driver-process']).rerun, ['web', 'driver-process']);
   assert.equal(tool.parseArgs(['--rerun', 'web', '--keep-going']).keepGoing, true);
