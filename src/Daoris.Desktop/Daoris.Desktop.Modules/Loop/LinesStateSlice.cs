@@ -39,8 +39,8 @@ public static class LinesStateSlice
     /// <summary>What each partition carries: every field of <c>LINES</c>' answer, each holding that repository's rows of it.</summary>
     public static readonly IReadOnlyList<string> Fields = ["lines", "languages", "reviews", "opinions", "helpers", "handOver", "commits", "access", "gitAccess"];
 
-    /// <summary>What <c>LINES</c> answers that is never pushed: none, every field a view reads.</summary>
-    public static readonly IReadOnlyList<string> PulledOnly = [];
+    /// <summary>What <c>LINES</c> answers that is never pushed: the growth switch, which no view reads and a press's plan does.</summary>
+    public static readonly IReadOnlyList<string> PulledOnly = ["growth"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change a press declared to the driver's file (a line, a language, a review, an opinion, a

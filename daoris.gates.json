@@ -71,7 +71,7 @@
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
-        ".claude/knowledge/adoption.md", ".codex/", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
+        ".claude/knowledge/adoption.md", ".codex/", "canon/core/knowledge/rooms-and-classes.md", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
         "src/Daoris.Cli/tsconfig.build.json", "src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/bin/", "src/Daoris.Cli/src/",
         "src/Daoris.Cli/test/fixtures/", "src/Daoris.Contracts/", "src/Daoris.Desktop/Directory.Build.props",
         "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Desktop/process.runsettings",

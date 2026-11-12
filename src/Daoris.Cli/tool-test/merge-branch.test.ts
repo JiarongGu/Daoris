@@ -2891,7 +2891,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
 
   // The browser test reaches the web gate and the baseline; every other verdict stands, the driver's among them.
   const web = tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: full });
-  assert.deepEqual(web.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'web']));
+  assert.deepEqual(web.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'reached', 'web']));
   const w = Object.fromEntries(web.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(w['web']!.stale!.paths, [spec], 'which path made it stale, the records forgiven');
   assert.equal(w['web']!.stale!.verdict.at, at(9));
