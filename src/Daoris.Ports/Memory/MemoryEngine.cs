@@ -1,4 +1,4 @@
-namespace Daoris.Knowledge;
+namespace Daoris.Ports.Memory;
 
 /// <summary>
 /// One entry of a repository's memory as a session names it (the memory coordinator design §1): the repository by the registry's
@@ -47,7 +47,11 @@ public enum MemoryReinforcement
 }
 
 /// <summary>What a key's receipt names: the entry the keyed call concerned and its revision after.</summary>
-public sealed record MemoryKeyReceipt(string Key, string? Entry, long? Revision);
+public sealed record MemoryKeyReceipt(string Key, string? Entry, long? Revision)
+{
+    /// <summary>How long an engine keeps a receipt: past it, no receipt no longer means no effect.</summary>
+    public static readonly TimeSpan Retention = TimeSpan.FromDays(30);
+}
 
 /// <summary>An entry not confirmed since a sweep's instant, with the re-check text it is written with.</summary>
 public sealed record MemoryDue(string Id, long Revision, string Recheck);
@@ -75,7 +79,7 @@ public interface IMemoryEngine : IMemoryReads
     /// <summary>An entry written; a same-content write answers the entry it repeats, its revision moved.</summary>
     Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default, string? key = null, string? recheck = null);
 
-    /// <summary>A relation written; a repeated one answers its link, its weight added to.</summary>
+    /// <summary>A relation written; a repeated one answers the same link. Its weight is the engine's own, and no caller reads it.</summary>
     Task<MemoryLink> RelateAsync(string from, string to, string kind, CancellationToken ct = default, string? key = null);
 
     /// <summary>The entry confirmed at <paramref name="revision"/>, its revision moved; null where it is gone, ended, or at another revision.</summary>
@@ -106,6 +110,37 @@ public interface IMemoryEngine : IMemoryReads
     /// <summary>The entries with a re-check text not confirmed since <paramref name="since"/>, read without effect.</summary>
     Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<MemoryDue>>([]);
+}
+
+/// <summary>The reads a memory answers: what every memory tool reads, and nothing that writes.</summary>
+public interface IMemoryReads
+{
+    /// <summary>The current entries <paramref name="query"/> matches, best first.</summary>
+    Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default);
+
+    /// <summary>The entry, ended or not; null where the memory keeps none by that id.</summary>
+    Task<MemoryEntry?> GetAsync(string id, CancellationToken ct = default);
+
+    /// <summary>The entries <paramref name="id"/> relates to.</summary>
+    Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Another repository's memory as a reader meets it: its type has no write,
+/// a read through it moves nothing of the owner's, and every entry is the owner's by reference. Its check is asked about an entry before
+/// <see cref="IMemoryReads.GetAsync"/> or <see cref="IMemoryReads.ExpandAsync"/> reads it, and one it refuses reads as missing; a search is
+/// not checked per entry, being of a repository the caller's workspace already shares.
+/// </summary>
+public interface IMemoryView : IMemoryReads
+{
+    /// <summary>The entry's revision, read by its id alone; null where it is missing.</summary>
+    Task<long?> RevisionOfAsync(string id, CancellationToken ct = default);
+}
+
+/// <summary>What a view asks before it reads an entry (Lyntai's <c>IMemoryViewCheck</c>): a call, not a grant; the scope stays the caller's.</summary>
+public interface IMemoryViewCheck
+{
+    Task<bool> PermitsAsync(MemoryReference reference, CancellationToken ct = default);
 }
 
 /// <summary>Each repository's memory, opened by its registry name.</summary>

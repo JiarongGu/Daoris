@@ -202,7 +202,9 @@ var composed = await ServiceFactory.CreateAsync(
     // The rule proposals a clear of history reads and tidies are this machine's files; a shared host has none.
     proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null,
     // A second opinion is this machine's alone: a shared host's desk refuses every door with its sentence.
-    mode: mode);
+    mode: mode,
+    // Each repository's memory is this machine's too: a shared host keeps none.
+    memory: mode == ServiceMode.Local ? HostComposition.BuildMemory(options.DatabasePath) : null);
 builder.Services.AddSingleton(composed);
 
 // An index a newer Daoris wrote is left as it is; the host starts, and what is not derived works. Said once,

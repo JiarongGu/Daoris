@@ -205,10 +205,10 @@ public sealed record ComposedService(
     public ChannelDesk Channel { get; init; } = null!;
 
     /// <summary>
-    /// Each repository's memory: Lyntai's engines over this machine's file beside the index. Null on a shared host, which
+    /// Each repository's memory: the engines the host composed, over this machine's file beside the index. Null on a shared host, which
     /// keeps no memory, and for an index held in memory.
     /// </summary>
-    public LyntaiMemory? Memory { get; init; }
+    public IMemoryEngines? Memory { get; init; }
 
     /// <summary>The event journal read by position, through the service's one connection's gate.</summary>
     public Func<long, int, CancellationToken, Task<JournalPage>> Journal { get; init; } = null!;
@@ -312,7 +312,9 @@ public static class ServiceFactory
         ServiceMode mode = ServiceMode.Local,
         CancellationToken ct = default,
         // The clock the index's readings and the roots' judging are measured on; the system's unless a test moves one.
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        // Each repository's memory engines, which the host composes from its adapter; a shared host keeps none whatever it passes.
+        IMemoryEngines? memory = null)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
 
@@ -437,7 +439,7 @@ public static class ServiceFactory
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals, channel),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
             Records = records,
-            Memory = mode == ServiceMode.Local ? LyntaiMemory.Beside(options.DatabasePath) : null,
+            Memory = mode == ServiceMode.Local ? memory : null,
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
             Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
             Supervising = new SuperviseDesk(sessions, local: mode == ServiceMode.Local),
