@@ -41,10 +41,19 @@ public static class ClosedRunEnds
         if (standing.Count == 0) return null;
         var after = RunSubjects.AfterHanded(graph);
         if (standing.Any(node => RunSubjects.Of(node, after) is not (RunSubject.Branch or RunSubject.Landing))) return null;
+        if (PastLanding(graph, record, standing, after)) return null;
         var bound = standing.Select(node => WorkPerformer.StatusOf(record, node.Id).Binding?.SubjectRevision).ToList();
         if (bound.All(tip => tip is not null && onLine.Contains(tip))) return OnLine;
         return branchStands ? null : BranchGone;
     }
+
+    /// <summary>A standing step after a reached landing reads the landing, not the branch, so a gone branch or a held commit does not stop it.</summary>
+    private static bool PastLanding(NodeGraph graph, NodeRecord record, IReadOnlyList<NodeDeclaration> standing, IReadOnlySet<string> after) =>
+        standing.Any(node => after.Contains(node.Id))
+        && graph.Nodes.Any(node => node.Kind == NodeKinds.Land && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Reached);
+
+    public static bool StandsPastLanding(NodeGraph graph, NodeRecord record) =>
+        PastLanding(graph, record, Standing(graph, record), RunSubjects.AfterHanded(graph));
 
     /// <summary>
     /// Each of <paramref name="tips"/> the line holds whole, asked through <paramref name="onLine"/> (<see cref="NodeRuntimeLook.OnLine"/>);

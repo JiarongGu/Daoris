@@ -93,7 +93,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
     failed to ready by the person, a new attempt its plugin is sent. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step watches a branch the line holds whole (`on-line`) or that is
-    gone (`branch-gone`); it is not governed again until its chain comes back. A word names its author; a second on a node is
+    gone (`branch-gone`), never while a step after a reached landing stands (a monitor, a plugin's release), since that reads the
+    landing, which a tidied branch and the line's holding the commit leave readable; it is not governed again until its chain
+    comes back. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
+    counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
     checked as kept and again as applied against the work read afresh, either miss `moved`. `changes` may name the part they go

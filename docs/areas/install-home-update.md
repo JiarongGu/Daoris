@@ -211,7 +211,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     converts. Two judge rather than convert: `review-records` keeps a person's Accept given with no commit as legacy only where the
     run's pinned graph has nothing after its review, its receipt saying it was given before Daoris drew a revision, else drops it
     and says so on the run (a supervisor's such word dropped stale); `closed-runs` ends a closed quest's runs whose standing steps
-    cannot move by the runtime's own judgement, counted by why in `home.migrated`'s `counts`. Records nothing reads are removed
+    cannot move by the runtime's own judgement, counted by why in `home.migrated`'s `counts`, and `reopened-runs` lapses such an end
+    an older build made under a step still to run after a reached landing. Records nothing reads are removed
     uncopied (`tree-records`, `unbound-records`, `old-bin`). The next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 
