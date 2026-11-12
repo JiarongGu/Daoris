@@ -212,6 +212,14 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.All(several, unit => Assert.Empty(unit.Links));
     }
 
+    [Fact]
+    public void A_landing_named_for_another_quest_links_its_unit_to_the_quest_its_session_served_alone()
+    {
+        var unit = Assert.Single(WorkInventory.Units(Facts(branches: [Grown()], landings: [Landed(["unit-a"], quest: "q1") with { Served = "q2" }])));
+
+        Assert.Equal([new WorkLink(WorkRelation.ProducedBy, "quest:q2")], unit.Links);
+    }
+
     /// <summary>
     /// A landing carrying several units keeps each advance's quest and unit, so each unit is
     /// executed by its own sessions and produced by its own quest, read from the record alone, with no session records. A landing whose
