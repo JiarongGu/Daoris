@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
+import { checkAmbient, checkBudget, checkProcesses, checkReferences, parseTrx, scanAmbient, scanProcesses } from './layers-census.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -69,6 +69,27 @@ test('LAYERS1: the ambient reads are counted per subdomain and only tighten, at 
   assert.deepEqual(checkAmbient(found, { 'Daoris.Desktop.Driver/Loop': 3 }), []);
   assert.match(checkAmbient(found, { 'Daoris.Desktop.Driver/Loop': 5 })[0], /fell to 3/);
   assert.match(checkAmbient({}, { 'Daoris.Desktop.Driver/Loop': 1 })[0], /fell to 0/);
+});
+
+test('LAYERS1: a process start in the application or a unit test is held to its file\'s allowance, which only falls', () => {
+  const sources = {
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+    [at('src/Daoris.Adapters', 'Daoris.Adapters.Machine')]: project(),
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 'var p = Process.Start(info);\n// Process.Start(said) in a comment\nvar q = new Process { StartInfo = info };',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Data.cs`]: 'var info = new ProcessStartInfo("git");',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Probe.cs`]: 'foreach (var each in Process.GetProcessesByName("node")) { }',
+    ['src/Daoris.Adapters/Daoris.Adapters.Machine/Host.cs']: 'Process.Start(info);',
+  };
+  const found = scanProcesses(tree(sources));
+
+  assert.deepEqual(found, {
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Probe.cs`]: 1,
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2,
+  });
+  assert.deepEqual(checkProcesses(found, found), []);
+  assert.match(checkProcesses(found, {})[0], /Probe\.cs starts or finds a process 1 times, over its allowance of 0/);
+  assert.match(checkProcesses({}, { [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2 })[0], /fell to 0 from its allowance of 2/);
 });
 
 test('LAYERS1: a unit test over a second fails by name, a listed one may not slow, and a record of another tier is not read', () => {
