@@ -82,7 +82,7 @@ internal static class DesktopCompilations
         var references = StructureAnalysis.BaseLibrary.Value.Concat(Carried.Value
             .Where(each => driverBuilt || each.Name != "Daoris.Desktop.Driver").Select(each => each.Reference));
         return CSharpCompilation.Create(assembly,
-            [ImplicitUsings, .. sources.Select(source => CSharpSyntaxTree.ParseText(source.Text, Parse, source.Path))],
+            [ImplicitUsings, .. sources.AsParallel().AsOrdered().Select(source => CSharpSyntaxTree.ParseText(source.Text, Parse, source.Path))],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable, allowUnsafe: true));
     }

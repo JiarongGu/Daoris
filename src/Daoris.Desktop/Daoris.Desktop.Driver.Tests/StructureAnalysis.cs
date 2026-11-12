@@ -87,9 +87,6 @@ internal sealed class StructureAnalysis
         _folder = folder;
     }
 
-    /// <summary>The compilation the analysis bound its names in.</summary>
-    internal Compilation Compilation => _compilation;
-
     /// <summary>Every name bound to a type another file declares, once per file and type, in order of file and line.</summary>
     public IReadOnlyList<TypeEdge> Edges { get; private set; } = [];
 
