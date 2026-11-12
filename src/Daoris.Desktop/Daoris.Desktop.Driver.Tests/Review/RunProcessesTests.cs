@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The processes a run started, kept by run, process id and creation time: stopped at the run's end only while the id still names the
-/// process that was started, and a process the run did not start is named and never stopped.
+/// process that run started, and a process the run did not start is named and never stopped.
 /// </summary>
 public sealed class RunProcessesTests
 {
@@ -20,7 +20,7 @@ public sealed class RunProcessesTests
         owned.Track("run1", 11, 2_000 * Second);
         owned.Track("run1", 13, 4_000 * Second);
         owned.Track("run2", 12, 3_000 * Second);
-        // Process 11's id was reused by another process after the run's own ended.
+        // Process 11's id now names another process: the run's own has ended.
         alive[11] = 9_999 * Second;
 
         var stopped = owned.Stop("run1");

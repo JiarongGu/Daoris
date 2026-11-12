@@ -148,10 +148,6 @@ public static class Exchanges
                                     : exchange.Holds && exchange.To == Person);
     }
 
-    /// <summary>
-    /// Whether <paramref name="session"/>'s turn asks the person nothing: no question or go-ahead held on them, nor one unread, as
-    /// <see cref="HoldsOnOwnHelper"/> reads it, for a wait on something that is not a helper.
-    /// </summary>
     public static bool AsksPersonNothing(IReadOnlyList<Exchange> exchanges, string session) =>
         !exchanges.Where(exchange => string.Equals(exchange.Part, session, StringComparison.Ordinal))
             .Any(exchange => exchange.Source == Unread

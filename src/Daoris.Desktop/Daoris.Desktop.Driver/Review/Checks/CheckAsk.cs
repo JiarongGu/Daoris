@@ -33,7 +33,7 @@ public static class CheckStates
 /// <param name="Exit">The heavy run's exit code, where it ran.</param>
 /// <param name="Tail">The end of the run's log, bounded, for a red the asker reads.</param>
 /// <param name="Tip">The commit of the asker's tree when the run began: the inputs the verdict is for.</param>
-/// <param name="Handed">The word that carried the verdict to the asker, or <see cref="CheckHanding.Quiet"/> where none was owed.</param>
+/// <param name="Handed">The word that carried the verdict to the asker, or <see cref="CheckHanding.Quiet"/> where no word is owed.</param>
 public sealed record CheckState(string Id, string State, DateTimeOffset At)
 {
     public int? Exit { get; init; }

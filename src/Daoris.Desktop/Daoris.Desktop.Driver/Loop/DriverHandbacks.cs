@@ -7,13 +7,11 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class DriverHandbacks(LoopContext context)
 {
-    private static readonly NoteCode[] Dones = [EndNoteCodes.EndedDone, EndNoteCodes.EndedDoneLeft, EndNoteCodes.EndedSubmitted];
-
     /// <summary>Read each done session of this machine's not yet read, in its tree.</summary>
     internal async Task LookAsync(IEnumerable<PriorSession> records, CancellationToken ct)
     {
         var files = new CheckFiles(context.Home);
-        foreach (var record in records.Where(Candidate))
+        foreach (var record in records.Where(HandbackReader.EndedDone))
         {
             if (File.Exists(files.PathOf(record.Session, "observed"))) continue;
             var folder = new LinePlaces(context.Home).Of(record.Tree).Folder;
@@ -22,15 +20,10 @@ internal sealed class DriverHandbacks(LoopContext context)
         }
     }
 
-    private static bool Candidate(PriorSession record) =>
-        !record.Teammate && record.Tree is { Length: > 0 } && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
-        && Dones.Any(code => HelperWaitTrees.Carries(record.NoteParts, code));
-
     private async Task ObserveAsync(PriorSession record, string folder, CheckFiles files, CancellationToken ct)
     {
         if (await HandbackReader.LineAsync(folder, ct).ConfigureAwait(false) is not { } line) return;
-        var declared = Path.Combine(folder, "daoris.gates.json");
-        var gates = DeclaredGates.Read(File.Exists(declared) ? File.ReadAllText(declared) : null);
+        var gates = HandbackReader.GatesOf(folder);
         var checks = files.Asks().Where(ask => ask.Session == record.Session).Select(ask => (ask, files.ReadState(ask.Id))).ToList();
         if (await HandbackReader.ReadAsync(folder, line, gates, checks, [], ct).ConfigureAwait(false) is not { } seen) return;
 

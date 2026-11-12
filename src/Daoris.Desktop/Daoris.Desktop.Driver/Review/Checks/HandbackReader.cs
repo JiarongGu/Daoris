@@ -20,6 +20,20 @@ internal static class HandbackReader
         return HandbackObservation.Judge(tip, mergeBase, int.TryParse(behind, out var count) ? count : 0, touched, gates, checks, left);
     }
 
+    private static readonly NoteCode[] Dones = [EndNoteCodes.EndedDone, EndNoteCodes.EndedDoneLeft, EndNoteCodes.EndedSubmitted];
+
+    /// <summary>Whether <paramref name="record"/> is a session of this machine's that ended done in a tree of its own.</summary>
+    internal static bool EndedDone(PriorSession record) =>
+        !record.Teammate && record.Tree is { Length: > 0 } && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
+        && Dones.Any(code => HelperWaitTrees.Carries(record.NoteParts, code));
+
+    /// <summary>The gates the tree's declaration names, none where it names none.</summary>
+    internal static IReadOnlyList<DeclaredGate> GatesOf(string folder)
+    {
+        var declared = Path.Combine(folder, DeclarationNames.Gates);
+        return DeclaredGates.Read(File.Exists(declared) ? File.ReadAllText(declared) : null);
+    }
+
     /// <summary>The line a tree's work goes back to: the remote's head where it names one, else a local <c>main</c> or <c>master</c>; null where none is there.</summary>
     internal static async Task<string?> LineAsync(string folder, CancellationToken ct)
     {

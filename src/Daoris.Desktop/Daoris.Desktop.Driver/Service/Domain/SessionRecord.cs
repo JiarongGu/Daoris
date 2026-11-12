@@ -132,10 +132,6 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public bool AwaitsHelper { get; init; }
 
-    /// <summary>
-    /// Whether it ended waiting on its own check: completed by <see cref="EndNoteCodes.EndedAwaitsCheck"/>, read by its note's code,
-    /// never its English. False for every other record and from an older host.
-    /// </summary>
     public bool AwaitsCheck { get; init; }
 
     /// <summary>

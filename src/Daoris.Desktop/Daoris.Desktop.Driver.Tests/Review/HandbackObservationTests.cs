@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The hand-back as Daoris reads it, never as the session says it: the base, the paths touched, the checks the landing's own selection
-/// reaches with the verdict each has at this tip, and what was left running. A check with no verdict is Daoris's to run.
+/// reaches with the verdict each has at this tip, and the processes left running. A check with no verdict is Daoris's to run.
 /// </summary>
 public sealed class HandbackObservationTests
 {

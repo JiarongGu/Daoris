@@ -9,11 +9,7 @@ public sealed class HandbackReaderTests : IDisposable
 
     private readonly string _tree = Path.Combine(AppContext.BaseDirectory, "handback-reader-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public void Dispose()
-    {
-        foreach (var file in Directory.EnumerateFiles(_tree, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
-        Directory.Delete(_tree, recursive: true);
-    }
+    public void Dispose() => GitSeed.Discard(_tree);
 
     private async Task<string> GitAsync(params string[] arguments)
     {

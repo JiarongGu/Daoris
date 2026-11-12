@@ -80,7 +80,7 @@ internal sealed class DriverChecks
         try
         {
             var said = await _context.Service.SayAsync(session, text, ct: ct, from: DaorisWords.From, key: key).ConfigureAwait(false);
-            return said.Kept ? said.Word?.Id ?? "handed" : null;
+            return said.Kept ? "handed" : null;
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
         {

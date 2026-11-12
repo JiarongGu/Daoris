@@ -197,7 +197,6 @@ public sealed class PermissionRulesTests : IDisposable
     // A working session's ask for a helper and a helper's answer, each a file under the home.
     [InlineData("helper_ask")]
     [InlineData("helper_answer")]
-    // A working session's ask for a check, a file under the home the driver's broker runs in the session's own tree.
     [InlineData("check_run")]
     // A partner's answer for its piece, a file under the home, refused to every session that writes none.
     [InlineData("partner_answer")]

@@ -31,7 +31,7 @@ internal sealed record HandbackObservation(
     public bool Ready => Behind == 0 && Left.Count == 0 && Checks.All(check => check.Verdict == CheckVerdicts.Reached);
 
     /// <summary>
-    /// Judge what was read: the gates <paramref name="touched"/> reaches, each with the newest finished verdict of <paramref name="tip"/> among
+    /// Judge what is read: the gates <paramref name="touched"/> reaches, each with the newest finished verdict of <paramref name="tip"/> among
     /// this session's checks (a verdict for other inputs counts for nothing), else <see cref="CheckVerdicts.Checking"/> while one is asked.
     /// </summary>
     public static HandbackObservation Judge(

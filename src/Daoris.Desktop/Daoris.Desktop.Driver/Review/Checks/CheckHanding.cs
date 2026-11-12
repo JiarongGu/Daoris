@@ -35,5 +35,5 @@ public static class CheckHanding
     }
 }
 
-/// <summary>Say a word as Daoris's to a session under a key: the kept word's id, or null where it was refused or lost.</summary>
+/// <summary>Say a word as Daoris's to a session under a key: the kept word's id, or null where the host refuses or loses it.</summary>
 public delegate Task<string?> CheckSay(string session, string text, string key, CancellationToken ct);

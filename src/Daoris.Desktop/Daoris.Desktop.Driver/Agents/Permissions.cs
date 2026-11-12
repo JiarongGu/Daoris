@@ -143,8 +143,6 @@ public static class PermissionRules
             // asks for an opinion, lands the work or answers a dispute, which is the person's. `helper_ask` and `helper_answer`
             // write a file each under the home and nothing else: an ask the driver takes under the
             // person's `helpers` rule, and a helper's answer, which reaches the asker as another agent's claim, never the person's.
-            // `check_run` writes one file under the home and nothing else: an ask the driver's broker runs as a heavy check in the
-            // session's own tree under the machine's admission, the same run `daoris gate run` makes, its verdict the session's next turn.
             // `partner_answer` writes one file under the home, for the piece the driver started its
             // session for, and is refused to every other session: the partner's claim beside the files Daoris reads itself.
             // `channel_post` and `channel_read` speak and read for the session's own ask only, a
