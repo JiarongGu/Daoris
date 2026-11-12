@@ -212,10 +212,6 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.All(several, unit => Assert.Empty(unit.Links));
     }
 
-    /// <summary>
-    /// A landing named for its chain's first quest, another repository's, while its session served a quest of its own repository, links its
-    /// unit to the quest it served alone: the first quest's run is another repository's, and never takes this branch for its work.
-    /// </summary>
     [Fact]
     public void A_landing_named_for_another_quest_links_its_unit_to_the_quest_its_session_served_alone()
     {

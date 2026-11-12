@@ -1,4 +1,4 @@
-// A merged build no release was made from, whose release definitions make none by themselves (no continuous-deployment trigger of
+// A merged build with no release of its own, whose release definitions make none by themselves (no continuous-deployment trigger of
 // theirs takes its branch): said at the first look rather than after the find, so the step holds for the person, or, where the step's
 // createRelease option asks and one definition is the release's, the release is made here from that build. A release made by then, or a
 // trigger that may make one, or triggers not read, leaves the step to look for it as before.

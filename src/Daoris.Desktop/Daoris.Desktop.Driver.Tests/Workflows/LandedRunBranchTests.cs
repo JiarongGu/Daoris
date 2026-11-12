@@ -48,7 +48,7 @@ public sealed class LandedRunBranchTests : NodeRunFixture
     }
 
     /// <summary>
-    /// Another repository's branch on the same ask, opened later, reads as the run quest's work (its landing was named for the chain's first
+    /// Another repository's branch on the same ask, opened later, reads as the run quest's work (its landing is named for the chain's first
     /// quest): the run's landing and its release stay where they stood, and nothing is landed or sent again.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class LandedRunBranchTests : NodeRunFixture
         Assert.Equal((NodeStates.Active, "quest:q8"), (claimed.State, claimed.Binding!.Subject));
         Assert.Equal(NodeStates.Blocked, RunStatus("handed").State);
 
-        // The release sent before stays told on the landing it was sent for, so its plugin keeps running and its answer reaches the record.
+        // The release in flight stays told on the landing its call names, so its plugin keeps running and its answer reaches the record.
         var told = Assert.Single(_port.Told[^1].GetValueOrDefault(Plugin) ?? []);
         Assert.Equal(("unit-b1", "feature/q7", Tip1, true), (told.Unit, told.Branch, told.Tip, told.Landing));
         Assert.Equal(["deploy"], told.Awaiting);

@@ -92,10 +92,8 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
     }
 
     /// <summary>
-    /// The frame a run's plugin node is told under: one after <c>handed</c>, the landed branch at its landing's tip, else the landing an
-    /// attempt of it still waiting was sent for (<see cref="LandingSentFor"/>); an attempt waiting, the
-    /// branch it is sent for; any other, the branch its binding observes, else the run's branch. Null where none is found this pass, and it is
-    /// told nothing.
+    /// A run's plugin node's frame: after <c>handed</c>, the landing's, else its waiting call's (<see cref="LandingSentFor"/>); a waiting attempt,
+    /// its call's branch; any other, its binding's branch, else the run's. Null where none is found this pass, and it is told nothing.
     /// </summary>
     private WatchedUnit? RunFrame(GovernedUnit governed, NodeRecord record, string node, PassTips tips)
     {

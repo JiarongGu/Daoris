@@ -118,7 +118,7 @@ test('a build no release was made from, with no stages of its own, is said as no
   assert.match(fromYaml.params.evidence.message, /build 20261110\.41 has no stages, and no release definition takes its artifact/);
 });
 
-/** A merged build no release was made from, taken by release definition 3 whose continuous-deployment trigger is off. */
+/** A merged build with no release of its own, taken by release definition 3 whose continuous-deployment trigger is off. */
 async function untriggered() {
   const api = await merged();
   api.releases.length = 0;
