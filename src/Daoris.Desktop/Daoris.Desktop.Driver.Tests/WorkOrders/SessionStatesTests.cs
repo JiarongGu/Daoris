@@ -79,8 +79,7 @@ public sealed class SessionStatesTests
             new(Look(Record("s1", "failed"), Verdict(StartVerdict.Blocked), accounts: [new("claude-code", "Claude Code", null, "default", null, true, "no account is signed in.") { Quests = ["q1"] }]),
                 SessionGroup.NeedsYou, SessionReason.SignIn),
 
-        // A done is unfinished where its own record says part of the work is left: it needs you until the person accepts the departure,
-        // and reads done, part left after, as their word on it.
+        // Unfinished: a done's departure needs you until you accept it, then reads done, part left.
         ["a done that departed from a requirement and waits for your yes is unfinished, not done"] =
             new(Look(Record("s1", "completed"), quest: DoneLeft with { Held = true }), SessionGroup.NeedsYou, SessionReason.Left),
         ["an accepted departure reads done, part left, and needs nothing of you"] =

@@ -184,8 +184,7 @@ internal sealed class SessionStateReader
             }
         }
 
-        // A done with a departure on it is never the plain done; its quest's newest session here stands for it. It needs the person until
-        // they accept the departure, and their acceptance is their word on it.
+        // A done with a departure on it is never plain done: it needs the person until they accept the departure, which is their word on it.
         if (record.State == "completed" && record.Quest is { } closed && _quests.TryGetValue(closed, out var done) && QuestLeft.Has(done)
             && _look.LastRun.TryGetValue(closed, out var newest) && string.Equals(newest.Session, record.Id, StringComparison.Ordinal))
         {
