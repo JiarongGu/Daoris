@@ -26,6 +26,7 @@
   <ItemGroup>
     <Compile Include="..\Daoris.Service.Tests\Quests\BoundSeed.cs" Link="BoundSeed.cs" />
     <Compile Include="..\Daoris.Service.Tests\ScratchTemp.cs" Link="ScratchTemp.cs" />
+    <Compile Include="..\..\Daoris.Desktop\Daoris.Desktop.Driver.Tests\Poll.cs" Link="Poll.cs" />
     <Compile Include="..\Daoris.Service.Tests\ScratchTempTests.cs" Link="ScratchTempTests.cs" />
   </ItemGroup>
 
