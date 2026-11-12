@@ -97,7 +97,6 @@
   "workflow.set.landing.accept": "Waits for you to accept it.",
   "workflow.set.landing.plugin": "`{{plugin}}` pushes it and opens a pull request.",
   "workflow.set.landing.push": "No plugin pushes it: the branch is for you to push.",
-  "workflow.set.landing.tidy": "Its tree and branch go once it lands.",
   "workflow.set.integrate.says": "Integrates the landed branch into its line, {{request}}, {{gates}}; {{conflicts}}.",
   "workflow.set.integrate.request.owner": "requested by you",
   "workflow.set.integrate.request.done": "requested once the quest's done",

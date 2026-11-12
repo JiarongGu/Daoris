@@ -97,7 +97,6 @@
   "workflow.set.landing.accept": "等你采纳。",
   "workflow.set.landing.plugin": "`{{plugin}}` 推送它并开启拉取请求。",
   "workflow.set.landing.push": "没有插件推送它：分支由你自己推送。",
-  "workflow.set.landing.tidy": "落地后，它的工作树和分支会被移除。",
   "workflow.set.integrate.says": "把已落地的分支集成进它的主线，{{request}}，{{gates}}；{{conflicts}}。",
   "workflow.set.integrate.request.owner": "由你发起",
   "workflow.set.integrate.request.done": "委托完成时发起",

@@ -184,7 +184,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     {
         var graph = ReleaseGraph();
         var g = new WireEvaluationTests.Graph([.. graph.Nodes], [.. graph.Wires]);
-        foreach (var id in new[] { "work", "requests", "holds", "content", "check", "review", "landing", "line" }) g.Through(id);
+        foreach (var id in new[] { "work", "requests", "holds", "content", "check", "review", "landing", "line", "worktree" }) g.Through(id);
 
         void ReachAs(string id, string? said, bool port)
         {

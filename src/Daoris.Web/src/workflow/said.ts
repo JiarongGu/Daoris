@@ -81,7 +81,6 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
         branch && pattern ? t('workflow.set.landing.branch', { pattern }) : t('workflow.set.landing.merge'),
         textOf(step, 'accept') === 'automatic' ? t('workflow.set.landing.automatic') : t('workflow.set.landing.accept'),
         ...(branch ? [plugin ? t('workflow.set.landing.plugin', { plugin }) : t('workflow.set.landing.push')] : []),
-        ...(flagOf(step, 'tidy') ? [t('workflow.set.landing.tidy')] : []),
       ]);
     }
     case 'pull-request': {

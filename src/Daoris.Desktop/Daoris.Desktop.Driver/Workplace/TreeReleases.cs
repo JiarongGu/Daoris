@@ -21,10 +21,12 @@ public sealed class TreeReleases(string home)
     {
         var removal = await new SessionTrees(home).RemoveBranchAsync(root, repository, branch, force: false, ct).ConfigureAwait(false);
         var grown = new SessionBranches(home);
+        // One line, since a list and a step's words carry it; the removal's refusal names the commits it would lose on lines of their own.
+        var said = string.Join(' ', removal.Message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         // A branch the record still stands for is read after the removal: a removed one is a trace, which keeps no reason.
         if (removal.Removed) grown.Keep(repository, branch, null);
-        else if (grown.Of(repository, branch) is not null) grown.Keep(repository, branch, removal.Message);
-        return new TreeReleased(repository, branch, removal.Removed, removal.Message);
+        else if (grown.Of(repository, branch) is not null) grown.Keep(repository, branch, said);
+        return new TreeReleased(repository, branch, removal.Removed, said);
     }
 
     /// <summary>

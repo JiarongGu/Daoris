@@ -134,14 +134,15 @@ public static class MigratedGraphs
 
     /// <summary>
     /// A graph's shape, by what a person means by it: its nodes' kinds with their written options, its wires between kinds, its entries' kinds.
-    /// Node ids, wire ids, reach and the end are no part of it, so a drawn graph matches the shipped copy that says the same.
+    /// Node ids, wire ids, reach and the end are no part of it, so a drawn graph matches the shipped copy that says the same. A <c>release</c>, which
+    /// only ends the work's trees, and the ways to it are no part of it either: a graph drawn without one is the shipped copy that holds one.
     /// </summary>
     public static string Shape(JsonObject graph)
     {
         var kinds = graph["nodes"]!.AsArray().ToDictionary(node => (string)node!["id"]!, node => (string)node!["kind"]!, StringComparer.Ordinal);
         string KindOf(JsonNode? end) => end is JsonObject o ? kinds.GetValueOrDefault((string?)o["node"] ?? "", "?") : kinds.GetValueOrDefault((string?)end ?? "", "?");
         var tokens = new List<string>();
-        foreach (var node in graph["nodes"]!.AsArray())
+        foreach (var node in graph["nodes"]!.AsArray().Where(node => (string?)node!["kind"] != NodeKinds.Release))
         {
             var options = node!["options"] as JsonObject;
             var written = options?.Where(pair => pair.Value is not null).OrderBy(pair => pair.Key, StringComparer.Ordinal)
@@ -149,7 +150,7 @@ public static class MigratedGraphs
             tokens.Add($"node {node["kind"]} {string.Join(',', written)}");
         }
 
-        foreach (var wire in graph["wires"]!.AsArray()) tokens.Add($"wire {KindOf(wire!["from"])}>{KindOf(wire["to"])} {(string?)wire["kind"]}");
+        foreach (var wire in graph["wires"]!.AsArray().Where(wire => KindOf(wire!["from"]) != NodeKinds.Release && KindOf(wire["to"]) != NodeKinds.Release)) tokens.Add($"wire {KindOf(wire!["from"])}>{KindOf(wire["to"])} {(string?)wire["kind"]}");
         foreach (var entry in graph["entries"]?.AsArray() ?? []) tokens.Add($"entry {KindOf(entry)}");
         tokens.Sort(StringComparer.Ordinal);
         return string.Join('\n', tokens);

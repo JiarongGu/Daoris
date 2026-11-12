@@ -98,7 +98,7 @@ describe("a repository's Workflow tab", () => {
     expect(landing).toHaveTextContent('automatic');
     expect(landing).toHaveTextContent('by Daoris');
     expect(landing).toHaveTextContent('On a branch named work/{quest}-{slug}. Accepted automatically once its quest is done. '
-      + 'example.pull-request pushes it and opens a pull request. Its tree and branch go once it lands.');
+      + 'example.pull-request pushes it and opens a pull request.');
 
     expect(pullRequest).toHaveTextContent('you');
     expect(pullRequest).toHaveTextContent('by example.pull-request');

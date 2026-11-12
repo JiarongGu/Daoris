@@ -11,7 +11,7 @@
   "graph": {
     "schemaVersion": 2,
     "entries": ["work"],
-    "end": "line",
+    "end": "worktree",
     "nodes": [
       { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
@@ -19,7 +19,8 @@
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "integrate" } },
       { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited", "options": { "request": "done", "conflicts": "session" } },
-      { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+      { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+      { "id": "worktree", "kind": "release", "version": 1, "reach": "performed" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
@@ -27,7 +28,8 @@
       { "id": "i", "kind": "after", "from": "holds", "to": "content" },
       { "id": "b", "kind": "after", "from": "content", "to": "landing" },
       { "id": "c", "kind": "after", "from": "landing", "to": "integrate" },
-      { "id": "d", "kind": "after", "from": "integrate", "to": "line" }
+      { "id": "d", "kind": "after", "from": "integrate", "to": "line" },
+      { "id": "r", "kind": "after", "from": "line", "to": "worktree" }
     ]
   }
 }
