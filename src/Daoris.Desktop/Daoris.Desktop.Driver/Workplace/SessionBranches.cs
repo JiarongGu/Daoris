@@ -43,6 +43,18 @@ public sealed record GrownBranch(
     /// </summary>
     public TidyBlock? Blocked { get; init; }
 
+    /// <summary>
+    /// The workflow run whose work the branch's tree holds, written while the run is governed (<see cref="SessionBranches.Own"/>): who owns the
+    /// tree, and so who ends it (<see cref="TreeReleases"/>). Null for a tree no run is known to own, such as a conversation's. Additive.
+    /// </summary>
+    public string? Run { get; init; }
+
+    /// <summary>
+    /// Why the tree stays after the run's <c>release</c> or the sweep tried to end it: the clean-up's refusal, in its words. Null until one
+    /// is kept, and dropped once the tree goes or is recorded again. Additive.
+    /// </summary>
+    public string? Kept { get; init; }
+
     /// <summary>A new unit's id: written once, where a tree opens.</summary>
     public static string NewUnit() => $"unit-{Guid.NewGuid():N}";
 }
@@ -113,8 +125,25 @@ public sealed class SessionBranches(string home)
     {
         var standing = all.LastOrDefault(each => Standing(each, entry.Repository, entry.Branch));
         return [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)),
-            entry with { Unit = standing?.Unit ?? entry.Unit, Held = standing?.Held, GoneAt = null, Blocked = null }];
+            entry with { Unit = standing?.Unit ?? entry.Unit, Run = standing?.Run ?? entry.Run, Held = standing?.Held, GoneAt = null, Blocked = null, Kept = null }];
     });
+
+    /// <summary>
+    /// The workflow run <paramref name="run"/> owns the standing branch's tree: written where the entry names no run or another, so a pass
+    /// that finds it owned writes nothing.
+    /// </summary>
+    public void Own(string repository, string branch, string run)
+    {
+        if (Of(repository, branch) is not { } standing || standing.Run == run) return;
+        Edit(all => [.. all.Select(each => Standing(each, repository, branch) && each.Run != run ? each with { Run = run } : each)]);
+    }
+
+    /// <summary>Why the standing branch's tree stays after an attempt to end it (<see cref="GrownBranch.Kept"/>), or none once it needs no reason.</summary>
+    public void Keep(string repository, string branch, string? why)
+    {
+        if (Of(repository, branch) is not { } standing || standing.Kept == why) return;
+        Edit(all => [.. all.Select(each => Standing(each, repository, branch) && each.Kept != why ? each with { Kept = why } : each)]);
+    }
 
     /// <summary>
     /// The branch grows from <paramref name="from"/> now: a step's own commits replayed onto its source's new
@@ -308,6 +337,8 @@ public sealed class SessionBranches(string home)
             if (entry.Now is not null) writer.WriteString("now", entry.Now);
             // Each only where it is known, so an entry from before reads as it did.
             if (entry.Unit is not null) writer.WriteString("unit", entry.Unit);
+            if (entry.Run is not null) writer.WriteString("run", entry.Run);
+            if (entry.Kept is not null) writer.WriteString("kept", entry.Kept);
             if (entry.Held is { } held) HeldFact.Write(writer, held);
             if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
             // Only where a guard kept it, so an entry from before reads as it did.
@@ -341,6 +372,8 @@ public sealed class SessionBranches(string home)
             Text(element, "grewFrom"), at, Text(element, "now"))
         {
             Unit = Text(element, "unit"),
+            Run = Text(element, "run"),
+            Kept = Text(element, "kept"),
             Held = HeldFact.Read(element),
             GoneAt = Moments.Read(Text(element, "goneAt")),
             Blocked = element.TryGetProperty("blocked", out var blocked) && blocked.ValueKind == JsonValueKind.Object

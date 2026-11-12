@@ -64,14 +64,14 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         // A folder with no link to a repository is no tree, and git asked in it would answer for whatever repository holds the home.
         var branches = await TreeHeads.ReadAsync([.. folders.Select(each => each.tree).Where(tree => Path.Exists(Path.Combine(tree, ".git")))], ct)
             .ConfigureAwait(false);
+        var grown = context.Grown.All();
         foreach (var (workspace, repository, tree) in folders)
         {
             var (code, branch) = branches.TryGetValue(tree, out var read) ? read : (1, SessionTree.NotATree);
-            found.Add(new(
-                tree,
-                Path.GetFileName(workspace),
-                Path.GetFileName(repository),
-                code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
+            var named = code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)";
+            // Whose it is and why it stays, from the record the tree's branch is kept in (the run that owns it, what its release kept it for).
+            var owner = grown.LastOrDefault(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, Path.GetFileName(repository), named));
+            found.Add(new(tree, Path.GetFileName(workspace), Path.GetFileName(repository), named) { Run = owner?.Run, Reason = owner?.Kept });
         }
 
         // The folders moved aside at every place of the trees, the old place's included.
