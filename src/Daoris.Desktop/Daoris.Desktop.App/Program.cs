@@ -60,6 +60,7 @@ internal static class Program
         {
             Clock = TimeProvider.System,
             Admission = Daoris.Adapters.Machine.StartPlaces.Shared,
+            Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
             StartPolicy = Daoris.Driver.GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
         });

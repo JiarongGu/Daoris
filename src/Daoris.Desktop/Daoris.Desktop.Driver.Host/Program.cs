@@ -38,6 +38,7 @@ AmbientPorts.Set(new PortSet
 {
     Clock = TimeProvider.System,
     Admission = StartPlaces.Shared,
+    Liveness = MachineLiveness.Shared,
     StartPolicy = GitStartAdmission.Admit,
     Seal = KeySeal.Port,
 });

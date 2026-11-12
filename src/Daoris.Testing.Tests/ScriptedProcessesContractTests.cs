@@ -22,6 +22,34 @@ public sealed class ScriptedProcessesContractTests : ProcessContract
     }
 }
 
+public sealed class ScriptedProcessHostContractTests : ProcessHostContract
+{
+    private readonly ScriptedProcesses _processes = new ScriptedProcesses(4)
+        .On(spec => spec.Program == "says", spec => new ScriptedAnswer([spec.Arguments[0]], 0))
+        .On(spec => spec.Program == "exits", spec => new ScriptedAnswer([], int.Parse(spec.Arguments[0])))
+        .On(spec => spec.Program == "waits", _ => new ScriptedAnswer([], 0, Waits: true));
+
+    protected override IProcessHost Host => _processes;
+
+    protected override IProcessLiveness Liveness => _processes;
+
+    protected override ProcessSpec Says(string text) => new("says", [text], "contract", AdmissionClasses.Background);
+
+    protected override ProcessSpec Exits(int code) => new("exits", [code.ToString()], "contract", AdmissionClasses.Background);
+
+    protected override ProcessSpec Waits() => new("waits", [], "contract", AdmissionClasses.Background);
+
+    [Fact]
+    public async Task A_start_no_row_answers_is_a_failure_naming_it()
+    {
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _processes.StartAsync(new ProcessSpec("unscripted", ["--flag"], "contract", AdmissionClasses.Person), CancellationToken.None));
+
+        Assert.Contains("unscripted --flag", failure.Message);
+        Assert.Equal(4, _processes.Free);
+    }
+}
+
 public sealed class ScriptedSealContractTests : SealContract
 {
     protected override SecretSeal Backend => ScriptedSeal.Port;

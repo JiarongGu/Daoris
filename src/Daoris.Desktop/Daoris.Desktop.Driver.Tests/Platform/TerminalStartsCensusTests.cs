@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <para><b>Read from the built program.</b> Each console of the driver's host (a type named <c>…Console</c> or <c>…Verb</c>) is
-/// followed through the calls its IL makes (<see cref="CallReach"/>) to a start: the start gate, a heavy run's gate, a git act's
+/// followed through the calls its IL makes (<see cref="CallReach"/>) to a start: the start gate, the machine's process host, a heavy run's gate, a git act's
 /// step or a terminal's shell. One that reaches a start is listed below: <c>null</c> where it asks the running Daoris before it acts
 /// (it reaches <see cref="InstanceDoor.FindAsync"/>), and starts its own only where none takes the work, or its reason.</para>
 /// <para>Its limit is the reach's: a start behind an interface or an abstract method is not followed, nor a verb the host's entry
@@ -74,6 +74,7 @@ public sealed class TerminalStartsCensusTests
 
     private static bool Starting(MethodBase method) =>
         method.DeclaringType is { Namespace: "Daoris.Driver" } type && Sinks.Contains(type.Name.Split('`')[0])
+        || method.DeclaringType == typeof(Daoris.Ports.Processes.IProcessHost)
         || method is { Name: "Start", DeclaringType.FullName: "System.Diagnostics.Process" };
 
     /// <summary>The type a method is written in: a lambda's or a state machine's outermost.</summary>

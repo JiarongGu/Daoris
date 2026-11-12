@@ -459,14 +459,12 @@ public sealed class MoveStoreTests : IDisposable
         var gone = Planted("run-gone", NoProcess, started);
         var another = Planted("run-another", Environment.ProcessId, started + TimeSpan.FromHours(1).Ticks);
         var unread = Planted("run-unread", NoProcess, null);
-        var idle = Planted("run-idle", 0, started);
         var live = Planted("run-live", Environment.ProcessId, started);
 
         Assert.Null(taker.Take(gone, 1).Refused);
         Assert.Null(taker.Take(another, 1).Refused);
-        // A start the run could not read when it began, and a process whose start no caller may read: the lease's "cannot tell" holds.
+        // A start the run could not read when it began: the lease's "cannot tell" holds (the machine's own is ProcessLivenessTests').
         Assert.Equal(MoveTakeRefusals.Live, taker.Take(unread, 1).Refused);
-        if (OperatingSystem.IsWindows()) Assert.Equal(MoveTakeRefusals.Live, taker.Take(idle, 1).Refused);
         Assert.Equal(MoveTakeRefusals.Live, taker.Take(live, 1).Refused);
         Assert.Equal(["run-taker", "run-taker"], new[] { gone, another }.Select(move => taker.Read(move)!.ClaimRun));
     }

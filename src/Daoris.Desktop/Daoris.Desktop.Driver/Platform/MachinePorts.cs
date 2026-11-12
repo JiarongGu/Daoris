@@ -24,6 +24,9 @@ internal static class MachinePorts
         (Chosen.StartPolicy ?? throw new InvalidOperationException("the root handed no admission of starts, so this process starts nothing."))(
             program, purpose.ToString());
 
+    internal static IProcessLiveness Liveness =>
+        Chosen.Liveness ?? throw new InvalidOperationException("the root handed no liveness, so this process tells no live holder.");
+
     /// <summary>The seal a kept key is kept under.</summary>
     internal static SecretSeal Seal => Chosen.Seal ?? throw new InvalidOperationException("the root handed no seal, so this process keeps no key.");
 }
