@@ -7,9 +7,7 @@ import { type DiffFile, type LineBehind, REVIEW_BOUND_MINUTES, type ReviewKnown 
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';
 
-// The review's frame: what the page knows of a session while git reads its range, the skeleton of what is
-// coming, its words with how long, and a refusal worded from its code with the person's next move. Molecules: every
-// state arrives as props, so a read of a minute and each refusal are reached without a bridge.
+// The review's frame: what is known of a session while git reads, the skeleton, how long, and a refusal worded from its code. Molecules: every state arrives as props.
 
 /** How long a read runs before the review says for how long: a moment passes unremarked, a wait does not. */
 export const SLOW_MS = 2_000;
@@ -146,7 +144,6 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
             {t('work.review.progress', { done, total: files.length })}
           </span>
         )}
-        {/* The range it is measured from is the head's, above: said once, from the first frame. */}
         <span className="ml-auto">
           <Segmented
             label={t('work.review.layout')}

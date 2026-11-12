@@ -10,7 +10,7 @@ const MARKDOWN = /\.(md|markdown)$/i;
 
 /**
  * **A file of the record, opened**: its two versions at the record compared line by line; a Markdown file that still stands is read
- * rendered as it was handed back, with its changes one press away.
+ * rendered as handed back, with its changes one press away.
  *
  * A molecule: the two texts arrive as props, null where a side holds no file.
  */

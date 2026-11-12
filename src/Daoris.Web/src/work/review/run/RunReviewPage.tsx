@@ -36,12 +36,8 @@ function useOverrule(answer: RunReviewAnswer | undefined) {
 }
 
 /**
- * **The review page, `review/<run>`**: a run's review read by its run, or by the session in view where its quest is a run's, the newest
- * record until the person reads another. A session no run governs reads its own changes (`fallback`), as it does until its read answers.
- *
- * @remarks
- * **Never swapped under the reader**: the attempt read is kept until *Read it* names the newer one, and a run named anew starts at its
- * newest. An organism: the bridge's reads and presses, handed to `RunReview`.
+ * **The review page, `review/<run>`**: a run's review read by its run, or by the session in view; a session no run governs reads its own
+ * changes (`fallback`). The attempt read is never swapped under the reader: *Read it* names the newer one.
  */
 export function RunReviewPage({ run, session, fallback }: { run: string | null; session: string | null; fallback?: ReactNode }) {
   const { t } = useTranslation();

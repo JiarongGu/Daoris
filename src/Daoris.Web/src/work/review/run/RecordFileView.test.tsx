@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../../locales/i18n';
 import { RecordFileView } from './RecordFileView';
 
-// A file of a folder's or a copy's review, once its row is opened: a Markdown file is read rendered as it was handed back, with its changes
+// A file of a folder's or a copy's review, once its row is opened: a Markdown file is read rendered as handed back, with its changes
 // one press away; any other file is its changes, line by line.
 
 describe('a record file once its row is opened', () => {

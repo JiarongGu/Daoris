@@ -605,8 +605,7 @@ describe("the person's skip and stop of a graph run's node", () => {
   });
 });
 
-// A graph run says which routes were taken, a decision's outcome on its node and a route its outcome left untaken said so, and a
-// review waiting on the person offers their changes in place of their Accept, which asks for their words before it sends them.
+// A graph run says which routes were taken, a decision's outcome on its node and a route its outcome left untaken said so.
 describe("a graph run's routes and a review's changes", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 

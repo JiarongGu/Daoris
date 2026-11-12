@@ -57,7 +57,6 @@ export function NodeWord({ run, step, onWord }: {
     );
   }
 
-  // A review's changes are sent back from its page (`review/<run>`), never from under the node.
   const acts = (step.acts ?? []).filter((act): act is NodeAct => act !== 'changes' && ACTS.includes(act as NodeAct));
   const choosing = acts.some(isReturnAct) && returnWaits(step);
   if (!onWord || acts.length === 0) return null;
@@ -72,11 +71,9 @@ export function NodeWord({ run, step, onWord }: {
 
   return (
     <div className="grid min-w-0 gap-1.5">
-      {/* A folder's return waiting on files changed on both sides offers each its three choices. */}
       {choosing && asking === null && <ReturnChoice run={run} step={step} onWord={onWord} refusal={(answer) => nodeWordRefused(t, answer)} />}
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {/* A waiting task's Done, or an approval's Approve and Reject, lead. */}
           {acts.filter(isTaskAct).map((act) => (
             <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
               {t(`workflow.run.node.${act}`)}
@@ -92,13 +89,11 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.stop')}
             </Button>
           )}
-          {/* A ready request under `start: you` waits for the person's send. */}
           {acts.includes('send') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('send')}>
               {t('workflow.run.node.send')}
             </Button>
           )}
-          {/* A declined request is asked again or gone on without. */}
           {acts.includes('ask-again') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('ask-again')}>
               {t('workflow.run.node.askAgain')}

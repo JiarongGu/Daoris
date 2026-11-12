@@ -9,9 +9,7 @@ import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
 import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
-// The review while git reads, as the side bar holds it at a usual width: loading at once, slow with how long,
-// each kind of refusal with its next move, loaded, and reading again behind the last answer — in light and dark, and
-// 中文 where its words differ.
+// The review while git reads, at the side bar's usual width: loading, slow, each refusal, loaded and reading again, in light and dark and 中文.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
