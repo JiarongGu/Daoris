@@ -238,8 +238,8 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The go-on of a conversation its agent refused at the open, interrupted between its two records: no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
-    /// room history) and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
+    /// The go-on of a conversation its agent refused at the open, or whose opening passed its bound unopened: no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
+    /// room history), why <c>not-offered</c> or <c>resume</c>, and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
     /// account are tried, the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
     /// that held a conversation, is handed Daoris's brief of that line first, recomposed here (<see cref="ContextBriefs"/>), since its
     /// words carried none; a refused new conversation goes on with its words alone. Within a go-on that already holds the session.
@@ -250,6 +250,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var sessionId = record.Session;
         var isHelp = string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase);
         var actor = isHelp ? "ask-daoris" : "chat";
+        var why = record.NotOffered ? HandOverWhy.NotOffered : HandOverWhy.Resume;
 
         // A fresh start of the actor is the course's too (the go-on of a conversation its agent refused at the open);
         // the executor reads the facts and says the refusals by their codes.
@@ -280,8 +281,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         {
             if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
             {
-                // Only an account the person picked is held to its account: an agent pick walks its agent's
-                // accounts, the refused one passed by the reading kept.
+                // Only an account the person picked is held to its account; an agent pick walks its agent's accounts.
                 order = ChatPending.Recovering(
                     actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config, staff, role);
                 pinned = context.Conversations.PickedOn(sessionId, record.Profile) ? record.Profile : null;
@@ -298,30 +298,22 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
         if (order.Count == 0) return new StartedFrom(null, false, null, $"{(isHelp ? "Ask Daoris" : "Chat")} is off, so `{sessionId}`'s words wait.");
 
-        // A refused continuation: its line holds an earlier part that held a conversation, the refused parts skipped as `LastRun` skips them.
         var records = ServiceClient.ReadRecords(json);
-        var continues = false;
-        for (var at = record.From; at is { Length: > 0 } && records.TryGetValue(at, out var earlier); at = earlier.From)
-        {
-            if (earlier.NotOffered) continue;
-            continues = true;
-            break;
-        }
+        var continues = LineKeys.Upto(sessionId, records).Any(part => part.Session != sessionId && !part.Record.NotOffered);
 
         var brief = continues
             ? await ContextBriefs.ComposeAsync(
-                    context.Service, context.Events, context.Home, sessionId, HandOverWhy.NotOffered, conversation: true, ct: ct)
+                    context.Service, context.Events, context.Home, sessionId, why, conversation: true, ct: ct)
                 .ConfigureAwait(false)
             : null;
         var started = isHelp
             ? await HelpStartAsync(record, order[0].Agent, config, onEnded, ct, order, HelpConversations.NotOffered).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, order[0].Agent, config, onEnded, pinned, ct: ct, tree: record.Tree,
-                    from: new ContinuedFrom(sessionId, HandOverWhy.NotOffered, HandOverBy.Daoris), order: order, moves: Moves(record, words))
+                    from: new ContinuedFrom(sessionId, why, HandOverBy.Daoris), order: order, moves: Moves(record, words))
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
-        // Where the open moved the words, the fresh start's first message is the new part's moved words.
         var moving = MovedWords.Moving(started);
         var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
         var files = moved?.Files ?? [.. words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files))];
@@ -331,7 +323,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
             : new ChatMessage(text, files)
             {
                 Brief = brief,
-                TakenOver = HandOverNotes.MovedFrom(sessionId, record.Adapter ?? order[0].Agent, record.Profile, HandOverWhy.NotOffered, null, brief.Text.Length),
+                TakenOver = HandOverNotes.MovedFrom(sessionId, record.Adapter ?? order[0].Agent, record.Profile, why, null, brief.Text.Length),
             };
         if ((moving && moved is not { Words.Count: > 0 }) || !await handOver.SayHandedOver(to, message, moved?.Shown).ConfigureAwait(false))
         {

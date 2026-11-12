@@ -36,19 +36,25 @@ internal sealed class PoolGitFixture : IDisposable
     internal static async Task<PoolGitFixture> CreateAsync(string? rules = null)
     {
         var fixture = new PoolGitFixture();
-        var root = fixture.Root;
-        Directory.CreateDirectory(Path.Combine(root, "src"));
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "# engine\n");
-        await File.WriteAllTextAsync(Path.Combine(root, "Engine.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />\n");
-        await File.WriteAllTextAsync(Path.Combine(root, "src", "Engine.cs"), "class Engine {}\n");
-        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "obj/\n_fixtures/\n*.log\n");
-        if (rules is not null) await File.WriteAllTextAsync(Path.Combine(root, "daoris.files.json"), rules);
-        await GitAsync(root, "add", ".");
-        await GitAsync(root, "commit", "--quiet", "-m", "first");
-        fixture.Start = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var seed = await GitSeed.SeedAsync($"pool:{rules}", async folder =>
+        {
+            var built = Path.Combine(folder, Repository);
+            Directory.CreateDirectory(Path.Combine(built, "src"));
+            await GitSeed.GitAsync(built, "init", "--quiet", "-b", "main");
+            await GitSeed.GitAsync(built, "config", "user.email", "fixture@example.test");
+            await GitSeed.GitAsync(built, "config", "user.name", "Fixture");
+            await GitSeed.NoMaintenanceAsync(built);
+            await File.WriteAllTextAsync(Path.Combine(built, "README.md"), "# engine\n");
+            await File.WriteAllTextAsync(Path.Combine(built, "Engine.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />\n");
+            await File.WriteAllTextAsync(Path.Combine(built, "src", "Engine.cs"), "class Engine {}\n");
+            await File.WriteAllTextAsync(Path.Combine(built, ".gitignore"), "obj/\n_fixtures/\n*.log\n");
+            if (rules is not null) await File.WriteAllTextAsync(Path.Combine(built, "daoris.files.json"), rules);
+            await GitSeed.GitAsync(built, "add", ".");
+            await GitSeed.GitAsync(built, "commit", "--quiet", "-m", "first");
+            await File.WriteAllTextAsync(Path.Combine(folder, "start"), (await GitAsync(built, "rev-parse", "HEAD")).Trim());
+        });
+        GitSeed.Copy(Path.Combine(seed, Repository), fixture.Root);
+        fixture.Start = await File.ReadAllTextAsync(Path.Combine(seed, "start"));
         return fixture;
     }
 

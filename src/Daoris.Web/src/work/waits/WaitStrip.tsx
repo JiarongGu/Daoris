@@ -12,8 +12,7 @@ import { HelperAsks, type HelperWaits } from './HelperAsks';
 import { HandOverAgentAsk, type HandOverAskWait } from './HandOverAgentAsk';
 import type { Answered } from '../InlineConfirm';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
-import type { EntryPress } from '../review/EntryAccept';
+import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import type { SessionGitAccessHold } from '../head/GitAccessFact';
@@ -38,9 +37,7 @@ export type WaitProps = {
    * Settles with a refusal's sentence, or nothing.
    */
   onAnswerSession?: (answer: string) => Promise<string | null> | void;
-  /** A press of its question's answer from the card, with the card's words, through the box's door. */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** The answer selected in its question, the frame's, shared by the box and the head's card. */
   answerPick?: AnswerPick;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
@@ -72,7 +69,6 @@ export type WaitProps = {
    * and its pending. Absent where nothing reads them (a browser).
    */
   gitAsks?: GitAskWaits | null;
-  /** What each running session holds of git access, handed to the head's *Details* alone; the strip draws none. */
   gitAccess?: SessionGitAccessHold | null;
   /**
    * The rules it proposed that the person still answers: the machine's proposals as the shell read them,
@@ -91,20 +87,15 @@ export type WaitProps = {
    */
   handOver?: HandOverAskWait | null;
   lands?: LandOffer | null;
-  /** The session's own press, where its parts offer work: in the strip's place of *Accept…*. */
-  entry?: EntryPress | null;
   landing?: LandingPlan | null;
-  planning?: boolean;
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  onReviewRun?: () => void;
   onSayRebase?: SayRebase;
-  onName?: (name: string) => void;
   review?: HeadReview | null;
   behind?: LineBehind | null;
   opinion?: HeadOpinion | null;
   onReview?: () => void;
   discards?: DiscardOffer | null;
   onDiscardTree?: (answered: Answered) => void;
-  /** A landing or a discard of its work is on its way, pressed in either place. */
   workBusy?: boolean;
   /**
    * The way from each wait to the event in the conversation that raised it, where the conversation finds one:
@@ -121,7 +112,7 @@ export type WaitProps = {
  * @remarks
  * **The head's molecules, not copies**: a go-ahead still open is `GoAheadList`'s where no box below answers the
  * park (where one does, the box draws it), a rule the session proposed
- * `ProposedRules`', the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
+ * `ProposedRules`', the work's line `Lands` with its door to the review, the rebase words and the gates, a discard the line
  * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no, a tool
  * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered, a third answer
  * alone the bound holds for them `AnswerAlone` with *Go on with this answer* and *Not now*, each
@@ -129,8 +120,7 @@ export type WaitProps = {
  * question is named and not answered here: the box below is its answer's one door, and its *Finish…* and
  * *Decline…* stay its card's. A hand-over offer is the pinned page head's, already on screen.
  *
- * **One owner of each answer**: the frame holds the presses and their pending; the work's ask is open in one
- * place at a time (`workAsk`); a refusal is said where the press is made.
+ * **One owner of each answer**: the frame holds the presses and their pending; a refusal is said where the press is made.
  *
  * **One place at a time**: while the head's waits are wholly on screen (`aside`, the
  * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the
@@ -318,11 +308,6 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                 <HandOverAgentAsk {...props.handOver} />
               </div>
             )}
-            {work && !props.lands && props.entry && (
-              <div data-wait="work" tabIndex={-1} className={cn('grid gap-2', sought === 'work' ? SOUGHT : 'outline-none')}>
-                <EntryWork entry={props.entry} />
-              </div>
-            )}
             {work && props.lands && (
               <div
                 data-wait="work"
@@ -333,18 +318,13 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   session={session}
                   lands={props.lands}
                   landing={props.landing}
-                  planning={props.planning}
                   onReview={props.onReview}
-                  onLand={props.onLand}
+                  onReviewRun={props.onReviewRun}
                   onSayRebase={props.onSayRebase}
-                  onName={props.onName}
                   review={props.review}
                   behind={props.behind}
                   opinion={props.opinion}
-                  ask={workAsk}
-                  busy={props.workBusy}
                   toEvent={toEvent}
-                  entry={props.entry}
                 />
               </div>
             )}

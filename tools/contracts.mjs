@@ -18,7 +18,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
@@ -141,13 +141,18 @@ export const LOCK = `${OWN_OUTPUT}.lock`;
 /**
  * Write the files, one run at a time: the web gates' pre-scripts start together, and two builds into the one output fight over its
  * files, as two generators would over the files they write. A run that waited reads the files again, and builds nothing
- * where the run before it wrote them. `build` and `look` are a test's.
+ * where the run before it wrote them. A run that built removes its own output, still holding the lock: the generator runs again
+ * only when a declaring source changed, and every tree that kept the output held about 240 MB of it. `build` and `look` are a test's.
  */
 export function writeContracts(root, mode, { build = generate, look = standing } = {}) {
   return withRunLock(join(root, LOCK), () => {
     const { hash, why } = look(root);
     if (mode === '--if-stale' && !why) return 0;
-    if (!build(root, hash)) return 2;
+    try {
+      if (!build(root, hash)) return 2;
+    } finally {
+      rmSync(join(root, OWN_OUTPUT), { recursive: true, force: true, maxRetries: 4 });
+    }
     console.log(`contracts: wrote ${Object.values(OUTPUTS).join(' and ')}`);
     return 0;
   });

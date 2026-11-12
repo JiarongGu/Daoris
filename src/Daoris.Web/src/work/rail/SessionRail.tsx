@@ -263,8 +263,7 @@ export function SessionRail({
   const calls = usePushedCalls();
   const placed = new Map((groupings ?? []).map((row) => [row.session, withCall(row, calls) ?? row]));
 
-  // An ask's one Accept, under its heading in the list by ask, where its lines of
-  // work hold more than one part with work to land. Its plan reads git for every part, so it is asked only once its ask is open.
+  // An ask's one Accept, under its heading in the list by ask, where its lines of work hold more than one part with work to land; its plan is asked once its ask is open.
   const [askAsking, setAskAsking] = useState<string | null>(null);
   const askPlan = useAskLanding(askAsking, askAsking !== null);
   const landAsk = useLandAsk();
@@ -277,7 +276,6 @@ export function SessionRail({
     return (
       <AskAccept
         ask={ask}
-        scope="ask"
         offered={offered}
         open={open}
         onOpen={(opened) => setAskAsking(opened ? ask : null)}

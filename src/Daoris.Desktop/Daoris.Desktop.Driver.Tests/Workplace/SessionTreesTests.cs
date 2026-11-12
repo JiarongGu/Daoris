@@ -553,14 +553,15 @@ public sealed class SessionTreesTests : IDisposable
     private async Task<string> MakeRepositoryAsync(string name, string? under = null)
     {
         var root = Path.Combine(under ?? _scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), $"# {name}\n");
-        await GitAsync(root, "add", ".");
-        await GitAsync(root, "commit", "-m", "first");
-        return root;
+        return await GitSeed.MadeAsync(root, $"session-trees:{name}", async made =>
+        {
+            await GitAsync(made, "init", "--quiet");
+            await GitAsync(made, "config", "user.email", "fixture@example.test");
+            await GitAsync(made, "config", "user.name", "Fixture");
+            await File.WriteAllTextAsync(Path.Combine(made, "README.md"), $"# {name}\n");
+            await GitAsync(made, "add", ".");
+            await GitAsync(made, "commit", "-m", "first");
+        });
     }
 
     /// <summary>

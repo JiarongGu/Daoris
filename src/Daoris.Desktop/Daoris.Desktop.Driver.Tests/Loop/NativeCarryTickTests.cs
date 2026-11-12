@@ -8,8 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Through REAL ticks on the native door. Its harness ends the session's own work with its turn, so a native session
 /// that closes its quest done and leaves its fix uncommitted is carried on in Daoris's own words, as its conversation resumed, and reads
 /// completed once the tree is clean, or when the bound (<see cref="TurnCarry.Bound"/>) is met. The words are the run's own prompt: no card,
-/// no say, no move record, and Daoris commits nothing (any commit in the tree is the stand-in's).
-/// </summary>
+/// no say, no move record, and Daoris commits nothing (any commit in the tree is the stand-in's).</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class NativeCarryTickTests : IDisposable
 {
@@ -24,12 +23,7 @@ public sealed class NativeCarryTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git(_repository, "init", "-q", "-b", "main");
-        Git(_repository, "config", "user.email", "native-carry@example.com");
-        Git(_repository, "config", "user.name", "LANDBACK1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git(_repository, "add", "-A");
-        Git(_repository, "commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "native-carry@example.com", "LANDBACK1");
     }
 
     public void Dispose()

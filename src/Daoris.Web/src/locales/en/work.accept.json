@@ -1,8 +1,5 @@
 {
-  "work.accept.entry": "Accept…",
-  "work.accept.entry_other": "Accept all {{count}} parts…",
   "work.accept.ask": "Accept the ask's {{count}} parts…",
-  "work.accept.title.entry": "accept every part of this line of work",
   "work.accept.title.ask": "accept the ask's work",
   "work.accept.reading": "Reading where accepting would put each part…",
   "work.accept.lands": "Lands {{count}} part on {{branch}}, one after another, in the order they ran.",
@@ -19,10 +16,8 @@
   "work.accept.clash": "{{part}} conflicts with {{by}} ({{says}}) and has work of its own beside the conflict, so it is not offered for leaving out: the press would be refused at {{by}} unless one is rebased onto the other.",
   "work.accept.leaveOut":"Leave {{part}} out",
   "work.accept.held": "{{part}} is held: {{says}}",
-  "work.accept.heldAll": "A gate holds a part, and what holds one part holds the whole line of work: answer it in that part's review first.",
   "work.accept.heldAsk": "A part here is held, so {{repository}}'s work stays; the other repositories' work lands.",
   "work.accept.problem": "{{part}} would be refused now: {{says}}",
-  "work.accept.problemAll": "A part that would be refused now holds the whole line of work: answer it in that part's review first, or leave it out where you can.",
   "work.accept.problemAsk": "A part here would be refused, so {{repository}}'s work stays; the other repositories' work lands.",
   "work.accept.meanIt": "Accept all",
   "work.accept.nothing": "Nothing was landed: none of this ask's lines of work has work to land here."

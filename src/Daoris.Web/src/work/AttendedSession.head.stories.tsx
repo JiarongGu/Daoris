@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
 import type { Quest } from '../data/api';
 import { aQuest } from '../quests/aQuest';
 import { chinese } from '../design/storyLanguage';
@@ -16,9 +15,8 @@ import { SessionPageHead } from './head/SessionPageHead';
 import { questName } from './identity';
 
 // The record head with every block it can carry, drawn in a real browser by `measured/head.spec.ts`: the pinned page head, the head, the parts folded to their line,
-// the one Accept, the chain folded to its line, the relations folded to theirs, the channel, the milestone
-// folded to its line and the trace folded, then the first lines of the conversation, which a marked box stands in for. The frame
-// is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
+// the chain folded to its line, the relations folded to theirs, the channel, the milestone folded to its line and the trace
+// folded, then the first lines of the conversation, which a marked box stands in for. The frame is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
 // `storyWidths` box is drawn around it.
 
 const nothing = () => {};
@@ -65,10 +63,6 @@ const MILESTONE: MilestoneUnit = {
   }],
 };
 
-const ACCEPT: ComponentProps<typeof AttendedSession>['entryAccept'] = {
-  scope: 'entry', offered: 2, open: false, onOpen: nothing, plans: null, onLand: nothing,
-};
-
 /** A typical record's quest: asked by an ask straight to this repository, so its chain is the ask and this quest. */
 const ASKED = quest({ id: 'q0000e', from: 'ask #c98a7e', title: 'Read the export table from the app' });
 
@@ -112,7 +106,6 @@ function RecordHead({ width, milestone = MILESTONE, typical = false }: {
               quest={QUEST}
               headed
               parts={{ entry: ENTRY, attended: ATTENDED.id, rows: ROWS, onShow: nothing }}
-              entryAccept={ACCEPT}
               chain={buildChain(QUEST.id, [QUEST, PARENT], EVIDENCE_SESSIONS)}
               relations={{
                 askedBy: { id: 'db000003', session: EVIDENCE_SESSIONS.find((session) => session.id === 'db000003') ?? null },

@@ -27,8 +27,7 @@ import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { isIntake, sessionOrigin, sessionTitle } from '../identity';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
-import type { EntryPress } from '../review/EntryAccept';
+import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
 import { type HeadLink, linkRow } from './headRows';
@@ -88,23 +87,15 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  * beside it. A failed attempt's branch whose tree is
  * gone has *Discard branch…* too, asking once, since no clean-up takes it and the review has no tree to discard.
  *
- * **Commits its tree holds are offered to land, whatever its ending**: where the driver's reader
- * says what the tree offers (`lands`), the line names the commits, the branch and the tree, and *Accept…* asks once under it,
- * saying where accepting puts the work by the repository's rule, as the review's foot says it, and for a session that did
- * not finish that only what it committed lands. The press is the review's Accept; a refusal is said inside the ask.
+ * **Commits its tree holds are offered, whatever its ending**: where the driver's reader says what the tree offers (`lands`),
+ * the line names the commits, the branch and the tree, with a *Review* door to the run's review, where the Accept is pressed.
  *
- * **Commits the line holds by content are never offered to land again**: where a squash merge or
- * a cherry-pick put its work elsewhere (`discards`), accepting would make a branch of work already there, so no *Accept…*
- * stands. The driver's sentence says where the work is, in Discard's own clause, and *Discard branch…* asks once with the
- * driver's sentence naming the ref its commits stay at; the press is the review's Discard, unforced.
+ * **Commits the line holds by content are never offered again**: where a squash merge or a cherry-pick put its work elsewhere
+ * (`discards`), the line offers *Discard branch…* alone, asking once with the driver's sentence naming the ref its commits
+ * stay at; the press is the review's Discard, unforced.
  *
- * **Where a review's gate holds the work, it stands where *Accept…* would**: *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
- * and the verdict's presses, and no *Accept…*, which the landing door would refuse.
- *
- * **The second opinion stands before it**: wherever a level asks one,
- * *Second opinion* in its state, its findings beside their answers and its presses, before the review's gate as the gate's order
- * has it. While it holds the work *Accept…* is not offered, except where *Accept…* is the press that answers it (a dispute, or
- * commits nobody read): then its ask says what it answers, and the press sends the gate's token back.
+ * **Where a review's gate holds the work, it stands in the door's place**: *Review in `<environment>`* in the gate's state, with
+ * the set-up step's showing and the verdict's presses. *Second opinion*, wherever a level asks one, stands before it.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
@@ -114,9 +105,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
 export function SessionHead({
   session, quest, opening, brief, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
+  ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
+  question = null, parkBox = false, pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
 }: {
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
@@ -132,8 +123,6 @@ export function SessionHead({
    * and the door that opens *At work*. Absent where the frame holds no answer for it.
    */
   waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void } | null;
-  /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own. */
-  entry?: EntryPress | null;
   /**
    * Its pieces, the frame's: what it asked other agents to write, where each stands, the
    * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
@@ -185,7 +174,7 @@ export function SessionHead({
    */
   toEvent?: WaitEvents;
   /**
-   * Where the ask of its work's line (*Accept…*, *Discard branch…*) is open, the frame's, so it is open in the head or in the
+   * Where the ask of its work's line (*Discard branch…*) is open, the frame's, so it is open in the head or in the
    * foot's strip, never both. Absent, the line holds its own.
    */
   workAsk?: WorkAsk;
@@ -217,8 +206,6 @@ export function SessionHead({
    * with where it is set, *Details*' rows. Absent or null where it is told none (no tree of its own here) or nothing answered.
    */
   process?: SessionProcess | null;
-  /** The landing plan shown is the previous one while the entered name's is read; the press waits. */
-  planning?: boolean;
   /**
    * The second opinion's gate where a level asks one: its findings beside their answers, where the frame read them,
    * and its presses. Drawn from the landing's plan's own `opinion`.
@@ -252,14 +239,12 @@ export function SessionHead({
    */
   landing?: LandingPlan | null;
   /**
-   * Land it: the review's Accept, told back to its ask, with the second opinion's token where the press answers what it showed
+   * The door to the review of the run whose Accept the work waits on: the head shows it where its Accept would be.
    * Absent where nothing can press it (a browser, a story).
    */
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  onReviewRun?: () => void;
   /** The press that says the rebase words where replaying conflicts; the frame holds the say door. */
   onSayRebase?: SayRebase;
-  /** The branch name typed in the land ask, so the frame asks the plan again with it; `''` when the ask is put down. */
-  onName?: (name: string) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account.
@@ -540,13 +525,9 @@ export function SessionHead({
         // Spaced as the head spaces its own.
         <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
           <Lands
-            key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent} entry={entry}
+            key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onReviewRun={onReviewRun} onSayRebase={onSayRebase}
+            review={review} behind={behind} opinion={opinion} toEvent={toEvent}
           />
-        </div>
-      ) : entry ? (
-        <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' ? SOUGHT : 'outline-none')}>
-          <EntryWork entry={entry} />
         </div>
       ) : discards ? (
         <div data-wait-section className="grid gap-2.5">

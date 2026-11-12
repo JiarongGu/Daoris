@@ -495,6 +495,18 @@
     "Plugins/PluginTokenAdoption.cs": {
       "reads": "other",
       "note": "a plugin command round's own question, which leaves the token unadopted, not a record's mark"
+    },
+    "Plugins/PluginCommandRun.cs": {
+      "reads": "other",
+      "note": "a plugin command round's own question, whose exit is read only where it asked none, not a record's mark"
+    },
+    "Plugins/PluginForget.cs": {
+      "reads": "other",
+      "note": "a plugin command round's own question, which leaves the forget unconfirmed, not a record's mark"
+    },
+    "Workflows/Kinds/Review/ThroughAccepts.cs": {
+      "reads": "other",
+      "note": "a workflow step's kind named opinion, not a record's mark"
     }
   },
   "modules": {

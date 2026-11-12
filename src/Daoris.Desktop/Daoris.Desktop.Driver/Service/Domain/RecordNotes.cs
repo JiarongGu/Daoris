@@ -32,6 +32,12 @@ public static class RecordNotes
     /// <summary>A choice its agent refused at the open (<see cref="EndNoteCodes.EndedChoiceNotOffered"/>).</summary>
     public const string EndedChoiceNotOffered = "ended.choice-not-offered";
 
+    /// <summary>A conversation's opening past its bound (<see cref="ChatNoteCodes.ChatNotUp"/>).</summary>
+    public const string ChatNotUp = "chat.not-up";
+
+    /// <summary>Ask Daoris's opening past its bound (<see cref="ChatNoteCodes.HelpNotUp"/>).</summary>
+    public const string ChatHelpNotUp = "chat.help-not-up";
+
     /// <summary>The lines that say the account is refused or signed out, which is the account's fault and never the quest's (<see cref="AccountNoteCodes.AccountsOwn"/>).</summary>
     public static IReadOnlyList<string> AccountsOwn { get; } =
         ["account.refused", "account.refused-own", "account.signed-out", "account.signed-out-own", "account.refused-model"];

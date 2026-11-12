@@ -17,8 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The stand-in service models, as far as these ticks reach, words kept on an ended record, with <c>by</c>;
 /// taken off by their ids; the ledger's one move out of an ended state; and an opinion read back with the answers kept. The
-/// answer door, <c>POST /api/opinions/{id}/answers</c>, is the stand-in's alone: a real session answers through its connector.
-/// </remarks>
+/// answer door, <c>POST /api/opinions/{id}/answers</c>, is the stand-in's alone: a real session answers through its connector.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class OpinionResumeTickTests : IDisposable
 {
@@ -42,12 +41,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
         SeededRules.In(_home);
-        Git(_repository, "init", "-q", "-b", "main");
-        Git(_repository, "config", "user.email", "opinion@example.com");
-        Git(_repository, "config", "user.name", "XAGENT1e");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git(_repository, "add", "-A");
-        Git(_repository, "commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "opinion@example.com", "XAGENT1e");
     }
 
     public void Dispose()

@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 // The shape lives beside the components that render it, so a molecule can name it without
@@ -363,15 +363,11 @@ export type LandingConflict = { says: string; words: string };
  * draws where *Accept…* would be; absent where nothing waits for a review. And the
  * second opinion's gate before it, wherever a level asks one, which the page draws beside the review's.
  */
-export const useLanding = (id: string | null, branch?: string | null) => {
+export const useLanding = (id: string | null) => {
   const { isAvailable } = useShenora();
-  const named = branch?.trim() || null;
   return useQuery({
-    // The plan asked again with a name the person entered, so a refusal shows before the press. The rule's own plan
-    // keeps its key, and the previous answer stands while the next is read, so the ask's gates do not blink away as one types.
-    queryKey: named ? [...keys.landing(id ?? ''), named] : keys.landing(id ?? ''),
-    placeholderData: named ? keepPreviousData : undefined,
-    queryFn: () => call('LANDING', { id: id ?? '', ...(named ? { branch: named } : {}) }) as Promise<{
+    queryKey: keys.landing(id ?? ''),
+    queryFn: () => call('LANDING', { id: id ?? '' }) as Promise<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       /**
        * The branch the press lands on already stands: an entry's or a chain's, which the press moves on instead of

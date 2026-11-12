@@ -55,7 +55,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
     private static SaidWordView Said(string id = "w8") => new(id, "Go on.", At, [], true);
 
     private static PriorSession Asker(string id = "s1", string? from = null, params SaidWordView[] said) =>
-        new(id, "trees/default/reports/s-1", "completed") { Said = said, From = from, Adapter = "claude-code-acp" };
+        new(id, "trees/default/reports/s-1", "completed") { Said = said, From = from, Line = from, Adapter = "claude-code-acp" };
 
     private static readonly PriorSession HelperRecord = new("h1", null, "completed") { Adapter = "codex-acp", Serves = "s1", Kind = "chat" };
 
@@ -282,8 +282,8 @@ public sealed class AnswersAloneHoldTests : IDisposable
     {
         GoneOn("s1", 2);
         GoneOn("s2", 0);
-        var first = Asker("s1") with { Kind = "driven", Quest = "q1", Created = At };
-        var resumed = Asker("s2", said: [Answer()]) with { Kind = "driven", Quest = "q1", Created = At.AddMinutes(5) };
+        var first = Asker("s1") with { Kind = "driven", Quest = "q1", Line = "q1", Created = At };
+        var resumed = Asker("s2", said: [Answer()]) with { Kind = "driven", Quest = "q1", Line = "q1", Created = At.AddMinutes(5) };
 
         Assert.True(Hold.Holds(resumed, Records(first, resumed, HelperRecord), At));
         Assert.Equal("q1", CountOf("s2", Records(first, resumed, HelperRecord)).Line);

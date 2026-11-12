@@ -45,7 +45,7 @@ public static class AtWorkExchangeReading
             record => record.Id,
             record => new PriorSession(record.Id, record.Tree, record.State, null, record.Repository)
             {
-                From = record.From, FromWhy = record.FromWhy, Quest = record.Quest, TookQuest = record.TookQuest,
+                From = record.From, FromWhy = record.FromWhy, Line = record.Line, Quest = record.Quest, TookQuest = record.TookQuest,
             },
             StringComparer.Ordinal);
 

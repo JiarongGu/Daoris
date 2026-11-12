@@ -32,7 +32,7 @@ public sealed class BriefWaitsTests : IDisposable
     /// <summary>The line c0nv0001 then c0nv0002, the second begun by a hand-over from the first.</summary>
     private static readonly string Line = new JsonArray(
         new JsonObject { ["id"] = "c0nv0001", ["state"] = "ended", ["repository"] = "Owner" },
-        new JsonObject { ["id"] = "c0nv0002", ["state"] = "ended", ["repository"] = "Owner", ["from"] = "c0nv0001", ["fromWhy"] = "press" }).ToJsonString();
+        new JsonObject { ["id"] = "c0nv0002", ["state"] = "ended", ["repository"] = "Owner", ["from"] = "c0nv0001", ["fromWhy"] = "press", ["line"] = "c0nv0001" }).ToJsonString();
 
     private string Ask(string id, string asker, string question)
     {

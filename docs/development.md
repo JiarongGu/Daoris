@@ -70,6 +70,12 @@ isolated worktree when it ends without a tracked change. A docs-only or read-onl
 is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
 `local/scratch/`, or commits it early; otherwise it is lost with the worktree.
 
+A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs` (a plan; `--apply` removes, `--root <checkout>`
+names another tree, `--hours <n>` the window): an entry it or anything directly in it was written in the last 24 hours stays, as
+do the caches a run keeps (`pinned-mingit`, `rehearsal-builds`, `seeds`) and every link, which is never followed; the rest is
+what a killed host, a failed rehearsal or a retired probe left, and goes. The tool refuses a folder git does not ignore and a
+target outside it, and leaves an entry something still holds for a later run.
+
 Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
 record the action and exact reason, leave the task open, and resolve the actual permission setting
 or surface it to the owner. Retry after new authorization or a real permission change through the

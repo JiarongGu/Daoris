@@ -14,8 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The stand-in service models the real one: an answer keeps the record parked, and a move into
-/// <c>awaiting-person</c> clears it. The real service still ends the record as it takes the answer.
-/// </remarks>
+/// <c>awaiting-person</c> clears it. The real service still ends the record as it takes the answer.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AnswerContinuesTickTests : IDisposable
 {
@@ -28,12 +27,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "answer@example.com");
-        Git("config", "user.name", "ANSWER1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "answer@example.com", "ANSWER1");
     }
 
     public void Dispose()

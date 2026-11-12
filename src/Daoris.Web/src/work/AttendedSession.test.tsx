@@ -99,10 +99,8 @@ describe('the attended session', () => {
   });
 
   /**
-   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent, and React
-   * matches a new fold to the milestone's by that key: each draw of a running driven session must not mount a fresh fold and leave
-   * the last one in the page, never unmounted. A working session is drawn again at every change of its record, so its relations line
-   * must not stand many times over, and moving to another session must not leave the old ones behind.
+   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent: each draw of a
+   * running driven session must not mount a fresh fold and leave the last one in the page, and moving to another session must not leave the old ones behind.
    */
   it('keeps one line of who it worked with, however often a running session with a milestone is drawn again', async () => {
     vi.useRealTimers();
@@ -231,38 +229,6 @@ describe('the attended session', () => {
     rerender(<AttendedSession session={session({ id: 'db000003' })} parts={parts(1, 'db000003')} />);
     expect(screen.getByRole('button', { name: 'Show the parts' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Hide the parts' })).toBeNull();
-  });
-
-  /**
-   * Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
-   * the parts' flow beside the press, drawn from the same plan and not before it is open. The flow is the one the person opened;
-   * Accept's ask does not open it (a block opening under a press elsewhere would move the control just pressed).
-   */
-  it('draws the landing plan Accept read as a prospective node in the parts\' flow, once its ask is open', async () => {
-    const userEvent = (await import('@testing-library/user-event')).default;
-    const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
-    vi.useRealTimers();
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      const width = this.hasAttribute('data-flow-pane') ? 1200 : 0;
-      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
-    });
-    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
-    try {
-      const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((row) => [row.id, { session: row }]));
-      const plan = { entry: EVIDENCE_ENTRIES[0]!.entry, repository: 'app', form: 'branch', target: 'daoris/t-one', parts: [{ session: 'ap000001' }, { session: 'ap000002' }] };
-      const accept = { scope: 'entry' as const, offered: 2, open: false, onOpen: vi.fn(), plans: [plan], onLand: vi.fn() };
-      const parts = { entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow: vi.fn() };
-      const { rerender } = render(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={accept} />);
-      expect(screen.queryByText('Accept would land these on daoris/t-one')).toBeNull();
-
-      rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={{ ...accept, open: true }} />);
-      expect(screen.queryByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeNull();
-      await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
-      expect(screen.getByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeInTheDocument();
-    } finally {
-      vi.restoreAllMocks();
-      vi.unstubAllGlobals();
-    }
   });
 
   /**

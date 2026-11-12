@@ -67,7 +67,7 @@ export const DrivenNarrow: Story = { decorators: [sessionWidths.narrow] };
 export const WorkflowPathsHeld: Story = { args: {
   session: { ...SESSION, state: 'completed' },
   lands: { branch: 'daoris/s-workflow', tree: 's-workflow', commits: 2, uncommitted: 0 },
-  onLand: () => {},
+  onReviewRun: () => {},
   landing: { form: 'branch', target: 'feature/docs', workflow: { state: 'kind-paths', holds: true,
     says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris workflow keep s1a2b3c4`.' } },
 } };
@@ -336,7 +336,7 @@ export const FailedItsWorkToLand: Story = {
     lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 },
     landing: { form: 'branch', target: 'feature/streaming-budget', plugin: 'azure-devops-pull-request' },
     onReview: () => {},
-    onLand: () => {},
+    onReviewRun: () => {},
   },
 };
 

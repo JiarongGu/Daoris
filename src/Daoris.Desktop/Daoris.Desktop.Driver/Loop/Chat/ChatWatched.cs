@@ -12,6 +12,9 @@ internal sealed record ChatWatched(string Adapter, bool Keeps, GoingOn? GoOn)
     /// <summary>A fact about how this run is set up, its transcript's first line on either door: the mode Ask Daoris's start got. Null says nothing.</summary>
     public string? Preamble { get; init; }
 
+    /// <summary>The native door's opening held to its bound, or null on the protocol door, whose open is bounded on its own session.</summary>
+    public NativeOpening? Opening { get; init; }
+
     /// <summary>Its record works already, so its open asks no move of it (<see cref="ChatRun.RunAsync"/>'s <c>working</c>).</summary>
     public bool Working { get; init; }
 }

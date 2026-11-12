@@ -2,7 +2,6 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import type { GoAhead, Session } from '../../data/api';
 import { chinese } from '../../design/storyLanguage';
-import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { DETAIL, GATES } from '../gates/opinionFixtures';
 import { STEP_SHOWN } from '../gates/reviewFixtures';
@@ -99,7 +98,7 @@ export const ParkedWithAGoAheadDarkChinese: Story = { ...ParkedWithAGoAhead, dec
  */
 export const InTheConversation: Story = {
   args: {
-    ...ParkedWithAGoAhead.args, lands: LANDS, landing: PLAN, onLand: nothing, onReview: nothing,
+    ...ParkedWithAGoAhead.args, lands: LANDS, landing: PLAN, onReviewRun: nothing, onReview: nothing,
     toEvent: { question: nothing, work: nothing, goAheads: { 2: nothing } },
   },
 };
@@ -110,12 +109,10 @@ export const InTheConversationChinese: Story = { ...InTheConversation, decorator
 /** The same in dark and 中文. */
 export const InTheConversationDarkChinese: Story = { ...InTheConversation, decorators: [chinese, dark] };
 
-/** A raising block's *To the wait* led here: go-ahead 2's line, outlined. */
 export const LedToFromTheConversation: Story = {
   args: { ...InTheConversation.args, seek: { wait: 'goAhead:2', n: 1 } },
 };
 
-/** Several, folded to one line naming them. */
 export const Folded: Story = {
   ...ParkedWithAGoAhead,
   play: async ({ canvasElement }) => {
@@ -123,40 +120,12 @@ export const Folded: Story = {
   },
 };
 
-/** Its work to accept: *Accept…* beside its line. */
-export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, landing: PLAN, onLand: nothing, onReview: nothing } };
+/** Its work to accept: the door to the run's review beside its line. */
+export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, landing: PLAN, onReviewRun: nothing, onReview: nothing } };
 
 /** The same in 中文 and dark. */
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
 
-/**
- * The session's *Accept all* at the foot, in the place of the part's own *Accept…*, where its parts
- * offer work to land; the same press the head draws, its ask open in one of them.
- */
-const SESSION_PRESS = { scope: 'entry' as const, offered: 2, open: false, onOpen: nothing, onLand: nothing };
-export const SessionAccept: Story = {
-  args: { session: session(), lands: LANDS, landing: PLAN, onLand: nothing, onReview: nothing, entry: SESSION_PRESS },
-  decorators: [storyWidths.wide],
-};
-export const SessionAcceptHalf: Story = { ...SessionAccept, decorators: [storyWidths.half] };
-export const SessionAcceptNarrow: Story = { ...SessionAccept, decorators: [storyWidths.narrow] };
-export const SessionAcceptChinese: Story = { ...SessionAccept, decorators: [storyWidths.wide, chinese] };
-export const SessionAcceptHalfChinese: Story = { ...SessionAccept, decorators: [storyWidths.half, chinese] };
-export const SessionAcceptNarrowChinese: Story = { ...SessionAccept, decorators: [storyWidths.narrow, chinese] };
-export const SessionAcceptDark: Story = { ...SessionAccept, decorators: [storyWidths.wide, dark] };
-export const SessionAcceptHalfDark: Story = { ...SessionAccept, decorators: [storyWidths.half, dark] };
-export const SessionAcceptNarrowDark: Story = { ...SessionAccept, decorators: [storyWidths.narrow, chinese, dark] };
-
-/** The head has no work of its own beside a part that has some: the session's *Accept…* stands alone, held while it asks elsewhere. */
-export const SessionAcceptBesideAPart: Story = {
-  args: { session: session(), entry: { ...SESSION_PRESS, offered: 1 } },
-  decorators: [storyWidths.half],
-};
-export const SessionAcceptBesideAPartNarrowChinese: Story = { ...SessionAcceptBesideAPart, decorators: [storyWidths.narrow, chinese, dark] };
-export const SessionAcceptHeldElsewhere: Story = {
-  args: { ...SessionAcceptBesideAPart.args, entry: { ...SESSION_PRESS, offered: 1, held: true } },
-  decorators: [storyWidths.half],
-};
 
 /**
  * The head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head
@@ -164,20 +133,10 @@ export const SessionAcceptHeldElsewhere: Story = {
  */
 export const AsideWhileTheHeadIsOnScreen: Story = { args: { ...ParkedWithAGoAhead.args, aside: true } };
 
-/** On screen or not, the strip stays up while *Accept…* is asking in it. */
-export const AsideButAsking: Story = {
-  args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing }, aside: true },
-};
-
-/** *Accept…* asking at the foot, the frame holding its ask here. */
-export const AcceptAsking: Story = {
-  args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing } },
-};
-
-/** A dispute *Accept…* answers, with its findings folded. */
+/** A dispute the review page answers, with its findings folded. */
 export const Disputed: Story = {
   args: {
-    session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.disputed }, onLand: nothing, onReview: nothing,
+    session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.disputed }, onReviewRun: nothing, onReview: nothing,
     opinion: { detail: DETAIL, acts: { sendBack: nothing, ask: nothing } },
   },
 };
@@ -186,7 +145,7 @@ export const Disputed: Story = {
 export const ReviewWaits: Story = {
   args: {
     session: session(), lands: LANDS, landing: { ...PLAN, review: { state: 'shown', environment: 'local', quest: STEP_SHOWN.id } },
-    onLand: nothing, review: { step: STEP_SHOWN, served: true, acts: { reviewed: nothing, notYet: nothing, skip: nothing } },
+    onReviewRun: nothing, review: { step: STEP_SHOWN, served: true, acts: { reviewed: nothing, notYet: nothing, skip: nothing } },
   },
 };
 

@@ -46,10 +46,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         new SessionArchive(_context.Home).Unarchive([sessionId]);
         _context.Marks.Clear(sessionId);
 
-        // 🔴 One its agent refused at the open began no conversation there, so it is never resumed: its go-on
+        // 🔴 One its agent refused at the open, or whose opening passed its bound unopened, began no conversation, so it is never resumed: its go-on
         // is a fresh start of its actor, its words the first message, a pick trying only its own agent's entries on its own account, and a
         // refused continuation handed the brief of its line first. The come-up's go-on takes the same path.
-        if (record.NotOffered)
+        if (record.NotOffered || (record.NotUp && _context.Conversations.Read(sessionId) is null))
         {
             var fresh = await _move.NotOfferedAsync(record, json, config, onEnded, ct).ConfigureAwait(false);
             if (fresh.SessionId is null) _context.Note(sessionId, LimitNotes.NotMoved(fresh.Message));

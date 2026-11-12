@@ -45,7 +45,8 @@ public static class SessionAnswers
         Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
         Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
         Work: loopback ? ParticipantWork.Of(s) : null, Decides: loopback ? s.Decides : null, Performs: loopback ? s.Performs : null,
-        HoldsPlace: loopback ? s.HoldsPlace : null);
+        HoldsPlace: loopback ? s.HoldsPlace : null,
+        Line: loopback ? s.Line : null);
 
     public static SaidWordResponse ToSaid(SaidWord word) =>
         new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt,

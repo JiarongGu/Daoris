@@ -96,6 +96,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public string? FromWhy { get; init; }
 
+    /// <summary>The conversation it is a part of, as the service set it at the open; null from an older host and for a teammate's record.</summary>
+    public string? Line { get; init; }
+
     /// <summary>The part its line ends at, as the service walks it; null from an older host or where the walk finds none.</summary>
     public string? Head { get; init; }
 

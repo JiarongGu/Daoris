@@ -984,8 +984,8 @@ describe('starting and holding a conversation', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Send' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'the budget is in level.json' } });
 
-    // What the driver holds shows as waiting, and only then is the keeping stop offered; never a word's own press.
-    expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
+    // What the driver holds shows as waiting, and only then the keeping stop; Send now waits for words.
+    expect(screen.getByRole('button', { name: 'Send now' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
     queue = { session: 's1a2b3c4', queued: [{ id: 'said-1', text: 'the budget is in level.json', files: [], level: 'urgent' }], taking: true, listening: true };
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!(queue); });

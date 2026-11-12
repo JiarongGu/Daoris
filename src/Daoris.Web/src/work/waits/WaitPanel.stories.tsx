@@ -89,7 +89,7 @@ function Column({ height, onResize, onReset, holds, question = ASKED }: {
           )}
         >
           {holds === 'stripAndPark' && (
-            <WaitStrip session={PARKED} answerBelow parkBox lands={LANDS} landing={{ session: 's1a2b3c4', form: 'branch', target: 'main' }} onLand={nothing} />
+            <WaitStrip session={PARKED} answerBelow parkBox lands={LANDS} landing={{ session: 's1a2b3c4', form: 'branch', target: 'main' }} onReviewRun={nothing} />
           )}
           {holds === 'nothing'
             ? <SessionBox box={{ kind: 'steer' }} held={{ queued: [], taking: true }} onSend={nothing} />

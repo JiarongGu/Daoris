@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>daoris plugin</c>: each change names the route the window's press
 /// takes, its payload written from the words, or none for the terminal's replace; a person's press acting alone is refused from a
 /// session's terminal with nothing written; and an alone remove of a folder something holds is refused as the route refuses it, nothing
-/// taken. Today's words are <see cref="PluginsTextTests"/>'; both ways through the route are the modules' <c>PluginsBothWaysTests</c>.
+/// taken; and each verb's exit and the files it writes, a row each. Both ways through the route are the modules' <c>PluginsBothWaysTests</c>.
 /// </summary>
 public sealed class PluginCommandTests : IDisposable
 {
@@ -39,12 +39,12 @@ public sealed class PluginCommandTests : IDisposable
         return folder;
     }
 
-    private PluginWorld World(string? session = null) => new()
+    private PluginWorld World(string? session = null, bool home = true) => new()
     {
         Instance = new InstanceWorld
         {
-            Home = Home,
-            Environment = name => name == DaorisHome.Variable ? Home : name == DriverChoicesCommand.SessionVariable ? session : null,
+            Home = home ? Home : null,
+            Environment = name => name == DaorisHome.Variable && home ? Home : name == DriverChoicesCommand.SessionVariable ? session : null,
             BaseDirectory = Path.Combine(_root, "application"),
             Out = _out,
             Error = _error,
@@ -52,6 +52,106 @@ public sealed class PluginCommandTests : IDisposable
         },
         WorkingDirectory = _root,
     };
+
+    private const string GateV1 =
+        """{"id":"acme.gate","name":"Acme gate","version":"1.0.0","hooks":{"command":["node","${plugin}/gate.mjs"],"points":["quest/consider"]}}""";
+
+    private const string Agent = """{ "id": "acme.agent" }""";
+
+    private static readonly Dictionary<string, string> Installed1 = new() { ["data/plugins/acme.agent/plugin.json"] = Agent };
+
+    private static readonly Dictionary<string, string> Outdated = new()
+    {
+        ["checkout/gate/gate.mjs"] = "// v2",
+        ["checkout/gate/plugin.json"] = """{"id":"acme.gate","name":"Acme gate","version":"1.1.0","hooks":{"command":["node","${plugin}/gate2.mjs"],"points":["quest/consider"]}}""",
+        ["data/plugins/.data/acme.gate/kept.json"] = "{}",
+        ["data/plugins/acme.gate/.daoris-source.json"] = """{"folder":"<root>/checkout/gate"}""",
+        ["data/plugins/acme.gate/gate.mjs"] = "// v1",
+        ["data/plugins/acme.gate/plugin.json"] = GateV1,
+        ["data/plugins/acme.gate/stale.txt"] = "old",
+    };
+
+    /// <summary>
+    /// Each verb's exit and what it changes under the install's folder (a file named with <c>-</c> is removed), from the files before it;
+    /// a refusal exits 2 on one line with nothing changed. The rows of the retired TypeScript verb's recording that held a behaviour, not
+    /// words. A manifest's own refusals are <see cref="PluginCatalogTests"/>', <see cref="PluginInstallTests"/>' and
+    /// <see cref="PluginOfferTests"/>'.
+    /// </summary>
+    private static readonly Dictionary<string, Row> Rows = new Row[]
+    {
+        new(["add", "<root>/checkout/gate"], 0, ["data/plugins/acme.gate/.daoris-source.json", "data/plugins/acme.gate/gate.mjs", "data/plugins/acme.gate/plugin.json"],
+            new() { ["checkout/gate/gate.mjs"] = "// v1", ["checkout/gate/plugin.json"] = GateV1 }),
+        new(["add", "--offer", "ACME.OFFERED"], 0, ["data/plugins/acme.offered/.daoris-source.json", "data/plugins/acme.offered/plugin.json"],
+            new() { ["app/plugin-offers/acme.offered/plugin.json"] = """{ "id": "acme.offered", "name": "Acme offered", "version": "3.0.0" }""" }),
+        new(["disable", "acme.agent"], 0, ["data/plugins.json"], Installed1),
+        new(["enable", "acme.agent"], 0, ["data/plugins.json"],
+            new() { ["data/plugins/acme.agent/plugin.json"] = Agent, ["data/plugins.json"] = """{ "disabled": ["acme.agent", "other"] }""" }),
+        new(["remove", "acme.agent"], 0, ["-data/plugins/acme.agent/plugin.json"], Installed1),
+        new(["switch", "acme.agent", "tools", "off", "--place", "repository:engine"], 0, ["data/plugins.json"], Installed1),
+        new(["update", "acme.gate", "--yes"], 0,
+            ["data/plugins/acme.gate/.daoris-source.json", "data/plugins/acme.gate/gate.mjs", "data/plugins/acme.gate/plugin.json", "-data/plugins/acme.gate/stale.txt"],
+            Outdated),
+        new(["update", "acme.gate"], 1, [], Outdated),
+        new(["add"], 2, []),
+        new(["add", "--offer"], 2, []),
+        new(["add", "--offer", "--yes"], 2, []),
+        new(["add", "--offer", "../up"], 2, []),
+        new(["add", "--offer", "acme.nobody"], 2, []),
+        new(["disable"], 2, []),
+        new(["frobnicate"], 2, []),
+        new(["install", "<root>/Acme.Gate.1.0.0.nupkg"], 2, []),
+        new(["remove"], 2, []),
+        new(["update"], 2, []),
+        new(["update", "--yes"], 2, []),
+        new(["update", "../acme.gate"], 2, []),
+        new(["update", "acme.nobody"], 2, [], new() { ["data/plugins/.keep"] = "" }),
+        new(["enable", "nobody"], 2, [], Installed1),
+        new(["try-again", "nobody"], 2, [], Installed1),
+        new(["remove", ".."], 2, [], Installed1),
+        new(["remove", ".data"], 2, [], new() { ["data/plugins/.data/acme.agent/kept.json"] = "{}" }),
+        new(["enable", "acme.agent"], 2, [], Home: false),
+        new(["list"], 2, [], Home: false),
+        new(["new", "acme.gate"], 2, [], Home: false),
+        new(["try", "acme.gate"], 2, [], Home: false),
+    }.ToDictionary(row => string.Join(' ', row.Argv) + (row.Home ? "" : ", no home"));
+
+    private sealed record Row(string[] Argv, int Exit, string[] Changed, Dictionary<string, string>? Before = null, bool Home = true);
+
+    public static TheoryData<string> Verbs() => [.. Rows.Keys];
+
+    [Fact]
+    public void The_rows_hold_every_verb_the_command_answers() =>
+        Assert.All(PluginCommand.Verbs, verb => Assert.Contains(Rows.Values, row => row.Argv[0] == verb));
+
+    [Theory]
+    [MemberData(nameof(Verbs))]
+    public async Task Each_verb_exits_and_changes_the_files_its_row_says(string name)
+    {
+        var row = Rows[name];
+        foreach (var (file, text) in row.Before ?? [])
+        {
+            var path = Path.Combine([_root, .. file.Split('/')]);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, text.Replace("<root>", file.EndsWith(".json", StringComparison.Ordinal)
+                ? System.Text.Json.JsonEncodedText.Encode(_root).ToString() : _root, StringComparison.Ordinal));
+        }
+
+        var before = Files();
+        var exit = await PluginCommand.RunAsync(
+            [.. row.Argv.Select(each => each.Replace("<root>", _root, StringComparison.Ordinal))], World(home: row.Home), CancellationToken.None);
+
+        var after = Files();
+        string[] changed = [.. after.Where(file => !before.TryGetValue(file.Key, out var was) || was != file.Value).Select(file => file.Key)
+            .Concat(before.Keys.Where(file => !after.ContainsKey(file)).Select(file => "-" + file)).Order(StringComparer.Ordinal)];
+        var said = $"`{name}` exit {exit}, changed {string.Join(", ", changed)}:\n{_out}\n{_error}";
+        Assert.True(row.Exit == exit, said);
+        Assert.True(row.Changed.Order(StringComparer.Ordinal).SequenceEqual(changed), said);
+        if (row.Exit == 2) Assert.True(_out.ToString().Length == 0 && _error.ToString().TrimEnd().Split('\n').Length == 1, said);
+    }
+
+    private Dictionary<string, string> Files() =>
+        Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories).ToDictionary(
+            path => Path.GetRelativePath(_root, path).Replace('\\', '/'), File.ReadAllText, StringComparer.Ordinal);
 
     [Fact]
     public void Each_change_names_its_route_and_the_payload_the_window_s_press_sends()

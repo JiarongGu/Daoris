@@ -54,13 +54,18 @@ internal sealed class SessionWrites(SessionStore store)
         };
         // An Ask Daoris record told none reads as one from before does, restricted; any other record has none.
         // The access setup as told, which the ledger judged a short map of words; none told keeps none.
-        session = session with { HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null), Access = access is { Count: > 0 } ? access : null };
+        session = session with
+        {
+            HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null), Access = access is { Count: > 0 } ? access : null,
+            Line = await SessionLines.OfNewAsync(_db, id, continues, quest, kind, ct).ConfigureAwait(false),
+        };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, performs, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
-            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $performs, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, performs, from_session, from_why, from_by, line, entry, help_mode, access, actor, revision)
+            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $performs, $from, $fromWhy, $fromBy, $line, $entry, $helpMode, $access, $actor, {NextRevision})
             """;
+        command.Parameters.AddWithValue("$line", session.Line);
         command.Parameters.AddWithValue("$decides", (object?)session.Decides ?? DBNull.Value);
         command.Parameters.AddWithValue("$performs", (object?)session.Performs ?? DBNull.Value);
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);

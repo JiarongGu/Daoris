@@ -52,6 +52,9 @@ public sealed record PriorSession(
     /// </summary>
     public bool NotOffered { get; init; }
 
+    /// <summary>It ended past its opening's bound, read by its end code: with no conversation kept, its go-on is a fresh start.</summary>
+    public bool NotUp { get; init; }
+
     /// <summary>The adapter its record opened on: an answer resumes its conversation only on the same one.</summary>
     public string? Adapter { get; init; }
 
@@ -201,6 +204,8 @@ public sealed record PriorSession(
 
     /// <summary>Who asked for it to continue <see cref="From"/>, by <see cref="HandOverBy"/>'s codes; null with it.</summary>
     public string? FromBy { get; init; }
+
+    public string? Line { get; init; }
 
     /// <summary>The workspace the record belongs to, as it names it: where a rule is resolved for it.</summary>
     public string? Workspace { get; init; }

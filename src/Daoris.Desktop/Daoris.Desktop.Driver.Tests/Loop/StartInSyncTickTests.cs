@@ -9,8 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a resume, a further part gone into its session's tree, a carry-on after a cut-off, and the person's words
 /// going on in the session's own conversation. Each time the session's first commit reaches the line by a squash
 /// while it is away; its next run starts on the line, and is told so. A real process (node) and a stand-in service on a loopback
-/// port, the shapes <see cref="AskAndWaitTickTests"/> and <see cref="AnswerContinuesTickTests"/> use; no model and no account.
-/// </summary>
+/// port, the shapes <see cref="AskAndWaitTickTests"/> and <see cref="AnswerContinuesTickTests"/> use; no model and no account.</summary>
 /// <remarks>The repository has no <c>origin</c>, so nothing is fetched and nothing is said of a fetch: the line here is the line.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class StartInSyncTickTests : IDisposable
@@ -27,12 +26,7 @@ public sealed class StartInSyncTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "sync@example.com");
-        Git("config", "user.name", "LANDSYNC2");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "sync@example.com", "LANDSYNC2");
     }
 
     public void Dispose()

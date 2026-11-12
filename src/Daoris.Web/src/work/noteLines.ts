@@ -307,6 +307,7 @@ export const NOTE_VALUES: Readonly<
   model: 'text', actor: 'actor', n: 'number', entry: 'text', passed: 'text',
   // A supervisor rule's act, the count it reads by name, its bound, its place and its act as the rule says them.
   counted: 'text', bound: 'number', place: 'text', do: 'text',
+  what: 'text',
   // The dependency folders a tree's open copied from its checkout, each as code, and one it did not copy.
   copied: 'names', modules: 'text',
   // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy.

@@ -4,7 +4,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LOCK, OUTPUTS, sourceHash, staleness, writeContracts } from './contracts.mjs';
+import { LOCK, OUTPUTS, OWN_OUTPUT, sourceHash, staleness, writeContracts } from './contracts.mjs';
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
 mkdirSync(join(REPO, '_fixtures'), { recursive: true });
@@ -111,6 +111,28 @@ test('a lock left by a run that died is taken at once, and the files are built',
     assert.ok(Date.now() - started < 5000, 'it waited on a holder that was gone');
     assert.deepEqual(run.asked, { builds: ['h'], looks: [true] });
     assert.equal(existsSync(join(root, LOCK)), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('TESTDIET1: a run that built removes its own build output, which a tree would keep at 240 MB; one that built nothing leaves it', () => {
+  const root = mkdtempSync(join(REPO, '_fixtures', 'contracts-own-'));
+  try {
+    const output = join(root, OWN_OUTPUT);
+    const run = stand('stale');
+    const build = run.build;
+    run.build = (at, hash) => {
+      mkdirSync(join(output, 'bin'), { recursive: true });
+      writeFileSync(join(output, 'bin', 'contracts-gen.dll'), '');
+      return build(at, hash);
+    };
+    assert.equal(writeContracts(root, '--write', run), 0);
+    assert.equal(existsSync(output), false);
+
+    mkdirSync(output, { recursive: true });
+    assert.equal(writeContracts(root, '--if-stale', stand(null)), 0);
+    assert.equal(existsSync(output), true);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
