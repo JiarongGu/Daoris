@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// driver's look reads at every pace after its first; the test's own git runs outside it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingFixture
 {

@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// events it sent before it crashed refused as stale. Also the 64 KB bound on a real pipe, which a fake's lines cannot prove.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class WorkProcessTests : IDisposable
 {
     private const string Plugin = "acme.deploy";

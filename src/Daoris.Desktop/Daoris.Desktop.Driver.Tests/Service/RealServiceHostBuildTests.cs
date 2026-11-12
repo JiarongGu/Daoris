@@ -5,6 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ends at once and writes nothing, so no host is built here; the success is every case of <c>KeepSizeServiceProcessTests</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class RealServiceHostBuildTests
 {
     [Fact]

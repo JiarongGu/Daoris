@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// request's outcome, and <c>line</c> observes the promotion. The verdict port is a stand-in answering green, as Review installs the real one.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 {

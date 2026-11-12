@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(ProcessPath.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class CommandShimTests : IDisposable
 {
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.

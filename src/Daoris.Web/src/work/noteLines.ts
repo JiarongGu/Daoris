@@ -283,7 +283,7 @@ export const NOTE_VALUES: Readonly<
   seconds: 'number',
   // An account's room under its usage curve, in whole percent points.
   room: 'number',
-  tokens: 'count', count: 'count',
+  tokens: 'count', count: 'count', left: 'count',
   // A curve's value now is a whole percent, as a window's use is.
   used: 'percent', near: 'percent', gone: 'percent', against: 'percent', curve: 'percent',
   // The share of a week unused at its reset, as a window's use is.

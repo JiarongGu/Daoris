@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// are carried on the plan for the card and the pipe to read; a repository's own value governs a room alone, never a department opened in its workspace.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RepositoryCreateGrowthTests : IDisposable
 {

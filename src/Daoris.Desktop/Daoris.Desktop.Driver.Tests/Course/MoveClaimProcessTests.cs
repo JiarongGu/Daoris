@@ -21,6 +21,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the driver's own code. The fast cases are <see cref="MoveTakeUpTests"/> and <see cref="MoveStoreTests"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : IClassFixture<MoveClaimProcessTests.Child>, IDisposable
 {
     private readonly string _home = Path.Combine(child.Root, "homes", Guid.NewGuid().ToString("N")[..8]);

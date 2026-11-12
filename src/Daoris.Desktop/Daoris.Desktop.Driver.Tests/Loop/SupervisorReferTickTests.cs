@@ -12,6 +12,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the plan releases it as the quest's own <i>Try again</i>, so the next look starts the third session, which closes the quest.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class SupervisorReferTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "supervisor-refer-tick", Guid.NewGuid().ToString("N")[..8]);

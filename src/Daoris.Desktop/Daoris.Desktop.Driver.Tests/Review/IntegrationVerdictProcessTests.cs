@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The runner is a node script keyed by files in its folder; the session's heavy run is the merge tool's own admission, in another process.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class IntegrationVerdictProcessTests : LandedFixture, IDisposable
 {
     private static readonly Encoding Utf8 = new UTF8Encoding(false);

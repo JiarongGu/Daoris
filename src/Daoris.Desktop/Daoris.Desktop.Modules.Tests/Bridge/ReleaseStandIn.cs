@@ -55,6 +55,8 @@ internal static class ReleaseStandIn
 /// after its test is killed, its file never written.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ReleaseStandInTests() : Bridge("release-stand-in"), IDisposable
 {
     private readonly List<Process> _started = [];

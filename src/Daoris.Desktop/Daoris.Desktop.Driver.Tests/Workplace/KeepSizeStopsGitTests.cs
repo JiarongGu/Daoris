@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// after the move and after a removal's rename, a stop at <c>judged</c>, and the press's run posting first and resuming before it removes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class KeepSizeStopsGitTests : KeepSizeFixture
 {

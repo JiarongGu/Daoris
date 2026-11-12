@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// one delivery and one external effect across the restart.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class WorkPerformProcessTests : IDisposable
 {
     private const string Plugin = "acme.deploy";

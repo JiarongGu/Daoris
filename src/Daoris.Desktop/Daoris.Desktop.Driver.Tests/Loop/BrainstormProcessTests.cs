@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// process's, so it runs beside the rest of the Process half.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class BrainstormProcessTests : IDisposable
 {
     private readonly GitTree _repository = new("brainstorm-pass");

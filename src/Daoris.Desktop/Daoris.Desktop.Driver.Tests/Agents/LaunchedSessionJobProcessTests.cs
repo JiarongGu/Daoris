@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class LaunchedSessionJobProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "launched-session-job", Guid.NewGuid().ToString("N")[..8]);

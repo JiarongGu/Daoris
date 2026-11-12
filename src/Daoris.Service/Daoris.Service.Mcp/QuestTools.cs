@@ -43,9 +43,8 @@ public sealed class QuestTools(
         [Description("Addresses the quest carries — a ticket, a page, a document. Absolute http or https only.")]
         string[]? links = null,
         [Description(
-            "Files the quest carries, by their path on this machine — a screenshot, a log, a document. "
-            + "Relative paths are the repository you are working in. They are kept on this machine and "
-            + "handed to whoever takes the quest here; a remote learns only their names.")]
+            "Files the quest carries, by path on this machine — a screenshot, a log, a document; a relative path is in the "
+            + "repository you are working in. They stay on this machine and go to whoever takes the quest here; a remote learns only their names.")]
         string[]? attachments = null,
         [Description(
             "What to ask next, in order, once this quest is DONE — develop, then verify, then report. "
@@ -57,21 +56,20 @@ public sealed class QuestTools(
             "What the person requires, for a quest an ask asks: each one their own words, quoted exactly as they "
             + "gave them in the ask or said on it since, with the check that proves the work meets them. A quote "
             + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
-            + "of the chain inherits them. A quest one repository asks of another carries none. A requirement may "
-            + "name its evidence: a path the done's commit must hold, which Daoris reads itself before what follows goes on.")]
+            + "of the chain inherits them. A quest one repository asks of another carries none.")]
         Requirement[]? requirements = null,
         [Description(
             "A short title: the few words that tell this quest apart in a list, at most 40 characters, about 20 in Chinese. "
             + "Your own words, never the title cut short. Omit it and the quest is named from its own words.")]
         string? shortTitle = null,
         [Description(
-            "What kind of work this is, where it is design or decision work: `design`, so the machine that takes it starts it on "
-            + "the role taking design work. Omit it for ordinary work. An intake marks it by its own reading of the ask.")]
+            "`design` for design or decision work, so the machine that takes it starts it on the role taking design work. "
+            + "Omit it for ordinary work; an intake marks it by its own reading of the ask.")]
         string? weight = null,
         [Description(
             "The files the work will change, as repository-relative globs (`src/frame/**`), where you know them. A start whose "
             + "paths meet another open quest's in that repository is said, and may wait for it. On an ask, these add to the "
-            + "person's own paths and never replace them. Omit it where you do not know.")]
+            + "person's own paths and never replace them.")]
         string[]? paths = null,
         [Description(
             "Whether the person looks at this chain's work running before it lands, for a quest an ask asks: off, on (the "
@@ -90,8 +88,7 @@ public sealed class QuestTools(
         WorkflowProposal? workflowProposal = null,
         CancellationToken ct = default)
     {
-        // A path becomes bytes at the door, on the machine that has the file: the exchange
-        // judges and keeps them, exactly as it does for the HTTP host's uploads.
+        // A path becomes bytes at the door, on the machine that has the file; the exchange judges and keeps them.
         var uploads = new List<QuestUpload>();
         foreach (var path in attachments ?? [])
         {

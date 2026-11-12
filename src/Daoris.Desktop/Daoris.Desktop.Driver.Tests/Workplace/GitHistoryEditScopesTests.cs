@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no seed is built under it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class GitHistoryEditScopesTests : TreeSyncFixture
 {

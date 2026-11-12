@@ -38,9 +38,9 @@ public class LongEntryTests
         ".claude/knowledge/release-handbook.md");
 
     private static readonly KnowledgeEntry Distractor = new(
-        "beta", EntryKind.Decision, Provenance.Local, "Signed installers",
+        "beta", EntryKind.Knowledge, Provenance.Local, "Signed installers",
         "Every deploy stage hands the artifact to a runner that signs it with the release certificate before the pipeline builds the installer.",
-        "docs/DECISIONS.md", "D7");
+        ".claude/knowledge/signed-installers.md");
 
     /// <summary>A source whose entries a test may change between refreshes, as a repository's files change.</summary>
     private sealed class Entries(params KnowledgeEntry[] entries) : IKnowledgeSource

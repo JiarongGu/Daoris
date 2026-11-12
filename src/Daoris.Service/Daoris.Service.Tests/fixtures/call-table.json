@@ -74,6 +74,12 @@
         "memory_search", "quest_list", "registry"
       ]
     },
+    "step": {
+      "only": [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",
+        "memory_search", "quest_list", "registry"
+      ]
+    },
     "brainstorm:generator": {
       "only": ["brainstorm_give"]
     },

@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="PartnerProcessTests"/>': here the piece stands answered, as that pass leaves it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class PartnerChatProcessTests : IDisposable
 {
     private const string Partner = "pt1";

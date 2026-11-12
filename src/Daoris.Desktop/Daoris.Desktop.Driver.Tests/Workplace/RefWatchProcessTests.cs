@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixture
 {
     /// <summary>How long after git's exit its move must be judged: the quiet window, and the rest for a loaded machine.</summary>

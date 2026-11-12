@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <see cref="DriverModuleStartFromTests"/>, whose adapter spawns nothing, so that class runs in the fast half.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
 {
     /// <summary>

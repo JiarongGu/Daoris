@@ -4,6 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>A landing observes the same changes after a rebase without replaying work the line already holds.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PatchEquivalentLandingTests : GraphRunFixture
 {

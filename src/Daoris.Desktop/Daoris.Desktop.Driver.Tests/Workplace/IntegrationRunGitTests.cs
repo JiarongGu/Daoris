@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// run, which reads the first run as dead, takes the candidate and resumes it, as a shell coming up after one that died does.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationRunGitTests : LandedFixture
 {

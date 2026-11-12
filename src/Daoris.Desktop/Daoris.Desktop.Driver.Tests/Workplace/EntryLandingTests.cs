@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// parts. Real git in a scratch repository, so this is the suite's Process half; nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class EntryLandingTests : LandedFixture
 {

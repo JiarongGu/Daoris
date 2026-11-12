@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is a few Win32 calls whose whole value is what a real console program does under them.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PseudoConsoleTests : IDisposable
 {
     private readonly string _folder = Path.Combine(

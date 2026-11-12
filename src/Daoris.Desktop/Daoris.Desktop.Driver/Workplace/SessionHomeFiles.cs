@@ -354,7 +354,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
             {
-                failed.Add(file);
+                if (!failed.Contains(file)) failed.Add(file);
                 // The store is shared, so what it held of each session asked of it stays.
                 foreach (var id in asked) Named(stayed[id], name);
             }

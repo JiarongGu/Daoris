@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// take this machine made (SESSUX1b2), which is the case here.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PauseTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

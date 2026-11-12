@@ -495,7 +495,7 @@ describe("The taskbar's count", () => {
     expect(figure('Repositories')).toBe('1');
     await openNotifications();
     const owed = await screen.findByRole('listitem', { name: 'engine' });
-    expect(within(owed).getByText('declaration waits for your acceptance')).toBeInTheDocument();
+    expect(within(owed).getByText('checks wait for your acceptance')).toBeInTheDocument();
     expect(within(owed).getByRole('button', { name: 'Open Setup' })).toBeInTheDocument();
   });
 
@@ -599,26 +599,25 @@ describe('A window on one workspace', () => {
   ];
   const WAITING = { ...COUNTED, 'quest:q9': { kind: 'parked-quest', workspace: 'other' } };
 
-  it('counts and lists its own workspace’s rows and the machine’s, never another workspace’s', async () => {
+  it('counts and lists every workspace’s rows, since a wait is the person’s wherever it is', async () => {
     start(ROWS, WAITING, WORKING, 'default');
 
-    // The two parks and the machine's rule, on the bell and the taskbar; Sessions counts its own parks and Agents the rule, the
-    // places summing to the bell; the other workspace's review and parked quest are counted nowhere.
-    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    // The other workspace's review and parked quest count beside this one's parks and the machine's rule.
+    await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
-      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
-    expect(sessionsButton()).toHaveAccessibleDescription('2 waiting on you · 1 under way');
-    expect([figure('Sessions'), figure('Quests'), figure('Agents')]).toEqual(['2', null, '1']);
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
+    expect(sessionsButton()).toHaveAccessibleDescription('3 waiting on you · 1 under way');
+    expect([figure('Sessions'), figure('Quests'), figure('Agents')]).toEqual(['3', '1', '1']);
 
     await openNotifications();
     await screen.findByText('an agent asks to do more');
     expect(screen.getAllByText('parked at a checkpoint')).toHaveLength(2);
-    expect(screen.queryByRole('group', { name: 'Ready for you' })).toBeNull();
-    expect(screen.queryByText('parked after failed sessions')).toBeNull();
+    expect(await screen.findByRole('group', { name: 'Ready for you' })).toBeInTheDocument();
+    expect(screen.getByText('parked after failed sessions')).toBeInTheDocument();
   });
 
   /**
-   * With two main windows open, one per workspace, each wears its own workspace's count on its own taskbar button and title;
+   * With two main windows open, one per workspace, each wears the count of every workspace's waits on its own taskbar button and title;
    * the second tells its own frame by its name, and the workspace it holds beside its title, as data.
    */
   it('tells its own frame its own count and its workspace where it is another main window', async () => {
@@ -626,9 +625,9 @@ describe('A window on one workspace', () => {
     try {
       start(ROWS, WAITING, WORKING, 'default');
 
-      await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+      await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
       await waitFor(() => expect(badges().at(-1)).toEqual(['DAORIS.WINDOWS', 'SET_BADGE', {
-        payload: { name: 'main:2', count: 3, description: '3 waiting on you', order: expect.any(Number) },
+        payload: { name: 'main:2', count: 5, description: '5 waiting on you', order: expect.any(Number) },
       }]));
       expect(badges().every(([, , request]) => (request as { payload: { name?: string } }).payload.name === 'main:2')).toBe(true);
       expect(invoke).toHaveBeenCalledWith(

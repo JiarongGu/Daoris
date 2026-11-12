@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// nothing. Git is asked once for a tip that moved, and not for one that did not.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationOwedGitTests : IAsyncLifetime
 {
@@ -105,7 +107,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var first = await CommitAsync(Checks);
         var second = await CommitAsync(More);
         var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
-        var configPath = Path.Combine(_home, "driver.json");
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         full.Save(configPath);
         var owed = new IntegrationOwed();
 

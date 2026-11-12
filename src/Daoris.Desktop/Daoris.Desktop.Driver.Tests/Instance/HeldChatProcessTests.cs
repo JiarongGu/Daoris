@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>The home is a scratch folder in the repository's gitignored <c>_fixtures/</c>; every <c>DAORIS_</c> variable of the machine is dropped from the process.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class HeldChatProcessTests : IAsyncDisposable
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "held-chat", Guid.NewGuid().ToString("N")[..8]);

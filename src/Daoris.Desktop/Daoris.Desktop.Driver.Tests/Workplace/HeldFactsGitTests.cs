@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its repository changes, and a trace that survives every removal path and is never judged again.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HeldFactsGitTests : LandedFixture
 {

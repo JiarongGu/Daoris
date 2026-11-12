@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// may already say <c>core.longpaths</c>, is kept from the read and from both gits. Windows alone: elsewhere a path has no such bound.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class GitLongPathsProcessTests : IDisposable
 {

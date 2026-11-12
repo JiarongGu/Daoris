@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// nothing of the machine running it is read.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class DriverModuleSystemTests : DriverModuleBridge
 {
     private const string Secret = "a-service-key-never-shown";

@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answers equal byte for byte and the two logs line for line, so the graph ran the same programs, as often, in the same order.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewGraphProgramsTests : LandedFixture
 {

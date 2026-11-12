@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// carried by a briefed part that continues it, so the return closes the move that stood <c>superseded</c> (§13.5's first row, the head read).
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("hand-over-move-downgrade");

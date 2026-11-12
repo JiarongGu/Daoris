@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its text; a clean diff lands, and a repository declaring none is unaffected. Real git in a scratch repository (the suite's Process half).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SensitiveLandingTests : LandedFixture
 {

@@ -251,7 +251,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         Read();
         await RunPassAsync(runtime);
         Assert.Equal(NodeStates.Failed, Ask.State);
-        Assert.Equal([NodeWordActs.AskAgain, NodeWordActs.GoOn], RunNodeWords.Acts(AskNode(), Ask));
+        Assert.Equal([NodeWordActs.AskAgain, NodeWordActs.GoOn, NodeWordActs.Stop], RunNodeWords.Acts(AskNode(), Ask));
 
         var worded = RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.AskAgain, null, () => _now);
         Assert.True(worded.Done, worded.Refused);

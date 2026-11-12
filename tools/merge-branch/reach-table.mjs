@@ -369,6 +369,11 @@ export const REACH = Object.freeze([
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
   { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },
+  {
+    paths: ['canon/core/knowledge/rooms-and-classes.md'],
+    gates: ['service', 'driver', 'rehearse', 'rehearse-family'],
+    why: "the driver's PlaceRoomTests holds the room classes it names to this canon document, beside what every canon file reaches",
+  },
   { paths: ['canon/**'], gates: ['service', 'rehearse', 'rehearse-family'], why: 'the package ships it, the examples must be current with it, and the service scans the doctrine synced from it' },
   {
     paths: ['examples/plugins/**'],

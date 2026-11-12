@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>git gc --prune=now</c>, each attempt's on its own, and the run's refs go at its settled end alone.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class StepRefsGitTests : IDisposable
 {

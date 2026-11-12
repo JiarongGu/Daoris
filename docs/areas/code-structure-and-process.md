@@ -140,6 +140,16 @@ finishes first and the whole set runs once.
     after, and the full stage (`--ci --stage`) remains the one that owes every gate. `TASKS.md` merges by its rows' ids
     (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
     a gate a merge now runs, the last green on 2026-11-02.
+22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
+    whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
+    root `Directory.Build.props` (one minute for a half with no run-settings file, fifteen for a Process half, which ends the run and
+    names the test), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (a minute), and the tool tests' `--test-timeout`
+    in `src/Daoris.Cli/package.json`; each is a ceiling over the slowest test that passes today and comes down as
+    `docs/2026-11-13-test-timing-census.md`'s plan cuts the tests above it. A test that needs longer says so and why where it is
+    declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
+    `tool-tests.xml`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
+    `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and
+    `NeedsTraitTests` holds it; a test with no such trait is a unit test, with no process, git, clock wait or network. (from TESTTIME1)
 
 ## Where a change goes
 

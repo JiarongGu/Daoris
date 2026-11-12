@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in scratch repositories, and each reads without writing: the checkout's status is the same before and after.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandedReviewTests : LandedFixture
 {

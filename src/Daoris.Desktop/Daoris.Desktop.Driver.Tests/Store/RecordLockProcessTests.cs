@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="HomeLeaseProcessTests"/>). The in-process half is <see cref="HeldFactsTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class RecordLockProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-record-lock-" + Guid.NewGuid().ToString("N")[..8]);

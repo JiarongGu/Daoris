@@ -213,6 +213,8 @@ public sealed class AgentPinCommandTests : IDisposable
     /// pins nothing. A real process, so the suite's Process half runs it.
     /// </summary>
     [Trait(Category.Name, Category.Process)]
+    [Trait(Category.Needs, Needed.Process)]
+    [Trait(Category.Needs, Needed.Git)]
     public sealed class Npm : IDisposable
     {
         private readonly AgentPinCommandTests _held = new();

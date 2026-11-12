@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>A phase added to <see cref="Cuts.All"/> and not given a row fails the census, as beside the crash theory.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class CurveMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("curve-move-downgrade");

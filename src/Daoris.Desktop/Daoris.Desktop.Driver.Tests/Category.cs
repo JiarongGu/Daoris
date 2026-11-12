@@ -54,4 +54,7 @@ internal static class Category
     /// <c>CensusTraitTests</c> holds that every such class carries it.
     /// </summary>
     public const string Census = "Census";
+
+    /// <summary>The trait naming each real dependency a Process class needs (<see cref="Needed"/>); a test with none is a unit test.</summary>
+    public const string Needs = "Needs";
 }

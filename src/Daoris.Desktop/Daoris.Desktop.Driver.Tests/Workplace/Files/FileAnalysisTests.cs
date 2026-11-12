@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// worktree or a bare repository is held by the floor whatever a layer says.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class FileAnalysisTests : IDisposable
 {

@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// kill its readings say nothing of), a go-on with held words, and the native resume's one retry. Real node processes over the tests' provider.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 [Collection(Alone.Name)]
 public sealed class LayerHoldProcessTests : IDisposable
 {

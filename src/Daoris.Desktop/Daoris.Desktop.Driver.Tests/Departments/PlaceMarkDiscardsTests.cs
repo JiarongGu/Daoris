@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// releases those paths from the line's mark; a path still changed stays marked, and a line in another place or still running is not read.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PlaceMarkDiscardsTests : IDisposable
 {

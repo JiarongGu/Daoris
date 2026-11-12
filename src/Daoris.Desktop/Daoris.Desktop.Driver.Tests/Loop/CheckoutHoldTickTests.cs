@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// steward's memory is a stand-in <see cref="IRoleStarts"/> set on the driver's context, as the watch sets the judge's at each look.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class CheckoutHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "checkout-hold", Guid.NewGuid().ToString("N")[..8]);

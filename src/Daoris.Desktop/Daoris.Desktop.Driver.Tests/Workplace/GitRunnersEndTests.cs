@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// dispose of its own cannot close. Fixtures live under the repository's gitignored <c>_fixtures/</c>. Nothing here reaches a network.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class GitRunnersEndTests : IDisposable
 {
     private static readonly string[] Waits = ["--no-optional-locks", "status"];

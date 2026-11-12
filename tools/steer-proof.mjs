@@ -47,7 +47,7 @@ async function run(kind, model) {
   const args = ['-p', '--input-format', 'stream-json', '--replay-user-messages', '--permission-mode', 'bypassPermissions',
     '--model', 'claude-sonnet-4-5', '--strict-mcp-config', '--setting-sources', 'project',
     '--output-format', 'stream-json', '--verbose', '--include-partial-messages'];
-  const child = spawn('claude', args, { cwd: work, env, shell: process.platform === 'win32', stdio: ['pipe', 'pipe', 'ignore'] });
+  const child = spawn('claude', args, { cwd: work, env, shell: process.platform === 'win32', stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
   const frames = [];
   const firstCall = model.calls.length;
   let pending = '';
@@ -89,7 +89,7 @@ async function run(kind, model) {
 }
 
 async function main() {
-  const version = spawnSync('claude', ['--version'], { shell: process.platform === 'win32', encoding: 'utf8' });
+  const version = spawnSync('claude', ['--version'], { shell: process.platform === 'win32', encoding: 'utf8', windowsHide: true });
   if (version.status !== 0) {
     console.log('not ready: no `claude` on PATH, so nothing was proven.');
     return 0;

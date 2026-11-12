@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// is held over a fake factory, so every case is reachable without a shell; one round trip runs a real one.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class TerminalModuleTests : Bridge
 {
     private static readonly TerminalShell Pwsh = new(TerminalShells.Pwsh, @"C:\seven\pwsh.exe", ["-NoLogo"]);

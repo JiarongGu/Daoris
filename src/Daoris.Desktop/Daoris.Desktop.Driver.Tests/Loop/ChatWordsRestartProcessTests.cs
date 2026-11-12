@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the conversation tests share, which keeps a running record's words where the driver that runs it asks (its say door).
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ChatWordsRestartProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-chat-restart-" + Guid.NewGuid().ToString("N")[..8]);

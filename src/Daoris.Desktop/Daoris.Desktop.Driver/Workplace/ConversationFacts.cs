@@ -97,7 +97,7 @@ public sealed class ConversationFacts(string home, Func<StoreSettled>? settled =
     {
         var ids = conversations.Where(Names).Distinct(StringComparer.Ordinal).ToList();
         var gone = new List<string>();
-        if (ids.Count == 0) return gone;
+        if (ids.Count == 0 || Read(ids).Count == 0) return gone;
         Keep(write =>
         {
             gone.Clear();

@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// state moves, its takes. Words land at the real protocol stub where a go-on carries them, so what is heard there is what an agent is sent.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("limit-move-older");

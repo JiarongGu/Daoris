@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="GitSeed"/>): no test here reads the first commit's id or time.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HelperCaptureProcessTests : IDisposable
 {

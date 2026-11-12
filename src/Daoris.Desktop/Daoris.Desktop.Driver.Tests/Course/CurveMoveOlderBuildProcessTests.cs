@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The curve's move moves the word and never writes it (its brief is its one message), so what the stub hears of a word is a go-on's.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("curve-move-older");

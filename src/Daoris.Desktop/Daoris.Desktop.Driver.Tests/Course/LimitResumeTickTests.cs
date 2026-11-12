@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the ledger's limit flag and Daoris's words under their key. The clock and the zone are the roster's, the test's. The stub's own
 /// sign-in is the account that cools.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitResumeTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

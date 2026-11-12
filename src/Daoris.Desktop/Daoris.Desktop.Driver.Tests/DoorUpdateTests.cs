@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// down a shim for <c>install</c>, and the channel is a transport over a table.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class DoorUpdateTests : IDisposable
 {
     private const string AcpPackage = "@agentclientprotocol/claude-agent-acp";

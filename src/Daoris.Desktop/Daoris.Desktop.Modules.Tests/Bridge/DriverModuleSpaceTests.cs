@@ -139,8 +139,14 @@ public sealed class DriverModuleSpaceTests : DriverModuleBridge
         Assert.Throws<ArgumentException>(() => SpaceFree.Asked(document.RootElement));
     }
 
+    [Fact]
+    public void A_read_asking_to_measure_asks_every_kind_the_table_holds()
+    {
+        using var document = JsonDocument.Parse("""{ "measure": true }""");
+        Assert.Equal(SpaceKinds.Table.Select(kind => kind.Id), SystemRoutes.SpaceAsked(document.RootElement.GetProperty("measure")));
+    }
+
     [Theory]
-    [InlineData("""{ "measure": true }""", 10)]
     [InlineData("""{ "measure": ["logs", "nowhere", 3] }""", 1)]
     [InlineData("""{ "measure": false }""", 0)]
     [InlineData("""{}""", 0)]

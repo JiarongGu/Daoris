@@ -33,16 +33,16 @@ public sealed class PresentFirstBenchTests(PresentFirstBenchTests.Checkout check
 
         public async Task InitializeAsync()
         {
-            var root = AppContext.BaseDirectory;
-            while (!File.Exists(Path.Combine(root, "tools", "read-path-bench-questions.json")))
+            var checkout = AppContext.BaseDirectory;
+            while (!File.Exists(Path.Combine(checkout, "tools", "read-path-bench-questions.json")))
             {
-                root = Path.GetDirectoryName(root) ?? throw new InvalidOperationException("no checkout holds the bench's questions");
+                checkout = Path.GetDirectoryName(checkout) ?? throw new InvalidOperationException("no checkout holds the bench's questions");
             }
 
-            Questions = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools", "read-path-bench-questions.json"))).RootElement.Clone();
+            Questions = JsonDocument.Parse(File.ReadAllText(Path.Combine(checkout, "tools", "read-path-bench-questions.json"))).RootElement.Clone();
             Directory.CreateDirectory(_scratch);
             _composed = await ServiceFactory.CreateAsync(new ServiceOptions(
-                _scratch, Path.Combine(_scratch, "knowledge.db"), Repository: root, Documents: "docs", Index: "docs/index"));
+                _scratch, Path.Combine(_scratch, "knowledge.db"), Repository: checkout, Documents: "docs", Index: "docs/index"));
         }
 
         public async Task DisposeAsync()

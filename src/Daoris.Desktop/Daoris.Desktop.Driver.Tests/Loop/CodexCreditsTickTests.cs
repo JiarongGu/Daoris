@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and is refused with that error; a carry-on closes the quest. The clock and the zone are the roster's, the test's.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class CodexCreditsTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

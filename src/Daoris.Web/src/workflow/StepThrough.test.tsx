@@ -13,7 +13,7 @@ describe("a run's step passed on the person's through words", () => {
   it.each([
     ['en', 'review', 'Accepted on your words: “please do without my accept”, kept on ask #a1'],
     ['en', 'quest.holds', 'Passed on your words: “please do without my accept”, kept on ask #a1'],
-    ['zh', 'review', '已按你的原话接受：“please do without my accept”，留在需求 #a1 上'],
+    ['zh', 'review', '已按你的原话采纳：“please do without my accept”，留在需求 #a1 上'],
     ['zh', 'quest.holds', '已按你的原话放行：“please do without my accept”，留在需求 #a1 上'],
   ])('says the quote and the ask it came from (%s, %s)', async (language, node, words) => {
     await i18n.changeLanguage(language);

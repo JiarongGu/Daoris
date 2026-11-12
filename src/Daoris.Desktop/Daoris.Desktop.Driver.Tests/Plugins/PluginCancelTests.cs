@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// process: the trial ends it itself, before the scratch under it is removed.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PluginCancelTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-cancel-" + Guid.NewGuid().ToString("N")[..8]);

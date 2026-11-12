@@ -3,11 +3,11 @@
  * How this repository's development cycle performed over a date range, read without changing anything.
  *
  *   node tools/dev-metrics.mjs --home <data> --logs <logs> --since YYYY-MM-DD --until YYYY-MM-DD
- *        [--service <url>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--json]
+ *        [--service <url> | --quests <file>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--json]
  *   node tools/dev-metrics.mjs --transcripts <subagents dir> --ids <a,b,...> [--json]
  *
  * `--home` is an install's `data` folder, `--logs` its `logs` folder. A quest's record comes from the running
- * service (`/api/quests?workspace=`, a read) when `--service` is given, else from `<home>/quests/*.json`. A figure
+ * service (`/api/quests?workspace=`, a read) when `--service` is given, else from the JSON file `--quests` names. A figure
  * whose source holds nothing is "not recorded" or "not read", with the place it would have to be logged: never a zero.
  * `--merge-queue` is this repository's `local/merge-queue.json`, where integration requests land or are handed back.
  * Builder mode times subagent transcripts with the clock `subagent-time.mjs` already keeps.
@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { clockOf } from './subagent-time.mjs';
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 const HOUR = 3600000;
 const TOKENS = ['input', 'output', 'cacheRead', 'cacheWrite'];
@@ -47,7 +48,7 @@ const round = (x) => Math.round(x * 100) / 100;
 const addTokens = (into, t) => { for (const k of TOKENS) into[k] += Number(t[k] ?? 0); return into; };
 const zero = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
 
-async function questsOf({ home, service, workspaces }) {
+async function questsOf({ file, service, workspaces }) {
   if (service) {
     const out = [];
     for (const w of workspaces) {
@@ -58,18 +59,17 @@ async function questsOf({ home, service, workspaces }) {
     }
     return out;
   }
-  return filesOf(join(home, 'quests'), (f) => f.endsWith('.json')).flatMap((f) => {
-    const body = readJson(join(home, 'quests', f), []);
-    return Array.isArray(body) ? body : [body];
-  });
+  const body = file ? readJson(file, []) : [];
+  return Array.isArray(body) ? body : [body];
 }
 
 function sessionsOf(home) {
   const quests = new Map();
   const events = new Map();
-  for (const f of filesOf(join(home, 'sessions'), (n) => n.endsWith('.events.jsonl'))) {
+  const folder = homeEntry(home, 'sessions');
+  for (const f of filesOf(folder, (n) => n.endsWith('.events.jsonl'))) {
     const id = f.replace('.events.jsonl', '');
-    const rows = readLines(join(home, 'sessions', f));
+    const rows = readLines(join(folder, f));
     events.set(id, rows);
     const first = rows.find((r) => r.kind === 'user' && /quest `#([0-9a-f]{8,})`/.test(r.text ?? ''));
     if (first) quests.set(id, /quest `#([0-9a-f]{8,})`/.exec(first.text)[1]);
@@ -78,7 +78,8 @@ function sessionsOf(home) {
 }
 
 function turnsOf(home) {
-  return filesOf(join(home, 'usage-history'), (f) => /^turns-.*\.jsonl$/.test(f)).flatMap((f) => readLines(join(home, 'usage-history', f)));
+  const folder = homeEntry(home, 'usage-history');
+  return filesOf(folder, (f) => /^turns-.*\.jsonl$/.test(f)).flatMap((f) => readLines(join(folder, f)));
 }
 
 function logEvents(logs, inRange) {
@@ -129,7 +130,7 @@ function lyntaiOf(calls) {
 
 /** The Lyntai store's own row counts, read-only, through node:sqlite where this Node has it. */
 async function storeCounts(home) {
-  const file = join(home, 'memory.db');
+  const file = homeEntry(home, 'memory');
   if (!existsSync(file)) return 'not recorded: no memory.db in the home';
   try {
     const { DatabaseSync } = await import('node:sqlite');
@@ -155,7 +156,7 @@ function mergesOnMain(repo, { since, until }) {
 function leftoversOf(home, work, landings) {
   const trees = ['trees']
     .flatMap((t) => filesOf(join(work, t), () => true).flatMap((ws) => filesOf(join(work, t, ws), () => true).flatMap((repo) => filesOf(join(work, t, ws, repo), (n) => /^s-/.test(n)))));
-  const branches = readJson(join(home, 'session-branches.json'), { branches: [] }).branches ?? [];
+  const branches = readJson(homeEntry(home, 'session-branches'), { branches: [] }).branches ?? [];
   return {
     trees: trees.length,
     sessionBranchesPresent: branches.filter((b) => !b.goneAt).length,
@@ -180,10 +181,10 @@ function frictionOf(events) {
 export async function collect(options) {
   const { home, logs, service, mergeQueue } = options;
   const inRange = windowOf(options);
-  const workspaces = (options.workspaces ?? filesOf(join(home, 'trees'), () => true).join(',')).split(',').filter(Boolean);
   const work = options.work ?? join(dirname(home), 'work');
-  const quests = await questsOf({ home, service, workspaces });
-  const landings = readJson(join(home, 'landings.json'), { branches: [] }).branches ?? [];
+  const workspaces = (options.workspaces ?? filesOf(join(work, 'trees'), () => true).join(',')).split(',').filter(Boolean);
+  const quests = await questsOf({ file: options.quests, service, workspaces });
+  const landings = readJson(homeEntry(home, 'landings'), { branches: [] }).branches ?? [];
   const { quests: sessionQuest, events } = sessionsOf(home);
   const turns = turnsOf(home);
   const logRows = logEvents(logs, inRange);
@@ -220,7 +221,7 @@ export async function collect(options) {
 
   return {
     range: { since: options.since ?? null, until: options.until ?? null },
-    source: { quests: service ? `service ${service}` : 'home quests folder', workspaces, questRecords: quests.length },
+    source: { quests: service ? `service ${service}` : options.quests ? `file ${options.quests}` : 'none named', workspaces, questRecords: quests.length },
     throughput: {
       questsFiled: filed.length,
       questsDone: done.length,

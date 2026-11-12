@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// generated here, under the repository's <c>_fixtures/</c>, and removed with it; no key, agent or known-hosts file of the person's is read.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitPushActProcessTests : IClassFixture<GitSshHost>, IDisposable
 {
     private readonly GitSshHost _host;

@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// take), over the stand-in service the driven harness runs; the loop that comes up is the real watch.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DrivenMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-older");

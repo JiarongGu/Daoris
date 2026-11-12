@@ -4,6 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>Over real git: a stop is about the line as it stands, so its open requests form nothing again until the line moves.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationStopGitTests : LandedFixture
 {

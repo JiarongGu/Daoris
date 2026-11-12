@@ -11,6 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the call that crossed it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class ServerKeeperProcessTests : IDisposable
 {
     private const int CallMb = 40;

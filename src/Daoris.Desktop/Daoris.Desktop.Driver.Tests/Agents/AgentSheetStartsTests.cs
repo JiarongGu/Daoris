@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="ProcessStarts.Within"/>) and made for real, over a stand-in <c>claude.cmd</c> in the managed layout.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class AgentSheetStartsTests : IDisposable
 {
     private const string Version = "--version";

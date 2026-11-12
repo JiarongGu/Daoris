@@ -22,6 +22,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// known-hosts file of the person's is read.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullRequestApiHost>, IDisposable
 {
     /// <summary>Whether this run's git is the MinGit the toolchain pins (<see cref="PinnedMinGit"/>) rather than the runner's.</summary>

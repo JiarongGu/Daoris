@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// off, a session in the checkout, an unread ledger, an operation in progress and git's lock each refuse.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class StashActsGitTests : TreeSyncFixture
 {

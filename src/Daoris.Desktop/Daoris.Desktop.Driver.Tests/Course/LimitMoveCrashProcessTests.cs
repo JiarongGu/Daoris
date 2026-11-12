@@ -19,6 +19,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// never attempted, which its go-on carries as it carries any ended record's words; a second open would only learn what the line shows.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("limit-move-crash");

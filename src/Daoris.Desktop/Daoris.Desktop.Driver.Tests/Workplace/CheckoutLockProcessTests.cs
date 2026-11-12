@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// writer holding it waits for no lock but a process start's place and a record's. Not in the git half: it starts PowerShell and the host.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class CheckoutLockProcessTests : TreeSyncFixture
 {
     private string TreesHome => DaorisHome.Entry(Home, HomeEntry.Trees);
@@ -429,7 +432,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
                     {
                         ["repository"] = "engine", ["adopted"] = true, ["registered"] = true, ["root"] = _root, ["workspace"] = "aurora",
                     }).ToJsonString()),
-                    ("GET", SessionChangeShape.ChangesPath) => (200, SessionChangeShape.Whole("[]")),
+                    ("GET", SessionChangeShape.ChangesPath or SessionChangeShape.QuestChangesPath) => (200, SessionChangeShape.Whole("[]")),
                     ("GET", _) => (200, "[]"),
                     _ => (404, "{}"),
                 };

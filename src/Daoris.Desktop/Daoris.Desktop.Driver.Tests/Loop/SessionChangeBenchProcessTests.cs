@@ -18,6 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SessionChangeBenchProcessTests(ITestOutputHelper output) : IAsyncLifetime
 {
     private static readonly TimeSpan ChangeBudget = TimeSpan.FromMilliseconds(250);

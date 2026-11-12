@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="RealReaderTheoryAttribute"/>), and is skipped with its reason where no Claude Code is installed.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PacketOnlyReaderProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "packet-only-reader", Guid.NewGuid().ToString("N")[..8]);

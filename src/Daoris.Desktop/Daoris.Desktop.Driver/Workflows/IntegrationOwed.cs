@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <param name="Since">When this blob is first read here as owed.</param>
 public sealed record DeclarationOwed(string Repository, string Workspace, string Line, string Blob, string State, DateTimeOffset Since)
 {
-    /// <summary>The checkout the declaration was read in, for the look's own use; never said.</summary>
+    /// <summary>The checkout the declaration is read in, for the look's own use; never said.</summary>
     internal string? Root { get; init; }
 }
 

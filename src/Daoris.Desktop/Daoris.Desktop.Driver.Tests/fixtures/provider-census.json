@@ -272,7 +272,11 @@
       ["tools/rehearsal-kit.mjs", "id in a sentence", "-", "words", "the kit's text names the stand-in"],
       ["tools/rehearsal-kit.mjs", "x-codex-turn-metadata", "-", "measurement", "the protocol stand-in's connector calls carry a root's lineage in Codex's turn header, which the connector reads (FABRIC-C2a)"],
       ["tools/service-publish.mjs", ".mcp.json", "-", "words", "the publisher's printed instruction names a repository's own connector file"],
-      ["tools/supervise-containment-probe.mjs", "\"claude\"", "-", "measurement", "a dated probe launches Claude Code's program to measure a supervisor's containment"],
+      ["tools/steer-proof.mjs", "\"claude\"", "-", "measurement", "a keyless proof of Send now on the native door launches the program Claude Code runs as"],
+      ["tools/steer-proof.mjs", "ANTHROPIC_API_KEY", "-", "measurement", "a keyless proof hands Claude Code a placeholder key so it asks no sign-in"],
+      ["tools/steer-proof.mjs", "CLAUDE_CONFIG_DIR", "-", "measurement", "a keyless proof points Claude Code at a scratch home"],
+      ["tools/steer-proof.mjs", "DISABLE_UPDATES", "-", "measurement", "a keyless proof switches off Claude Code's own update check"],
+      ["tools/supervise-containment-probe.mjs", "\"claude\"","-", "measurement", "a dated probe launches Claude Code's program to measure a supervisor's containment"],
       ["tools/supervise-containment-probe.mjs", "\"claude-code-acp\"", "-", "measurement", "a dated probe resolves Claude Code's adapter to measure a supervisor's containment"],
       ["tools/supervise-containment-probe.mjs", ".mcp.json", "-", "measurement", "a dated probe plants a connector file in its scratch room to measure what a supervisor's containment leaves out"],
       ["tools/testbed.mjs", ".mcp.json", "-", "measurement", "the test bed writes the connector file into its scratch repository"]

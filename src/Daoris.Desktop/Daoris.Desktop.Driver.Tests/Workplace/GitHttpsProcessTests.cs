@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>In the Process half, beside a listener.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposable
 {
     /// <summary>Whether this run's git is the MinGit the toolchain pins (<see cref="PinnedMinGit"/>) rather than the runner's.</summary>

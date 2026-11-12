@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// runs as StopHold's does; the git starts before the harness's own (node) start are the start's, counted and listed.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class StartGitCountTests : IDisposable
 {
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "start-git", Guid.NewGuid().ToString("N")[..8]);

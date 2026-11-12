@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is the built stand-in (<c>daoris-owner-stand-in</c>), which starts a node that starts a node of its own, detached.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class OwnedProcessesProcessTests
 {
     // A node that starts a detached node, says its id, and waits: both give up at two minutes, so a failing test leaves nothing for long.

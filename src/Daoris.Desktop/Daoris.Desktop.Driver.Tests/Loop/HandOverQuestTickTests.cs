@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// adapter and answers a claim as this machine's, which the hand-over's judge reads.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverQuestTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-hand-quest-" + Guid.NewGuid().ToString("N")[..8]);

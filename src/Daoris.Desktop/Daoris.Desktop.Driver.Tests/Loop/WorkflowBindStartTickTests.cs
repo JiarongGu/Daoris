@@ -18,6 +18,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// start past its holds reaches the open, is refused, and runs nothing. No model anywhere, and no account.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class WorkflowBindStartTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-bind-start-" + Guid.NewGuid().ToString("N")[..8]);

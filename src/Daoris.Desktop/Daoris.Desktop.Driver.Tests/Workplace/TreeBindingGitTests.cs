@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in the checkout's own worktree configuration binds nothing, and the tree goes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyingFixture
 {

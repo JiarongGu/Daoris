@@ -9,6 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reservation is taken, the start ends as a failure that names no move, so nothing releases the reservation unless the conclusion does.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class MovingReservationFaultTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-moving-fault-" + Guid.NewGuid().ToString("N")[..8]);

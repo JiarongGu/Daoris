@@ -2878,7 +2878,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
   const at = (hour: number) => `2026-10-04T${String(hour).padStart(2, '0')}:00:00Z`;
   const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
   const driverCs = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs';
-  // The full set passed tree F. W is F with a browser test fixed and the records written; D is F with the driver changed.
+  // The full set passed F; W: a browser test fixed, records written; D: the driver changed.
   const between: Record<string, string[]> = { 'F>W': [spec, 'TASKS.md', 'docs/decisions/D150.md'], 'F>D': [driverCs] };
   const judging = (tree: string) => ({
     tree,
@@ -2889,9 +2889,9 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
   const full: Verdict[] = ALL.map((gate) => ({ gate, verdict: 'PASS', tree: 'F', at: at(9) }));
   const inPlan = (gates: string[]) => ALL.filter((gate) => gates.includes(gate));
 
-  // The browser test reaches the web gate and the baseline; every other verdict stands, the driver's among them.
+  // The browser test reaches the web gate and the baseline; every other verdict stands.
   const web = tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: full });
-  assert.deepEqual(web.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'web']));
+  assert.deepEqual(web.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'reached', 'web']));
   const w = Object.fromEntries(web.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(w['web']!.stale!.paths, [spec], 'which path made it stale, the records forgiven');
   assert.equal(w['web']!.stale!.verdict.at, at(9));
@@ -2900,12 +2900,12 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
     assert.deepEqual(w[gate]!.standing, { standing: 'unreached', paths: [spec], records: ['TASKS.md', 'docs/decisions/D150.md'] }, gate);
   }
   // Passing again on W, the stage approves it.
-  const again = [...full, ...inPlan([...BASE, ...ALWAYS_REACHED, 'web']).map((gate) => ({ gate, verdict: 'PASS', tree: 'W', at: at(11) }))];
+  const again = [...full, ...inPlan([...BASE, ...ALWAYS_REACHED, 'reached', 'web']).map((gate) => ({ gate, verdict: 'PASS', tree: 'W', at: at(11) }))];
   assert.deepEqual(tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: again }).missing, []);
 
   // A driver change voids the driver's verdicts and every gate it reaches.
   const driver = tool.stageJudgement({ ...judging('D'), plan: ALL, verdicts: full });
-  assert.deepEqual(driver.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']));
+  assert.deepEqual(driver.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'reached', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']));
   const d = Object.fromEntries(driver.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(d['driver-process']!.stale!.paths, [driverCs]);
   for (const gate of ['service', 'devkit', 'rehearse', 'web']) assert.equal(d[gate]!.standing!.standing, 'unreached', gate);

@@ -16,9 +16,9 @@
         "Defaults",
         "  connector    on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose, mcp__daoris-knowledge__system_plan",
         "  commit       on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
-        "  no-push      on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
-        "  no-publish   on   deny  a sentence to auto mode's classifier",
-        "  tree-guard   on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "  no-push      off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish   off  deny  a sentence to auto mode's classifier",
+        "  tree-guard   off  deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "  own-skills   on   allow  a sentence to auto mode's classifier",
         "  own-servers  on   allow  a sentence to auto mode's classifier",
         "  own-plugins  on   allow  a sentence to auto mode's classifier",
@@ -45,9 +45,9 @@
         "Defaults",
         "  connector    on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose, mcp__daoris-knowledge__system_plan",
         "  commit       on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
-        "  no-push      on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
-        "  no-publish   on   deny  a sentence to auto mode's classifier",
-        "  tree-guard   on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "  no-push      off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish   off  deny  a sentence to auto mode's classifier",
+        "  tree-guard   off  deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "  own-skills   on   allow  a sentence to auto mode's classifier",
         "  own-servers  on   allow  a sentence to auto mode's classifier",
         "  own-plugins  on   allow  a sentence to auto mode's classifier",
@@ -66,7 +66,7 @@
       ],
       "folders": [],
       "before": {
-        "daoris/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}"
+        "daoris/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"own-memory\"\n  ]\n}"
       },
       "exit": 0,
       "out": [
@@ -76,15 +76,15 @@
         "Defaults",
         "  connector    on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose, mcp__daoris-knowledge__system_plan",
         "  commit       on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
-        "  no-push      on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
-        "  no-publish   on   deny  a sentence to auto mode's classifier",
-        "  tree-guard   on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "  no-push      off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish   off  deny  a sentence to auto mode's classifier",
+        "  tree-guard   off  deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "  own-skills   on   allow  a sentence to auto mode's classifier",
         "  own-servers  on   allow  a sentence to auto mode's classifier",
         "  own-plugins  on   allow  a sentence to auto mode's classifier",
         "  own-chrome   on   allow  a sentence to auto mode's classifier",
         "  own-settings on   allow  a sentence to auto mode's classifier",
-        "  own-memory   on   allow  a sentence to auto mode's classifier",
+        "  own-memory   off  allow  a sentence to auto mode's classifier",
         "",
         "This machine",
         "  allow  Bash(npm run test:*)",
@@ -98,7 +98,7 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}"
+        "daoris/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"own-memory\"\n  ]\n}"
       }
     },
     {
@@ -120,9 +120,9 @@
         "Defaults",
         "  connector    on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose, mcp__daoris-knowledge__system_plan",
         "  commit       on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
-        "  no-push      on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
-        "  no-publish   on   deny  a sentence to auto mode's classifier",
-        "  tree-guard   on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "  no-push      off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish   off  deny  a sentence to auto mode's classifier",
+        "  tree-guard   off  deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "  own-skills   on   allow  a sentence to auto mode's classifier",
         "  own-servers  on   allow  a sentence to auto mode's classifier",
         "  own-plugins  on   allow  a sentence to auto mode's classifier",
@@ -302,22 +302,23 @@
       "argv": [
         "rules",
         "default",
-        "no-publish",
+        "own-memory",
         "off"
       ],
       "folders": [],
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: the default `no-publish` is off on this machine."
+        "daoris: the default `own-memory` is off on this machine."
       ],
       "err": [],
       "after": {
-        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"no-publish\"\n  ]\n}\n"
+        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"own-memory\"\n  ]\n}\n"
       }
     },
     {
-      "name": "rules default, no-push follows git access",
+      "name": "rules default, an opt-in one switched off is already off",
+      "changed": "no-push, no-publish and the tree guard are limits the person switches on, so off is what they are until then and the verb changes nothing (D284).",
       "argv": [
         "rules",
         "default",
@@ -326,11 +327,11 @@
       ],
       "folders": [],
       "before": {},
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `no-push` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris git access`."
+      "exit": 0,
+      "out": [
+        "daoris: the default `no-push` is off on this machine."
       ],
+      "err": [],
       "after": {}
     },
     {
@@ -338,16 +339,16 @@
       "argv": [
         "rules",
         "default",
-        "no-publish",
+        "own-memory",
         "on"
       ],
       "folders": [],
       "before": {
-        "daoris/data/permissions.json": "{\"defaultsOff\":[\"no-publish\"]}"
+        "daoris/data/permissions.json": "{\"defaultsOff\":[\"own-memory\"]}"
       },
       "exit": 0,
       "out": [
-        "daoris: the default `no-publish` is on on this machine."
+        "daoris: the default `own-memory` is on on this machine."
       ],
       "err": [],
       "after": {
@@ -355,22 +356,23 @@
       }
     },
     {
-      "name": "rules default, the tree guard off",
+      "name": "rules default, the tree guard switched on",
+      "changed": "The tree guard is a limit the person switches on, so it is recorded as on (defaultsOn) and no default is recorded off (D284).",
       "argv": [
         "rules",
         "default",
         "tree-guard",
-        "off"
+        "on"
       ],
       "folders": [],
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: the default `tree-guard` is off on this machine."
+        "daoris: the default `tree-guard` is on on this machine."
       ],
       "err": [],
       "after": {
-        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"tree-guard\"\n  ]\n}\n"
+        "daoris/data/permissions.json": "{\n  \"defaultsOn\": [\n    \"tree-guard\"\n  ]\n}\n"
       }
     },
     {
@@ -685,17 +687,17 @@
       ],
       "folders": [],
       "before": {
-        "daoris/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"proposed\"\n}\n"
+        "daoris/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"own-memory\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"proposed\"\n}\n"
       },
       "exit": 0,
       "out": [
-        "daoris: accepted #p0000009 — switch the default `tree-guard` off is now in the rules.",
+        "daoris: accepted #p0000009 — switch the default `own-memory` off is now in the rules.",
         "  Sessions started from now on are handed it; one already running keeps what it began with."
       ],
       "err": [],
       "after": {
-        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"tree-guard\"\n  ]\n}\n",
-        "daoris/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"own-memory\"\n  ]\n}\n",
+        "daoris/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"own-memory\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
       }
     },
     {

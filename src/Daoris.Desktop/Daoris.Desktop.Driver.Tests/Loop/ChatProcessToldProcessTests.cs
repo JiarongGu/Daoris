@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// each prompt reaches the file whole, so the assertions are about what the harness heard, not what the driver meant to send.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ChatProcessToldProcessTests : IDisposable
 {
     private const string Lead = "This repository's process on this machine, set for its repository:";

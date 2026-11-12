@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// scratch home, at as many kept trees as the install's machine log found (143-145).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HelpTreesReadTests : IDisposable
 {

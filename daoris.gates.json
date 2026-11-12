@@ -18,7 +18,7 @@
       "paths": [
         "daoris.gates.json", "package.json", "src/", "tools/comment-gate.mjs", "tools/fsx.mjs"
       ] },
-    { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process",
+    { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=service.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "AGENTS.md", "CHANGELOG.md", "CLAUDE.md", "LICENSE", "README.md", "ROADMAP.md", "TASKS.md",
         "daoris.gates.json", "daoris.json", "daoris.lanes.json", "daoris.lock", "package-lock.json", "package.json", ".claude/",
@@ -41,7 +41,7 @@
         "src/Daoris.Service/Daoris.Service.Mcp/", "src/Daoris.Service/Daoris.Service.Shared/",
         "src/Daoris.Service/Daoris.Service.Tests/", "tools/fsx.mjs"
       ] },
-    { "name": "devkit", "run": "dotnet test src/Daoris.Devkit",
+    { "name": "devkit", "run": "dotnet test src/Daoris.Devkit --results-directory _fixtures/test-timing --logger \"trx;LogFileName=devkit.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Contracts/", "src/Daoris.Devkit/", "src/Daoris.Service/Daoris.Service.slnx",
@@ -68,10 +68,10 @@
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
       ] },
-    { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process",
+    { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=driver.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
-        ".claude/knowledge/adoption.md", ".codex/", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
+        ".claude/knowledge/adoption.md", ".codex/", "canon/core/knowledge/rooms-and-classes.md", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
         "src/Daoris.Cli/tsconfig.build.json", "src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/bin/", "src/Daoris.Cli/src/",
         "src/Daoris.Cli/test/fixtures/", "src/Daoris.Contracts/", "src/Daoris.Desktop/Directory.Build.props",
         "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Desktop/process.runsettings",
@@ -88,7 +88,7 @@
         "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/", "src/Daoris.Web/scripts/",
         "src/Daoris.Web/src/", "tools/fsx.mjs", "tools/machine-admission.mjs", "tools/machine-admission.test.mjs"
       ] },
-    { "name": "modules", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process",
+    { "name": "modules", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=modules.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "examples/engine/", "src/Daoris.Cli/bin/", "src/Daoris.Cli/src/tools/", "src/Daoris.Contracts/",
@@ -104,7 +104,7 @@
         "src/Daoris.Web/tsconfig.tsbuildinfo", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census",
+    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Daoris.Desktop.App/", "src/Daoris.Desktop/Daoris.Desktop.Driver/",

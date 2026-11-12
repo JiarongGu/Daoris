@@ -19,6 +19,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// counts the one more brief and open; one the coming-up shell's own take opened is resumed, and counts none.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("hand-over-move-crash");

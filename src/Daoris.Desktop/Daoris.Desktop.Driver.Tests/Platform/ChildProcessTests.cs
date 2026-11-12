@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A kill that races a process's end is guarded.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ChildProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-child-" + Guid.NewGuid().ToString("N")[..8]);

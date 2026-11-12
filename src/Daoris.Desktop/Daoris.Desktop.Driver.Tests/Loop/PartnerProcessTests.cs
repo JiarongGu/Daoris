@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a strict job is Windows': elsewhere the cases return at once. Mirrors <see cref="HelperProcessTests"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class PartnerProcessTests : IDisposable
 {
     private const string Piece = "p7a1b2c3";

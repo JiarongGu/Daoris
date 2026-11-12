@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and only where git read objects alone for it, so a commit's changes are asked in the tree that asks, under its attributes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitReadsStampTests : LandedFixture
 {

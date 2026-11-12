@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>cmd</c>, never an agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PieceLauncherProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-piece-launcher-" + Guid.NewGuid().ToString("N")[..8]);

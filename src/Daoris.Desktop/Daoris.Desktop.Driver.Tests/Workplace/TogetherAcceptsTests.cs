@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// held by its own gate lands nothing, and a head moved since its check is refused under the hold before anything is made.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TogetherAcceptsTests : LandedFixture
 {

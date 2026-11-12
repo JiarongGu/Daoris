@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the ask names them.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class FileAsksStageTests : IDisposable
 {
     private const string Act = "run(node install.cjs)";

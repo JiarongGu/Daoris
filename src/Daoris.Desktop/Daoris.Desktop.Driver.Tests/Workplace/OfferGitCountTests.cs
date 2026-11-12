@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// asked one at a time, and an empty range and the files it differs in asked of a line that had not moved.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class OfferGitCountTests(ITestOutputHelper output) : LandedFixture
 {

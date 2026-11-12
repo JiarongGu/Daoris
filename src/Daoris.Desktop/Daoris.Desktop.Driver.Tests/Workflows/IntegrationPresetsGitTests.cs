@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// request, the transport integrates the branch into the line, and the run's <c>integrate</c> and <c>line</c> nodes are reached.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
 {

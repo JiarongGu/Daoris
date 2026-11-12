@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// branch of its own lands as it stands. Real git, as <see cref="LandingTidyTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandingSquashTests : IDisposable
 {
