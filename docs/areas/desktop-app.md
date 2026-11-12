@@ -181,13 +181,16 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. *Done and
     failed* holds, beside a session's end, each watched step after a run's review once reached or failed, one line by run, node and
     attempt (`outcome:<run>/<node>/<attempt>`, `Workflows/Kinds/Review/RunOutcomeNotices`, claimed by the look's last pass `RunOutcomesLook` through the news,
-    so it is kept once and written again where a write was lost), said by its step's kind and its run. Beside the
+    so it is kept once and written again where a write was lost), said by its step's kind and its run. The end of a part whose
+    line goes on (a later part or a co-worker that has not ended, `LineGoesOn`, in `WorkOrders/Sessions/`) raises no notice: the line has not ended. Beside the
     presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
     in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
     window's own words, with the place it named (*outside its focus* where that was beyond its conversation's focus at the press),
     its outcome, a press to open its conversation and a pause's *Resume*, and apart under *Asked you* the presses it put to the
     person on a card in restricted mode, each with its card's state; a restart empties it. (from D196, D253)
-32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
+32. .NET judges *What needs you*. A session's row there is its line's (`LineNeeds`): none for a part whose line works through a
+    later part or needs the person through another session, so a line is listed once, by the part or co-worker that decides it;
+    the terminal's `notices` lists the same rows. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
     holds a review row for each session Sessions' list places in Needs you for a run's Accept (`reason` `review`), except one of a
     quest whose run the person stopped, its review among its steps (`StoppedRuns`, read from the node records;
     `StoppedReviewAttentionTests`).

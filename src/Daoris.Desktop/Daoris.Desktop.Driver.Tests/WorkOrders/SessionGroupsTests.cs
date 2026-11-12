@@ -5,15 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one reader of a session's group: which of the five groups each session is in, and
-/// Archived, with the word it shows and the facts its second line says, from the records, the quests, the planner's
-/// verdicts, the trees' judgement and the archive marks, never from what a session printed. One table holds every state
-/// of the design's §1; the screen and the terminal both read this answer, so they cannot disagree.
+/// The one reader of a session's group (the five and Archived), its word and second line, from the records, quests, verdicts,
+/// trees' judgement and archive marks; the screen and the terminal read this answer.
 /// </summary>
-/// <remarks>
-/// Files and in-process stand-ins only, so this is the suite's fast half. The trees' judgement here is handed in; the
-/// judgement over real git is <see cref="SessionTreeWorkTests"/>.
-/// </remarks>
+/// <remarks>Files and stand-ins only; the judgement over real git is <see cref="SessionTreeWorkTests"/>.</remarks>
 public sealed class SessionGroupsTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
@@ -24,8 +19,9 @@ public sealed class SessionGroupsTests
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
         bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null,
-        string? noteCode = null, bool limit = false) => new()
+        string? noteCode = null, bool limit = false, string? line = null) => new()
         {
+            ["line"] = line ?? (kind == "driven" ? quest : null) ?? id,
             // An account's limit made its failure: the ledger's flag, as the service answers it.
             ["limit"] = limit,
             // Its note's first line by its code, where a case reads one.
@@ -1106,28 +1102,21 @@ public sealed class SessionGroupsTests
     }
 
     [Fact]
-    public void The_evidences_ask_reads_as_two_entries_and_its_intake_is_off_the_list()
+    public void The_evidences_ask_reads_as_a_row_per_line_and_its_intake_is_off_the_list()
     {
         var entries = SessionGroups.ReadEntries(Evidence());
 
-        Assert.Equal([AppKey, DbKey], entries.Select(entry => entry.Key).Order(StringComparer.Ordinal));
-        var app = entries.Single(entry => entry.Key == AppKey);
-        var db = entries.Single(entry => entry.Key == DbKey);
-        Assert.Equal(("ask:c98a7e", "app", "db"), (app.Origin, app.Repository, db.Repository));
-
-        Assert.Equal(["ce81a888", "62c005bc", "8eba4af2", "cf8faff5"], app.Parts.Select(part => part.Session));
-        Assert.Equal(
-            [PartBegan.Opened, PartBegan.Retried, PartBegan.Asked, PartBegan.Resumed], app.Parts.Select(part => part.Began));
-        Assert.Equal(("db", null), (app.Parts[2].AskedBy, app.Parts[3].AskedBy));
-        Assert.Equal(("ce81a888", "8eba4af2"), (app.Parts[1].After, app.Parts[3].After));
-
-        Assert.Equal(["283ef343", "e2ddbfc4", "53416cea", "2487c69d", "486d9ca0"], db.Parts.Select(part => part.Session));
-        Assert.Equal(
-            [PartBegan.Opened, PartBegan.Asked, PartBegan.Asked, PartBegan.Resumed, PartBegan.Resumed], db.Parts.Select(part => part.Began));
-
-        // The live part leads, and the rows the page still reads are untouched, the intake's among them.
-        Assert.Equal((SessionGroup.Working, "cf8faff5"), (app.Group, app.Leading));
-        Assert.Equal((SessionGroup.Working, "486d9ca0"), (db.Group, db.Leading));
+        // A row per line: each quest's sessions, however many lines one ask holds in one repository.
+        var lines = entries.ToDictionary(entry => entry.Line, StringComparer.Ordinal);
+        Assert.Equal(["01ba2c71", "28b052ac", "3068f747", "63df101b", "711d2524"], lines.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([AppKey, AppKey, DbKey, DbKey, DbKey], entries.Select(entry => entry.Key).Order(StringComparer.Ordinal));
+        Assert.Equal(["ce81a888", "62c005bc"], lines["28b052ac"].Parts.Select(part => part.Session));
+        Assert.Equal([PartBegan.Opened, PartBegan.Retried], lines["28b052ac"].Parts.Select(part => part.Began));
+        var (asked, db) = (lines["711d2524"], lines["3068f747"]);
+        Assert.Equal([PartBegan.Asked, PartBegan.Resumed], asked.Parts.Select(part => part.Began));
+        Assert.Equal(("db", "8eba4af2"), (asked.Parts[0].AskedBy, asked.Parts[1].After));
+        Assert.Equal([PartBegan.Opened, PartBegan.Resumed, PartBegan.Resumed], db.Parts.Select(part => part.Began));
+        Assert.Equal(((SessionGroup.Working, "cf8faff5"), (SessionGroup.Working, "486d9ca0")), ((asked.Group, asked.Leading), (db.Group, db.Leading)));
         Assert.Contains("a1b2c3d4", SessionGroups.Read(Evidence()).Select(row => row.Session));
         Assert.DoesNotContain(entries, entry => entry.Key.EndsWith("/intake", StringComparison.Ordinal));
     }
@@ -1181,12 +1170,12 @@ public sealed class SessionGroupsTests
     {
         var look = Look(
         [
-            Record("e1d00001", "awaiting-person", "q1", entry: "quest:q1/engine", at: 0),
-            Record("e1d00002", "working", "q2", entry: "quest:q1/engine", at: 10),
-            Record("e1d00003", "working", "q3", entry: "quest:q1/engine", at: 20),
-            Record("e1d00004", "completed", "q4", repository: "game", entry: "quest:q4/game", at: 5),
-            Record("e1d00005", "working", "q5", repository: "game", entry: "quest:q4/game", at: 6),
-            Record("e1d00006", "working", "q6", repository: "game", entry: "quest:q4/game", at: 7),
+            Record("e1d00001", "awaiting-person", "q1", entry: "quest:q1/engine", at: 0, line: "q1"),
+            Record("e1d00002", "working", "q2", entry: "quest:q1/engine", at: 10, line: "q1"),
+            Record("e1d00003", "working", "q3", entry: "quest:q1/engine", at: 20, line: "q1"),
+            Record("e1d00004", "completed", "q4", repository: "game", entry: "quest:q4/game", at: 5, line: "q4"),
+            Record("e1d00005", "working", "q5", repository: "game", entry: "quest:q4/game", at: 6, line: "q4"),
+            Record("e1d00006", "working", "q6", repository: "game", entry: "quest:q4/game", at: 7, line: "q4"),
         ]);
 
         var entries = SessionGroups.ReadEntries(look);
@@ -1207,11 +1196,13 @@ public sealed class SessionGroupsTests
             ],
             quests: [AskQuest("q1", "game", "engine"), AskQuest("q2", "game", "engine") with { Parent = "q1" }]);
 
-        var parts = Assert.Single(SessionGroups.ReadEntries(look)).Parts;
+        var entries = SessionGroups.ReadEntries(look);
+        var parts = Assert.Single(entries, entry => entry.Line == "q1").Parts;
 
         Assert.Equal(
-            [(PartBegan.Opened, null), (PartBegan.CarriedOn, "c0d00001"), (PartBegan.HandedOver, "c0d00002"), (PartBegan.CarriedOn, null)],
+            [(PartBegan.Opened, null), (PartBegan.CarriedOn, "c0d00001"), (PartBegan.HandedOver, "c0d00002")],
             parts.Select(part => (part.Began, part.After)));
+        Assert.Equal(PartBegan.CarriedOn, Assert.Single(Assert.Single(entries, entry => entry.Line == "q2").Parts).Began);
     }
 
     /// <summary>
@@ -1248,7 +1239,7 @@ public sealed class SessionGroupsTests
     [Fact]
     public void A_record_with_no_entry_is_its_own_line_of_work()
     {
-        var look = Look([Record("0ld00001", "completed", "q1", at: 0), Record("0ld00002", "completed", "q1", at: 5)]);
+        var look = Look([Record("0ld00001", "completed", "q1", at: 0, line: "0ld00001"), Record("0ld00002", "completed", "q1", at: 5, line: "0ld00002")]);
 
         Assert.Equal(["session:0ld00001/engine", "session:0ld00002/engine"], SessionGroups.ReadEntries(look).Select(entry => entry.Key).Order(StringComparer.Ordinal));
     }
@@ -1260,7 +1251,7 @@ public sealed class SessionGroupsTests
         var entries = SessionGroups.ReadEntries(Evidence(), ["62c005bc"]);
 
         var app = Assert.Single(entries);
-        Assert.Equal((AppKey, 4), (app.Key, app.Parts.Count));
+        Assert.Equal((AppKey, 2), (app.Key, app.Parts.Count));
     }
 
     /// <summary>The groups in the order a list shows them, each group's entries by its leading part as the rows are.</summary>

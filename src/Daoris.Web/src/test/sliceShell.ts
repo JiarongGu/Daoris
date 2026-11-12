@@ -118,7 +118,7 @@ const SLICES: Record<string, (ask: Ask, remotes: Ask) => Promise<Partitions>> = 
       if (object(row) && own) Object.assign(row, { repository: own.repository, created: own.created, updated: own.updated });
     }
     const entries = object(groups) && Array.isArray(groups.entries) ? groups.entries : ownEntries(sessions, rows);
-    return { rows, entries: byKey(entries, (entry) => entry.entry) };
+    return { rows, entries: byKey(entries, (entry) => entry.leading) };
   },
   calls: async (ask) => {
     const groups = await ask('SESSION_GROUPS', {});

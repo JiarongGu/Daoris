@@ -34,6 +34,7 @@ public sealed class SessionsCommandTests : IDisposable
         string? ask = null, bool deletable = false, int minutes = 0, string? entry = null) => new()
         {
             ["entry"] = entry,
+            ["line"] = kind == "driven" ? quest ?? id : id,
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
             ["deletable"] = deletable, ["door"] = "claude-code",
             ["created"] = T0.AddMinutes(minutes).ToString("O"), ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"),
@@ -418,7 +419,7 @@ public sealed class SessionsCommandTests : IDisposable
         ],
         [Quest("q1", "Cap the hydration per frame", "Done"), Quest("q4", "Draw the minimap", "Done", to: "game")]);
 
-    /// <summary>The listing is by entry, one line each with its parts, the parts indented under it.</summary>
+    /// <summary>The listing: entries, parts indented.</summary>
     [Fact]
     public async Task The_listing_is_by_entry_with_its_parts_indented_under_it()
     {
@@ -438,7 +439,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain("1ntake01", said);
     }
 
-    /// <summary>With <c>--json</c> the rows stay as they were, the intake's among them, and <c>entries</c> is added beside them.</summary>
+    /// <summary>With <c>--json</c> the rows stay, the intake's among them, and <c>entries</c> is added.</summary>
     [Fact]
     public async Task With_json_it_keeps_the_rows_and_adds_the_entries()
     {
