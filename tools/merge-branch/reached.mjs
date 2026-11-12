@@ -32,7 +32,11 @@ const RUNNER_ORDER = ['dotnet', 'vitest', 'node'];
 const WEB = 'src/Daoris.Web';
 const CLI = 'src/Daoris.Cli';
 
-const stemOf = (path) => posix.basename(path).replace(/\.[^.]+$/, '').replace(/\.(test|spec)$/, '').replace(/(Tests?)$/, '');
+/** A command names at most this many units, so a bound lifted never meets the command line's length limit. */
+const COMMAND_UNITS = 120;
+const chunked = (units) => Array.from({ length: Math.ceil(units.length / COMMAND_UNITS) }, (_, at) => units.slice(at * COMMAND_UNITS, (at + 1) * COMMAND_UNITS));
+
+const stemOf =(path) => posix.basename(path).replace(/\.[^.]+$/, '').replace(/\.(test|spec)$/, '').replace(/(Tests?)$/, '');
 
 /**
  * How near a unit is to the change, for choosing among the units a bound leaves out: 3 where the change is in the unit's own
@@ -96,10 +100,10 @@ export function reachedPlan(units, changed, { bounds = {}, replayed = {} } = {})
     if (runner === 'dotnet') {
       for (const project of [...new Set(kept.map((unit) => unit.project))]) {
         const among = kept.filter((unit) => unit.project === project);
-        groups.push({ runner, suite, project, settings: among[0]?.settings ?? null, units: among });
+        for (const units of chunked(among)) groups.push({ runner, suite, project, settings: among[0]?.settings ?? null, units });
       }
     } else {
-      groups.push({ runner, suite, units: kept });
+      for (const units of chunked(kept)) groups.push({ runner, suite, units });
     }
   }
   groups.sort((a, b) => RUNNER_ORDER.indexOf(a.runner) - RUNNER_ORDER.indexOf(b.runner));

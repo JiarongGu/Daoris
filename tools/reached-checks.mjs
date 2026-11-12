@@ -24,7 +24,7 @@
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { verdictsHome } from './merge-branch.mjs';
@@ -34,7 +34,7 @@ import { reuseContext } from './merge-branch/reached-reuse.mjs';
 import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
 import { toolchainOf } from './merge/flow-deps.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
-import { passedClasses } from './merge/trx-passes.ts';
+import { passesOf, withReport } from './merge-branch/reached-reports.mjs';
 
 /** The paths the checkout changes against HEAD: staged, unstaged, a merge's. */
 export function changedPaths(root) {
@@ -63,15 +63,6 @@ export function planFor(root, paths, store, { bounds = {} } = {}) {
   return { plan: reachedPlan(run, paths, { bounds, replayed: counts }), night, keys };
 }
 
-/** What a command of the plan ran, given the logger's file: the classes it saw pass, or every unit where it exited clean and logs none. */
-function passesOf(group, ran, trxFile) {
-  if (trxFile && existsSync(trxFile)) {
-    const passed = passedClasses(readFileSync(trxFile, 'utf8'));
-    return group.units.filter((unit) => passed.has(unit.unit));
-  }
-  return ran.status === 0 ? group.units : [];
-}
-
 async function main(argv) {
   const root = process.cwd();
   const at = argv.indexOf('--paths');
@@ -89,15 +80,14 @@ async function main(argv) {
   const failed = [];
   commands.forEach((each, index) => {
     const group = plan.groups[index];
-    const trxName = each.command === 'dotnet' ? `reached-${each.label}-${index + 1}.trx` : null;
-    const logger = trxName ? ['--results-directory', '_fixtures/test-timing', '--logger', `trx;LogFileName=${trxName}`] : [];
-    const trxFile = trxName ? join('_fixtures/test-timing', trxName) : null;
-    if (trxFile) rmSync(trxFile, { force: true });
+    const { args, report } = withReport(each, `reached-${each.label}-${index + 1}`);
+    mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
+    rmSync(join(root, report), { force: true });
     console.log(`reached: ${each.label}: ${each.command} ${each.args.slice(0, 2).join(' ')} …`);
     // npm is a script on Windows and needs a shell; its arguments are paths, so nothing in them is read by it.
-    const ran = spawnSync(each.command, [...each.args, ...logger], { cwd: each.cwd, stdio: 'inherit', windowsHide: true, shell: each.command === 'npm' && process.platform === 'win32' });
+    const ran = spawnSync(each.command, args, { cwd: each.cwd, stdio: 'inherit', windowsHide: true, shell: each.command === 'npm' && process.platform === 'win32' });
     if (ran.status !== 0) failed.push(each.label);
-    for (const unit of passesOf(group, ran, trxFile)) {
+    for (const unit of passesOf(group, ran.status, join(root, report), root)) {
       store.add(unitId(unit), keys.get(unitId(unit)), new Date().toISOString());
     }
   });
