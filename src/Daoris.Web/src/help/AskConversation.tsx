@@ -1,8 +1,8 @@
 
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { sentence } from '../locales/format';
-import { NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
-import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
+import { NO_TURNS, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
+import { Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
@@ -53,9 +53,9 @@ import { useHelpFocus } from './focus/useHelpFocus';
  * rather than on a box the person must type it into again.
  *
  * **Its conversations are kept**: the history lists them, kept on this machine only, and the one the person
- * picks is shown in the newest's place. One that ended goes on in itself with the person's next words where its own
- * conversation is kept, so its knowledge carries; one that cannot is offered a new conversation from its words.
- * The newest that ended still starts a new one by default; *Go on in it* chooses it. A draft handed in
+ * picks is shown in the newest's place. **Every one shown takes the next word**: a stop ends the reply, never the
+ * conversation, and one no reply runs in continues with the person's next words, its own conversation resumed or, where that
+ * is lost, a new part handed Daoris's brief. Nothing opens ahead under one shown. A draft handed in
  * (the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing.
  */
 export function useAskConversation(
@@ -74,7 +74,7 @@ export function useAskConversation(
   changeFocus?: number,
 ) {
   const { here, every, scoped, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, startIn, mine, newest, shownIn, i18n } = useHelpPlace();
-  const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here: every ? null : here, registered, helper, chosen, setChosen, shown, live, picked });
+  const { setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow } = useHelpHistory({ here: every ? null : here, registered, helper, chosen, setChosen, shown });
   // The focus a start carries, read at its press from the focus hook below, which needs the opening round this one keeps; and
   // where a focus handed in with a draft goes.
   const startFocus = useRef<() => Place | undefined>(() => undefined);
@@ -124,7 +124,6 @@ export function useAskConversation(
   const send = useSendMessage();
   const end = useEndChat();
   const stop = useStopSession();
-  const cancelTurn = useCancelTurn();
   const editQueued = useEditQueued(shown?.id ?? null);
   const roster = useHarnesses();
   // The accounts the limit's line words its wait from, its presses, and the wait its events hold.
@@ -135,16 +134,13 @@ export function useAskConversation(
   const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
-  const structured = Array.isArray(roster.data?.harnesses)
-    ? roster.data.harnesses.find((row) => row.door === shown?.door)?.structured
-    : undefined;
 
   // What the person is writing, kept per conversation and apart for a new one: its words and its files, held here
   // rather than in the box, so going through the history and back loses neither, and one conversation's draft never follows
   // the person into another. The box writes the conversation it would send to: the one shown where words reach it, else a
   // new one's.
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
-  const draftKey = shown && (live || picked) ? shown.id : NEW_DRAFT;
+  const draftKey = shown ? shown.id : NEW_DRAFT;
   const draft = drafts[draftKey] ?? NO_DRAFT;
   const editDraft = (key: string, change: (was: Draft) => Draft) =>
     setDrafts((all) => ({ ...all, [key]: change(all[key] ?? NO_DRAFT) }));
@@ -181,7 +177,7 @@ export function useAskConversation(
     setRefusal(why);
     putBack(text, files);
   };
-  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choose, choosing, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus: () => startFocus.current(), takeFocus: (focus, into) => takeFocus.current(focus, into), helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
+  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choosing, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus: () => startFocus.current(), takeFocus: (focus, into) => takeFocus.current(focus, into), helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
   const history = (
     <AskHistory
       rows={shownListing?.conversations ?? []}
@@ -269,18 +265,16 @@ export function useAskConversation(
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
 
-  // No box under one the person chose that cannot go on, or is still being checked: words typed there started a
-  // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view.
-  const composer = readOnly ? null : (
+  const composer = (
     <Composer
       key={draftKey}
-      // A message always reaches something: the one running, or the one it starts.
+      // A message always reaches something: the one shown, or the one it starts.
       live
-      placeholder={t(goesOn ? 'help.placeholderGoOn' : 'help.placeholder')}
+      placeholder={t(shown && !live ? 'help.placeholderGoOn' : 'help.placeholder')}
       sending={send.isPending || start.isPending || joining || end.isPending}
       refusal={refusal}
-      // Only a conversation that runs has an ending to choose.
-      endings={live && !end.isPending}
+      // A conversation has no ending to choose: its one stop ends the reply.
+      endings={false}
       draft={draft.text}
       onDraft={(text) => editDraft(draftKey, (was) => ({ ...was, text }))}
       carried={draft.carry}
@@ -294,36 +288,33 @@ export function useAskConversation(
           : going.length > 0 ? t('help.sending')
             : turns.opening || !turns.taking ? t('help.opening') : undefined}
       taking={turns.taking}
-      stoppable={structured === true}
-      stopping={cancelTurn.isPending}
-      onStopTurn={() => { if (shown) cancelTurn.mutate(shown.id); }}
+      // Stop ends the reply's whole process tree, its tools' servers with it, on every door; the conversation stays.
+      stoppable
+      stopping={stop.isPending}
+      stopTurnLabel={t('help.stop')}
+      stopTurnTip={t('help.stopTip')}
+      onStopTurn={() => { if (shown) stop.mutate(shown.id); }}
       onRemove={editQueued.remove}
       onEdit={editQueued.reword}
       onSend={onSend}
-      onFinish={() => { if (shown) end.mutate(shown.id); }}
-      onStop={() => { if (shown) stop.mutate(shown.id); }}
+      onFinish={() => {}}
     />
   );
   const { published } = useHelpFollow({ shown, onGo });
 
-  // What the next words do, said right above the box: where one started from; whether one
-  // that ended goes on in itself; that one the person chose is being checked, or cannot go on, with a new conversation from
-  // its words first and a blank one beside it. A title it names breaks inside a word too wide for the dock.
+  // What the next words do, said right above the box: where one started from, or that one no reply runs in continues. A
+  // title it names breaks inside a word too wide for the dock.
   const line = (key: string, values?: Record<string, string>) => (
     <Prose className="m-0 text-small text-ink-soft wrap-anywhere">{t(key, values)}</Prose>
   );
-  const press = (key: string, onClick: () => void) => (
-    <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
-  );
-  const ended = shown !== null && !live;
-  const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, choosing, setChoosing });
+  const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, choosing, setChoosing });
 
   // What the open conversation's head calls it: the history's title, else the person's first words, else a conversation.
   const title = !shown ? null
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
-    body: conversation, held: <AskHeld session={shown?.id} live={live} />, published, composer, ended,
+    body: conversation, held: <AskHeld session={shown?.id} live={live} />, published, composer,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
       : limitLine ? <>{limitLine}{note}</> : note,
     // A new conversation from the head takes the shown one's applied focus.

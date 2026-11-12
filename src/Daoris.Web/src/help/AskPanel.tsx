@@ -18,13 +18,11 @@ export type AskConversationSlot = {
    * published nothing.
    */
   published?: ReactNode;
-  /** The box, or null where nothing may be written yet: a conversation being checked, or one that cannot go on. */
+  /** The box: every conversation shown takes the next word. */
   composer: ReactNode;
-  /** Whether the conversation shown has ended, so a message starts the next. */
-  ended: boolean;
   /**
-   * What the next words do, said right above the box where they are written: that an
-   * ended one goes on, cannot and offers a new one from its words, or is being checked, each with its press.
+   * What the next words do, said right above the box where they are written: that one no reply runs in continues, where
+   * one started from, or a limit's wait with its presses.
    */
   note?: ReactNode;
   /** The way back to the conversation's tail, where the reader left it: a strip of its own above the box. */
@@ -164,9 +162,8 @@ export function AskPanel({
     </>
   );
 
-  // What the next words do: the organism's line, or the panel's own for one that ended.
-  const note = conversation && (conversation.note
-    ?? (talking && conversation.ended ? <Prose className="m-0 text-small text-ink-faint">{t('help.ended')}</Prose> : null));
+  // What the next words do: the organism's line.
+  const note = conversation?.note ?? null;
 
   const content = browsing ? (
     // The history holds its own head, its search and its rows' scroll.
