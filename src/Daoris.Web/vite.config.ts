@@ -69,10 +69,11 @@ export default defineConfig({
     // keystroke, and across ~60 files in parallel workers they ran 1–5s alone and 5.1–6s on a loaded
     // machine: four full runs on 2026-09-24 each timed out a DIFFERENT typing test at the 5s default,
     // and every one passed alone. A real failure is an assertion, and it still fails at once.
-    // The one budget for a test and its hooks: a minute, over the 47 s WorkFrame's free-answer test reached under load; it comes
-    // down to what `_fixtures/test-timing/web-unit.json` allows. A test needing longer says why where declared (`names.test.ts`).
-    testTimeout: 60_000,
-    hookTimeout: 60_000,
+    // The one budget for a test and its hooks: ten seconds, over the 6 s a typing test reached on a loaded machine (the 5 s default
+    // failed a different one each run). tools/time-ratchet.mjs holds each test to the same ten seconds from the durations the run
+    // records. A test needing longer says why where it is declared (`names.test.ts`, WorkFrame's free-answer test) and is listed there.
+    testTimeout: 10_000,
+    hookTimeout: 10_000,
     // A quarter of the machine, not all of it. By default every logical processor but one ran a worker (21 on the
     // owner's machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs
     // failed on 20 s timeouts in files that passed alone. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.

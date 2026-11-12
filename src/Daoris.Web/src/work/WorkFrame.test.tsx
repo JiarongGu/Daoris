@@ -1616,12 +1616,12 @@ describe('a park\'s question', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'g0ah3ad0', text: 'Neither: hold the tile until the review.' },
     }));
-  });
+  }, 60_000);
 
   /**
    * The owner's case, in neutral words: parked on a production go-ahead beside its question, with the person's words in the box. The
    * go-ahead comes first and takes the words, keeping the park for the question (`goesOn: false`); an answer selected and the free
-   * answer wait for it alike, through *Send* and Enter (Codex's round-2 finding 14), said so, and nothing goes to the park meanwhile.
+   * answer wait for it alike, through *Send* and Enter, said so, and nothing goes to the park meanwhile.
    */
   it('answers a production go-ahead first with the box\'s words, keeping the park for its question, whose answers wait for it', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
