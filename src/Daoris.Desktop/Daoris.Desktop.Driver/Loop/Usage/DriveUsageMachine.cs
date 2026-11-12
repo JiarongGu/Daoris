@@ -97,6 +97,8 @@ internal static class DriveUsageMachine
           workflow send <run> <node>
           workflow ask-again <run> <node>  ·  workflow go-on <run> <node> "…"
               send a ready request that waits for you, or answer a declined one: ask it again, or go on without it.
+          workflow try-again <run> <node>
+              try a failed plugin step again, as a new attempt its plugin is sent.
           workflow accept <run> <node> ["…"]
           workflow changes <run> <node> "…"
               your Accept of the work on a run's review, which lands it as the run's workflow says; or the changes

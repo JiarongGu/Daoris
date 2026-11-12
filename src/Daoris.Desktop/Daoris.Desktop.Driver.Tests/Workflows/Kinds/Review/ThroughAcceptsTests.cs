@@ -57,6 +57,19 @@ public sealed class ThroughAcceptsTests
     }
 
     [Fact]
+    public void A_paused_ask_or_a_paused_quest_of_its_line_is_not_passed_on_words()
+    {
+        var none = DriverConfig.Empty;
+        var pause = new WorkPause(DateTimeOffset.UnixEpoch, new Dictionary<string, string>());
+        QuestView[] line = [new QuestView("q0", "ask #a1", "reports", "first", "", "Done"), Quest()];
+
+        Assert.False(ThroughAccepts.Paused(none, "a1", line));
+        Assert.True(ThroughAccepts.Paused(none.WithPausedAsk("#A1", pause), "a1", line));
+        Assert.True(ThroughAccepts.Paused(none.WithPausedQuest("q0", pause), "a1", line));
+        Assert.False(ThroughAccepts.Paused(none.WithPausedQuest("q9", pause), "a1", line));
+    }
+
+    [Fact]
     public void Its_words_name_the_quote_and_the_ask_they_are_kept_on()
     {
         Assert.Equal("accepted on your words, \"please do without my accept\", kept on ask #a1", ThroughAccepts.Words("a1", "please do without my accept"));

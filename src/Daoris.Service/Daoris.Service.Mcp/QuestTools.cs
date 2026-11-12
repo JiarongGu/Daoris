@@ -212,6 +212,8 @@ public sealed class QuestTools(
         [Description("Include finished and declined ones. Default false — outstanding work is the question.")]
         bool includeClosed = false,
         [Description(WorkspaceArgument)] string? workspace = null,
+        [Description("The page to answer, from 1: a long list, closed quests included, is answered a page at a time, each naming the next.")]
+        int page = 1,
         CancellationToken ct = default)
     {
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
@@ -225,12 +227,12 @@ public sealed class QuestTools(
         }
 
         var proposals = await ProposalsAsync(found, ct).ConfigureAwait(false);
-        var text = new StringBuilder($"{found.Count} quest(s){Scoped(scope)}:\n\n");
+        var blocks = new List<QuestListPage.Block>();
         foreach (var group in found.GroupBy(q => q.To).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
-            text.AppendLine($"## `{group.Key}` — {group.Count()}");
             foreach (var quest in group)
             {
+                var text = new StringBuilder();
                 text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
                 // Its publisher's short title, where one is given: the words a list shows for it.
                 if (quest.Short is { } shortTitle) text.AppendLine($"  short title: {shortTitle}");
@@ -376,12 +378,12 @@ public sealed class QuestTools(
                     text.AppendLine((quest.Answers.Any(answer => answer.IsDeparture) ? "  the person accepted the departure " : "  the person accepted the done as it stood ")
                         + accepted.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
                 }
-            }
 
-            text.AppendLine();
+                blocks.Add(new(quest.To, text.ToString()));
+            }
         }
 
-        return text.ToString();
+        return QuestListPage.Of(blocks, page, Scoped(scope));
     }
 
     [McpServerTool(Name = "quest_respond")]

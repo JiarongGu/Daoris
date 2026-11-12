@@ -5,8 +5,17 @@ namespace Daoris.Driver;
 /// believed answer reaches and fails it, a person rejects or skips it as declared), bound by its place after the landing, carried out by its
 /// plugin and titled by its step and its plugin. A step name Daoris has a half of reads as that half (<see cref="PullRequestStep"/>).
 /// </summary>
-public record PluginStep : INodeKind, IStarts
+public record PluginStep : INodeKind, IStarts, IPressed
 {
+    /// <summary>Its <i>Try again</i> where it failed, <see cref="PluginStepRetry"/>'s.</summary>
+    IReadOnlyList<string> IPressed.Takes => PluginStepRetry.Unit.Takes;
+
+    string IPressed.Refusal => PluginStepRetry.Unit.Refusal;
+
+    IReadOnlyList<string> IPressed.Acts(NodeDeclaration node, NodeStatus status) => PluginStepRetry.Unit.Acts(node, status);
+
+    NodeMove? IPressed.Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => PluginStepRetry.Unit.Move(node, word, status, scope);
+
     /// <summary>The step's kind, <c>&lt;plugin&gt;/&lt;step&gt;</c>; empty on a registered half, which <see cref="NodeKit.Find"/> names as it hands it out.</summary>
     public string Kind { get; init; } = "";
 
