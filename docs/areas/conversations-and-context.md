@@ -358,9 +358,10 @@ of everything it handed, section by section.
 
 ## Open
 
-- **CONVO1** (D280, proposed): one conversation under every chat, driven session and Ask Daoris, the line read as one, outliving
-  its processes and its agent; *Stop* ends the reply and the next word continues every end; agent and account switched between
-  turns. Rows a (ASKCHAT1) to k in `docs/2026-11-12-conversation-foundation-design.md` §7.
+- **CONVO1** (D280): one conversation under every chat, driven session and Ask Daoris, with an id of its own written on each part,
+  outliving its processes and its agent; a word kept before it is acknowledged; *Stop* ends the reply and holds what waits; the
+  next word continues every end; agent and account switched between turns. Rows a (ASKCHAT1) to l in
+  `docs/2026-11-12-conversation-foundation-design.md` §7.
 - **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
   edit and retry, folded thinking and tools). Needs a design.
 - **ASKPUSH1:** a driven session's *Send now* on a door that cannot steer (a driven native run, started with no stdin) still waits

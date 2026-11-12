@@ -115,7 +115,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-11-ask-daoris-second-check-design.md`|Accepted design: ASKSUPERVISE1, Ask Daoris's acts read by a second model (D272)
 |`2026-11-11-grow-department-design.md`|Design (settled, D276): GROWDEPT1, any agent opens a department or room by a set-up and staffs it by quests, within a person-only switch
 |`2026-11-11-review-for-every-kind-design.md`|Accepted design: REVIEWUX1, the person's review for every kind of work (D273)
-|`2026-11-12-conversation-foundation-design.md`|Proposed design: CONVO1, one conversation under every chat, driven session and Ask Daoris (D280)
+|`2026-11-12-conversation-foundation-design.md`|Design (settled, D280): CONVO1, one conversation under every chat, driven session and Ask Daoris
 
 ## UI, browser, tools and plugin contracts
 
