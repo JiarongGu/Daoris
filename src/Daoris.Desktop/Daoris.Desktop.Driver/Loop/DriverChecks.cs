@@ -39,9 +39,10 @@ internal sealed class DriverChecks
         return Exchanges.AsksPersonNothing(Exchanges.Of(await _helpers.OwnLookAsync(session, since, ct).ConfigureAwait(false), session), session);
     }
 
-    /// <summary>One look: the asks' trees read, the next check started beside the look where none runs, the finished verdicts handed.</summary>
-    internal async Task LookAsync(CancellationToken ct)
+    /// <summary>One look: the hand-backs read, the asks' trees read, the next check started beside the look where none runs, the finished verdicts handed.</summary>
+    internal async Task LookAsync(IEnumerable<PriorSession> sessions, CancellationToken ct)
     {
+        await new DriverHandbacks(_context).LookAsync(sessions, ct).ConfigureAwait(false);
         var files = new CheckFiles(_context.Home);
         var asks = files.Asks();
         if (asks.Count == 0) return;

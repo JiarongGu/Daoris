@@ -174,6 +174,7 @@
   "work.shown.awaitingReply": "等回复",
   "work.shown.answered": "已回答",
   "work.shown.goingOn": "继续中",
+  "work.shown.awaitingCheck": "等检查",
   "work.shown.awaitingHelper": "等助手",
   "work.shown.limitWaits": "正在等待额度重置",
   "work.limit.word": "额度用尽",

@@ -28,9 +28,13 @@ internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, K
     /// </summary>
     internal const string EndedAwaitsHelper = "ended.awaits-helper";
 
-    /// <summary>Whether a finished record ended waiting on its own helper: completed, by that code.</summary>
+    /// <summary>The driver's code for a session that ended its turn on its own open check (<c>EndNoteCodes.EndedAwaitsCheck</c>), read here by its spelling.</summary>
+    internal const string EndedAwaitsCheck = "ended.awaits-check";
+
+    /// <summary>Whether a finished record ended waiting on its own helper or its own check: completed, by one of those codes.</summary>
     internal static bool WaitedOnHelper(Session session) =>
-        session.State == SessionState.Completed && NoteParts.Carries(session.NoteParts, EndedAwaitsHelper);
+        session.State == SessionState.Completed
+        && (NoteParts.Carries(session.NoteParts, EndedAwaitsHelper) || NoteParts.Carries(session.NoteParts, EndedAwaitsCheck));
 
     /// <summary>
     /// The session holding <paramref name="repository"/>'s <paramref name="tree"/>: an active one (<see cref="SessionStore.ActiveForAsync"/>),
@@ -41,7 +45,9 @@ internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, K
     public async Task<Session?> HolderAsync(string repository, string? tree, CancellationToken inside, string? except = null)
     {
         if (await sessions.ActiveForAsync(repository, tree, inside).ConfigureAwait(false) is { } active) return active;
-        foreach (var waiting in await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsHelper, inside).ConfigureAwait(false))
+        var waits = (await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsHelper, inside).ConfigureAwait(false))
+            .Concat(await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsCheck, inside).ConfigureAwait(false));
+        foreach (var waiting in waits)
         {
             if (string.Equals(waiting.Id, except, StringComparison.Ordinal) || !WaitedOnHelper(waiting)) continue;
             if (await quests.FindAsync(waiting.Quest!, inside).ConfigureAwait(false) is { Status: QuestStatus.Taken }) return waiting;

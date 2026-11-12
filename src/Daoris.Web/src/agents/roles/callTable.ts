@@ -4,7 +4,7 @@
 /** Every tool the connector registers. */
 export const REGISTERED_TOOLS: readonly string[] = [
   'brainstorm_give', 'brainstorm_synthesize',
-  'channel_post', 'channel_read', 'checkout_read', 'go_ahead_ask',
+  'channel_post', 'channel_read', 'check_run', 'checkout_read', 'go_ahead_ask',
   'handback_read', 'handover_propose', 'helper_answer', 'helper_ask',
   'knowledge_convergence', 'knowledge_get', 'knowledge_refresh', 'knowledge_repositories', 'knowledge_search',
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',
@@ -24,7 +24,7 @@ const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];
 const CONVERSING = ['go_ahead_ask', 'handover_propose', 'opinion_answer', 'permission_propose'];
-const WORKING = [...CONVERSING, 'question_ask', 'review_ready', 'review_serve'];
+const WORKING = [...CONVERSING, 'check_run', 'question_ask', 'review_ready', 'review_serve'];
 const without = (tools: readonly string[], left: readonly string[]) => tools.filter((tool) => !left.includes(tool));
 
 const COLUMNS: Record<string, Column> = {
@@ -34,7 +34,7 @@ const COLUMNS: Record<string, Column> = {
   chat: { only: [...CORE, ...CONVERSING] },
   // Neither works in a repository of its own, so neither has a helper to ask.
   intake: { only: without(CORE, [...MEMORY_CHANGES, 'helper_ask']) },
-  'ask-daoris': { allBut: [...TURNS, 'helper_ask', ...MEMORY_CHANGES, 'system_plan'] },
+  'ask-daoris': { allBut: [...TURNS, 'check_run', 'helper_ask', ...MEMORY_CHANGES, 'system_plan'] },
   help: {
     only: [
       ...without(CORE, ['channel_post', 'channel_read', 'memory_propose', 'quest_publish', 'quest_respond', ...MEMORY_CHANGES]),

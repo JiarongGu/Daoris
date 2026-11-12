@@ -161,7 +161,7 @@ export function keptSessionFilters(filters: SessionFilters): Record<string, unkn
 }
 
 /** The words the reader derives that the page shows as its own. */
-const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limit-waits']);
+const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'awaiting-check', 'limit-waits']);
 
 /**
  * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*, *answered*, *going on*),

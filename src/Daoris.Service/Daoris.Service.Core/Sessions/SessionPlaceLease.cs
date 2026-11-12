@@ -28,7 +28,7 @@ internal sealed class SessionPlaceLease(SessionStore store)
               AND ($except IS NULL OR id <> $except)
               AND (state IN ('Queued', 'Starting', 'Working')
                    OR (holds_place IS NOT NULL AND state = 'AwaitingPerson')
-                   OR (holds_place IS NOT NULL AND state = 'Completed' AND quest IS NOT NULL AND note_parts LIKE $helper))
+                   OR (holds_place IS NOT NULL AND state = 'Completed' AND quest IS NOT NULL AND (note_parts LIKE $helper OR note_parts LIKE $check)))
             ORDER BY created
             LIMIT 1
             """;
@@ -36,6 +36,7 @@ internal sealed class SessionPlaceLease(SessionStore store)
         command.Parameters.AddWithValue("$root", (object?)Trees.Normalize(root) ?? DBNull.Value);
         command.Parameters.AddWithValue("$except", (object?)except ?? DBNull.Value);
         command.Parameters.AddWithValue("$helper", $"%\"{SessionHolders.EndedAwaitsHelper}\"%");
+        command.Parameters.AddWithValue("$check", $"%\"{SessionHolders.EndedAwaitsCheck}\"%");
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);

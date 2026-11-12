@@ -130,7 +130,7 @@ public static class PermissionRules
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
-                "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
+                "helper_ask", "helper_answer", "check_run", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
                 "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
@@ -143,6 +143,8 @@ public static class PermissionRules
             // asks for an opinion, lands the work or answers a dispute, which is the person's. `helper_ask` and `helper_answer`
             // write a file each under the home and nothing else: an ask the driver takes under the
             // person's `helpers` rule, and a helper's answer, which reaches the asker as another agent's claim, never the person's.
+            // `check_run` writes one file under the home and nothing else: an ask the driver's broker runs as a heavy check in the
+            // session's own tree under the machine's admission, the same run `daoris gate run` makes, its verdict the session's next turn.
             // `partner_answer` writes one file under the home, for the piece the driver started its
             // session for, and is refused to every other session: the partner's claim beside the files Daoris reads itself.
             // `channel_post` and `channel_read` speak and read for the session's own ask only, a

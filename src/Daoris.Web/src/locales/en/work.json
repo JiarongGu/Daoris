@@ -174,6 +174,7 @@
   "work.shown.awaitingReply": "awaiting reply",
   "work.shown.answered": "answered",
   "work.shown.goingOn": "going on",
+  "work.shown.awaitingCheck": "awaiting check",
   "work.shown.awaitingHelper": "awaiting helper",
   "work.shown.limitWaits": "waiting for a limit to reset",
   "work.limit.word": "limited",
