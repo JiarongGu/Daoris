@@ -246,7 +246,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     no verdict, or a failure's held row. *Ask for a fix…* publishes one ask per failed gate with its last 256 KiB, never twice;
     `failed: ask`, only in a version the person saved, asks at each look, `wait` waits for the press, `stop` asks nothing.
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
-    verification (`daoris gate verify`) is a run the batching never counts. (D192)
+    verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
+    (`check_run`, driving rule 40a), the same heavy run under the same admission; a hand-back's checks are chosen by `GateReach`,
+    the declared gates' reach, as a landing's are. (D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
