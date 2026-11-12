@@ -39,6 +39,9 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
     public string? Ended { get; init; }
 
     public IReadOnlyList<SystemOperation>? Operations { get; init; }
+
+    /// <summary>A branch's or a checkout's changed files at the record's commits, where the checkout stands on this machine (<see cref="ReviewCommitFiles"/>); null otherwise.</summary>
+    public IReadOnlyList<ReviewRow>? Files { get; init; }
 }
 
 /// <summary>A record newer than the one read: its attempt, its revision and the paths whose content differs from the one read.</summary>

@@ -16,7 +16,8 @@ public static class ReviewCommits
         return code == 0 ? (text, null) : (null, ReviewContent.NotRow);
     }
 
-    private static async Task<string?> CommitAsync(string root, ReviewRecord record, string side, CancellationToken ct)
+    /// <summary>The commit <paramref name="side"/> of <paramref name="record"/> names; null where the record names none.</summary>
+    public static async Task<string?> CommitAsync(string root, ReviewRecord record, string side, CancellationToken ct)
     {
         var reference = record.Reference;
         switch (record.Kind, side)

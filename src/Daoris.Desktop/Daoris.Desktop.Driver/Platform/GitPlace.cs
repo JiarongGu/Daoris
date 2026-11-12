@@ -103,8 +103,9 @@ internal sealed class GitPlace
         {
             return true; // disposed by its wait, which ends only at the exit
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (System.Runtime.InteropServices.ExternalException)
         {
+            // Win32Exception, and the COMException E_HANDLE a handle the wait disposed meanwhile throws.
             return true;
         }
     }

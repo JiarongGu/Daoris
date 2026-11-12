@@ -90,7 +90,7 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
  * the attended session is this frame's to hold.
  */
 export function WorkFrame({
-  selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
+  selected, onSelect, notify, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
   lists, layout: viewLayout, onOpenSessions, onChangeRule, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
   onOpenBranch, notifications, notificationsShow = 0, notificationsToggle = 0,
 }: {
@@ -157,12 +157,6 @@ export function WorkFrame({
   selected: string | null;
   onSelect: (id: string | null) => void;
   notify: Notify;
-  /**
-   * Send the reviewed work back as a quest — a door into the platform's own composer, not
-   * a second publish path. It is the one review move Daoris has that an editor does not, and it
-   * goes through the channel `repository-owns-its-work` sanctions rather than around it.
-   */
-  onSendBack?: (repository: string) => void;
   /**
    * Open the ask a parked intake is waiting on. Its answer is there — publish or close —
    * and the ask's record is the application's to open, in Quests, the way the attention band does.
@@ -372,7 +366,7 @@ export function WorkFrame({
   // The head's *Waiting on* opens At work at the request it names.
   const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
-    t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
+    t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
     session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
   });

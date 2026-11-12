@@ -345,7 +345,17 @@ public sealed class GitScheduler
     /// <summary>A run returned: its place freed where its processes exited, else counted apart until they exit, and said.</summary>
     private void Ended(Entry entry)
     {
-        var exited = entry.Place!.Exited;
+        bool exited;
+        try
+        {
+            exited = entry.Place!.Exited;
+        }
+        catch (Exception)
+        {
+            // A fault reading the place must never skip freeing its slot below: a slot leaked is a git ask queued for good.
+            exited = true;
+        }
+
         lock (_gate)
         {
             entry.Done = true;

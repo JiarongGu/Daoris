@@ -47,6 +47,7 @@ export type RunReviewAnswer = {
   by?: string | null; words?: string | null; says?: RunReviewSays; before?: RunReviewStep[]; presses?: string[];
   newer?: { attempt: number; revision: string; changed: string[] } | null; supervisor?: RunReviewSupervisor | null; follows?: RunReviewStep[];
   ended?: string | null; operations?: ReviewOperation[] | null;
+  files?: ReviewRow[] | null;
 };
 
 /** What `RUN_REVIEW_FILE` answers: the file's text at the record's revision, or why it is not drawn (`moved`, `not-row`, `not-kept`, `not-run`). */
