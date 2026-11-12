@@ -17,7 +17,7 @@ export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
   failures?: Array<{ unit: string; key: string }>; replayed?: Replay; abnormal?: boolean; slowest?: Slow[];
-  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; [other: string]: unknown;
+  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
 
@@ -136,16 +136,17 @@ export function verdictExtras(result: GateResult): { key?: VerdictKey; signature
 
 const gateRecord = (result: GateResult): GateRecord => ({
   name: result.gate.name, verdict: result.verdict, ms: result.ms ?? 0, replayed: result.replayed !== undefined, mainRed: result.mainRed === true,
-  abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [],
+  abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [], flakes: result.flakes ?? [],
 });
 
 /**
  * A merge's gates settled: each failure main already has under the same signature set down as main's, the failed gates left
- * for the branch's, the record and the summary's lines built.
+ * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock.
  */
-export function settleMerge({ branch, at, ms, results, mains, previous }: {
-  branch: string; at: string; ms: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[];
+export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
+  branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[];
 }): { failed: GateResult[]; held: Held[]; lines: string[]; record: MergeRecord } {
+  const ms = results.reduce((sum, result) => sum + (result.ms ?? 0), 0);
   const held: Held[] = [];
   for (const result of results) {
     if (result.verdict !== 'FAIL' || result.abnormal) continue;
@@ -157,7 +158,7 @@ export function settleMerge({ branch, at, ms, results, mains, previous }: {
   }
   const records = results.map(gateRecord);
   const record = buildRecord({
-    branch, at, ms, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
+    branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
   });
   const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [] }));
   return {

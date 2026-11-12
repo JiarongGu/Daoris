@@ -3393,6 +3393,7 @@ const owedLine = (skipped) => (skipped
   : null);
 
 async function gateMerge(root, state, plan) {
+  const started = Date.now();
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
   // Before the gates choose, so the merge's changed paths include what the writing changed. The notes
@@ -3420,7 +3421,7 @@ async function gateMerge(root, state, plan) {
   }), ratchetIn(root, gateEnvironment()));
   const home = verdictsHome(root);
   const settled = settleMerge({
-    branch, at: nowIso(), ms: results.reduce((sum, result) => sum + (result.ms ?? 0), 0), results,
+    branch, at: nowIso(), wallMs: Date.now() - started, results,
     mains: mainRedsOf(flowSeams(), root, home), previous: readRecords(join(home, MERGE_RECORD)),
   });
   appendRecord(join(home, MERGE_RECORD), settled.record);

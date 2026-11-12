@@ -165,12 +165,13 @@ test('settling a merge sets down main\'s reds, fails the merge on the branch\'s,
     gate: { name, run: 'x' }, verdict, note: '', ms, failures, log: 'l',
   });
   const mains = [{ gate: 'reached', key: 'k1', from: 'finding' as const, at: '2026-11-12T08:00:00Z', commit: 'abc' }];
-  const onlyMain = settleMerge({ branch: 'b', at: 'now', ms: 20, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }]), make('cli', 'PASS', [])], mains, previous: [] });
+  const onlyMain = settleMerge({ branch: 'b', at: 'now', wallMs: 1500, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }]), { ...make('cli', 'FLAKE', []), flakes: ['A.Tests'] }], mains, previous: [] });
   assert.deepEqual(onlyMain.failed, []);
   assert.equal(onlyMain.record.passed, true);
+  assert.deepEqual([onlyMain.record.ms, onlyMain.record.wallMs, onlyMain.record.flakes], [2000, 1500, 1], 'gate time summed, wall time as measured, the flaky tests counted');
   assert.equal(onlyMain.record.mainReds.length, 1);
   assert.match(onlyMain.lines.join('\n'), /main's red/);
-  const both = settleMerge({ branch: 'b', at: 'now', ms: 11 * 60_000, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }, { unit: 'Y', key: 'k2' }]), make('cli', 'PASS', [], 6 * 60_000)], mains, previous: [] });
+  const both = settleMerge({ branch: 'b', at: 'now', wallMs: 11 * 60_000, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }, { unit: 'Y', key: 'k2' }]), make('cli', 'PASS', [], 6 * 60_000)], mains, previous: [] });
   assert.deepEqual(both.failed.map((each) => each.gate.name), ['reached']);
   assert.match(both.lines.join('\n'), /cli took 6 min, over its 5 min budget/);
   assert.equal(both.record.firstPass, false);
