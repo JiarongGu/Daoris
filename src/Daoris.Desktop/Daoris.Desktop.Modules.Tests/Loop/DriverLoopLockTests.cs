@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// is the lease's: a terminal's verb acting alone holds it for its act, and the desktop's start waits on that hold.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverLoopLockTests : Bridge
 {
     private string LeaseFile => HomeLease.PathIn(Home);

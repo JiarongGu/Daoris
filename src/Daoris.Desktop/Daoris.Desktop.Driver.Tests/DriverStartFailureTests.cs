@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// exit 2; the watch on what still leaves the entry point is held by <c>MachineLogTests</c>' rows.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverStartFailureTests : IDisposable
 {
     /// <summary>A key in the driver's environment, which nothing a failed start says may repeat.</summary>

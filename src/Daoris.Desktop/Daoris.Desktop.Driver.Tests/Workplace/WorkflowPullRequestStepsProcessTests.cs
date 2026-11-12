@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that says it is judged by the save as a graph of steps.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class WorkflowPullRequestStepsProcessTests : IClassFixture<GitSshHost>, IAsyncLifetime, IDisposable
 {
     private const string Token = "test-token-for-the-pull-request-step";

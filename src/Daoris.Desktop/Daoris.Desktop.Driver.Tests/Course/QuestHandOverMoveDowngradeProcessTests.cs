@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// imported by the loop's look and never by the shell's come-up.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class QuestHandOverMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly HandOverQuestHarness _h = new("quest-hand-over-downgrade");

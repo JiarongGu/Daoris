@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// strike), and <c>--once</c> returns. Without it the run would wait for its operator.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class QuietEndProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "quiet-end", Guid.NewGuid().ToString("N")[..8]);

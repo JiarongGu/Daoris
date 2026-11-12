@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that forgot a record on a failed read is broken here, and keeps it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class UnreadRecordGitTests : LandedFixture
 {

@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// made, so the hold is counted from the new record's <c>created</c>. Written without a run: the merge's Process half runs it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class CurveMoveProcessTests : IDisposable
 {
     /// <summary>Ten minutes after the ledger's records are made (<c>2026-10-03T08:00:00Z</c>): a move made then holds until 08:30.</summary>

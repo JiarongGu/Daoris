@@ -21,6 +21,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// never the machine's real one. No model anywhere, and no account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class TrustHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

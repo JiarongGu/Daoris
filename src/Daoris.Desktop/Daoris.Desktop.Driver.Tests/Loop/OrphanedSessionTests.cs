@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the spawn, the marker and the record's move are exactly what a fake would get wrong.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class OrphanedSessionTests : IDisposable
 {
     private readonly string _home = Path.Combine(

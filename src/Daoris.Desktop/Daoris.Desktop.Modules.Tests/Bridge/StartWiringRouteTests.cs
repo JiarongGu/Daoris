@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// would run on and where each part came from — the driver's <c>WiringAsync</c>, carried as names.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class StartWiringRouteTests : Bridge
 {
     private DriverModule Module()

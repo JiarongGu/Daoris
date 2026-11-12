@@ -9,6 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="ChatGoOnTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ChatRoutingProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "chat-routing", Guid.NewGuid().ToString("N")[..8]);

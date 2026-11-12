@@ -15,6 +15,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// prompt takes the quest, says the sentence as its message, reports its usage and ends its turn; a carry-on closes the quest.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitMessageTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");

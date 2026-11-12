@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// one before and writes nothing, so the part is not judged again at each pass; a part that moved on since the tidy is judged as any other.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TidiedPartKeepingTests : LandedFixture
 {

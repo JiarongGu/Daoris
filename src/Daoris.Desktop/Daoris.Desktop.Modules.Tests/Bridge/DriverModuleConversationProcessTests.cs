@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <see cref="DriverModuleConversationTests"/> so that class, which starts none, runs in the fast half.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
 {
     /// <summary>

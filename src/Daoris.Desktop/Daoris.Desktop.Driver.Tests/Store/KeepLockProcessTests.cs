@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="RecordLockProcessTests"/>). The in-process half is <see cref="KeepLockTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class KeepLockProcessTests : IDisposable
 {
     private const string Start = "{\n  \"drivable\": [\n    \"engine\"\n  ],\n  \"notify\": true\n}\n";

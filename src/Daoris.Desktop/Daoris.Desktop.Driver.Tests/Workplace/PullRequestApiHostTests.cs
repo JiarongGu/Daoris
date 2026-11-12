@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks><para>In the Process half, beside a listener.</para></remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PullRequestApiHostTests(PullRequestApiHost api) : IClassFixture<PullRequestApiHost>
 {
     private readonly string _token = "fixture-api-token-" + Guid.NewGuid().ToString("N")[..8];

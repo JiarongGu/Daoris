@@ -15,6 +15,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// starts and no account is spent: the real run is the owner's, and this is what it is proven on.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class BrainstormRoomMeasureProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "brainstorm1c-measure-" + Guid.NewGuid().ToString("N")[..8]);

@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// sessions' branches, never an open conversation's tree, a dirty one or a detached one.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeUpdateTests : LandedFixture
 {

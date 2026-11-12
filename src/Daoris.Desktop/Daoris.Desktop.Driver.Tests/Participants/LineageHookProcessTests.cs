@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>The inputs carry the keys Claude Code 2.1.299 handed the probe kit's logger.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LineageHookProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-hook-" + Guid.NewGuid().ToString("N")[..8]);

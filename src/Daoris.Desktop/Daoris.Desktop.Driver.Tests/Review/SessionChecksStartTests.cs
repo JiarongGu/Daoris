@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// shape <see cref="StartInSyncTickTests"/> uses; no model and no account.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SessionChecksStartTests : IDisposable
 {
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "session-checks-start", Guid.NewGuid().ToString("N")[..8]);

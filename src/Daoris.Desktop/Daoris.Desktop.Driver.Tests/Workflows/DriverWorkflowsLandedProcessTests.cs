@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>show</c> says before the steps. The words are the CLI's, as its <c>workflowchoice-door.test.ts</c> held them.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class DriverWorkflowsLandedProcessTests : IDisposable
 {

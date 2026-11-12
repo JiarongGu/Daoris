@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// arrives with no tools' <c>PATH</c> laid over it and the handed mark added, and the program's exit is the run's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTests.Echo echo) : IClassFixture<DriverProgramWordsProcessTests.Echo>
 {
     private readonly string _root = echo.Root;

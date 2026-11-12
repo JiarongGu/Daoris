@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is the same on every run. 🔴 <b>Nothing here reaches a network.</b>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitReadsTests : IDisposable
 {

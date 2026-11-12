@@ -23,7 +23,7 @@
     "typecheck:web":"npm --prefix src/Daoris.Web run typecheck",
     "check:web-rules": "npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts src/test/structure.test.ts src/test/providerCensus.test.ts src/design/presentational.test.ts src/design/pageMeasure.test.tsx",
     "test:web": "npm run test:web:unit && npm run test:web:e2e",
-    "test:web:unit": "npm --prefix src/Daoris.Web run test",
+    "test:web:unit": "npm --prefix src/Daoris.Web run test -- --reporter=default --reporter=json --outputFile.json=../../_fixtures/test-timing/web-unit.json",
     "test:web:e2e": "npm --prefix src/Daoris.Web run build && node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e",
     "test:web:measured": "npm --prefix src/Daoris.Web run e2e:measured",
     "desktop": "node tools/desktop.mjs",

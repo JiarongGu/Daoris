@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The per-file read is kept here, and only here, as the oracle.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class UntrackedPatchesTests : LandedFixture
 {

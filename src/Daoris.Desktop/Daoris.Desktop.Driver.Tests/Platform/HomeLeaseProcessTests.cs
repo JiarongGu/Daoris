@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// loop elsewhere on the machine looks like, without spawning one.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HomeLeaseProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(

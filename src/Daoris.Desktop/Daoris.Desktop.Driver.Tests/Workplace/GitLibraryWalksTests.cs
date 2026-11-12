@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// criss-cross whose two bases are committed in the same second, which is git's; a graft; a shallow boundary before and after a deepen.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryWalksTests : LandedFixture
 {

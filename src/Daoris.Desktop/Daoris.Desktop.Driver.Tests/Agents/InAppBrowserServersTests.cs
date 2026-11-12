@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and the session is told why, never handed a placeholder that fails inside the harness unexplained.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class InAppBrowserServersTests
 {
     private static readonly ServerEntry Knowledge =

@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reports the same whole list; a file the build did not write is never named.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class BuildAccountProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "build-account-" + Guid.NewGuid().ToString("N")[..8]);

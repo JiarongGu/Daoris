@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>The driver's own hold and let-go around a real run are <c>SessionTreeLockTickTests</c>'.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SessionLocksTests : IDisposable
 {

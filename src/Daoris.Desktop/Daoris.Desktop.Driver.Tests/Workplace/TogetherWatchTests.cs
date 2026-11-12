@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// dropped, and one at <i>landing</i> after a restart is settled by its git effects, never while a landing of the head's tree is under way.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TogetherWatchTests : IDisposable
 {

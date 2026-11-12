@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// as the driver hands its own, so the class sets nothing of this process's and runs beside the rest.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ToolsChildProcessTests : IDisposable
 {
     private const string Answer = "stub-git";

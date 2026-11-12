@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// shell's resume lands after it, between the open's ask and the open itself, at <see cref="Cuts.Opening"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("hand-over-move-older");

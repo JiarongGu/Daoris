@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ledger is the stand-in the looks read (<see cref="StandInLedger"/>), through the real client and <see cref="BranchTidying.BesideAsync"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class CheckoutBesideGitTests : TreeSyncFixture
 {

@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Real node processes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ClaudeDrivenParityProcessTests : IDisposable
 {
     private const string Prompt = "the prompt";

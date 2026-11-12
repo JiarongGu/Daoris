@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// batch of object questions, and the files of a range in one <c>diff</c>; each answer is the one it gave before.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyingFixture
 {

@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// update leaves the branch at its tip.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitHistoryEditTests : TreeSyncFixture
 {

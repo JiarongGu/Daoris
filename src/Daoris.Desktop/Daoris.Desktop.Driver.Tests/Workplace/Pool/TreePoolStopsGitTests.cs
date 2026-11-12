@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the claim over and reads the disk, never the phase alone. Each case ends in a state the next look reads right, and no record names a slot.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolStopsGitTests : IDisposable
 {

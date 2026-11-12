@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class TreePoolDayBenchProcessTests(ITestOutputHelper output)
 {
     [Fact]

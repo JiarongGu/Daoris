@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// script that speaks the stream the Claude Code mapper reads; a protocol door's is the stand-in's own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class TransportRunProcessTests : IDisposable
 {
     private const string Script = """

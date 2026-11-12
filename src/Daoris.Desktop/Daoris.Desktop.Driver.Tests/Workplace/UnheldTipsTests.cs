@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answered for each tip the judgement's refs hold a session branch at, and asked of git on its own for any other commit.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class UnheldTipsTests : LandedFixture
 {

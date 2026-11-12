@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// nothing. Git is asked once for a tip that moved, and not for one that did not.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationOwedGitTests : IAsyncLifetime
 {

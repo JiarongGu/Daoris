@@ -11,6 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// on no token with no record opened and no harness started.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class StartTreeCloseGitTests : LandedFixture
 {

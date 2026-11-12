@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Run by the parent at the merge: it starts K processes at once.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AccountGoalTickTests : IDisposable
 {
     private const int Cap = 4;

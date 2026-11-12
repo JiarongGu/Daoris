@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ref watch on a fake source, and the asks' clock stands still while the test moves it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PullRequestMomentsGitTests : LandedFixture
 {

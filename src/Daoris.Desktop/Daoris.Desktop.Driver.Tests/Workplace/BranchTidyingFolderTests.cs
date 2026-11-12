@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// removal's ends. The tidy's other process cases are <see cref="BranchTidyingProcessTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class BranchTidyingFolderTests : BranchTidyingFixture
 {

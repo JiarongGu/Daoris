@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>The fixture's files are seconds old, so the clock is read a minute ahead: a fence refused here is refused by its stats, not
 /// by its age. Each test commits a content of its own, since the store keeps facts by id across repositories.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RepositoryDeclarationsProcessTests : LandedFixture
 {

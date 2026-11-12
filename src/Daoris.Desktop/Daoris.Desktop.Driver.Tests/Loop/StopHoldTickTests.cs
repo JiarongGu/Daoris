@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// host the carry-on is refused until the service's half lands.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class StopHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

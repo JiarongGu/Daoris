@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// meanwhile; the end against the start is the turn's own, and what of it stays uncommitted is what the line keeps the place with.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ManifestTests : IDisposable
 {

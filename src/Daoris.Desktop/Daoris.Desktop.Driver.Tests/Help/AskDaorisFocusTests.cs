@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, and the in-process ledger of <see cref="ChatGoOnTests"/>. No model, no account.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AskDaorisFocusTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-ask-focus-" + Guid.NewGuid().ToString("N")[..8]);

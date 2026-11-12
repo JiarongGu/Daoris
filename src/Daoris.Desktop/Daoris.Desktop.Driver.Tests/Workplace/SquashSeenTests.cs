@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real git in a scratch repository, a stand-in for the say door: nothing reaches a network or a harness.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SquashSeenTests : LandedFixture
 {

@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// door under <c>together:&lt;operation&gt;</c>; a refusal, or words that reach nobody, bind nothing.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TogetherPressTests : LandedFixture
 {

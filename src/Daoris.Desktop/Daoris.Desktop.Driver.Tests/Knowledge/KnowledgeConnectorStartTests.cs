@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// host, so it needs `Daoris.Service.Mcp` built; it is skipped-by-failure otherwise, with the path in the message.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class KnowledgeConnectorStartTests : IDisposable
 {
     private readonly string _root = Path.Combine(

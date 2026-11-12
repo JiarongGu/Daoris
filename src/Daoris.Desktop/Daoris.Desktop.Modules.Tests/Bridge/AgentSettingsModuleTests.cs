@@ -18,6 +18,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// questions by a test.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class AgentSettingsModuleTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));

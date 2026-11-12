@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Collection(ProcessPath.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HarnessRunTests
 {
     private static readonly TestAgent Node = new(Binary: ["node"], VersionArguments: ["--version"]);

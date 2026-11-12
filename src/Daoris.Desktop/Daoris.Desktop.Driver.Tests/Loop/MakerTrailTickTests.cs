@@ -11,6 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and the stand-in service on a loopback port, the shapes <see cref="StartInSyncTickTests"/> uses; no model and no account.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class MakerTrailTickTests : IDisposable
 {
     private const string Left = "The part of this line before you ran on `stub`";

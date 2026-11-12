@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the agent at spawn through the variable its toolchain declares.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ApiKeyAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(

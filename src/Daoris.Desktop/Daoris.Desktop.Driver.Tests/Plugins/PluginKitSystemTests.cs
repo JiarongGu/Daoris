@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>plan/read</c> and <c>apply/perform</c> in the kit's stand-in world, reading each answer by the driver's own reader.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PluginKitSystemTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-kit-system-" + Guid.NewGuid().ToString("N")[..8]);

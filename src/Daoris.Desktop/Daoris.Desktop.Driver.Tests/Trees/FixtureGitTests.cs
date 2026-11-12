@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// handed to the one git a case runs.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class FixtureGitTests : LandedFixture
 {

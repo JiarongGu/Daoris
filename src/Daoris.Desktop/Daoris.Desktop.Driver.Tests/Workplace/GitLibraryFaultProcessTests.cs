@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The process that dies is the owner stand-in in its <c>lease</c> mode, started and ended by the test, never the installed Daoris.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryFaultProcessTests : LandedFixture
 {

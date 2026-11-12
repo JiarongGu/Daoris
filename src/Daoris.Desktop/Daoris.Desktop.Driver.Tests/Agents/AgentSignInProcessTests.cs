@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// input, which is the terminal's, and keeps it in the account's folder; its status question answers by that file.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class AgentSignInProcessTests : IDisposable
 {
     private const string Agent = "claude-code";

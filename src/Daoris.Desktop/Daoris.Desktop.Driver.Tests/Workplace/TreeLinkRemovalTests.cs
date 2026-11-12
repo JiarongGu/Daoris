@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// so there every test is green with or without the guard.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeLinkRemovalTests : BranchTidyingFixture
 {

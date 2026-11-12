@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// processes over the tests' scenario program.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LauncherRunnerProcessTests : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("layer-runner");

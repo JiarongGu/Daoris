@@ -3,6 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PluginCycleStaleTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-cycle-" + Guid.NewGuid().ToString("N")[..8]);

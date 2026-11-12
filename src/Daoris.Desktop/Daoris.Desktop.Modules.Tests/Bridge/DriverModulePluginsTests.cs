@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// the switch and removal, an update, an install, and the kit's New and Try.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverModulePluginsTests : DriverModuleBridge
 {
     /// <summary>

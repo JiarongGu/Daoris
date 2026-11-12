@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// said so on the turn's review and told to the line at its next turn. A path its own file tools named is its own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TurnUnattributedTests : IDisposable
 {

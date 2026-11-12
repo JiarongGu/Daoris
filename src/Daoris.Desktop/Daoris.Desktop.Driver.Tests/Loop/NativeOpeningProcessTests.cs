@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A real process (node) speaking the native door, and the in-process ledger of <see cref="ChatGoOnTests"/>. No model, no account.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class NativeOpeningProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-native-opening-" + Guid.NewGuid().ToString("N")[..8]);

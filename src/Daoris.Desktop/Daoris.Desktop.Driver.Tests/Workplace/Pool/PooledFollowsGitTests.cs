@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// chain's step grows from, and the follow records, is that one. Real git in scratch repositories.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PooledFollowsGitTests : LandedFixture
 {
