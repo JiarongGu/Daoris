@@ -17,9 +17,8 @@
 
   <!--
     The one place the test budget is enforced in .NET: a test that runs past its bound ends the run, which says it hung. The owner's
-    budget is seconds for a unit test (30 s here) and two minutes for a Process case. The Process bound is 3 minutes while the listed
-    tests of tools/time-ratchet.json run up to 181 s; tools/time-ratchet.mjs holds each test to its own limit from the durations the
-    gates record, and the bound comes down to 2 minutes when the list's Process tests are cut. A half that runs under a run-settings
+    budget is seconds for a unit test (30 s here) and two minutes for a Process case, which is the Process bound; tools/time-ratchet.mjs
+    holds each test to its own limit from the durations the gates record. A half that runs under a run-settings
     file is a Process half (`dotnet test` passes the file as VSTestSetting). No dump is written: the run's log names the test it ended on.
   -->
   <PropertyGroup>
@@ -28,7 +27,7 @@
     <VSTestBlameHangTimeout>30s</VSTestBlameHangTimeout>
   </PropertyGroup>
   <PropertyGroup Condition="'$(VSTestSetting)' != ''">
-    <VSTestBlameHangTimeout>3min</VSTestBlameHangTimeout>
+    <VSTestBlameHangTimeout>2min</VSTestBlameHangTimeout>
   </PropertyGroup>
 
 </Project>

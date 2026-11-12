@@ -143,7 +143,7 @@ finishes first and the whole set runs once.
     a gate a merge now runs, the last green on 2026-11-02.
 22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
     whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
-    root `Directory.Build.props` (30 seconds for a half with no run-settings file, three minutes for a Process half, which ends the
+    root `Directory.Build.props` (30 seconds for a half with no run-settings file, two minutes for a Process half, which ends the
     run and names the test), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (ten seconds), and the tool tests'
     `--test-timeout` in `src/Daoris.Cli/package.json`. Those are the backstop for a hang; `tools/time-ratchet.mjs` holds each test to
     its own limit (30 s, 2 min for a Process half, 10 s for the page, 2 min for a tool test) from the durations the gates record, and
