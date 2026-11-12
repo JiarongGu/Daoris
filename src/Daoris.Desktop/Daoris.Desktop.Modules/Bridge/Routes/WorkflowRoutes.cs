@@ -109,6 +109,9 @@ public sealed class WorkflowRoutes(DriverContext context)
                 Tip = tip is null ? null : new { tip.Line, tip.Commit, tip.Gates },
                 Problem = problem,
                 Declaration = declaration,
+                Change = tip is not null && state is LandedGates.Changed or LandedGates.Unaccepted
+                    ? (await DeclarationChange.AtAsync(root, start.Landed.Gates, tip.Gates, ct).ConfigureAwait(false))?.Wire()
+                    : null,
             },
             Verifications = start.Verifications.Select(each => new { each.Id, each.Name }).ToArray(),
             Integration = repository is null ? null : await IntegrationAsync(config, repository, root, read, readProblem, ct).ConfigureAwait(false),
@@ -127,6 +130,9 @@ public sealed class WorkflowRoutes(DriverContext context)
         var declaration = root is not null && tip is not null && state is IntegrationAcceptance.Changed or IntegrationAcceptance.Unaccepted
             ? await IntegrationAcceptance.TextAsync(root, tip.Gates, ct).ConfigureAwait(false)
             : null;
+        var change = tip is not null && state is IntegrationAcceptance.Changed or IntegrationAcceptance.Unaccepted
+            ? await DeclarationChange.AtAsync(root, accepted, tip.Gates, ct).ConfigureAwait(false)
+            : null;
         return new
         {
             Gates = accepted,
@@ -134,6 +140,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Tip = tip is null ? null : new { tip.Line, tip.Commit, tip.Gates },
             Problem = problem,
             Declaration = declaration,
+            Change = change?.Wire(),
         };
     }
 
@@ -301,7 +308,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         string? message = null;
         if (clear)
         {
-            _context.Change(each => each.WithIntegrationGates(repository, null));
+            _context.Change(each => DeclarationAcceptance.Withdraw(_loop.Home, each, repository, workspace));
         }
         else
         {
@@ -317,7 +324,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             }
             else
             {
-                _context.Change(each => each.WithIntegrationGates(repository, tip.Gates));
+                _context.Change(each => DeclarationAcceptance.Accept(_loop.Home, each, repository, workspace, tip.Gates));
             }
         }
 

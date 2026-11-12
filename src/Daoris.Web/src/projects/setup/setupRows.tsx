@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { CommitField, commitRowSays, type RepositoryCommits, type CommitRule } from '../../settings/repository/Commits';
 import { HeavyGates, heavySummary } from '../../settings/repository/HeavyGates';
+import { declarationStanding } from '../../settings/repository/DeclarationAcceptance';
 import { IntegrationDeclaration } from '../../settings/repository/IntegrationDeclaration';
 import { LandedRoute, type LandedSetup } from '../../settings/repository/LandedRoute';
 import { SessionChecksRow, sessionChecksSummary } from '../../settings/repository/SessionChecks';
@@ -185,8 +186,9 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
   const landedRow = landed
     ? <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
     : null;
-  const integrationRow = !gatesApart && landed?.start.integration && landed.onAcceptIntegration
-    ? <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
+  const standing = landed ? declarationStanding(landed.start) : null;
+  const integrationRow = !gatesApart && standing && landed?.onAcceptIntegration
+    ? <IntegrationDeclaration repository={repository} integration={standing} busy={busy} onAccept={landed.onAcceptIntegration} />
     : null;
   // The heavy gates and the sessions' checks, the checks first. The heavy gates named are those its own file marks where it
   // marks some, else this machine's list, as `run-heavy` resolves them.

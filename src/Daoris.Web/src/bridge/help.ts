@@ -225,17 +225,6 @@ export const useHelpPublished = (session: string | null) => {
   });
 };
 
-/**
- * Name an Ask Daoris conversation, or give it its first question back with no name. A history act's route publishes
- * the history and the conversations the panel shows, and the state hub asks them again in every window, as it
- * does for a pin and a start from an earlier conversation.
- */
-export const useRenameHelp = () =>
-  useMutation({
-    mutationFn: (rename: { id: string; name: string | null }) =>
-      call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
-  });
-
 export type HelpFocusAnswer =
   | { session: string; focus: Place; focusNext: Place | null; reopens?: boolean; refused?: undefined }
   | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
@@ -244,12 +233,6 @@ export type HelpFocusAnswer =
 export const useHelpFocus = () =>
   useMutation({
     mutationFn: (choice: { session: string; focus: Place }) => call('HELP_FOCUS', choice) as Promise<HelpFocusAnswer>,
-  });
-
-/** Pin an Ask Daoris conversation to the top of its history, or unpin it. */
-export const usePinHelp = () =>
-  useMutation({
-    mutationFn: (pin: { id: string; pinned: boolean }) => call('HELP_PIN', pin) as Promise<{ session: string; pinned: string | null }>,
   });
 
 /**

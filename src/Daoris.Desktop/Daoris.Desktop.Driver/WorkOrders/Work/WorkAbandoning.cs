@@ -83,7 +83,7 @@ public static class WorkAbandoning
             }
         }
 
-        var archived = new SessionArchive(world.Home).Marks().Keys.ToHashSet(StringComparer.Ordinal);
+        var archived = new ConversationArchive(world.Home).Marks().Keys.ToHashSet(StringComparer.Ordinal);
         return Plan(work, claims, judged, held, archived, grounds, reopened) with
         {
             Abandoned = new AbandonRecord(world.Home).Last(scope, named),
@@ -389,7 +389,8 @@ public static class WorkAbandoning
         {
             var look = await SessionGroups.LookAsync(
                 world.Service, DriverConfig.Load(world.ConfigPath), world.Unadopted, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
-            var answer = new SessionArchive(world.Home).Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], world.Clock());
+            var answer = new ConversationArchive(world.Home).Archive(
+                ids, SessionGroups.Read(look, ConversationArchive.Parts(ids, look.Records)), look.Records, world.Clock());
             var archived = new List<string>();
             foreach (var outcome in answer.Outcomes)
             {
@@ -542,7 +543,7 @@ public static class WorkAbandoning
             return review ? new AbandonSession(session, act) { Why = AbandonWhy.Review } : new AbandonSession(session, act) { Archive = true };
         }
 
-        if (archived.Contains(record.Id)) return new AbandonSession(session, AbandonAct.None);
+        if (archived.Contains(ConversationArchive.Of(record))) return new AbandonSession(session, AbandonAct.None);
         return review
             ? new AbandonSession(session, AbandonAct.Keep) { Why = AbandonWhy.Review }
             : new AbandonSession(session, AbandonAct.Archive) { Archive = true };

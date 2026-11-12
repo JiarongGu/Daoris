@@ -75,7 +75,7 @@ public sealed class SessionsThroughInstanceTests
     /// <summary>
     /// <c>sessions archive</c> and <c>unarchive</c> are the person's presses, sent to the running Daoris, which shows them in its
     /// window; the terminal says it waits, then prints the lines the confirmed press answers, which are the alone path's words
-    /// (<see cref="SessionArchive.ArchiveSaid"/>), and this process reads and writes nothing.
+    /// (<see cref="ConversationArchive.ArchiveSaid"/>), and this process reads and writes nothing.
     /// </summary>
     [Theory]
     [InlineData("archive", true, "sessions: archived s1a2b3c4.")]
@@ -97,7 +97,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal(line + Environment.NewLine, output.ToString());
         Assert.Matches(InstanceStandIn.WaitingAlone("sessions"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
-        Assert.False(File.Exists(new SessionArchive(home.Home).FilePath));
+        Assert.Empty(new ConversationArchive(home.Home).Marks());
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("SESSION_ARCHIVE", press.GetProperty("type").GetString());
         Assert.Equal($$"""{"ids":["s1a2b3c4"],"archived":{{(archived ? "true" : "false")}},"said":true}""", press.GetProperty("payload").GetRawText());
@@ -121,7 +121,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal(1, exit);
         Assert.Equal("", output.ToString());
         Assert.Contains("sessions: refused refused. (refused)", home.Error.ToString());
-        Assert.False(File.Exists(new SessionArchive(home.Home).FilePath));
+        Assert.Empty(new ConversationArchive(home.Home).Marks());
     }
 
     private const string Id = "s1a2b3c4";
@@ -324,7 +324,7 @@ public sealed class SessionsThroughInstanceTests
         var exit = await SessionsCommand.RunAsync(
             new SessionsAsk("archive") { Ids = ["s1a2b3c4"] }, World(new EmptyService(), home.Home, home.World("sessions")), output);
 
-        var said = SessionArchive.ArchiveSaid([new ArchiveOutcome("s1a2b3c4", ArchiveVerdict.Unknown)]);
+        var said = ConversationArchive.ArchiveSaid([new ArchiveOutcome("s1a2b3c4", ArchiveVerdict.Unknown)]);
         Assert.Equal(said.Code, exit);
         Assert.Equal(string.Concat(said.Out.Select(line => line + Environment.NewLine)), output.ToString());
         Assert.Equal("sessions: kept s1a2b3c4: no session here is s1a2b3c4." + Environment.NewLine, output.ToString());

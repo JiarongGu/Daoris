@@ -355,7 +355,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         if (placed.SessionId is not { } id) return new ChatStart(null, placed.Message);
         try
         {
-            new HelpConversations(context.Home).StartedFrom(id, record.Session, handed);
+            new ConversationFacts(context.Home).StartedFrom(id, record.Session, handed);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

@@ -57,7 +57,7 @@ public static class HelpBeyond
     {
         var notes = HelpPlaceNotes.Read(home, session);
         if (notes.Count == 0) return [];
-        var kept = new HelpConversations(home).Read(session);
+        var kept = new ConversationFacts(home).Read(session);
         var held = HelpFoci.Of(kept, workspace);
         var entries = new List<HelpBeyondEntry>();
         foreach (var note in notes)

@@ -53,7 +53,7 @@ public sealed class HelpBeyondTests : IDisposable
     [Fact]
     public void A_search_keeps_how_many_its_answer_found_and_answers_it_as_its_count()
     {
-        new HelpConversations(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
+        new ConversationFacts(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
         Noted(
             Line(Noon, "search", workspace: "Work", what: "release", found: 3),
             Line(Noon.AddSeconds(1), "search", workspace: "all", found: 0),
@@ -98,7 +98,7 @@ public sealed class HelpBeyondTests : IDisposable
     [Fact]
     public void Each_noted_place_beyond_the_focus_is_listed_with_its_act_and_what_it_named()
     {
-        new HelpConversations(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
+        new ConversationFacts(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
         Noted(
             Line(Noon, "search", workspace: "Work", what: "release"),
             Line(Noon.AddSeconds(1), "search", workspace: "Games", what: "release"),
@@ -120,7 +120,7 @@ public sealed class HelpBeyondTests : IDisposable
     [Fact]
     public void Each_place_is_judged_against_the_focus_held_when_it_was_noted()
     {
-        new HelpConversations(_home).Change("h1", kept => kept with
+        new ConversationFacts(_home).Change("h1", kept => kept with
         {
             Focus = Work,
             Foci = [Games, Work],
@@ -140,7 +140,7 @@ public sealed class HelpBeyondTests : IDisposable
     public void A_repository_named_in_two_workspaces_is_the_one_the_focus_holds()
     {
         RepoView[] twice = [.. Registry, new("engine", true, "C:/checkouts/engine-work", "Work")];
-        new HelpConversations(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
+        new ConversationFacts(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
         Noted(Line(Noon, "read", repository: "engine"));
 
         Assert.Empty(HelpBeyond.Of(_home, "h1", "Games", twice));

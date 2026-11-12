@@ -42,7 +42,6 @@ function Place({ first, route, landingOpen, ...props }: Partial<PlaceWorkflowPro
         route: choice.route ?? was.route,
         step: choice.route && choice.route !== was.route ? choice.step ?? null : choice.step === undefined ? was.step : choice.step,
       }))}
-      onAcceptGates={(answered) => answered.done()}
       onAcceptIntegration={(_request, answered) => answered.done()}
       onVerify={(_ask, answered) => answered.done()}
       editor={editor}

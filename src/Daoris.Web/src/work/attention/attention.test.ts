@@ -766,14 +766,14 @@ describe('a declaration owed acceptance, worded', () => {
     where: 'web', integration: { wait: 'declaration', repository: 'web', line: 'trunk', tip: '89abcdef0123456789abcdef0123456789abcdef', state: 'changed' },
   });
 
-  it('is titled by its repository, says what the blob is and whether integration goes on, offers no press and holds no work', () => {
+  it('is titled by its repository, says the checks and whether work goes on, offers no press and holds no work', () => {
     expect(words(unaccepted)).toMatchObject({
-      kind: 'integration', title: 'engine', where: 'engine', stands: false,
-      detail: '`daoris.gates.json` on main (`0123456`) declares an integration you have not accepted, so none of it runs. Read it on Setup and accept it.',
+      kind: 'integration', title: 'engine', where: 'engine',
+      detail: 'The checks in `daoris.gates.json` on main are not accepted, so none of them runs. Read what they are on Setup and accept them.',
     });
     expect(words(changed)).toMatchObject({
       title: 'web',
-      detail: '`daoris.gates.json` on trunk (`89abcde`) changed since you accepted it; integration goes on under the last accepted one. Read the change on Setup and accept it.',
+      detail: 'The checks in `daoris.gates.json` on trunk changed since you accepted them; work goes on under the ones you accepted. Read the change on Setup and accept it.',
     });
     for (const each of [unaccepted, changed]) expect(attentionActs(words(each))).toEqual([]);
     expect([unaccepted, changed].map((each) => attentionGroup(each))).toEqual(['word', 'word']);
@@ -783,8 +783,8 @@ describe('a declaration owed acceptance, worded', () => {
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
-      expect(words(unaccepted).detail).toBe('main 上的 `daoris.gates.json`（`0123456`）声明了你还没采纳的集成，所以其中的内容都不会被使用。请在配置里读一读并采纳它。');
-      expect(words(changed).detail).toBe('trunk 上的 `daoris.gates.json`（`89abcde`）自你采纳后已改动；集成仍按上次采纳的那份进行。请在配置里读一读改动并采纳它。');
+      expect(words(unaccepted).detail).toBe('main 上 `daoris.gates.json` 里的检查项还没有采纳，所以它们都不会运行。请在配置里读一读它们并采纳。');
+      expect(words(changed).detail).toBe('trunk 上 `daoris.gates.json` 里的检查项自你采纳后已改动；工作仍按你采纳过的那份进行。请在配置里读一读改动并采纳它。');
     } finally {
       await i18n.changeLanguage('en');
     }

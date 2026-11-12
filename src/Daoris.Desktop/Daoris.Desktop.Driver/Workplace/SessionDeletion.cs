@@ -49,8 +49,8 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     public async Task<DeleteOutcome> DeleteAsync(
         ServiceClient service, string id, string door, MachineLog? log, ISessionEventRemoval? events = null, CancellationToken ct = default)
     {
-        var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
-            .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+        var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         if (record is null) return new(id, DeleteVerdict.Unknown, $"No session here is `{id}`.");
 
         if (record.Teammate)
@@ -62,27 +62,54 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
             };
         }
 
-        var judged = await service.JudgeSessionDeleteAsync(id, ct).ConfigureAwait(false);
-        if (!judged.Taken) return Refused(id, judged);
+        // A conversation is deleted whole: every part goes, each judged first, and one refused keeps the rest.
+        var parts = Parts(record, records);
+        var trees = new SessionTrees(home);
+        foreach (var part in parts)
+        {
+            var judged = await service.JudgeSessionDeleteAsync(part.Id, ct).ConfigureAwait(false);
+            if (!judged.Taken) return Refused(part.Id, judged) with { Message = Whole(judged.Message, part.Id, id, parts.Count) };
+            if (MachineHalf(part, trees) is { } kept) return kept with { Message = Whole(kept.Message, part.Id, id, parts.Count) };
+        }
 
-        if (MachineHalf(record, new SessionTrees(home)) is { } kept) return kept;
-
-        var deleted = await service.DeleteSessionAsync(id, ct).ConfigureAwait(false);
-        if (!deleted.Taken) return Refused(id, deleted);
+        foreach (var part in parts)
+        {
+            var deleted = await service.DeleteSessionAsync(part.Id, ct).ConfigureAwait(false);
+            if (!deleted.Taken) return Refused(part.Id, deleted) with { Message = Whole(deleted.Message, part.Id, id, parts.Count) };
+        }
 
         // The one helper a clear also calls, so a delete takes every file a clear takes.
-        var files = new SessionHomeFiles(home, remover).Remove([id], events);
-        var stayed = files.Stayed[id];
+        var ids = parts.Select(part => part.Id).ToList();
+        var files = new SessionHomeFiles(home, remover).Remove(ids, events, [ConversationArchive.Of(record)]);
+        var stayed = ids.SelectMany(each => files.Stayed[each]).Distinct(StringComparer.Ordinal).ToList();
 
-        log?.Info("session.deleted", ("session", id), ("kind", KindOf(record)), ("door", door));
+        log?.Info("session.deleted", ("session", id), ("kind", KindOf(record)), ("door", door), ("parts", parts.Count));
         return new(id, DeleteVerdict.Deleted, stayed.Count == 0
-            ? $"Deleted session `{id}`: its record, and its words, transcript and files on this machine."
+            ? parts.Count == 1
+                ? $"Deleted session `{id}`: its record, and its words, transcript and files on this machine."
+                : $"Deleted session `{id}` and the {parts.Count - 1} other part{(parts.Count == 2 ? "" : "s")} of its conversation: their records, and their words, transcripts and files on this machine."
             : LeftOver(id, stayed))
         {
-            Removed = ["record", .. files.Went[id]],
+            Removed = ["record", .. ids.SelectMany(each => files.Went[each]).Distinct(StringComparer.Ordinal)],
             Stayed = stayed,
         };
     }
+
+    /// <summary>
+    /// What a delete of <paramref name="record"/> takes: every part of its conversation held here, oldest first, so the person is told how
+    /// many go before they press (<see cref="Parts(string, IReadOnlyList{SessionRecord})"/>).
+    /// </summary>
+    public static IReadOnlyList<SessionRecord> Parts(SessionRecord record, IReadOnlyList<SessionRecord> records)
+    {
+        var line = ConversationArchive.Of(record);
+        var held = records.Where(each => !each.Teammate && ConversationArchive.Of(each) == line)
+            .OrderBy(each => each.Created).ThenBy(each => each.Id, StringComparer.Ordinal).ToList();
+        return held.Count > 0 && !record.Teammate ? held : [record];
+    }
+
+    /// <summary>The refusal of one part, said as the conversation's: which part, of how many, and that nothing is deleted.</summary>
+    private static string Whole(string said, string part, string asked, int count) =>
+        count == 1 ? said : $"Session `{asked}` is one of {count} parts of its conversation, deleted whole; part `{part}` is kept: {said} Nothing was deleted.";
 
     /// <summary>
     /// A delete whose files the disk did not all let go of: which stayed, by the words for each name, and that they are
@@ -111,10 +138,10 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         SessionHomeFiles.Mark => ("its go-on mark", false),
         SessionHomeFiles.Choice => ("its choice of a new session", false),
         SessionHomeFiles.Spawn => ("its spawn files", true),
-        SessionHomeFiles.Help => ("its name and pin in Ask Daoris's history", false),
+        SessionHomeFiles.Help => ("what Ask Daoris kept of it", false),
         SessionHomeFiles.Held => ("its held words", true),
         SessionHomeFiles.Landing => ("its closed automatic landing", false),
-        SessionHomeFiles.Archived => ("its archive mark", false),
+        SessionHomeFiles.Facts => ("its name, pin and archive mark", true),
         // A name a later inventory adds is said as it is named.
         _ => ($"its {name}", false),
     };

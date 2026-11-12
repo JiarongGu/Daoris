@@ -30,6 +30,62 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening, page.FirstFailure };
     }
 
+    // Name a conversation, or clear its name with none: its first question is its title again. One route for every conversation of
+    // this machine's, Ask Daoris's and a session's, by any of its parts' ids: the name is its facts' (`ConversationFacts`), kept
+    // by the conversation's id.
+    [DriverRoute("CONVERSATION_RENAME", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CONVERSATION_RENAME", Session = "id")]
+    [Timeless("CONVERSATION_RENAME", "a conversation's name")]
+    [Publishes("CONVERSATION_RENAME", StateScopes.Sessions | StateScopes.Help, Session = "id")]
+    private async Task<object?> ConversationRenameAsync(ConversationRename press, CancellationToken cancellationToken)
+    {
+        // `help rename <id> "…"` or `--clear`, said in the verb's words (Ask Daoris's own verb).
+        if (press.Said)
+        {
+            var renamed = new HelpVerbAsk("rename") { Id = press.Id, Text = press.Name, Clear = press.Name is null };
+            return await SessionsVerbs.HelpSaidAsync(context, renamed, cancellationToken).ConfigureAwait(false);
+        }
+
+        var conversation = await ConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
+        var facts = new ConversationFacts(_loop.Home);
+        facts.Rename(conversation, press.Name);
+        return new { Session = press.Id, Conversation = conversation, facts.Read(conversation).Name };
+    }
+
+    // Pin a conversation to the top of its list, or unpin it; the same route for every conversation.
+    [DriverRoute("CONVERSATION_PIN", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CONVERSATION_PIN", Session = "id")]
+    [Timeless("CONVERSATION_PIN", "a conversation's pin")]
+    [Publishes("CONVERSATION_PIN", StateScopes.Sessions | StateScopes.Help, Session = "id")]
+    private async Task<object?> ConversationPinAsync(ConversationPin press, CancellationToken cancellationToken)
+    {
+        // `help pin <id>` and `unpin`, said in the verb's words.
+        if (press.Said)
+        {
+            var pin = new HelpVerbAsk(press.Pinned ? "pin" : "unpin") { Id = press.Id };
+            return await SessionsVerbs.HelpSaidAsync(context, pin, cancellationToken).ConfigureAwait(false);
+        }
+
+        var conversation = await ConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
+        var facts = new ConversationFacts(_loop.Home);
+        facts.Pin(conversation, press.Pinned, DateTimeOffset.UtcNow);
+        return new { Session = press.Id, Conversation = conversation, facts.Read(conversation).Pinned };
+    }
+
+    /// <summary>
+    /// The id of the conversation a record of this machine's is a part of, judged from the records as the service answers them;
+    /// otherwise the sentence why not, which the page says where it is pressed. A teammate's record is read only here.
+    /// </summary>
+    private async Task<string> ConversationOfAsync(string id, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var record = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false))
+            .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        if (record is null) throw new DriverException($"no conversation here is `{id}` any more.");
+        if (record.Teammate) throw new DriverException($"`{id}` is a teammate's record, which this machine only reads.");
+        return ConversationArchive.Of(record);
+    }
+
     // A conversation in a repository. The record is the service's and the lock is the
     // ledger's; what only this side can do is put a harness behind it — a process on this
     // machine, which never leaves it.

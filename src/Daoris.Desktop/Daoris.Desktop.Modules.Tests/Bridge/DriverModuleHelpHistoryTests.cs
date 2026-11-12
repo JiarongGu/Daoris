@@ -14,11 +14,11 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
 {
-    private static JsonObject Record(string id, string state = "completed", string repository = "daoris:help") => new()
+    private static JsonObject Record(string id, string state = "completed", string repository = "daoris:help", string? line = null) => new()
     {
         ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["door"] = "claude-code-acp",
         ["created"] = "2026-10-05T09:00:00Z", ["updated"] = "2026-10-05T09:05:00Z", ["deletable"] = state is not "working",
-        ["said"] = new JsonArray(),
+        ["said"] = new JsonArray(), ["line"] = line,
     };
 
     private async Task<(DriverLoop Loop, DriverModule Module, Ledger Ledger)> UpAsync(params JsonObject[] records)
@@ -146,38 +146,47 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Said(loop, "h1", "what is a workspace?", "A circle.");
         Said(loop, "h2", "how do I land?", "Setup.");
 
-        var named = await AnswerAsync(module, "HELP_RENAME", new { id = "h1", name = " Workspaces " });
-        var pinned = await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = true });
+        var named = await AnswerAsync(module, "CONVERSATION_RENAME", new { id = "h1", name = " Workspaces " });
+        var pinned = await AnswerAsync(module, "CONVERSATION_PIN", new { id = "h1", pinned = true });
 
         Assert.Equal("Workspaces", named.GetProperty("name").GetString());
         Assert.Equal(JsonValueKind.String, pinned.GetProperty("pinned").ValueKind);
         var first = (await AnswerAsync(module, "HELP_CONVERSATIONS", new { })).GetProperty("conversations")[0];
         Assert.Equal(("h1", "Workspaces"), (first.GetProperty("session").GetString(), first.GetProperty("title").GetString()));
-        Assert.True(File.Exists(new HelpConversations(loop.Home).PathOf("h1")));
+        Assert.Equal("Workspaces", new ConversationFacts(loop.Home).Read("h1").Name);
 
-        await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false });
-        var cleared = await AnswerAsync(module, "HELP_RENAME", new { id = "h1" });
+        await AnswerAsync(module, "CONVERSATION_PIN", new { id = "h1", pinned = false });
+        var cleared = await AnswerAsync(module, "CONVERSATION_RENAME", new { id = "h1" });
         Assert.Equal(JsonValueKind.Null, cleared.GetProperty("name").ValueKind);
-        Assert.Equal(HelpKept.None, new HelpConversations(loop.Home).Read("h1"));
+        Assert.Equal(HelpKept.None, new ConversationFacts(loop.Home).Read("h1"));
     }
 
-    /// <summary>
-    /// Only Ask Daoris's own conversations of this machine's are named, pinned or started from: a repository's chat, a teammate's
-    /// record and one no record holds are refused in a sentence, and nothing is kept. A name that is not one short line is too.
-    /// </summary>
-    [Theory]
-    [InlineData("HELP_RENAME", "c1", "is no Ask Daoris conversation of this machine's")]
-    [InlineData("HELP_PIN", "laptop/h9", "is no Ask Daoris conversation of this machine's")]
-    [InlineData("HELP_PIN", "n0b0dy00", "no conversation here is `n0b0dy00`")]
-    public async Task Any_other_session_is_refused_and_nothing_is_kept(string route, string id, string why)
+    /// <summary>The one rename and pin pair takes any conversation of this machine's by its id: a repository's chat as Ask Daoris's, a later part by its conversation's.</summary>
+    [Fact]
+    public async Task The_same_pair_names_and_pins_a_repositorys_chat_by_its_conversations_id()
     {
-        var (loop, module, _) = await UpAsync(Record("h1"), Record("c1", repository: "engine"), Record("laptop/h9"));
+        var (loop, module, _) = await UpAsync(Record("c1", repository: "engine"), Record("c2", repository: "engine", line: "c1"));
+
+        await AnswerAsync(module, "CONVERSATION_RENAME", new { id = "c2", name = "Port work" });
+        await AnswerAsync(module, "CONVERSATION_PIN", new { id = "c1", pinned = true });
+
+        var kept = new ConversationFacts(loop.Home).Read("c1");
+        Assert.Equal(("Port work", true), (kept.Name, kept.Pinned is not null));
+        Assert.Equal(HelpKept.None, new ConversationFacts(loop.Home).Read("c2"));
+    }
+
+    /// <summary>A teammate's record and one no record holds are refused in a sentence, and nothing is kept; a name that is not one short line is too.</summary>
+    [Theory]
+    [InlineData("CONVERSATION_PIN", "laptop/h9", "teammate's record")]
+    [InlineData("CONVERSATION_PIN", "n0b0dy00", "no conversation here is `n0b0dy00`")]
+    public async Task A_teammates_record_or_none_is_refused_and_nothing_is_kept(string route, string id, string why)
+    {
+        var (loop, module, _) = await UpAsync(Record("h1"), Record("laptop/h9"));
 
         var refusal = await RefusalAsync(module, route, new { id, name = "x", pinned = true });
 
         Assert.Contains(why, refusal);
-        var sessions = DaorisHome.Entry(loop.Home, HomeEntry.Sessions);
-        Assert.True(!Directory.Exists(sessions) || !Directory.EnumerateFiles(sessions, "*" + HelpConversations.Suffix).Any());
+        Assert.Equal(HelpKept.None, new ConversationFacts(loop.Home).Read(id));
     }
 
     [Fact]
@@ -185,7 +194,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     {
         var (_, module, _) = await UpAsync(Record("h1"));
 
-        var refusal = await RefusalAsync(module, "HELP_RENAME", new { id = "h1", name = new string('x', 81) });
+        var refusal = await RefusalAsync(module, "CONVERSATION_RENAME", new { id = "h1", name = new string('x', 81) });
 
         Assert.Contains("at most 80 characters", refusal);
     }
@@ -200,16 +209,16 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         var (loop, module, ledger) = await UpAsync(Record("h1"), Record("h2"));
         Said(loop, "h1", "what is a workspace?", "A circle.");
         Said(loop, "h2", "how do I land?", "Setup.");
-        var kept = new HelpConversations(loop.Home);
+        var kept = new ConversationFacts(loop.Home);
         kept.Rename("h1", "Workspaces");
         kept.Rename("h2", "Landing");
 
         var deleted = await AnswerAsync(module, "SESSION_DELETE", new { id = "h1" });
 
         Assert.Equal("h1", deleted.GetProperty("deleted").GetString());
-        Assert.Contains("help", deleted.GetProperty("removed").EnumerateArray().Select(name => name.GetString()));
+        Assert.Contains("facts", deleted.GetProperty("removed").EnumerateArray().Select(name => name.GetString()));
         Assert.Equal(["DELETE /api/sessions/h1"], ledger.Deletes);
-        Assert.False(File.Exists(kept.PathOf("h1")));
+        Assert.Equal(HelpKept.None, kept.Read("h1"));
         Assert.False(File.Exists(loop.Events.PathOf("h1")));
         Assert.Equal("Landing", kept.Read("h2").Name);
     }
@@ -281,9 +290,9 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
             ("HELP_CONVERSATIONS", new { said = true }, ["list"]),
             ("HELP_CONVERSATIONS", new { q = "remote", json = true, said = true }, ["list", "--search", "remote", "--json"]),
             ("HELP_CONVERSATIONS", new { workspace = "games", said = true }, ["list", "--workspace", "games"]),
-            ("HELP_RENAME", new { id = "c1", name = "x", said = true }, ["rename", "c1", "x"]),
-            ("HELP_RENAME", new { id = "h1", name, said = true }, ["rename", "h1", name]),
-            ("HELP_PIN", new { id = "n0b0dy00", pinned = true, said = true }, ["pin", "n0b0dy00"]),
+            ("CONVERSATION_RENAME", new { id = "c1", name = "x", said = true }, ["rename", "c1", "x"]),
+            ("CONVERSATION_RENAME", new { id = "h1", name, said = true }, ["rename", "h1", name]),
+            ("CONVERSATION_PIN", new { id = "n0b0dy00", pinned = true, said = true }, ["pin", "n0b0dy00"]),
             ("SESSION_DELETE", new { id = "c1", help = true, said = true }, ["delete", "c1", "--yes"]),
         })
         {
@@ -294,8 +303,8 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         }
 
         Assert.Empty(ledger.Deletes);
-        Assert.Equal(HelpKept.None, new HelpConversations(loop.Home).Read("h1"));
-        Assert.False((await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false })).TryGetProperty("said", out _));
+        Assert.Equal(HelpKept.None, new ConversationFacts(loop.Home).Read("h1"));
+        Assert.False((await AnswerAsync(module, "CONVERSATION_PIN", new { id = "h1", pinned = false })).TryGetProperty("said", out _));
     }
 
     /// <summary>A terminal's rename, pin, unpin and delete run here, kept and deleted as the window's are, in the verb's words.</summary>
@@ -305,12 +314,12 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         var (loop, module, ledger) = await UpAsync(Record("h1"), Record("h2"));
         Said(loop, "h1", "what is a workspace?", "A circle.");
 
-        Assert.Equal(("help: h1 is named “Workspaces”.", 0), SaidOf(await AnswerAsync(module, "HELP_RENAME", new { id = "h1", name = "Workspaces", said = true })));
-        Assert.Equal(("help: h1 is pinned to the top of the list.", 0), SaidOf(await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = true, said = true })));
-        Assert.Equal("Workspaces", new HelpConversations(loop.Home).Read("h1").Name);
-        Assert.NotNull(new HelpConversations(loop.Home).Read("h1").Pinned);
-        Assert.Equal(("help: h1 is unpinned.", 0), SaidOf(await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false, said = true })));
-        Assert.Equal(("help: h1 is called by its first question again.", 0), SaidOf(await AnswerAsync(module, "HELP_RENAME", new { id = "h1", said = true })));
+        Assert.Equal(("help: h1 is named “Workspaces”.", 0), SaidOf(await AnswerAsync(module, "CONVERSATION_RENAME", new { id = "h1", name = "Workspaces", said = true })));
+        Assert.Equal(("help: h1 is pinned to the top of the list.", 0), SaidOf(await AnswerAsync(module, "CONVERSATION_PIN", new { id = "h1", pinned = true, said = true })));
+        Assert.Equal("Workspaces", new ConversationFacts(loop.Home).Read("h1").Name);
+        Assert.NotNull(new ConversationFacts(loop.Home).Read("h1").Pinned);
+        Assert.Equal(("help: h1 is unpinned.", 0), SaidOf(await AnswerAsync(module, "CONVERSATION_PIN", new { id = "h1", pinned = false, said = true })));
+        Assert.Equal(("help: h1 is called by its first question again.", 0), SaidOf(await AnswerAsync(module, "CONVERSATION_RENAME", new { id = "h1", said = true })));
 
         var deleted = SaidOf(await AnswerAsync(module, "SESSION_DELETE", new { id = "h1", help = true, said = true }));
         Assert.Equal(0, deleted.Code);
@@ -323,7 +332,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     public async Task The_history_waits_for_the_loop()
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "HELP_CONVERSATIONS", new { }));
-        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "HELP_PIN", new { id = "h1", pinned = true }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "CONVERSATION_PIN", new { id = "h1", pinned = true }));
     }
 
     /// <summary>
