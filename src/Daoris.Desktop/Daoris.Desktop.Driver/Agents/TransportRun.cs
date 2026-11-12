@@ -542,13 +542,22 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         {
             // 🔴 One going on goes on in its own conversation: resumed by the id kept for it, never a new session, which
             // would be a new conversation under the same record.
-            await ProtocolOpen.BeginAsync(session, protocol.Cwd, conversation, ct, protocol.Connectors).ConfigureAwait(false);
+            var open = ProtocolOpen.BeginAsync(session, protocol.Cwd, conversation, ct, protocol.Connectors);
+            try
+            {
+                await open.WaitAsync(protocol.OpenBound, ct).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                throw new OpeningPastBound(protocol.OpenBound);
+            }
+
             protocol.Opened?.Invoke();
         }
         catch (Exception error)
         {
             failed = error;
-            if (error is not OperationCanceledException) Sink().Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Open)));
+            if (error is not OperationCanceledException and not OpeningPastBound) Sink().Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Open)));
             // A session that never opened is no session: nothing closes it, and nothing more is said to it.
             Session = null;
             protocol.Unopened?.Invoke(error);
