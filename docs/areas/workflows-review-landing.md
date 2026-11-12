@@ -39,7 +39,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
-   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192)
+   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
+   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
+   repository (the look says the checks changed in one sentence), by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
+   --accept|--withdraw [--plan]`) in restricted mode, shown as checks added, removed and changed by name with their commands
+   (`DeclarationChange`), the row ending at the press. (D283)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A
    choice is refused (`place-kind`), nothing written, where a department it reaches cannot run one of its steps by its place's
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a

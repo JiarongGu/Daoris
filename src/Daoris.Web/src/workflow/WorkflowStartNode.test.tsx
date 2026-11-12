@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { GATES_CHANGED, NO_VERIFICATION, ROUTED, START, WORKSPACE } from './fixtures';
-import { WorkflowStartNode } from './WorkflowStartNode';
 import { WorkflowTab } from './WorkflowTab';
 
 // A Workflow tab draws its start node first, each route (the default,
@@ -43,7 +42,7 @@ describe("a Workflow tab's start node", () => {
     render(<WorkflowTab page="repository" name="engine" current={ROUTED} />);
 
     const landed = node('Landed work');
-    expect(landed).toHaveTextContent('Its gates run unasked as you accepted them, at blob 3b18e51 on main\'s tip aa11bb2.');
+    expect(landed).toHaveTextContent('Its gates run unasked as you accepted them, from main.');
     expect(landed).toHaveTextContent('A verification you start here runs its checks; landed work is not verified by itself yet.');
     expect(within(landed).queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
@@ -80,22 +79,12 @@ describe("a Workflow tab's start node", () => {
     expect(screen.getByRole('button', { name: '验证…' })).toBeInTheDocument();
   });
 
-  it("holds a changed declaration for the person's Accept the gates, showing what they accept, and the press goes out", async () => {
-    const onAcceptGates = vi.fn();
-    render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} onAcceptGates={onAcceptGates} />);
+  // The place's Gates holds the declaration and its one acceptance, so the start node says where the route stands and draws neither.
+  it("says a changed declaration waits and draws neither the declaration nor an acceptance, which are the page's Gates", () => {
+    render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} />);
 
     const landed = node('Landed work');
-    expect(landed).toHaveTextContent('The gates changed since you accepted them: nothing runs until you accept them again.');
-    expect(within(landed).getByLabelText("daoris.gates.json at main's tip aa11bb2")).toHaveTextContent('"run": "npm test"');
-    await userEvent.click(within(landed).getByRole('button', { name: 'Accept the gates' }));
-    expect(onAcceptGates).toHaveBeenCalledOnce();
-  });
-
-  // A place's Gates holds the declaration and its acceptance, so its start node says where the route stands and draws neither.
-  it("draws neither the declaration nor Accept the gates where the page's Gates are apart, and keeps what the route says", () => {
-    render(<WorkflowStartNode start={GATES_CHANGED} page="repository" scope={{ repository: 'engine', workspace: 'aurora' }} onAccept={vi.fn()} gatesApart />);
-
-    expect(node('Landed work')).toHaveTextContent('The gates changed since you accepted them');
+    expect(landed).toHaveTextContent('The gates changed since you accepted them: nothing runs until you accept them again, under Gates on its Setup page.');
     expect(screen.queryByLabelText("daoris.gates.json at main's tip aa11bb2")).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
@@ -121,7 +110,7 @@ describe("a Workflow tab's start node", () => {
       ...WORKSPACE, start: { ...START, landed: { ...START.landed, level: 'workspace-landed', gates: null, state: 'unread', tip: null } },
     }} />);
 
-    expect(node('Landed work')).toHaveTextContent("Its gates are accepted repository by repository, at each line's tip, on each repository's Workflow tab.");
+    expect(node('Landed work')).toHaveTextContent("Its gates are accepted repository by repository, under Gates on each repository's Setup page.");
     expect(start()).toHaveTextContent('as the workspace aurora chooses');
   });
 
@@ -133,12 +122,11 @@ describe("a Workflow tab's start node", () => {
 
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} onAcceptGates={() => {}} />);
+    render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} />);
 
     expect(screen.getByRole('heading', { name: '工作在这里如何分流' })).toBeInTheDocument();
     const list = screen.getByRole('list', { name: '工作在这里如何分流' });
     expect(within(list).getByRole('listitem', { name: '起点' })).toBeInTheDocument();
-    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查项在你采纳之后变了：在你再次采纳之前，什么都不会运行。');
-    expect(screen.getByRole('button', { name: '采纳这些检查项' })).toBeInTheDocument();
+    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查项在你采纳之后变了：在你再次采纳之前，什么都不会运行，请在它配置页的检查项里采纳。');
   });
 });

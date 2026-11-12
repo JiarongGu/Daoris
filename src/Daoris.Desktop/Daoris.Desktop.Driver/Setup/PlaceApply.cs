@@ -369,19 +369,9 @@ public static class PlaceApplies
     /// <summary>A change the configuration's edit makes: not the copy saved before it, nor the set-up press.</summary>
     private static bool Written(PlaceChange change) => change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey);
 
-    /// <summary>The acceptance made through its own door's edit: the landed route's, with the gates it verifies by, or the integration's blob.</summary>
-    private static DriverConfig Accepted(string home, DriverConfig config, PlaceAccept accept, string workspace)
-    {
-        if (accept.Purpose == PlacePlans.Integration) return config.WithIntegrationGates(accept.Repository, accept.Blob);
-        var landed = WorkflowSelection.ResolveLanded(config, accept.Repository, workspace);
-        var found = landed.Workflow == WorkflowSelection.Current ? null : WorkflowPorts.Store(home).Load(landed.Workflow);
-        return WorkflowSelection.Apply(config, new WorkflowUse(landed.Workflow, accept.Repository, null, null)
-        {
-            Landed = true,
-            Gates = found?.Read.Verifies == true ? accept.Blob : null,
-            Pipeline = found?.Read.Pipeline,
-        });
-    }
+    /// <summary>The acceptance of the repository's declaration, one for every purpose it serves (<see cref="DeclarationAcceptance"/>).</summary>
+    private static DriverConfig Accepted(string home, DriverConfig config, PlaceAccept accept, string workspace) =>
+        DeclarationAcceptance.Accept(home, config, accept.Repository, workspace, accept.Blob);
 
     /// <summary>
     /// Step 6, one repository's adoption quest: found by its key where it has been asked before, else asked now, as the set-up press asks it, with the

@@ -15,7 +15,7 @@ vi.mock('@shenora/react', async (original) => ({
 
 import { waitFor } from '@testing-library/react';
 import { keys } from '../../data/queries';
-import { acceptGatesPress, useAcceptIntegration, useRunNodeWord, useSetLanded, useVerify, useWorkflowCurrent } from './workflow';
+import { useAcceptIntegration, useRunNodeWord, useVerify, useWorkflowCurrent } from './workflow';
 
 // The place's chart asks the effective graph of the route the person chose, and a read of another route is another answer.
 describe("a repository's Current asked for a route", () => {
@@ -61,27 +61,6 @@ describe("the person's verification of a branch or a commit", () => {
     const refused = await result.current.mutateAsync({ repository: 'engine', commit: 'a1b2c3d' });
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_VERIFY', { payload: { repository: 'engine', commit: 'a1b2c3d' } });
     expect([refused.refused, refused.message]).toEqual(['refused', 'verify: the gates are not accepted yet.']);
-  });
-});
-
-// AGENTSPLACE1a0: *Accept the gates* sends the blob the page showed, so the driver can refuse a tip that moved.
-describe("the person's Accept the gates", () => {
-  afterEach(() => invoke.mockReset());
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
-  );
-
-  it('builds the press from the route and the tip it showed, and sends the blob', async () => {
-    const tip = { line: 'main', commit: 'aa11bb2', gates: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' };
-    expect(acceptGatesPress('engine', { workflow: 'web-verify', tip }))
-      .toEqual({ repository: 'engine', workflow: 'web-verify', gates: tip.gates });
-    // A tip not read sends no blob.
-    expect(acceptGatesPress('engine', { workflow: 'web-verify', tip: null })).toEqual({ repository: 'engine', workflow: 'web-verify' });
-
-    invoke.mockResolvedValueOnce({ start: null, lowered: [] });
-    const { result } = renderHook(() => useSetLanded(), { wrapper });
-    await result.current.mutateAsync(acceptGatesPress('engine', { workflow: 'web-verify', tip }));
-    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_LANDED', { payload: { repository: 'engine', workflow: 'web-verify', gates: tip.gates } });
   });
 });
 

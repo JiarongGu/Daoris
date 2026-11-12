@@ -1,153 +1,77 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Answered } from '../../work/InlineConfirm';
-import { GATES_CHANGED, INTEGRATION_ACCEPTED, INTEGRATION_CHANGED, INTEGRATION_UNACCEPTED, START } from '../fixtures';
+import { GATES_CHANGED, INTEGRATION_ACCEPTED, INTEGRATION_CHANGED, START } from '../fixtures';
 import { PlaceGates } from './PlaceGates';
 
-// Gates shows the declaration once, with two choices, each naming its purpose, blob and standing,
-// and one confirmation applying the ones chosen, each by the blob that is read. A molecule: every state is reached by its props.
+// Gates shows the line's declaration as one acceptance for every purpose it serves: what changed in plain words, one press, one withdrawal.
+// A molecule: every state is reached by its props.
 
 const landedWaits = GATES_CHANGED.landed;
 
-/** An acceptance that answers as the driver does: kept, or refused in a sentence. */
-const keeps = () => vi.fn((answered: Answered) => answered.done());
-const keepsIntegration = () => vi.fn((_request: unknown, answered: Answered) => answered.done());
+const keeps = () => vi.fn((_request: unknown, answered: Answered) => answered.done());
 
 // The language goes back inside `act`, with the page still drawn.
 afterEach(async () => { await act(async () => { await i18n.changeLanguage('en'); }); });
 
 describe("a place's Gates", () => {
   const draw = (extra: Partial<Parameters<typeof PlaceGates>[0]> = {}) => {
-    const landed = keeps();
-    const integration = keepsIntegration();
-    render(<PlaceGates landed={landedWaits} integration={INTEGRATION_CHANGED} onAcceptLanded={landed} onAcceptIntegration={integration} {...extra} />);
-    return { landed, integration };
-  };
-  const row = (purpose: 'landed' | 'integration') => document.querySelector(`[data-acceptance="${purpose}"]`) as HTMLElement;
-
-  it('shows each declaration once, names each purpose, the blob and the standing it leaves, and says a changed landed gate stops verification', () => {
-    draw();
-
-    expect(screen.getAllByLabelText("daoris.gates.json at main's tip aa11bb2")).toHaveLength(2);
-
-    expect(within(row('landed')).getByText('Accept for landed verification')).toBeInTheDocument();
-    expect(row('landed')).toHaveTextContent('verification stops until you accept it again');
-    expect(row('landed')).toHaveTextContent('Blob 0e5751c at main\'s tip aa11bb2');
-    expect(within(row('integration')).getByText('Accept for integration')).toBeInTheDocument();
-    // Changed integration goes on under the last accepted blob.
-    expect(row('integration')).toHaveTextContent('integration goes on under blob 3b18e51 until you accept this one');
-  });
-
-  const tickBoth = async () => {
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for landed verification' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
+    const accept = keeps();
+    render(<PlaceGates landed={landedWaits} integration={INTEGRATION_CHANGED} onAcceptIntegration={accept} {...extra} />);
+    return accept;
   };
 
-  it('applies both choices on one confirmation, each by the blob it read', async () => {
-    const { landed, integration } = draw();
-
-    await tickBoth();
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-
-    expect(landed).toHaveBeenCalledOnce();
-    expect(integration).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
-  });
-
-  it('applies only the ones ticked', async () => {
-    const { landed, integration } = draw();
-
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-    expect(landed).not.toHaveBeenCalled();
-    expect(integration).toHaveBeenCalledOnce();
-  });
-
-  it('starts with nothing ticked, so nothing is offered to confirm until the person ticks', async () => {
+  it('says what changed as checks added, removed and changed by name with their commands, and no blob id', () => {
     draw();
 
-    expect(screen.getByRole('checkbox', { name: 'Accept for landed verification' })).not.toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'Accept for integration' })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Accept the chosen…' })).toBeDisabled();
-    expect(screen.getByText('Choose what to accept, then confirm.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
-    expect(screen.getByRole('button', { name: 'Accept the chosen…' })).toBeEnabled();
+    expect(screen.getByText(/Added/)).toHaveTextContent('Added comments: node tools/comment-gate.mjs');
+    expect(screen.getByText(/Removed/)).toHaveTextContent('Removed old: echo old');
+    expect(screen.getByText(/Changed/)).toHaveTextContent('Changed cli: now npm test (it ran npm run verify)');
+    expect(document.body.textContent).not.toMatch(/[0-9a-f]{7,}/);
   });
 
-  it('clears a tick whose blob changed since, saying so, and accepts nothing it did not read', async () => {
-    const landed = keeps();
-    const integration = keepsIntegration();
-    const props = { landed: landedWaits, onAcceptLanded: landed, onAcceptIntegration: integration };
-    const { rerender } = render(<PlaceGates {...props} integration={INTEGRATION_CHANGED} />);
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
-    expect(screen.getByRole('checkbox', { name: 'Accept for integration' })).toBeChecked();
-
-    rerender(<PlaceGates {...props} integration={{ ...INTEGRATION_CHANGED, tip: { ...INTEGRATION_CHANGED.tip!, gates: 'ffffffffffffffffffffffffffffffffffffffff' } }} />);
-
-    expect(screen.getByRole('checkbox', { name: 'Accept for integration' })).not.toBeChecked();
-    expect(screen.getByRole('status')).toHaveTextContent('Accept for integration: the declaration changed since you chose it, so the choice was cleared.');
-    expect(screen.getByRole('button', { name: 'Accept the chosen…' })).toBeDisabled();
-  });
-
-  it("says a refusal for its own purpose and leaves the other's acceptance standing", async () => {
-    const landed = keeps();
-    const integration = vi.fn((_request: unknown, answered: Answered) => answered.refused('engine\'s line moved: read the declaration again.'));
-    render(<PlaceGates landed={landedWaits} integration={INTEGRATION_CHANGED} onAcceptLanded={landed} onAcceptIntegration={integration} />);
-
-    await tickBoth();
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-
-    expect(landed).toHaveBeenCalledOnce();
-    expect(await screen.findByRole('alert')).toHaveTextContent("Accept for integration: engine's line moved: read the declaration again.");
-    // The confirmation stays, so the refused one can be pressed again.
-    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
-  });
-
-  it('withdraws the integration acceptance on its own, never the landed route', async () => {
-    const { landed, integration } = draw();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Withdraw the integration acceptance' }));
-
-    expect(integration).toHaveBeenCalledWith({ clear: true }, expect.anything());
-    expect(landed).not.toHaveBeenCalled();
-  });
-
-  it('offers no choice for what stands accepted, and draws no declaration', () => {
-    draw({ landed: START.landed, integration: INTEGRATION_ACCEPTED });
+  it('is one acceptance and one press for every purpose: no tick, no second confirmation', async () => {
+    const accept = draw();
 
     expect(screen.queryByRole('checkbox')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Accept the chosen…' })).toBeNull();
-    expect(row('landed')).toHaveTextContent('Accepted: blob 3b18e51 at main\'s tip aa11bb2.');
-    expect(row('integration')).toHaveTextContent('Accepted: blob 3b18e51 at main\'s tip aa11bb2.');
-    expect(document.querySelector('pre')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+
+    expect(accept).toHaveBeenCalledOnce();
+    expect(accept).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
   });
 
-  it('draws a declaration two choices share a single time', () => {
-    const shared = '{\n  "gates": []\n}';
-    draw({
-      landed: { ...landedWaits, declaration: shared },
-      integration: { ...INTEGRATION_UNACCEPTED, declaration: shared },
-    });
+  it('is asked for where only the landed route waits, with the same one press', async () => {
+    const accept = draw({ integration: INTEGRATION_ACCEPTED, landed: { ...landedWaits, change: INTEGRATION_CHANGED.change } });
 
-    expect(document.querySelectorAll('pre')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+
+    expect(accept).toHaveBeenCalledOnce();
   });
 
-  it('offers no choice a route without verification does not have, and says when nothing asks', () => {
+  it("says the driver's refusal under the press", async () => {
+    const accept = vi.fn((_request: unknown, answered: Answered) => answered.refused("engine's line moved: read the declaration again."));
+    draw({ onAcceptIntegration: accept });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("engine's line moved: read the declaration again.");
+  });
+
+  it('withdraws the one acceptance', async () => {
+    const accept = draw({ integration: INTEGRATION_ACCEPTED, landed: START.landed });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Withdraw' }));
+
+    expect(accept).toHaveBeenCalledWith({ clear: true }, expect.anything());
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+  });
+
+  it('says when nothing asks', () => {
     draw({ landed: { workflow: 'current', level: 'current', gates: null, state: 'none' }, integration: null });
 
-    expect(row('landed')).toBeNull();
     expect(screen.getByText(/No gates here ask for your acceptance/)).toBeInTheDocument();
-  });
-
-  it('offers no press where the page is handed none', () => {
-    draw({ onAcceptLanded: undefined, onAcceptIntegration: undefined });
-
-    expect(screen.queryByRole('checkbox')).toBeNull();
-    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('says its words in Chinese', async () => {
@@ -155,7 +79,7 @@ describe("a place's Gates", () => {
     draw();
 
     expect(screen.getByRole('heading', { name: '检查项' })).toBeInTheDocument();
-    expect(within(row('landed')).getByText('采纳，用于落地验证')).toBeInTheDocument();
-    expect(within(row('integration')).getByText('采纳，用于集成')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '采纳' })).toBeInTheDocument();
+    expect(screen.getByText(/新增/)).toHaveTextContent('新增 comments：node tools/comment-gate.mjs');
   });
 });

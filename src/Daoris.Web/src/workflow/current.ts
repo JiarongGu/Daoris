@@ -84,11 +84,28 @@ export interface WorkflowLanded {
   problem?: string | null;
   /** The declaration at the tip, where it waits to be accepted. */
   declaration?: string | null;
+  /** What the tip's declaration changed against the accepted one, where it waits. */
+  change?: DeclarationChange | null;
+}
+
+/** One check of a declaration: its name and the command it runs; `was` is the command a changed check ran before. */
+export interface DeclaredCheck {
+  name: string;
+  run: string;
+  was?: string | null;
+}
+
+/** What a line's declaration changed against the accepted one, read from the two texts: checks by name, and the other parts' keys. */
+export interface DeclarationChange {
+  added: DeclaredCheck[];
+  removed: DeclaredCheck[];
+  changed: DeclaredCheck[];
+  other: string[];
 }
 
 /**
- * A repository's integration declaration and the person's acceptance of it: the
- * `daoris.gates.json` `integration` object at the line's tip, accepted by its blob on its own, apart from the landed route's gates.
+ * A repository's integration declaration and the person's acceptance of it: the `daoris.gates.json` at the line's tip, accepted by its
+ * blob once for every purpose it serves (integration and the landed route's verification).
  * `state` is `accepted`, `changed`, `unaccepted` or `unread`; one a newer driver names is said as recorded.
  */
 export interface WorkflowIntegration {
@@ -99,6 +116,8 @@ export interface WorkflowIntegration {
   problem?: string | null;
   /** The declaration at the tip, only where it waits to be accepted (`changed` or `unaccepted`). */
   declaration?: string | null;
+  /** What the tip's declaration changed against the accepted one, only where it waits. */
+  change?: DeclarationChange | null;
 }
 
 /** The start node a Workflow tab draws first: its routes, the landed route, and the verification workflows saved here. */

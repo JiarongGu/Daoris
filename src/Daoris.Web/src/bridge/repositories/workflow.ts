@@ -58,16 +58,7 @@ export const useWorkflowCurrents = (repositories: readonly string[]) => {
 export type LandedAnswer = { start: WorkflowStart; lowered: string[] };
 
 /**
- * What *Accept the gates* sends (AGENTSPLACE1a0): the route's own workflow again, and the blob of the declaration the page showed at
- * the line's tip, so the driver refuses `moved` a tip the person did not read. A tip not read sends no blob, as before.
- */
-export const acceptGatesPress = (repository: string, landed: { workflow: string; tip?: { gates: string } | null }) => ({
-  repository, workflow: landed.workflow, ...(landed.tip?.gates ? { gates: landed.tip.gates } : {}),
-});
-
-/**
- * The person's press on the landed route: Setup's route row and the Workflow tab's
- * *Accept the gates*. `workflow` is a verification workflow's id, `current` for no verification, or null for the workspace's again;
+ * The person's press on the landed route: Setup's route row. `workflow` is a verification workflow's id, `current` for no verification, or null for the workspace's again;
  * for a repository naming one, the driver reads the `daoris.gates.json` at its line's tip and accepts it by its blob. Every workflow
  * answer is asked again after it, since each page's start node reads the route.
  */
