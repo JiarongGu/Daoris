@@ -232,9 +232,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
     unfinished), failed (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done
-    (completed, stopped, declined, stood down). A done whose own record says work is left is never done: the quest's newest session
-    is needs you with reason `left` where its answers departed from a requirement, accepted or not (`QuestLeft`), or where its run
-    holds a step failed and kept for the person after the done (`PersonWaits.Left`). Each row carries `state` and the finer
+    (completed, stopped, declined, stood down). A done whose own record says work is left is never the plain done: the quest's newest
+    session is needs you with reason `left` where its answers departed from a requirement the person has not yet accepted
+    (`QuestLeft.Waits`), or where its run holds a step failed and kept for the person after the done, no word on it
+    (`PersonWaits.Left`); once the person accepted the departure it is done with reason `part-left` (`QuestLeft.Accepted`), their
+    word on it. Each row carries `state` and the finer
     `reason`; *Archived* folds a done or failed session alone, and a left one is the person's to set aside. Each
     row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first
     of needs you, working and pending any part is in, needs you and working where a co-worker serving a part is, else as its

@@ -104,7 +104,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
     checked as kept and again as applied against the work read afresh, either miss `moved`. `changes` may name the part they go
-    to, else the newest. *Stop…* stops the run before the Accept and *Stop what follows…* after it, promising no undo. An Accept
+    to, else the newest. *Stop…* stops the run before the Accept and *Stop what follows…* after it, promising no undo. A failed step
+    has the same stop, one door for the window, Ask Daoris and the terminal: it ends the step and, nothing else standing, its run as
+    `stopped` with the person's words, also where the run had ended failed at that step (the stop governs it again to end it). A
+    step the record holds ready, active or invalidated in a run that ended reads not reached, never working
+    (`EndedSteps`, read at the drawing and never stored). An Accept
     waits for its pass up to 20 seconds, never behind a tree's hold, that pass judging the pressed run first. A quest bound to a
     closure graph is closed by that graph. (D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (D190)

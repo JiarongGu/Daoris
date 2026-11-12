@@ -18,6 +18,16 @@ public sealed class QuestLeftTests
         Assert.True(QuestLeft.Has(Quest));
     }
 
+    [Fact]
+    public void A_departure_waits_on_the_person_until_they_accept_it_and_is_their_word_after()
+    {
+        Assert.True(QuestLeft.Waits(Quest with { Held = true }));
+        Assert.False(QuestLeft.Accepted(Quest with { Held = true }));
+        Assert.True(QuestLeft.Accepted(Quest));
+        Assert.False(QuestLeft.Waits(Quest));
+        Assert.False(QuestLeft.Accepted(Quest with { Answers = [] }));
+    }
+
     [Theory]
     [InlineData("Taken")]
     [InlineData("Open")]
