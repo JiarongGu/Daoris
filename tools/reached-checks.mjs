@@ -10,17 +10,31 @@
  * waits there for its fix pass. The checks that can see the change run at the merge instead: the merge tool runs this as
  * its `reached` gate, with the CLI's verify, the censuses and the web's structure checks beside it.
  *
+ * A class whose key (every file that reaches it, its suite's declaration, the toolchain) passed before is not run again: a
+ * change to a widely referenced project runs exactly the classes that name it, and a docs-only change none. A class that needs a
+ * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
+ * left to the nightly run, and said.
+ *
  *   node tools/reached-checks.mjs [--plan] [--paths <path>[,<path>…]]
  *
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
- * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
+ * would run and runs nothing. With nothing changed there is nothing reached, and it says so. The passes are kept in
+ * `local/reached-classes.json` of the main checkout, or the file `DAORIS_REACHED_STORE` names.
  *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
 import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
-import { census, treeOf, unitsReached } from './test-map.mjs';
-import { reachedCommands, reachedLines, reachedPlan } from './merge-branch/reached.mjs';
+import { verdictsHome } from './merge-branch.mjs';
+import { census, treeOf } from './test-map.mjs';
+import { reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge-branch/reached.mjs';
+import { reuseContext } from './merge-branch/reached-reuse.mjs';
+import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
+import { toolchainOf } from './merge/flow-deps.ts';
+import { nightLines, tiersOf } from './merge/tiers.ts';
+import { passedClasses } from './merge/trx-passes.ts';
 
 /** The paths the checkout changes against HEAD: staged, unstaged, a merge's. */
 export function changedPaths(root) {
@@ -29,31 +43,63 @@ export function changedPaths(root) {
   return diff.stdout.split('\0').filter(Boolean);
 }
 
-/** The plan for `paths` over the tree at `root`. */
-export function planFor(root, paths) {
-  if (paths.length === 0) return reachedPlan([], paths);
+/** The file the class passes are kept in. */
+export const storeFile = (root) => process.env.DAORIS_REACHED_STORE || join(verdictsHome(root), 'local', 'reached-classes.json');
+
+/** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
+export function planFor(root, paths, store) {
+  if (paths.length === 0) return { plan: reachedPlan([], paths), night: {}, keys: new Map() };
   const { files, read } = treeOf(root);
-  return reachedPlan(unitsReached(paths, census(files, read)), paths);
+  const map = census(files, read);
+  const gatesText = read('daoris.gates.json');
+  const toolchain = toolchainOf();
+  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates: JSON.parse(gatesText).gates ?? [] });
+  // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
+  const reached = map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
+  const { units, night } = unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches });
+  const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
+  const counts = {};
+  for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
+  return { plan: reachedPlan(run, paths, { replayed: counts }), night, keys };
+}
+
+/** What a command of the plan ran, given the logger's file: the classes it saw pass, or every unit where it exited clean and logs none. */
+function passesOf(group, ran, trxFile) {
+  if (trxFile && existsSync(trxFile)) {
+    const passed = passedClasses(readFileSync(trxFile, 'utf8'));
+    return group.units.filter((unit) => passed.has(unit.unit));
+  }
+  return ran.status === 0 ? group.units : [];
 }
 
 async function main(argv) {
   const root = process.cwd();
   const at = argv.indexOf('--paths');
   const paths = at >= 0 ? (argv[at + 1] ?? '').split(',').filter(Boolean) : changedPaths(root);
-  const plan = planFor(root, paths);
-  for (const line of reachedLines(plan)) console.log(line);
+  const store = new PassedClasses(storeFile(root));
+  const { plan, night, keys } = planFor(root, paths, store);
+  for (const line of [...reachedLines(plan), ...nightLines(night)]) console.log(line);
   const commands = reachedCommands(plan);
   if (argv.includes('--plan')) {
     for (const each of commands) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
     return 0;
   }
   const failed = [];
-  for (const each of commands) {
+  commands.forEach((each, index) => {
+    const group = plan.groups[index];
+    const trxName = each.command === 'dotnet' ? `reached-${each.label}-${index + 1}.trx` : null;
+    const logger = trxName ? ['--results-directory', '_fixtures/test-timing', '--logger', `trx;LogFileName=${trxName}`] : [];
+    const trxFile = trxName ? join('_fixtures/test-timing', trxName) : null;
+    if (trxFile) rmSync(trxFile, { force: true });
     console.log(`reached: ${each.label}: ${each.command} ${each.args.slice(0, 2).join(' ')} …`);
     // npm is a script on Windows and needs a shell; its arguments are paths, so nothing in them is read by it.
-    const ran = spawnSync(each.command, each.args, { cwd: each.cwd, stdio: 'inherit', windowsHide: true, shell: each.command === 'npm' && process.platform === 'win32' });
+    const ran = spawnSync(each.command, [...each.args, ...logger], { cwd: each.cwd, stdio: 'inherit', windowsHide: true, shell: each.command === 'npm' && process.platform === 'win32' });
     if (ran.status !== 0) failed.push(each.label);
-  }
+    for (const unit of passesOf(group, ran, trxFile)) {
+      store.add(unitId(unit), keys.get(unitId(unit)), new Date().toISOString());
+    }
+  });
+  store.save();
   if (failed.length) {
     console.log(`reached: failed: ${failed.join(', ')}`);
     return 1;

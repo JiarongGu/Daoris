@@ -1,6 +1,17 @@
 {
   "devkit": "0.0.1",
 
+  "tiers": {
+    "needs": {
+      "git": ["src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Ports/Git/", "src/Daoris.Testing/Git/"],
+      "process": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Ports/Processes/"],
+      "harness": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/", "src/Daoris.Ports/Agents/"],
+      "browser": ["src/Daoris.Ports/Browser/", "src/Daoris.Desktop/Daoris.Desktop.Modules/Windows/"],
+      "network": ["src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/"],
+      "filesystem": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Store/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Install/"]
+    }
+  },
+
   "gates": [
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify", "clock": true, "regenerate": "node tools/contracts.mjs --if-stale" },

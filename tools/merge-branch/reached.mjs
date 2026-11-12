@@ -4,6 +4,7 @@
  * meantime. A unit the bounds leave out is counted and named, never dropped silently.
  */
 import { posix } from 'node:path';
+import { changedCode } from '../merge/tiers.ts';
 
 // test-map: strings name paths as data — the suites' folders are what the commands run in, not reads
 
@@ -14,7 +15,11 @@ import { posix } from 'node:path';
  */
 const SUITES = Object.freeze({
   driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node',
+  'driver-process': 'dotnet', 'driver-process-git': 'dotnet', 'driver-process-git-pinned': 'dotnet', 'modules-process': 'dotnet', 'service-process': 'dotnet',
 });
+
+/** A Process half's class is a unit of a merge only where `unitsOfMerge` kept it for a dependency whose code changed. */
+const isDependencyUnit = (unit) => Array.isArray(unit.needs) && unit.needs.length > 0;
 
 /**
  * How many units of one suite a merge runs, bounded by the minutes they cost (median of a CI run's gates, 2026-11-05 to
@@ -47,20 +52,40 @@ function nearness(unit, changed) {
 }
 
 /**
+ * The units a merge considers of those its paths reach: every unit class, and of the Process halves' classes (which each name
+ * the dependency they need) only those a changed path of that dependency's declared code reaches (`reaches(unit, path)`). Each
+ * other dependency class is counted by its first dependency in `night`, left to the nightly run and the stage.
+ */
+export function unitsOfMerge(units, paths, { tiers, reaches }) {
+  const kept = [];
+  const night = {};
+  for (const unit of units) {
+    if (!SUITES[unit.suite] || !unit.suite.includes('-process')) {
+      kept.push(unit);
+      continue;
+    }
+    const needs = unit.needs ?? [];
+    if (changedCode(needs, paths, tiers).some((path) => reaches(unit, path))) kept.push(unit);
+    else night[needs[0] ?? 'unnamed'] = (night[needs[0] ?? 'unnamed'] ?? 0) + 1;
+  }
+  return { units: kept, night };
+}
+
+/**
  * Which units of `units` (the census's `unitsReached`) a merge runs. A suite over its bound keeps the units nearest the
  * change first (`nearness`), then the census's order; `left` counts what each suite left out and `reached` every unit of
  * the suites a merge runs that the paths reach.
  */
-export function reachedPlan(units, changed, { bounds = {} } = {}) {
+export function reachedPlan(units, changed, { bounds = {}, replayed = {} } = {}) {
   const limit = { ...REACHED_BOUNDS, ...bounds };
   const bySuite = new Map();
   for (const unit of units) {
-    if (!SUITES[unit.suite]) continue;
+    if (!SUITES[unit.suite] || (unit.suite.includes('-process') && !isDependencyUnit(unit))) continue;
     bySuite.set(unit.suite, [...(bySuite.get(unit.suite) ?? []), unit]);
   }
   const groups = [];
   const left = {};
-  let reached = 0;
+  let reached = Object.values(replayed).reduce((sum, count) => sum + count, 0);
   for (const [suite, all] of bySuite) {
     reached += all.length;
     const runner = SUITES[suite];
@@ -70,14 +95,15 @@ export function reachedPlan(units, changed, { bounds = {} } = {}) {
     if (kept.length < all.length) left[suite] = all.length - kept.length;
     if (runner === 'dotnet') {
       for (const project of [...new Set(kept.map((unit) => unit.project))]) {
-        groups.push({ runner, suite, project, units: kept.filter((unit) => unit.project === project) });
+        const among = kept.filter((unit) => unit.project === project);
+        groups.push({ runner, suite, project, settings: among[0]?.settings ?? null, units: among });
       }
     } else {
       groups.push({ runner, suite, units: kept });
     }
   }
   groups.sort((a, b) => RUNNER_ORDER.indexOf(a.runner) - RUNNER_ORDER.indexOf(b.runner));
-  return { groups, left, reached };
+  return { groups, left, reached, replayed };
 }
 
 /** The commands that run a plan's groups, each with the folder it runs in and the label its log says. */
@@ -85,6 +111,10 @@ export function reachedCommands(plan) {
   return plan.groups.map((group) => {
     if (group.runner === 'dotnet') {
       const names = group.units.map((unit) => `FullyQualifiedName~${unit.unit}`).join('|');
+      if (group.settings) {
+        // The settings' own filter makes it the half, and VSTest ANDs it with the one added here.
+        return { label: group.suite, cwd: '.', command: 'dotnet', args: ['test', group.project, '--settings', group.settings, '--filter', `(${names})`] };
+      }
       return { label: group.suite, cwd: '.', command: 'dotnet', args: ['test', group.project, '--filter', `(Category!=Process)&(${names})`] };
     }
     if (group.runner === 'vitest') {
@@ -101,12 +131,14 @@ export function reachedCommands(plan) {
 export function reachedLines(plan) {
   if (plan.reached === 0) return ['reached: no reached unit in a suite a merge runs; the CI beside runs the whole suites'];
   const lines = [];
-  for (const suite of new Set(plan.groups.map((group) => group.suite))) {
+  const replayed = plan.replayed ?? {};
+  for (const suite of new Set([...plan.groups.map((group) => group.suite), ...Object.keys(replayed)])) {
     const ran = plan.groups.filter((group) => group.suite === suite).reduce((sum, group) => sum + group.units.length, 0);
     const left = plan.left[suite] ?? 0;
+    const standing = replayed[suite] ? `; ${replayed[suite]} replayed from a standing pass of the same inputs` : '';
     lines.push(left
-      ? `reached: ${suite}: ${ran} of ${ran + left} reached units run; ${left} are left to the CI beside`
-      : `reached: ${suite}: ${ran} reached unit${ran === 1 ? '' : 's'} run`);
+      ? `reached: ${suite}: ${ran} of ${ran + left} reached units run; ${left} are left to the CI beside${standing}`
+      : `reached: ${suite}: ${ran} reached unit${ran === 1 ? '' : 's'} run${standing}`);
   }
   return lines;
 }
