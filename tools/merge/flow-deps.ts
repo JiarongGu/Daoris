@@ -62,7 +62,7 @@ const sdksOf = (): string => {
 };
 
 let toolchain: Toolchain | null = null;
-const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
+export const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
 
 /** The deps of one run in the checkout `root`, whose verdict store is `home`'s, with a build ledger of its own. */
 export function flowDepsOf(seams: Seams, root: string, home: string, kind: string | null): FlowDeps {

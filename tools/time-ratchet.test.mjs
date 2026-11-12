@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, scanRecords, tighten } from './time-ratchet.mjs';
 
@@ -44,6 +45,44 @@ test('a test over its limit and not listed fails, one listed may run up to its t
 test('an entry that starts a key covers every test under it', () => {
   const found = { 't.mjs::queue > one': { ms: 90_000, limit: 5_000 }, 't.mjs::other': { ms: 90_000, limit: 5_000 } };
   assert.equal(checkTimes(found, { 't.mjs::queue': 100_000 }).length, 1);
+});
+
+test('a merge judges only the records its own gates wrote: a stale record is not read, and none written means a pass', () => {
+  const dir = join('_fixtures', 'time-ratchet-since');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    const old = join(dir, 'censuses.trx');
+    writeFileSync(old, trx([['C.Census', '00:00:41']]));
+    const earlier = new Date(Date.now() - 3_600_000);
+    utimesSync(old, earlier, earlier);
+    const since = Date.now() - 60_000;
+    assert.deepEqual(checkTimes(scanRecords(dir, '.', { since }).over, {}), [], "the merge ran no census, so the earlier merge's record is not its own");
+    assert.equal(Object.keys(scanRecords(dir, '.').over).length, 1, 'outside a merge the records on disk are all judged');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a merge whose own census run is over its listed time fails the ratchet', () => {
+  const dir = join('_fixtures', 'time-ratchet-own');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    const since = Date.now() - 60_000;
+    writeFileSync(join(dir, 'censuses.trx'), trx([['C.Census', '00:00:41']]));
+    const problems = checkTimes(scanRecords(dir, '.', { since }).over, { 'C.Census': 35_000 });
+    assert.equal(problems.length, 1);
+    assert.match(problems[0], /C\.Census took 41000 ms, longer than its listed 35000 ms/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the ratchet verify runs stands aside inside a merge, and says so', () => {
+  const ran = spawnSync(process.execPath, [join(import.meta.dirname, 'time-ratchet.mjs')], { encoding: 'utf8', windowsHide: true, env: { ...process.env, MERGE_GATES_RUN: '1' } });
+  assert.equal(ran.status, 0);
+  assert.match(ran.stdout, /stands aside inside a merge/);
 });
 
 test('the list is cut to what the records show and never grows', () => {

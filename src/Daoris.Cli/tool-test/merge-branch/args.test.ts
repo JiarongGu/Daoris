@@ -24,6 +24,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
   assert.throws(() => tool.parseArgs(['--rerun', 'web', '--gated']), /--rerun takes gate names/);
+  assert.equal(tool.parseArgs(['--rerun', 'reached', '--no-timeout']).noTimeout, true, 'an investigation re-runs one gate with no budget');
   // Every verb that runs gates runs them one at a time when told to, as on a loaded machine.
   for (const argv of [['a', '--one-at-a-time'], ['--continue', '--one-at-a-time'], ['--rerun', 'web', '--one-at-a-time'],
     ['--stale', '--one-at-a-time'], ['--full', '--one-at-a-time'], ['--full', '--keep-going', '--one-at-a-time']]) {
@@ -79,7 +80,7 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
     [['--prune', '--no-prune'], /--no-prune/],
     [['--rerun'], /--rerun names the gates to run again/],
     [['--rerun', 'web', '--continue'], /one of/],
-    [['--rerun', 'web', '--full'], /--rerun takes gate names, --keep-going and --one-at-a-time/],
+    [['--rerun', 'web', '--full'], /--rerun takes gate names, --keep-going, --one-at-a-time and --no-timeout/],
     [['--rerun', 'web', 'web'], /'web' is named twice/],
     [['--passed', 'a'], /--passed takes no branch/],
     [['--passed', '--full'], /one of/],

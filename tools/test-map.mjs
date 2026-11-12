@@ -332,6 +332,8 @@ function ownFile(each, read) {
   return each.files.find((file) => declares.test(read(file))) ?? each.files[0];
 }
 
+export const needsOf = (text) => [...new Set([...text.matchAll(/Trait\(\s*Category\.Needs\s*,\s*Needed\.(\w+)\s*\)/g)].map((found) => found[1].toLowerCase()))];
+
 /** A .NET class's subject: its project's first folder its own file sits in, or the project at its root; and a declared one. */
 export function dotnetSubject(project, file, text = '') {
   const declared = /^\s*\/\/\s*subject:\s*(\S+)/m.exec(text);
@@ -368,6 +370,7 @@ export function census(files, read, { suites = null } = {}) {
         suite: suite.suite, kind: 'dotnet', unit: each.full, name: each.name, file, project: suite.project, process: suite.process,
         subject: subject.declared ?? subject.subject, atRoot: subject.atRoot, declaredSubject: subject.declared,
         reach: { areas: each.reach, reaches: each.reaches ?? [] }, strings: each.strings ?? '',
+        settings: suite.settings, needs: needsOf(read(file)),
       });
     }
   }
