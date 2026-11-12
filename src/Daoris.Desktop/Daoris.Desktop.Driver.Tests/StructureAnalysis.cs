@@ -27,7 +27,7 @@ internal sealed class StructureAnalysis
     private static readonly string[] ImplicitUsings =
     [
         "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks",
-        "Daoris.Ports.Browser",
+        "Daoris.Ports.Browser", "Daoris.Ports.Store", "System.Data.Common",
     ];
 
     /// <summary>The base library the driver compiles against: the managed assemblies of the runtime this test host runs on.</summary>
