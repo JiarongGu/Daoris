@@ -45,12 +45,10 @@
  * declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
  * long-lived build server carried a broken environment into a publish, so that rehearsal started after
  * `dotnet build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
- * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the
- * census of test units), the CLI's verify (`MERGE_SUITES`: the lists, records and documents no path places), and each
- * path check one of its paths reaches (`PATH_CHECKS`: the web `tsc --noEmit` and the design and structure tests, the
- * desktop's censuses, and the `reached` check, `tools/reached-checks.mjs`, which runs the test units the paths reach in
- * the driver's, the modules', the service's, the page's and the tools' suites, bounded per suite); every other gate it
- * reaches is listed and skipped, "in the CI beside".
+ * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the census of test
+ * units), the CLI's verify (`MERGE_SUITES`), and each path check one of its paths reaches (`PATH_CHECKS`: the web
+ * typecheck and structure tests, the desktop's censuses, and `tools/reached-checks.mjs`, the test units the paths reach,
+ * bounded per suite); every other gate it reaches is listed and skipped, "in the CI beside".
  * `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  * merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  * places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -422,6 +420,8 @@ import {
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
+import { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
+export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
@@ -492,9 +492,6 @@ export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
 export const GATE_TREE = 'local/gate-tree';
 export const GATE_TREE_LOCK = 'local/gate-tree.lock';
 export const GATE_TREE_RECORD = 'local/gate-tree.json';
-
-/** The folders whose `package-lock.json` the gate tree installs from, as AGENTS.md has a fresh checkout do. */
-export const DEPENDENCY_FOLDERS = ['.', 'src/Daoris.Web'];
 
 /** The stage's path for a commit: what an owed rehearsal and a refused stage name. `tools/desktop-publish.mjs` names it too. */
 export const stageCommand = (commit) => `node tools/merge-branch.mjs --ci --stage ${String(commit).slice(0, 7)}`;
@@ -4112,33 +4109,6 @@ export function gateTreeVerdict(facts, { atMerge = false } = {}) {
     return { remove: false, why: `it holds ${sha}, and its stage has not read it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}; --prune removes it` };
   }
   return { remove: true, why: '', said: `the gate tree at ${sha}, never staged${leftLock}` };
-}
-
-/** Where a folder's install notes the lockfile it installed from: inside `node_modules`, which `npm ci` lays anew. */
-const DEPENDENCY_STAMP = '.gate-tree-lockfile';
-const fileHash = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
-
-/**
- * The folders of `DEPENDENCY_FOLDERS` with a `package-lock.json` whose dependencies are missing or were installed from
- * another lockfile than the one there now: a gate tree moved to a commit that changed one installs again.
- */
-export function staleDependencies(tree) {
-  return DEPENDENCY_FOLDERS.filter((folder) => {
-    const lockfile = join(tree, folder, 'package-lock.json');
-    if (!existsSync(lockfile)) return false;
-    try {
-      return readFileSync(join(tree, folder, 'node_modules', DEPENDENCY_STAMP), 'utf8').trim() !== fileHash(lockfile);
-    } catch {
-      return true;
-    }
-  });
-}
-
-/** The note that a folder's dependencies were installed from its lockfile as it is now. */
-export function stampDependencies(tree, folder) {
-  const stamp = join(tree, folder, 'node_modules', DEPENDENCY_STAMP);
-  mkdirSync(dirname(stamp), { recursive: true });
-  writeAtomic(stamp, `${fileHash(join(tree, folder, 'package-lock.json'))}\n`);
 }
 
 /** Each folder's dependencies the gate tree lacks, installed from its lockfile (`npm ci`, as AGENTS.md has a fresh checkout do). */

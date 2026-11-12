@@ -23,6 +23,9 @@ when the work moves outside it. What follows is what a worktree adds.
 
 ## The worktree
 
+- **Set it up first**: `node tools/worktree-setup.mjs` (`--build` to build the driver's and the modules' tests too). It copies
+  `local/*.props` from the main checkout as files, installs dependencies from the lockfiles and primes the build. Never link
+  `local/` or `node_modules` into the main checkout: git and an install follow a link and empty what it names.
 - **Commit first**, empty if need be, then once per piece that passes its tests. Every commit ends with the
   session's `Co-Authored-By:` line. A worktree with no commit of its own is pruned as merged.
 - **Merge main at the start and before the hand-back** (`git merge --ff-only main` on a fresh worktree); resolve
