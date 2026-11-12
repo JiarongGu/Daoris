@@ -271,8 +271,13 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     AAC and HEVC, HEVC through the machine's decoder. The codecs are patent-licensed, and the package carries no
     licence. The modules' test project builds this application on Windows, and `CodecPlaybackProcessTests` plays a
     clip of each on that build, its page held shown: Chrome loads no media in a hidden page. (from D99, D85, D234)
-55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. The
-    person's Edge on a Daoris profile stays an option. Daoris keeps sign-ins across a restart itself. (from D78, D84)
+55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. Daoris's own
+    plugin runs it `--isolated`: each session, Ask Daoris included, drives a browser context of its own in a window of its own,
+    closed when the session ends, and never takes the person's tabs or another session's. Each tab it opens is given the cookies
+    of the browser's own context, where the person signs in (`share-sign-in.cjs`, its `--init-page`); nothing goes back. On one
+    shared set of tabs a second session moved the first one's page, and every click on the first one's snapshot reference
+    waited out its 5 s; on contexts of their own, clicks took about 0.6 s. The person's Edge on a Daoris profile stays an option.
+    Daoris keeps sign-ins across a restart itself. (from D78, D84, D277)
 
 **The setup guide and the views**
 
@@ -415,7 +420,6 @@ a probe, git through a counting seam, a source that only names a start, a proces
 
 ## Open
 
-- **THROUGH1f (D277):** the browser's tabs are one set shared by every session's server; decided: a browser context per session for `${browser}`, ended with the session, the person's and Ask Daoris's tabs apart; the click-settle timeouts on the identity and Azure DevOps pages measured first. Not built.
 - **CANVAS1g**: the canvas in the installed window, with FLOWCHART2h.
 - **SETUPUX1x**: the set-up experience seen in the installed window, and its fixes.
 - **AGENTSPLACE1l**: the Agents place seen in the installed window.

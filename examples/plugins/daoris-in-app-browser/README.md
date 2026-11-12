@@ -20,6 +20,13 @@ browser*), go to the ticket system, and sign in. The sign-in stays in the browse
 every session after uses it. Settings → Browser chooses whether that window is Daoris's own or your Edge on a
 profile of Daoris's; `${browser}` is the chosen one's endpoint. Signing in is the person's to do, never a session's.
 
+**Each session's tabs are its own.** The server runs `--isolated`, so each session (Ask Daoris included) drives a browser
+context of its own, in a window of its own: it never takes the person's tabs or another session's, and its context and
+tabs close when it ends. Each tab it opens starts with the person's sign-in: `share-sign-in.cjs`, the server's
+`--init-page`, gives it the cookies of the browser's own context, and nothing goes back. Sharing one set of tabs, a
+second session moved the first one's page under it, and every click on a reference from the first one's snapshot
+waited out its 5 s.
+
 **Ask Daoris uses it once you approve it.** The server is offered to Ask Daoris too (`"to": ["sessions",
 "help"]`), and Ask Daoris is handed it only once you approve its exact tools on the plugin's page
 (Plugins → *In-app browser* → *Ask Daoris* → *Approve*), or press Apply on Ask Daoris's own proposal of
