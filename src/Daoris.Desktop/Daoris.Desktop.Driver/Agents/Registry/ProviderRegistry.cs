@@ -128,7 +128,7 @@ public sealed class ProviderRegistry
     public IReadOnlyList<string> Known { get; }
 
     /// <summary>Each agent's facts and its doors' sheets, read from the registrations and the measurements table.</summary>
-    public IAgentFacts Facts => LazyInitializer.EnsureInitialized(ref _facts, () => new ProviderFacts(this, Measurement.Table))!;
+    public IAgentFacts Facts => LazyInitializer.EnsureInitialized(ref _facts, () => new ProviderFacts(this))!;
 
     private IAgentFacts? _facts;
 

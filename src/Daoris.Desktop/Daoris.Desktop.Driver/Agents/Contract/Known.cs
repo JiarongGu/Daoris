@@ -16,7 +16,7 @@ public enum KnownBy
 /// <see cref="Applies"/> is a plain description. Declared, negotiated and
 /// measured stay separate evidence, never a score.
 /// </remarks>
-public readonly record struct Known<T>(T? Value, KnownBy By, string Evidence, string Applies, bool IsKnown)
+public readonly record struct Known<T>(T? Value, KnownBy By, string Evidence, string Applies, bool IsKnown, MeasuredAt? At = null)
 {
     /// <summary>Applies to every start: the default of a declared fact.</summary>
     public const string Anywhere = "any";
@@ -30,8 +30,8 @@ public readonly record struct Known<T>(T? Value, KnownBy By, string Evidence, st
     public static Known<T> Negotiated(T value, string evidence, string applies) =>
         new(value, KnownBy.Negotiated, evidence, applies, true);
 
-    public static Known<T> Measured(T value, string evidence, string applies) =>
-        new(value, KnownBy.Measured, evidence, applies, true);
+    public static Known<T> Measured(T value, string evidence, string applies, MeasuredAt? at = null) =>
+        new(value, KnownBy.Measured, evidence, applies, true, at);
 
     /// <summary>The value, where it is known; asking an absent fact for it is a defect in the asker.</summary>
     public T Required => IsKnown

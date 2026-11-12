@@ -100,7 +100,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
         "spawn.key-only-own", "spawn.shared-variable-kept", "spawn.registering-keeps-declared", "spawn.registering-strips-undeclared",
         "accounts.pool-agrees", "accounts.lent-exact", "interactive.declared", "interactive.absent-refused",
         "tables.recorded-sentences", "tables.d210-precedence", "run.unsupported-refused", "frames.unknown-unread",
-        "admission.not-widened", "containment.not-widened",
+        "containment.not-widened",
         "applicability.one-fact-differs", "applicability.other-opening", "applicability.other-copy", "records.ids-resolve",
         // Each ability's cases, and a stated absence's fallback.
         "ability.resumes", "ability.takes-settings", "ability.structured", "ability.words-at-next-step", "ability.steering",
@@ -153,7 +153,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
     public async Task A_planted_pending_case_that_passes_fails_the_suite()
     {
         var planted = ConformancePending.Parse(
-            """[ { "case": "identity.rules", "door": "*", "row": "c", "why": "Planted: a case the stand-in passes, held pending." } ]""",
+            """[ { "case": "identity.rules", "door": "*", "row": "h", "why": "Planted: a case the stand-in passes, held pending." } ]""",
             "planted.json");
         Assert.Empty(planted.Problems);
 
@@ -164,8 +164,8 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
         Assert.Contains("planted.json", failed.Message);
         // Unplanted, the same row passes, and a held case that fails is still held, with the reason it is.
         Assert.Null(await Conformance.RunAsync(ConformanceSubject.RegistrySource, "stub", Conformance.EveryDoor, "identity.rules", _scratch, []));
-        var held = await Conformance.RunAsync(ConformanceSubject.RegistrySource, "stub", Conformance.EveryDoor, "admission.not-widened", _scratch);
-        Assert.StartsWith("held pending (row u)", held);
+        var held = await Conformance.RunAsync(ConformanceSubject.RegistrySource, "stub", Conformance.EveryDoor, "containment.not-widened", _scratch);
+        Assert.StartsWith("held pending (row h)", held);
     }
 
     /// <summary>The second rule, planted: a line naming a case the suite does not run, or a door it does not run that case on, fails.</summary>
@@ -175,10 +175,10 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
         var planted = ConformancePending.Parse(
             """
             [
-              { "case": "identity.rules", "door": "*", "row": "c", "why": "A provider's case, run on every door at once." },
-              { "case": "no.such-case", "door": "*", "row": "c", "why": "A case nobody wrote." },
-              { "case": "posture.unmapped-refused", "door": "claude-code", "row": "o", "why": "A door this provider has not." },
-              { "case": "parts.stated", "door": "stub", "row": "c", "why": "A provider's case named on one door." }
+              { "case": "identity.rules", "door": "*", "row": "h", "why": "A provider's case, run on every door at once." },
+              { "case": "no.such-case", "door": "*", "row": "h", "why": "A case nobody wrote." },
+              { "case": "posture.unmapped-refused", "door": "claude-code", "row": "r", "why": "A door this provider has not." },
+              { "case": "parts.stated", "door": "stub", "row": "h", "why": "A provider's case named on one door." }
             ]
             """,
             "planted.json");
@@ -203,10 +203,10 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
             [
               { "case": "identity.rules", "door": "*", "row": "z", "why": "No such row." },
               { "case": "parts.stated", "door": "*", "why": "No row at all." },
-              { "case": "ids.names-resolve", "door": "*", "row": "c", "why": "Said once." },
-              { "case": "ids.names-resolve", "door": "*", "row": "c", "why": "Said twice." },
-              { "case": "records.ids-resolve", "door": "*", "row": "c", "why": "Two sentences. Not one." },
-              { "case": "accounts.pool-agrees", "door": "*", "row": "c", "why": "A field the layout has no place for.", "more": 1 }
+              { "case": "ids.names-resolve", "door": "*", "row": "h", "why": "Said once." },
+              { "case": "ids.names-resolve", "door": "*", "row": "h", "why": "Said twice." },
+              { "case": "records.ids-resolve", "door": "*", "row": "h", "why": "Two sentences. Not one." },
+              { "case": "accounts.pool-agrees", "door": "*", "row": "h", "why": "A field the layout has no place for.", "more": 1 }
             ]
             """,
             "broken.json");
