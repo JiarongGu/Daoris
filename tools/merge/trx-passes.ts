@@ -1,6 +1,6 @@
 /**
- * The classes a trx says passed: every test of the class ran and passed. A class with a failure, a skip or a test that never
- * reported is not one, so a pass is recorded only for what was seen to pass.
+ * The classes a trx says passed: every test of the class ran and passed. A class with a failure or a skip is not one, so a pass
+ * is recorded only for a class the report shows passing.
  */
 
 const unescape = (text: string): string => text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');

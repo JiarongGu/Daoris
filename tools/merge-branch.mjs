@@ -457,7 +457,8 @@ import { inFolders, readFolders, regenerate, regenerations, writeFolders } from 
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
-import { clearMerged, staleRun } from './merge/queue-stale.ts';
+import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
+import { saidDrained } from './merge/said-drained.ts';
 import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
@@ -3344,10 +3345,7 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
 } = {}) {
   const commit = headCommit(root);
-  // Inside a merge the time ratchet is the merge's own last check, so verify's stands aside (tools/time-ratchet.mjs).
-  const stepFor = kind === 'merge' && step === gateStep
-    ? (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } })
-    : step;
+  const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
@@ -5983,6 +5981,8 @@ let acceptedPass = [];
 
 /** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
 const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
+/** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
+const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
@@ -7069,20 +7069,12 @@ async function queueVerb(root, options) {
   if (options.recheck) {
     requireQueueHome(root, home, { run: true });
     const merged = (tip) => git(home, ['merge-base', '--is-ancestor', tip, MAIN], { allowFail: true }).status === 0;
-    const out = withQueue(home, (queue) => {
-      const swept = clearMerged(queue, merged, nowIso());
-      const stale = staleRun(swept.queue, pidAlive);
-      const stopped = Boolean(queue.stop);
-      if (!stopped && !stale && swept.cleared.length === 0) return { none: true };
-      return { queue: stopped ? { ...swept.queue, recheck: { at: nowIso() } } : swept.queue, cleared: swept.cleared, stale, stopped };
-    });
+    const out = withQueue(home, (queue) => sweepQueue(queue, { merged, alive: pidAlive, at: nowIso() }));
     if (out.none) {
       console.log('merge-branch: the queue is not stopped, holds no stale run and no request main already holds; nothing to recheck');
       return 0;
     }
-    if (out.cleared.length) console.log(`merge-branch: already in ${MAIN}, cleared from the queue: ${out.cleared.join(', ')}`);
-    if (out.stale) console.log(`merge-branch: ${out.stale}; the runner is started and resumes it`);
-    if (out.stopped) console.log("merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found");
+    for (const line of sweepLines(out, MAIN)) console.log(line);
     if (out.stopped || out.stale) await ensureRunner(home);
     return 0;
   }
@@ -7112,36 +7104,10 @@ async function dropQueuedVerb(root, options) {
   const asked = nowIso();
   const out = withQueue(home, (queue) => dropQueued(queue, options.branches, asked));
   console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);
-  if (out.ended) await saidDrained(home, out.ended, asked);
+  if (out.ended) {
+    await saidDrained({ read: () => readQueue(home), alive: pidAlive, line: drainedLine, sleep: sleepMs, waitMs: DRAIN_WAIT_MS, pollMs: DROP_POLL_MS, span, logFile: MERGE_QUEUE_LOG, say: console.log }, out.ended, asked);
+  }
   return 0;
-}
-
-/**
- * What the drop of a candidate ended. The runner owns the run's processes, so it ends them (within `DROP_POLL_MS`) and
- * records what it ended; this waits for that record, and says it. A candidate with no run in progress had none to end.
- * Only the runner's take of the drop (`draining`, at its next ask) is waited for on the clock, `DRAIN_WAIT_MS`: one that took
- * it always records what it ended, however long ending its trees takes, so that is waited for while the runner runs.
- */
-async function saidDrained(home, candidate, asked) {
-  const runner = candidate.run?.pid;
-  const running = ['running', 'bisecting', 'forming'].includes(candidate.state) && pidAlive(runner);
-  if (!running) {
-    console.log(`  ${candidate.tip.slice(0, 7)} had no run in progress (${candidate.state}), so there was nothing to end`);
-    return;
-  }
-  const until = Date.now() + DRAIN_WAIT_MS;
-  for (;;) {
-    const { drained, draining } = readQueue(home);
-    if (drained?.tip === candidate.tip && drained.at >= asked) {
-      console.log(`  the runner (pid ${runner}) ${drainedLine(drained)}, and takes the next queued work`);
-      return;
-    }
-    const took = draining?.tip === candidate.tip && draining.at >= asked;
-    if (!pidAlive(runner) || (!took && Date.now() >= until)) break;
-    await sleepMs(100);
-  }
-  const every = DROP_POLL_MS < 1000 ? `${DROP_POLL_MS} ms` : span(DROP_POLL_MS);
-  console.log(`  the runner (pid ${runner}) has not yet said it ended ${candidate.tip.slice(0, 7)}'s run; it asks every ${every}, and ${MERGE_QUEUE_LOG} says when it has`);
 }
 
 export async function main(argv) {

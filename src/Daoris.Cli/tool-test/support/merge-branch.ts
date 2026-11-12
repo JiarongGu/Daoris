@@ -19,7 +19,7 @@ export interface Lane { id: string; title: string; summary: string; steward: boo
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
-  full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
+  full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean; noTimeout?: boolean;
   /** The full set in a worktree of its own, at this commit (main's tip when null). */
   beside: boolean; besideCommit: string | null;
   /** The declared runner (`--full --beside --daoris-verify`). */

@@ -89,7 +89,6 @@ export function scanRecords(dir, root, { since = null } = {}) {
   const seen = new Set();
   if (!existsSync(dir)) return { over, seen };
   for (const file of readdirSync(dir).sort()) {
-    // A merge judges the records its own gates wrote; an older record is another run's, made under another load.
     if (since !== null && statSync(join(dir, file)).mtimeMs < since) continue;
     const text = () => readFileSync(join(dir, file), 'utf8');
     const tests = file.endsWith('.trx') ? readTrx(text()) : file === 'web-unit.json' ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
@@ -140,8 +139,6 @@ export function tighten(found, list, seen = new Set()) {
 function main() {
   const at = process.argv.indexOf('--since');
   const since = at >= 0 ? Number(process.argv[at + 1]) : null;
-  // Inside a merge the gates run beside each other, so verify's ratchet could read records before this merge's gates wrote them:
-  // the merge tool runs it once after the last gate, with `--since` its start.
   if (since === null && process.env.MERGE_GATES_RUN === '1') {
     console.log("time-ratchet: stands aside inside a merge: the merge tool runs it once after every gate, on the records its own gates wrote");
     return 0;

@@ -332,7 +332,6 @@ function ownFile(each, read) {
   return each.files.find((file) => declares.test(read(file))) ?? each.files[0];
 }
 
-/** The real dependencies a test file names with `[Trait(Category.Needs, Needed.X)]`, lower-cased. */
 export const needsOf = (text) => [...new Set([...text.matchAll(/Trait\(\s*Category\.Needs\s*,\s*Needed\.(\w+)\s*\)/g)].map((found) => found[1].toLowerCase()))];
 
 /** A .NET class's subject: its project's first folder its own file sits in, or the project at its root; and a declared one. */

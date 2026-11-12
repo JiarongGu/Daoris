@@ -26,6 +26,26 @@ export function staleRun(queue: QueueRecord, alive: (pid: number) => boolean): s
   return `the candidate says ${candidate.state}, but ${who} has ended and the queue's runner${queue.runner ? ` (pid ${queue.runner.pid})` : ''} is not running`;
 }
 
+export type Sweep = { none: true } | { queue: QueueRecord; cleared: string[]; stale: string | null; stopped: boolean };
+
+/** What `--queue --recheck` does to the queue: clears what main holds, finds a stale run, and asks the runner to recheck a stop. */
+export function sweepQueue(queue: QueueRecord & { stop?: unknown }, { merged, alive, at }: { merged: (tip: string) => boolean; alive: (pid: number) => boolean; at: string }): Sweep {
+  const swept = clearMerged(queue, merged, at);
+  const stale = staleRun(swept.queue, alive);
+  const stopped = Boolean(queue.stop);
+  if (!stopped && !stale && swept.cleared.length === 0) return { none: true };
+  return { queue: stopped ? { ...swept.queue, recheck: { at } } : swept.queue, cleared: swept.cleared, stale, stopped };
+}
+
+/** What a sweep says it did. */
+export function sweepLines(out: Exclude<Sweep, { none: true }>, main: string): string[] {
+  return [
+    ...(out.cleared.length ? [`merge-branch: already in ${main}, cleared from the queue: ${out.cleared.join(', ')}`] : []),
+    ...(out.stale ? [`merge-branch: ${out.stale}; the runner is started and resumes it`] : []),
+    ...(out.stopped ? ["merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found"] : []),
+  ];
+}
+
 /** The queue with each request main already holds moved to `landed`, and the branches it cleared. */
 export function clearMerged(queue: QueueRecord, merged: (tip: string) => boolean, at: string): { queue: QueueRecord; cleared: string[] } {
   const landedOf = (each: Member) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.tip, at });
