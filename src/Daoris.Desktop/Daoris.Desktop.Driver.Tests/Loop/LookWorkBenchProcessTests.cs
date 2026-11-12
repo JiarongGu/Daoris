@@ -43,7 +43,6 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Directory.CreateDirectory(_home);
         _ledger.Register(Repository, _root);
         var trees = new SessionTrees(_home);
-        // One tree is opened for real and the rest are its copies (opening one is ten git starts); each then commits its own part.
         var opened = await TreeFarm.OpenAsync(trees, _home, _root, Repository, "default", TreeCount);
         var baseCommit = (await GitAsync(opened[0], "rev-parse", "HEAD")).Trim();
         for (var at = 0; at < TreeCount; at++)

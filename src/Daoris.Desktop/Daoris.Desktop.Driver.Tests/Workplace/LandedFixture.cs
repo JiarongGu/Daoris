@@ -40,7 +40,6 @@ public abstract class LandedFixture : IDisposable
 
     protected static LandedItem Landed(SweepPlan plan, string branch) => plan.Landed.Single(item => item.Branch == branch);
 
-    /// <summary>The trees a test stocked for its landings (<see cref="FarmedTrees.StockAsync"/>); empty, each landing opens its own.</summary>
     protected FarmedTrees Farmed { get; } = new();
 
     /// <summary>A session's tree, one commit, and the press — the branch form, so a landing makes and records a branch.</summary>

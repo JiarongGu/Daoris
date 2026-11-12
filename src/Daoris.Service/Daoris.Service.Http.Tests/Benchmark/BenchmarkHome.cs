@@ -57,7 +57,6 @@ public static class BenchmarkHome
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(home);
         Directory.CreateDirectory(repositories);
-        // Each checkout is its own folder and its own git, so they are made side by side.
         Parallel.ForEach(Names, new ParallelOptions { MaxDegreeOfParallelism = 8, CancellationToken = ct }, name => Checkout(repositories, name));
         Wrote("the checkouts");
 
@@ -113,7 +112,6 @@ public static class BenchmarkHome
         ComposedService service, string home, Func<string, string> Root, IReadOnlyList<Quest> quests, IReadOnlyList<string> asks, CancellationToken ct)
     {
         var lastChat = new Dictionary<string, string>(StringComparer.Ordinal);
-        // A session's folder is files only, written on the pool while the next session's records are kept.
         var folders = new List<Task>(EndedSessions);
         for (var i = 0; i < EndedSessions; i++)
         {
