@@ -424,6 +424,8 @@ check('the game says it uses the engine, read from its manifest', usesOf(registr
 
 // -------------------------------------------------- 3. the real client registers
 
+const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
+check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
 section('3. `daoris repository connect` — the real client, through the real door');
 for (const name of EXAMPLES) {
   const connect = run(`node "${cliBin}" repository connect`, join(examplesRoot, name), {
@@ -760,11 +762,9 @@ section('7. The driver starts what should start (D46)');
 // The newcomer is the drivable one: it is born in scratch and connected FROM scratch, so its
 // registered root is a tree the rehearsal owns — never the tracked examples, which connect from the
 // real repository and must never be spawned into by a test.
-const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
-check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
 // The connector the protocol door hands every session, which the driver finds as a development build. Section 17 reads that
 // it is offered, and 17e's stub calls it, so it is built here: one another gate built may be older than the tools a
-// phase calls on it, and a fresh checkout has none.
+// phase calls on it.
 const connectorBuild = run(`dotnet build "${connectorProject}"`, repoRoot);
 check('the knowledge connector a session is handed builds', connectorBuild.code === 0, connectorBuild.out.split('\n').slice(-4).join('\n'));
 
