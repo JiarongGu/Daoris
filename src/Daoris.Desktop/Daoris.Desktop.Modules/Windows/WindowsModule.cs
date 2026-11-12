@@ -33,7 +33,7 @@ public sealed class WindowsModule(
     IEventBus events, ISecondaryWindows windows, PlatformAddress platform,
     // Daoris's own browser: a window the person opens to sign in and to watch. Null where the
     // host carries none, which is only a test that does not care.
-    Daoris.Driver.IInAppBrowser? browser = null,
+    IInAppBrowser? browser = null,
     // Each main window's taskbar button and title. Null where there is no main window to badge.
     ShowWaiting? badge = null,
     // The workspace each main window's title wears. Null where there is no window to title.

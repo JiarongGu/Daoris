@@ -53,6 +53,7 @@
          because none of it is WinForms, and being in here cost it every test it should have had. -->
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+    <Using Include="Daoris.Ports.Browser" />
   </ItemGroup>
 
 </Project>

@@ -107,7 +107,7 @@ public sealed class MemoryReceiptTests : IAsyncLifetime
         var soon = await ReadyAsync(new MemoryChange(MemoryOpKind.Write, Text: "The legend sits under the map."));
         Assert.True(await _machine.Memory.BeginAsync(late.Id, Now.AddMinutes(5)));
         Assert.True(await _machine.Memory.BeginAsync(soon.Id, Now.AddDays(20)));
-        var clock = new MovedClock();
+        var clock = new MovedClock { VirtualTimestamp = true };
         clock.Advance(TimeSpan.FromDays(42));
 
         await _machine.RestartAsync();

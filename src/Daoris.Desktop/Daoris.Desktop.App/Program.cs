@@ -274,7 +274,7 @@ internal static class Program
         // the home — the home `driver.json` is in, as every machine file's is.
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
             Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath())));
-        builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
+        builder.Services.AddSingleton<IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
         // Its favorites and settings, as a Settings domain: the files `daoris browser`
         // edits, read by `daoris-browser` each time it starts.
         builder.Services.AddIpcModule<BrowserModule>();

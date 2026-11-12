@@ -20,7 +20,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private static readonly TimeSpan Long = ChangeStream.LongestWait;
 
     /// <summary>The clock the stream's waits are bounded on, moved only by a test that means a wait to end.</summary>
-    private readonly MovedClock _clock = new();
+    private readonly MovedClock _clock = new() { VirtualTimestamp = true };
 
     private readonly string _file = Path.Combine(
         Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");

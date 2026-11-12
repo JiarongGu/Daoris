@@ -20,7 +20,7 @@ public sealed class WireEvaluationTests
     internal static NodeDeclaration Node(string id, string kind = Plugin) =>
         new(id, kind, 1, NodeKit.Row(kind)?.Reach ?? NodeReach.Performed);
 
-    internal static Dictionary<string, string> Ports(string name, string schema) => new() { [name] = schema };
+    internal static Dictionary<string, string> WirePorts(string name, string schema) => new() { [name] = schema };
 
     internal static Wire After(string id, string from, string to, WireGroup? group = null) => new(id, WireKinds.After, new(from), new(to)) { Group = group };
 
@@ -117,7 +117,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void After_reads_a_reach_or_a_skip_and_data_a_reach_alone()
     {
-        NodeDeclaration[] nodes = [Node("a") with { Outputs = Ports("preview", Preview) }, Node("b"), Node("c") with { Inputs = Ports("preview", Preview) }];
+        NodeDeclaration[] nodes = [Node("a") with { Outputs = WirePorts("preview", Preview) }, Node("b"), Node("c") with { Inputs = WirePorts("preview", Preview) }];
         Wire[] wires = [After("w1", "a", "b"), Data("w2", "a", "preview", "c", "preview")];
         var reached = new Graph(nodes, wires);
 
@@ -1003,7 +1003,7 @@ public sealed class WireEvaluationTests
         var quest = QuestOf();
         NodeDeclaration[] nodes =
         [
-            Node("claimed", NodeKinds.Claimed), Node("deploy") with { Inputs = Ports("claim", NodeObserving.EvidenceSchema(NodeKinds.Claimed)) }
+            Node("claimed", NodeKinds.Claimed), Node("deploy") with { Inputs = WirePorts("claim", NodeObserving.EvidenceSchema(NodeKinds.Claimed)) }
         ];
         var run = RunOver(quest, BranchOf("unit-b1"), "t1");
         var g = new Graph(nodes, [Data("d", "claimed", WireEnd.Evidence, "deploy", "claim")], RunRecord)
