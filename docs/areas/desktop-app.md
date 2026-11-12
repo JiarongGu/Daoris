@@ -148,9 +148,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run
     (`HelpPressLine`: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a restart empties it. (from D196, D253)
-32. .NET judges *What needs you*. A session's row there is its line's (`LineNeeds`): none for a part whose line works through a
-    later part or needs the person through another session, so a line is listed once, and `daoris notices` lists the same
-    rows. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
+32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
+    `daoris notices` lists; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
+    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). Overview keeps one summary line per group.
     (from D150, D181, D196)

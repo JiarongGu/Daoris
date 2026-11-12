@@ -11,6 +11,9 @@ public sealed record IntegrateAsk(string Repository)
 
     /// <summary>The branch <c>--plan</c> previews in git's objects alone; null where none is asked.</summary>
     public string? Plan { get; init; }
+
+    /// <summary>With <c>--accept</c> or <c>--withdraw</c>: say the change and write nothing.</summary>
+    public bool PlanOnly { get; init; }
 }
 
 /// <summary>
@@ -24,7 +27,7 @@ public static class IntegrateCommand
 {
     public const string Usage =
         "usage: daoris integrate <repository> [--plan <branch> | --request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | "
-        + "--order <request> first|last]";
+        + "--order <request> first|last | --accept [--plan] | --withdraw [--plan]]";
 
     /// <summary>The acts, as their flags spell them; the verb is <c>hand-back</c> on every door.</summary>
     public static IReadOnlyList<string> Acts { get; } = ["--request", "--drop", "--recheck", "--decide", "--order"];
@@ -49,6 +52,17 @@ public static class IntegrateCommand
             }
 
             return new IntegrateAsk(args[0].Trim()) { Plan = args[2].Trim() };
+        }
+
+        if (args[1] is "--accept" or "--withdraw")
+        {
+            if (args.Count > 3 || args.Count == 3 && args[2] != "--plan")
+            {
+                problem = $"`{args[1]}` takes `--plan` after it, and nothing else.";
+                return null;
+            }
+
+            return new IntegrateAsk(args[0].Trim()) { Act = args[1][2..], PlanOnly = args.Count == 3 };
         }
 
         if (!Acts.Contains(args[1]))
@@ -149,6 +163,7 @@ public static class IntegrateCommand
     /// </summary>
     public static async Task<int> PressAsync(IntegrateAsk ask, InstanceWorld world, CancellationToken ct = default)
     {
+        if (IntegrateGatesCommand.Acts.Contains(ask.Act ?? "")) return await IntegrateGatesCommand.RunAsync(ask, world, ct).ConfigureAwait(false);
         if (!Pressed.Contains(ask.Act ?? ""))
         {
             await world.Error.WriteLineAsync($"integrate: `--{ask.Act}` is not built yet; nothing was changed.").ConfigureAwait(false);

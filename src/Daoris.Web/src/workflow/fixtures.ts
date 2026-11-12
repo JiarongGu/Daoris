@@ -183,6 +183,12 @@ export const INTEGRATION_ACCEPTED: WorkflowIntegration = {
 /** The tip's declaration changed since the person accepted it: its writers and tidy use nothing until they accept it again. */
 export const INTEGRATION_CHANGED: WorkflowIntegration = {
   gates: ACCEPTED_BLOB, state: 'changed', tip: { ...INTEGRATION_TIP, gates: CHANGED_BLOB }, declaration: INTEGRATION_TEXT,
+  change: {
+    added: [{ name: 'comments', run: 'node tools/comment-gate.mjs' }],
+    removed: [{ name: 'old', run: 'echo old' }],
+    changed: [{ name: 'cli', run: 'npm test', was: 'npm run verify' }],
+    other: [],
+  },
 };
 
 /** A declaration never accepted. */

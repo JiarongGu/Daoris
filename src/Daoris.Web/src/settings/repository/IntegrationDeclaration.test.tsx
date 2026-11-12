@@ -17,14 +17,13 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 describe("a repository's integration declaration on its Setup", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('says an accepted declaration with its blob and tip, and offers to withdraw it', async () => {
+  it('says an accepted declaration with no blob id, and offers to withdraw it', async () => {
     const onAccept = vi.fn();
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_ACCEPTED} onAccept={onAccept} />);
 
-    expect(screen.getByText('Integration declaration')).toBeInTheDocument();
-    expect(screen.getByText(/^Accepted\./)).toHaveTextContent(
-      "Accepted. Its generated files, line rules and scratch are used as you accepted them, at blob 3b18e51 on main's tip aa11bb2.");
-    expect(screen.queryByRole('button', { name: 'Accept the integration declaration' })).not.toBeInTheDocument();
+    expect(screen.getByText('Checks the line declares')).toBeInTheDocument();
+    expect(screen.getByText(/^Accepted\./)).toHaveTextContent("Accepted. The line's checks run as you accepted them.");
+    expect(screen.queryByRole('button', { name: 'Accept' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Withdraw' }));
     expect(onAccept).toHaveBeenCalledWith({ clear: true }, expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
   });
@@ -33,9 +32,9 @@ describe("a repository's integration declaration on its Setup", () => {
     const onAccept = vi.fn();
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_CHANGED} onAccept={onAccept} />);
 
-    expect(screen.getByText(/changed since you accepted it/)).toBeInTheDocument();
-    expect(screen.getByLabelText("daoris.gates.json at main's tip aa11bb2")).toHaveTextContent('"scratch": ["dist/", "coverage/"]');
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the integration declaration' }));
+    expect(screen.getByText(/changed since you accepted them/)).toBeInTheDocument();
+    expect(screen.getByLabelText('daoris.gates.json on main')).toHaveTextContent('"scratch": ["dist/", "coverage/"]');
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
     expect(onAccept).toHaveBeenCalledWith({ gates: INTEGRATION_CHANGED.tip!.gates }, expect.anything());
     // Changed, it is accepted already: it can be withdrawn too.
     expect(screen.getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
@@ -45,7 +44,7 @@ describe("a repository's integration declaration on its Setup", () => {
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_UNACCEPTED} onAccept={vi.fn()} />);
 
     expect(screen.getByText(/not accepted yet/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Accept the integration declaration' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Withdraw' })).not.toBeInTheDocument();
   });
 
@@ -60,14 +59,14 @@ describe("a repository's integration declaration on its Setup", () => {
     const onAccept = vi.fn((_request, answered) => answered.refused('`engine`\'s line holds another declaration than the one you read, so nothing was accepted.'));
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_UNACCEPTED} onAccept={onAccept} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the integration declaration' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
     expect(screen.getByRole('alert')).toHaveTextContent('another declaration than the one you read');
   });
 
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_UNACCEPTED} onAccept={vi.fn()} />);
-    expect(screen.getByText('集成声明')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '采纳集成声明' })).toBeInTheDocument();
+    expect(screen.getByText('主线声明的检查项')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '采纳' })).toBeInTheDocument();
   });
 });

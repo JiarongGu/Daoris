@@ -70,9 +70,9 @@ export type AttentionRead =
   | { state: 'known'; rows: PushedAttention[]; working: number; running: number; resyncing: boolean };
 
 /**
- * Who needs the person in this window: the pushed rows, read from memory and never pulled, since no route answers them;
- * each row of a session, a quest or an ask filtered to the window's scope by the workspace .NET judged it with, as the lists it came
- * from were, and the machine's, which carry none, in every window. Nothing a tick or a focus asks again.
+ * Who needs the person in this window: the pushed rows, read from memory and never pulled, since no route answers them; every row,
+ * whatever workspace the window looks at (a wait is the person's wherever it is, and the terminal's `notices` lists the same rows), and
+ * the sessions the driver runs filtered to the window's scope. Nothing a tick or a focus asks again.
  */
 export const useAttention = (): AttentionRead => {
   const { isAvailable } = useShenora();
@@ -96,7 +96,8 @@ export const useAttention = (): AttentionRead => {
   const parked = new Set(read.data.sessions.map((each) => each.key));
   return {
     state: 'known',
-    rows: read.data.rows.filter(scoped),
+    // Every row, whatever the window's scope: what waits for the person waits in every workspace, and `daoris notices` lists the same rows.
+    rows: read.data.rows,
     working: working.length,
     running: working.filter((each) => !parked.has(each.key)).length,
     resyncing,

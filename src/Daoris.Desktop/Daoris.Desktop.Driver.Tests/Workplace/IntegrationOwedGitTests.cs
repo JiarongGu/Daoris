@@ -93,6 +93,50 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal((IntegrationAcceptance.Changed, changed, _now), (each.State, each.Blob, each.Since));
     }
 
+    /// <summary>
+    /// In full access the repository's line is the person's own: the declaration it commits is accepted as it lands, never owed, said
+    /// in one sentence of the checks that changed; in restricted mode the same declaration waits.
+    /// </summary>
+    [Fact]
+    public async Task A_declaration_on_a_full_access_line_is_accepted_as_it_lands_and_said_as_checks_changed()
+    {
+        const string Checks = """{ "gates": [ { "name": "build", "run": "dotnet build" } ], "integration": { "by": "daoris" } }""";
+        const string More = """{ "gates": [ { "name": "build", "run": "dotnet build" }, { "name": "comments", "run": "node gate.mjs" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Checks);
+        var second = await CommitAsync(More);
+        var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
+        var configPath = Path.Combine(_home, "driver.json");
+        full.Save(configPath);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(full, Registry, _now, CancellationToken.None);
+        Assert.Empty(owed.Under(full));
+        var byMode = Assert.Single(owed.ByMode(full));
+        Assert.Equal(second, byMode.Blob);
+
+        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, byMode, CancellationToken.None);
+
+        Assert.Equal("engine's checks changed on main: added `comments`; they run from now on.", said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+        var restricted = Choices(first);
+        Assert.Single(owed.Under(restricted));
+        Assert.Empty(owed.ByMode(restricted));
+    }
+
+    /// <summary>The acceptance ends the row at once, from the choices as they stand, with no look and no git.</summary>
+    [Fact]
+    public async Task An_acceptance_ends_the_row_without_another_look()
+    {
+        var blob = await CommitAsync(Declares);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(), Registry, _now, CancellationToken.None);
+        Assert.Single(owed.Under(Choices()));
+
+        var reads = owed.GitReads;
+        Assert.Empty(owed.Under(Choices(blob)));
+        Assert.Equal(reads, owed.GitReads);
+    }
+
     /// <summary>A line that holds no declaration, or one that declares no integration, owes nothing whether or not something is accepted.</summary>
     [Fact]
     public async Task A_line_with_no_declaration_or_no_integration_owes_nothing()
