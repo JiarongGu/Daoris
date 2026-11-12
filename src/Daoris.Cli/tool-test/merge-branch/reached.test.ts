@@ -75,6 +75,28 @@ test('a .NET suite runs as one filtered command per test project, its fast half 
   });
 });
 
+test('a Process half\'s class is a unit of a merge only where a changed path is the code of the dependency it needs; every other is left to the night', () => {
+  const needing = (name: string, needs: string[]) => ({ ...dotnet('driver-process', name, 'x'), needs, settings: 'src/Daoris.Desktop/process.runsettings' });
+  const git = needing('GitProcessTests', ['git']);
+  const harness = needing('HarnessProcessTests', ['harness']);
+  const changed = ['src/Ports/Git/IGit.cs'];
+  const kept = tool.unitsOfMerge([dotnet('driver', 'ATests', 'x'), git, harness], changed, {
+    tiers: { git: ['src/Ports/Git/'], harness: ['src/Ports/Agents/'] }, reaches: () => true,
+  });
+  assert.deepEqual(kept.units.map((unit) => unit.name), ['ATests', 'GitProcessTests']);
+  assert.deepEqual(kept.night, { harness: 1 });
+  const plan = tool.reachedPlan(kept.units, changed, { replayed: { driver: 5 } });
+  const commands = tool.reachedCommands(plan);
+  assert.deepEqual(commands.map((each) => each.label), ['driver', 'driver-process']);
+  assert.deepEqual(commands[1]!.args, ['test', DRIVER, '--settings', 'src/Daoris.Desktop/process.runsettings', '--filter', '(FullyQualifiedName~Daoris.Desktop.GitProcessTests)']);
+  assert.match(tool.reachedLines(plan).join('\n'), /driver: 1 reached unit run; 5 replayed from a standing pass of the same inputs/);
+});
+
+test('a Process class with no dependency named is never a unit of a merge', () => {
+  const plan = tool.reachedPlan([dotnet('driver-process', 'XProcessTests', 'x')], []);
+  assert.deepEqual(plan.groups, []);
+});
+
 test('a merge that changes nothing reaches nothing, and says the CI beside runs the whole suites', () => {
   const plan = tool.reachedPlan([], []);
   assert.deepEqual(plan.groups, []);
@@ -82,7 +104,11 @@ test('a merge that changes nothing reaches nothing, and says the CI beside runs 
 });
 
 test('the tool reads the census of this repository: a changed tool reaches the tool-test that holds it, --plan runs nothing, and a clean checkout reaches nothing', () => {
-  const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
+  const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], {
+    cwd: repoRoot, encoding: 'utf8', windowsHide: true,
+    // A store that holds no pass, which a plan only reads: the plan is the census's alone.
+    env: { ...process.env, DAORIS_REACHED_STORE: join(repoRoot, '_fixtures', 'reached-test-none', 'passes.json') },
+  });
   const planned = run('--plan', '--paths', 'tools/merge-branch/reached.mjs');
   assert.equal(planned.status, 0, planned.stderr);
   assert.match(planned.stdout, /reached: tool-tests: (\d+ of )?\d+ reached units? run/);
