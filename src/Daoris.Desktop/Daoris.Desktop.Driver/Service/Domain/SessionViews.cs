@@ -52,10 +52,7 @@ public sealed record PriorSession(
     /// </summary>
     public bool NotOffered { get; init; }
 
-    /// <summary>
-    /// Its opening passed its bound (<c>chat.not-up</c>, Ask Daoris's <c>chat.help-not-up</c>), read by its end code: where no
-    /// conversation of it is kept, its harness never opened one, and its go-on is a fresh start of its actor, as a refused choice's is.
-    /// </summary>
+    /// <summary>It ended past its opening's bound, read by its end code: with no conversation kept, its go-on is a fresh start.</summary>
     public bool NotUp { get; init; }
 
     /// <summary>The adapter its record opened on: an answer resumes its conversation only on the same one.</summary>

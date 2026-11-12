@@ -362,9 +362,7 @@ public sealed class HelpRoomTests : IDisposable
         // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpRoomSections.All[0].GetType().Name}.cs"))!;
 
-        // The doors section's rows and places are parts beside it (`HelpDoor*`), and the checkouts full access names a paragraph of *What
-        // you may do* (`HelpRoomFullReads`), rendered by that section and never a section itself; every other file of the folder is one
-        // section's own.
+        // Parts beside their sections: the doors' (`HelpDoor*`) and *What you may do*'s checkouts; every other file is one section's own.
         string[] parts = ["HelpRoomFullReads.cs"];
         var files = Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories);
         Assert.Equal(

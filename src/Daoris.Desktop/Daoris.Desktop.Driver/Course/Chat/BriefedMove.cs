@@ -238,10 +238,8 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The go-on of a conversation its agent refused at the open, interrupted between its two records, or whose opening passed its bound
-    /// before its harness opened a conversation: no conversation began there, so it is a fresh start of its actor, never a resume, its record
-    /// the new part's <c>from</c> (Ask Daoris's room history), why <c>not-offered</c> or, for the opening, <c>resume</c> as for any
-    /// conversation of it unkept, and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
+    /// The go-on of a conversation its agent refused at the open, or whose opening passed its bound unopened: no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
+    /// room history), why <c>not-offered</c> or <c>resume</c>, and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
     /// account are tried, the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
     /// that held a conversation, is handed Daoris's brief of that line first, recomposed here (<see cref="ContextBriefs"/>), since its
     /// words carried none; a refused new conversation goes on with its words alone. Within a go-on that already holds the session.

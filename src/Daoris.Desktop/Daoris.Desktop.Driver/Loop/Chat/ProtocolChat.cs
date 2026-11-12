@@ -106,7 +106,6 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <summary>The refusal that ended its open before any prompt, or null.</summary>
     public ModelRefusal? NotOffered { get; set; }
 
-    /// <summary>What its open past its bound said, which its record ends with; null where its open did not pass it.</summary>
     public Noted? NotUp { get; set; }
 
     public ChatTurns Turns { get; }

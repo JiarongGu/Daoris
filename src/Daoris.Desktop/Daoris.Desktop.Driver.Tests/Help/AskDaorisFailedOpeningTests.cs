@@ -59,7 +59,6 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             OpeningBound = TimeSpan.FromSeconds(2),
-            // The window's reading of the machine, which every Ask Daoris start reads its room by.
             DescribeHelp = _ => Task.FromResult<HelpMachine?>(Machine),
         };
         string Seen(string id) => $"heard [{string.Join(" | ", HeardLines())}], state {ledger.State(id)}, records {ledger.Count}, "
@@ -77,7 +76,6 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
             Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "are you there now?", Reaches = "resume", Door = "screen",
         });
 
-        // The fresh start is the ledger's next record.
         const string fresh = "h2";
         await Poll.Until(
             () => ledger.Count == 2 && events.After(fresh, 0).Events.Any(e => e.Kind == SessionEventKind.Message && e.Text == "heard are you there now?"),
