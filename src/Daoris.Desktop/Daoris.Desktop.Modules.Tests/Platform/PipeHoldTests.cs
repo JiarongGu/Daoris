@@ -16,8 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris. The
-/// window's answer is the confirmations' own, as the bridge's <c>PERSON_CONFIRM</c> gives it; the conversations are a stand-in module's.
-/// The pipe is Windows': elsewhere a test returns at once.
+/// window's answer is the confirmations' own; the conversations are a stand-in module's. The pipe is Windows': elsewhere a test returns.
 /// </remarks>
 public sealed class PipeHoldTests : Bridge
 {

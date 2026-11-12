@@ -16,7 +16,7 @@ repository.
   `_places.Free` and `_running.Remove`, leaking one place slot each time. Once the bound was used up, every git ask queued for good.
 - **Fix:** `HasExited` treats any `ExternalException` (covering both) as exited, as its comment already said; `Ended` reads `Exited`
   inside a try, a throw counting as exited, so no fault can skip freeing the slot.
-- **Verification:** `GitPlaceExitTests` and the scheduler's classes pass; a deterministic test injecting a failing exit read follows.
+- **Verification:** `GitPlaceExitTests` and the scheduler's classes pass; `GitSchedulerTests.A_place_whose_exit_read_throws_is_still_freed_and_the_next_ask_is_admitted` binds a place whose exit read throws the `COMException` and fails (the next ask never admitted) with the `Ended` try removed.
 
 ## 2026-11-12 - A goal step's record failed the role census, and the seeded role table had no `step`
 

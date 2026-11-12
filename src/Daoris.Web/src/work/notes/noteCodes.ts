@@ -496,7 +496,6 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.writing': { values: ['repository'] },
   'held.reserving': { values: ['repository'] },
   'held.reserved': { values: ['run', 'tree', 'repository', 'until'] },
-  'held.answering': { values: ['session'] },
   'held.config-unread': { values: [] },
   'held.lead': { values: [] },
   'held.tail': { values: [] },
