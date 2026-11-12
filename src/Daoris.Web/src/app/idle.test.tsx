@@ -14,16 +14,7 @@ const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', async () => {
-  const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
-  return {
-    ...actual,
-    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
-    // The newest handler for each event: what the shell's pump would deliver to.
-    useShenoraEvent: (_module: string, type: string, handler: (payload: unknown) => void) => { heard.set(type, handler); },
-    useWindowMaximized: () => false,
-  };
-});
+vi.mock('@shenora/react', async () => (await import('../test/appShell')).appShellMock(invoke, { notifyReady, holds: false, heard }));
 
 import '../locales/i18n';
 import { App } from './App';
