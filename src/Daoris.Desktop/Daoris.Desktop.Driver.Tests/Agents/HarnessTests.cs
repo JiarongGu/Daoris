@@ -848,6 +848,24 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 The version a start records is the pin's where the pin's install runs, even when the machine's own look answers another one
+    /// (a copy of the program on <c>PATH</c> from before the pin): the offers and measurements keyed by it would otherwise name a program
+    /// that did not run.
+    /// </summary>
+    [Fact]
+    public async Task The_version_recorded_is_the_pinned_installs_when_the_machine_s_look_answers_another()
+    {
+        new HarnessSettings().WithVersion("fake", "9.9.9").Save(Settings);
+        Install("9.9.9");
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Equal("9.9.9", selection.Version);
+    }
+
+    /// <summary>
     /// 🔴 A pin nobody installed <b>refuses the spawn</b> rather than quietly running `PATH`. Falling
     /// back would run a different tool than the one the person asked for and report success — and
     /// the version on the record would then be a claim about the wrong binary.
