@@ -3,37 +3,6 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What the person keeps of one Ask Daoris conversation: the name they gave it, when they pinned it, and the earlier
-/// conversation it started from with what it is handed, and its focus (<see cref="HelpFoci"/>). <see cref="None"/> where they kept nothing.
-/// </summary>
-public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From, string? Handed)
-{
-    public static HelpKept None { get; } = new(null, null, null, null);
-
-    /// <summary>The place its last turn ran under; null until its first words, or one chosen before them.</summary>
-    public HelpFocus? Focus { get; init; }
-
-    /// <summary>The place chosen and not yet applied, which its next words apply; null for none.</summary>
-    public HelpFocus? FocusNext { get; init; }
-
-    /// <summary>Each place it held, first to last, none twice; null where it kept none.</summary>
-    public IReadOnlyList<HelpFocus>? Foci { get; init; }
-
-    /// <summary>Each message that carried a change of focus, first to last (<see cref="HelpFocusMark"/>).</summary>
-    public IReadOnlyList<HelpFocusMark> Marks { get; init; } = [];
-
-    /// <summary>When the person archived the conversation; null for one not archived.</summary>
-    public DateTimeOffset? Archived { get; init; }
-
-    public bool Equals(HelpKept? other) =>
-        other is not null && Name == other.Name && Pinned == other.Pinned && From == other.From && Handed == other.Handed
-        && Archived == other.Archived && Equals(Focus, other.Focus) && Equals(FocusNext, other.FocusNext)
-        && (Foci ?? []).SequenceEqual(other.Foci ?? []) && Marks.SequenceEqual(other.Marks);
-
-    public override int GetHashCode() => HashCode.Combine(Name, Pinned, From, Handed, Focus, FocusNext);
-}
-
 /// <summary>One row of Ask Daoris's history: a conversation of this machine's the person spoke in.</summary>
 /// <param name="Session">Its record's id.</param>
 /// <param name="State">Its record's state, in the public spelling.</param>
@@ -50,11 +19,7 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>What the list calls it: the person's name for it, else its first question.</summary>
     public string Title => Name ?? Opening ?? "";
 
-    /// <summary>
-    /// A line of what it is about: the first line of Ask Daoris's last answer in it, as Markdown, whole as far as
-    /// <see cref="HelpConversations.PreviewLimit"/>, so the page parses it before it cuts it to a row. Daoris makes
-    /// no model call, so it writes no summary of its own; where the conversation got to is the agent's own words.
-    /// </summary>
+    /// <summary>The first line of Ask Daoris's last answer in it, as Markdown, whole as far as <see cref="HelpConversations.PreviewLimit"/>.</summary>
     public string? About { get; init; }
 
     /// <summary>When it is opened.</summary>
@@ -69,22 +34,13 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>Whether it still runs.</summary>
     public bool Live { get; init; }
 
-    /// <summary>
-    /// The access mode it ran under, its record's: <see cref="HelpModes.Restricted"/> or
-    /// <see cref="HelpModes.Full"/>, the mode its last start got, never the mode chosen now; a record from before the modes ran restricted.
-    /// </summary>
+    /// <summary>The access mode its last start got, never the mode chosen now; a record from before the modes ran restricted.</summary>
     public string Mode { get; init; } = HelpModeNames.Restricted;
 
-    /// <summary>
-    /// The workspace it started in, its record's: kept from its start and never
-    /// moved; a record with none is <c>default</c>'s, as it is recorded.
-    /// </summary>
+    /// <summary>The workspace it started in, never moved; a record with none is <c>default</c>'s.</summary>
     public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
 
-    /// <summary>
-    /// Whether words written to it once it ended go on in its own conversation: its harness conversation's id is
-    /// kept, on an agent whose door resumes. One from before ids were kept for it is offered a new conversation from its words.
-    /// </summary>
+    /// <summary>Whether words written to it once it ended go on in its own conversation: its harness id is kept, on an agent whose door resumes.</summary>
     public bool Resumable { get; init; }
 
     /// <summary>The place its last turn ran under, its home's until one is applied (<see cref="HelpFoci"/>).</summary>
@@ -104,11 +60,7 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>Where a search found its words: its title where that holds them, else a snippet around the match, or null.</summary>
     public string? Found { get; init; }
 
-    /// <summary>
-    /// Where a search found its words in what is said: the line they are on, as Markdown, whole as far as
-    /// <see cref="HelpConversations.PreviewLimit"/>, for the page to parse before it cuts around them; <see cref="Found"/>'s
-    /// snippet is cut first, and a delimiter could lose its partner. Null where the title holds them, or for no search.
-    /// </summary>
+    /// <summary>The line a search found its words on in what is said, as Markdown; null where the title holds them, or for no search.</summary>
     public string? FoundLine { get; init; }
 }
 
@@ -127,15 +79,8 @@ public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, 
 /// record of it), and what the person adds to it is its row of <see cref="ConversationFacts"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>This machine's, and the person's.</b> A help record keeps the workspace it started in, and no feed pushes it whatever
-/// that is (the sync skips it by its kind). Its words are files under the home and its name and pin the facts' row, never the
-/// record, which travels where a record does, and never a repository.</para>
-///
-/// <para><b>Listed from the records and the words</b>: a record of Ask Daoris's of this machine's the person spoke in, or named,
-/// by its name or first question, when it is last spoken in, and the first line of its last answer. One opened ahead of the
-/// person and never spoken in is no conversation, so it is not listed.</para>
-///
-/// <para><b>Facts that do not read are nothing kept</b>: the conversation lists by its question.</para>
+/// This machine's, and the person's: no feed pushes a help record, and its name and pin are the facts' row, never the record's. One
+/// opened ahead of the person and never spoken in or named is no conversation, so it is not listed.
 /// </remarks>
 public sealed class HelpConversations(string home)
 {
@@ -146,19 +91,13 @@ public sealed class HelpConversations(string home)
     /// </summary>
     public const string Brief = "brief";
 
-    /// <summary>
-    /// What a replacement is handed: the words that waited on an earlier one whose agent refused its model at
-    /// the open, before any prompt, moved to this one opened on the walk's next answer.
-    /// </summary>
+    /// <summary>What a replacement is handed: the words that waited on an earlier one whose agent refused its model at the open.</summary>
     public const string NotOffered = "not-offered";
 
-    /// <summary>A page's most, and a page where none is asked for: every record is read, and a page is what is answered of them.</summary>
+    /// <summary>A page's most, and a page where none is asked for.</summary>
     public const int PageLimit = 200;
 
-    /// <summary>
-    /// How much of a line the page is given to parse before it cuts it: an answer's first line, or the line a search
-    /// found its words on. Far past the two lines a row shows, so a delimiter cut here is never in a row's view.
-    /// </summary>
+    /// <summary>How much of a line the page is given to parse before it cuts it, far past the two lines a row shows.</summary>
     public const int PreviewLimit = 1000;
 
     private readonly ConversationFacts _facts = new(home);
@@ -168,21 +107,9 @@ public sealed class HelpConversations(string home)
     /// by when each is last spoken in. With <paramref name="search"/>, only those whose name or words hold it, each with where.
     /// </summary>
     /// <remarks>
-    /// <para><b>Every record is ordered and searched before a page is taken</b>. The list read the newest 200 records
-    /// by when each is opened and only then read pins, last words and the search, so a pinned or lately spoken conversation
-    /// opened long ago fell off it, and an older one is never searched. What orders a record is cheap to read for each: its kept
-    /// file, its first question and its record's last line. What only a row shows (its last answer, whether it goes on) is read
-    /// for the page alone. A search reads each record's words, as a search must.</para>
-    ///
-    /// <para><b>An offset into one order.</b> Ties go by when each is opened, newest first, then by id, so a page's edge is the
-    /// same each time it is asked. A conversation that moves between two asks (spoken in, pinned) can show on two pages or on
-    /// neither until the list is asked again from its start.</para>
-    ///
-    /// <para><b>One workspace's, or every one's</b>. A workspace named keeps the records
-    /// its conversations started in, its name matched whatever its letters' case, before anything is ordered, searched or
-    /// counted, so another workspace's never fill its page, and its total and next page are its own. None named is every
-    /// workspace's, the list as it is. A record from before keeps no workspace and is <c>default</c>'s, never guessed from its
-    /// words.</para>
+    /// Every record is ordered and searched before a page is taken, so a pinned or lately spoken conversation opened long ago is
+    /// never left off; ties go by when each is opened, then by id, so a page's edge is the same each time. A workspace named keeps
+    /// only its records, before anything is ordered, searched or counted; a record that keeps none is <c>default</c>'s.
     /// </remarks>
     /// <param name="resumes">Whether an adapter's door resumes a conversation by its id, by the adapter's name.</param>
     /// <param name="search">Words to find; too few to search with (<see cref="SessionEventText.Searchable"/>), nothing is found.</param>

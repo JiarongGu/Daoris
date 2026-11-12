@@ -29,7 +29,6 @@ public sealed class ReadShareConversationTests : IDisposable
         }
     }
 
-    /// <summary>What <paramref name="read"/> answers while <paramref name="path"/> is held, as <see cref="Held{T}"/> holds it.</summary>
     private static async Task<T> HeldAsync<T>(string path, Func<Task<T>> read)
     {
         using (MoveHold.Take(path))

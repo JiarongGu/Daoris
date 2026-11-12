@@ -10,7 +10,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed class HelpRoutes(DriverContext context)
 {
-    /// <summary>What a history act changes: Ask Daoris's history, and the conversations the panel shows.</summary>
     private const StateScopes Kept = StateScopes.Sessions | StateScopes.Help;
 
     private readonly DriverContext _context = context;
@@ -53,10 +52,8 @@ public sealed class HelpRoutes(DriverContext context)
         return new { SessionId = id, place.Message, Starting = true, Workspace = circle, Focus = started };
     }
 
-    /// <summary>The workspace a start's press names, trimmed; null where it names none, which is <c>default</c>'s.</summary>
     private static string? WorkspaceAsked(string? workspace) => string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
 
-    /// <summary>The workspace as this machine spells it, or refused naming those it holds: <c>default</c> and each repository's.</summary>
     private static string HeldWorkspace(Snapshot snapshot, string circle)
     {
         var held = snapshot.Repositories.Select(known => known.Workspace).Append(RemoteTarget.DefaultWorkspace)
@@ -124,7 +121,6 @@ public sealed class HelpRoutes(DriverContext context)
         return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
     }
 
-    /// <summary>What <c>HELP_PUBLISHED</c> answers: <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
     public static object PublishedAnswer(string session, IReadOnlyList<HelpPublishedEntry> published) => new
     {
         Session = session,

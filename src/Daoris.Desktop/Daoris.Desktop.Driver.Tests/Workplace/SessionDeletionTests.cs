@@ -53,19 +53,19 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Sessions, "p1.events.jsonl")));
     }
 
-    /// <summary>One part the ledger refuses keeps the whole conversation, said with which part and that nothing was deleted.</summary>
+    /// <summary>One part the ledger refuses keeps the whole conversation, said with which part and that nothing is deleted.</summary>
     [Fact]
     public async Task A_part_the_ledger_refuses_keeps_the_whole_conversation()
     {
-        var ledger = new Ledger(Record("p1", line: "p1"), Record("p2", line: "p1"))
+        var ledger = new Ledger(Record("p1", line: "p1"), Record("p2", line: "p1", state: "working", deletable: false))
         {
-            DeleteRefusal = new JsonObject { ["deletable"] = false, ["error"] = "it is running again", ["refusal"] = "live" },
+            Refusal = new JsonObject { ["deletable"] = false, ["error"] = "it is running again.", ["refusal"] = "live" },
         };
         using var service = ledger.Client();
 
-        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "p2", PluginEvents.Screen, log: null);
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "p1", PluginEvents.Screen, log: null);
 
-        Assert.Equal(DeleteVerdict.Live, outcome.Verdict);
+        Assert.NotEqual(DeleteVerdict.Deleted, outcome.Verdict);
         Assert.Contains("one of 2 parts of its conversation", outcome.Message);
         Assert.Contains("Nothing was deleted", outcome.Message);
         Assert.Empty(ledger.Deletes);

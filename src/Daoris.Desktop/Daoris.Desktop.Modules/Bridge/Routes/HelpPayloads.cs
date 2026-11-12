@@ -4,7 +4,6 @@ namespace Daoris.Desktop;
 
 // The payloads of HelpRoutes' and HelpFocusRoutes' presses, each named for its route.
 
-/// <summary>A blank workspace is the default's; no focus is its home's (`help/focus.ts`'s place).</summary>
 public sealed record StartHelp(string? Workspace, JsonElement? Focus = null);
 
 /// <summary>The place a conversation is to be about, as `help/focus.ts` spells it.</summary>

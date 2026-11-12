@@ -51,7 +51,6 @@ public sealed class DesktopStore : IDisposable
 
     public const int HandOffsVersion = ClaimExpectVersion + 1;
 
-    /// <summary>The version whose step makes the conversations' facts: name, pin, archive, focus and the earlier conversation one started from.</summary>
     public const int ConversationFactsVersion = HandOffsVersion + 1;
 
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds.</summary>

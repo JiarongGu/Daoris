@@ -115,7 +115,6 @@ public static class HistoryClearing
 
         // 3. What the home kept of each cleared session, after the service's yes: measured as it goes, so only what went is counted.
         var gone = answered.SelectMany(unit => unit.Sessions.Concat(unit.Teammates)).Distinct(StringComparer.Ordinal).ToList();
-        // A clear takes whole conversations, so each one's facts go with its parts: a driven line's are its quest's.
         var conversations = gone.Select(id => facts.Record(id) is { } record ? ConversationArchive.Of(record) : id).Concat(gone).Distinct(StringComparer.Ordinal).ToList();
         var removed = machine.Files.Remove(gone, world.Events, conversations);
         failed.AddRange(removed.Failed);

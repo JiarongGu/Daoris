@@ -11,11 +11,11 @@ namespace Daoris.Driver;
 /// reads one after.
 /// </summary>
 /// <remarks>
-/// <para><b>A conversation is archived where its newest part was marked</b>, at that mark's time, its parts read from the ledger's
+/// <para><b>A conversation is archived where its newest part carries a mark</b>, at that mark's time, its parts read from the ledger's
 /// <c>line</c>; a mark on an older part alone is dropped, since the list showed the newest. Where the ledger holds no record of a marked
 /// session, or none of its parts, the session is its own conversation.</para>
 /// <para><b>Run again it changes nothing</b>: a fact already kept stands, an older file only fills what is not kept yet.</para>
-/// <para>It ends when no supported home holds either file; the row that deletes it is CONVO1's.</para>
+/// <para>It ends when no supported home holds either file.</para>
 /// </remarks>
 public sealed class ConversationFactsStep : IHomeMigrationStep
 {
@@ -67,7 +67,7 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
         }
         catch (JsonException)
         {
-            // A file that does not read was nothing kept; its copy stays in the salvage folder.
+            // A file that does not read keeps nothing; its copy stays in the salvage folder.
             return;
         }
 
@@ -103,7 +103,7 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
         }
         catch (JsonException)
         {
-            // A file that does not read was no mark: a row back in the list, never a row gone.
+            // A file that does not read holds no mark: a row back in the list, never a row gone.
             return;
         }
 
@@ -115,7 +115,7 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
         }
     }
 
-    /// <summary>Each conversation whose newest part was marked, with that mark's time.</summary>
+    /// <summary>Each conversation whose newest part carries a mark, with that mark's time.</summary>
     private static IEnumerable<(string Conversation, DateTimeOffset At)> Conversations(
         IReadOnlyDictionary<string, DateTimeOffset> marks, IReadOnlyDictionary<string, (string Line, string Created)> parts)
     {

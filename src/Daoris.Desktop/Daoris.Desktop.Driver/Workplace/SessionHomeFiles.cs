@@ -51,15 +51,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
-    /// <summary>
-    /// Ask Daoris's conversation's: what each of its starts handed (<see cref="HelpWired"/>), and what its Applies published
-    /// (<see cref="HelpPublished"/>).
-    /// </summary>
+    /// <summary>Ask Daoris's: what each start handed (<see cref="HelpWired"/>) and its Applies published (<see cref="HelpPublished"/>).</summary>
     public const string Help = "help";
     public const string Held = "held";
     public const string Landing = "landing";
 
-    /// <summary>A conversation's row of <see cref="ConversationFacts"/>: its name, pin, archive mark and places.</summary>
     public const string Facts = "facts";
 
     /// <summary>A chat run's binding, opinion gate and look, named by the record its key names, <c>chat-&lt;id&gt;</c>.</summary>

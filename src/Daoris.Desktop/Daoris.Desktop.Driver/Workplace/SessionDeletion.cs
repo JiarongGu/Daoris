@@ -107,7 +107,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         return held.Count > 0 && !record.Teammate ? held : [record];
     }
 
-    /// <summary>The refusal of one part, said as the conversation's: which part, of how many, and that nothing was deleted.</summary>
+    /// <summary>The refusal of one part, said as the conversation's: which part, of how many, and that nothing is deleted.</summary>
     private static string Whole(string said, string part, string asked, int count) =>
         count == 1 ? said : $"Session `{asked}` is one of {count} parts of its conversation, deleted whole; part `{part}` is kept: {said} Nothing was deleted.";
 

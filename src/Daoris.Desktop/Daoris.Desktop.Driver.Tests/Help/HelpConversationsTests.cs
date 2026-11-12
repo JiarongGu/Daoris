@@ -185,7 +185,6 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Throws<DriverException>(() => new ConversationFacts(_home).Pin("../escape", true, Monday));
     }
 
-    /// <summary>What the person kept is one row of the desktop store, and a store with no row for it lists the conversation by its question.</summary>
     [Fact]
     public void The_name_and_pin_are_one_row_of_the_desktop_store_and_survive_a_new_reader()
     {
@@ -197,7 +196,6 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Equal(new HelpKept("Landing", Monday, null, null), new ConversationFacts(_home).Read("h1"));
     }
 
-    /// <summary>A conversation with nothing kept lists by its question.</summary>
     [Fact]
     public void A_conversation_with_nothing_kept_lists_by_its_question()
     {

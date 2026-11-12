@@ -203,7 +203,7 @@ public sealed class AbandonTests : IDisposable
             ledger.Declines);
         Assert.Equal(("Closed", Reason), ledger.Ask("a1"));
         Assert.Equal(("working", "Done", "Taken", "Taken"), (ledger.State("laptop/s9"), ledger.Status("q4"), ledger.Status("q5"), ledger.Status("q8")));
-        Assert.Equal(["1ntake00", "land0000", "p4rk3d00", "w0rk1ng0"], new ConversationArchive(_home).Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["1ntake00", "land0000", "p4rk3d00", "w0rk1ng0"], new ConversationArchive(_home).Marks().Keys.Order());
         Assert.Equal((11, 11), (outcome.Listed, outcome.Went));
         Assert.Empty(outcome.Changed);
         Assert.Empty(outcome.Failed);

@@ -48,7 +48,6 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(ClaudeLineageHook.Source, File.ReadAllText(path));
     }
 
-    /// <summary><see cref="SessionProcesses.AnyAlive"/> reads a held marker, so one naming a process gone is none alive.</summary>
     [Fact]
     public void A_marker_is_read_as_no_process_while_its_move_into_place_still_holds_it()
     {

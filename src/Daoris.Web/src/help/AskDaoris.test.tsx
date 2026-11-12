@@ -1233,7 +1233,7 @@ describe('Ask Daoris’s history', () => {
       .toHaveClass('wrap-anywhere');
   });
 
-  /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions' own, asked once. */
+  /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions'. */
   it('renames, pins and deletes from the history through the driver', async () => {
     withHistory([row({ session: EARLIER.id })]);
     show();

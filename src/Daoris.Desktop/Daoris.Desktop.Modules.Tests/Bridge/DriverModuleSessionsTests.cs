@@ -422,7 +422,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Equal(["done1"], archived.GetProperty("archived").EnumerateArray().Select(mark => mark.GetProperty("session").GetString()));
         Assert.Empty(archived.GetProperty("kept").EnumerateArray());
-        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
+        Assert.Equal(["done1"], new ConversationArchive(Home).Marks().Keys);
         var row = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
         Assert.Equal("archived", row.GetProperty("group").GetString());
         Assert.True(row.GetProperty("archived").GetBoolean());
@@ -453,7 +453,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Contains(code, refusal);
         Assert.Contains($"session={session}", refusal);
         Assert.Contains(group, refusal);
-        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
+        Assert.Empty(new ConversationArchive(Home).Marks());
     }
 
     /// <summary>

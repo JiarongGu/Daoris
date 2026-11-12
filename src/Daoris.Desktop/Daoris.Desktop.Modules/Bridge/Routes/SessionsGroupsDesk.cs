@@ -86,7 +86,6 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         // `sessions archive` and `unarchive` sent over the pipe ask for their words (`said: true`), the alone path's own, and a
         // terminal's lines; the page asks for none, and its answers keep their shape.
         var said = press.Said;
-        // A conversation is archived or not as a whole, so every part of each is read and judged.
         var records = await (_loop.Service ?? throw NotReady()).SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
 
         if (!archive)

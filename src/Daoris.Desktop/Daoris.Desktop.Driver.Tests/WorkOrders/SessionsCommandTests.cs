@@ -852,7 +852,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (yes, done) = await RunAsync(Family(), ["archive", "--ended", "--yes"]);
         Assert.Equal(0, yes);
         Assert.Contains("archived 3 sessions that ended", done);
-        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new ConversationArchive(_home).Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new ConversationArchive(_home).Marks().Keys.Order());
     }
 
     [Fact]

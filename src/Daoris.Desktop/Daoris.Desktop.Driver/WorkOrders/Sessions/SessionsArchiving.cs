@@ -16,7 +16,6 @@ internal static class SessionsArchiving
 
     private static async Task<int> ArchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
-        // Every part of each conversation is judged: it is archived or not as a whole.
         var parts = ConversationArchive.Parts(ids, await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false));
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, parts, ct).ConfigureAwait(false);
         var answer = new ConversationArchive(world.Home).Archive(ids, SessionGroups.Read(look, parts), look.Records, DateTimeOffset.UtcNow);
