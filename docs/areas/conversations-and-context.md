@@ -258,8 +258,11 @@ of everything it handed, section by section.
     and a tool call the reply has been inside for two minutes is said above the box with how long it has run and *Stop* beside it
     (`LongCallLine`), a word that ends nothing. Every conversation's opening is held to a bound a phase (`ChatOpening`, 60 s): the
     plugins' servers past it are left out, said, and the opening goes on; the steps to the spawn, and the harness's open of its
-    conversation (`TransportProtocol.OpenBound`), where the connector Daoris's work needs comes up, fail the start past it, said
-    as *Ask Daoris could not start: … did not come up*, its process ended and its words kept for the next send; the person's stop
+    conversation (`TransportProtocol.OpenBound`), where the connector Daoris's work needs comes up, fail the start past it, and the native
+    door's harness, given no word while a conversation is opened ahead, fails it past the bound from the first word written to its first
+    reading (`NativeOpening`), said
+    as *Ask Daoris could not start: … did not come up*, its process ended, its record ending on that note, and its words kept for the
+    next send, which, where no conversation of it is kept, starts it afresh as a refused start's does (`PriorSession.NotUp`); the person's stop
     reaches an opening with no process yet (`SessionProcesses.Openings`) and ends it as their stop. It presses Daoris's verbs, and the person
     says yes on the card to every change (roles-and-supervision 56); a place it names is a go link in its answer, which the
     window opens (roles-and-supervision 55). A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are

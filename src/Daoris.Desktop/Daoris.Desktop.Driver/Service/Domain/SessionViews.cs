@@ -52,6 +52,9 @@ public sealed record PriorSession(
     /// </summary>
     public bool NotOffered { get; init; }
 
+    /// <summary>It ended past its opening's bound, read by its end code: with no conversation kept, its go-on is a fresh start.</summary>
+    public bool NotUp { get; init; }
+
     /// <summary>The adapter its record opened on: an answer resumes its conversation only on the same one.</summary>
     public string? Adapter { get; init; }
 

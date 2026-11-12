@@ -90,7 +90,8 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 new LineageReadings(Context.Home, sessionId),
                 said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
                 // What the door says it loaded, kept beside what Ask Daoris's start handed.
-                HelpLoaded.Part(Context.Home, sessionId)));
+                HelpLoaded.Part(Context.Home, sessionId),
+                watched.Opening));
             // The native door's go-on hands the run its ask, which the run's one retry reads and marks.
             await (goOn is null
                     ? run.OpenAsync(CancellationToken.None)
@@ -103,6 +104,13 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // Its exit, then its capture read to its end, then its process's lineage end.
             ending = true;
             var end = await run.EndAsync(CancellationToken.None).ConfigureAwait(false);
+
+            // Its harness said nothing past the opening's bound: failed with the reason said, its words kept, the next send starting it afresh.
+            if (watched.Opening?.NotUp is { } notUp)
+            {
+                await conclusion.ConcludeAsync(sessionId, "failed", notUp, onEnded).ConfigureAwait(false);
+                return;
+            }
 
             // The run tried the same resume once more where its native harness ended on a failed exit before naming its conversation, which a
             // crash, a failed sign-in or a flag it rejected ends the same way, so it proves nothing of its loss; a second such end is
@@ -145,6 +153,12 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 return;
             }
 
+            if (watched.Opening?.NotUp is { } notUp)
+            {
+                await conclusion.ConcludeAsync(sessionId, "failed", notUp, onEnded).ConfigureAwait(false);
+                return;
+            }
+
             if (processes.WasStopRequested(sessionId))
             {
                 await conclusion.ConcludeAsync(sessionId, "stopped", conclusion.EndedNoteFor(sessionId, watched, stopped: true), onEnded).ConfigureAwait(false);
@@ -160,10 +174,11 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 return;
             }
 
-            await conclusion.ConcludeAsync(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
+            await conclusion.ConcludeAsync(sessionId, "failed", chat?.NotUp ?? Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
         }
         finally
         {
+            watched.Opening?.Dispose();
             Context.Output?.Close(sessionId);
             SpawnFiles.Remove(rules);
             SpawnFiles.Remove(servers);

@@ -50,6 +50,10 @@ internal static class SessionReads
     internal static bool NotOffered(SessionResponse session) =>
         PartsOf(session)?.Any(part => part.Code == RecordNotes.EndedChoiceNotOffered) == true;
 
+    /// <summary>Whether a record ended past its opening's bound, by its end code (<see cref="PriorSession.NotUp"/>).</summary>
+    internal static bool NotUp(SessionResponse session) =>
+        PartsOf(session)?.Any(part => part.Code is RecordNotes.ChatNotUp or RecordNotes.ChatHelpNotUp) == true;
+
     /// <summary>Whether a raw record says it ended <c>choice-not-offered</c>, for a reader that holds the record as JSON.</summary>
     internal static bool NotOffered(JsonElement session) =>
         NotePart.Read(session)?.Any(part => part.Code == RecordNotes.EndedChoiceNotOffered) == true;
@@ -370,6 +374,7 @@ internal static class SessionReads
             Chosen = Wired<ActorChosen>(session.Chosen),
             Limit = session.Limit,
             NotOffered = NotOffered(session),
+            NotUp = NotUp(session),
             // What an answered park is compared with, and where its evidence counts from.
             Adapter = session.Door,
             DoorVersion = session.DoorVersion,
