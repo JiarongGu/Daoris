@@ -24,9 +24,9 @@ public sealed class RebindBoundTests
     {
         NodeDeclaration[] nodes =
         [
-            Node("step", kind) with { Outputs = WirePorts("made", WireValues.Commit) },
-            Node("check") with { Inputs = WirePorts("made", WireValues.Commit), Outputs = WirePorts("checked", WireValues.Commit) },
-            Node("merge") with { Inputs = WirePorts("checked", WireValues.Commit) },
+            Node("step", kind) with { Outputs = Plugs("made", WireValues.Commit) },
+            Node("check") with { Inputs = Plugs("made", WireValues.Commit), Outputs = Plugs("checked", WireValues.Commit) },
+            Node("merge") with { Inputs = Plugs("checked", WireValues.Commit) },
         ];
         Wire[] wires = [Data("w1", "step", "made", "check", "made"), Data("w2", "check", "checked", "merge", "checked")];
         return new Graph(nodes, wires) { Run = At("tip-m1") };

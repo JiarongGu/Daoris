@@ -1388,7 +1388,7 @@ test("this repository's lanes each carry an id, a title and a one-line summary, 
     assert.ok(lane.title.trim(), `${lane.id}: no title`);
     assert.ok(lane.summary.trim() && !lane.summary.includes('\n'), `${lane.id}: its summary is one line, for the people and agents that address the lane`);
   }
-  assert.deepEqual(lanes.map((lane) => lane.id), ['web-shell', 'web-settings', 'driver', 'modules', 'service', 'cli', 'tools', 'records']);
+  assert.equal(lanes.map((lane) => lane.id).join(), 'web-shell,web-settings,driver,modules,service,layers,cli,tools,records');
   const stewards = lanes.filter((lane) => lane.steward);
   assert.deepEqual(stewards.map((lane) => [lane.id, lane.paths, lane.gates]),
     [['records', ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json'], ['universal', 'cli']]]);

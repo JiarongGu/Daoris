@@ -13,9 +13,9 @@ public sealed class WireValuesTests
     private const string Run = "run:r";
     private const string Work = "unit-b1";
 
-    private static NodeDeclaration Producer(string id, string output, string schema) => Node(id) with { Outputs = WirePorts(output, schema) };
+    private static NodeDeclaration Producer(string id, string output, string schema) => Node(id) with { Outputs = Plugs(output, schema) };
 
-    private static NodeDeclaration Reader(string id, string input, string schema) => Node(id) with { Inputs = WirePorts(input, schema) };
+    private static NodeDeclaration Reader(string id, string input, string schema) => Node(id) with { Inputs = Plugs(input, schema) };
 
     private static readonly NodeDeclaration[] Nodes =
     [
@@ -106,7 +106,7 @@ public sealed class WireValuesTests
         NodeDeclaration[] nodes =
         [
             Producer("make", "made", WireValues.Commit),
-            Reader("check", "made", WireValues.Commit) with { Outputs = WirePorts("checked", WireValues.Commit) },
+            Reader("check", "made", WireValues.Commit) with { Outputs = Plugs("checked", WireValues.Commit) },
             Reader("merge", "checked", WireValues.Commit),
         ];
         Wire[] wires = [Data("w1", "make", "made", "check", "made"), Data("w2", "check", "checked", "merge", "checked")];
