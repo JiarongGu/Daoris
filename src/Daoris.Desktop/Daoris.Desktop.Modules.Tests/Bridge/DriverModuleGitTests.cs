@@ -299,7 +299,6 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     {
         var root = await InitAsync();
         var commit = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
-        // The reads keep an answer only once every file it rests on is older than the clock's grain, so a repository made a moment ago is aged.
         Aged(Path.Combine(root, ".git"));
         var module = await UpAsync(root);
 

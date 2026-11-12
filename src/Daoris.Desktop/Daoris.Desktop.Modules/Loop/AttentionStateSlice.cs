@@ -129,7 +129,6 @@ public static class AttentionStateSlice
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // A run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
-        // A second check's flag not yet seen, the reader's claim about one of Ask Daoris's acts.
         ["secondCheck"] = ["session", "range", "index", "says", "certainty", "call", "at", "reader", "independence"],
         // A run waiting on a person's task, its node and the presses it waits for.
         ["task"] = ["run", "node", "acts", "work"],
