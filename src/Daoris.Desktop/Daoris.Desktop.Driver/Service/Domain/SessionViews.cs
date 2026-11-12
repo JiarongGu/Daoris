@@ -202,6 +202,8 @@ public sealed record PriorSession(
     /// <summary>Who asked for it to continue <see cref="From"/>, by <see cref="HandOverBy"/>'s codes; null with it.</summary>
     public string? FromBy { get; init; }
 
+    public string? Line { get; init; }
+
     /// <summary>The workspace the record belongs to, as it names it: where a rule is resolved for it.</summary>
     public string? Workspace { get; init; }
 

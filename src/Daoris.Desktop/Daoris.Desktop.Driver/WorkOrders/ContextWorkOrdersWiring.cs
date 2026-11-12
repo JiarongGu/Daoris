@@ -28,7 +28,7 @@ internal sealed class ContextWorkOrdersOperations : IContextWorkOrders
     {
         try
         {
-            var parts = ContextBriefs.LineOf(records, session).Select(part => part.Session).ToList();
+            var parts = LineKeys.Upto(session, records).Select(part => part.Session).ToList();
             if (!parts.Contains(session, StringComparer.Ordinal)) parts.Add(session);
             var look = await LookAsync(service, home, records, parts, session, ct).ConfigureAwait(false);
             var asked = (look.Helpers ?? []).ToDictionary(ask => $"helper:{ask.Id}", ask => ask.Question, StringComparer.Ordinal);

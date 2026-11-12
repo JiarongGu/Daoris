@@ -198,6 +198,7 @@ public sealed class OpinionRecheckTests : IDisposable
         var (host, git, tip, fix, _) = Answered();
         host.Session("s0", "failed", adapter: "codex-acp");
         host.Set("s1", "from", "s0");
+        host.Set("s1", "line", "s0");
         host.Set("s1", "fromWhy", HandOverWhy.Limit);
         var driver = Driver(host, git);
         await driver.DeliverAsync("op1", AskedAt(tip));

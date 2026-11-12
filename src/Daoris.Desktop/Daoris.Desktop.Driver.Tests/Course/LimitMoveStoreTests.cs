@@ -343,6 +343,7 @@ public sealed class LimitMoveStoreTests : IDisposable
         world.Ledger.Edit("c1", record =>
         {
             record["from"] = "c0";
+            record["line"] = "c0";
             record["actor"] = RoleWork.Chat;
         });
 

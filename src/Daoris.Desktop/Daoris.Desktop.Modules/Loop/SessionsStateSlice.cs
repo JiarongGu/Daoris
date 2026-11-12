@@ -51,7 +51,7 @@ public static class SessionsStateSlice
         // host answers none for, and then the page reads today's predicates.
         "work",
         // The quest a chat took through its own connector, which the at-work view reads a chat's wait by.
-        "tookQuest",
+        "tookQuest", "line",
     ];
 
     /// <summary>
@@ -61,7 +61,7 @@ public static class SessionsStateSlice
     /// slice's entries carry for the page; and <c>decides</c>, which the page reads as the pushed <c>work</c>).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "resolved", "head", "decides"];
+        ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "resolved", "head", "decides", "performs"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change declared to the sessions, a conversation's end and the service coming up. The

@@ -1,45 +1,19 @@
 namespace Daoris.Driver;
 
-/// <summary>One part of a line as its record says it: its id, why it continued the part before it, and its record.</summary>
-/// <param name="Why">Its <c>fromWhy</c>, one of <see cref="HandOverWhy"/>; null where it continues none.</param>
-public sealed record LinePart(string Session, string? Why, PriorSession Record);
-
 /// <summary>
-/// What a brief is composed from, read on this machine: the line a new part
-/// continues, one chain back by each record's <c>from</c>, each part's events as its record keeps them, the tree as it stands now,
-/// the gates that make a call a check, the entry's other parts and what is still asked. <see cref="ContextBrief.Compose"/> is the
-/// pure half; this reads what it is handed, and nothing here writes.
+/// What a brief is composed from, read on this machine: the conversation a new part continues, its parts up to the one moved from
+/// (<see cref="LineKeys.Upto"/>), each part's events as its record keeps them, the tree as it stands now, the gates that make a call a
+/// check, the entry's other parts and what is still asked. <see cref="ContextBrief.Compose"/> is the pure half; this reads what it is
+/// handed, and nothing here writes.
 /// </summary>
 /// <remarks>
-/// <b>Never a part beside the line</b>: a record of the same entry that continues nothing on it is one of the entry's other parts,
-/// one line each, never its words. <b>A part this machine holds no record of</b> (a teammate's, deleted) ends the line there.
+/// <b>Never a part beside the conversation</b>: a record of the same entry on another conversation is one of the entry's other parts,
+/// one line each, never its words. <b>A part this machine holds no record of</b> (a teammate's, deleted) is no part of it.
 /// </remarks>
 internal static class ContextBriefs
 {
-    /// <summary>The most parts a line is followed back: a guard against a chain no person made.</summary>
-    internal const int Depth = 50;
-
     /// <summary>The most of a list read for the brief to count: what it names, and that more were there.</summary>
     private const int ListRead = 500;
-
-    /// <summary>
-    /// The line <paramref name="session"/> ends, oldest part first: it and, by each record's <c>from</c>, the parts it continued. A
-    /// link that comes back on itself, or names a record not held here, ends the line where it would repeat or break.
-    /// </summary>
-    internal static IReadOnlyList<LinePart> LineOf(IReadOnlyDictionary<string, PriorSession> records, string session)
-    {
-        var line = new List<LinePart>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        var at = session;
-        while (at is not null && line.Count < Depth && seen.Add(at) && records.TryGetValue(at, out var record))
-        {
-            line.Add(new LinePart(at, record.FromWhy, record));
-            at = record.From is { Length: > 0 } from ? from : null;
-        }
-
-        line.Reverse();
-        return line;
-    }
 
     /// <summary>
     /// The brief of the line <paramref name="session"/> ends, for the new part that goes on from it now because of
@@ -64,7 +38,7 @@ internal static class ContextBriefs
         var answered = await RecordsAsync(service, ct).ConfigureAwait(false);
         var json = answered ?? "[]";
         var records = ServiceClient.ReadRecords(json);
-        var line = LineOf(records, session);
+        var line = LineKeys.Upto(session, records);
         IReadOnlyList<SessionEvent> Read(string part)
         {
             var kept = Events(events, home, part);
@@ -113,7 +87,7 @@ internal static class ContextBriefs
 
     /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow; none read, none.</summary>
     internal static async Task<IReadOnlyList<string>> LineIdsAsync(ServiceClient service, string session, CancellationToken ct) =>
-        [.. LineOf(ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false) ?? "[]"), session).Select(part => part.Session)];
+        [.. LineKeys.Upto(session, ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false) ?? "[]")).Select(part => part.Session)];
 
     /// <summary>The service's records, closed ones included; null for an answer that could not be had or read.</summary>
     private static async Task<string?> RecordsAsync(ServiceClient service, CancellationToken ct)

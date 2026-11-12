@@ -1,17 +1,17 @@
 {
-  "about": "CONTEXTDRIVE1a (the context-counters design §2.3, §2.4): the line key and each count of a line, over records as the service answers them. The driver's LineKeysTests and LineCountsTests read it, and the service's LineKeysFixtureTests holds the service's walk (Lines.WalkAsync) to the same lines: a row with a service member list is the records the walk visits from its first part, and the line the key names is the same set. A record's id here is a name; the service test maps it to the id it makes.",
+  "about": "CONTEXTDRIVE1a (the context-counters design §2.3, §2.4): the line key and each count of a line, over records as the service answers them, each with the `line` the service gives it (CONVO1c). The driver's LineKeysTests and LineCountsTests read it; the service's SessionLinesTests holds the `line` set at the open and given by the ledger's step to each named part's key, and its LineKeysFixtureTests holds the service's walk (Lines.WalkAsync) to the same lines: a row with a service member list is the records the walk visits from its first part, and the line the key names is the same set. A record's id here is a name; the service test maps it to the id it makes.",
   "keys": [
     {
       "name": "a driven line across a hand-over, a carry-on and D79's resume with no from",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "press", "state": "failed", "created": "2026-11-03T09:10:00Z" },
-        { "id": "s3", "kind": "driven", "quest": "q1", "from": "s2", "fromWhy": "carry-on", "state": "stopped", "created": "2026-11-03T09:20:00Z" },
-        { "id": "s4", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:30:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "fromWhy": "press", "state": "failed", "created": "2026-11-03T09:10:00Z" },
+        { "id": "s3", "kind": "driven", "quest": "q1", "line": "q1", "from": "s2", "fromWhy": "carry-on", "state": "stopped", "created": "2026-11-03T09:20:00Z" },
+        { "id": "s4", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:30:00Z" }
       ],
       "named": [
-        { "session": "s3", "key": "q1", "parts": ["s1", "s2", "s3"], "cut": null },
-        { "session": "s4", "key": "q1", "parts": ["s4"], "cut": null }
+        { "session": "s3", "key": "q1", "parts": ["s1", "s2", "s3", "s4"], "cut": null },
+        { "session": "s4", "key": "q1", "parts": ["s1", "s2", "s3", "s4"], "cut": null }
       ],
       "line": ["s1", "s2", "s3", "s4"],
       "service": { "from": "s1", "members": ["s1", "s2", "s3", "s4"] }
@@ -19,12 +19,12 @@
     {
       "name": "a conversation continued from a driven part is on its quest's line",
       "records": [
-        { "id": "p1", "kind": "driven", "quest": "q2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "c1", "kind": "chat", "from": "p1", "fromWhy": "press", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "p1", "kind": "driven", "quest": "q2", "line": "q2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "c1", "kind": "chat", "line": "q2", "from": "p1", "fromWhy": "press", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": [
         { "session": "c1", "key": "q2", "parts": ["p1", "c1"], "cut": null },
-        { "session": "p1", "key": "q2", "parts": ["p1"], "cut": null }
+        { "session": "p1", "key": "q2", "parts": ["p1", "c1"], "cut": null }
       ],
       "line": ["p1", "c1"],
       "service": { "from": "p1", "members": ["p1", "c1"] }
@@ -32,12 +32,12 @@
     {
       "name": "a conversation alone is keyed by its first part",
       "records": [
-        { "id": "c1", "kind": "chat", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "c2", "kind": "chat", "from": "c1", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "c1", "kind": "chat", "line": "c1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "c2", "kind": "chat", "line": "c1", "from": "c1", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": [
         { "session": "c2", "key": "c1", "parts": ["c1", "c2"], "cut": null },
-        { "session": "c1", "key": "c1", "parts": ["c1"], "cut": null }
+        { "session": "c1", "key": "c1", "parts": ["c1", "c2"], "cut": null }
       ],
       "line": ["c1", "c2"],
       "service": { "from": "c1", "members": ["c1", "c2"] }
@@ -45,8 +45,8 @@
     {
       "name": "two quests on one line key by the oldest",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q5", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q5", "line": "q1", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": [
         { "session": "s2", "key": "q1", "parts": ["s1", "s2"], "cut": null }
@@ -57,7 +57,7 @@
     {
       "name": "a teammate's part ends the walk before it",
       "records": [
-        { "id": "c1", "kind": "chat", "from": "mate/s9", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "c1", "kind": "chat", "line": "c1", "from": "mate/s9", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": [
         { "session": "c1", "key": "c1", "parts": ["c1"], "cut": null },
@@ -68,33 +68,33 @@
     {
       "name": "a part this machine keeps no record of ends the line before it",
       "records": [
-        { "id": "c2", "kind": "chat", "from": "s0", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "c2", "kind": "chat", "line": "s0", "from": "s0", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": [
-        { "session": "c2", "key": "s0", "parts": ["s0", "c2"], "cut": null }
+        { "session": "c2", "key": "s0", "parts": ["c2"], "cut": null }
       ],
       "line": ["c2"]
     },
     {
       "name": "a cycle keys the line by the part itself and reads at least",
       "records": [
-        { "id": "s1", "kind": "chat", "from": "s2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "chat", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "chat", "line": "s1", "from": "s2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "chat", "line": "s2", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": [
-        { "session": "s1", "key": "s1", "parts": ["s2", "s1"], "cut": "cycle" },
-        { "session": "s2", "key": "s2", "parts": ["s1", "s2"], "cut": "cycle" }
+        { "session": "s1", "key": "s1", "parts": ["s1"], "cut": "cut" },
+        { "session": "s2", "key": "s2", "parts": ["s2"], "cut": "cut" }
       ],
-      "line": ["s1", "s2"]
+      "line": ["s1"]
     }
   ],
   "counts": [
     {
       "name": "equal across a hand-over, a carry-on and a restart: named by any part of the line",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "press", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:10:00Z" },
-        { "id": "s3", "kind": "driven", "quest": "q1", "from": "s2", "fromWhy": "carry-on", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:20:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "fromWhy": "press", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:10:00Z" },
+        { "id": "s3", "kind": "driven", "quest": "q1", "line": "q1", "from": "s2", "fromWhy": "carry-on", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:20:00Z" }
       ],
       "named": ["s1", "s2", "s3"],
       "events": {
@@ -117,8 +117,8 @@
     {
       "name": "a person's word between two answers starts the count again, across a part",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "carry-on", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "fromWhy": "carry-on", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": ["s2"],
       "events": {
@@ -132,7 +132,7 @@
     {
       "name": "a trimmed log reads at least",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "trimmed": true, "tokens": ["answer", "acts", "end", "answer", "acts", "end"] } },
@@ -144,8 +144,8 @@
     {
       "name": "a log that does not read is a line read from the next part on, at least",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": ["s2"],
       "events": { "s2": { "tokens": ["brief", "answer", "acts", "end"] } },
@@ -156,8 +156,8 @@
     {
       "name": "a walk cut by a cycle reads at least and has no quest to fail",
       "records": [
-        { "id": "s1", "kind": "chat", "from": "s2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "chat", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "chat", "line": "s1", "from": "s2", "state": "ended", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "chat", "line": "s2", "from": "s1", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": ["s2"],
       "events": {
@@ -165,7 +165,7 @@
         "s2": { "tokens": ["brief", "answer", "acts", "end"] }
       },
       "expect": {
-        "answers-alone": { "n": 2, "known": "at-least", "why": "walk-cut" },
+        "answers-alone": { "n": 1, "known": "at-least", "why": "walk-cut" },
         "quiet": { "n": 0, "known": "at-least", "why": "walk-cut" },
         "limits": { "n": 0, "known": "at-least", "why": "walk-cut" },
         "moves": { "n": 0, "known": "exact" },
@@ -177,7 +177,7 @@
     {
       "name": "a store before its step reads moves at least",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "tokens": ["started", "acts", "end"] } },
@@ -190,7 +190,7 @@
     {
       "name": "a store that does not read leaves moves unknown",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "tokens": ["started", "acts", "end"] } },
@@ -218,7 +218,7 @@
     {
       "name": "a conversation has no failures to count by quest or by choice",
       "records": [
-        { "id": "c1", "kind": "chat", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "c1", "kind": "chat", "line": "c1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["c1"],
       "events": { "c1": { "tokens": ["started", "acts", "end"] } },
@@ -235,8 +235,8 @@
     {
       "name": "a conversation continued from a driven part counts its quest's failures",
       "records": [
-        { "id": "p1", "kind": "driven", "quest": "q2", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
-        { "id": "c1", "kind": "chat", "from": "p1", "fromWhy": "press", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "p1", "kind": "driven", "quest": "q2", "line": "q2", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
+        { "id": "c1", "kind": "chat", "line": "q2", "from": "p1", "fromWhy": "press", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": ["c1"],
       "events": { "p1": { "tokens": ["started", "acts", "end"] }, "c1": { "tokens": ["brief", "acts", "end"] } },
@@ -249,8 +249,8 @@
     {
       "name": "a teammate's record is left out: of the strikes and of the line",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
-        { "id": "mate/s9", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:05:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:00:00Z" },
+        { "id": "mate/s9", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:05:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "tokens": ["started", "acts", "end"] } },
@@ -262,7 +262,7 @@
     {
       "name": "a teammate's record named has no counts here",
       "records": [
-        { "id": "mate/s9", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:05:00Z" }
+        { "id": "mate/s9", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "created": "2026-11-03T09:05:00Z" }
       ],
       "named": ["mate/s9"],
       "expect": {}
@@ -270,9 +270,9 @@
     {
       "name": "a quiet end counts once, as quiet only, and a limit end is no strike",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "limit": true, "created": "2026-11-03T09:00:00Z" },
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "limit": true, "created": "2026-11-03T09:00:00Z" },
         {
-          "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "limit", "state": "failed", "adapter": "a2", "created": "2026-11-03T09:10:00Z",
+          "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "fromWhy": "limit", "state": "failed", "adapter": "a2", "created": "2026-11-03T09:10:00Z",
           "noteParts": [{ "code": "ended.quiet", "values": { "minutes": 15 } }]
         }
       ],
@@ -288,7 +288,7 @@
     {
       "name": "a limit end counts in limits",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "limit": true, "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "failed", "adapter": "a1", "limit": true, "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "tokens": ["started", "acts", "end"] } },
@@ -301,7 +301,7 @@
     {
       "name": "an admission's count stands though the log it read was trimmed since",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "trimmed": true, "tokens": ["answer", "acts", "end"] } },
@@ -313,7 +313,7 @@
     {
       "name": "an admission seeded over a trimmed log reads at least, and counts a go-on read on after it",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "trimmed": true, "tokens": ["answer", "acts", "end", "answer", "acts", "end"] } },
@@ -325,8 +325,8 @@
     {
       "name": "the person's word read on after an admission's seed starts its count again, and it is exact",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" },
-        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "carry-on", "state": "working", "created": "2026-11-03T09:10:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "line": "q1", "from": "s1", "fromWhy": "carry-on", "state": "working", "created": "2026-11-03T09:10:00Z" }
       ],
       "named": ["s1", "s2"],
       "events": {
@@ -341,7 +341,7 @@
     {
       "name": "a go-on the admission reserved counts before its events show it",
       "records": [
-        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+        { "id": "s1", "kind": "driven", "quest": "q1", "line": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
       ],
       "named": ["s1"],
       "events": { "s1": { "tokens": ["started", "acts", "end", "answer", "acts", "end"] } },

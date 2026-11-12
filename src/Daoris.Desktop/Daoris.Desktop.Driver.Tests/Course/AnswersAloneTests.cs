@@ -297,7 +297,8 @@ public sealed class AnswersAloneTests
             foreach (var e in Turn(Supervisor())) events.Append("s0", e);
             var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
             {
-                ["s1"] = new("s1", null, "awaiting-person") { From = "s0" },
+                ["s0"] = new("s0", null, "completed") { Line = "s0" },
+                ["s1"] = new("s1", null, "awaiting-person") { From = "s0", Line = "s0" },
             };
 
             Assert.False(hold.AtBound("s0", records));

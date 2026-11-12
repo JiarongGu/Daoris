@@ -69,8 +69,8 @@ public sealed class LineCountsTests : IDisposable
         var admissions = new ContinuationAdmissions(_home, () => StoreSettled.Yes);
         var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
         {
-            ["s1"] = new("s1", null, "completed") { Quest = "q1" },
-            ["s9"] = new("s9", null, "completed") { Quest = "q9" },
+            ["s1"] = new("s1", null, "completed") { Quest = "q1", Line = "q1" },
+            ["s9"] = new("s9", null, "completed") { Quest = "q9", Line = "q9" },
         };
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = "h1", Id = "w1", Text = "Answered." });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "Went on." });

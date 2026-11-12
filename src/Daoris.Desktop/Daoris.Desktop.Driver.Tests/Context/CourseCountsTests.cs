@@ -152,7 +152,7 @@ public sealed class CourseCountsTests : IDisposable
     {
         JsonObject Run(string id, string state) => new()
         {
-            ["id"] = id, ["kind"] = "driven", ["quest"] = "q7", ["state"] = state, ["repository"] = "Engine", ["agent"] = "codex-acp",
+            ["id"] = id, ["kind"] = "driven", ["quest"] = "q7", ["line"] = "q7", ["state"] = state, ["repository"] = "Engine", ["agent"] = "codex-acp",
             ["created"] = Moments.Write(At),
         };
 

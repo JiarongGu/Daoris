@@ -390,6 +390,7 @@ internal static class SessionReads
             From = session.From,
             FromWhy = session.FromWhy,
             FromBy = session.FromBy,
+            Line = session.Line is { Length: > 0 } line ? line : null,
             Workspace = session.Workspace,
             // A chat goes on through the chat runner, never the planner.
             Kind = session.Kind ?? "driven",

@@ -39,7 +39,7 @@ public sealed class LineFactsTests : IDisposable
 
     private static readonly string Records = new JsonArray(
         new JsonObject { ["id"] = "s1", ["kind"] = "chat", ["state"] = "ended", ["repository"] = "Owner", ["created"] = "2026-11-03T09:00:00Z" },
-        new JsonObject { ["id"] = "s2", ["kind"] = "chat", ["state"] = "ended", ["repository"] = "Owner", ["from"] = "s1", ["fromWhy"] = "limit", ["created"] = "2026-11-03T09:30:00Z" }).ToJsonString();
+        new JsonObject { ["id"] = "s2", ["kind"] = "chat", ["state"] = "ended", ["repository"] = "Owner", ["from"] = "s1", ["fromWhy"] = "limit", ["line"] = "s1", ["created"] = "2026-11-03T09:30:00Z" }).ToJsonString();
 
     [Fact]
     public void CONTEXTDRIVE1i_a_line_s_parts_and_go_ons_say_why_each_began_and_who_answered()
@@ -67,7 +67,7 @@ public sealed class LineFactsTests : IDisposable
         Assert.All(facts.GoOns, goOn => Assert.Equal(GoOnBy.Alone, goOn.By));
         Assert.Equal(At.AddMinutes(_minute - 2), facts.GoOns[^1].At);
 
-        var driven = new JsonArray(new JsonObject { ["id"] = "s1", ["kind"] = "driven", ["quest"] = "q1", ["state"] = "failed", ["repository"] = "Engine" }).ToJsonString();
+        var driven = new JsonArray(new JsonObject { ["id"] = "s1", ["kind"] = "driven", ["quest"] = "q1", ["line"] = "q1", ["state"] = "failed", ["repository"] = "Engine" }).ToJsonString();
         Assert.Equal(new CountWatch(3, SupervisorRules.Hold, SupervisorRules.Machine), LineCountsRead.FactsOf(_home, "s1", driven).Counts.Single(count => count.Count == "failures").Watch);
 
         // The service did not answer: every count from its records reads unknown, and the line is its part alone.

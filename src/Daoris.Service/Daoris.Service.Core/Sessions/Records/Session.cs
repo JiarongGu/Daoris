@@ -137,6 +137,8 @@ public sealed record Session(
     /// <summary>Who asked for it to continue <see cref="From"/>, by the driver's code (<c>person</c>, <c>daoris</c>, <c>agent</c>); null with it.</summary>
     public string? FromBy { get; init; }
 
+    public string? Line { get; init; }
+
     /// <summary>
     /// The access mode an Ask Daoris record's run actually gets: <c>restricted</c> or <c>full</c>, the
     /// effective mode, kept apart from the mode the person chose, which a switch reaches only at its next start. Written at the open

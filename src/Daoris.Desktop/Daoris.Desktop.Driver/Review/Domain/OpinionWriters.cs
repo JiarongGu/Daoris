@@ -32,7 +32,7 @@ internal static class OpinionWriters
             .Prepend(candidate);
 
         var agents = new List<string>();
-        foreach (var part in seeds.SelectMany(seed => ContextBriefs.LineOf(records, seed)))
+        foreach (var part in seeds.SelectMany(seed => LineKeys.Upto(seed, records)))
         {
             if (part.Record.Adapter?.Trim() is { Length: > 0 } adapter && !agents.Contains(adapter, StringComparer.OrdinalIgnoreCase))
             {
