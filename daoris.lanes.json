@@ -116,6 +116,7 @@
         "src/Daoris.Ports/**",
         "src/Daoris.Testing/**",
         "src/Daoris.Testing.Tests/**",
+        "src/Daoris.Adapters/**",
         "src/Layers.props",
         "src/BannedSymbols.Effects.txt"
       ],
@@ -123,7 +124,9 @@
         "units": [
           "src/Daoris.Ports/Daoris.Ports.csproj",
           "src/Daoris.Testing/Daoris.Testing.csproj",
-          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj"
+          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Machine/Daoris.Adapters.Machine.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

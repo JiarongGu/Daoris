@@ -32,4 +32,10 @@ public sealed record PortSet
 
     /// <summary>The browser.</summary>
     public IInAppBrowser? Browser { get; init; }
+
+    /// <summary>The application's admission of each start, asked before the machine places it.</summary>
+    public StartPolicy? StartPolicy { get; init; }
+
+    /// <summary>The machine's seal of a secret kept at rest.</summary>
+    public SecretSeal? Seal { get; init; }
 }

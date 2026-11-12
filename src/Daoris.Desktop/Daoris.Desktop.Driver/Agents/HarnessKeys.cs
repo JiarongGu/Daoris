@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's.
-/// Encrypted at rest for the Windows user (<see cref="KeySeal"/>); tracked by nothing; no HTTP surface. A person
+/// Encrypted at rest for the Windows user by the machine's seal (<see cref="Daoris.Ports.Processes.SecretSeal"/>); tracked by nothing; no HTTP surface. A person
 /// sees a key only as its <see cref="Handle"/>.</para>
 /// </remarks>
 public static class HarnessKeys
@@ -35,7 +35,7 @@ public static class HarnessKeys
         var keys = Read(home);
         var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
-        held[account] = KeySeal.Sealed(trimmed);
+        held[account] = Sealed(trimmed);
         Write(home, read, keys);
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
@@ -91,7 +91,7 @@ public static class HarnessKeys
             throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
         }
 
-        held[named] = KeySeal.Sealed(trimmed);
+        held[named] = Sealed(trimmed);
         Write(home, read, keys);
 
         // What marked it refused is cleared, none the reason the key is not kept.
@@ -114,7 +114,7 @@ public static class HarnessKeys
 
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
-        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;
+        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? MachinePorts.Seal.Open(kept) : null;
 
     /// <summary>
     /// Take an account's key away and keep the account: its last reading, of that key, is forgotten, so it reads no key
@@ -186,10 +186,14 @@ public static class HarnessKeys
         // Every key a write leaves is a sealed one: a key kept before the seal is sealed by the first write after it.
         var sealedKeys = keys.ToDictionary(
             agent => agent.Key,
-            agent => agent.Value.ToDictionary(account => account.Key, account => KeySeal.Sealed(account.Value), StringComparer.Ordinal),
+            agent => agent.Value.ToDictionary(account => account.Key, account => Sealed(account.Value), StringComparer.Ordinal),
             StringComparer.Ordinal);
         JsonKeeping.Save(path, File.Exists(path), read, Written(sealedKeys));
     }
+
+    /// <summary>The value the machine's seal keeps for <paramref name="key"/>; a machine with no seal keeps no key.</summary>
+    private static string Sealed(string key) => MachinePorts.Seal.Seal(key)
+        ?? throw new DriverException("this machine cannot keep an API key: keys are encrypted for the Windows user, and this is not Windows.");
 
     /// <summary>The keys' own shape: agent then account, each sorted.</summary>
     private static string Written(Dictionary<string, Dictionary<string, string>> keys) => JsonFile.Serialize(writer =>

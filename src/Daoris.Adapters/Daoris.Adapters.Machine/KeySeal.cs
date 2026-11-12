@@ -1,7 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using Daoris.Ports.Processes;
 
-namespace Daoris.Driver;
+namespace Daoris.Adapters.Machine;
 
 /// <summary>
 /// An API key as <c>keys.json</c> holds it: encrypted with DPAPI for the Windows user this runs as, so the file copied to another
@@ -16,17 +17,17 @@ public static class KeySeal
     /// <summary>What marks a value as sealed, with the seal's version.</summary>
     public const string Prefix = "dpapi1:";
 
+    /// <summary>The seal as the root hands it to the application.</summary>
+    public static SecretSeal Port { get; } = new(Sealed, Open);
+
     /// <summary>Named, so bytes this user sealed for some other purpose do not open here.</summary>
     private static readonly byte[] Purpose = Encoding.UTF8.GetBytes("daoris/agent/api-keys/1");
 
-    /// <summary>The value to keep for <paramref name="key"/>; a value already sealed is returned as it is.</summary>
-    public static string Sealed(string key)
+    /// <summary>The value to keep for <paramref name="key"/>; a value already sealed is returned as it is; null off Windows, where no user's seal exists.</summary>
+    public static string? Sealed(string key)
     {
         if (key.StartsWith(Prefix, StringComparison.Ordinal)) return key;
-        if (!OperatingSystem.IsWindows())
-        {
-            throw new DriverException("this machine cannot keep an API key: keys are encrypted for the Windows user, and this is not Windows.");
-        }
+        if (!OperatingSystem.IsWindows()) return null;
 
         var bytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(key), Purpose, DataProtectionScope.CurrentUser);
         return Prefix + Convert.ToBase64String(bytes);

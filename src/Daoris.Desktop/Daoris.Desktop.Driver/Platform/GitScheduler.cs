@@ -29,8 +29,8 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class GitScheduler
 {
-    /// <summary>How many gits run at once in run places: the start gate's figure.</summary>
-    public const int Bound = ProcessStarts.Bound;
+    /// <summary>How many gits run at once in run places: the machine's start places' figure, so a git placed here never waits there behind gits.</summary>
+    public const int Bound = 4;
 
     /// <summary>How many of them may wait outside Daoris.</summary>
     public const int OutsideBound = 2;

@@ -1,0 +1,7 @@
+{
+  "suite": "adapters-machine",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests",
+  "contract": ["src/Daoris.Testing/Processes"],
+  "ports": ["Processes"],
+  "outside": ["nuget:System.Security.Cryptography.ProtectedData"]
+}

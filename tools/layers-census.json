@@ -9,8 +9,7 @@
       "Lyntai.Core",
       "Lyntai.Providers.Basic",
       "Microsoft.Data.Sqlite",
-      "SQLitePCLRaw.bundle_e_sqlite3",
-      "System.Security.Cryptography.ProtectedData"
+      "SQLitePCLRaw.bundle_e_sqlite3"
     ],
     "Daoris.Service.Core": [
       "Lyntai.Core",
@@ -22,6 +21,8 @@
       "Microsoft.AspNetCore.Mvc.Testing"
     ]
   },
-  "ambient": {},
+  "ambient": {
+    "Daoris.Desktop.Driver/Platform": 1
+  },
   "slowTests": {}
 }
