@@ -106,9 +106,9 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>This machine's session of <paramref name="quest"/>, ended as <paramref name="state"/>.</summary>
-    private async Task<Session> Served(Quest quest, SessionState state = SessionState.Completed)
+    private async Task<Session> Served(Quest quest, SessionState state = SessionState.Completed, SessionKind kind = SessionKind.Driven)
     {
-        var session = await _sessions.CreateAsync(quest.Id, quest.To, "stub", Now, workspace: quest.Workspace);
+        var session = await _sessions.CreateAsync(quest.Id, quest.To, "stub", Now, workspace: quest.Workspace, kind: kind);
         await _sessions.SetStateAsync(session.Id, state, null, null, null, Now.AddMinutes(3));
         return (await _sessions.FindAsync(session.Id))!;
     }
@@ -630,7 +630,8 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         var quest = await Closed("Done after a few tries");
         var failedOnce = await Served(quest, SessionState.Failed);
         var failedTwice = await Served(quest, SessionState.Failed);
-        var landed = await Served(quest);
+        // A chat about the quest is a conversation of its own; a driven part shares its quest's line with its failed ones.
+        var landed = await Served(quest, kind: SessionKind.Chat);
         var theirs = await Theirs(quest, SessionState.Failed);
 
         var plan = await Desk().PlanAsync(FailedUnit(quest.Id));
@@ -652,6 +653,23 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(theirs.Id));
         Assert.NotNull(await _quests.FindAsync(quest.Id));
         Assert.NotEmpty(await _quests.HistoryAsync(quest.Id));
+    }
+
+    /// <summary>A conversation is cleared whole or not at all: a failed part whose conversation holds a part that did not fail stays, said.</summary>
+    [Fact]
+    public async Task A_failed_part_whose_conversation_holds_a_part_that_did_not_fail_stays_and_is_said()
+    {
+        var quest = await Closed("Done after a failure");
+        var failed = await Served(quest, SessionState.Failed);
+        var landed = await Served(quest);
+
+        var plan = await Desk().PlanAsync(FailedUnit(quest.Id));
+
+        Assert.Empty(plan.Sessions);
+        var kept = Assert.Single(plan.Kept);
+        Assert.Equal((HistoryRefusal.Open, failed.Id), (kept.Refusal, kept.Session));
+        Assert.Contains("a clear takes a conversation whole", kept.Message);
+        Assert.NotNull(await _sessions.FindAsync(landed.Id));
     }
 
     /// <summary>

@@ -22,11 +22,12 @@ public sealed class HelpDoorHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, opened.Status);
         Assert.Equal("default", opened.Json.GetProperty("session").GetProperty("workspace").GetString());
 
-        // A driver from before names none: the default workspace's, whose conversation is running.
+        // A driver from before names none: the default workspace's, opened beside the one running, as every conversation opens.
         var unnamed = await host.PostAsync("/api/sessions/help", new { door = "stub", room });
 
-        Assert.Equal(409, unnamed.Status);
-        Assert.Contains(opened.Json.GetProperty("session").GetProperty("id").GetString()!, unnamed.Json.GetProperty("error").GetString());
+        Assert.Equal(200, unnamed.Status);
+        Assert.Equal("default", unnamed.Json.GetProperty("session").GetProperty("workspace").GetString());
+        Assert.NotEqual(opened.Json.GetProperty("session").GetProperty("id").GetString(), unnamed.Json.GetProperty("session").GetProperty("id").GetString());
     }
 }
 

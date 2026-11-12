@@ -114,15 +114,12 @@ public sealed class KeptReadingTests : IDisposable
 
     private async Task ExecuteAsync(string sql)
     {
-        await using (var connection = new SqliteConnection($"Data Source={Database}"))
-        {
-            await connection.OpenAsync();
-            await using var command = connection.CreateCommand();
-            command.CommandText = sql;
-            Assert.Equal(1, await command.ExecuteNonQueryAsync());
-        }
-
-        SqliteConnection.ClearAllPools();
+        // Unpooled, so its closed connection holds the file no longer and no pool of the process is cleared for it.
+        await using var connection = new SqliteConnection($"Data Source={Database};Pooling=False");
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        Assert.Equal(1, await command.ExecuteNonQueryAsync());
     }
 
     private void Write(string relative, string content)
