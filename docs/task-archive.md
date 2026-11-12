@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFIX1: what the work workspace's Ask Daoris found, fixed (2026-11-12)
+
+> **ASKFIX1** (driver, modules, web, plugins): Outcome: a to g as their commits say; d's one way (D228): a failed plugin step's run step holds its failed attempt (`PluginFailureHeld`, `Held` with `again`) as a check's does, and the window's *Try again* (`FailedStepHeld`) presses that attempt's `again` through `WORK_HELD`, the press What needs you makes; `daoris workflow try-again`, `PluginStepRetry` and the run step's `try-again` act, its words and keys are gone.
+
+---
+
 ## DEVLINK1: a plugin for sessions to report to the development agent (2026-11-12)
 
 > **DEVLINK1** (plugins, examples): Outcome: `examples/plugins/daoris-dev-report` 1.0.0 listens on `session/ended` alone (a manifest with interfaces needs a point) and declares two tool commands over its own private storage (the kit's `storage.mjs`, one record at a time under a lock): `report` (`title`, `body`, `evidence`, `severity` note, defect or blocking) files a record with an id, time, session and place and answers the id in `said` and `data`; `inbox` (`--unread`, `read <id>`, `mark <id>`) lists unread first, newest first. The development agent reads it with `daoris daoris-dev-report inbox`; its `node --test` cases and `PluginKitExampleTests` hold it.
