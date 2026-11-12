@@ -31,9 +31,9 @@ public sealed class RoleCatalogTests : IDisposable
         ActorChoices.With(StaffedRoles.Config("claude"), actor, choices);
 
     [Fact]
-    public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes_but_the_supervisor_s()
+    public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes_but_the_supervisor_s_and_a_plugin_step_s()
     {
-        Assert.Equal(ParticipantWork.Codes.Where(work => work != ParticipantWork.Supervise), RoleWork.Codes);
+        Assert.Equal(ParticipantWork.Codes.Where(work => work is not (ParticipantWork.Supervise or ParticipantWork.Step)), RoleWork.Codes);
     }
 
     [Fact]

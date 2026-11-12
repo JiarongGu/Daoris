@@ -43,7 +43,7 @@ public static class ChildCalls
         string[] lines;
         try
         {
-            lock (Gate) lines = File.ReadAllText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            lock (Gate) lines = AtomicFile.ReadText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

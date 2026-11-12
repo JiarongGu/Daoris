@@ -155,11 +155,7 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
     expect(measured.down, `the head's height at ${width} is ${measured.down}: ${said(measured)}`).toBeLessThanOrEqual(ceiling);
   });
 
-  test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by no head with every block yet`, async ({ page }) => {
-    // The gap, held open: with the parts and the relations folded, what is left is the page head (70 to 111 px), the chain's line
-    // and *Accept* (30 px each, the chain's 52 at the floor), six folded lines of 17 px or two, and 8 px between nine blocks; the
-    // blocks alone are over the budget. A head that fits turns this red ("expected to fail"): remove the mark and lower the ceiling.
-    test.fail(true, `the head with every block is over ${BUDGET} px at every width: its blocks alone are, before any space between them`);
+  test(`${story} at ${width}: UX7's ${BUDGET} px budget, kept by the head with every block`, async ({ page }) => {
     const measured = await open(page, story);
     expect(measured.down, `the conversation starts ${measured.down} px down at ${width}, over ${BUDGET}: ${said(measured)}`).toBeLessThanOrEqual(BUDGET);
   });

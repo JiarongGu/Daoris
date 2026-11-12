@@ -432,7 +432,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
                     {
                         ["repository"] = "engine", ["adopted"] = true, ["registered"] = true, ["root"] = _root, ["workspace"] = "aurora",
                     }).ToJsonString()),
-                    ("GET", SessionChangeShape.ChangesPath) => (200, SessionChangeShape.Whole("[]")),
+                    ("GET", SessionChangeShape.ChangesPath or SessionChangeShape.QuestChangesPath) => (200, SessionChangeShape.Whole("[]")),
                     ("GET", _) => (200, "[]"),
                     _ => (404, "{}"),
                 };

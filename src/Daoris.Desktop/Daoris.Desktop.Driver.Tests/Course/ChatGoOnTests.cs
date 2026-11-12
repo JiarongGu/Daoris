@@ -931,7 +931,7 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>A record of this machine's: a chat unless said otherwise, in the state given, on the account named or the tool's own.</summary>
     /// <param name="quest">The quest a driven record serves (MSG1f2's start-from), or null.</param>
     /// <param name="ask">The ask an intake answers, or null.</param>
-    /// <param name="from">The session it continues, why and who asked, or null: a curve's move holds by it.</param>
+    /// <param name="from">The session it continues, or null.</param>
     public Words Chat(
         string id, string state, string adapter, string tree, string kind = "chat", string? quest = null, string repository = "engine",
         string? ask = null, string? profile = null, ContinuedFrom? from = null)
@@ -945,6 +945,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                 ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["quest"] = quest, ["ask"] = ask,
                 ["profile"] = profile, ["from"] = from?.Session, ["fromWhy"] = from?.Why, ["fromBy"] = from?.By,
             };
+            record["line"] = LineOf(id, from?.Session);
             StandInLedger.Works(record);
             _sessions.Add(record);
         }
@@ -1093,9 +1094,12 @@ internal sealed class ChatLedger : HttpMessageHandler
         };
         // The conversation it continues, why and who asked, as the service answers them on loopback.
         StandInLedger.Continues(session, asked);
+        session["line"] = LineOf(session["id"]!.GetValue<string>(), session["from"]?.GetValue<string>());
         _sessions.Add(session);
         return session;
     }
+
+    private string LineOf(string id, string? from) => from is null ? id : (string?)_sessions.Find(s => (string?)s["id"] == from)?["line"] ?? from;
 
     /// <summary>
     /// A keyed open (rows d-i and d-ii part 3), under the ledger's lock: its key's receipt answered first; the record the words leave, the open's

@@ -106,9 +106,9 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>This machine's session of <paramref name="quest"/>, ended as <paramref name="state"/>.</summary>
-    private async Task<Session> Served(Quest quest, SessionState state = SessionState.Completed)
+    private async Task<Session> Served(Quest quest, SessionState state = SessionState.Completed, SessionKind kind = SessionKind.Driven)
     {
-        var session = await _sessions.CreateAsync(quest.Id, quest.To, "stub", Now, workspace: quest.Workspace);
+        var session = await _sessions.CreateAsync(quest.Id, quest.To, "stub", Now, workspace: quest.Workspace, kind: kind);
         await _sessions.SetStateAsync(session.Id, state, null, null, null, Now.AddMinutes(3));
         return (await _sessions.FindAsync(session.Id))!;
     }
@@ -621,8 +621,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     // ——— A closed quest's failed sessions (design §1.1, §4).
 
     /// <summary>
-    /// A closed quest's failed sessions of this machine's go, and nothing else: the quest, its log and its other sessions
-    /// stay. A teammate's failed session is listed and kept, since its record is theirs.
+    /// A closed quest's failed sessions here go, and nothing else: the quest, its log, its other sessions stay; a teammate's is kept.
     /// </summary>
     [Fact]
     public async Task A_closed_quests_failed_sessions_go_and_a_teammates_is_listed_and_kept()
@@ -630,7 +629,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         var quest = await Closed("Done after a few tries");
         var failedOnce = await Served(quest, SessionState.Failed);
         var failedTwice = await Served(quest, SessionState.Failed);
-        var landed = await Served(quest);
+        var landed = await Served(quest, kind: SessionKind.Chat);
         var theirs = await Theirs(quest, SessionState.Failed);
 
         var plan = await Desk().PlanAsync(FailedUnit(quest.Id));

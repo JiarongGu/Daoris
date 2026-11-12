@@ -24,7 +24,6 @@ import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
-import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories';
 import * as judgement from '../src/workflow/edit/WorkflowEditor.judgement.stories';
 import * as canvas from '../src/design/canvas/Canvas.stories';
 import * as large from '../src/design/canvas/LargeGraph.stories';
@@ -78,8 +77,6 @@ const books: Record<string, Record<string, ComponentType>> = {
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
   // The workflow editor: its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.
   editor: composeStories(editor) as unknown as Record<string, ComponentType>,
-  // Ask Daoris's proposal on the editor's chart: the union drawn and marked at 80 and 39rem, the rail at 25rem.
-  proposal: composeStories(proposal) as unknown as Record<string, ComponentType>,
   // The driver's refusals on the editor's chart: an outline and a chip, no box moved.
   judgement: composeStories(judgement) as unknown as Record<string, ComponentType>,
   // The canvas: a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.

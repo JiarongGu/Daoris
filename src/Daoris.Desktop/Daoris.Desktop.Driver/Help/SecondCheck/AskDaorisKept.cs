@@ -76,7 +76,7 @@ public sealed class AskDaorisKept(string home)
         {
             lock (Gate)
             {
-                return File.Exists(path) ? File.ReadAllText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries) : [];
+                return File.Exists(path) ? AtomicFile.ReadText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries) : [];
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

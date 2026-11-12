@@ -10,8 +10,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>One builder, two doors.</b> A partition is what <c>LINES</c> answers (<see cref="LinesRoutes.Answer"/>) for that
-/// repository's rows, so the pull and the push cannot drift: a field <c>LINES</c> comes to answer is classed in <see cref="Fields"/>
-/// or <see cref="PulledOnly"/>, which <c>LinesStateSliceTests</c> holds. The line is read as far as the machine's facts judged the
+/// repository's rows, so the pull and the push cannot drift: a field <c>LINES</c> comes to answer is pushed in <see cref="Fields"/>,
+/// which <c>LinesStateSliceTests</c> holds. The line is read as far as the machine's facts judged the
 /// checkout's guess (<see cref="CanonicalLine.Judged"/>), as Ask Daoris's room reads it.</para>
 ///
 /// <para><b>A partition per repository</b>, named by it: a ref moved in one repository, whose line is judged again alone
@@ -37,10 +37,7 @@ public static class LinesStateSlice
     public const string Name = "lines";
 
     /// <summary>What each partition carries: every field of <c>LINES</c>' answer, each holding that repository's rows of it.</summary>
-    public static readonly IReadOnlyList<string> Fields = ["lines", "languages", "reviews", "opinions", "helpers", "handOver", "commits", "access", "gitAccess"];
-
-    /// <summary>What <c>LINES</c> answers that is never pushed: none, every field a view reads.</summary>
-    public static readonly IReadOnlyList<string> PulledOnly = [];
+    public static readonly IReadOnlyList<string> Fields = ["lines", "languages", "reviews", "opinions", "helpers", "handOver", "growth", "commits", "access", "gitAccess"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change a press declared to the driver's file (a line, a language, a review, an opinion, a

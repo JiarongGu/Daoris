@@ -84,7 +84,7 @@ test('a citation the move may not edit, reaching neither place, a fixture\'s or 
 test('a run moves the files with git, writes the citations, and leaves none behind', () => {
   const root = join(here, '..', '_fixtures', `file-designs-${process.pid}`);
   rmSync(root, { recursive: true, force: true });
-  const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
   try {
     for (const [path, text] of Object.entries(tree())) {
       mkdirSync(dirname(join(root, path)), { recursive: true });

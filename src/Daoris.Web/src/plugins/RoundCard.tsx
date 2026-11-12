@@ -75,7 +75,7 @@ export function RoundCard({ plugin, pluginName, command, given, place, send, onE
   plugin: string;
   pluginName: string;
   command: CommandShown;
-  /** Arguments already known, the record a menu was opened on: filled in, still the person's to confirm. */
+  /** Arguments already known, the record a menu is opened on: filled in, still the person's to confirm. */
   given?: Record<string, string>;
   /** The place in force: `machine`, `workspace:<name>` or `repository:<id>`. */
   place: string;

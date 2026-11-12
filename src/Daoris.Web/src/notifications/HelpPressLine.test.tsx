@@ -55,7 +55,7 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
 
   it.each([
     ['en', 'Accept review of run q7'],
-    ['zh', '接受 进展 q7 的 review'],
+    ['zh', '采纳 进展 q7 的 review'],
   ])("names a run's step it pressed and the act, read from the press (%s)", async (language, said) => {
     await i18n.changeLanguage(language);
     const step = press('h5', 'WORKFLOW_NODE', { scope: 'run', target: 'q7', step: { node: 'review', act: 'accept' } });

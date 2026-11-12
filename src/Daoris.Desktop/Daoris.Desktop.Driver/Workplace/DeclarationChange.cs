@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One check of a declaration: its name and the command it runs; <see cref="Was"/> is the command it ran before, where a changed check's command differs.</summary>
+/// <summary>One check of a declaration: its name and the command it runs, and, where a changed check's command differs, the command it ran before.</summary>
 public sealed record DeclaredCheck(string Name, string Run, string? Was = null);
 
 /// <summary>
@@ -19,7 +19,7 @@ public sealed record DeclarationChange(
     private const string ChecksKey = "gates";
 
     /// <summary>
-    /// The change from the declaration <paramref name="accepted"/> (the text of the accepted blob; null where none was accepted or it held
+    /// The change from the declaration <paramref name="accepted"/> (the text of the accepted blob; null where none is accepted or it holds
     /// none) to <paramref name="tip"/> (the line's), read from their JSON. A text that is not JSON declares no checks.
     /// </summary>
     public static DeclarationChange Between(string? accepted, string? tip)

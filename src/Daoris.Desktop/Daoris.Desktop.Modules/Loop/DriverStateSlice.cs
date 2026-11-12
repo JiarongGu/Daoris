@@ -49,10 +49,10 @@ public static class DriverStateSlice
 
     /// <summary>
     /// What <c>STATE</c> answers that is never pushed: a press's own answer (what *Try again*, a review's put and *Show it again*
-    /// said), and what no view reads (the file's path, the cap, the agent, the poll, the released stops).
+    /// said), and what no view reads (the file's path, the cap, the agent, the poll, the released stops, the growth switches).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["retried", "reviewed", "shownAgain", "configPath", "cap", "pollSeconds", "released"];
+        ["retried", "reviewed", "shownAgain", "configPath", "cap", "pollSeconds", "released", "growth", "workspaceGrowth"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change a press or the driver declared to its state, its sessions (what runs) or its agents

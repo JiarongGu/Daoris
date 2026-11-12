@@ -77,7 +77,7 @@ test('the unguarded store plans under no precondition and writes without checkin
 test('the adapter answers both points on the hook wire, keeping the store in its data folder', async () => {
   const data = scratch('wire');
   keep(data, { items: { release: { value: '1', etag: 'e1' } }, serial: 1 });
-  const child = spawn(process.execPath, [join(folder, 'hooks.mjs')], { env: { ...process.env, DAORIS_PLUGIN_DATA: data } });
+  const child = spawn(process.execPath, [join(folder, 'hooks.mjs')], { env: { ...process.env, DAORIS_PLUGIN_DATA: data }, windowsHide: true });
   const answers = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
   const ask = async (id, method, params) => {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);

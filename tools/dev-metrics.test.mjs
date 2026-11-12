@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { collect, builderTimes, render } from './dev-metrics.mjs';
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 const root = join('_fixtures', 'dev-metrics-fixture');
 const home = join(root, 'data');
 const logs = join(root, 'logs');
+const questsFile = join(root, 'quests.json');
 const jl = (rows) => rows.map((r) => JSON.stringify(r)).join('\n') + '\n';
 
 const quest = (id, filed, accepted, answers, requirements = 2) => ({
@@ -16,23 +18,22 @@ const quest = (id, filed, accepted, answers, requirements = 2) => ({
 
 before(() => {
   rmSync(root, { recursive: true, force: true });
-  mkdirSync(join(home, 'usage-history'), { recursive: true });
-  mkdirSync(join(home, 'sessions'), { recursive: true });
-  mkdirSync(join(home, 'quests'), { recursive: true });
+  mkdirSync(homeEntry(home, 'usage-history'), { recursive: true });
+  mkdirSync(homeEntry(home, 'sessions'), { recursive: true });
   mkdirSync(join(root, 'work', 'trees', 'ws', 'widget-app', 's-aaaa1111'), { recursive: true });
   mkdirSync(logs, { recursive: true });
-  writeFileSync(join(home, 'quests', 'all.json'), JSON.stringify([
+  writeFileSync(questsFile, JSON.stringify([
     quest('aaa111111111', '2026-01-02T00:00:00Z', '2026-01-02T04:00:00Z', [{ requirement: 1, met: 'ok' }, { requirement: 2, departed: 'chose x' }]),
     quest('bbb222222222', '2026-01-02T01:00:00Z', '2026-01-02T03:00:00Z', [{ requirement: 1, met: 'ok' }, { requirement: 2, met: 'ok' }]),
     quest('ccc333333333', '2025-12-01T00:00:00Z', '2025-12-01T01:00:00Z', []),
   ]));
-  writeFileSync(join(home, 'landings.json'), JSON.stringify({ branches: [
+  writeFileSync(homeEntry(home, 'landings'),JSON.stringify({ branches: [
     { quest: 'aaa111111111', session: 'aaaa1111', landedAt: '2026-01-02T04:10:00Z', goneAt: '2026-01-02T06:00:00Z', removedAs: 'on-line' },
     { quest: 'bbb222222222', session: 'bbbb2222', landedAt: '2026-01-02T03:10:00Z' },
   ] }));
-  writeFileSync(join(home, 'session-branches.json'), JSON.stringify({ branches: [{ branch: 'x/s-1', at: '2026-01-02T00:00:00Z' }] }));
+  writeFileSync(homeEntry(home, 'session-branches'),JSON.stringify({ branches: [{ branch: 'x/s-1', at: '2026-01-02T00:00:00Z' }] }));
   const turn = (session, actor, input, output, cacheRead, cacheWrite, ended) => ({ kind: 'turn', session, actor, input, output, cacheRead, cacheWrite, ended });
-  writeFileSync(join(home, 'usage-history', 'turns-2026-01.jsonl'), jl([
+  writeFileSync(homeEntry(home, 'usage-history', 'turns-2026-01.jsonl'),jl([
     turn('aaaa1111', 'build', 10, 100, 1000, 50, '2026-01-02T02:00:00Z'),
     turn('aaaa1111', 'build', 5, 50, 500, 25, '2026-01-02T03:00:00Z'),
     turn('bbbb2222', 'build', 1, 2, 3, 4, '2026-01-02T02:30:00Z'),
@@ -42,14 +43,14 @@ before(() => {
   const user = (id) => ({ seq: 1, at: '2026-01-02T01:00:00Z', kind: 'user', text: `Your target is quest \`#${id}\`, asked by x` });
   const call = (id, title, at, input) => ({ seq: 2, at, kind: 'tool', id, title, status: 'in_progress', input: JSON.stringify(input) });
   const done = (id, at, text) => ({ seq: 3, at, kind: 'tool', id, status: 'completed', content: [{ type: 'text', text }] });
-  writeFileSync(join(home, 'sessions', 'aaaa1111.events.jsonl'), jl([
+  writeFileSync(homeEntry(home, 'sessions', 'aaaa1111.events.jsonl'),jl([
     user('aaa111111111'),
     call('t1', 'memory_search', '2026-01-02T01:10:00Z', { query: 'one' }), done('t1', '2026-01-02T01:10:02Z', 'No memory entry in workspace `w` matches `one`.'),
     call('t2', 'mcp__srv__memory_search', '2026-01-02T01:20:00Z', { query: 'two' }), done('t2', '2026-01-02T01:20:04Z', '1. entry: a note'),
     call('t3', 'mcp__srv__memory_get', '2026-01-02T01:30:00Z', { id: 'a' }), done('t3', '2026-01-02T01:30:01Z', 'the note'),
     call('t4', 'memory_write', '2026-01-02T01:40:00Z', { content: 'c' }), done('t4', '2026-01-02T01:40:01Z', 'written'),
   ]));
-  writeFileSync(join(home, 'sessions', 'bbbb2222.events.jsonl'), jl([
+  writeFileSync(homeEntry(home, 'sessions', 'bbbb2222.events.jsonl'),jl([
     user('bbb222222222'),
     call('u1', 'memory_search', '2026-01-02T01:10:00Z', { query: 'three' }), done('u1', '2026-01-02T01:10:06Z', '1. entry: other'),
   ]));
@@ -71,7 +72,7 @@ before(() => {
 
 after(() => rmSync(root, { recursive: true, force: true }));
 
-const options = () => ({ home, logs, since: '2026-01-02', until: '2026-01-02', mergeQueue: join(root, 'merge-queue.json') });
+const options = () => ({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02', mergeQueue: join(root, 'merge-queue.json') });
 
 test('throughput, lead time and completion are read from the quests and the landing records', async () => {
   const r = await collect(options());
@@ -120,7 +121,7 @@ test('Lyntai use counts the connector\'s memory calls and says what is not recor
 });
 
 test('the table says "not recorded" where nothing is logged, and an absent source is never a zero', async () => {
-  const r = await collect({ home, logs, since: '2026-01-02', until: '2026-01-02' });
+  const r = await collect({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
   assert.equal(r.firstPass, 'not read: pass --merge-queue <local/merge-queue.json>');
   const text = render(r);
   assert.match(text, /not recorded/);
