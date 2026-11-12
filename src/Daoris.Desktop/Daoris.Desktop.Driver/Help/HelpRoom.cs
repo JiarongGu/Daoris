@@ -104,13 +104,15 @@ public static class HelpRoom
     public static bool Written(string home, string? workspace = null) => File.Exists(Path.Combine(PathOf(home, workspace), "AGENTS.md"));
 
     /// <summary>
-    /// Write the room from the machine as it stands, and answer where it is: the room of the workspace it is scoped to
-    /// (<see cref="HelpMachine.Workspace"/>), <c>default</c>'s where it is the whole machine.
+    /// Write the room from the machine as it stands, and answer where it is: the room of its conversation's home workspace
+    /// (<see cref="HelpMachine.Home"/>), <c>default</c>'s where it is the whole machine. Every conversation of that workspace reads it, so
+    /// it is written for the home alone, whatever focus the machine was described for: each run is told its own (<see cref="HelpFocusTold"/>).
     /// </summary>
     public static string Prepare(string home, HelpMachine machine)
     {
         var room = PathOf(home, machine.Home);
-        lock (HelpRoomWrites.Of(room)) return Write(home, room, machine);
+        var own = machine.Focus is null ? machine : machine.Within(machine.Home);
+        lock (HelpRoomWrites.Of(room)) return Write(home, room, own);
     }
 
     private static string Write(string home, string room, HelpMachine machine)
@@ -129,20 +131,16 @@ public static class HelpRoom
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape.
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
-        Said[Path.GetFullPath(room)] = new RoomSaid(Path.GetFullPath(home), machine.Home, machine.NotReadYet.Any, machine.Focus);
+        Said[Path.GetFullPath(room)] = new RoomSaid(Path.GetFullPath(home), machine.Home, machine.NotReadYet.Any);
         return room;
     }
-
-    /// <summary>The focus this process last wrote the room of <paramref name="workspace"/> for; null for its home's own.</summary>
-    internal static HelpFocus? FocusWritten(string home, string? workspace) =>
-        Said.GetValueOrDefault(Path.GetFullPath(PathOf(home, workspace)))?.Focus;
 
     // What each room this process wrote last under each home said is not read yet, by its folder, with its workspace:
     // the catch-up writes only such a room again, from its own workspace's facts. A room another process wrote, or one
     // written before this process, is written again at its next start.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoomSaid> Said = new(StringComparer.OrdinalIgnoreCase);
 
-    private sealed record RoomSaid(string Home, string? Workspace, bool NotReadYet, HelpFocus? Focus);
+    private sealed record RoomSaid(string Home, string? Workspace, bool NotReadYet);
 
     /// <summary>
     /// Whether any room this process wrote last under <paramref name="home"/> said something is not read yet, so it

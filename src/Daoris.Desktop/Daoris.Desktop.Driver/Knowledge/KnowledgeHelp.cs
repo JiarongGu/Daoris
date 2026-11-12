@@ -30,7 +30,6 @@ internal interface IKnowledgeHelp
     string? GoesOnIn(string home, string? workspace, string? tree);
     bool SaidNotReadYet(string home);
     IReadOnlyList<string?> Unread(string home);
-    HelpFocus? FocusWritten(string home, string? workspace);
     string Prepare(string home, HelpMachine machine);
     IReadOnlyList<HelpRead> HandedCheckouts(string home, string session);
     IReadOnlyList<(string Id, string Name)> Views { get; }
