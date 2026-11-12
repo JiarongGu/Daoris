@@ -411,7 +411,10 @@ internal sealed class WatchRun(
         if (_limiting is null && Limits is { } limits && !watch.DrainsNow()) _limiting = _beside.LimitsAsync(limits, _config, ct);
 
         // The declarations owed acceptance, read before the report so the wake it brings judges them.
-        if (await watch.OwedLookAsync(_config, ct).ConfigureAwait(false) is { Count: > 0 } accepted) report = report with { Events = [.. report.Events, .. accepted] };
+        if (await Stages.TimeAsync("owed", () => watch.OwedLookAsync(_config, ct)).ConfigureAwait(false) is { Count: > 0 } accepted)
+        {
+            report = report with { Events = [.. report.Events, .. accepted] };
+        }
 
         Looked(_by, _woke, part, nudges, began, failed: false);
         await onReport(report, _config).ConfigureAwait(false);
