@@ -81,6 +81,7 @@
   "work.rail.reason.opinion": "its quest waits for a second opinion",
   "work.rail.reason.elsewhere": "its quest is taken elsewhere",
   "work.rail.reason.left": "reached done, but part of its work is left: open it to see what",
+  "work.rail.reason.part-left": "done, part left: you accepted what it departed from",
   "work.rail.pausedAsk": "paused with ask #{{id}}",
   "work.rail.pausedQuest": "paused with quest #{{id}}",
   "work.rail.pausedTip": "Its quest is paused on this machine: nothing of its work starts here until you resume it, and Resume carries it on.",

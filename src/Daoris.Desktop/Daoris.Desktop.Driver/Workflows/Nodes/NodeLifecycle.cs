@@ -306,6 +306,8 @@ public static class NodeLifecycle
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
+        // Every failure has a way out of its own: a step no skip passes over (a pull request's) is ended, and its run with it, by the person's stop.
+        rows.Add(new(NodeStates.Failed, NodeStates.Stopped, person, "the person stops a failed node, which ends it and its run as stopped"));
         foreach (var from in NodeStates.Bound)
         {
             rows.Add(new(from, NodeStates.Invalidated, daoris, "its binding changed: history is kept, and unresolved attempts are superseded"));
