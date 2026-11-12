@@ -56,6 +56,8 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     DriverHelpers ILookStagesWiring.Helpers => driver.Helpers;
 
+    DriverChecks ILookStagesWiring.Checks => driver.Checks;
+
     DriverPartners ILookStagesWiring.Partners => driver.Partners;
 
     DriverBrainstorms ILookStagesWiring.Brainstorms => driver.Brainstorms;

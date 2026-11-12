@@ -135,6 +135,8 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         // helper, as a first run's does. A closed quest's session holds none, and never waits.
         var awaitsHelper = stop is null && exitCode == 0 && !closed && status == "Taken"
                            && await _driver.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
+        var awaitsCheck = stop is null && exitCode == 0 && !closed && status == "Taken" && !awaitsHelper
+                          && await _driver.WaitsOnOwnCheckAsync(sessionId, openedAt, ct).ConfigureAwait(false);
         var conclusion = stop is not null
             ? stop.Conclusion
             : exitCode is int code
@@ -150,7 +152,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                     backgroundCut: ended.BackgroundCut,
                     // A closure graph's submission is its done, as at a first run's end.
                     submitted: !closed && QuestResults.Submitted(after),
-                    awaitsHelper: awaitsHelper,
+                    awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, a failed run and never a park, as at a first run's end.
                     providerRefused: ended.ProviderRefused,
                     reopenedFrom: Planner.ReopenedFrom(quest, after))
@@ -257,8 +259,8 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",
             true,
-            // A session waiting on its own helper is no ending, and keeps its tree, as a park does.
-            SessionStates.IsParked(conclusion.State) || swappedOn || HelperWaits.Ended(conclusion.Parts)
+            // A session waiting on its own helper or check is no ending, and keeps its tree, as a park does.
+            SessionStates.IsParked(conclusion.State) || swappedOn || HelperWaits.Ended(conclusion.Parts) || CheckWaits.Ended(conclusion.Parts)
                 ? null
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,

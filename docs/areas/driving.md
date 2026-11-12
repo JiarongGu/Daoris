@@ -53,7 +53,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
    take that its kept session goes on from. (D178)
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
-7. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
+7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
+    line and how far the line moved past it, the paths touched, the gates those paths reach (the landing's own selection, never a
+    list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
+    this tip is run by Daoris through the broker, never refused for; a red comes back to the session as a word. The reading is
+    a note on the session's record. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
    session that wrote it, and read whole. (D219)
 
 ### Planning a look
@@ -202,8 +206,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.
     (D83, D208, D229)
 40. Each end gets one class from its record: completed, failed, limited, transient-bound, access, stopped by the person, a role or
-    Daoris, refused-choice, awaits-helper, stood-down, or unknown. A limit outranks a good end or one Daoris made.
+    Daoris, refused-choice, awaits-helper, awaits-check, stood-down, or unknown. A limit outranks a good end or one Daoris made.
     (D173, D206, D210)
+40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
+    `daoris gate run` makes) and ends its turn on it with no question to the person ends `completed` by `ended.awaits-check`,
+    holding its tree as a wait on its helper does; the verdict (reached, failed or stopped, a red's log tail) is Daoris's word
+    under the key `check/<id>`, which reopens it in the same conversation, so the wait spends no tokens. The broker runs one
+    check at a time on this machine, a hand-back's own checks before a worker's, each class first come, first served. (TEAMWORK1a)
 41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
     tree and records the same. Both are carried on. (D104)
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)

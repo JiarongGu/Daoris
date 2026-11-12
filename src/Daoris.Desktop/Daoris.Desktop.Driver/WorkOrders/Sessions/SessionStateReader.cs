@@ -145,6 +145,7 @@ internal sealed class SessionStateReader
         // It ended its turn on its own helper's ask and goes on with the answer in its own tree: the planner considers
         // nothing of its taken quest meanwhile, so no verdict says so.
         if (record.AwaitsHelper) return In(row with { Shown = ShownState.AwaitingHelper }, SessionGroup.Working);
+        if (record.AwaitsCheck) return In(row with { Shown = ShownState.AwaitingCheck }, SessionGroup.Working);
 
         if (_runWaits.TryGetValue(record.Id, out var waits))
         {
