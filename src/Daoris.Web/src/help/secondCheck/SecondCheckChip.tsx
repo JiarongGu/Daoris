@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
-import { type ReadingsCheck } from '../../bridge/helpReadings';
+import { type ReadingsCheck } from './readingTypes';
 
 /**
  * The second check beside the access chip: *Second check on · 2 pending* (this conversation's ranges queued or being read),

@@ -37,7 +37,7 @@ afterEach(() => window.localStorage.clear());
 /**
  * The box on every session that takes words, by what a word said now would do (`SESSION_QUEUE`'s
  * `reaches` and `why`), and the line saying why on the rest; the words shown at once, where they went, and the one
- * press where they cannot go on; *Send back…* opening the box.
+ * press where they cannot go on.
  */
 describe('the box on every session that takes words', () => {
   const ENDED = { ...DRIVEN, state: 'completed', note: 'Done; committed as a1b2c3d.' };
@@ -469,29 +469,6 @@ describe('the box on every session that takes words', () => {
     expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
   });
 
-  /**
-   * *Send back…* in a review opens the box on that session, with the focus in it, instead of the quest composer —
-   * what the glossary's *send back* means. Where the session takes no words, the quest composer's door stays.
-   */
-  it('opens the box from Send back… in a review, and the quest composer only where nothing takes words', async () => {
-    window.localStorage.setItem('daoris.dockClosed', '0');
-    const DIFF = { session: 's1a2b3c4', base: 'abc1234567890', truncated: null, files: [{ path: 'src/chunk.ts', status: 'modified', added: 1, removed: 1, patch: '@@ -1 +1 @@\n-a\n+b' }] };
-    driver({ reaches: 'resume' }, undefined, { SESSION_DIFF: DIFF });
-    const onSendBack = vi.fn();
-    render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <Tooltip.Provider>
-          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-
-    const box = await screen.findByLabelText('Message');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Send back…' }));
-    await waitFor(() => expect(box).toHaveFocus());
-    expect(onSendBack).not.toHaveBeenCalled();
-  });
 });
 
 /**

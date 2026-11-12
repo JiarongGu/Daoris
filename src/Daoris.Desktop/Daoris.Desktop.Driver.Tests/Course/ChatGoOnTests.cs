@@ -1186,8 +1186,6 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
-                // Ask Daoris's open, its record in the room's "repository", one running at a time in its workspace,
-                // none named being `default`'s.
                 case ("POST", "/api/sessions/help"):
                 {
                     var asked = JsonNode.Parse(body!)!;
@@ -1196,16 +1194,6 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var mode = asked["mode"]?.GetValue<string>();
                     HelpModesAsked.Add(mode);
                     var workspace = named ?? "default";
-                    if (_sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == HelpRoom.Repository
-                                                     && Live.Contains(s["state"]!.GetValue<string>())
-                                                     && string.Equals(s["workspace"]?.GetValue<string>() ?? "default", workspace, StringComparison.OrdinalIgnoreCase)) is { } running)
-                    {
-                        return (HttpStatusCode.Conflict, new JsonObject
-                        {
-                            ["error"] = $"Ask Daoris already has a conversation running in `{workspace}` — `{running["id"]}`.",
-                        }.ToJsonString());
-                    }
-
                     var session = new JsonObject
                     {
                         ["id"] = $"h{_sessions.Count + 1}", ["repository"] = HelpRoom.Repository, ["state"] = "queued", ["kind"] = "chat",

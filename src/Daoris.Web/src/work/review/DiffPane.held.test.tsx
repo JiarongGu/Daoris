@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { fireEvent } from '@testing-library/react';
@@ -55,7 +55,7 @@ function pane(discards: DiscardOffer | null, onDiscardTree?: (answered: Answered
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <DiffPane session="s1a2b3c4" hasTree onSendBack={vi.fn()} discards={discards} onDiscardTree={onDiscardTree} />
+        <DiffPane session="s1a2b3c4" hasTree discards={discards} onDiscardTree={onDiscardTree} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -76,10 +76,9 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
     expect(await screen.findByText('src/report/compare.ts')).toBeInTheDocument();
     // The driver's sentence, shown as it is in either language: it is content, as the review's own sentence is.
     expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
-    expect(screen.queryByRole('button', { name: i18n.t('work.review.accept') })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Accept|采纳/ })).toBeNull();
     // One discard: the head's, in Accept's place; the review's own two-step one would say the same unforced.
     expect(screen.queryByRole('button', { name: i18n.t('work.review.discard') })).toBeNull();
-    expect(screen.getByRole('button', { name: i18n.t('work.review.sendBack') })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: i18n.t('settings.sweep.discard') }));
     expect(onDiscardTree).not.toHaveBeenCalled();
@@ -136,17 +135,17 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
     expect(await screen.findByRole('button', { name: i18n.t('settings.sweep.discard') })).toBeInTheDocument();
     expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
     expect(container).not.toHaveTextContent('staging-preview');
-    expect(screen.queryByRole('button', { name: i18n.t('work.review.accept') })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
   });
 
-  it('offers Accept as before where nothing holds the work by content', async () => {
+  it('offers the tree’s own Discard and no landing press where nothing holds the work by content', async () => {
     await i18n.changeLanguage(language);
     answer();
     pane(null);
 
-    expect(await screen.findByRole('button', { name: i18n.t('work.review.accept') })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: i18n.t('work.review.discard') })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: i18n.t('settings.sweep.discard') })).toBeNull();
-    await waitFor(() => expect(asked('LANDING')).toHaveLength(1));
+    expect(screen.queryByRole('button', { name: /Accept|采纳/ })).toBeNull();
+    expect(asked('LANDING')).toHaveLength(0);
   });
 });

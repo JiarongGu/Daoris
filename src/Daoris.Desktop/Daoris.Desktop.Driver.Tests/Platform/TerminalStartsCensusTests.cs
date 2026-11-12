@@ -35,6 +35,7 @@ public sealed class TerminalStartsCensusTests
         ["IntegrateConsole"] = null,
         ["OpinionConsole"] = null,
         ["PlaceConsole"] = null,
+        ["PluginConsole"] = null,
         ["QuestCheckConsole"] = Reads,
         ["QuestReviewConsole"] = null,
         ["SessionsConsole"] = null,

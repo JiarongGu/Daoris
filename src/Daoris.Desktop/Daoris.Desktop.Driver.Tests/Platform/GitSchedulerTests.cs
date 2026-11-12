@@ -432,6 +432,22 @@ public sealed class GitSchedulerTests
     }
 
     [Fact]
+    public async Task A_place_whose_exit_read_throws_is_still_freed_and_the_next_ask_is_admitted()
+    {
+        var scheduler = Scheduler(bound: 1, repository: 1);
+
+        Assert.Equal(1, await scheduler.RunAsync(Read("faulty"), _ =>
+        {
+            GitPlace.Current!.Bind(() => throw new System.Runtime.InteropServices.COMException("handle disposed", unchecked((int)0x80070006)), () => Task.CompletedTask);
+            return Task.FromResult(1);
+        }, CancellationToken.None).WaitAsync(Soon));
+
+        Assert.Equal(0, scheduler.Running);
+        Assert.Equal(0, scheduler.Apart);
+        Assert.Equal(2, await scheduler.RunAsync(Read("next"), _ => Task.FromResult(2), CancellationToken.None).WaitAsync(Soon));
+    }
+
+    [Fact]
     public async Task A_read_its_last_asker_ended_answers_it_once_the_run_returns_and_says_one_that_outlived_its_kill()
     {
         var scheduler = Scheduler(bound: 1, repository: 1);
