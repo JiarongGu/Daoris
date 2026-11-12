@@ -124,9 +124,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             delegated = pipe.Delegate.Judge(request, key!, claim, connection);
             if (delegated.Tier == PipeDelegateTier.Refused) return (IpcJson.Serialize(pipe.Refuse(request, PipeDelegate.Unproved, PipeDelegate.UnprovedSentence)), null);
         }
-        else if (claim is null && @class == PipeClass.Person && !holding && !asked && !covered)
+        else if (claim is null && @class == PipeClass.Person && !holding && !covered)
         {
-            delegated = PipeTerminalTier.Judge(pipe, connection);
+            delegated = PipeTerminalTier.Judge(pipe);
         }
 
         // A person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.

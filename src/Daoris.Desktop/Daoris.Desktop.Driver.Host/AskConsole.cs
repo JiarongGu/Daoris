@@ -35,6 +35,8 @@ internal static class AskConsole
             var workflows = new AskWorkflowWorld(
                 service, () => DriverConfig.Load(DriverConfig.ResolvePath()), DriverConfig.HomeOf(DriverConfig.ResolvePath()));
 
+            if (read.List) return await AskListCommand.RunAsync(read, service, Console.Out).ConfigureAwait(false);
+
             if (read.SetWorkflow is { } setWorkflow)
             {
                 if (read.WorkflowWords is not null) return Usage("`ask workflow <id>` takes your words after it, not --workflow-words");

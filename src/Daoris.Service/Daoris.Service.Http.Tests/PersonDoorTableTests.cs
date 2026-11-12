@@ -120,6 +120,7 @@ public sealed class PersonDoorTableTests
         // A piece's answer, handed to its lead's line by the driver.
         ("POST", "/api/partners/{partner}/hand", Driver),
         ("POST", "/api/supervise", Driver),
+        ("POST", "/api/step-sessions", Driver),
 
         ("POST", "/api/quests/{id}/review", Person),
         ("POST", "/api/quests/{id}/set-up-step", Person),
@@ -152,10 +153,10 @@ public sealed class PersonDoorTableTests
         // A memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
         ("POST", "/api/memory/{id}/decide", Person),
         ("POST", "/api/sessions/{id}/memory", Person),
-        ("POST", "/api/asks/{id}/close", Person),
-        ("DELETE", "/api/asks/{id}", Person),
-        ("DELETE", "/api/quests/{id}", Person),
-        ("DELETE", "/api/sessions/{id}", Person),
+        ("POST", "/api/asks/{id}/close", Agent),
+        ("DELETE", "/api/asks/{id}", Agent),
+        ("DELETE", "/api/quests/{id}", Agent),
+        ("DELETE", "/api/sessions/{id}", Agent),
         ("POST", "/api/sessions/{id}/release-place", Person),
         ("POST", "/api/history/clear", Person),
         // Only the person starts one, sends its packet and clears it; an agent asks them instead.
@@ -163,9 +164,9 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/brainstorms/{id}/send", Person),
         ("POST", "/api/brainstorms/{id}/stop", Person),
         ("DELETE", "/api/brainstorms/{id}", Person),
-        ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
-        // The person's bring-forward of their machine's lost take; a local host's alone.
-        ("POST", "/api/quests/{id}/conflicts/forward", Person),
+        ("POST", "/api/quests/{id}/conflicts/dismiss", Agent),
+        // A bring-forward of a machine's lost take; a local host's alone.
+        ("POST", "/api/quests/{id}/conflicts/forward", Agent),
         ("POST", "/api/sync/machines/{machine}/retire", Person),
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
@@ -197,10 +198,10 @@ public sealed class PersonDoorTableTests
 
         Assert.Equal(40, Routes.Count(route => route.Class == Open));
         // An outside agent's read, post and leave, and the person's admission of it.
-        Assert.Equal(8, Routes.Count(route => route.Class == Agent));
+        Assert.Equal(14, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
-        Assert.Equal(33, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(41, Routes.Count(route => route.Class == Person));
+        Assert.Equal(34, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(35, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }
@@ -246,7 +247,7 @@ public sealed class PersonDoorTableTests
         Assert.Empty(person.Where(each => each.Marks is null).Select(each => each.Item1));
         Assert.All(person, each => Assert.Contains(each.Marks!.Kind, OwnerMarkKinds.All));
         Assert.All(person, each => Assert.False(string.IsNullOrWhiteSpace(each.Marks!.Evidence), each.Item1));
-        Assert.Empty(PersonDoors.Table.Where(door => door.Class != Person && door.Marks is not null).Select(door => door.Pattern));
+        Assert.Empty(PersonDoors.Table.Where(door => door.Class is not (Person or Agent) && door.Marks is not null).Select(door => door.Pattern));
 
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/asks")!.Marks!.Kind);
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/sessions/{id}/added")!.Marks!.Kind);

@@ -43,7 +43,7 @@ public sealed record Door(string Method, string Pattern, DoorClass Class, string
     /// <summary>
     /// What a person's door's effect is attributed to the person by on a quest's records: the kind of
     /// write that makes the quest the owner's for the run, and the evidence the desktop's reader finds it by; or none, with why. Every
-    /// <see cref="DoorClass.Person"/> door and form declares one (<c>PersonDoorTableTests</c>, and the desktop's census sweep).
+    /// <see cref="DoorClass.Person"/> door and form declares one, as does an agent's door whose keyed call is the person's press.
     /// </summary>
     public OwnerMark? Marks { get; init; }
 }
@@ -286,6 +286,7 @@ public static class PersonDoors
         new("POST", "/api/partners", DoorClass.Driver, "a partner's record, opened for one piece of the session that asked"),
         new("POST", "/api/partners/{partner}/hand", DoorClass.Driver, "a piece's answer, handed to the line of the session that asked"),
         new("POST", "/api/supervise", DoorClass.Driver, "a supervisor's record, opened for the decision an agent-held supervisor makes"),
+        new("POST", "/api/step-sessions", DoorClass.Driver, "a workflow step's session's record, opened at the run's place"),
 
         // The person's alone (19, and the forms above): the review, what a review is set to, the yes and the done, a
         // go-ahead's answer, their words, closing and deleting, and the registry's verbs.
@@ -323,10 +324,10 @@ public static class PersonDoors
         // and only they keep or drop what an ended session staged.
         new("POST", "/api/memory/{id}/decide", DoorClass.Person, "a memory end's approval") { Marks = OwnerMark.None("a memory row, no quest") },
         new("POST", "/api/sessions/{id}/memory", DoorClass.Person, "an ended session's memory changes kept or dropped") { Marks = OwnerMark.None("a memory row, no quest") },
-        new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
-        new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
-        new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
-        new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
+        new("POST", "/api/asks/{id}/close", DoorClass.Agent, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
+        new("DELETE", "/api/asks/{id}", DoorClass.Agent, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
+        new("DELETE", "/api/quests/{id}", DoorClass.Agent, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
+        new("DELETE", "/api/sessions/{id}", DoorClass.Agent,"a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
         new("POST", "/api/sessions/{id}/release-place", DoorClass.Person, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
         new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
         // Only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
@@ -335,9 +336,9 @@ public static class PersonDoors
         new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("POST", "/api/brainstorms/{id}/stop", DoorClass.Person, "a brainstorm's stop") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear") { Marks = OwnerMark.None("a brainstorm, no quest") },
-        new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
+        new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Agent,"a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
         // Only the person, on the machine whose take lost, brings it forward; a local host's alone.
-        new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Person, "a lost take brought forward") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:dismissed") },
+        new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Agent,"a lost take brought forward") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:dismissed") },
         // Only the person says a machine left their workspace, which a bind to a retired machine would hold off.
         new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },

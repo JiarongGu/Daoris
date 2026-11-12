@@ -216,7 +216,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     be delivered with no press of theirs, the latest standing and `--clear` taking them back; the ask's page says the standing words
     (*Delivered on your words*) with *Take back…*, the person's press. Ask Daoris's press puts on an ask only
     words that stand verbatim, whitespace and case aside, in the person's own messages of the conversation whose delegate key proved
-    it; a working session's own press puts none. (D65, D133, D277, D282)
+    it; a working session's own press puts none. Any caller closes (`ask close <id> --reason`, the reason kept as its note) or
+    deletes an ask, and a quest or a session: the service keeps no key for these (D284). `ask list [--workspace <w>|--all]
+    [--open] [--json]` and `quest list [--repository <r>] [--workspace <w>] [--open] [--json]` read them and change nothing; an
+    ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
+    probably meant, and is never made. (D65, D133, D277, D282, D284)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
     parked one ends when the person answers the ask. An ask asks each receiver once: a publish to a receiver holding an open, taken
