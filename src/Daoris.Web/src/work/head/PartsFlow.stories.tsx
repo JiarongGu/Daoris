@@ -3,7 +3,6 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryPart, SessionEntry } from '../entries';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFlow } from './PartsFlow';
 
 // A session's parts drawn as a flowchart: each part hung by what it followed and
@@ -51,16 +50,6 @@ const forkRows = Object.fromEntries(['p1', 'p2', 'p3'].map((id, index) => [id, {
   session: { ...EVIDENCE_SESSIONS[2 + index]!, id }, root: 'C:/work/app',
 }]));
 
-/** Where Accept would land the install's three parts: one held by a gate, one leaving out a commit the line holds. */
-const PLAN: EntryAcceptPlan = {
-  entry: RETRY.entry, repository: 'app', form: 'branch', target: 'daoris/t-one',
-  parts: [
-    { session: 'ap000001' },
-    { session: 'ap000002', leftOut: [{ commit: 'abc1234', subject: 'already on the line', why: 'content' }] },
-    { session: 'ap000003', held: 'a gate holds it' },
-  ],
-};
-
 /** A failed start, its retry, and a request the database repository sent back: the parts' lineage by what each followed. */
 export const Retry: Story = { args: { entry: RETRY, attended: 'ap000002', rows }, decorators: light };
 /** The same in dark. */
@@ -71,12 +60,6 @@ export const RetryChinese: Story = { args: { entry: RETRY, attended: 'ap000002',
 export const Fork: Story = { args: { entry: FORK, attended: 'p3', rows: forkRows }, decorators: light };
 /** The same in 中文. */
 export const ForkChinese: Story = { args: { entry: FORK, attended: 'p3', rows: forkRows }, decorators: [chinese, atWidths(), inLight] };
-/** Where Accept would land the parts, read once its ask is open: a dashed node, with what holds or leaves out each on its edge. */
-export const WithTheLandingPlan: Story = { args: { entry: RETRY, attended: 'ap000003', rows, plan: PLAN }, decorators: light };
-/** The same in 中文. */
-export const WithTheLandingPlanChinese: Story = {
-  args: { entry: RETRY, attended: 'ap000003', rows, plan: PLAN }, decorators: [chinese, atWidths(), inLight],
-};
 
 /**
  * A session that moved: handed over from Claude Code at its account's limit, then moved

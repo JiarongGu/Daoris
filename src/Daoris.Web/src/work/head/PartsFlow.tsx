@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { LifeFlow } from '../../design/canvas/LifeFlow';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { partsFlow } from './partsLife';
 import { ranLine } from '../actors';
 import { PartsHeading, PartsList, type PartsProps } from './PartsStrip';
@@ -8,7 +7,7 @@ import { PartsHeading, PartsList, type PartsProps } from './PartsStrip';
 /**
  * **A session's parts drawn as a flowchart**: in the parts strip's place on the
  * session's page, its heading and then the parts as nodes, each hung by what it followed and labelled by how it began, the part
- * the page is on lit, and, once Accept's plan is read, the place the parts *would* land as a dashed node. Where the drawing does
+ * the page is on lit. Where the drawing does
  * not fit (the side bar's floor), or the person chose the list, the strip is the flow's rail.
  *
  * @remarks
@@ -16,14 +15,13 @@ import { PartsHeading, PartsList, type PartsProps } from './PartsStrip';
  *   says nothing of which ran when or at once; the oldest-first order is the ledger's, never a cause.
  * - **A press shows a part**: Enter on its node, and a control inside it, as the strip's button did; every act on the page stays
  *   the part shown's.
- * - **The landing is a plan**, read only while Accept's ask is open, drawn from `plan`; what did land is the landing flow's.
  * - Nothing is drawn for a line of work of one part, whose page needs neither strip nor flow.
  */
-export function PartsFlow({ plan, ...props }: PartsProps & { plan?: EntryAcceptPlan | null }) {
+export function PartsFlow(props: PartsProps) {
   const { t } = useTranslation();
   const { entry, attended, rows, onShow } = props;
   if (entry.parts.length < 2) return null;
-  const life = partsFlow(t, entry, { attended, rows, plan });
+  const life = partsFlow(t, entry, { attended, rows });
   const nodes = life.nodes.map((node) => {
     const at = entry.parts.findIndex((part) => part.session === node.id);
     if (at < 0) return node;

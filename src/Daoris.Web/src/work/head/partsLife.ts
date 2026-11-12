@@ -5,7 +5,6 @@ import type { EntryPart, PartSpent, SessionEntry } from '../entries';
 import { HANDED_REASONS } from '../noteLines';
 import { shownOf } from '../groups';
 import { ownTree } from '../identity';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import type { PartFacts } from './PartsStrip';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
@@ -84,12 +83,10 @@ export type PartsLife = {
 };
 
 const START = 'start';
-const LANDING = 'landing';
 
 /**
  * **A line of work's parts as a flow**: each part a node oldest first, hung by what it
- * followed (`EntryPart.After`) and labelled by how it began, an asked part from a faint node for the repository that asked it,
- * and the plan where Accept would land them as a prospective node, dashed.
+ * followed (`EntryPart.After`) and labelled by how it began, an asked part from a faint node for the repository that asked it.
  *
  * @remarks
  * **Lineage, never cause or concurrency** (trap 19): a part keeps no start, end or overlap, so the order of the list is the
@@ -99,17 +96,14 @@ const LANDING = 'landing';
  * - **What a part says of itself**: its word as the list shows it, and its quest. Its agent and when it began only where the page
  * holds that part's session record, since the part keeps neither (`SessionEntries.cs`).
  * - **What is lit**: the part the page is on, and a line says which part's record is the list's row.
- * - **The landing is a plan, not a join**: it is drawn only once Accept's plan is read, as where the parts *would* land, with what
- * holds or leaves out each on its edge; what did land is the landing flow's.
  * - A way of beginning this page does not know is shown as recorded (trap 10), hung by what it follows.
  */
 export function partsFlow(
   t: Translate, entry: SessionEntry,
-  { attended, rows, plan }: { attended: string; rows: PartsFacts; plan?: EntryAcceptPlan | null },
+  { attended, rows }: { attended: string; rows: PartsFacts },
 ): PartsLife {
   const { parts } = entry;
   const held = new Set(parts.map((part) => part.session));
-  const numberOf = (session: string) => t('work.parts.number', { n: parts.findIndex((part) => part.session === session) + 1 });
 
   /** What a part hangs from: the node for the repository that asked, else the part it followed if held, else the start. */
   const source = (part: EntryPart): string => {
@@ -166,32 +160,6 @@ export function partsFlow(
       says: known ? beganLine(t, part, parts, rows) : t('work.parts.began.recorded', { began: part.began }),
     });
   });
-
-  // Where Accept would land them: a plan, not a join, and not drawn until it is read.
-  if (plan) {
-    nodes.push({
-      id: LANDING, reached: false,
-      title: t(plan.form === 'merge' ? 'work.parts.landing.titleMerges' : 'work.parts.landing.titleLands', { target: plan.target }),
-    });
-    for (const each of plan.parts) {
-      if (!held.has(each.session)) continue;
-      const what = [
-        ...(each.held ? [t('work.parts.landing.held', { says: each.held })] : []),
-        ...(each.problem ? [t('work.parts.landing.problem', { says: each.problem })] : []),
-        ...(each.conflict ? [t('work.parts.landing.conflict', { says: each.conflict.says })] : []),
-        ...(each.sameTreeAs ? [t('work.parts.landing.sameTree', { other: numberOf(each.sameTreeAs) })] : []),
-        ...(each.clash ? [t('work.parts.landing.clash', { by: numberOf(each.clash.by), says: each.clash.says })] : []),
-        ...(each.superseded ? [t('work.parts.landing.superseded', { by: numberOf(each.superseded.by) })] : []),
-        ...(each.leftOut && each.leftOut.length > 0 ? [t('work.parts.landing.leavesOut', { count: each.leftOut.length })] : []),
-      ];
-      edges.push({
-        id: `${each.session}>${LANDING}`, from: each.session, to: LANDING, style: 'conditional',
-        says: what.length > 0
-          ? what.join('; ')
-          : each.own && each.target ? t('work.parts.landing.own', { branch: each.target }) : t('work.parts.landing.lands'),
-      });
-    }
-  }
 
   return { label: t('work.parts.label'), nodes, edges, entries, lines };
 }

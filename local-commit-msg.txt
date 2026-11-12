@@ -1,0 +1,5 @@
+feat(web): REVIEWUX1 row f finished: tests on the Review door, five web reds fixed, dead landing words and the parts' plan removed
+
+The landed and review-chat suites exercise the Review door in place of the removed Accept, ask and name flows; the note codes map holds ChatOpening's three codes and the words' two, the zh ask record says 采纳, the Send now case follows the composer; both catalogues lose the head's, the entry's and the review's landing words, and the parts' flow draws no landing plan.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>

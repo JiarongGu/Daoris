@@ -121,7 +121,6 @@
   "opinion.ask.stopTitle": "Stop the reviewer",
   "opinion.ask.stop": "Stop {{who}}'s reading: it gives no opinion, and the work then waits as one with none.",
   "opinion.ask.stopMeanIt": "Stop reading",
-  "opinion.accept.answers": "Accepting answers what the second opinion left unsettled: {{unsettled}}.",
   "opinion.said.sentBack": "Your words went to session {{session}} as its next turn.",
   "opinion.session.title": "Second opinion",
   "opinion.session.kind": "second opinion",

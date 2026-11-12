@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFlow } from './PartsFlow';
 
 // The parts flow takes the parts strip's place on the session's page, the
@@ -142,28 +141,12 @@ describe('the parts flow, in the strip\'s place', () => {
   });
 });
 
-describe('where Accept would land the parts (§2.3, trap 19)', () => {
-  const plan: EntryAcceptPlan = {
-    entry: APP.entry, repository: 'app', form: 'branch', target: 'daoris/t-one',
-    parts: [{ session: 'ap000001' }, { session: 'ap000002' }, { session: 'ap000003', held: 'a gate holds it' }],
-  };
-
-  it('draws a prospective node once the plan is read, dashed, saying would, and no landing as done', () => {
-    paneWidth = 1200;
-    draw({ plan });
-
-    const landing = node(/^Accept would land these on daoris\/t-one/);
-    expect(landing.className).toMatch(/border-dashed/);
-    expect(landing).not.toHaveAttribute('aria-current');
-    expect(landing).toHaveAccessibleDescription(
-      'Not reached. From Part 1: its work would land. From Part 2: its work would land. From Part 3: held: a gate holds it.');
-    expect(screen.queryByText(/landed on|merged into/i)).toBeNull();
-  });
-
-  it('draws none before the plan is read', () => {
+describe('no landing in the parts (§2.3, trap 19)', () => {
+  it('draws no landing node, since the Accept is the review page’s', () => {
     paneWidth = 1200;
     draw();
     expect(within(flow()).queryByText(/Accept would/)).toBeNull();
+    expect(screen.queryByText(/landed on|merged into/i)).toBeNull();
   });
 });
 

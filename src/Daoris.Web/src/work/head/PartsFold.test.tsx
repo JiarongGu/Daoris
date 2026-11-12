@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFold } from './PartsFold';
 
 // The canvas toolbar's tooltips need the provider the app shell holds.
@@ -115,18 +114,13 @@ describe('the parts, folded to one line', () => {
     expect(onShow).toHaveBeenCalledWith('ap000003');
   });
 
-  it('opens drawn where a story or a test asks, and reads Accept\'s plan in the drawing only once opened', () => {
-    const plan: EntryAcceptPlan = {
-      entry: APP.entry, repository: 'app', form: 'branch', target: 'daoris/t-one',
-      parts: [{ session: 'ap000001' }, { session: 'ap000002' }, { session: 'ap000003' }],
-    };
+  it('opens drawn where a story or a test asks', () => {
     paneWidth = 1200;
-    const folded = draw({ plan });
-    expect(screen.queryByText(/Accept would land/)).toBeNull();
+    const folded = draw();
+    expect(screen.queryByRole('button', { name: 'Hide the parts' })).toBeNull();
     folded.unmount();
 
-    draw({ plan, defaultOpen: true });
-    expect(screen.getByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeInTheDocument();
+    draw({ defaultOpen: true });
     expect(screen.getByRole('button', { name: 'Hide the parts' })).toBeInTheDocument();
   });
 

@@ -5,7 +5,6 @@ import { en, zh } from '../../locales';
 import { driverSource } from '../../test/driverSource';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryPart, SessionEntry } from '../entries';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PART_BEGAN, partsFlow } from './partsLife';
 
 // A line of work's parts drawn as lineage. A part keeps no start,
@@ -22,8 +21,8 @@ const part = (session: string, began: string, over: Partial<EntryPart> = {}): En
 const entry = (parts: EntryPart[], over: Partial<SessionEntry> = {}): SessionEntry => ({
   entry: 'quest:q0000a/app', origin: 'quest:q0000a', repository: 'app', group: 'done', leading: parts.at(-1)!.session, parts, ...over,
 });
-const flowOf = (e: SessionEntry, attended = e.leading, held: typeof rows = {}, plan: EntryAcceptPlan | null = null) =>
-  partsFlow(t, e, { attended, rows: held, plan });
+const flowOf = (e: SessionEntry, attended = e.leading, held: typeof rows = {}) =>
+  partsFlow(t, e, { attended, rows: held });
 const shape = (flow: ReturnType<typeof partsFlow>) => flow.edges.map((edge) => `${edge.from}>${edge.to}`);
 
 beforeEach(() => {
@@ -175,90 +174,22 @@ describe('what a part says of itself (§2.3)', () => {
   });
 });
 
-describe('where Accept would land the parts: a prospective node, never done (§2.3, trap 19)', () => {
-  const plan: EntryAcceptPlan = {
-    entry: APP.entry, repository: 'app', form: 'branch', target: 'daoris/t-one',
-    parts: [
-      { session: 'ap000001', own: false },
-      { session: 'ap000002', leftOut: [{ commit: 'abc1234', subject: 'already there', why: 'content' }] },
-      { session: 'ap000003', held: 'a gate holds it' },
-    ],
-  };
-
-  it('draws none until the plan is read', () => {
-    const flow = flowOf(APP);
+describe('no landing among the parts (§2.3, trap 19)', () => {
+  it('draws no landing node: the Accept is the review page’s', () => {
+    const flow = flowOf(APP, 'ap000003', rows);
     expect(flow.nodes.some((node) => node.id === 'landing')).toBe(false);
-  });
-
-  it('draws the plan as a node not reached, with a dashed edge from each part and what holds or leaves it out', () => {
-    const flow = flowOf(APP, 'ap000003', rows, plan);
-    const landing = flow.nodes.find((node) => node.id === 'landing')!;
-
-    expect(landing.title).toBe('Accept would land these on daoris/t-one');
-    expect(landing.reached).toBe(false);
-    expect(landing.current).toBeFalsy();
-    expect(landing.state).toBeUndefined();
-    expect(flow.edges.filter((edge) => edge.to === 'landing').map((edge) => [edge.from, edge.style, edge.says])).toEqual([
-      ['ap000001', 'conditional', 'its work would land'],
-      ['ap000002', 'conditional', 'leaves out 1 commit the line already holds'],
-      ['ap000003', 'conditional', 'held: a gate holds it'],
-    ]);
-  });
-
-  it('says a merge for a line that merges, and what a shared tree and a redone part do', () => {
-    const merging: EntryAcceptPlan = {
-      ...plan, form: 'merge', target: 'main',
-      parts: [
-        { session: 'ap000001' },
-        { session: 'ap000002', sameTreeAs: 'ap000001' },
-        { session: 'ap000003', superseded: { by: 'ap000002', says: 'src/a.ts', conflicts: true } },
-      ],
-    };
-    const flow = flowOf(APP, 'ap000003', rows, merging);
-
-    expect(flow.nodes.find((node) => node.id === 'landing')!.title).toBe('Accept would merge these into main');
-    expect(flow.edges.filter((edge) => edge.to === 'landing').map((edge) => edge.says)).toEqual([
-      'its work would land',
-      'lands with part 1\'s, which shares its tree',
-      'looks superseded by part 2, and lands unless you leave it out',
-    ]);
-  });
-
-  it('says a clash edge in its own words, never superseded', async () => {
-    const clashing: EntryAcceptPlan = {
-      ...plan, parts: [{ session: 'ap000001' }, { session: 'ap000002' }, { session: 'ap000003', clash: { by: 'ap000002', says: 'CLAUDE.md' } }],
-    };
-    const edge = () => flowOf(APP, 'ap000003', rows, clashing).edges.find((each) => each.id === 'ap000003>landing')!.says;
-
-    expect(edge()).toBe("conflicts with part 2's work in CLAUDE.md");
-    await i18n.changeLanguage('zh');
-    expect(edge()).toBe('与第 2 段的工作在 CLAUDE.md 上冲突');
-    await i18n.changeLanguage('en');
-  });
-
-  it('claims no landing as done: nothing it says is in the past, and every word of it says would', () => {
-    const flow = flowOf(APP, 'ap000003', rows, plan);
-    const words = JSON.stringify([flow.nodes.find((node) => node.id === 'landing'), flow.edges.filter((edge) => edge.to === 'landing')]);
-    expect(words).not.toMatch(/landed|merged|accepted|done|complete/i);
-    expect(words).toMatch(/would/);
-  });
-
-  it('draws a part the plan names that the page does not hold as no edge at all', () => {
-    const flow = flowOf(APP, 'ap000003', rows, { ...plan, parts: [{ session: 'zz999999' }] });
-    expect(flow.edges.filter((edge) => edge.to === 'landing')).toEqual([]);
+    expect(flow.edges.some((edge) => edge.to === 'landing')).toBe(false);
   });
 });
 
 describe('the parts in 中文', () => {
-  it('says them as the strip says them, and the start and the landing', async () => {
+  it('says them as the strip says them, and the start', async () => {
     await i18n.changeLanguage('zh');
-    const flow = flowOf(APP, 'ap000002', rows, {
-      entry: APP.entry, repository: 'app', form: 'branch', target: 'daoris/t-one', parts: [{ session: 'ap000001' }],
-    });
+    const flow = flowOf(APP, 'ap000002', rows);
 
-    expect(flow.nodes.map((node) => node.title)).toEqual(['起点', '第 1 段', '第 2 段', '由 db 委托', '第 3 段', '采纳会把这些落地在 daoris/t-one 上']);
+    expect(flow.nodes.map((node) => node.title)).toEqual(['起点', '第 1 段', '第 2 段', '由 db 委托', '第 3 段']);
     expect(flow.edges.map((edge) => [edge.label ?? null, edge.says])).toEqual([
-      ['开始', '开始'], ['重试', '接第 1 段重试'], ['委托', '由 db 委托'], [null, '它的工作会落地'],
+      ['开始', '开始'], ['重试', '接第 1 段重试'], ['委托', '由 db 委托'],
     ]);
     expect(flow.label).toBe('这条工作线的各段如何接续');
   });

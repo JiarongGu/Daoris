@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { beganLine } from './partsLife';
 import { ranLine } from '../actors';
 import { PartsFlow } from './PartsFlow';
@@ -21,14 +20,11 @@ const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent
  * - **Where the fold's state lives**: in this molecule, as the milestone's does, and the page mounts it under the line of work's
  * id, not the session's: pressing a part in the open flow shows another session of the same line of work, and the flow the
  * person is reading must not fold under their press. Another line of work starts folded.
- * - **Accept's plan is read for the open flow only**: folded, no landing node is drawn, and the person's press on Accept is not
- * what opens it (a block opening itself under a press elsewhere would move the control the person just pressed).
  * - **The newest is the last of the list**, which is oldest first (the ledger's order, never a time): how it began is the strip's
  * own sentence (`beganLine`).
  * - Nothing is drawn for a line of work of one part, as the strip and the flow draw none.
  */
-export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & {
-  plan?: EntryAcceptPlan | null;
+export function PartsFold({ defaultOpen = false, ...props }: PartsProps & {
   /** Open on first draw: a story's or a test's, since the page's own default is folded. */
   defaultOpen?: boolean;
 }) {
@@ -41,7 +37,7 @@ export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & 
   if (open) {
     return (
       <div className="grid gap-1">
-        <PartsFlow {...props} plan={plan} />
+        <PartsFlow {...props} />
         <button type="button" onClick={() => setOpen(false)} className={`${PRESS} justify-self-start`}>
           {t('work.parts.hideAll')}
         </button>
