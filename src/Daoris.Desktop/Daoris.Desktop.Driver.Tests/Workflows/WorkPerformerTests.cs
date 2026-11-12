@@ -273,6 +273,21 @@ public sealed class WorkPerformerTests : IDisposable
     }
 
     [Fact]
+    public async Task An_outcome_sent_again_for_a_settled_attempt_by_another_plugin_id_is_a_replay_and_counts_nothing()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation, Reached)], Declared, Watched)).What);
+
+        var again = Assert.Single(performer.Hear([new WorkStepHeard("renamed.plugin", 1, Heard(invocation, Reached).Step)], Declared, Watched));
+
+        Assert.Equal(PerformedWhat.Replay, again.What);
+        Assert.Empty(_port.Refusals);
+        Assert.Equal(NodeStates.Reached, Status().State);
+    }
+
+    [Fact]
     public async Task A_transient_failure_is_retried_with_a_new_key_after_its_persisted_delay()
     {
         var performer = Performer();
