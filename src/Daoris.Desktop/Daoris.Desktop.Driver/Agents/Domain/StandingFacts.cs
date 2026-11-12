@@ -15,6 +15,9 @@ public sealed record StandingFacts
     /// <summary>The workspace it works for; null where none is named.</summary>
     public string? Workspace { get; init; }
 
+    /// <summary>Ask Daoris's focus as told (<see cref="HelpFocusTold"/>), which its shared room never says; null for every other session.</summary>
+    public string? Focus { get; init; }
+
     /// <summary>The code map its tree keeps, repository-relative; null where it keeps none.</summary>
     public string? CodeMap { get; init; }
 

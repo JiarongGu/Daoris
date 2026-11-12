@@ -35,7 +35,7 @@ public sealed class HelpRoomCatchUp(string home, Func<HelpMachine?> describe, Ma
                 {
                     try
                     {
-                        KnowledgeHelp.Current.Prepare(home, machine.Within(workspace, KnowledgeHelp.Current.FocusWritten(home, workspace)));
+                        KnowledgeHelp.Current.Prepare(home, machine.Within(workspace));
                     }
                     catch (Exception error)
                     {

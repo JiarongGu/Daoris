@@ -18,16 +18,12 @@ internal interface IHelpRoomSection
     string Render(HelpMachine machine);
 }
 
-/// <summary>
-/// The room's sections, in the order it renders them. A new section is a file under <c>Knowledge/Room/</c>
-/// and a line here, where the helper should read it.
-/// </summary>
+/// <summary>The room's sections in the order it renders them: a new one is a file under <c>Knowledge/Room/</c> and a line here.</summary>
 internal static class HelpRoomSections
 {
     public static readonly IReadOnlyList<IHelpRoomSection> All =
     [
         new HelpRoomIntro(),
-        new HelpRoomInFocus(),
         new HelpRoomMayDo(),
         new HelpRoomVerbs(),
         new HelpRoomMakingAPlugin(),
