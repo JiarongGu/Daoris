@@ -132,9 +132,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             delegated = pipe.Delegate.Judge(request, key!, claim, connection);
             if (delegated.Tier == PipeDelegateTier.Refused) return (IpcJson.Serialize(pipe.Refuse(request, PipeDelegate.Unproved, PipeDelegate.UnprovedSentence)), null);
         }
-        else if (judged is null && claim is null && @class == PipeClass.Person && !holding && !asked && !covered)
+        else if (judged is null && claim is null && @class == PipeClass.Person && !holding && !covered)
         {
-            delegated = PipeTerminalTier.Judge(pipe, connection);
+            delegated = PipeTerminalTier.Judge(pipe);
         }
 
         if (judged is null && delegated is { Tier: PipeDelegateTier.Covered } && PipeGrowth.Governs(request) && pipe.Growth is { } growth)

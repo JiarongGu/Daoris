@@ -28,6 +28,9 @@ public static class SessionReason
     /// <summary>Needs you: its quest closed done with part left (<see cref="QuestLeft"/>, <see cref="PersonWaits.Left"/>); the person's archive sets it aside.</summary>
     public const string Left = PersonWaits.Left;
 
+    /// <summary>Done: its quest closed done with part left and the person accepted the departure, which is their word on it (<see cref="QuestLeft.Accepted"/>).</summary>
+    public const string PartLeft = "part-left";
+
     /// <summary>Failed: it ended past its transient bound (<see cref="StartVerdict.TransientHeld"/>).</summary>
     public const string Transient = "transient";
 

@@ -119,7 +119,7 @@ public sealed class OwnerSetCensusTests
     public void Every_person_door_of_the_service_declares_its_record_kind_and_evidence_the_reader_knows()
     {
         var source = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Http", "PersonDoors.cs"));
-        var persons = Regex.Matches(source, @"(?:new|DoorForm)\((?<head>[^\n]*?)DoorClass\.Person,[^\n]*").ToList();
+        var persons = Regex.Matches(source, @"(?:new|DoorForm)\((?<head>[^\n]*?)DoorClass\.(?:Person,[^\n]*|Agent,[^\n]*Marks =[^\n]*)").ToList();
         Assert.True(persons.Count >= 30, $"the source names {persons.Count} person doors");
         var marks = Regex.Matches(source, @"Marks = OwnerMark\.(?<how>Of|None)\((?:OwnerMarkKinds\.(?<kind>\w+), )?""(?<evidence>[^""]+)""\)").ToList();
         Assert.Equal(persons.Count, marks.Count);

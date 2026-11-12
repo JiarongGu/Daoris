@@ -121,7 +121,11 @@ public static class RunNodeWords
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
         var (refused, result) = records.Edit(bound.Unit, record =>
         {
-            if (record.Ended is { } ended) return (null, Refuse(Ended) with { Detail = ended.Quest });
+            // The one step a run ended failed at has the person's stop too, which governs the run again to end it stopped.
+            var failedAt = record.Ended is { Outcome: RunOutcomes.Failed } failedRun && failedRun.Node == node && act == NodeWordActs.Stop && by is null
+                && WorkPerformer.StatusOf(record, node).State == NodeStates.Failed;
+            if (record.Ended is { } ended && !failedAt) return (null, Refuse(Ended) with { Detail = ended.Quest });
+            if (failedAt) record = record with { Ended = null };
             var standing = EarlyAccepts.Standing(record, node, by);
             if (SupervisedWords.Refused(standing, by) is { } held) return (null, Refuse(held));
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
@@ -286,7 +290,7 @@ public static class RunNodeWords
 
     /// <summary>
     /// What the run's view offers the person on a node standing at <paramref name="status"/>: its skip where it is ready or under way and its kind
-    /// lets the person pass it over, and its stop wherever it is under way or about to be judged. A node not reached yet is offered neither, though
+    /// lets the person pass it over, and its stop wherever it is under way, about to be judged or failed. A node not reached yet is offered neither, though
     /// the door takes a word on it as the table does; a run that ended or does not read offers none, which its reader decides.
     /// </summary>
     /// <param name="promoted">
@@ -298,7 +302,7 @@ public static class RunNodeWords
         // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on.
         var acts = NodeKit.Of(node.Kind) is IPressed pressed ? new List<string>(pressed.Acts(node, status)) : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
-        if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);
+        if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated or NodeStates.Failed && !promoted) acts.Add(NodeWordActs.Stop);
         return acts;
     }
 

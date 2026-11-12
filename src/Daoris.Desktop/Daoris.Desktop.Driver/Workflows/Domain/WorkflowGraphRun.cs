@@ -200,8 +200,9 @@ public static class WorkflowGraphRuns
             // A declined request is read from the quests' records at this look, so the hold's code is never stored on the node.
             var held = node.Kind == NodeKinds.WorkRequests && status.State == NodeStates.Active && WorkRequests.Declined(run.Requests);
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
-            var cannot = GraphCannotStart.Of(node, status.State, run.Process);
+            var cannot = facts.Record?.Ended is null ? GraphCannotStart.Of(node, status.State, run.Process) : null;
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
+            if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
             var needs = facts.Needs.GetValueOrDefault(node.Id);

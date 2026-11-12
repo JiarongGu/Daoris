@@ -217,7 +217,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     be delivered with no press of theirs, the latest standing and `--clear` taking them back; the ask's page says the standing words
     (*Delivered on your words*) with *Take back…*, the person's press. Ask Daoris's press puts on an ask only
     words that stand verbatim, whitespace and case aside, in the person's own messages of the conversation whose delegate key proved
-    it; a working session's own press puts none. (D65, D133, D277, D282)
+    it; a working session's own press puts none. Any caller closes (`ask close <id> --reason`, the reason kept as its note) or
+    deletes an ask, and a quest or a session: the service keeps no key for these (D284). `ask list [--workspace <w>|--all]
+    [--open] [--json]` and `quest list [--repository <r>] [--workspace <w>] [--open] [--json]` read them and change nothing; an
+    ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
+    probably meant, and is never made. (D65, D133, D277, D282, D284)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
     parked one ends when the person answers the ask. Where no declaration covers the work and no repository's own files fit it, the
@@ -233,9 +237,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
     unfinished), failed (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done
-    (completed, stopped, declined, stood down). A done whose own record says work is left is never done: the quest's newest session
-    is needs you with reason `left` where its answers departed from a requirement, accepted or not (`QuestLeft`), or where its run
-    holds a step failed and kept for the person after the done (`PersonWaits.Left`). Each row carries `state` and the finer
+    (completed, stopped, declined, stood down). A done whose own record says work is left is never the plain done: the quest's newest
+    session is needs you with reason `left` where its answers departed from a requirement the person has not yet accepted
+    (`QuestLeft.Waits`), or where its run holds a step failed and kept for the person after the done, no word on it
+    (`PersonWaits.Left`); once the person accepted the departure it is done with reason `part-left` (`QuestLeft.Accepted`), their
+    word on it. Each row carries `state` and the finer
     `reason`; *Archived* folds a done or failed session alone, and a left one is the person's to set aside. Each
     row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first
     of needs you, working and pending any part is in, needs you and working where a co-worker serving a part is, else as its
