@@ -18,23 +18,17 @@ public enum StartClass
     Background,
 }
 
-/// <summary>
-/// Process starts, a few at a time and never on the caller's thread, a person's first.
-/// </summary>
+/// <summary>Process starts, a few at a time and never on the caller's thread, a person's first.</summary>
 /// <remarks>
-/// <para><b>The gate.</b> A start is first admitted by the application's policy the root handed (git's places), then takes a
-/// place of the machine's admission for its class (<see cref="StartClass"/>), waiting asynchronously, so the rest of a fan-out
-/// queues as tasks rather than as threads; then it runs on the thread pool, so the caller's thread is free from the first wait.
-/// How many places there are, and a person's reserved one, are the machine adapter's (<c>StartPlaces</c>). Only the start
-/// is placed, never the run: a child that runs for minutes holds no place, and nothing waits on it but its own caller.</para>
-///
+/// <para>A start is admitted by the policy the root handed (git's places), then waits asynchronously for a place of the machine's
+/// (<c>StartPlaces</c>) for its class, and runs on the thread pool; only the start is placed, never the run.</para>
 /// <para><b>Every start of the desktop's</b> passes it: git's, a session's, a harness action's, a plugin's, the
 /// host's, Edge's, and the file manager the window kit's launcher opens (<see cref="RunAsync(Action, CancellationToken)"/>).
 /// <c>ProcessStartsCensusTests</c> names the few that stay outside, each with why, and whose each start inside is.</para>
 /// </remarks>
 public sealed class ProcessStarts
 {
-    /// <summary>The one gate every start of the desktop's passes, placed by the machine's admission the root chose.</summary>
+    /// <summary>The one gate every start of the desktop's passes.</summary>
     public static ProcessStarts Shared { get; } = new(() => MachinePorts.Admission, Process.Start);
 
     // The stand-in a test's flow makes its starts with (Within); null in production.
@@ -47,20 +41,17 @@ public sealed class ProcessStarts
     private readonly Func<IMachineAdmission> _admission;
     private readonly Func<ProcessStartInfo, Process?> _start;
 
-    /// <summary>A gate whose places are <paramref name="admission"/>'s, over <paramref name="start"/>.</summary>
     internal ProcessStarts(IMachineAdmission admission, Func<ProcessStartInfo, Process?> start)
         : this(() => admission, start)
     {
     }
 
-    // The admission is read at each start, so the shared gate takes the one its root chose whenever the root chose it.
     private ProcessStarts(Func<IMachineAdmission> admission, Func<ProcessStartInfo, Process?> start)
     {
         _admission = admission;
         _start = start;
     }
 
-    /// <summary>The machine's class of a start that is <paramref name="whose"/>.</summary>
     internal static string ClassOf(StartClass whose) => whose == StartClass.Person ? AdmissionClasses.Person : AdmissionClasses.Background;
 
     /// <summary>
@@ -139,7 +130,6 @@ public sealed class ProcessStarts
         var placing = _admission().PlaceAsync(admissionClass, ct);
         if (placing.IsCompleted) return await placing.ConfigureAwait(false);
 
-        // Said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
         using (Queued()) return await placing.ConfigureAwait(false);
     }
 

@@ -191,7 +191,6 @@ public static class HarnessKeys
         JsonKeeping.Save(path, File.Exists(path), read, Written(sealedKeys));
     }
 
-    /// <summary>The value the machine's seal keeps for <paramref name="key"/>; a machine with no seal keeps no key.</summary>
     private static string Sealed(string key) => MachinePorts.Seal.Seal(key)
         ?? throw new DriverException("this machine cannot keep an API key: keys are encrypted for the Windows user, and this is not Windows.");
 

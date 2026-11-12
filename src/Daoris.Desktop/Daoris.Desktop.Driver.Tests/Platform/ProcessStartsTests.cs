@@ -9,10 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Process starts, a few at a time and never on the caller's thread: .NET starts every process under one lock, a
 /// start an antivirus hook holds keeps it, and a sweep's git fan-out once parked 51 threads on it, the window's among them.
 /// </summary>
-/// <remarks>
-/// The fast half: no process starts. A start is a function handed in, held on a gate the test opens, as a slow
-/// <c>CreateProcess</c> holds the lock.
-/// </remarks>
+/// <remarks>The fast half: no process starts. A start is a function handed in, held on a gate the test opens, as a slow
+/// <c>CreateProcess</c> holds the lock.</remarks>
 public sealed class ProcessStartsTests
 {
     // True on the thread that is making the calls, while it makes them: a start that ran there ran on a caller's thread.
@@ -177,7 +175,6 @@ public sealed class ProcessStartsTests
         Assert.Equal("start=50@#q1 start.queue=700", stages.Take());
     }
 
-    /// <summary>A start of a class asks the machine for a place of that class; a git started in a place takes the place's class.</summary>
     [Fact]
     public async Task A_start_is_placed_under_its_class()
     {

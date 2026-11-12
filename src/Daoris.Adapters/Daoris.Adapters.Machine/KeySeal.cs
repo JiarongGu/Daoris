@@ -8,16 +8,13 @@ namespace Daoris.Adapters.Machine;
 /// An API key as <c>keys.json</c> holds it: encrypted with DPAPI for the Windows user this runs as, so the file copied to another
 /// user or machine opens nothing.
 /// </summary>
-/// <remarks>
-/// A value without <see cref="Prefix"/> is a key kept before the seal existed; it is read as written and sealed by the next write
-/// of the file (<see cref="Sealed"/>), which is the whole of its life.
-/// </remarks>
+/// <remarks>A value without <see cref="Prefix"/> is a key kept before the seal existed; it is read as written and sealed by the next
+/// write of the file (<see cref="Sealed"/>), which is the whole of its life.</remarks>
 public static class KeySeal
 {
     /// <summary>What marks a value as sealed, with the seal's version.</summary>
     public const string Prefix = "dpapi1:";
 
-    /// <summary>The seal as the root hands it to the application.</summary>
     public static SecretSeal Port { get; } = new(Sealed, Open);
 
     /// <summary>Named, so bytes this user sealed for some other purpose do not open here.</summary>
