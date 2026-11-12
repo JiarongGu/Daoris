@@ -143,19 +143,14 @@ internal static class HelpDoorRowsActs
             "`daoris ask … --kind <kind> [--workflow <id>|current]`, `daoris ask workflow <id> [--kind <kind>] "
             + "[--workflow <id>|current]|--clear [\"…\"]`, and for a quest no ask published, before it starts (WORKFLOW1e2), "
             + "`daoris quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]`"),
-        // The person's Keep where a kind's paths hold its work. Never proposed: keeping a workflow that asks less of the person is
-        // their say-so, as going on without a second opinion is.
         new("keep the workflow a kind of task chose for a piece of work that changed paths outside the kind's, where that workflow "
             + "asks less of you than the one it would follow without the kind, with your words; nothing switches by itself",
             "(no screen yet)",
             "`daoris workflow keep <session> [\"…\"]`"),
-        // The person's skip and stop of a node of a run bound to a graph version. Never proposed: passing a step over or stopping
-        // it is the person's word on the work, as a held attempt's is.
         new("pass a step of a run that follows a saved graph over, with your words, such as a go-ahead nobody will raise, or stop it, which "
             + "ends the run once nothing else of it can move (kept on the run's record, and Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
             "`daoris workflow skip <run> <node> \"…\"`, `daoris workflow stop <run> <node> [\"…\"]`"),
-        // The person's Accept of a run's review. Never proposed: the press is theirs.
         new("accept a run's review, with a note if you like: what it holds lands (kept on the run's record, and Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Accept* under the review",
             "`daoris workflow accept <run> <node> [\"…\"]`"),

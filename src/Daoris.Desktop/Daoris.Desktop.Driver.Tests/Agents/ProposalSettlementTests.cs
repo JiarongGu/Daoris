@@ -166,6 +166,7 @@ public sealed class ProposalSettlementTests : IDisposable
     [InlineData("Bash(gh release create:*)")]
     public void A_widening_that_would_let_a_publish_through_waits_for_the_person_while_no_publish_is_on(string rule)
     {
+        PermissionRules.Save(_home, PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.NoPublishId, on: true));
         Propose("p8", "add", scope: "repository", name: "engine", list: "allow", rule: rule);
 
         var settled = ProposalSettlement.Settle(_home, "p8", Role, yes: true, null, At);

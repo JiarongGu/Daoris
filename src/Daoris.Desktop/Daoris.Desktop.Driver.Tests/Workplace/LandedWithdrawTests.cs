@@ -15,7 +15,6 @@ public sealed class LandedWithdrawTests : LandedFixture
 
     private static async Task<string> TipOfAsync(string root, string reference) => (await GitAsync(root, "rev-parse", reference)).Trim();
 
-    /// <summary>A landing whose row the line took another way: another commit changed the same file, so its files read otherwise there.</summary>
     private async Task<(string Root, SessionTrees Trees, string Branch, string Tip)> DiffersAsync()
     {
         var root = await RepositoryAsync("engine");

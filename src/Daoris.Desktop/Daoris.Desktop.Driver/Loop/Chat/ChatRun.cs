@@ -140,7 +140,6 @@ internal sealed class ChatRun(
             // go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's command denied under
             // `light`, and the conversation told only then.
             var heavy = await told.HeldChecksAsync(sessionId, workTree, place, config, agent, opened).ConfigureAwait(false);
-            // In full access the git doors judge this conversation's push as the person's own: a Write nobody set is allowed for it.
             if (helpMode == HelpModes.Full) GitSessionAccess.Begin(home, sessionId, repository: null, place.Workspace, unrestricted: true);
             if (agent.Rules is { } language)
             {

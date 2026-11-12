@@ -90,11 +90,6 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal(plain, older);
     }
 
-    /// <summary>
-    /// One rule in both modes: a simple act on this machine is Ask Daoris's own where its mode lets it press (a card in restricted mode),
-    /// work that changes a repository's content goes to that repository, and a refusal names its rule. Full access presses every step of a
-    /// run as the person and never calls a pass or a stop theirs alone.
-    /// </summary>
     [Fact]
     public void The_room_says_do_it_or_send_it_on_in_both_modes_and_full_access_presses_every_run_step()
     {

@@ -69,7 +69,6 @@ describe('What agents may do', () => {
     expect(within(publish).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
   });
 
-  /** `no-push` is an opt-in default like the others: a switch the person turns on, with its reason shown. */
   it('shows no-push with a switch, off until the person turns it on', () => {
     show();
     const push = screen.getByRole('listitem', { name: 'no-push' });

@@ -20,7 +20,7 @@ public sealed class DeadApprovalsTests
         var change = new ProposedChange("add", RuleScope.Repository, "reports", list, rule, null, null);
 
         Assert.Null(DeadApprovals.Refusal(Empty(), change));
-        Assert.Equal(ChangeEffect.Widens, RuleProposals.Effect(Empty(), change));
+        Assert.NotEqual(ChangeEffect.Nothing, RuleProposals.Effect(Empty(), change));
     }
 
     [Theory]

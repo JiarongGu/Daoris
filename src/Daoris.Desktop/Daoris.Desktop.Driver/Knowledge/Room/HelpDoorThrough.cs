@@ -14,10 +14,6 @@ internal static class HelpDoorThrough
         + "`daoris ask through <id> \"<their words>\"` on one already made, each copied verbatim from their messages here; each run\n"
         + "of it then goes through its review to its pull request on them, and a departure from a requirement still waits for them.\n";
 
-    /// <summary>
-    /// The one rule for what Ask Daoris finishes itself and what it sends on, said by the section in each mode: a simple act on this
-    /// machine is its own where its mode lets it press, and work that changes a repository's content goes to that repository.
-    /// </summary>
     private const string SendOn =
         "Work that changes a repository's content goes to that repository as a quest (`daoris ask --to <repo> \"…\"`) or a session.\n";
 

@@ -14,9 +14,11 @@ public static partial class DeadApprovals
     {
         if (change is not { Action: "add", List: RuleList.Allow or RuleList.Ask, Rule: { } rule }) return null;
 
-        foreach (var (where, lists) in Scopes(file))
+        foreach (var (scope, name, where, lists) in Scopes(file))
         {
-            if (lists.Deny.Contains(rule, StringComparer.Ordinal))
+            // The same scope's own deny is moved by the change (a rule has one place per scope), so only another scope's can beat it.
+            var same = scope == change.Scope && string.Equals(name?.Trim(), change.Name?.Trim(), StringComparison.OrdinalIgnoreCase);
+            if (!same && lists.Deny.Contains(rule, StringComparer.Ordinal))
             {
                 return $"this rule can never take effect: a deny of `{rule}` is set in {where}, and a deny beats an allow or an ask. "
                        + "Remove that deny first.";
@@ -34,11 +36,11 @@ public static partial class DeadApprovals
         return null;
     }
 
-    private static IEnumerable<(string Where, RuleLists Lists)> Scopes(PermissionFile file)
+    private static IEnumerable<(RuleScope Scope, string? Name, string Where, RuleLists Lists)> Scopes(PermissionFile file)
     {
-        yield return ("this machine's rules", file.Machine);
-        foreach (var (name, lists) in file.Workspaces) yield return ($"workspace `{name}`'s rules", lists);
-        foreach (var (name, lists) in file.Repositories) yield return ($"`{name}`'s rules", lists);
+        yield return (RuleScope.Machine, null, "this machine's rules", file.Machine);
+        foreach (var (name, lists) in file.Workspaces) yield return (RuleScope.Workspace, name, $"workspace `{name}`'s rules", lists);
+        foreach (var (name, lists) in file.Repositories) yield return (RuleScope.Repository, name, $"`{name}`'s rules", lists);
     }
 
     // A Bash rule running git whose subcommand, after any options, is `push`; `git stash push` is no push.

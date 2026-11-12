@@ -414,7 +414,6 @@ public sealed class GitAccessTests : IDisposable
         Assert.Equal("deny", GitSessionAccess.Read(Home, "s7")!.Classes.Single(each => each.Class == "write").Value);
     }
 
-    /// <summary>A full-access session's push passes the door as the person's own where nobody set Write; a Write they set, and Dangerous, still hold.</summary>
     [Fact]
     public void A_full_access_session_pushes_where_write_is_unset_and_keeps_what_the_person_set()
     {

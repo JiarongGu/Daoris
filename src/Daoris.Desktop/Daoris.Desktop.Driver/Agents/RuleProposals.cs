@@ -108,7 +108,6 @@ public static class RuleProposals
     }
 
     /// <summary>What the change does to the rules as they stand — or a refusal in the driver's words.</summary>
-    /// <exception cref="DriverException">The rules could not take it.</exception>
     public static ChangeEffect Effect(PermissionFile file, ProposedChange change)
     {
         switch (change.Action)

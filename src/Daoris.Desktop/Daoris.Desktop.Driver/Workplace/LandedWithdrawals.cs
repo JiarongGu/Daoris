@@ -44,7 +44,6 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         string root, string repository, string branch, string why, bool plan, CancellationToken ct)
     {
         why = why.Trim();
-        // A plan changes nothing, so it needs no reason yet: it says the record would keep the one it is given.
         if (why.Length == 0 && !plan)
         {
             return new(false, $"`{branch}` is not withdrawn: say why the line will never hold its work (the reason is kept with its record).");
@@ -57,7 +56,6 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
                 + "and a branch of yours is never.");
         }
 
-        // One look at the checkout's line, as the clean-up's judgement takes.
         using var look = context.OneLook();
         if (await JudgeAsync(root, repository, entry, ct).ConfigureAwait(false) is not { } judged)
         {
@@ -116,8 +114,6 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
     {
         var (item, branch) = (judged.Item, entry.Branch);
         var subject = $"`{branch}` in `{repository}` is not withdrawn";
-        // Withdrawal is offered at any time: its commits stay on a recovery ref, so a branch the line holds, one a pull request carries or one
-        // ahead of its remote goes too. Only a branch git cannot delete, or one with no tip to keep, stays.
         return item.Kind switch
         {
             LandedKind.CheckedOut => $"{subject}: it is checked out in a working tree, the repository's own checkout included.",

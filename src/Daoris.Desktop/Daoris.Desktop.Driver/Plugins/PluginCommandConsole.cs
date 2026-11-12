@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris &lt;plugin&gt; &lt;command&gt; [args…] [--stdin]</c>: a command the plugin declares, run round by round in its own process
 /// (<see cref="PluginCommandRun"/>), its lines said, an address and a code shown, and each value it asks typed here, hidden where it
-/// says so, or read line by line from standard input with <c>--stdin</c>. Open to every caller: a session's terminal runs it as the person's does.
-/// Exit: the command's own · 2 a refusal or a plugin that never ends.
+/// says so, or read line by line from standard input with <c>--stdin</c>. Exit: the command's own · 2 a refusal or a plugin that never ends.
 /// </summary>
 public static class PluginCommandConsole
 {
