@@ -70,11 +70,21 @@ internal static class TreesRemoveVerb
     /// </summary>
     private static async Task<int> WithdrawLandingAsync(SessionTrees trees, string home, string named, string? repository, string why, bool plan)
     {
-        using var service = ServiceClient.FromEnvironment();
-        var withdrawal = await new LandedBranchWithdrawal(trees, home).WithdrawNamedAsync(service, named, repository, why, plan).ConfigureAwait(false);
-        if (!plan) Told(home, PressesTold.WithdrawLanding);
-        var said = TreesWords.Withdraw(withdrawal);
-        said.Print(Console.Out, Console.Error);
-        return said.Code;
+        var door = new LandedBranchWithdrawal(trees, home);
+        async Task<int> AloneAsync()
+        {
+            using var service = ServiceClient.FromEnvironment();
+            var withdrawal = await door.WithdrawNamedAsync(service, named, repository, why, plan).ConfigureAwait(false);
+            if (!plan) Told(home, PressesTold.WithdrawLanding);
+            var said = TreesWords.Withdraw(withdrawal);
+            said.Print(Console.Out, Console.Error);
+            return said.Code;
+        }
+
+        // Beside a running Daoris the act is its own route, sent as a terminal press, never refused for the desktop running; a name two
+        // repositories made, or none, is answered where it is judged, alone.
+        if (plan || door.Owners(named, repository) is not [var owner]) return await AloneAsync().ConfigureAwait(false);
+        return await InstanceDoor.PressAsync(TreesRoutes.Withdraw, new { repository = owner, branch = named, why, plan },
+            AloneAsync, answer => TreesSaid.ReadWords(Console.Out, Console.Error)(answer) ?? 2, InstanceHost.World(home, "trees")).ConfigureAwait(false);
     }
 }

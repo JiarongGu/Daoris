@@ -143,6 +143,8 @@ public sealed class LandedBranchWithdrawalTests : IDisposable
         Assert.Contains("WithdrawNamedAsync(service, named, repository, why, plan)", console);
         Assert.Contains("TreesWords.Withdraw(withdrawal)", console);
         Assert.Contains("Told(home, PressesTold.WithdrawLanding)", console);
+        // Beside a running Daoris the act is sent as its route, never refused for the desktop running.
+        Assert.Contains("InstanceDoor.PressAsync(TreesRoutes.Withdraw", console);
         Assert.Contains("remove <landing branch> [--repository <name>] --why \\\"…\\\" [--plan]", console);
         Assert.Contains("remove <landing branch> [--repository <name>] --why \"…\" [--plan]", DriverCommand.Usage);
     }

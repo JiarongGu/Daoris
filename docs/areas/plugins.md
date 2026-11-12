@@ -145,8 +145,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exit and follows `then` (`reload`, `back`, `stay`). The palette lists the commands of each plugin on, sound and with commands on
     at the machine, asking `PLUGINS` only while open, a row opening the plugin's page at its card. *Remove…* where `storage.forget`
     names a command offers to ask it to sign out first, ticked; a disabled `forget` says why. A failed step's `needs: "<command>"` (on `work/perform`'s completion, a reconcile or `step_answer`) is kept on its record and, where its plugin declares that command, drawn on the run's step as a door to its round card; any other name is ignored and said (`RunNeeds`). (D274)
-28. Every plugin press is the person's: a session's terminal is refused. With Daoris running a verb takes the route, else it acts
-    alone under the home's lease. (D194)
+28. A plugin's presses and its command line are open to every caller, a session's terminal included. With Daoris running a verb
+    takes the route, else it acts alone under the home's lease. (D194)
 29. A manifest's `interfaces` names what Daoris reaches the plugin through besides its points: `commands` (each `{ name, title,
     about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each `{ id, title,
     icon, where, places, context, body }`), every word authored (D222). `args` are `{ name, type: text | number | boolean | choice,
@@ -162,7 +162,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     where an agent calls. It is answered `{ said, ask, open, code, then, data, exit }`: `said` at most 40 lines of 2,000 characters
     and 8 KiB, `then` `stay`, `reload`, `back` or `{ go: { view, args } }`, `data` at most 32 KiB for an agent, at most 8 rounds of
     60 s each, the answers so far sent whole. `daoris <plugin> <command> [args] [--stdin]` is the terminal's word (rule 30), asking
-    each missing value, hidden where masked, and refusing a session's terminal; the window's door is `PLUGIN_COMMAND`, one round per
+    each missing value, hidden where masked, from a session's terminal as from a person's; the window's door is `PLUGIN_COMMAND`, one round per
     call, a missing argument refused before any process starts, the plugins pushed again after each round. *About*'s last runs are
     the newest 20 `plugin.command` lines, not drawn yet. `storage` is `profiles/plugins/<id>/`, limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's
     processes alone and removed with it; Daoris reads nothing in it. A removal first runs the `forget` command once, bound to 10

@@ -115,14 +115,14 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 26. A held `ask` is a git go-ahead, `run/git/asks/{id}.json`, answered *Allow* or *Refuse* in *What needs you*, the session's head
     or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once. Where no instance of
     Daoris holds the home's lease, the door takes a kept grant or refuses at once (`not-running`). (D198, D135)
-27. The judge reads git access alone. `no-push` is a fixed default, on for every session and opened only by git access's Write,
-    with no switch on the page, in `agent rules` or in a proposal; a proposal to allow or ask a git push is refused where it is
-    proposed, naming the place's Write and `daoris git access … write=ask|allow` (`PushProposals`); `no-publish` carries the
-    publishing and release sentence and is switched alone. The home's migration made a switched-off `no-push` the machine's Write
-    `allow` where unset and `no-publish` off (`GitPushStep`). (D198, D277)
-28. A session's harness rules follow its Write (`GitAccessPolicy`): `deny` or the default keeps every push form denied; `ask` or
-    `allow` opens the plain push and denies force, delete, tag, mirror and prune unless Dangerous is `allow`. Codex holds no rules
-    file; its block and the access setup say so. (D198, D72, D233)
+27. The doors judge by git access. `no-push` and `no-publish` are opt-in defaults, off until the person switches them on (rules
+    page, `agent rules default`, `defaultsOn` in the rules file); a session in full access has Write `allow` at the doors where no
+    one set one (its record's `unrestricted`, Dangerous unchanged). A proposal to allow or ask a rule that a deny would beat, the
+    person's own or `no-push` once on, is refused where it is proposed, naming the deny and where it is set (`DeadApprovals`).
+    The home's migration made a switched-off `no-push` the machine's Write `allow` where unset (`GitPushStep`). (D198, D277)
+28. While `no-push` is on, a session's harness rules follow its Write (`GitAccessPolicy`): `deny` or the default keeps every push
+    form denied; `ask` or `allow` opens the plain push and denies force, delete, tag, mirror and prune unless Dangerous is `allow`.
+    Codex holds no rules file; its block and the access setup say so. (D198, D72, D233)
 29. Identity is who, access is what. A read-only identity refuses writes at both doors and at the landing. (D198)
 
 **Landing and pull requests**

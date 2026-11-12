@@ -203,7 +203,7 @@ public static class HelpRoom
 
     /// <summary>
     /// What its session is handed in full access: no allow-list and nothing asked, since its harness's
-    /// mode asks nothing; every deny the person's rules compose, the shipped no-push among them, which still wins;
+    /// mode asks nothing; every deny the person's rules compose (an opt-in default they switched on among them), which still wins;
     /// those of the workspace its tools are bound to, <c>default</c>'s where null.
     /// </summary>
     public static RuleLists FullRules(PermissionFile file, string? workspace = null) =>

@@ -21,11 +21,9 @@ public sealed record LandedWithdrawal(bool Done, string Message)
 /// on a word, and keeps a way back.
 /// </summary>
 /// <remarks>
-/// <para><b>Only a branch whose proof reads <see cref="LandedKind.Differs"/>,</b> or <see cref="LandedKind.Unknown"/> where git could compare
-/// but not say (the person names the branch, so that is theirs to decide; one git could not even read, at no tip, is not). The line holding
-/// it, a pull request that may still carry it, a tree having it checked out, commits its remote lacks, a branch of the person's own and
-/// a name no landing recorded are refused: those are the clean-up's, with its proof, or not Daoris's at all. It is local only and never
-/// touches a remote.</para>
+/// <para><b>Any branch a landing made, at any time:</b> the line holding it, a pull request that may still carry it and commits its remote lacks
+/// do not stop it, since its commits stay on a recovery ref. A tree having it checked out, one git could not read (no tip), a branch of the
+/// person's own and a name no landing recorded are refused. It is local only and never touches a remote.</para>
 ///
 /// <para><b>A way back with the delete.</b> The branch is deleted only while it is the commit judged, and its commits go on a recovery ref
 /// (<see cref="RecoveryKeeps"/>), in one <c>update-ref</c> transaction (<see cref="ContentHolds.DeleteJudgedAsync"/>, which reads the working
@@ -118,28 +116,13 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
     {
         var (item, branch) = (judged.Item, entry.Branch);
         var subject = $"`{branch}` in `{repository}` is not withdrawn";
-        switch (item.Kind)
+        // Withdrawal is offered at any time: its commits stay on a recovery ref, so a branch the line holds, one a pull request carries or one
+        // ahead of its remote goes too. Only a branch git cannot delete, or one with no tip to keep, stays.
+        return item.Kind switch
         {
-            case LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.PullRequest:
-                return $"{subject}: the line holds its work ({LandedWords.Clause(item)}), which `daoris tree clean` removes with that proof.";
-            case LandedKind.CheckedOut:
-                return $"{subject}: it is checked out in a working tree, the repository's own checkout included.";
-            case LandedKind.AheadOfRemote:
-                return $"{subject}: it holds {item.Commits} commit(s) its remote does not have, so it was pushed and then moved; the clean-up keeps it too.";
-            case LandedKind.LeanedOn:
-                // Only a branch the line's proof clears reads leaned on, so the line holds its work: the clean-up takes it, once that session branch goes.
-                return $"{subject}: the line holds its work, and {LandedWords.Clause(item)}; `daoris tree clean` takes both with its proof.";
-            case LandedKind.Unknown when judged.Tip.Length == 0:
-                return $"{subject}: {item.Detail}.";
-        }
-
-        // A pull request may still carry what a plugin pushed, unless the platform said it is abandoned: the clean-up asks it, with proof.
-        if ((entry.Pushed || entry.PullRequest is not null) && entry.PullRequestState?.State != PullRequestStates.Abandoned)
-        {
-            return $"{subject}: a pull request may still carry it ({(entry.PullRequest is { } pull ? pull : "a plugin pushed it")}); "
-                + "the clean-up asks the platform and removes it with that proof, or it is withdrawn once the pull request is abandoned.";
-        }
-
-        return null;
+            LandedKind.CheckedOut => $"{subject}: it is checked out in a working tree, the repository's own checkout included.",
+            LandedKind.Unknown when judged.Tip.Length == 0 => $"{subject}: {item.Detail}.",
+            _ => null,
+        };
     }
 }

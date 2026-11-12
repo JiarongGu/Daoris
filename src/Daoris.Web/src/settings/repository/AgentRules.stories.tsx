@@ -17,9 +17,9 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     why: 'A session commits its own work in its own tree, because committing is part of finishing a task — the push is still refused.',
   },
   {
-    id: 'no-push', list: 'deny', on: true, fixed: true,
+    id: 'no-push', list: 'deny', on: false,
     rules: ['Bash(git push)', 'Bash(git push:*)'],
-    why: "A push leaves this machine: git access's Write, set in Settings → Git, says whether a session may.",
+    why: 'Off until you switch it on: a push leaves this machine, and while this is on a session may not push unless git access lets it.',
   },
   {
     id: 'no-publish', list: 'deny', on: true, rules: [],

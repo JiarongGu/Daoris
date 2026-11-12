@@ -414,6 +414,21 @@ public sealed class GitAccessTests : IDisposable
         Assert.Equal("deny", GitSessionAccess.Read(Home, "s7")!.Classes.Single(each => each.Class == "write").Value);
     }
 
+    /// <summary>A full-access session's push passes the door as the person's own where nobody set Write; a Write they set, and Dangerous, still hold.</summary>
+    [Fact]
+    public void A_full_access_session_pushes_where_write_is_unset_and_keeps_what_the_person_set()
+    {
+        GitSessionAccess.Begin(Home, "restricted", "engine", "Games");
+        GitSessionAccess.Begin(Home, "full", "engine", "Games", unrestricted: true);
+
+        Assert.Equal("as-today", GitSessionAccess.Held(Home, "restricted", "engine", "Games").Of(GitAccessKeys.Write).Value);
+        Assert.Equal("allow", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Write).Value);
+        Assert.Equal("deny", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Dangerous).Value);
+
+        Put("""{"machineGitAccess":{"write":"deny"}}""");
+        Assert.Equal("deny", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Write).Value);
+    }
+
     [Fact]
     public void Git_asks_lists_the_go_aheads_that_wait()
     {

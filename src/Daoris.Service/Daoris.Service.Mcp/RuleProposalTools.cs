@@ -34,7 +34,7 @@ public sealed class RuleProposalTools(RuleProposalBox? proposals = null, IntakeS
         string? rule = null,
         [Description("For workspace and repository: which one.")]
         string? name = null,
-        [Description("For default: the id it ships under — connector, commit, no-publish or tree-guard (no-push follows git access).")]
+        [Description("For default: the id it ships under — connector, commit, no-push, no-publish or tree-guard (the last three are off until the person switches them on).")]
         string? id = null,
         [Description("For default: true to switch it on, false to switch it off.")]
         bool? on = null)

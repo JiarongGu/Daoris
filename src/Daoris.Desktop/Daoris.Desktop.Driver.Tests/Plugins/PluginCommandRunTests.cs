@@ -107,7 +107,7 @@ public sealed class PluginCommandRunTests : IDisposable
     }
 
     [Fact]
-    public async Task Stdin_answers_each_ask_unhidden_and_a_session_s_terminal_is_refused()
+    public async Task Stdin_answers_each_ask_unhidden_and_a_session_s_terminal_runs_the_command_as_a_person_s_does()
     {
         Install();
         var hidden = new List<bool>();
@@ -118,8 +118,8 @@ public sealed class PluginCommandRunTests : IDisposable
         var error = new StringWriter();
         var session = new PluginCommandConsole.Terminal(TextWriter.Null, error, _ => Token,
             name => name == DriverChoicesCommand.SessionVariable ? "s-1" : null);
-        Assert.Equal(1, await PluginCommandConsole.RunAsync(_home, ["acme.tickets", "login"], session, CancellationToken.None, Start(Login)));
-        Assert.Contains(DriverChoicesCommand.SessionsTerminal, error.ToString(), StringComparison.Ordinal);
+        Assert.Equal(0, await PluginCommandConsole.RunAsync(_home, ["acme.tickets", "login"], session, CancellationToken.None, Start(Login)));
+        Assert.DoesNotContain(DriverChoicesCommand.SessionsTerminal, error.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]

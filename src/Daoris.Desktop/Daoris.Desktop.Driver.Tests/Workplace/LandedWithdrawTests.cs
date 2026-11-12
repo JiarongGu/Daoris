@@ -113,24 +113,23 @@ public sealed class LandedWithdrawTests : LandedFixture
     }
 
     [Fact]
-    public async Task A_branch_the_line_holds_is_refused_to_the_normal_clean_up()
+    public async Task A_branch_the_line_holds_is_withdrawn_too_with_its_recovery_ref()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
         await SquashAsync(root, landed.Branch!);
+        var tip = await TipOfAsync(root, landed.Branch!);
 
         var done = await trees.WithdrawLandedAsync(root, "engine", landed.Branch!, Why);
 
-        Assert.False(done.Done);
-        Assert.True(done.Message.Contains("tree clean", StringComparison.Ordinal), done.Message);
-        Assert.Contains(landed.Branch!, await GitAsync(root, "branch", "--list"));
-        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
-        Assert.Single(new LandedBranches(Home).All());
+        Assert.True(done.Done, done.Message);
+        Assert.DoesNotContain(landed.Branch!, await GitAsync(root, "branch", "--list"));
+        Assert.Equal(tip, await TipOfAsync(root, done.KeptRef!));
     }
 
     [Fact]
-    public async Task A_branch_a_plugin_pushed_whose_pull_request_may_still_carry_it_is_refused()
+    public async Task A_branch_a_pull_request_may_still_carry_is_withdrawn_too_with_its_recovery_ref()
     {
         var (root, trees, branch, tip) = await DiffersAsync();
         trees.Recorded.Pushed("engine", branch, tip);
@@ -138,10 +137,8 @@ public sealed class LandedWithdrawTests : LandedFixture
 
         var done = await trees.WithdrawLandedAsync(root, "engine", branch, Why);
 
-        Assert.False(done.Done);
-        Assert.Contains("pull request", done.Message);
-        Assert.Equal(tip, await TipOfAsync(root, branch));
-        Assert.Single(new LandedBranches(Home).All());
+        Assert.True(done.Done, done.Message);
+        Assert.Equal(tip, await TipOfAsync(root, done.KeptRef!));
     }
 
     [Fact]
