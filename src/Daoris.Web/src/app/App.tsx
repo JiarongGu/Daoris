@@ -23,6 +23,7 @@ import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
 import { ShellSignals } from './ShellSignals';
 import { logEvent, pageShows, useAttached, useDriver } from '../bridge/shell';
 import { NotificationsStanding } from '../notifications/NotificationsStanding';
+import { runOfNotice } from '../notifications/DoneAndFailed';
 import { AdoptionNotice } from '../person/Confirmations';
 import { UpdateBanner } from '../update/UpdateBanner';
 import { LinkOpener } from '../design/links';
@@ -403,7 +404,8 @@ export function App() {
                   notices={notices}
                   onRead={(ids) => markNoticesRead.mutate(ids)}
                   onOpenNotice={(notice) => {
-                    if (notice.kind === 'outcome' && notice.quest) openReview(notice.quest, notice.session);
+                    const run = runOfNotice(notice);
+                    if (run) openReview(run, notice.session);
                     else if (notice.session) openInWork(notice.session);
                   }}
                   onDismiss={(notice) => dismissNotice.mutate(notice.id)}

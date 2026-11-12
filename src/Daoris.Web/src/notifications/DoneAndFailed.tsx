@@ -36,6 +36,12 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     const words = { step, run: notice.quest ?? '' };
     return notice.state === 'failed' ? t('notifications.done.outcome.failed', words) : t('notifications.done.outcome.reached', words);
   }
+  if (notice.kind === 'through') {
+    // A run's step the runtime passed on the person's through words: the step, the run, and the ask the words are kept on.
+    const step = notice.route ? t(`workflow.step.${notice.route}`, { defaultValue: notice.act ?? '' }) : notice.act ?? '';
+    const words = { step, run: notice.quest ?? '', ask: notice.code ?? '' };
+    return notice.state === 'skipped' ? t('notifications.done.through.passed', words) : t('notifications.done.through.accepted', words);
+  }
   if (notice.kind === 'plugin-command') {
     // A plugin's command round nobody watched, or one that failed: by the plugin's id and the command's name, never its words.
     const words = { plugin: notice.code ?? '', command: notice.act ?? '' };
@@ -47,6 +53,11 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
   }
   return t('notifications.done.other');
+}
+
+/** The run a notice of a run's step opens the review of (a step's outcome, a step passed on the person's words); null for any other. */
+export function runOfNotice(notice: Notice): string | null {
+  return (notice.kind === 'outcome' || notice.kind === 'through') && notice.quest ? notice.quest : null;
 }
 
 /**
@@ -104,7 +115,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
   const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.kind === 'look'
     || notice.state === 'failed';
-  const opens = onOpen && (notice.session || (notice.kind === 'outcome' && notice.quest)) ? () => {
+  const opens = onOpen && (notice.session || runOfNotice(notice)) ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);
   } : null;

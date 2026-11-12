@@ -270,7 +270,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person (agents-and-harnesses 23). No family reaches a role. (D183, D205, D253, D261)
 58. Full access runs its harness's unrestricted mode, keeps `checkout_read` and names each readable checkout and where it is, and a proved press runs at once with no card as the person's own, said once
     on its conversation's console, logged `help.pressed` and kept in this run's memory with what it named (the newest 100, a
-    restricted press kept there as asked with its card's state), listed in *Notifications*. A terminal's press under the tier `act`
+    restricted press kept there as asked with its card's state), listed in *Notifications*, a run's step by its act, the step and
+    the run (`HelpPressStep`). A terminal's press under the tier `act`
     is kept in the tier's own record (desktop-app 15). A proof that does not hold, a used nonce or a session with no key is refused
     `delegate-unproved`. Only the person chooses the mode (Settings, the panel's chip, `help mode`); a change takes the next turn
     and is said. In either mode, after each turn and off its path, the second check selects what ran with no yes of the person's

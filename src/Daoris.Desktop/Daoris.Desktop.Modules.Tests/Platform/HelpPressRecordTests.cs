@@ -42,6 +42,18 @@ public sealed class HelpPressRecordTests : IDisposable
     }
 
     [Fact]
+    public void A_press_of_a_runs_step_names_the_run_the_step_and_the_act()
+    {
+        var record = new HelpPressRecord(TimeProvider.System);
+        record.Began(Press("WORKFLOW_NODE", """{"run":"q7","node":"review","act":"accept","words":null}"""), "s1a2b3c4");
+        var press = Assert.Single(record.Now());
+
+        Assert.Equal(("run", "q7", new HelpPressStep("review", "accept")), (press.Scope, press.Target, press.Step));
+        record.Began(Press("WORK_PAUSE", """{"quest":"q1","node":"x"}"""), "s1a2b3c4");
+        Assert.Null(record.Now()[0].Step);
+    }
+
+    [Fact]
     public void Only_the_newest_are_held_and_a_new_run_starts_empty()
     {
         var record = new HelpPressRecord(TimeProvider.System);

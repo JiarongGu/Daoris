@@ -133,7 +133,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     requirement of the run's quests departed or waits unmet, no other step waits on the person (a hold, an open look or opinion, a
     go-ahead, a task, an approval, a choice), nothing is stopped, neither the ask nor a quest of its line is paused here, no word is
     kept and the person asked for no changes on that review;
-    else the run waits for them. A go-ahead is never passed on them. (D227, D228, D256, D273, D277)
+    else the run waits for them. A go-ahead is never passed on them. The run's step so moved says *Accepted on your words* (a review) or
+    *Passed on your words* (an unchecked done) with the quote and its ask (`Through`, read back from the words kept), and each is one
+    notice in *Done and failed* by run, node and attempt (`ThroughNotices`). (D227, D228, D256, D273, D277)
 24. An entry's or an ask's one Accept keeps each part's word on the record the press drew for it and lands it at the pass; a part
     no `land` performs is held, said. It is not atomic: a moved part is refused alone, and the answer says which landed, accepted,
     moved and failed. A part lands on its run's branch; each quest an ask sent is a run of its own unless its chain leads back to an

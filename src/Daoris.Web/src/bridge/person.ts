@@ -226,9 +226,17 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     if (id === null || route === null || session === null || at === null || !outcome) return [];
     return [{
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
-      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
+      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true, ...stepOf(shaped.step),
     }];
   });
+}
+
+/** A run's step a press acted on and the act, where it named both. */
+function stepOf(raw: unknown): Pick<HelpPressNow, 'step'> {
+  if (typeof raw !== 'object' || raw === null) return {};
+  const node = text((raw as Record<string, unknown>).node);
+  const act = text((raw as Record<string, unknown>).act);
+  return node !== null && act !== null ? { step: { node, act } } : {};
 }
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
