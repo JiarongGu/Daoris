@@ -66,7 +66,7 @@ public sealed class HandedRecordTests : IDisposable
     [Fact]
     public void The_rules_handed_are_counted_by_list_with_the_scopes_they_were_composed_for()
     {
-        var file = PermissionRules.Load(_home);
+        var file = PermissionRules.Load(_home) with { DefaultsOn = [PermissionRules.NoPushId, PermissionRules.NoPublishId, PermissionRules.TreeGuardId] };
         var composed = PermissionRules.Compose(file, "work", "reports");
 
         var rules = Daoris.Driver.SessionRules.Handed(takes: true, file, composed, "work", "reports");

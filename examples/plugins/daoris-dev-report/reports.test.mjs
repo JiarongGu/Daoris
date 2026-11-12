@@ -19,7 +19,7 @@ function storage(t) {
 
 /** One round in a process of its own, as the driver starts one: the handshake, the command, the shutdown. */
 async function round(folder, params, extra = {}) {
-  const child = spawn(process.execPath, [entry], { env: { ...process.env, DAORIS_PLUGIN_PRIVATE: folder, ...extra }, stdio: ['pipe', 'pipe', 'inherit'] });
+  const child = spawn(process.execPath, [entry], { env: { ...process.env, DAORIS_PLUGIN_PRIVATE: folder, ...extra }, stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
   const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
   const ask = async (frame) => {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...frame })}\n`);

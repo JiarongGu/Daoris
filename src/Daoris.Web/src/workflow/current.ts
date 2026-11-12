@@ -88,7 +88,7 @@ export interface WorkflowLanded {
   change?: DeclarationChange | null;
 }
 
-/** One check of a declaration: its name and the command it runs; `was` is the command a changed check ran before. */
+/** One check of a declaration: its name and the command it runs; where a changed check's command differs, the command it ran before. */
 export interface DeclaredCheck {
   name: string;
   run: string;

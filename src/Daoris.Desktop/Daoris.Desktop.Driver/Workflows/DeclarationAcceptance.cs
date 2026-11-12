@@ -9,7 +9,7 @@ public static class DeclarationAcceptance
 {
     /// <summary>
     /// What full access accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in the file at
-    /// <paramref name="configPath"/>, and the sentence that says it (what changed against the blob accepted before); null where it was
+    /// <paramref name="configPath"/>, and the sentence that says it (what changed against the blob accepted before); null where it is
     /// accepted meanwhile, or where its checkout is gone.
     /// </summary>
     internal static async Task<string?> AcceptByModeAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)

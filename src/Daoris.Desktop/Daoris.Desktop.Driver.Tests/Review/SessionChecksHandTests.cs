@@ -166,7 +166,7 @@ public sealed class SessionChecksHandTests : IDisposable
 
     /// <summary>
     /// The spawned settings file of a Claude Code session under light names each heavy gate's command in its deny list and tells the
-    /// classifier, beside <c>no-push</c>; a Codex session's start writes no file at all (the pipeline design §7's 1b proof).
+    /// classifier, beside <c>no-push</c> where the person switched it on; a Codex session's start writes no file at all (the pipeline design §7's 1b proof).
     /// </summary>
     [Theory]
     [InlineData("claude-code")]
@@ -174,6 +174,7 @@ public sealed class SessionChecksHandTests : IDisposable
     public void A_claude_session_under_light_is_handed_each_heavy_command_denied_and_the_classifier_told(string name)
     {
         Marked();
+        PermissionRules.Save(Home, PermissionRules.Load(Home) with { DefaultsOn = [PermissionRules.NoPushId] });
         var adapters = ProviderRegistry.Built();
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,

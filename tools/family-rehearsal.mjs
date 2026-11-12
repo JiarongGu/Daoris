@@ -424,6 +424,8 @@ check('the game says it uses the engine, read from its manifest', usesOf(registr
 
 // -------------------------------------------------- 3. the real client registers
 
+const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
+check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
 section('3. `daoris repository connect` — the real client, through the real door');
 for (const name of EXAMPLES) {
   const connect = run(`node "${cliBin}" repository connect`, join(examplesRoot, name), {
@@ -760,11 +762,9 @@ section('7. The driver starts what should start (D46)');
 // The newcomer is the drivable one: it is born in scratch and connected FROM scratch, so its
 // registered root is a tree the rehearsal owns — never the tracked examples, which connect from the
 // real repository and must never be spawned into by a test.
-const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
-check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
 // The connector the protocol door hands every session, which the driver finds as a development build. Section 17 reads that
 // it is offered, and 17e's stub calls it, so it is built here: one another gate built may be older than the tools a
-// phase calls on it, and a fresh checkout has none.
+// phase calls on it.
 const connectorBuild = run(`dotnet build "${connectorProject}"`, repoRoot);
 check('the knowledge connector a session is handed builds', connectorBuild.code === 0, connectorBuild.out.split('\n').slice(-4).join('\n'));
 
@@ -4188,7 +4188,7 @@ const syncQuest = await api('POST', '/api/quests', {
 const syncRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 const syncRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.quest === syncQuest.json?.quest?.id);
-const syncTree = syncRecord?.tree ?? '';
+const syncTree = syncRecord?.tree ?? join(scratch, 'no-tree');
 const syncLanded = run(`dotnet "${driverDll}" tree land ${syncRecord?.id}`, scratch, cleanEnv);
 const landedBranch = /put the work on `([^`]+)`/.exec(syncLanded.out)?.[1] ?? '';
 check(
@@ -4208,7 +4208,7 @@ run(`git clone -q -b ${syncLine} "${syncOrigin}" "${syncPlatform}"`, scratch);
 run(`git ${GIT_ID} merge --squash origin/${landedBranch}`, syncPlatform);
 run(`git ${GIT_ID} commit -q -m "Land beside the line (#1)"`, syncPlatform);
 run(`git push -q origin ${syncLine}`, syncPlatform);
-// The session carried on in its tree after its landing: one commit of its own on its branch.
+// The session carried on after its landing: one commit on its branch.
 const sessionBranch = run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim();
 writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
 run(`git ${GIT_ID} add -A`, syncTree);

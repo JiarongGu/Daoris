@@ -53,7 +53,7 @@ public sealed class TreePoolWindowsProcessTests : IDisposable
         _fixture = await PoolGitFixture.CreateAsync();
         var pool = _fixture.Pool();
         var slot = await _fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        using var held = new FileStream(Path.Combine(slot.Path, "work.txt"), FileMode.Open, FileAccess.Read, FileShare.None);
+        using var held = new FileStream(Path.Combine(slot.Path, "README.md"), FileMode.Open, FileAccess.Read, FileShare.None);
 
         var done = await pool.RetireAsync(_fixture.Site, 1, "quest-1");
 

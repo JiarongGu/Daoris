@@ -28,7 +28,7 @@ function writer(file, go, who, count) {
     while (!existsSync(${JSON.stringify(go)})) await new Promise((resolve) => setTimeout(resolve, 5));
     for (let n = 0; n < ${count}; n++) kept.put('rows', '${who}-' + n, { who: '${who}', n });
   `;
-  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'ignore', 'pipe'] });
+  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
   let said = '';
   child.stderr.on('data', (chunk) => { said += chunk; });
   return new Promise((resolve) => child.on('close', (code) => resolve({ code, said })));
@@ -63,7 +63,7 @@ test('a record is written and removed alone, the others kept', (t) => {
 
 test('a lock left by a process that has gone is taken over', (t) => {
   const file = scratch(t);
-  const gone = spawnSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8' }).stdout;
+  const gone = spawnSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8', windowsHide: true }).stdout;
   writeFileSync(`${file}.lock`, `${gone}\n`);
 
   records(file).put('rows', 'after', true);

@@ -103,8 +103,8 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
 
         Assert.Equal(LinesStateSlice.Name, snapshot.Slice);
         Assert.Equal(["alpha", "beta"], snapshot.Partitions.Select(each => each.Partition));
-        // A field LINES comes to answer is pushed or named as the pull's alone, never left to chance.
-        var classed = LinesStateSlice.Fields.Concat(LinesStateSlice.PulledOnly).ToHashSet();
+        // A field LINES comes to answer is pushed, never left to chance.
+        var classed = LinesStateSlice.Fields.ToHashSet();
         Assert.All(lines.EnumerateObject().Select(each => each.Name), field => Assert.Contains(field, classed));
         foreach (var partition in snapshot.Partitions)
         {

@@ -145,7 +145,7 @@ public sealed class OpinionPacketTests : IDisposable
     [Fact]
     public void The_opinion_s_rules_deny_every_edit_tool_and_withhold_the_commit_default()
     {
-        var composed = PermissionRules.Compose(PermissionFile.Empty, "work", "reports");
+        var composed = PermissionRules.Compose(PermissionFile.Empty with { DefaultsOn = [PermissionRules.NoPushId] }, "work", "reports");
 
         var handed = OpinionPermissions.Shape(composed);
 
@@ -162,7 +162,7 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Contains("Bash(git commit:*)", handed.Deny);
         Assert.Contains("Bash(git -* commit *)", handed.Deny);
         Assert.Contains("Bash(git merge:*)", handed.Deny);
-        // `no-push` stands, as for every session.
+        // `no-push` stands where the person switched it on, as for every session.
         Assert.Contains("Bash(git push:*)", handed.Deny);
     }
 
