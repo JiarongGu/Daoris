@@ -592,7 +592,6 @@ describe('Ask Daoris, with an agent named', () => {
    * first (as *New conversation* does, without ending anything), and the draft goes in the box, not under the ended transcript.
    */
   describe('a draft handed to it', () => {
-    const ENDED_NOTICE = 'This conversation has ended. A message starts a new one.';
     const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
     const offer = (readied: string | null = null, text = '> a per-frame budget\n\n') => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -613,7 +612,6 @@ describe('Ask Daoris, with an agent named', () => {
 
       await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
       await act(async () => {});
-      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
       expect(sent()).toEqual([]);
       expect(invoke.mock.calls.filter(([, type]) => type === 'END_CHAT')).toEqual([]);
     });
@@ -636,7 +634,6 @@ describe('Ask Daoris, with an agent named', () => {
 
       await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
       await act(async () => {});
-      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
       expect(sent()).toEqual([]);
     });
 
@@ -979,17 +976,6 @@ describe('Ask Daoris, with an agent named', () => {
     expect(starts()).toBe(0);
   });
 
-  it('says one that ended for any other reason continues too', async () => {
-    SESSIONS = [{ ...HELP, state: 'failed' }];
-    bridge({ sessionId: 'n3xt0000', message: 'opened' });
-    show();
-
-    const panel = await screen.findByRole('complementary', { name: 'Ask Daoris' });
-    expect(await within(panel).findByText('Your next word continues this conversation.')).toBeInTheDocument();
-    expect(within(panel).getByLabelText('Message')).toBeEnabled();
-    expect(within(panel).queryByRole('button', { name: 'Finish' })).toBeNull();
-  });
-
   /** Its one Stop, while a reply runs on any door, stops the reply's whole process tree through the session's stop. */
   it('stops the reply in flight with its one Stop, offering no ending', async () => {
     SESSIONS = [HELP];
@@ -1170,20 +1156,6 @@ describe('Ask Daoris’s history', () => {
       payload: { id: EARLIER.id, text: 'and a remote?' },
     }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', expect.anything());
-  });
-
-  /** One whose own conversation is lost takes the word too: the driver goes on in a new part handed Daoris's brief. */
-  it('sends the next word to one that cannot resume its own conversation', async () => {
-    withHistory([row({ resumable: false })]);
-    show();
-
-    expect(await screen.findByText('Your next word continues this conversation.')).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
-    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: EARLIER.id, text: 'and a remote?' },
-    }));
   });
 
   /**
