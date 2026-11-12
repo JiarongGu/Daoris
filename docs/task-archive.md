@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MERGEFLOW1b (part) — `reached` reuses passes per class, dependency tiers, the time ratchet judged on a merge's own records (2026-11-13)
+
+> **MERGEFLOW1b (part)** (tools): Outcome: `reached` keeps a pass per test class (per node and page file too) keyed by every file reaching it, its suite's declaration and the toolchain, replayed on the same inputs; a command names at most 120 units, a suite runs at most 40 classes nearest the change; `tiers.needs` runs a Process class at a merge only when a changed path is its dependency's code; `--rerun` takes `--no-timeout`; `--queue` names a stale run and `--queue --recheck` clears requests main holds; the time ratchet runs once, last, on the merge's own timing records. A broad replay's `reached` took 7 min 49 s, the rest on the row. Merged in `03fc4536ca`.
+
 ## APPROVE1y closed — a platform's token is its plugin's, never the git identity's (2026-11-13, D274)
 
 > **APPROVE1y** (records): Outcome: closed. The work workspace's API token was set on 2026-11-11, and under D274 a platform's credential is the plugin's own, signed in by its commands and kept in its private storage, so no pull request waits on a token on the git identity; the identity's `api` token setters go with PLUGINEXT1 i. The `plugin try` check is archived under 2026-11-11.
