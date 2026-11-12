@@ -457,6 +457,7 @@ export {
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
 export { BASELINE, BLOCKING, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
+export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
 
