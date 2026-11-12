@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// would make the Process half's longest class.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class BranchTidyingLandingTests : BranchTidyingFixture
 {
     /// <summary>
@@ -65,6 +67,8 @@ public sealed class BranchTidyingLandingTests : BranchTidyingFixture
 
 /// <summary>The landing branches a look takes, a class of their own look (<see cref="BranchTidyingLandingTests"/>).</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
 {
     /// <summary>
@@ -132,6 +136,8 @@ public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
 
 /// <summary>The landing branches a look keeps, a class of their own look (<see cref="BranchTidyingLandingTests"/>).</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class BranchTidyingLandingKeptTests : BranchTidyingFixture
 {
     /// <summary>

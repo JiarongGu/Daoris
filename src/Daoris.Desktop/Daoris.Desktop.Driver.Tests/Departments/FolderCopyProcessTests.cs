@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// with that path until their <i>Keep both</i>, and then writes its version beside the folder's, every other file of its back.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class FolderCopyProcessTests : IDisposable
 {
     private static readonly NodeDeclaration Return = new("back", NodeKinds.Return, 1, NodeReach.Performed);

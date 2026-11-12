@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the present version on the node's words, and the next plan, read from the system as it stands, applied.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SystemPlanProcessTests : IDisposable
 {
     private const string Unit = "run:r1";

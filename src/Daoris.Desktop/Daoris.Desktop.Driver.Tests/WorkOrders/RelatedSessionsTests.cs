@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// fixture of three branches, an uncommitted edit counted, and a failed read after a good one said *not read*.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RelatedSessionsTests : IDisposable
 {

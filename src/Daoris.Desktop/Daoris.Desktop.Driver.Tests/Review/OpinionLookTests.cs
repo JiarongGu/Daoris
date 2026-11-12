@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no agent runs and nothing reaches a network.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class OpinionLookTests : IDisposable
 {
     private readonly string _scratch;

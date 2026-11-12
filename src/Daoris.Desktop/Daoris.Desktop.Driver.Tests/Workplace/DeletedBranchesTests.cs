@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the commit, the row carries its Undo until the act is undone or the name stands again, and a person's delete is a row the same way.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class DeletedBranchesTests : TreeSyncFixture
 {

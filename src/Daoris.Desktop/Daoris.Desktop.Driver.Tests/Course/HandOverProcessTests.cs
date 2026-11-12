@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="ChatGoOnTests"/>; a real process each.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-handover-proc-" + Guid.NewGuid().ToString("N")[..8]);

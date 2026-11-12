@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<c>GIT_ASK_YESNO</c>) is first seen asked, where a file is held open without sharing its delete, so its silence means something.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryHoldTests : LandedFixture
 {

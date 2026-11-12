@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Alone: the install seam is a process-wide hook.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class DependencyAbsenceTests : IDisposable
 {

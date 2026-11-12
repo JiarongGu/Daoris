@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Its first prompt takes the quest and fails the turn; a carry-on's prompt closes it. No model, no real account, no sign-in.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ContinuedChoiceTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

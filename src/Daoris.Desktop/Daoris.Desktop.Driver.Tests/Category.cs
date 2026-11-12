@@ -54,4 +54,11 @@ internal static class Category
     /// <c>CensusTraitTests</c> holds that every such class carries it.
     /// </summary>
     public const string Census = "Census";
+
+    /// <summary>
+    /// The trait that names the real dependency a test needs, beside its category: <c>[Trait(Category.Needs, Needed.Git)]</c>, one per
+    /// dependency. A test with none is a unit test: milliseconds, no process, git, clock wait or network. A merge reads the traits to
+    /// choose what to run, so a Process class carries one for each thing it starts or reaches; <c>NeedsTraitTests</c> holds that.
+    /// </summary>
+    public const string Needs = "Needs";
 }

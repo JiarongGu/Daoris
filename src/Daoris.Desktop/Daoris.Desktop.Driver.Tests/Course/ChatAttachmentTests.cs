@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// were handed — so each assertion is about the wire, not about what the driver meant to send.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class ChatAttachmentTests : IDisposable
 {
     private readonly string _home = Path.Combine(

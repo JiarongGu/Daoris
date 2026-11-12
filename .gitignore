@@ -66,3 +66,6 @@ src/Daoris.Service/Daoris.Service.Http/wwwroot/
 # by `tools/contracts.mjs` in each checkout (the web's pre-scripts write them when stale), so a contract changes in one place.
 src/Daoris.Web/src/data/generated/
 src/Daoris.Web/src/bridge/generated/
+
+# Test runs' own output: a blame collector's sequence files and the like (the durations are kept under _fixtures/test-timing).
+TestResults/

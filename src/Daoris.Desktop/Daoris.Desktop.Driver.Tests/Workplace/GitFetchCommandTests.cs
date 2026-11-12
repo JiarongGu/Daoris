@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// writes nothing; <c>--yes</c> with no Daoris running fetches itself through the journal's act, refused from a session's terminal.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitFetchCommandTests : TreeSyncFixture
 {

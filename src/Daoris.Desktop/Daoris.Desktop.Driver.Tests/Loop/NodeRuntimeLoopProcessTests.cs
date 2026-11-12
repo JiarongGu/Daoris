@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// performed step (the owner's install today), the same loop starts no plugin process and writes no unit record.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class NodeRuntimeLoopProcessTests : IDisposable
 {
     private const string Plugin = "acme.deploy";

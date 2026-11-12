@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// which would build the same work from nothing.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class RetryWorkTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

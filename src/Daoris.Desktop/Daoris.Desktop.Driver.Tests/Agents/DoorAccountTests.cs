@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// version, and one pin for both would install the wrong thing under a trusted name.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DoorAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(

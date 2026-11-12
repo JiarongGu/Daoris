@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// account proves the copy. Its first turn takes the quest, says its context and is refused by the account's limit; a resumed turn, or a
 /// briefed one, closes the quest. Two of the stand-in's accounts are in the set; the roster's clock and zone are the test's.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitCarryTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

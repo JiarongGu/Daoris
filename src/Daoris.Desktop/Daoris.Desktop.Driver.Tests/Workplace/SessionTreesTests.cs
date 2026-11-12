@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// cut-off open waits in included): it runs four at once with the git-only classes.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SessionTreesTests : IDisposable
 {

@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Run by the parent at the merge.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AccountReadingTickTests : IDisposable
 {
     private static readonly string[] Accounts = ["account-1", "account-2"];

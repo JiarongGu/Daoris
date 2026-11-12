@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, a stand-in server that never answers, and a stand-in service.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AskDaorisOpeningTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-ask-opening-" + Guid.NewGuid().ToString("N")[..8]);

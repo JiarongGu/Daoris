@@ -5,6 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>Over real git: each expectation alone refuses movement, a symbolic ref is refused, and the rollbacks are conditional.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RefTransactionGitTests : IDisposable
 {

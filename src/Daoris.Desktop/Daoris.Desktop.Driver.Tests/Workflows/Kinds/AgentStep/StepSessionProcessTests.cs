@@ -16,6 +16,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answers through <c>step_answer</c>: the step is reached under the plugin with the pull request's address, and the session ends completed.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class StepSessionProcessTests : IAsyncLifetime
 {
     private const string Plugin = "daoris-azure-devops";

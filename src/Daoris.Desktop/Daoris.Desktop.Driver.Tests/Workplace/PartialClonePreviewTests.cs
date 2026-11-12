@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// listing with sizes prints <c>BAD</c> there and exits 0), and said unfetched, never not on the branch, once its promisor is gone.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PartialClonePreviewTests : LandedFixture
 {

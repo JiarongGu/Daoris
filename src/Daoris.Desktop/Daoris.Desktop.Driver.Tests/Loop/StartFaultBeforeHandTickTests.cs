@@ -10,6 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// files stage) ends that record like any other failure of the start, and the tree it held is let go.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class StartFaultBeforeHandTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-before-hand-" + Guid.NewGuid().ToString("N")[..8]);

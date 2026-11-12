@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// it out between the judgement and the effect; undone, the section included.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitRefDeleteTests : TreeSyncFixture
 {

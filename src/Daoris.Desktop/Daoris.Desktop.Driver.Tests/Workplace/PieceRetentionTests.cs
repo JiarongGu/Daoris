@@ -46,6 +46,8 @@ internal static class PieceRetention
 /// that branch stands where it froze, its box unchanged. A piece ref is no branch of Daoris's and no holder.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PieceTidyRetentionTests : BranchTidyingFixture
 {
@@ -72,6 +74,8 @@ public sealed class PieceTidyRetentionTests : BranchTidyingFixture
 /// the line, and the piece's ref stands where it froze, its box unchanged. A sync's clean-up deletes landed branches, never a piece's ref.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PieceSyncRetentionTests : TreeSyncFixture
 {
@@ -98,6 +102,8 @@ public sealed class PieceSyncRetentionTests : TreeSyncFixture
 /// naming the lead, since the clear would take the lead's record the person's <i>Discard…</i> finds the piece's checkout by.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PieceClearRetentionTests : IDisposable
 {

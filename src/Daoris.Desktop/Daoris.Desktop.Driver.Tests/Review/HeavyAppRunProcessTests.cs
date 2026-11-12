@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine is dropped from the verb.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class HeavyAppRunProcessTests : IAsyncDisposable
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "heavy-app-run", Guid.NewGuid().ToString("N")[..8]);

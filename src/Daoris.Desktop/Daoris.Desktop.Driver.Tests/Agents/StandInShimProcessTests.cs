@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>structured is not null</c>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class StandInShimProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-shim-" + Guid.NewGuid().ToString("N")[..8]);

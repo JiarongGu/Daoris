@@ -10,6 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// tree held. Where that read throws, the opened record is ended like any other failure of the start, and nothing it held stays held.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class CutLimitPartFaultTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-cut-limit-" + Guid.NewGuid().ToString("N")[..8]);

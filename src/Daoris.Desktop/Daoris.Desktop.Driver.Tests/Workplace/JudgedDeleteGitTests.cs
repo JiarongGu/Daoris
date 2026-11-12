@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// once it went: an unread list is not clear, and a put-back git refused is said as such, never as put back.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class JudgedDeleteGitTests : LandedFixture
 {

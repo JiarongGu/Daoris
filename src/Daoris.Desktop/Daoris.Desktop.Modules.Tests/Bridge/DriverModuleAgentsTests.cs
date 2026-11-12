@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// actions and their console, and usage.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverModuleAgentsTests : DriverModuleBridge
 {
     /// <summary>

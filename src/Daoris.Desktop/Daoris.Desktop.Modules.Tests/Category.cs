@@ -21,4 +21,7 @@ internal static class Category
 
     /// <summary>A class that reads the project's sources by text: the censuses, run alone by the <c>censuses</c> gate.</summary>
     public const string Census = "Census";
+
+    /// <summary>The trait that names the real dependency a test needs, beside its category, one per dependency (see <c>Needed</c>).</summary>
+    public const string Needs = "Needs";
 }

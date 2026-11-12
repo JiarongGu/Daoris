@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>In the suite's Process half: each case starts programs. A batch file is Windows', where an install runs.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class DriverModuleToolProgramsTests : DriverModuleBridge
 {
     /// <summary>A stub program that prints <paramref name="lines"/> whatever it is asked.</summary>

@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// it are said, and the repository's refs, objects, index and working files are as they were before.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationPlanGitTests : LandedFixture
 {

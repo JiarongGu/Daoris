@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the read-back fails it changed while applying, each with the key's present value on the node's words.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SystemReadBackProcessTests : IDisposable
 {
     private const string Unit = "run:r1";

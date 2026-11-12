@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// behind a standing move (there are never two records of one move, §3.3), so the first come-up ends the move and the next imports the box.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("ended-limit-move-downgrade");

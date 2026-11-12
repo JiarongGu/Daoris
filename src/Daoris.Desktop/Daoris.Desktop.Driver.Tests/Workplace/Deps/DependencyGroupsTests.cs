@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// lockfile chooses, and an output `gen/` another rule names. Fixtures live under the repository's gitignored `_fixtures/`.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class DependencyGroupsTests : IDisposable
 {

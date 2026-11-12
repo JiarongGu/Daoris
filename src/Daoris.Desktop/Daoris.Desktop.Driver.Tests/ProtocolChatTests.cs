@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ProtocolChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(

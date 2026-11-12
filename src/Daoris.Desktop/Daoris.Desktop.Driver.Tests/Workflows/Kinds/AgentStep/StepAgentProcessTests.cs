@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and <c>step_answer</c> alone, calls a tool, and answers; the answer reaches the step under the plugin, its address the pull request's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class StepAgentProcessTests : IDisposable
 {
     private const string Plugin = "daoris-azure-devops";

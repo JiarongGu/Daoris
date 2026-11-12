@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// stand-in harness: every gate in this repository already needs it, and it echoes without a model.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ChatTurnTakingTests
 {
     /// <summary>A harness that answers what it hears and exits when the person stops talking.</summary>

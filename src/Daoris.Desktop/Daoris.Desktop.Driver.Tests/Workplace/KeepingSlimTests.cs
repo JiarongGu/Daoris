@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// What needs no git (the manifest's states, the purge's read after a slim, the budget and the backoff) is <see cref="SetAsideSlimTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class KeepingSlimTests : BranchTidyingFixture
 {

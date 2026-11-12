@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// period judged every record and compared every partition, where the kept list handed back unmoved is now judged once.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SessionsSliceIdleProcessTests(ITestOutputHelper output)
 {
     private const int Records = 1261;

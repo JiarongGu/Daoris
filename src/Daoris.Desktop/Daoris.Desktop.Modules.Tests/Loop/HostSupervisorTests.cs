@@ -126,6 +126,8 @@ public sealed class HostSupervisorNoHostTests
 /// can honestly say is what the page names about itself: its own bundle.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class HostSupervisorTests : IDisposable
 {
     private readonly string _root = Path.Combine(

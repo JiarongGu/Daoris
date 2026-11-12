@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a lock a minute old says and a Node takes it as stale at once, with no wait of a minute.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverConfigFenceProcessTests : IDisposable
 {
     private const string Start = "{\n  \"cap\": 3,\n  \"intakeAdapter\": \"codex-acp\"\n}\n";

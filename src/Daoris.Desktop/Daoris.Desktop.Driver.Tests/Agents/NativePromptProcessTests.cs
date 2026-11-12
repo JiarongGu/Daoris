@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// harness is started by (the <see cref="AgentStartsProcessTests"/> pattern). The harness is <c>node</c> running a script of this test's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class NativePromptProcessTests : IDisposable
 {
     private const string Prompt = "报告 😀 Serve the report\n端口 8080 \U0001F600";

@@ -19,6 +19,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// one reading, <see cref="ConversationMoves.ReadAsync"/>).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class CurveMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("curve-move-crash");

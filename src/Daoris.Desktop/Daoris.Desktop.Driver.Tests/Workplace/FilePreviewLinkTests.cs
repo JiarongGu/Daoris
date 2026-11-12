@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// `mklink /J` makes one, so these start `cmd`. Elsewhere a symbolic link needs no process.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class FilePreviewLinkTests : IDisposable
 {
     private readonly string _home = Path.Combine(

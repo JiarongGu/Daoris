@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// plugin arrived must still find the harness it declared.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ChatRunnerTests : IDisposable
 {
     private readonly string _home = Path.Combine(

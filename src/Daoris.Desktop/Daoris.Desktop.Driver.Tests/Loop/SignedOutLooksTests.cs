@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// line is a question a look asked; the binary is asked its version once per binary, which is no question of an account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SignedOutLooksTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

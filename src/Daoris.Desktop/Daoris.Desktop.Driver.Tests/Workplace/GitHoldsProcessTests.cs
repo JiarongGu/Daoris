@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// handed its home, as the driver hands its own.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 [Collection(Alone.Name)]
 public sealed class GitHoldsProcessTests : IDisposable
 {

@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// moved, and at a finish; a look that changed nothing writes nothing, the file's bytes and write time as they were.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class FoundReadsTests : IDisposable
 {

@@ -19,6 +19,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>), holding the entry's acknowledgments.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class ChannelNextStepTickTests : IDisposable
 {
     private const string Words = "The budget lives in level.json, not in the manifest.";

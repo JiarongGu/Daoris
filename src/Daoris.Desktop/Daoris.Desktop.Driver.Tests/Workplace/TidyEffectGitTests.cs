@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (canary 8), and the branches the line holds none of are not judged at each pace: the git starts counted down.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
 {

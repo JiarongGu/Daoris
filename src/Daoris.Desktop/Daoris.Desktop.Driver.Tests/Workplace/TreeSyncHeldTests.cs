@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// second clone of it, committing the same change under a new id as a squash of one commit does.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeSyncHeldTests : TreeSyncFixture
 {

@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>HEAD</c> file and <c>objects/</c> and <c>refs/</c> folders, whatever git answers of it, none read into.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SetAsideReadsTests : IDisposable
 {

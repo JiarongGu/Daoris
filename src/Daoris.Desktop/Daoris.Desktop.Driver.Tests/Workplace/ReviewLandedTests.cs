@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real git in a scratch repository: the landing's replay is made by hand as the parent makes it, with a cherry-pick and a merge.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewLandedTests : LandedFixture
 {

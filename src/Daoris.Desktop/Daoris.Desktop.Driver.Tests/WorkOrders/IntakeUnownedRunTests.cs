@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// department owns is routed to it with no change.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class IntakeUnownedRunTests : IDisposable
 {
     private const string Why = "a billing system, and no repository here declares billing";

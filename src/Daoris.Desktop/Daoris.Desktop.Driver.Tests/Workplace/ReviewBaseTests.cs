@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and Review listed 26 files, everything the line took in since the session began, as the session's work.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewBaseTests : LandedFixture
 {

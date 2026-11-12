@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>The stand-in service is <see cref="SessionMessagesTickTests.SaidStandIn"/>: words kept on an ended record, the setup kept.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AccessSwapTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-swap-tick-" + Guid.NewGuid().ToString("N")[..8]);
