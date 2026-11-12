@@ -137,6 +137,22 @@ internal static class SessionsJson
                     writer.WriteNull("waits");
                 }
 
+                // Its line's state, and the part or co-worker it is read from.
+                if (row.Line is { } line)
+                {
+                    writer.WriteStartObject("line");
+                    writer.WriteString("state", line.State);
+                    writer.WriteString("group", line.Group);
+                    writer.WriteString("reason", line.Reason);
+                    writer.WriteString("by", line.By);
+                    writer.WriteString("role", line.Role);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("line");
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -166,6 +182,19 @@ internal static class SessionsJson
                         writer.WriteString("after", part.After);
                         writer.WriteString("askedBy", part.AskedBy);
                         writer.WriteString("head", part.Head);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteStartArray("coworkers");
+                    foreach (var coworker in entry.Coworkers)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("session", coworker.Session);
+                        writer.WriteString("role", coworker.Role);
+                        writer.WriteString("serves", coworker.Serves);
+                        writer.WriteString("shown", coworker.Shown);
+                        writer.WriteString("state", coworker.State);
                         writer.WriteEndObject();
                     }
 

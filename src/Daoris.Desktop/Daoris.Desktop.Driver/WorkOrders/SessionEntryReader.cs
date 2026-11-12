@@ -41,26 +41,38 @@ public static class SessionEntries
             .Concat(look.Quests.Where(quest => quest.From.StartsWith("ask #", StringComparison.OrdinalIgnoreCase)).Select(quest => "ask:" + quest.From[5..]))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        // A co-worker is drawn inside the session it serves, never an entry of its own.
+        var priors = AtWorkExchangeReading.Priors(look.Records);
+        var serving = look.Records.Where(record => LineStandings.Served(record, priors) is not null).OrderBy(record => record.Created).ToList();
+        var coworkers = serving.Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
         var lines = look.Records
+            .Where(record => !coworkers.Contains(record.Id))
             .Where(record => !(Intake(record) && !record.Live && record.Ask is { } ask && askedOf.Contains("ask:" + ask)))
             .GroupBy(record => record.EntryKey, StringComparer.Ordinal)
-            .Where(line => only is null || line.Any(record => only.Contains(record.Id, StringComparer.Ordinal)));
+            .Select(line => (Line: line, Coworkers: serving.Where(coworker => line.Any(record => record.Id == coworker.Serves)).ToList()))
+            .Where(each => only is null || each.Line.Concat(each.Coworkers).Any(record => only.Contains(record.Id, StringComparer.Ordinal)));
 
         var entries = new List<(SessionEntry Entry, int At)>();
-        foreach (var line in lines)
+        foreach (var (line, serves) in lines)
         {
             var placed = line
                 .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
                 .Select(record => (Record: record, Row: rowOf[record.Id]))
                 .ToList();
-            var group = Ongoing.FirstOrDefault(each => placed.Any(part => part.Row.Group == each))
-                ?? placed.LastOrDefault(part => part.Row.Group != SessionGroup.Archived).Row?.Group
+            // Each part's group is its line's, so a line whose newest part or co-worker works is working whatever its earlier parts ended in.
+            var group = Ongoing.FirstOrDefault(each => placed.Any(part => GroupOf(part.Row) == each))
+                ?? placed.Select(part => GroupOf(part.Row)).LastOrDefault(each => each != SessionGroup.Archived)
                 ?? SessionGroup.Archived;
-            var lead = placed.Last(part => part.Row.Group == group);
+            var lead = placed.Last(part => GroupOf(part.Row) == group);
             var parts = Began(placed.Select(part => part.Record).ToList(), placed.Select(part => part.Row).ToList(), quests);
             var key = line.Key;
             var read = EntryKey.Parse(key);
-            entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts) { Head = HeadOf(read.Origin, parts) }, position[lead.Record.Id]));
+            entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts)
+            {
+                Head = HeadOf(read.Origin, parts),
+                Coworkers = [.. serves.Select(coworker => new EntryCoworker(
+                    coworker.Id, LineRole.Of(coworker)!, coworker.Serves!, rowOf[coworker.Id].Shown, rowOf[coworker.Id].State))],
+            }, position[lead.Record.Id]));
         }
 
         return [.. entries.OrderBy(each => each.At).Select(each => each.Entry)];
@@ -82,6 +94,9 @@ public static class SessionEntries
         look = await SessionGroups.JudgeAsync(look, holds.Holds, holds.WorkAsync, ids, cancellationToken).ConfigureAwait(false);
         return (entries, SessionGroups.Read(look, ids));
     }
+
+    /// <summary>Where a part is listed: its line's group (<see cref="SessionGrouping.Line"/>), else its own row's.</summary>
+    private static string GroupOf(SessionGrouping row) => row.Line?.Group ?? row.Group;
 
     /// <summary>A quest its line's own ask's intake published: the line's own work, not a sibling's request.</summary>
     private static bool LinesOwn(SessionRecord record, QuestView quest) =>

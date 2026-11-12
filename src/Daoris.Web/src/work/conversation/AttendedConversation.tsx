@@ -14,7 +14,7 @@ import { FileOpener, type FileOpen } from '../review/preview';
 import type { coolingFor } from '../say';
 import type { Roster } from '../start/agentRoster';
 import { type EarlierPart, EarlierParts } from './EarlierParts';
-import { ancestryOf } from './line';
+import { lineMembersBefore } from '../lineState';
 import { SessionConversation } from './SessionConversation';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
@@ -46,7 +46,7 @@ export function AttendedConversation({
   partRows: PartRows;
   partBox: RefObject<HTMLDivElement | null>;
 }) {
-  const { attended, attendedEntry, sessions, harnesses, live, here } = session;
+  const { attended, attendedEntry, sessions, harnesses, live, here, openedAt } = session;
   const { talking, chatTurns, turns, onUsage, onWaiting } = boxState;
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
   const { waits, standing, setAnchored, helperWaits, goToWait, setTail } = waitsState;
@@ -57,8 +57,8 @@ export function AttendedConversation({
     const part = attendedEntry?.parts.find((each) => each.session === id);
     return attendedEntry && part && part.began !== 'opened' ? beganLine(t, part, attendedEntry.parts, partRows) : undefined;
   };
-  // The line the attended part continues: the parts it continues by `from` (a part running alongside is not among them), and how each began.
-  const line: EarlierPart[] = ancestryOf(sessions.data ?? [], attended.id, attendedEntry ? new Set(attendedEntry.parts.map((part) => part.session)) : null)
+  // The line's parts before the one it heads, by its membership (each record's `line`), and how each began.
+  const line: EarlierPart[] = lineMembersBefore(sessions.data, attended.id)
     .flatMap((id) => {
       const row = (sessions.data ?? []).find((each) => each.id === id);
       return row
@@ -71,7 +71,7 @@ export function AttendedConversation({
       {/* A file a tool card names opens in the side bar's preview. */}
       <FileOpener.Provider value={openPreview}>
         {/* The parts it continues, above it and read-only; keyed by the part, so attending another starts the count again. */}
-        {line.length > 0 && <EarlierParts key={attended.id} line={line} scroller={centre} />}
+        {line.length > 0 && <EarlierParts key={`${attended.id}:${openedAt ?? ''}`} line={line} at={openedAt} scroller={centre} />}
         <div ref={partBox} data-part={attended.id} data-attended className="min-w-0 scroll-mt-12">
           <SessionConversation
             session={attended.id}

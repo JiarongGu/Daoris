@@ -24,6 +24,17 @@ export type EntryPart = {
   askedBy: string | null;
 };
 
+/** A record serving one of an entry's parts: drawn inside that part's session, never listed as its own. */
+export type EntryCoworker = {
+  session: string;
+  /** `reviewer`, `partner` or `helper`. */
+  role: string;
+  /** The part it serves. */
+  serves: string;
+  shown: string;
+  state: SessionGroupName;
+};
+
 /**
  * What one part spent, as `SESSION_SPENT` answers it from this machine's record (the driver's `SessionSpent`): its
  * turns, those whose door said what they consumed, and each count summed over those, null where none said it, never zero.
@@ -52,6 +63,8 @@ export type SessionEntry = {
   /** The part a row opens on: `leading` when the group is you or working, otherwise `head ?? leading`. Absent where the answer has none. */
   opens?: string;
   parts: EntryPart[];
+  /** The records serving its parts, oldest first. */
+  coworkers?: EntryCoworker[];
 };
 
 /** The part a list row opens on, given the row's own (leading) record: the driver's `opens`, else the leading record as before. */

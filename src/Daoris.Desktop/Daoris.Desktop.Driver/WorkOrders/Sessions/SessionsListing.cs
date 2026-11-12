@@ -68,10 +68,17 @@ internal static class SessionsListing
                 var line = string.Join(" · ", new[] { Title(record, quests, openings), Span(record, now) }.Concat(Facts(row, record))
                     .Concat(entry.Parts.Count > 1 ? [$"{entry.Parts.Count} parts"] : []));
                 output.Add($"  {entry.Leading}  {Word(row.Shown)}  {record.Repository} — {line}");
-                if (entry.Parts.Count < 2) continue;
-                foreach (var part in entry.Parts)
+                if (entry.Parts.Count > 1)
                 {
-                    output.Add($"      {part.Session}  {Word(part.Shown)}  {(part.Quest is { } quest ? $"#{quest}" : "conversation")} · {Began(part)}");
+                    foreach (var part in entry.Parts)
+                    {
+                        output.Add($"      {part.Session}  {Word(part.Shown)}  {(part.Quest is { } quest ? $"#{quest}" : "conversation")} · {Began(part)}");
+                    }
+                }
+
+                foreach (var coworker in entry.Coworkers)
+                {
+                    output.Add($"      {coworker.Session}  {Word(coworker.Shown)}  {coworker.Role} of {coworker.Serves}");
                 }
             }
         }
@@ -161,6 +168,11 @@ internal static class SessionsListing
     internal static IEnumerable<string> Facts(SessionGrouping row, SessionRecord record)
     {
         if (row.Teammate) yield return $"on {record.Id[..record.Id.IndexOf('/')]}";
+        // Its line's state where another part or a co-worker decides it, named.
+        if (row.Line is { } standing && standing.By != row.Session)
+        {
+            yield return $"its line is {GroupName(standing.State).ToLowerInvariant()}: {(standing.Role == LineRole.Part ? "part" : $"its {standing.Role}")} {standing.By}";
+        }
         if (row.Shown == ShownState.Parked)
         {
             yield return row.Strikes is { } strikes

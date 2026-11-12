@@ -59,15 +59,17 @@ public static class GroupsStateSlice
         ["row"] =
         [
             "session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
-            "deletable", "lands", "discards", "waits", "repository", "created", "updated",
+            "deletable", "lands", "discards", "waits", "line", "repository", "created", "updated",
         ],
+        ["line"] = ["state", "group", "reason", "by", "role"],
+        ["coworker"] = ["session", "role", "serves", "shown", "state"],
         ["waits"] = ["run", "node", "why", "since"],
         ["work"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
         ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["lands"] = ["branch", "tree", "commits", "uncommitted"],
         ["discards"] = ["branch", "tree", "says", "keeps", "keptAt"],
-        ["entry"] = ["entry", "origin", "repository", "group", "leading", "head", "opens", "parts"],
+        ["entry"] = ["entry", "origin", "repository", "group", "leading", "head", "opens", "parts", "coworkers"],
         ["part"] = ["session", "quest", "shown", "group", "began", "after", "askedBy", "head"],
     };
 
@@ -80,7 +82,9 @@ public static class GroupsStateSlice
         ["row.lands"] = "lands",
         ["row.discards"] = "discards",
         ["row.waits"] = "waits",
+        ["row.line"] = "line",
         ["entry.parts"] = "part",
+        ["entry.coworkers"] = "coworker",
     };
 
     /// <summary>

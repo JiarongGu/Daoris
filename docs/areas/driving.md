@@ -227,10 +227,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in), failed
     (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done (completed, stopped,
-    declined, stood down). Each row carries `state` and the finer `reason`; *Archived* folds a done or failed session alone. A line
-    is in the first of needs you, working and pending any part is in, else as its newest part ended. A tree holding commits no
-    run waits on is offered on its session, bar one running. `daoris session list --group` takes the five and `archived`.
-    (D132, D273)
+    declined, stood down). Each row carries `state` and the finer `reason`; *Archived* folds a done or failed session alone. Each
+    row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first
+    of needs you, working and pending any part is in, needs you and working where a co-worker serving a part is, else as its
+    newest part ended, naming the part or co-worker it is read from. An entry is placed by its parts' line, and a co-worker is in
+    the entry of the part it serves (`coworkers`), never an entry of its own; the list, the head and the terminal say the line's
+    state, and any part opens as its line's newest part, at that part. A tree holding commits no run waits on is offered on its
+    session, bar one running. `daoris session list --group` takes the five and `archived`. (D132, D273, D280)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from` forward, at most
     256 hops; a cycle or the bound reads as no head. (D167, D212)
 

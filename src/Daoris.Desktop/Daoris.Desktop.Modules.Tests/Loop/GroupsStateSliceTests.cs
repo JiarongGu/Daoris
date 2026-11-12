@@ -169,9 +169,13 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Discards = new DiscardOffer("daoris/s1", "s1", new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/kept/s1", null)),
             Calling = new RunningCall("npm test", At),
             Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At)],
+            Line = new LineStanding(SessionGroup.Working, SessionGroup.Working, "working", "h1", LineRole.Helper),
         };
         var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Pending, "s1",
-            [new EntryPart("s1", "q1", "completed", SessionGroup.Pending, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }]) { Head = "s1" };
+            [new EntryPart("s1", "q1", "completed", SessionGroup.Pending, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }])
+        {
+            Head = "s1", Coworkers = [new EntryCoworker("h1", LineRole.Helper, "s1", "working", SessionGroup.Working)],
+        };
 
         var route = FieldsOf(Written(SessionsGroupsWires.Grouped(row)), "row").Concat(FieldsOf(Written(SessionsGroupsWires.Entry(entry)), "entry")).ToList();
         var pushed = GroupsStateSlice.Fields.SelectMany(shape => shape.Value.Select(field => $"{shape.Key}.{field}")).ToHashSet(StringComparer.Ordinal);
@@ -395,6 +399,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         ReadType(TypeBody(groups, "DiscardOffer"), "discards", fields);
         ReadType(TypeBody(entries, "SessionEntry"), "entry", fields);
         ReadType(TypeBody(entries, "EntryPart"), "part", fields);
+        ReadType(TypeBody(entries, "EntryCoworker"), "coworker", fields);
         return fields;
     }
 

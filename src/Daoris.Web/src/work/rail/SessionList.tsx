@@ -8,6 +8,7 @@ import {
   sessionsByState, stripSessions,
 } from '../groups';
 import { type EntryFacts, entryOfSession, opensOf, type PartSpent, type SessionEntry, sessionsByAsk } from '../entries';
+import { lineSaid } from '../lineState';
 import type { HeavyPart } from '../heavySlot';
 import { isHelp, isIntake, sessionTitle } from '../identity';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -153,6 +154,7 @@ export function SessionList({
         parts={facts.entry?.parts}
         quests={facts.entry?.quests}
         grouping={grouping}
+        line={grouping ? lineSaid(session.id, grouping, groupings, sessions, facts.entry?.ids) : null}
         place={byState && parent?.repository !== session.repository ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}
         // The entry is attended while any of its parts is: the strip on its page picks which one.
