@@ -3,9 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run whose focus is a repository is told that repository's own with its first words (<see cref="HelpFocusTold"/>): its line, the
-/// sessions waiting on the person or ended there, its quests parked or held, and what landed from it, from the facts projected to its
-/// workspace. Nothing for a focus on this machine or a workspace.
+/// A repository in focus, told with its conversation's first words (<see cref="HelpFocusTold"/>): its line, its sessions waiting or ended,
+/// its quests parked or held, and what landed from it, from its workspace's facts.
 /// </summary>
 internal static class HelpFocusGathered
 {

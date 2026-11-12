@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D280 finding 12: two Ask Daoris conversations of one workspace on different focuses, started together, each read their own focus in
-/// the standing block of their own first words, and the room they share names neither; one going on afterwards resumes its own
-/// conversation, which its own first words told, in a room still naming none.
+/// Two Ask Daoris conversations of one workspace on different focuses, started together, each read their own in their first words'
+/// standing block, the room they share naming neither; one going on afterwards resumes its own conversation in that room.
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, and the in-process ledger of <see cref="ChatGoOnTests"/>. No model, no account.</remarks>
 [Trait(Category.Name, Category.Process)]

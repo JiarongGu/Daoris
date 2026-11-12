@@ -3,9 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's room: the folder under Daoris's home its conversation runs in, written
-/// from the machine at every open — what Daoris is, which screen and which terminal command does each
-/// thing, and what this machine holds now.
+/// Ask Daoris's room: the folder under Daoris's home its conversation runs in, written from the machine at every open — what Daoris
+/// is, which screen and which terminal command does each thing, and what this machine holds now.
 /// </summary>
 /// <remarks>
 /// <para><b>Daoris's own directory</b>, the intake's rule: the one kind of tree the driver may
@@ -104,9 +103,8 @@ public static class HelpRoom
     public static bool Written(string home, string? workspace = null) => File.Exists(Path.Combine(PathOf(home, workspace), "AGENTS.md"));
 
     /// <summary>
-    /// Write the room from the machine as it stands, and answer where it is: the room of its conversation's home workspace
-    /// (<see cref="HelpMachine.Home"/>), <c>default</c>'s where it is the whole machine. Every conversation of that workspace reads it, so
-    /// it is written for the home alone, whatever focus the machine was described for: each run is told its own (<see cref="HelpFocusTold"/>).
+    /// Write the room of its conversation's home workspace (<see cref="HelpMachine.Home"/>) from the machine as it stands, and answer where it
+    /// is: every conversation of that workspace reads it, so it says no focus; each is told its own (<see cref="HelpFocusTold"/>).
     /// </summary>
     public static string Prepare(string home, HelpMachine machine)
     {

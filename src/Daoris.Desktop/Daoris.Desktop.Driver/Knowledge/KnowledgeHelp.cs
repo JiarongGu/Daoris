@@ -1,6 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>The room's sources answer their sections and workspace projection without exposing their owners' stores.</summary>
 internal interface IHelpMachineSources
 {
     HelpMachine Describe(IHelpRoomSection section, HelpMachine machine);

@@ -23,7 +23,6 @@ public sealed class HelpRoomFocusTests : IDisposable
 
     private string Written(HelpMachine machine) => File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, machine), "AGENTS.md"));
 
-    /// <summary>🔴 D280 finding 12: two conversations of one room on different focuses, written in either order, read one room naming neither.</summary>
     [Fact]
     public void The_room_says_no_conversation_s_focus_whichever_wrote_it_last()
     {
@@ -83,7 +82,6 @@ public sealed class HelpRoomFocusTests : IDisposable
         Assert.DoesNotContain("## In focus", unread, StringComparison.Ordinal);
     }
 
-    /// <summary>The focus rides the standing block of a conversation's first words, said in its account.</summary>
     [Fact]
     public void The_standing_block_carries_the_focus_it_is_handed()
     {

@@ -42,20 +42,15 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         return text.ToString();
     }
 
-    /// <summary>
-    /// Every conversation of this workspace reads this one room, so it names no conversation's focus: each is told its own with its first
-    /// words (<see cref="HelpFocusTold"/>), and a change in one line ahead of the person's.
-    /// </summary>
+    /// <summary>Every conversation of the workspace reads this room, so it names no focus: each is told its own (<see cref="HelpFocusTold"/>).</summary>
     private const string Focus =
         "Its focus, what the person chose this conversation to be about, is told in its first words: this machine, a workspace\n"
         + "or a repository, where its tools start. A change reaches you in one line ahead of their words. The focus limits nothing:\n"
         + "name a workspace, or `all`, to look beyond it.\n\n";
 
     /// <summary>
-    /// What its workspace is to its tools: where they start, never a fence. Restricted: its connector answers for its workspace
-    /// unless it names another, or all, and it may read every workspace's checkouts and propose into any. Full access (the trap is
-    /// a workspace's label read as confinement): its shell reaches the whole machine, so the workspace is said to be no fence.
-    /// Words, not a gate; the mode is the gate.
+    /// What its workspace is to its tools: where they start, never a fence. Full access is said to be no fence, since a workspace's label
+    /// is read as confinement while its shell reaches the whole machine. Words, not a gate; the mode is the gate.
     /// </summary>
     private static string Bound(string workspace, bool full)
     {
