@@ -73,6 +73,7 @@ public sealed class DriverPartsTests : IDisposable
             pass => Assert.IsType<ReviewsLook>(pass),
             pass => Assert.IsType<OpinionsLook>(pass),
             pass => Assert.IsType<HelpersLook>(pass),
+            pass => Assert.IsType<ChecksLook>(pass),
             pass => Assert.IsType<PartnersLook>(pass),
             pass => Assert.IsType<BrainstormsLook>(pass),
             pass => Assert.IsType<MeetingsLook>(pass),
