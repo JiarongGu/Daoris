@@ -313,7 +313,6 @@ public static class ServiceFactory
         CancellationToken ct = default,
         // The clock the index's readings and the roots' judging are measured on; the system's unless a test moves one.
         TimeProvider? time = null,
-        // Each repository's memory engines, which the host composes from its adapter; a shared host keeps none whatever it passes.
         IMemoryEngines? memory = null)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);

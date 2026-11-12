@@ -2,6 +2,16 @@
   "version": 1,
   "modules": [
     {
+      "id": "Daoris.Adapters.Memory.Lyntai",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai",
+      "summary": "the memory engine's port over Lyntai's graph engine and its SQLite file"
+    },
+    {
+      "id": "Daoris.Adapters.Memory.Lyntai.Tests",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests",
+      "summary": "the memory adapter's dependency tests: the memory contract on Lyntai's engines over a real file"
+    },
+    {
       "id": "daoris",
       "path": "src/Daoris.Cli",
       "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
@@ -79,7 +89,12 @@
     {
       "id": "Daoris.Ports",
       "path": "src/Daoris.Ports",
-      "summary": "the effect contracts of the application: git, processes, the store's unit of work, the browser and the harness"
+      "summary": "the effect contracts of the application: git, processes, the store's unit of work, the browser, the harness and the memory engine"
+    },
+    {
+      "id": "Daoris.Service.Application.Rehearsals",
+      "path": "src/Daoris.Service/Daoris.Service.Application.Rehearsals",
+      "summary": "the service's application over its real adapters: the memory's classes over Lyntai's engines"
     },
     {
       "id": "Daoris.Service.Core",
@@ -146,6 +161,21 @@
     {
       "from": "ContractsGen",
       "to": "Daoris.Desktop.Modules",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Memory.Lyntai",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Memory.Lyntai.Tests",
+      "to": "Daoris.Adapters.Memory.Lyntai",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Memory.Lyntai.Tests",
+      "to": "Daoris.Testing",
       "kind": "project"
     },
     {
@@ -244,8 +274,38 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Service.Application.Rehearsals",
+      "to": "Daoris.Adapters.Memory.Lyntai",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Application.Rehearsals",
+      "to": "Daoris.Service.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Application.Rehearsals",
+      "to": "Daoris.Service.Mcp",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Application.Rehearsals",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Service.Core",
       "to": "Daoris.Contracts",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Core",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Http",
+      "to": "Daoris.Adapters.Memory.Lyntai",
       "kind": "project"
     },
     {
@@ -261,6 +321,11 @@
     {
       "from": "Daoris.Service.Http.Tests",
       "to": "Daoris.Service.Http",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Mcp",
+      "to": "Daoris.Adapters.Memory.Lyntai",
       "kind": "project"
     },
     {

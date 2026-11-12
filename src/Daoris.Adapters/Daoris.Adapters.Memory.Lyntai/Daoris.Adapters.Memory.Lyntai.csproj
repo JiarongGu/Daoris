@@ -18,6 +18,7 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <RootNamespace>Daoris.Adapters.Memory.Lyntai</RootNamespace>
     <AssemblyName>Daoris.Adapters.Memory.Lyntai</AssemblyName>
+    <Description>the memory engine's port over Lyntai's graph engine and its SQLite file</Description>
   </PropertyGroup>
 
   <ItemGroup>

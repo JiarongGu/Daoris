@@ -38,10 +38,7 @@ internal static class HostComposition
                 new LyntaiOptions());
     }
 
-    /// <summary>
-    /// Each repository's memory: Lyntai's engines over one file of this machine's beside the index at <paramref name="databasePath"/>;
-    /// null for an index held in memory, which keeps no file. A shared host is handed none whatever this answers.
-    /// </summary>
+    /// <summary>Each repository's memory: Lyntai's engines beside the index at <paramref name="databasePath"/>; null for one held in memory.</summary>
     public static IMemoryEngines? BuildMemory(string databasePath) => LyntaiMemory.Beside(databasePath);
 
     /// <summary>

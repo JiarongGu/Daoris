@@ -126,10 +126,8 @@ public interface IMemoryReads
 }
 
 /// <summary>
-/// Another repository's memory as a reader meets it: its type has no write,
-/// a read through it moves nothing of the owner's, and every entry is the owner's by reference. Its check is asked about an entry before
-/// <see cref="IMemoryReads.GetAsync"/> or <see cref="IMemoryReads.ExpandAsync"/> reads it, and one it refuses reads as missing; a search is
-/// not checked per entry, being of a repository the caller's workspace already shares.
+/// Another repository's memory as a reader meets it: no write, and a read moves nothing of the owner's. Its check is asked about an entry
+/// before a get or an expansion reads it, and one it refuses reads as missing; a search, of a workspace already shared, is not checked.
 /// </summary>
 public interface IMemoryView : IMemoryReads
 {

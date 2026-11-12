@@ -203,7 +203,6 @@ var composed = await ServiceFactory.CreateAsync(
     proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null,
     // A second opinion is this machine's alone: a shared host's desk refuses every door with its sentence.
     mode: mode,
-    // Each repository's memory is this machine's too: a shared host keeps none.
     memory: mode == ServiceMode.Local ? HostComposition.BuildMemory(options.DatabasePath) : null);
 builder.Services.AddSingleton(composed);
 

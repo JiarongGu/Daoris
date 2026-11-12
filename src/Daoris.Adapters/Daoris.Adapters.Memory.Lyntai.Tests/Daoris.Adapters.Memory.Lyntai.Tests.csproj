@@ -14,6 +14,7 @@
     <IsTestProject>true</IsTestProject>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <RootNamespace>Daoris.Adapters.Memory.Lyntai.Tests</RootNamespace>
+    <Description>the memory adapter's dependency tests: the memory contract on Lyntai's engines over a real file</Description>
   </PropertyGroup>
 
   <ItemGroup>

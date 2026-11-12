@@ -8,7 +8,6 @@ using Lyntai.Storage.Sqlite.Migrations;
 
 namespace Daoris.Adapters.Memory.Lyntai;
 
-// Inside the namespace, so the port's view and check are meant where Lyntai's carry the same names.
 using Daoris.Ports.Memory;
 
 /// <summary>
