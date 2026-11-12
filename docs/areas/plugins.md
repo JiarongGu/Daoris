@@ -125,7 +125,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     browser: its manifest says `hooks.browser`, so each of its processes is handed the in-app browser's DevTools address as
     `DAORIS_BROWSER` while a shell carries one (`PluginBrowser`, asked for the address only), and each call is a page-side `fetch` that
     reads no cookie or token; a lapsed sign-in is renewed once, then fails `signed-out`; every answer's evidence ends `Way: the token.`
-    or `Way: the browser.` (D279). A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
+    or `Way: the browser.` (D281). A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
     unsound mark (three unasked exits within an hour, after which it is not started until the person's *Try again*: `try-again` on
     `PLUGIN_ACTION`, `daoris plugin try-again <id>`, and the button on its page while `PLUGINS` says `unsound`, clearing every place's

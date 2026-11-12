@@ -273,7 +273,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     clip of each on that build, its page held shown: Chrome loads no media in a hidden page. (from D99, D85, D234)
 55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. The
     person's Edge on a Daoris profile stays an option. Daoris keeps sign-ins across a restart itself. A plugin whose manifest says `hooks.browser` is handed the endpoint as
-    `DAORIS_BROWSER` and works in a tab of its own in the signed-in profile (a fresh context carries no sign-in). (from D78, D84, D279)
+    `DAORIS_BROWSER` and works in a tab of its own in the signed-in profile (a fresh context carries no sign-in). (from D78, D84, D281)
 
 **The setup guide and the views**
 
