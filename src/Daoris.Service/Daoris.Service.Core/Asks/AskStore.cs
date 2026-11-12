@@ -84,7 +84,6 @@ public sealed class AskStore
         // The paths its asker declared; an ask from before declared none.
         await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
 
-        // The person's through words; an ask from before holds none, so each run of it waits for their Accept.
         await SchemaColumns.EnsureAsync(_db, "asks", "through_words", "through_words TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
 
         // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and

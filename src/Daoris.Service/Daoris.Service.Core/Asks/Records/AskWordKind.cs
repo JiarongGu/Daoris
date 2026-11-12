@@ -33,9 +33,6 @@ public enum AskWordKind
     /// </summary>
     Channel,
 
-    /// <summary>
-    /// Their words a requirement or the through words quote, given when the ask is made: verified verbatim against their own messages in
-    /// the conversation that made it, or typed at their own press. Kept so the exchange's quote judge reads them as it reads every word.
-    /// </summary>
+    /// <summary>Their words a requirement quotes, given when the ask is made, kept for the exchange's quote judge.</summary>
     Quoted,
 }

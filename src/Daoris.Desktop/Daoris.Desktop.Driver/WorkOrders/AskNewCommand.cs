@@ -3,14 +3,11 @@ namespace Daoris.Driver;
 /// <summary>A new ask as <c>daoris ask "…"</c> makes it: the workspace it is made at, its words, and what it carries.</summary>
 /// <param name="To">The receiver it is published to at once as a quest; null, and its intake answers it.</param>
 /// <param name="Files">Files on this machine by their full paths, read when the ask is made.</param>
-/// <param name="Requirements">The person's words and their checks, for the quest published at once to <paramref name="To"/>.</param>
-/// <param name="Through">The person's through words (D277).</param>
 public sealed record AskNew(
     string Workspace, string Sentence, string? To = null, IReadOnlyList<string>? Links = null, IReadOnlyList<string>? Files = null,
     string? Review = null, string? ReviewWords = null, string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
     IReadOnlyList<Daoris.Contracts.Quests.QuestRequirementWire>? Requirements = null, string? Through = null)
 {
-    /// <summary>The person's words it carries beside its sentence.</summary>
     public AskCarried Carried => new(Requirements ?? [], string.IsNullOrWhiteSpace(Through) ? null : Through.Trim());
 }
 

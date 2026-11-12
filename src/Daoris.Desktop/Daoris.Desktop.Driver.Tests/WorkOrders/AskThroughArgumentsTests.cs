@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's words a new ask carries (D277): <c>--require</c> beside <c>--to</c> and <c>--through</c> on a new ask, <c>ask through
+/// The person's words a new ask carries:<c>--require</c> beside <c>--to</c> and <c>--through</c> on a new ask, <c>ask through
 /// &lt;id&gt;</c> on one already made, and the judgement of an agent's press against the person's own messages in its conversation.
 /// </summary>
 public sealed class AskThroughArgumentsTests

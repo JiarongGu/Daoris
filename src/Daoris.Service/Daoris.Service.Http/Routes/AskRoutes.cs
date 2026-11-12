@@ -90,7 +90,6 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
                 WorkflowWords = request.WorkflowWords,
                 Short = request.Short,
                 Paths = request.Paths ?? [],
-                // The person's words carried when it is made: the quotes the driver verified, and their through words.
                 Requirements = QuestAnswers.RequirementsOf(request.Requirements),
                 Through = request.Through,
             },

@@ -44,10 +44,8 @@ public sealed record AskArguments
 
     public bool ClearWorkflow { get; init; }
 
-    /// <summary>A new ask's through words: the person's own, asking for its work to be delivered with no press of theirs (D277).</summary>
     public string? Through { get; init; }
 
-    /// <summary><c>ask through &lt;id&gt;</c>: the ask whose through words are set from the words after it, or taken back with <c>--clear</c>.</summary>
     public string? SetThrough { get; init; }
 
     public IReadOnlyList<string> Files { get; init; } = [];

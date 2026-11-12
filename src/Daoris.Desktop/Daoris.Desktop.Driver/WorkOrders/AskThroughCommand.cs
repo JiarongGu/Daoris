@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record AskThroughAsk(string Ask, string? Words);
 
 /// <summary>
-/// <c>daoris ask through &lt;id&gt; "&lt;the person's words&gt;"|--clear</c>: the person's through words on an ask already made (D277),
+/// <c>daoris ask through &lt;id&gt; "&lt;the person's words&gt;"|--clear</c>: the person's through words on an ask already made,
 /// which each run of its quests reads live, or their take-back. The person's press of the running Daoris (<c>ASK_THROUGH</c>), confirmed in
 /// its window, or Ask Daoris's, whose words are judged against the person's own messages in its conversation; alone where none runs.
 /// </summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's words a press puts on an ask (D277): requirements' quotes and through words. Where Ask Daoris presses, proved by the
+/// The person's words a press puts on an ask: requirements' quotes and through words. Where Ask Daoris presses, proved by the
 /// delegate key that names its conversation, each must stand verbatim (whitespace and case aside) in one of the person's own messages
 /// there; the person's own press, in the window, on a card or at their terminal, is their word; a working session's own press puts none.
 /// No model reads them: a quote the person never said is refused naming it.

@@ -151,7 +151,6 @@ public static class AskDoorViews
     /// The person's kind and workflow for its work, as the composer sends them; null sends none, and each repository's choice decides.
     /// </param>
     /// <param name="shortTitle">The ask's short title, at most 40 characters; null sends none.</param>
-    /// <param name="carried">The person's requirements and through words, verified where the press was proved; null sends none.</param>
     public static async Task<AskAnswer> AskAsync(
         this ServiceClient service, string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
@@ -172,10 +171,7 @@ public static class AskDoorViews
             ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The person's through words on an ask, or their take-back with none, the door <c>ask through</c> and the ask's page press. The
-    /// service's sentence comes back verbatim, a refusal included.
-    /// </summary>
+    /// <summary>The person's through words on an ask, or their take-back with none; the service's sentence comes back verbatim.</summary>
     public static Task<AskAnswer> ChooseAskThroughAsync(this ServiceClient service, string ask, string? words, CancellationToken ct = default) =>
         service.AnsweredAsync(new ChooseAskThrough(ask.TrimStart('#'), string.IsNullOrWhiteSpace(words) ? null : words.Trim()), ct);
 

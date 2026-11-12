@@ -160,7 +160,6 @@ internal static class HelpDoorRowsActs
             "Sessions → the session's *Workflow* view, *Accept* under the review",
             "`daoris workflow accept <run> <node> [\"…\"]`",
             new HelpDoorAsk.Never(HelpDoorThrough.Accept)),
-        // The person's words asking for an ask's work to be delivered, which its runs read (D277).
         ("put your words asking for an ask's work to be delivered with no press of yours on it, or take them back: each run of it is "
             + "accepted on them where nothing else waits on you, and a departure from a requirement still waits",
             "(no screen yet)",

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The person's through words on an ask (D277): judged, kept with when, the latest standing, and taken back by a keep with none. A
+/// The person's through words on an ask: judged, kept with when, the latest standing, and taken back by a keep with none. A
 /// person's door, a local host's as every ask route is; whether an agent's press quotes the person is judged where the press is proved.
 /// </summary>
 internal sealed class AskThroughs(AskStore asks, AskStandings standings)

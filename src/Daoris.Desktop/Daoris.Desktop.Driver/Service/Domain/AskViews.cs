@@ -150,20 +150,15 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
     /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing; empty where they make none.</summary>
     public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
 
-    /// <summary>The person's through words on it, oldest first, the latest standing; one with no words is their take-back.</summary>
     public IReadOnlyList<AskThroughView> ThroughWords { get; init; } = [];
 
-    /// <summary>The through words that stand, or null where none were given or the latest took them back.</summary>
     public AskThroughView? Through => ThroughWords is [.., { Words: not null } latest] ? latest : null;
 }
 
-/// <summary>The person's through words on an ask (D277), with when; null words are their take-back.</summary>
+/// <summary>The person's through words on an ask, with when; null words are their take-back.</summary>
 public sealed record AskThroughView(string? Words, DateTimeOffset At);
 
-/// <summary>
-/// What a new ask carries of the person's words beside its sentence (D277): requirements, each their words and its check, for the quest
-/// published at once, and their through words. Verified where the press is proved (<see cref="AskQuotes"/>) before it is sent.
-/// </summary>
+/// <summary>A new ask's requirements and through words, verified where the press is proved (<see cref="AskQuotes"/>).</summary>
 public sealed record AskCarried(IReadOnlyList<Daoris.Contracts.Quests.QuestRequirementWire> Requirements, string? Through);
 
 public static class Asks

@@ -22,8 +22,6 @@ public sealed record ListAsks(string? Workspace = null, bool? IncludeClosed = nu
 /// <param name="Kind">The person's kind for its work, with <paramref name="Workflow"/> and <paramref name="WorkflowWords"/>.</param>
 /// <param name="Short">The asker's short title, at most 40 characters, judged as a quest's is.</param>
 /// <param name="Paths">The paths the asker declares the work touches, judged as a quest's are; each quest it publishes carries them.</param>
-/// <param name="Requirements">The person's words and their checks, for the quest published at once to <paramref name="To"/>.</param>
-/// <param name="Through">The person's through words: their asking for the work to be delivered with no press of theirs.</param>
 public sealed record PostAsk(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,

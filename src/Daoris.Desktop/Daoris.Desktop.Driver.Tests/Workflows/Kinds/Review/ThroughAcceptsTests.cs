@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's through words on a run's ask (D277): the runtime passes an unchecked done and keeps the person's Accept on them, step by
+/// The person's through words on a run's ask: the runtime passes an unchecked done and keeps the person's Accept on them, step by
 /// step, only where no requirement departed or waits unmet, nothing else waits on the person and nothing is stopped; else the run waits.
 /// </summary>
 public sealed class ThroughAcceptsTests

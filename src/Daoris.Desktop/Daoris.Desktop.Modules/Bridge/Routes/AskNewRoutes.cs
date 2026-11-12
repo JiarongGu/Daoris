@@ -10,7 +10,7 @@ public sealed record AskNewPress(
     string? Review = null, string? ReviewWords = null, string? Kind = null, string? Workflow = null, string? WorkflowWords = null,
     string? Short = null, bool Said = false, IReadOnlyList<AskRequirementPress>? Requirements = null, string? Through = null);
 
-/// <summary>One requirement a new ask carries: the person's words and the check (D277).</summary>
+/// <summary>One requirement a new ask carries: the person's words and the check.</summary>
 public sealed record AskRequirementPress(string Quote, string Check);
 
 /// <summary>

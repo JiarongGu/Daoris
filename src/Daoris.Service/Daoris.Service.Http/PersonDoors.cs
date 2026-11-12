@@ -296,7 +296,6 @@ public static class PersonDoors
         // What kind of task an ask is and which workflow it follows is the person's, as what
         // a review is set to is; an agent proposes a kind and never sets one.
         new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow") { Marks = OwnerMark.None("an ask's kind and workflow, chosen before its quests start") },
-        // The person's words asking for the work to be delivered with no press of theirs, or their take-back (D277).
         new("POST", "/api/asks/{id}/through", DoorClass.Person, "an ask's through words") { Marks = OwnerMark.None("an ask's through words, which its runs read") },
         // A quest published with no ask has its own, set on its page before it starts, the person's alike.
         new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow") { Marks = OwnerMark.None("a quest's kind and workflow, chosen before it starts; its status does not move") },

@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// </summary>
 internal static class AskQuotedPress
 {
-    /// <summary>Why <paramref name="carried"/> cannot go on an ask as this request was pressed, or null.</summary>
+    /// <summary>Why <paramref name="carried"/> cannot go on an ask by this request's press, or null.</summary>
     public static string? Refused(DriverLoop loop, AskCarried carried)
     {
         var (by, session) = PipeDoor.By;

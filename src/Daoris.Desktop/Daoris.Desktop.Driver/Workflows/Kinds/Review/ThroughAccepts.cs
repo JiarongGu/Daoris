@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's through words on a run's ask (D277): their own words asking for the work to be delivered with no press of theirs, which
+/// The person's through words on a run's ask: their own words asking for the work to be delivered with no press of theirs, which
 /// the runtime applies as their word, never as a supervisor's. Step by step, each kept for the next pass as the person's door keeps it: a
 /// <c>quest.holds</c> waiting on an unchecked done is passed with them, then the <c>review</c> waiting on its record is accepted with them,
 /// bound to the record standing. Only where no requirement of the run's quests departed or waits unmet, no other step waits on the person

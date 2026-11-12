@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The room's one rule for a run's steps and the person's words asking for delivery (D277, read with D253 by mode): Ask Daoris puts the
+/// The room's one rule for a run's steps and the person's words asking for delivery, by mode: Ask Daoris puts the
 /// person's requirements and through words on an ask when it makes it; where it asks on the person's card it never presses a run's step,
 /// and where it acts as the person it presses an Accept or the pass of an unchecked done only where the person asked in words for the
 /// work to be delivered and the run still waits on it. The section and the doors table both say it from here, so the room never says two.

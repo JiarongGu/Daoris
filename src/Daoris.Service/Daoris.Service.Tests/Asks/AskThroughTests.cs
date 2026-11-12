@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The person's words an ask carries when it is made (D277): requirements whose quotes are kept on the ask as words the person said,
+/// The person's words an ask carries when it is made: requirements whose quotes are kept on the ask as words the person said,
 /// so the exchange's own quote judge reads them, and through words, the person's asking for delivery with no press of theirs, kept on
 /// the ask with when, the latest standing and a take-back clearing them.
 /// </summary>

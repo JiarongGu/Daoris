@@ -32,7 +32,6 @@ public static class PersonWaitReader
         return Of(new GraphRuns(files).Read(), files.Read);
     }
 
-    /// <summary>Why <paramref name="node"/> standing at <paramref name="status"/> waits on the person, or null where it does not.</summary>
     internal static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
     {
         NodeStates.Unknown => PersonWaits.Held,
