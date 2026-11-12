@@ -71,7 +71,8 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
             return System.Diagnostics.Process.Start(info);
         }))
         {
-            await tidying.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+            // A tidy of its own: the first one's quiet repository is left alone (TidyIdleness), and this counts what a look that reads it asks.
+            await new BranchTidying(_home) { Pace = TimeSpan.Zero }.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
         }
 
         return starts;

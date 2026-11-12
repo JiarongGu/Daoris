@@ -163,7 +163,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 30. The loop looks at its pace (15 s by default), on a nudge and on a wake (a ledger change, a terminal's words, a session's end).
     A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on beside the look, reserved.
     A read costs no more as the home grows: the lists a pass reads are asked at once; the tidy reads a repository's refs, top and
-    trees once a look until one of its stages writes, and a branch's end judgement is three starts; a reader of the session or
+    trees once a look until one of its stages writes, a branch's end judgement is three starts, and a repository whose last pass did nothing and said nothing starts no git while the stamp of git's own
+    files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
     (`JudgedOnce`); a look reads the open records and every record once each; the overlaps read a running tree's changes only
     where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
@@ -329,7 +330,8 @@ are roots that wire and grow by a one-line door at most.
 | a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
 | a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests` |
-| what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `SessionReadsBenchProcessTests` |
+| what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
+trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests` |
