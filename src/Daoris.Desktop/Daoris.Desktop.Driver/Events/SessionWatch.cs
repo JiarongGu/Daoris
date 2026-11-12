@@ -138,10 +138,7 @@ public sealed class SessionWatch
     /// <summary>The record's watcher, begun now where nothing began it.</summary>
     public static SessionWatch Of(ISessionEvents events) => Watches.GetValue(events, each => new SessionWatch(each));
 
-    /// <summary>
-    /// The clock quiet is counted on. A root hands the machine's (the clock adapter's, which stops in sleep); until it does this is a
-    /// monotonic clock, which a sleep does not stop, so the gap rule counts. A test hands one it moves.
-    /// </summary>
+    /// <summary>The clock quiet is counted on: the root hands the machine's, else a monotonic one, and a test one it moves.</summary>
     public QuietClock Clock { get; set; } = new(() => Stopwatch.GetElapsedTime(Origin), stopsInSleep: false);
 
     private static readonly long Origin = Stopwatch.GetTimestamp();
