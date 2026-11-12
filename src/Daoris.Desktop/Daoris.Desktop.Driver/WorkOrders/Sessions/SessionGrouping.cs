@@ -88,13 +88,14 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>
     /// This row with its run's <paramref name="waits"/> and what its tree holds where it holds any; its reason is the first wait
-    /// that is not an Accept, else the person's review.
+    /// that is neither an Accept nor a step left failed, else the person's review where an Accept waits, else the left step.
     /// </summary>
     public SessionGrouping WaitedOn(IReadOnlyList<PersonWait> waits, TreeWork? work) => this with
     {
         Waits = waits,
         Work = work,
-        Reason = waits.FirstOrDefault(wait => wait.Why != PersonWaits.Accept)?.Why ?? SessionReason.Review,
+        Reason = waits.FirstOrDefault(wait => wait.Why is not (PersonWaits.Accept or PersonWaits.Left))?.Why
+                 ?? (waits.Any(wait => wait.Why == PersonWaits.Accept) ? SessionReason.Review : SessionReason.Left),
     };
 
     /// <summary>Whether *Delete…* would be taken: the ledger would delete its record, and this machine holds neither its tree nor a landing of it. The page offers the act only here.</summary>

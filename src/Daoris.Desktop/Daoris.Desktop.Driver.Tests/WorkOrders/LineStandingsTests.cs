@@ -71,6 +71,24 @@ public sealed class LineStandingsTests
     }
 
     [Fact]
+    public void A_line_whose_newest_part_is_a_left_quests_session_reads_left_on_every_part()
+    {
+        var left = new QuestView("q1", "game", "engine", "The work of #q1", "A body.", "Done")
+        {
+            Answers = [new(1, "met", null, null), new(2, null, "the part is held", "their words")],
+        };
+        var newest = Record("5e55a001", "completed", 10, line: "5e55a000", from: "5e55a000", fromWhy: "press");
+        newest["quest"] = "q1";
+        var look = SessionLook.From(new JsonArray(Record("5e55a000", "stopped", 0), newest).ToJsonString(), [left], [], _ => 0);
+
+        var earlier = Row(look, "5e55a000");
+
+        Assert.Equal(SessionGroup.Done, earlier.State);
+        Assert.Equal(new LineStanding(SessionGroup.NeedsYou, SessionGroup.NeedsYou, SessionReason.Left, "5e55a001", LineRole.Part), earlier.Line);
+        Assert.Equal(earlier.Line, Row(look, "5e55a001").Line);
+    }
+
+    [Fact]
     public void An_ended_line_is_as_its_newest_part_ended()
     {
         var look = Look(

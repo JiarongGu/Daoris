@@ -315,7 +315,7 @@ export function SessionRow({
 
 /** The reasons the reader gives (`SessionReason`) that a row says in a line of their own. */
 const REASON_LINES: ReadonlySet<string> = new Set([
-  'question', 'policy-held', 'unclosed', 'steward-stop', 'sign-in', 'transient', 'carried-on', 'opinion', 'elsewhere',
+  'question', 'policy-held', 'unclosed', 'steward-stop', 'sign-in', 'transient', 'carried-on', 'opinion', 'elsewhere', 'left',
 ]);
 
 /**

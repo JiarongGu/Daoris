@@ -72,8 +72,8 @@ internal sealed class QuestReads(QuestStore store)
     /// <remarks>
     /// Open and taken first: what is outstanding is the question worth asking, and a finished queue
     /// pushing live work off the end is how a list stops being read. A done that a departure holds for the
-    /// person's yes is outstanding too: it waits on someone, and what follows it waits with it — the
-    /// driver keeps a quest waiting on it waiting because it is listed here.
+    /// person's yes is outstanding too, as is a done with a departure on it (<see cref="Quest.Left"/>, read by the key
+    /// <c>"departed":</c>): it waits on someone, and what follows it waits with it — the driver keeps a quest waiting on it waiting.
     /// </remarks>
     public Task<IReadOnlyList<Quest>> ListAsync(
         string? receiver = null, bool includeClosed = false, string? workspace = null,
@@ -84,7 +84,7 @@ internal sealed class QuestReads(QuestStore store)
             SELECT * FROM quests
             WHERE ($receiver IS NULL OR receiver = $receiver)
               AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
-              {(includeClosed ? "" : "AND (status IN ('Open', 'Taken') OR held = 1)")}
+              {(includeClosed ? "" : "AND (status IN ('Open', 'Taken') OR held = 1 OR (status = 'Done' AND answers LIKE '%\"departed\":%'))")}
             ORDER BY CASE status WHEN 'Open' THEN 0 WHEN 'Taken' THEN 1 ELSE 2 END, filed
             """;
         command.Parameters.AddWithValue("$receiver", (object?)receiver ?? DBNull.Value);

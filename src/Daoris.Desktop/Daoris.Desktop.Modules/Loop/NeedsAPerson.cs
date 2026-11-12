@@ -154,13 +154,13 @@ public static class NeedsAPerson
         }
 
         // A run whose every wait is the person's Accept, one row by the session Sessions' list places for it in Needs you: never a
-        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions.
-        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") == SessionReason.Review))
+        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions. A done left unfinished is a `left` row.
+        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") is SessionReason.Review or SessionReason.Left))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
-            var row = Row("review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
+            var row = Row(Text(placed, "reason") == SessionReason.Left ? "left" : "review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
             rows.Add(row);

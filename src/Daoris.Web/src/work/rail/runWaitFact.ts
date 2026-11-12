@@ -10,6 +10,7 @@ const LINES: Record<string, string> = {
   'go-ahead': 'work.rail.runWaits.goAhead',
   held: 'work.rail.runWaits.held',
   choose: 'work.rail.runWaits.choose',
+  left: 'work.rail.runWaits.left',
 };
 
 /**

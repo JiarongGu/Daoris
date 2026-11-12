@@ -3,5 +3,6 @@
   "status.Taken": "taken",
   "status.Submitted": "submitted",
   "status.Done": "done",
+  "status.Unfinished": "done, part left",
   "status.Declined": "declined"
 }

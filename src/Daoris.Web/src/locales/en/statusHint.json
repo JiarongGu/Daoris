@@ -3,5 +3,6 @@
   "statusHint.Taken": "a repository's agent has accepted it",
   "statusHint.Submitted": "its agent made its work ready — it closes at its workflow's end, once nothing holds it",
   "statusHint.Done": "finished",
+  "statusHint.Unfinished": "closed done, but it departed from what you required, so part of the work is left: it stays here until it is finished or you close its ask",
   "statusHint.Declined": "turned down — the note is the part the asker can act on"
 }

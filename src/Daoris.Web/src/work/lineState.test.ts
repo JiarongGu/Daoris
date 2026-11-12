@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../data/api';
 import { listedGroup, type SessionGrouping } from './groups';
-import { lineHeadOf, lineMembersBefore, lineSaid } from './lineState';
+import i18n from '../locales/i18n';
+import { lineHeadOf, lineMembersBefore, lineSaid, lineWords } from './lineState';
 
 const session = (id: string, state: string, created: string, line?: string, extra: Partial<Session> = {}) =>
   ({ id, state, created, updated: created, repository: 'engine', kind: 'chat', line: line ?? id, ...extra }) as Session;
@@ -35,6 +36,18 @@ describe('a line of work read as one session', () => {
     const line = { state: 'working', group: 'working', reason: 'working', by: '4e1b0001', role: 'helper' } as const;
     const groupings = [row('5e55a000', 'done', line), row('4e1b0001', 'working', line)];
     expect(lineSaid('5e55a000', groupings[0], groupings, sessions)).toEqual({ shown: 'working', by: '4e1b0001', role: 'helper', part: null });
+  });
+
+  it('says a line unfinished where its deciding part is a done that left work, in both languages', async () => {
+    const left = { state: 'needs-you', group: 'needs-you', reason: 'left', by: '80c78acf', role: 'part' } as const;
+    const groupings = [row('a674bf6a', 'done', left), row('80c78acf', 'needs-you', left)];
+    const said = lineSaid('a674bf6a', groupings[0], groupings, sessions, ['a674bf6a', '80c78acf']);
+    expect(said).toEqual({ shown: 'awaiting-person', by: '80c78acf', role: 'part', part: 2, left: true });
+    await i18n.changeLanguage('en');
+    expect(lineWords(i18n.t, said!)).toBe('Done in part 2, part of the work left');
+    await i18n.changeLanguage('zh');
+    expect(lineWords(i18n.t, said!)).toBe('第 2 段已完成，仍有部分未做完');
+    await i18n.changeLanguage('en');
   });
 
   it('opens any part as its line\'s session, its newest part, and draws the parts before it by membership', () => {
