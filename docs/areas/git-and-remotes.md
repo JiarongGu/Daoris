@@ -116,9 +116,10 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
     or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once. Where no instance of
     Daoris holds the home's lease, the door takes a kept grant or refuses at once (`not-running`). (D198, D135)
 27. The judge reads git access alone. `no-push` is a fixed default, on for every session and opened only by git access's Write,
-    with no switch on the page, in `agent rules` or in a proposal; `no-publish` carries the publishing and release sentence and is
-    switched alone. The home's migration made a switched-off `no-push` the machine's Write `allow` where unset and `no-publish`
-    off (`GitPushStep`). (D198)
+    with no switch on the page, in `agent rules` or in a proposal; a proposal to allow or ask a git push is refused where it is
+    proposed, naming the place's Write and `daoris git access … write=ask|allow` (`PushProposals`); `no-publish` carries the
+    publishing and release sentence and is switched alone. The home's migration made a switched-off `no-push` the machine's Write
+    `allow` where unset and `no-publish` off (`GitPushStep`). (D198, D277)
 28. A session's harness rules follow its Write (`GitAccessPolicy`): `deny` or the default keeps every push form denied; `ask` or
     `allow` opens the plain push and denies force, delete, tag, mirror and prune unless Dangerous is `allow`. Codex holds no rules
     file; its block and the access setup say so. (D198, D72, D233)

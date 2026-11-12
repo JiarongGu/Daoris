@@ -103,4 +103,18 @@ public sealed class PluginKitExampleTests : IDisposable
     [InlineData("daoris-azure-devops")]
     [InlineData("daoris-github")]
     public void Each_pull_request_example_keeps_the_kit_s_journal_and_its_store(string example) => KeepsTheKitFiles(example, KitFiles);
+
+    /// <summary>The development-report example listens on `session/ended` alone and keeps its reports through the kit's store, declaring its two commands and its storage.</summary>
+    [Fact]
+    public void The_development_report_example_keeps_the_kit_s_store_and_declares_its_commands()
+    {
+        KeepsTheKitFiles("daoris-dev-report", [PluginKitStorage.Library, PluginKitStorage.Test]);
+        var (manifest, problem) = PluginCatalog.ReadAsWritten("daoris-dev-report", Path.Combine(Example("daoris-dev-report"), PluginCatalog.ManifestName));
+        Assert.Null(problem);
+        Assert.Equal(["session/ended"], manifest.Hooks!.Points);
+        Assert.Equal(["report", "inbox"], manifest.Interfaces.Commands.Select(each => each.Name));
+        Assert.All(manifest.Interfaces.Commands, each => Assert.True(each.Tool));
+        Assert.Empty(manifest.Interfaces.Refused);
+        Assert.Equal(["note", "defect", "blocking"], manifest.Interfaces.Commands[0].Args.Single(each => each.Name == "severity").Choices);
+    }
 }

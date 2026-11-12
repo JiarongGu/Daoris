@@ -29,6 +29,7 @@ public static class AsksStateSlice
     [
         "id", "workspace", "sentence", "state", "tier", "asked", "updated", "asker", "note", "links", "attachments", "proposal", "quests",
         "intake", "short", "deletable", "goAheads", "reviewChoices", "reviewProposals", "workflowChoices", "workflowProposals",
+        "throughWords",
     ];
 
     /// <summary>What the service answers of an ask that is never pushed: every word the person gave on it, which a trace reads.</summary>

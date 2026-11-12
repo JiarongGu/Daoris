@@ -212,7 +212,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `Published` or `Closed`, and `Done` derived from its quests. Every session on it is handed its words, and a requirement must
     quote them. A new ask published at once (`--to`) takes `--require "<quote>" "<check>"`, its quotes kept on it as the person's
     `quoted` words before its quest is judged; it and `ask through <id>` take *through words*, the person's asking for the work to
-    be delivered with no press of theirs, the latest standing and `--clear` taking them back. Ask Daoris's press puts on an ask only
+    be delivered with no press of theirs, the latest standing and `--clear` taking them back; the ask's page says the standing words
+    (*Delivered on your words*) with *Take back…*, the person's press. Ask Daoris's press puts on an ask only
     words that stand verbatim, whitespace and case aside, in the person's own messages of the conversation whose delegate key proved
     it; a working session's own press puts none. (D65, D133, D277)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads

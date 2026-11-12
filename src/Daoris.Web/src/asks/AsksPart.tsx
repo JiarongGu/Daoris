@@ -7,6 +7,7 @@ import { sentence } from '../locales/format';
 import { askItem } from '../app/opener';
 import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
+  useTakeBackAskThrough,
 } from '../data/queries';
 import { useScope } from '../data/scope';
 import { namer } from '../settings/accounts/namer';
@@ -136,6 +137,8 @@ export function useAsksPart({
   const chooseReview = useChooseAskReview();
   // An intake's kind proposal applied on the person's press.
   const chooseKind = useChooseAskWorkflow();
+  // The person's take-back of their through words on the ask.
+  const takeBack = useTakeBackAskThrough();
   useErrorNotify(active ? asks.error : null, notify);
 
   const [draft, setDraft] = useState<AskDraft>(EMPTY_DRAFT);
@@ -199,7 +202,7 @@ export function useAsksPart({
   const questsById = Object.fromEntries((quests ?? []).map((quest) => [quest.id, quest]));
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
   const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending
-    || chooseReview.isPending || chooseKind.isPending || reading;
+    || chooseReview.isPending || chooseKind.isPending || takeBack.isPending || reading;
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 
   const onAsk = async () => {
@@ -366,6 +369,10 @@ export function useAsksPart({
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
           // repository that declares no environment) is the service's sentence, said under the press.
           onChooseReview={(choice, words, answered) => chooseReview.mutate({ id: shown.id, choice, words }, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.ask); answered.done(); },
+            onError: (error) => answered.refused(sentence(error)),
+          })}
+          onTakeBackThrough={(answered) => takeBack.mutate({ id: shown.id }, {
             onSuccess: (result) => { notify(result.message); setHeld(result.ask); answered.done(); },
             onError: (error) => answered.refused(sentence(error)),
           })}
