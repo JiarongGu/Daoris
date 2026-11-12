@@ -143,6 +143,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Contains("  2  billing  to go", said, StringComparison.Ordinal);
         Assert.Contains("Setting up — 1 waiting for your review · 2 to go", said, StringComparison.Ordinal);
         Assert.Single(world.Published);
+        Assert.All(world.Thens, then => Assert.Null(then));
     }
 
     [Fact]

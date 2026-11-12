@@ -8,12 +8,13 @@ namespace Daoris.Driver.Host;
 /// </summary>
 internal static class RepositoryConsole
 {
-    private const string Usage =
+    private static readonly string Usage =
         "usage: daoris repository connect [--workspace <name>] [--dry-run]  ·  daoris repository retire [<name>] [--dry-run]\n"
         + "       daoris repository add <folder> [--workspace <name>] [--exclude <glob>]... [--dry-run]\n"
         + "       daoris repository add --system <plugin>/<system> [<name>] [--workspace <name>] [--dry-run]\n"
         + "       daoris repository excludes <folder> [--add <glob>]... [--remove <glob>]...   (none: says them)\n"
-        + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]";
+        + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]\n"
+        + "       " + RepositoryCreateCommand.Usage["usage: ".Length..];
 
     public static async Task<int> RunAsync(string[] args)
     {
@@ -117,6 +118,9 @@ internal static class RepositoryConsole
 
                     return await RepositoryPresses.PressImportAsync(folder, workspace, service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
                 }
+
+                case "create":
+                    return await RepositoryCreateConsole.RunAsync(words, root, service).ConfigureAwait(false);
 
                 default:
                     Console.Error.WriteLine(Usage);

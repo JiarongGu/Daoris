@@ -187,6 +187,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'intake.ask-answered': { values: ['ask', 'quests'] },
   'intake.turn-failed': { values: ['ask'] },
   'intake.asks': { values: ['ask'] },
+  'intake.unowned': { values: ['ask'] },
   'intake.exit': { values: ['ask', 'exit'] },
   'intake.person-answered': { values: ['ask', 'quests'] },
   'intake.person-closed': { values: ['ask'] },

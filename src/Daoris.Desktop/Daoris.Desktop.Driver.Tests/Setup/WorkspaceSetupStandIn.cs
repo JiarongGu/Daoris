@@ -37,6 +37,8 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
     /// <summary>Each ask published: its workspace, its words and its receiver.</summary>
     public List<(string Workspace, string Sentence, string To)> Published { get; } = [];
 
+    public List<SetupThen?> Thens { get; } = [];
+
     /// <summary>What the ask door answers, where it refuses; null publishes an open quest.</summary>
     public AskAnswer? Refuse { get; set; }
 
@@ -138,9 +140,10 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
         Descriptions[Rows.Single(row => row.Repository == repository).Root!] = new(null, ["Node"], null);
     }
 
-    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
+    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct)
     {
         Published.Add((workspace, sentence, to));
+        Thens.Add(then);
         if (Refuse is { } refused) return Task.FromResult(refused);
 
         // Numbered by the asks, never by what the list holds now: a quest deleted would hand its id to the next.

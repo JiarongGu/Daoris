@@ -26,6 +26,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Opinion { get; } = Person("SET_OPINION");
     public static InstanceRoute Helpers { get; } = Person("SET_HELPERS");
     public static InstanceRoute HandOver { get; } = Person("SET_HAND_OVER");
+    public static InstanceRoute Growth { get; } = Person("SET_GROWTH");
     public static InstanceRoute Commits { get; } = Person("SET_COMMITS");
     public static InstanceRoute Keep { get; } = Person("SET_KEEP");
     public static InstanceRoute Role { get; } = Person("SET_ROLE");
@@ -54,6 +55,7 @@ public static class ChoiceRoutes
         ("driver opinion", Opinion, "the second-opinion rule"),
         ("driver helpers", Helpers, "the helpers rule"),
         ("driver handover", HandOver, "the hand-over rule"),
+        ("driver growth", Growth, "the growth switch on opening repositories and rooms, the person's alone"),
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver role set|remove|default|policy|rules …", Role, "a working role's record, choices and policy, or a place's supervisor rules"),

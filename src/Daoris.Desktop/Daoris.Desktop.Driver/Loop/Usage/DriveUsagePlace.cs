@@ -15,6 +15,12 @@ internal static class DriveUsagePlace
               part, the work driving releases and each declaration to accept. --plan writes nothing;
               --apply is your press, and an adoption of more repositories than --at-once asks is paced
               by a workspace plan the loop works.
+          place <repository> --room <path> --purpose "…" (--plan | --apply)
+              a room: a folder of an adopted repository with an AGENTS.md of its own, asked of that
+              repository's own session as one quest carrying the doctrine's room convention, the
+              repository's own declaration and your reason; Daoris writes none of the room. It rides
+              with no other part, and is refused for a path outside the repository, a room already
+              there, a repository not registered, held or not adopted. --apply is your press.
           place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
           place --workspace <name> --pause | --resume | --stop
               adopt a workspace one repository at a time, the ones other work touches first: a press
@@ -117,6 +123,11 @@ internal static class DriveUsagePlace
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.
+          repository create <name> --purpose "…" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work "…"] [--plan]
+              open a new department: its folder beside the workspace's repositories (or under --under), an empty
+              history with one commit as the identity they use, its registration, its drive and its set-up quest,
+              and nothing pushed. --plan says what it would do and writes nothing; a press of the same words goes
+              on from a receipt, and a failure leaves the folder, which retire does not remove.
           role [<id>]  ·  role set|remove|default|policy|rules <id> …
               the role catalogue: a role takes a work in a place, on its choices.
           role brief

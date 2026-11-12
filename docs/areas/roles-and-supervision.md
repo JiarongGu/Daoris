@@ -258,16 +258,32 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person: a route with a view (`PressViews`) judges the press at the ask by the route's own rules, refuses in those words with no
     card, and gives the card what the press means and its command. The views cover the routes Ask Daoris presses: a repository's,
     a session's, a quest's and an ask's acts, an account's and an agent's settings, a place's switches and rules, clean-ups, git
-    identities, the machine's and the browser's settings, a role's change, a plugin's, a history clear, a sync, a place's set-up and
-    a new ask. A settled press no line waits on is said in its conversation. A working session's tier is its repository's access
-    setup, read at the press: unrestricted runs its proved press as its own (rule 52), the rest go on a card naming the session.
-    Ask Daoris has no proposal tool; the room's *What you may do* names the verbs. `sessions archive --ended` stays the terminal's.
-    (D89, D170, D253, D261)
+    identities, the machine's and the browser's settings, a role's change, a plugin's, a history clear, a sync, a place's set-up
+    (a room asked of a repository, `place <repository> --room <path> --purpose "…"`, has a card of its own) and a new ask, and a
+    department opened (`repository create <name> --purpose "…"`, whose view judges as its plan `REGISTRY_CREATE_PLAN` does and gives
+    the card every value, the steps in order and the first lines of each quest it publishes). A settled press no line waits on is said in its
+    conversation; a press that opened a place answers a `PressReceipt`, which the press record keeps in either mode and the windows draw
+    once as a line with go links, *Opened `<name>` in `<workspace>`* (a room's the quest's line alone), under the turn and in *Notifications*.
+    A working session's tier is its repository's access setup, read at the press: unrestricted runs its proved press as its own
+    (rule 52), the rest go on a card naming the session. Ask Daoris has no proposal tool; the room's *What you may do* names the verbs.
+    `sessions archive --ended` stays the terminal's.
+    Which place a request calls for is the room's one table (`HelpRoomGrowth`), asked of the registry's `domain` and the knowledge
+    search and said in the turn: the department that owns the work, by an ask; a room in it, where the part needs instructions or checks
+    of its own; a new repository, where the work is its own deliverable; a folder department, where it wants no history; nothing, for a
+    name, a plan or a throwaway. The earlier row wins and the person's own words go ahead of it. Any agent (Ask Daoris, a lead, a driven
+    session) opens a place through the two presses, its tier deciding as for every press; a refusal is the route's own words, answered at
+    once and never carded; the intake never creates one. The person's growth switch holds both presses per workspace and repository
+    (`mode`, the default, as above; `asked`, a card even in full access, saying so; `off`, a refusal in the route's words, kept in the
+    press record as refused, in either mode), read by the plan the route, the card and the pipe all judge by (`GrowthRules`,
+    `PipeGrowth`, `DelegateGrowth`, a working session's own press included). It is the person's alone, in Settings or `daoris settings
+    growth`: the pipe refuses `SET_GROWTH` to every press that proves a session's key, in every mode, and to a process in an agents' job
+    (`person-alone`), and the room lists it as no verb. (D89, D170, D253, D261, D276)
 57. Restricted mode adds the access the person configures: the checkouts it reads, each read judged at the call; and the families
     of acts it presses with no card, the one shape a grant has: `pause`, `clean-up`, `discard` and `settings`. A granted family
     runs a proved press as the person's own, read at each press; a look asks no grant. An older record's `housekeeping` and
     `settings` lists grant nothing until the home's migration converts them. Its tool calls outside its allow-list are held for the
-    person (agents-and-harnesses 23). No family reaches a role. (D183, D205, D253, D261)
+    person (agents-and-harnesses 23). No family reaches a role, and none reaches a department's creation or a room's ask
+    (`REGISTRY_CREATE`, `PLACE_APPLY`): restricted mode carries a card for them whatever is granted. (D183, D205, D253, D261, D276)
 58. Full access runs its harness's unrestricted mode, keeps `checkout_read` and names each readable checkout and where it is, and a proved press runs at once with no card as the person's own, said once
     on its conversation's console, logged `help.pressed` and kept in this run's memory with what it named (the newest 100, a
     restricted press kept there as asked with its card's state), listed in *Notifications*, a run's step by its act, the step and

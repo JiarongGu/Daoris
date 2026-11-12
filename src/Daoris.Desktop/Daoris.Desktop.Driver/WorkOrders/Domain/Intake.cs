@@ -149,6 +149,14 @@ public static class IntakePrompt
             text.Append("person decides.\n\n");
         }
 
+        // No owner at all: the intake creates nothing (an act with a card, which it has none of), so it says so and the ask is held.
+        text.Append("When no repository owns it at all — no declaration covers the work and no repository's own files fit it, so it\n");
+        text.Append("needs a department or a room that does not exist yet — that is different from not being settled between\n");
+        text.Append("owners. Publish nothing, and end your last message with one line, alone, reading exactly\n");
+        text.Append($"`{IntakeUnowned.Marker} <the work, and why nothing here owns it, in one sentence>`. Daoris holds the ask with\n");
+        text.Append("that sentence for Ask Daoris, which can open a department or a room for it; you never create one, and you\n");
+        text.Append("never send it to the nearest repository for want of an owner.\n\n");
+
         // The browser it is handed, in a block of its own; nothing where none is.
         if (browser is not null) text.Append(browser).Append("\n\n");
 
@@ -196,11 +204,12 @@ public static class IntakeObservation
     /// What the protocol door said when the agent refused the turn itself, or null — the
     /// exit after stdin closes is 0 either way, so this is what tells a cut-off intake from an asking one.
     /// </param>
+    /// <param name="unowned">The reason its last message gave for <i>no department owns this</i> (<see cref="IntakeUnowned.Read"/>), or null.</param>
     /// <remarks>
     /// Each line is a code with its values beside its English; the person's
     /// closing note and the agent's failure are words of their own, never a value.
     /// </remarks>
-    public static SessionConclusion Conclude(int exitCode, int before, AskView? after, string? turnFailed = null)
+    public static SessionConclusion Conclude(int exitCode, int before, AskView? after, string? turnFailed = null, string? unowned = null)
     {
         var exit = exitCode == 0 ? "" : $" (exit {exitCode})";
         if (after is null)
@@ -245,6 +254,19 @@ public static class IntakeObservation
             return SessionConclusion.Of("failed", Noted.Of(
                     PeerNoteCodes.IntakeTurnFailed, $"the agent's turn failed before publishing anything onto ask `#{after.Id}`:", ("ask", after.Id))
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent)));
+        }
+
+        // The same park with its own sentence: no department owns the ask, so it is held for Ask Daoris, which can open one.
+        if (exitCode == 0 && unowned is { Length: > 0 })
+        {
+            return SessionConclusion.Of("awaiting-person", Noted.Of(
+                    PeerNoteCodes.IntakeUnowned,
+                    $"no department owns ask `#{after.Id}`: nothing in this workspace's declarations covers the work. It is held for "
+                    + "Ask Daoris — ask it to open a department or a room for it (`daoris repository create`, or "
+                    + "`daoris place <repository> --room <path>`) — or route it yourself with `daoris ask publish "
+                    + $"{after.Id} --to <repository>`, or end it with `daoris ask close {after.Id} --reason \"…\"`. The intake said:",
+                    ("ask", after.Id))
+                .Then(" ", Noted.Said(unowned, NoteBy.Agent)));
         }
 
         // A clean exit that published nothing is the intake ASKING: the declarations did not settle it

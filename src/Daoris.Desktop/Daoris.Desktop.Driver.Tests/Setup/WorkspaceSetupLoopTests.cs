@@ -92,6 +92,9 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([]);
 
         public Task<PlaceTip> TipAsync(RepoView repository, DriverConfig config, CancellationToken ct) => Task.FromResult(Tip);
+
+        public Task<PlaceRoomRead> RoomAsync(RepoView repository, DriverConfig config, string path, CancellationToken ct) =>
+            throw new NotSupportedException("a workspace's plan asks no room");
     }
 
     [Fact]

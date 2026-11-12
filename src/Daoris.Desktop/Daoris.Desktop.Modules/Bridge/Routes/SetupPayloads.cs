@@ -9,7 +9,7 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed record PlacePlanRead(
     IReadOnlyList<string>? Repositories, string? Repository, string? Preset, bool Opinion = false, bool Look = false, bool Adoption = false,
-    string? Builds = null, bool Drive = false, long? AtOnce = null, long? Pilot = null, bool Said = false);
+    string? Builds = null, bool Drive = false, long? AtOnce = null, long? Pilot = null, bool Said = false, string? Room = null, string? Purpose = null);
 
 /// <summary>One acceptance a place's apply makes.</summary>
 public sealed record PlaceAcceptSent(string? Repository, string? Purpose);
@@ -21,7 +21,7 @@ public sealed record PlaceAcceptSent(string? Repository, string? Purpose);
 public sealed record PlaceApplyPress(
     IReadOnlyList<string>? Repositories, JsonElement? Repository, string? Preset, string? Digest, IReadOnlyList<PlaceAcceptSent>? Accept,
     bool Opinion = false, bool Look = false, bool Adoption = false, string? Builds = null, bool Drive = false, long? AtOnce = null, long? Pilot = null,
-    bool Said = false);
+    bool Said = false, string? Room = null, string? Purpose = null);
 
 /// <summary>The repository a reconcile plans or presses.</summary>
 public sealed record ReconcileAsk(string? Repository);

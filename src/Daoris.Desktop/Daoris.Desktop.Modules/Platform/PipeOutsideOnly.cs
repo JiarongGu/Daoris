@@ -18,6 +18,17 @@ public static class PipeOutsideOnly
 
     private static readonly FrozenSet<string> Routes = new[] { $"{DriverModule.Name}.CHANNEL_JOIN" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The refusal's code for a press no agent makes: one that proves a session's key, or comes from a process in an agents' job.</summary>
+    public const string PersonAlone = "person-alone";
+
+    public const string PersonAloneSentence =
+        "The growth switch is the person's alone: an agent that could turn its own refusal back off would be held by nothing. Change it in Daoris's window (Settings) or from your own terminal. Nothing was changed.";
+
+    private static readonly FrozenSet<string> Alone = new[] { $"{DriverModule.Name}.SET_GROWTH" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Whether the route is the person's alone: refused, in any mode, to a press proving a session's key and to a process in an agents' job.</summary>
+    public static bool IsAlone(string? module, string? route) => Alone.Contains($"{module}.{route}");
+
     /// <summary>
     /// Where <paramref name="module"/>'s <paramref name="route"/> is one of these: the refusal's code for a caller in an agents' job, or
     /// the standing the card's ask says for one the system would not place; neither for a caller outside, or for any other route.

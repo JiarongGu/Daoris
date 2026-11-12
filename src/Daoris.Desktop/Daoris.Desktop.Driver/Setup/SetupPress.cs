@@ -278,7 +278,7 @@ public static class SetupPress
             return new(false, plan.Refusals.Count > 0 ? plan.Refusals[0].Sentence : "nothing to ask.", null, null, []);
         }
 
-        var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, ct).ConfigureAwait(false);
+        var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, plan.Then, ct).ConfigureAwait(false);
         var quest = answer.Ok ? answer.QuestId : null;
         var message = answer.Ok && plan.Alone && Admit(home, plan.Repository, quest) is { } unadmitted ? $"{answer.Message} {unadmitted}" : answer.Message;
         return new(answer.Ok, message, answer.AskId, quest, []);

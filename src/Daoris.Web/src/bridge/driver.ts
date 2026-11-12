@@ -12,6 +12,7 @@ import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
+import type { GrowthValue } from '../settings/repository/Growth';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
@@ -177,6 +178,10 @@ export type DriverState = {
   handOver?: { repository: string; rule: HandOverRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceHandOver?: { workspace: string; rule: HandOverRule }[];
+  /** The growth switch as set, left out where none is set (`mode`); what each repository resolves to is `LINES`' `growth`. */
+  growth?: { repository: string; value: GrowthValue }[];
+  /** And by workspace. */
+  workspaceGrowth?: { workspace: string; value: GrowthValue }[];
   /**
    * The access setups as set: what each repository's sessions start under, full access or the pauses it
    * names — left out where none is set: the pageoffers no access section. What each repository resolves to is `LINES`' `access`.

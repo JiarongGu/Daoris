@@ -45,7 +45,7 @@ internal sealed class SetupStandIn : ISetupWorld
 
     public RepositoryDescription? Describe(string root) => null;
 
-    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
+    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct)
     {
         Published.Add((workspace, sentence, to));
         return Task.FromResult(Answer);

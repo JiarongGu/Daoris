@@ -31,8 +31,8 @@ public interface ISetupWorld
     /// <summary>What its own files say it is, from its checkout; null when they say nothing.</summary>
     RepositoryDescription? Describe(string root);
 
-    /// <summary>An ask at <paramref name="workspace"/> with its receiver named: published at once, as the person's.</summary>
-    Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct);
+    /// <summary>An ask at <paramref name="workspace"/> with its receiver named: published at once, as the person's, with <paramref name="then"/> as its chain's one step to that receiver.</summary>
+    Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct);
 }
 
 /// <summary>What a workspace plan reads beyond the single press's facts, and where its lines go.</summary>

@@ -8,6 +8,7 @@ import { accessToast, isFull, resolveAccess } from '../../settings/repository/Ac
 import { commitToast } from '../../settings/repository/Commits';
 import { helperToast } from '../../settings/repository/Helpers';
 import { handOverToast } from '../../settings/repository/HandOver';
+import { growthToast } from '../../settings/repository/Growth';
 import { opinionToast } from '../../settings/repository/Opinions';
 import { reviewToast } from '../../settings/repository/Reviews';
 import { namer } from '../../settings/accounts/namer';
@@ -15,7 +16,7 @@ import { sayDiscard, sayWithdraw, sweepKey, SweepList } from '../../settings/Swe
 import { SyncSection } from '../../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion,
+  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetGrowth, useSetHandOver, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
@@ -440,6 +441,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
   const setHandOver = useSetHandOver();
+  const setGrowth = useSetGrowth();
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
@@ -500,7 +502,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
         }
       : null,
     busy: setLine.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setGrowth.isPending || setAccess.isPending || setRead.isPending || act.isPending
       || setGitAccess.isPending
       || retire.isPending,
     // The access its repositories' sessions start under: the workspace's over this machine's, resolved on the page from
@@ -595,6 +597,16 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             set: ofWorkspace(state.workspaceHelpers)?.rule,
             onChange: (edit) => setHelpers.mutate({ workspace, ...edit }, {
               onSuccess: () => notify(helperToast(t, workspace, edit)),
+              onError,
+            }),
+          }
+        : null,
+      // Whether an agent's press that opens a repository or a room here runs as the mode says, is asked or is refused; none where the answer lacks it.
+      growth: state && Array.isArray(state.workspaceGrowth)
+        ? {
+            set: ofWorkspace(state.workspaceGrowth)?.value,
+            onChange: (value) => setGrowth.mutate({ workspace, value }, {
+              onSuccess: () => notify(growthToast(t, workspace, value)),
               onError,
             }),
           }

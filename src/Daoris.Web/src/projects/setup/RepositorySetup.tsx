@@ -9,6 +9,7 @@ import { type LandedSetup } from '../../settings/repository/LandedRoute';
 import { type SessionChecksValue } from '../../settings/repository/SessionChecks';
 import { type HelperEdit, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import { type HandOverEdit, type RepositoryHandOver } from '../../settings/repository/HandOver';
+import { type GrowthValue, type RepositoryGrowth } from '../../settings/repository/Growth';
 import { type LandingIntegrate } from '../../settings/repository/IntegratePolicy';
 import { type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
 import { type RepositoryLine } from '../../settings/repository/Lines';
@@ -148,6 +149,9 @@ export type SessionsSetup = {
    */
   handOver?: RepositoryHandOver | null;
   onHandOver?: (edit: HandOverEdit) => void;
+  /** Whether an agent's press that opens a room here runs as the mode says, is asked or is refused, as resolved: the person's alone. */
+  growth?: RepositoryGrowth | null;
+  onGrowth?: (value: GrowthValue) => void;
   /** Its standing answer, the person's words and when they set them; null for none. */
   standing?: { says: string; at?: string | null } | null;
   /** Keep a standing answer, or with null clear it; left out where none is set, and nothing is offered. */

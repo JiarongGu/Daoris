@@ -23,6 +23,7 @@ export * from './helpBeyond';
 export * from './helpReadings';
 export * from './hold';
 export * from './sessions/history';
+export * from './repositories/growth';
 export * from './repositories/lines';
 export * from './log';
 export * from './notices';

@@ -2,6 +2,7 @@ import { COMMIT_DEFAULT, commitSummary } from '../../settings/repository/Commits
 import { type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
 import { HELPER_DEFAULT, helperSummary } from '../../settings/repository/Helpers';
 import { HAND_OVER_DEFAULT, handOverSummary } from '../../settings/repository/HandOver';
+import { GROWTH_DEFAULT, growthSummary } from '../../settings/repository/Growth';
 import { opinionSummary } from '../../settings/repository/Opinions';
 import { reviewSummary } from '../../settings/repository/Reviews';
 import { type TFunction } from 'i18next';
@@ -71,6 +72,8 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   const handOver = sessions?.onHandOver ? sessions.handOver : undefined;
   const handOverRule = handOver?.rule ?? HAND_OVER_DEFAULT;
   const handOverOwn = handOver?.source === 'repository';
+  const growth = sessions?.onGrowth ? sessions.growth : undefined;
+  const growthOwn = growth?.source === 'repository';
   const standing = sessions?.standing ?? null;
   const sessionsParts = sessions && [
     ...(language
@@ -81,6 +84,9 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
     ...(helpers ? [marked(helperSummary(t, helperRule), helpers.source === 'repository' || helpers.source === 'workspace' ? helpers.source : 'daoris')] : []),
     ...(handOver
       ? [marked(handOverSummary(t, handOverRule), handOver.source === 'repository' || handOver.source === 'workspace' ? handOver.source : 'daoris')]
+      : []),
+    ...(growth
+      ? [marked(growthSummary(t, growth.value ?? GROWTH_DEFAULT), growth.source === 'repository' || growth.source === 'workspace' ? growth.source : 'daoris')]
       : []),
     ...(sessions.onStanding
       ? [standing ? t('projects.setup.summary.standing', { count: standing.says.split('\n').length }) : t('projects.setup.summary.noStanding')]
@@ -123,7 +129,7 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
-    sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
+    sessions: languageOwn || helpersOwn || handOverOwn || growthOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0 || Boolean(reach?.checkout?.on),
     // The Workflow folds open for a need alone: a door that asked for one.
     landing: false,

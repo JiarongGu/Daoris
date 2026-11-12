@@ -7,6 +7,7 @@ import type { GitAccessChange, RepositoryGitAccess } from '../../settings/reposi
 import type { CommitChange, RepositoryCommits } from '../../settings/repository/Commits';
 import type { HelperChange, RepositoryHelpers } from '../../settings/repository/Helpers';
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
+import type { RepositoryGrowth } from '../../settings/repository/Growth';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
@@ -41,6 +42,8 @@ export type LinesAnswer = {
   // What an agent's ask to hand its session over does, as the driver resolves it: never null, `default` where
   // nothing is set.
   handOver?: RepositoryHandOver[];
+  // Whether an agent's press that opens a room runs as the mode says, is asked or is refused, as resolved: never null.
+  growth?: RepositoryGrowth[];
   // The access setup each one's sessions start under, every pause with its value and where it is set:
   // never null, `default` where nothing is set.
   access?: RepositoryAccess[];

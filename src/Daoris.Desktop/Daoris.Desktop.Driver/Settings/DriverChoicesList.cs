@@ -71,6 +71,8 @@ internal static class DriverChoicesList
 
         Section("handover");
 
+        Section("growth");
+
         Section("brainstorms");
 
         Section("commits");

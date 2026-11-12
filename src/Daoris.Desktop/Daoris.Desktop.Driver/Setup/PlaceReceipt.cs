@@ -37,7 +37,11 @@ public static class PlaceOperations
     /// <summary>A copy of a shipped default saved in the home (<c>WORKFLOW_SAVE</c>), before the configuration that chooses it.</summary>
     public const string WorkflowSave = "workflow-save";
 
+    public const string Room = "room";
+
     public static string AdoptionOf(string repository) => $"{Adoption}:{repository}";
+
+    public static string RoomOf(string repository) => $"{Room}:{repository}";
 
     public static string WorkflowSaveOf(string workflow) => $"{WorkflowSave}:{workflow}";
 }
@@ -86,6 +90,7 @@ public static class PlaceDigests
         parts.Add(["ask", ask.Preset, Flag(ask.Opinion), Flag(ask.Look), Flag(ask.Adoption), ask.Builds ?? "", Flag(ask.Drive), .. ask.Repositories]);
         // Pacing joins the digest only where it is said, so a plan read without it keeps the digest it had.
         if (ask.AtOnce is not null || ask.Pilot is not null) parts.Add(["pacing", ask.AtOnce?.ToString() ?? "", ask.Pilot?.ToString() ?? ""]);
+        if (ask.Room is not null || ask.Purpose is not null) parts.Add(["room", ask.Room ?? "", ask.Purpose ?? ""]);
         foreach (var row in plan.Repositories)
         {
             parts.Add(["repository", row.Repository, row.Workspace]);

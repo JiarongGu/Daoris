@@ -92,6 +92,7 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
                 Paths = request.Paths ?? [],
                 Requirements = QuestAnswers.RequirementsOf(request.Requirements),
                 Through = request.Through,
+                Then = QuestAnswers.StepsOf(request.Then),
             },
             DateTimeOffset.UtcNow, ct);
         return _answers.Moved(http, outcome);

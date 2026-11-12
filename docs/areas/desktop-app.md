@@ -146,7 +146,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once). Beside the presses waiting, counting toward no
     group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run
     (`HelpPressLine`: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
-    restricted mode's cards apart under *Asked you*; a restart empties it. (from D196, D253)
+    restricted mode's cards apart under *Asked you*; a press that opened a place says what it made under its row, as the
+    conversation does (`PressReceiptLine`); a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). Overview keeps one summary line per group.
@@ -253,7 +254,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     the person presses or something has run, never on a timer. (from D152, D150)
 60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration and Files
     (the files git does not manage there, with the person's rules and permissions); a workspace's are Details, Branches and
-    Workflow. Their setup and rules are the place's, in Agents → Setup. (from D150, D147)
+    Workflow. Their setup and rules are the place's, in Agents → Setup, where each place's sessions fold holds one
+    row, *New repositories and rooms* (`settings/repository/Growth.tsx`, `SET_GROWTH`, `driver.json`'s `growth` and `workspaceGrowth`): whether an agent's
+    press that opens a repository or a room runs as the access mode says, waits for the person's Confirm even in full access, or is refused. A
+    workspace's row is its own value, a repository's its own over its workspace's (`LINES`' `growth` resolves it); the press is the person's alone, never
+    an agent's in any mode (roles-and-supervision 56). (from D150, D147, D276)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map (modules in their folders; a cycle one card in
     the nearest folder holding it), drawn on the canvas. Each zoom tier says less about the same cards, the chosen and the

@@ -247,6 +247,17 @@ public sealed record DriverConfig(
         new Dictionary<string, HandOverRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Whether an agent's press that opens a room in each repository runs as the access mode says, is asked even in full access, or is refused
+    /// (<see cref="GrowthKey"/>), the person's alone to set. Resolved by <see cref="GrowthRules.Resolve"/>, edited by <see cref="GrowthRules.Apply"/>; absent is <c>mode</c>.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Growth { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's growth switch: it governs a department opened in it and a room in any of its repositories that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, string> WorkspaceGrowth { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The person's brainstorm policy on this machine: who may start one, the agents it runs and its minutes. Resolved by
     /// <see cref="BrainstormRules.Resolve"/>, edited by <see cref="BrainstormRules.Apply"/>; null is the default.
     /// </summary>

@@ -42,7 +42,7 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
 
     public RepositoryDescription? Describe(string root) => _press.Describe(root);
 
-    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct) => _press.PublishAsync(workspace, sentence, to, ct);
+    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct) => _press.PublishAsync(workspace, sentence, to, then, ct);
 
     public Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct) => service.StrikesAsync(ct);
 

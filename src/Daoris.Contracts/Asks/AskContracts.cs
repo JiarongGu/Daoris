@@ -26,7 +26,8 @@ public sealed record PostAsk(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
     string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
-    IReadOnlyList<string>? Paths = null, IReadOnlyList<QuestRequirementWire>? Requirements = null, string? Through = null) : IRoute<AskActionResponse>
+    IReadOnlyList<string>? Paths = null, IReadOnlyList<QuestRequirementWire>? Requirements = null, string? Through = null,
+    IReadOnlyList<QuestStepWire?>? Then = null) : IRoute<AskActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/asks";

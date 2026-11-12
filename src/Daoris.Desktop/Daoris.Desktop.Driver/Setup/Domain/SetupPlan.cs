@@ -70,6 +70,8 @@ public sealed record SetupPlan(string Repository)
     /// <summary>The quest's body (<see cref="SetupBrief"/>).</summary>
     public string? Body { get; init; }
 
+    public SetupThen? Then { get; init; }
+
     /// <summary>The agent this machine's driven sessions start on, which would carry it.</summary>
     public string? Adapter { get; init; }
 

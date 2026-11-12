@@ -28,6 +28,7 @@ the run's stages and the quest log's operations in their order.
 | `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
 | `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
 | `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
+| `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
 | `Departments/` | A place's manifests and turns (`Manifest/`), a folder turn's review (`Review/`), a system's plans (`Systems/`), `PlaceHomeMarker` |
 | `Service/Quests/`, `Service/Sessions/`, `Service/Asks/` | `QuestStore` and `QuestExchange` (every door's judgement, the log's operations, `QuestLog`, `QuestTransitions`), `SessionStore` and `SessionLedger` (opens, moves, says, the tree lock and the place lease), `AskStore` and `AskDesk`, each a root wiring parts of its own |
 
@@ -219,7 +220,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     it; a working session's own press puts none. (D65, D133, D277, D282)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
-    parked one ends when the person answers the ask. An ask asks each receiver once: a publish to a receiver holding an open, taken
+    parked one ends when the person answers the ask. Where no declaration covers the work and no repository's own files fit it, the
+    intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
+    (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
+    that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
+    creates nothing; a verdict past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a receiver holding an open, taken
     or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
     never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
@@ -262,6 +267,45 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a
     tree no run owns is the look's tidy's and the person's. (D228)
 
+### Departments and rooms
+
+51. `daoris repository create <name> --purpose "…"` (`REGISTRY_CREATE`, a person's press, no grantable family) makes a department and
+    ends before any content. Its plan (`REGISTRY_CREATE_PLAN`, open; the press's own ground and its view's one judge) reads the
+    registry, the workspace's commit identities and the folder, and writes nothing: the folder goes under the parent most of the
+    workspace's registered git roots share (`--under` where none can be read), the line is the one most of them land on, the author the
+    identity they commit as; a name registered in any workspace in any case, a folder that exists and is not empty, an unknown workspace,
+    an unusable line, no identity (naming `daoris git use`) and no `git` each refuse it with nothing written. The apply keeps a receipt
+    before its first effect (`data/place-receipts/create/<digest>.json`) and goes in order: the folder; `git init` with one empty commit and
+    no remote; the unadopted registration; drive on with hold off, left off with the step and the next press named where the inherited
+    workflow holds a `push` or a `pull-request` and the place has no remote; the set-up quest. A failure leaves the folder and the receipt
+    and deletes nothing; a re-press whose folder holds exactly the receipt's empty commit goes on from the first operation not done.
+    `--kind folder` registers a folder with no history, identity or set-up quest, so `--work` is refused with it. No `daoris.json`, brief or
+    code is written and nothing is pushed. The answer carries the `PressReceipt` it made, which Ask Daoris's press record keeps
+    (roles-and-supervision 56). The growth switch (`GrowthRules`: `growth` and `workspaceGrowth` in `driver.json`, set only by the person with
+    `daoris settings growth <workspace> [--repository <name>] mode|asked|off`) is read by the plan: `off` refuses it (`growth-off`), and the
+    plan carries the value, so `asked` puts the press on a card even in full access.
+52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one
+    repository with its receiver named, as the person's, carrying `SetupPlan.Then`, a title and body the service chains behind the quest
+    as its one step to the same repository, or none. `place --adoption`, a workspace tick, `repository create` and `place --room` publish
+    through it; only a creation sets `Then`: the person's `--work`, a quest titled by its first line whose body is the request, the purpose
+    and `{parent}`, published by the service when the set-up closes done and not at all when it is declined. The ask door's `then` is
+    judged as any chain is, and refused `BadChain` where it names no receiver. The step goes to a place whose row may still read
+    unadopted: the planner starts it over the protocol door, sits it over the pipe door (`NotAdopted`, a wait) until the driver's follow
+    registers the adoption, and sits it `NotDrivable` where the drive was left off (rule 9).
+53. A room is asked, never made: `daoris place <repository> --room <path> --purpose "…"` is a part of `PLACE_APPLY` (`PlaceAsk.Room`,
+    `Purpose`), so a place's set-up stays one door, and its whole is one quest to that repository's own session; Daoris writes none of a
+    room's text. It rides with no delivery, opinion, look, adoption, driving or pace (`room-alone`), asks one repository (`room-one`) with a
+    one-line reason (`room-purpose`), and refuses, every refusal said at once and nothing written, a path that is not a folder inside the
+    repository (`room-path`: empty, rooted, with `..` or a character Windows refuses, inside `.git`, `.agents` or `.claude`, through a link
+    or submodule, or onto a file), a room already there (`room-exists`: `daoris.json`'s `rooms`, a folder with its own `AGENTS.md`, or a
+    lanes room, read as git objects at the line's tip by `IPlaceWorld.RoomAsync`), a repository not registered, not adopted, without a
+    checkout, held or with a set-up open, and a line that cannot be read. Its one change is `ROOM_PRESS`, so `--plan` and the receipt say
+    it with no case of their own; the card is its own kind (`place-room`); its receipt is the quest's one `room` operation, found by the
+    plan's key on a retry. The quest's body (`RoomBrief`) names the repository, the path, the reason, the canon's `rooms-and-classes`
+    convention and the repository's own declaration as its line holds it, and asks only for `daoris --version`, `sync` and `check`
+    (`SetupPressRules.RoomRules`). The growth switch for the repository (its own value, else its workspace's) is read by the same plan:
+    `off` refuses the room (`growth-off`).
+
 ## Where a change goes
 
 New behaviour goes in a unit of its own in its subdomain (D231). `Loop/Driver.cs`, `Service/Quests/Quests.cs`,
@@ -284,7 +328,7 @@ are roots that wire and grow by a one-line door at most.
 | rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
 | a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |
-| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs` | `IntakeTests`, `IntakePromptGoldenTests` |
+| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs` | `IntakeTests`, `IntakePromptGoldenTests`, `IntakeUnownedTests`, `IntakeUnownedRunTests` |
 
 Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`, service tests under
 `src/Daoris.Service/Daoris.Service.Tests/`. Gates: `driver` (with `StructureTests`), `censuses`, `driver-process` and

@@ -30,7 +30,7 @@ public sealed class SetupWorldTests
         var service = new StandIn("""{"message":"Asked as `#a1b2c3` in `work`.","ask":{"id":"a1b2c3"},"quest":{"id":"q1"}}""");
         using var client = service.Client();
 
-        var answer = await new SetupWorld(client, "unused-home").PublishAsync("work", "Set up this repository for every agent (2026-10-01)\n\nbody", "reports", CancellationToken.None);
+        var answer = await new SetupWorld(client, "unused-home").PublishAsync("work", "Set up this repository for every agent (2026-10-01)\n\nbody", "reports", null, CancellationToken.None);
 
         Assert.True(answer.Ok);
         Assert.Equal(("a1b2c3", "q1"), (answer.AskId, answer.QuestId));
@@ -42,6 +42,25 @@ public sealed class SetupWorldTests
         Assert.StartsWith("Set up this repository for every agent (2026-10-01)\n", sent.RootElement.GetProperty("sentence").GetString());
         Assert.Equal(0, sent.RootElement.GetProperty("attachments").GetArrayLength());
         Assert.Equal(0, sent.RootElement.GetProperty("links").GetArrayLength());
+        Assert.False(sent.RootElement.TryGetProperty("then", out _));
+    }
+
+    /// <summary>A set-up asked with a step behind it carries that one step on the same ask, to the same repository, as given.</summary>
+    [Fact]
+    public async Task A_press_with_a_step_asks_once_carrying_it_to_the_same_repository()
+    {
+        var service = new StandIn("""{"message":"Asked as `#a1b2c3` in `work`.","ask":{"id":"a1b2c3"},"quest":{"id":"q1"}}""");
+        using var client = service.Client();
+
+        var answer = await new SetupWorld(client, "unused-home").PublishAsync(
+            "work", "Set up this repository for every agent (2026-10-01)\n\nbody", "reports", new SetupThen("Build the report", "After {parent}: build it."), CancellationToken.None);
+
+        Assert.True(answer.Ok);
+        using var sent = JsonDocument.Parse(service.Bodies.Single());
+        Assert.Equal("reports", sent.RootElement.GetProperty("to").GetString());
+        var step = Assert.Single(sent.RootElement.GetProperty("then").EnumerateArray());
+        Assert.Equal(("reports", "Build the report", "After {parent}: build it."), (
+            step.GetProperty("to").GetString(), step.GetProperty("title").GetString(), step.GetProperty("body").GetString()));
     }
 
     private sealed class StandIn(string answer) : HttpMessageHandler

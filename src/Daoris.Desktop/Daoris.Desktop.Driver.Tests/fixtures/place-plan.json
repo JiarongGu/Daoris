@@ -89,6 +89,7 @@
       "lines": [
         "place: name `--plan` to read the plan, or `--apply` to apply it.",
         "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)",
         "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
         "       daoris place --workspace <name> --pause | --resume | --stop"
       ]
@@ -112,6 +113,7 @@
       "lines": [
         "place: `opinions` is not something `--with` takes — `opinion` or `look`; adoption is `--adoption`.",
         "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)",
         "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
         "       daoris place --workspace <name> --pause | --resume | --stop"
       ]

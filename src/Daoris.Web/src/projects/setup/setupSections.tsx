@@ -4,6 +4,7 @@ import { AccessRows, accessSummary } from '../../settings/repository/Access';
 import type { RepositoryAcross } from '../../settings/repository/Across';
 import { HelperField, helperRowSays, type RepositoryHelpers, type HelperRule } from '../../settings/repository/Helpers';
 import { HandOverField, handOverRowSays, type RepositoryHandOver, type HandOverRule } from '../../settings/repository/HandOver';
+import { GrowthSetting } from '../../settings/repository/Growth';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
 import { Segmented, SettingRow } from '../../design/ui';
 import { RepositoryRules } from './RepositoryRules';
@@ -180,6 +181,17 @@ export function setupSections({ work, workParts, sections, lineRow, landingRow, 
                   onChange={(edit) => sessions.onHandOver?.(edit)}
                 />
               )}
+            />
+          )}
+          {sessions.growth && sessions.onGrowth && (
+            <GrowthSetting
+              name={repository}
+              twin={t('settings.growth.twin.repository', { workspace: sessions.growth.workspace, repository })}
+              value={sessions.growth.value}
+              source={sessions.growth.source}
+              workspace={sessions.growth.workspace}
+              busy={busy}
+              onChange={sessions.onGrowth}
             />
           )}
           {sessions.onStanding && (

@@ -155,7 +155,7 @@ public static class AskDoorViews
         this ServiceClient service, string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
         string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null,
-        AskCarried? carried = null)
+        AskCarried? carried = null, IReadOnlyList<QuestStepWire?>? then = null)
     {
         var chosen = workflow is { } composed && (composed.Kind ?? composed.Workflow) is not null ? workflow : null;
         return await service.AnsweredAsync(
@@ -167,7 +167,8 @@ public static class AskDoorViews
                 WorkflowWords: chosen is not null && !string.IsNullOrWhiteSpace(chosen.Words) ? chosen.Words.Trim() : null,
                 Short: string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim(),
                 Requirements: carried is { Requirements.Count: > 0 } ? carried.Requirements : null,
-                Through: carried?.Through),
+                Through: carried?.Through,
+                Then: then is { Count: > 0 } ? then : null),
             ct).ConfigureAwait(false);
     }
 

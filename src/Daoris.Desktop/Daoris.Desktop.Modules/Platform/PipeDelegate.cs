@@ -80,6 +80,9 @@ public sealed class PipeDelegate(InstancePipe pipe)
 
     public const string TerminalPressedEvent = "terminal.pressed";
 
+    /// <summary>The machine log's event for a press Ask Daoris or a session made that the person's growth switch refused, with its words.</summary>
+    public const string RefusedEvent = "help.refused";
+
     /// <summary>The refusal's words, which say nothing of which check failed.</summary>
     public const string UnprovedSentence =
         "This terminal did not prove the key Daoris handed its session, for this connection and this press. Nothing was asked or done.";
@@ -106,10 +109,29 @@ public sealed class PipeDelegate(InstancePipe pipe)
             HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: session.PlaceOf),
-            null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true),
+            null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository),
             null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository),
             _ => new(PipeDelegateTier.Asked, asker),
         };
+    }
+
+    /// <summary>A press that would have run unasked, put on the person's card by the growth switch, naming the asker its restricted press names; none for a terminal's.</summary>
+    internal PipeDelegateJudgement? Asking(PipeDelegateJudgement covered, PipeDelegateClaim? claim, PipeConnection connection)
+    {
+        if (covered.Terminal || claim is null) return null;
+        var asker = connection.Asker with { Session = claim.Session };
+        return covered.Own
+            ? new(PipeDelegateTier.Asked, asker, claim.Session, Repository: covered.Repository)
+            : new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: covered.PlaceOf);
+    }
+
+    /// <summary>A press the growth switch refused before it ran, logged with its words and, for Ask Daoris's, kept as refused (<see cref="HelpPressRecord.Barred"/>).</summary>
+    internal void Refused(PipeDelegateJudgement judgement, IpcRequest request, string words)
+    {
+        pipe.Log.Info(RefusedEvent, ("session", judgement.Session ?? ""), ("route", $"{request.Module}.{request.Type}"), ("why", words), ("door", PipeDoor.Terminal));
+        if (judgement.Own || judgement.Terminal) return;
+        pipe.StandingConfirmation.HelpPresses.Barred(request, judgement.Session ?? "", words);
+        pipe.TellDriverState();
     }
 
     /// <summary>A press run with no card, in the machine log: Ask Daoris's as the person's, kept for the window's list; a terminal's as the person's, kept in the terminal tier's record (<see cref="PipeTerminalTier.Kept"/>); a working session's as its own.</summary>
@@ -138,6 +160,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         if (judgement.PlaceOf is { } placeOf) _ = PlaceAsync(placeOf, request, kept);
         _ = answer.ContinueWith(done =>
         {
+            if (done.IsCompletedSuccessfully && PressReceipts.Of(done.Result) is { } receipt) presses.Received(kept, receipt);
             presses.Ended(kept, done.IsCompletedSuccessfully && HelpPressRecord.Succeeded(done.Result));
             pipe.TellDriverState();
         }, TaskScheduler.Default);
