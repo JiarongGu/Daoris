@@ -5,10 +5,9 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one Roslyn analysis of the driver's own tree, shared by every structure case over it, over the one compilation of the driver's
-/// sources the declarations' censuses read too (<see cref="DesktopCompilations.Of"/>): the compile is the gate's cost, and two classes
-/// that each made their own paid it twice. The <c>Layer/</c> folders name Lyntai's assembly, which a build without Lyntai's local
-/// build does not compile, so the analysis walks none of them and names none of their types.
+/// The one Roslyn analysis of the driver's own tree, shared by every structure case, over the compilation the declarations' censuses
+/// read too (<see cref="DesktopCompilations.Of"/>): two classes that each compiled paid the gate's cost twice. The <c>Layer/</c>
+/// folders need Lyntai's local build, so the analysis walks none of them and names none of their types.
 /// </summary>
 internal static class DriverTree
 {

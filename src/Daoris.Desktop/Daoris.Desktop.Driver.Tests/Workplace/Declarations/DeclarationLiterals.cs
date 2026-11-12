@@ -43,7 +43,6 @@ internal static class DeclarationLiterals
             LocalDeclarationStatementSyntax local when local.IsConst => local.Declaration.Variables.Select(each => each.Identifier.ValueText),
             _ => [],
         }).ToHashSet(StringComparer.Ordinal);
-        // Each tree is read on its own thread, through the model the other censuses bind it in; the hits keep the trees' order.
         return [.. trees.AsParallel().AsOrdered().Select(tree => In(compilation, tree, consts)).ToList().SelectMany(each => each).Distinct()];
     }
 

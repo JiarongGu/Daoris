@@ -102,10 +102,7 @@ internal sealed class StructureAnalysis
     /// <summary>Each top-level type a source declares, by name.</summary>
     public IReadOnlySet<string> DeclaredTypes { get; private set; } = new HashSet<string>();
 
-    /// <summary>
-    /// The compiler's errors over the sources, by id, with a count and one example each: what the binding could not resolve. An error
-    /// in a source of the compilation the analysis does not walk is that source's, and no error of these.
-    /// </summary>
+    /// <summary>The compiler's errors over the walked sources, by id, with a count and one example each: what the binding could not resolve.</summary>
     public IReadOnlyDictionary<string, (int Count, string Example)> Errors()
     {
         var found = new SortedDictionary<string, (int Count, string Example)>(StringComparer.Ordinal);
@@ -135,11 +132,7 @@ internal sealed class StructureAnalysis
         return Over(compilation, trees, "");
     }
 
-    /// <summary>
-    /// The analysis of <paramref name="walked"/>, trees of a compilation made elsewhere, each named by its path under
-    /// <paramref name="folder"/> (a prefix of each tree's path, <c>/</c>-ended, or empty). A type only a tree left unwalked declares
-    /// is no edge's, as though that tree were not compiled.
-    /// </summary>
+    /// <summary>The analysis of <paramref name="walked"/> trees of a shared compilation, named under <paramref name="folder"/>; an unwalked tree's types are no edge's.</summary>
     internal static StructureAnalysis Over(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> walked, string folder)
     {
         var analysis = new StructureAnalysis(compilation, walked, folder);
