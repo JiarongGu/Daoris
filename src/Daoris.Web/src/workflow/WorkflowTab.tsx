@@ -21,11 +21,6 @@ export type WorkflowTabProps = {
   /** The read is refused, in the driver's sentence that says why. */
   refusal?: string | null;
   doors?: WorkflowDoors;
-  /**
-   * The person's *Accept the gates* on the start node's landed route: the declaration at the line's tip, accepted
-   * by its blob. None, and the start offers no press.
-   */
-  onAcceptGates?: (answered: Answered) => void;
   /** An acceptance is on its way. */
   accepting?: boolean;
   /** The person's *Verify…* of a branch or a commit under the accepted gates; none, and the start offers no press. */
@@ -87,7 +82,7 @@ export function WorkflowHead({ page, name, current }: { page: 'repository' | 'wo
  * editor below it, whose *Use here* chooses a saved version for this page's place.
  */
 export function WorkflowTab({
-  page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, verifications, editor,
+  page, name, current, reading = false, refusal = null, doors, onVerify, verifications, editor,
 }: WorkflowTabProps & {
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose page it is. */
@@ -114,8 +109,6 @@ export function WorkflowTab({
           start={current.start}
           page={page}
           scope={{ repository: current.repository ?? (page === 'repository' ? name : null), workspace: current.workspace }}
-          onAccept={onAcceptGates}
-          accepting={accepting}
           onVerify={onVerify}
         />
       )}

@@ -11,4 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="../Daoris.Devkit.Core/Daoris.Devkit.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Daoris.Service\Daoris.Service.Tests\ScratchTemp.cs" Link="ScratchTemp.cs" />
+    <Compile Include="..\..\Daoris.Service\Daoris.Service.Tests\ScratchTempTests.cs" Link="ScratchTempTests.cs" />
+  </ItemGroup>
 </Project>

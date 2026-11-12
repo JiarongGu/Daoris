@@ -44,6 +44,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // A session's page holds its answer, its review, its gate, its helper's and hand-over's yes and no, its held call and answer.
   parked: 'sessions',
   review: 'sessions',
+  left: 'sessions',
   opinion: 'sessions',
   helper: 'sessions',
   'hand-over': 'sessions',

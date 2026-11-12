@@ -14,11 +14,21 @@ import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { release } from './release.mjs';
+import { wayWords, within } from './browser.mjs';
 import { work } from './work.mjs';
 import { run } from './commands.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
+
+/** Words ending with the way the calls went (`Way: the browser.`), inside the 300 characters an evidence message holds. */
+const signed = (text) => {
+  const way = wayWords();
+  if (!way) return text;
+  return `${text.length + way.length + 1 <= 300 ? text : `${text.slice(0, 299 - way.length - 1)}…`} ${way}`;
+};
+
+const told = (answer) => (answer?.evidence ? { ...answer, evidence: { ...answer.evidence, message: signed(answer.evidence.message ?? '') } } : answer);
 
 const RECEIPT = 'azure-devops-pull-request/receipt@1';
 const PULL_REQUEST = 'azure-devops-pull-request/pull-request@1';
@@ -80,6 +90,13 @@ function failed(code, message) {
 
 /** `work/state`: a landed branch's pull request, found by its address or its source branch, read and said in Daoris's words. */
 async function state(frame) {
+  return within(async () => {
+    const read = await stateOf(frame);
+    return typeof read.message === 'string' ? { ...read, message: signed(read.message) } : read;
+  });
+}
+
+async function stateOf(frame) {
   const repo = azureOf(frame.origin) ?? azureOf(originOf(frame.root));
   if (!repo) return { state: 'unknown', pullRequest: frame.pullRequest ?? null, message: 'origin names no Azure DevOps repository.' };
   let id = idOf(frame.pullRequest);
@@ -121,25 +138,25 @@ const kit = work({
   send,
   say,
   act: async (attempt) => {
-    if (stepOf(attempt) === 'pull-request') return pullRequest(attempt);
-    if (stepOf(attempt) === 'release') return release(attempt, unitOf(attempt), say);
+    if (stepOf(attempt) === 'pull-request') return within(async () => told(await pullRequest(attempt)));
+    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say)));
     return failed('unknown-step', `no step ${attempt.step}`);
   },
   // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.
-  check: async (attempt) => {
+  check: (attempt) => within(async () => {
     if (stepOf(attempt) === 'release') return { state: 'not-started' };
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
     try {
       const repo = located(unit);
       const active = (await fromBranch(repo, unit.branch)).find((pr) => pr.status === 'active');
-      return active ? { state: 'done', outcome: await reached(attempt, repo, active,`pull request ${active.pullRequestId} is active from \`${unit.branch}\`.`) } : { state: 'not-started' };
+      return active ? { state: 'done', outcome: told(await reached(attempt, repo, active, `pull request ${active.pullRequestId} is active from \`${unit.branch}\`.`)) } : { state: 'not-started' };
     } catch (error) {
       if (!(error instanceof Refusal) || !TRANSIENT.includes(error.code)) return null;
       say(`${error.message}; attempt ${attempt.invocation} is asked again later.`);
       return { state: 'running' };
     }
-  },
+  }),
   remove: async () => ({ disposition: 'already-gone' }),
 });
 

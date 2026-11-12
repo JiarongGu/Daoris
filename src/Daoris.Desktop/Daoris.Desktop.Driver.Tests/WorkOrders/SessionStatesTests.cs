@@ -32,6 +32,12 @@ public sealed class SessionStatesTests
     private static readonly QuestView Taken = new("q1", "game", "engine", "The work of #q1", "A body.", "Taken");
     private static readonly QuestView Done = Taken with { Status = "Done" };
 
+    /// <summary>A done that departed from the person's second requirement, accepted or not: the departure stays on it.</summary>
+    private static readonly QuestView DoneLeft = Done with
+    {
+        Answers = [new(1, "met", null, null), new(2, null, "the part is held", "their words")],
+    };
+
     private static Consideration Verdict(StartVerdict verdict) => new(Taken, verdict, "the planner's sentence");
 
     private static SessionLook Look(
@@ -72,6 +78,22 @@ public sealed class SessionStatesTests
         ["a start held for a sign-in needs you"] =
             new(Look(Record("s1", "failed"), Verdict(StartVerdict.Blocked), accounts: [new("claude-code", "Claude Code", null, "default", null, true, "no account is signed in.") { Quests = ["q1"] }]),
                 SessionGroup.NeedsYou, SessionReason.SignIn),
+
+        // Needs you: a done is unfinished where its own record says part of the work is left, accepted or not.
+        ["a done that departed from a requirement is unfinished, not done"] =
+            new(Look(Record("s1", "completed"), quest: DoneLeft), SessionGroup.NeedsYou, SessionReason.Left),
+        ["an accepted departure is as unfinished as one held for your yes"] =
+            new(Look(Record("s1", "completed"), quest: DoneLeft with { Held = false }), SessionGroup.NeedsYou, SessionReason.Left),
+        ["a done whose answers are all met is done"] =
+            new(Look(Record("s1", "completed"), quest: Done with { Answers = [new(1, "met", null, null)] }), SessionGroup.Done, "completed"),
+        ["an unfinished done you archived is set aside by you"] =
+            new(Look(Record("s1", "completed"), quest: DoneLeft, archived: true), SessionGroup.NeedsYou, SessionReason.Left, SessionGroup.Archived),
+        ["a run whose step failed after its quest's done is unfinished"] =
+            new(Look(Record("s1", "completed"), quest: Done, waits: [Wait(PersonWaits.Left)]), SessionGroup.NeedsYou, PersonWaits.Left),
+        ["a run's failed step you archived is set aside by you"] =
+            new(Look(Record("s1", "completed"), quest: Done, waits: [Wait(PersonWaits.Left)], archived: true), SessionGroup.NeedsYou, PersonWaits.Left, SessionGroup.Archived),
+        ["a run's other wait still needs you though archived"] =
+            new(Look(Record("s1", "completed"), quest: Done, waits: [Wait(PersonWaits.Left), Wait(PersonWaits.GoAhead)], archived: true), SessionGroup.NeedsYou, PersonWaits.GoAhead),
 
         // Failed: nothing goes on from it without the person.
         ["a parked quest's last session failed"] = new(Look(Record("s1", "failed"), Verdict(StartVerdict.Exhausted)), SessionGroup.Failed, ShownState.Parked),
@@ -123,6 +145,19 @@ public sealed class SessionStatesTests
         var row = SessionGroups.Read(expected.Look).Single();
 
         Assert.Equal((expected.State, expected.Reason, expected.Group ?? expected.State), (row.State, row.Reason, row.Group));
+    }
+
+    [Fact]
+    public void Only_the_newest_session_of_an_unfinished_quest_is_unfinished_and_an_earlier_one_stays_done()
+    {
+        var older = Record("s1", "completed");
+        older["created"] = T0.AddHours(-1).ToString("O");
+        var look = SessionLook.From(new JsonArray(older, Record("s2", "completed")).ToJsonString(), [DoneLeft], [], _ => 0);
+
+        var rows = SessionGroups.Read(look).ToDictionary(row => row.Session, row => (row.State, row.Reason));
+
+        Assert.Equal((SessionGroup.NeedsYou, SessionReason.Left), rows["s2"]);
+        Assert.Equal((SessionGroup.Done, "completed"), rows["s1"]);
     }
 
     [Fact]

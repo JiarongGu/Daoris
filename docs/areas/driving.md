@@ -209,13 +209,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### Asks and intakes
 
 43. An ask is a sentence entered at a workspace, kept verbatim with every later word of the person's. It is `Open`, `Proposed`,
-    `Published` or `Closed`, and `Done` derived from its quests. Every session on it is handed its words, and a requirement must
+    `Published` or `Closed`, and `Done` derived from its quests, none of them held or left (`Quest.Left`: a done that departed from
+    a requirement, accepted or not). Every session on it is handed its words, and a requirement must
     quote them. A new ask published at once (`--to`) takes `--require "<quote>" "<check>"`, its quotes kept on it as the person's
     `quoted` words before its quest is judged; it and `ask through <id>` take *through words*, the person's asking for the work to
     be delivered with no press of theirs, the latest standing and `--clear` taking them back; the ask's page says the standing words
     (*Delivered on your words*) with *Take back…*, the person's press. Ask Daoris's press puts on an ask only
     words that stand verbatim, whitespace and case aside, in the person's own messages of the conversation whose delegate key proved
-    it; a working session's own press puts none. (D65, D133, D277)
+    it; a working session's own press puts none. (D65, D133, D277, D282)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
     parked one ends when the person answers the ask. An ask asks each receiver once: a publish to a receiver holding an open, taken
@@ -225,12 +226,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards only what
     nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
-    order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in), failed
-    (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done (completed, stopped,
-    declined, stood down). Each row carries `state` and the finer `reason`; *Archived* folds a done or failed session alone. A line
-    is in the first of needs you, working and pending any part is in, else as its newest part ended. A tree holding commits no
-    run waits on is offered on its session, bar one running. `daoris session list --group` takes the five and `archived`.
-    (D132, D273)
+    order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
+    unfinished), failed (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done
+    (completed, stopped, declined, stood down). A done whose own record says work is left is never done: the quest's newest session
+    is needs you with reason `left` where its answers departed from a requirement, accepted or not (`QuestLeft`), or where its run
+    holds a step failed and kept for the person after the done (`PersonWaits.Left`). Each row carries `state` and the finer
+    `reason`; *Archived* folds a done or failed session alone, and a left one is the person's to set aside. Each
+    row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first
+    of needs you, working and pending any part is in, needs you and working where a co-worker serving a part is, else as its
+    newest part ended, naming the part or co-worker it is read from. An entry is placed by its parts' line, and a co-worker is in
+    the entry of the part it serves (`coworkers`), never an entry of its own; the list, the head and the terminal say the line's
+    state, and any part opens as its line's newest part, at that part. A tree holding commits no run waits on is offered on its
+    session, bar one running. `daoris session list --group` takes the five and `archived`. (D132, D273, D280, D282)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from` forward, at most
     256 hops; a cycle or the bound reads as no head. (D167, D212)
 

@@ -104,6 +104,7 @@ export function publishedCounts(items: readonly PublishedItem[]): PublishedCount
       if (each.shown === 'Held') counts.waits += 1;
       else if (each.shown === 'Open') counts.open += 1;
       else if (each.shown === 'Taken' || each.shown === 'Submitted') counts.taken += 1;
+      else if (each.shown === 'Unfinished') counts.waits += 1;
       else if (each.shown === 'Done') counts.done += 1;
       else if (each.shown === 'Declined') counts.declined += 1;
     }

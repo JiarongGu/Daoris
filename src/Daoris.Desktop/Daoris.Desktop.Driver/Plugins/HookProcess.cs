@@ -65,7 +65,7 @@ public sealed class HookProcess : IHookChannel
     /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
     /// </remarks>
     /// <exception cref="DriverException">No hooks, or the tool its first word names cannot run as the person chose.</exception>
-    public static ProcessStartInfo StartInfo(PluginEntry plugin, string home)
+    public static ProcessStartInfo StartInfo(PluginEntry plugin, string home, string? browser = null)
     {
         var hooks = plugin.Manifest.Hooks
             ?? throw new DriverException($"plugin `{plugin.Manifest.Id}` declares no hooks.");
@@ -107,6 +107,8 @@ public sealed class HookProcess : IHookChannel
         // The plugin's own private storage goes to its own processes alone; a folder the desktop inherited never does.
         info.Environment.Remove(PluginPrivate.Variable);
         if (PluginPrivate.Handed(home, plugin) is { } storage) info.Environment[PluginPrivate.Variable] = storage;
+        info.Environment.Remove(PluginBrowser.Variable);
+        if (browser is not null && hooks.Browser) info.Environment[PluginBrowser.Variable] = browser;
         // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
         // is held to the shim rule about its arguments rather than started bare and not found.
         info.FileName = HarnessActions.WindowsShim(
@@ -129,7 +131,7 @@ public sealed class HookProcess : IHookChannel
     public static async Task<HookProcess> StartAsync(
         PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null, TimeProvider? clock = null)
     {
-        var info = StartInfo(plugin, home);
+        var info = StartInfo(plugin, home, await PluginBrowser.EndpointAsync(plugin, ct).ConfigureAwait(false));
         var hooks = plugin.Manifest.Hooks!;
         try
         {

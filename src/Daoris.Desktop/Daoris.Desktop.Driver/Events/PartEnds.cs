@@ -68,6 +68,7 @@ public static class PartEnds
         ["update.closed"] = "stopped-daoris",
         ["ended.limit-words-wait"] = "limited",
         ["ended.done"] = "completed",
+        ["ended.done-left"] = "completed",
         ["ended.submitted"] = "completed",
         ["ended.declined"] = "completed",
     }.ToFrozenDictionary(StringComparer.Ordinal);

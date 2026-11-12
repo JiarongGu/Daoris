@@ -6,18 +6,24 @@ namespace Daoris.Driver;
 /// </summary>
 public static class PersonWaitReader
 {
-    /// <summary>Every step of a run not ended that waits on the person, by run and then by the graph's order.</summary>
+    /// <summary>Every step of a run not ended that waits on the person, by run and then by the graph's order, and each step left failed.</summary>
     /// <param name="record">A unit's node record, or null where it does not read.</param>
     public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record)
     {
         var waits = new List<PersonWait>();
-        foreach (var run in runs.Where(run => run.Ended is null && run.Line is null).OrderBy(run => run.Run, StringComparer.Ordinal))
+        foreach (var run in runs.Where(run => run.Line is null).OrderBy(run => run.Run, StringComparer.Ordinal))
         {
-            if (run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
+            if (run.Ended is { Outcome: RunOutcomes.Failed, Node: { Length: > 0 } failed } ended)
+            {
+                waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At));
+                continue;
+            }
+
+            if (run.Ended is not null || run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);
-                if (WhyOf(node, status) is not { } why || kept.Pending.Any(word => word.Node == node.Id)) continue;
+                if ((WhyOf(node, status) ?? LeftOf(node, status, kept)) is not { } why || kept.Pending.Any(word => word.Node == node.Id)) continue;
                 waits.Add(new PersonWait(run.Run, node.Id, why, run.Binding.Repository, status.Since));
             }
         }
@@ -31,6 +37,14 @@ public static class PersonWaitReader
         var files = new NodeRecordFiles(home);
         return Of(new GraphRuns(files).Read(), files.Read);
     }
+
+    /// <summary>A step failed and kept for the person, no word on it yet: the declined request has a row of its own.</summary>
+    private static string? LeftOf(NodeDeclaration node, NodeStatus status, NodeRecord record) =>
+        status.State == NodeStates.Failed && !(node.Kind == NodeKinds.Request && status.Code == RequestOptions.DeclinedCode)
+        && record.Attempts.LastOrDefault(attempt => attempt.Node == node.Id && attempt.Attempt == status.Attempt) is { Resolution: null } attempt
+        && WorkPerformer.KeptFailure(record, attempt)
+            ? PersonWaits.Left
+            : null;
 
     internal static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
     {

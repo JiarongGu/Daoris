@@ -39,7 +39,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
-   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192)
+   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
+   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
+   repository (the look says the checks changed in one sentence), by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
+   --accept|--withdraw [--plan]`) in restricted mode, shown as checks added, removed and changed by name with their commands
+   (`DeclarationChange`), the row ending at the press. (D283)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A
    choice is refused (`place-kind`), nothing written, where a department it reaches cannot run one of its steps by its place's
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a
@@ -87,10 +91,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     target's tip, once read, rebinds only while nothing fed is active or reached. A node only a skipped producer feeds is skipped
     with it. An unbound step after a review, its tip unread, binds the commit the review accepted. A step's commits stay on
     `refs/daoris/steps/<run>/<node>/<attempt>` until the run ends settled. (D190, D259, D260)
-18. The runtime is the record's one writer: a door keeps the person's word (skip, stop, send, ask again, go on, try again, accept,
-    changes, done, approve, reject) and the next pass applies it; no run ends while a word waits. A failed plugin step offers
-    *Try again* on the run's step (`daoris workflow try-again <run> <node>`, `PluginStepRetry`): the table's failed to ready by the
-    person, a new attempt its plugin is sent; a step of another kind refuses it `not-plugin-step`. A run ends when its graph's end settles or
+18. The runtime is the record's one writer: a door keeps the person's word (skip, stop, send, ask again, go on, accept,
+    changes, done, approve, reject) and the next pass applies it; no run ends while a word waits. A failed plugin step's run step
+    holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
+    `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
+    failed to ready by the person, a new attempt its plugin is sent. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step watches a branch the line holds whole (`on-line`) or that is
     gone (`branch-gone`); it is not governed again until its chain comes back. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
@@ -183,7 +188,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
     (`tidy-merged`) and a `push` no `branch` landing leads to (`land-tail`). (D241, D245, D247)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
-    goal, the run's place and commit, the landing's evidence, the step's outcomes and schema) is kept under
+    goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
     `workflows/agent-steps/<invocation>.json`, and the step's session starts off the pass: staffed as the place's builds, a chat on
     no quest at the run's checkout holding no tree, lease or cap, read-only, with only its plugin's `daoris-plugins` server and
     `step_answer`, refusing the person's words (*Workflow step* in Sessions). `step_answer` keeps one answer, `reached` with a
@@ -283,7 +288,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
 55. Every step of a live run that only the person moves is read from the bound runs, never stored: an active `review`, `human` or
-    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`. Sessions places the run's newest session in Needs you with
+    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
+    alone). Sessions places the run's newest session in Needs you with
     its `waits`, opening the run's view, and *What needs you* lists each with its presses.
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record

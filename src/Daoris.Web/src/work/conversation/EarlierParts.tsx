@@ -1,8 +1,8 @@
-import { type RefObject, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import { SessionConversation } from './SessionConversation';
-import { drawnOf } from './line';
+import { drawnOf, EARLIER_AT_MOST } from './line';
 
 /** One earlier part of a line, as its record says it: what its conversation is read by, and how it began. */
 export type EarlierPart = {
@@ -30,24 +30,40 @@ export function ShowEarlier({ count, onPress }: { count: number; onPress: () => 
 }
 
 /**
- * **The parts a session's page draws above the attended one**: the parts it
- * continues by `from`, oldest first, each its own conversation, read-only and read with its own record's liveness. At most the three
- * nearest are drawn; above them one press draws up to three more, and says how many.
+ * **The parts a line's session draws above its newest one**: the line's earlier parts by its membership, oldest first, each its own
+ * conversation under its boundary, read-only and read with its own record's liveness. At most the three nearest are drawn; above
+ * them one press draws up to three more, and says how many.
  *
  * @remarks
  * Every part is a `SessionConversation` in its earlier mode, which owns neither the region's scroll nor any fact of the frame, so the
- * attended part below alone does. The host keys this by the attended part: attending another starts the count again, and an earlier
- * part attended draws its own ancestry, so the parts after it are not drawn.
+ * newest part below alone does. Opening an earlier part opens the line's session at it (`at`): drawn whatever the count, and
+ * brought into view. The host keys this by the line and the part opened, so another starts the count again.
  */
-export function EarlierParts({ line, scroller }: { line: readonly EarlierPart[]; scroller: RefObject<HTMLElement | null> }) {
-  const [pressed, setPressed] = useState(0);
+export function EarlierParts({ line, at = null, scroller }: {
+  line: readonly EarlierPart[];
+  /** The earlier part the person opened, which the session opens at; null opens at its newest part. */
+  at?: string | null;
+  scroller: RefObject<HTMLElement | null>;
+}) {
+  const from = at ? line.findIndex((part) => part.id === at) : -1;
+  const [pressed, setPressed] = useState(from < 0 ? 0 : Math.max(0, Math.ceil((line.length - from) / EARLIER_AT_MOST) - 1));
+  const opened = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (from >= 0) opened.current?.scrollIntoView?.({ block: 'start' });
+  }, [at, from]);
   const { drawn, more } = drawnOf(line.map((part) => part.id), pressed);
   const shown = line.filter((part) => drawn.includes(part.id));
   return (
     <>
       {more > 0 && <ShowEarlier count={more} onPress={() => setPressed((was) => was + 1)} />}
       {shown.map((part) => (
-        <div key={part.id} data-part={part.id} className="mb-2 min-w-0">
+        <div
+          key={part.id}
+          ref={part.id === at ? opened : undefined}
+          data-part={part.id}
+          data-opened={part.id === at ? '' : undefined}
+          className="mb-2 min-w-0 scroll-mt-12"
+        >
           <SessionConversation
             mode="earlier"
             session={part.id}

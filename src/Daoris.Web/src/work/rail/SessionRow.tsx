@@ -18,6 +18,7 @@ import { heavyLine } from '../HeavySlotLine';
 import { notStartedLine } from '../actors';
 import type { PartSpent } from '../entries';
 import { spentLine } from '../head/partsLife';
+import { type LineSaid, lineWords } from '../lineState';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention.
@@ -92,9 +93,11 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 }
 
 export function SessionRow({
-  session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, place, archived = false,
+  session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, line = null, place, archived = false,
   selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait,
 }: {
+  /** Its line's state where another part or a co-worker decides it (`lineSaid`): its mark is that, said first on its line. */
+  line?: LineSaid | null;
   /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
   spent?: PartSpent | null;
   /**
@@ -185,7 +188,7 @@ export function SessionRow({
   const landed = where?.landed && (where.treeGone || where.landed.state === 'standing') ? where.landed : null;
   const tree = landed || where?.treeGone ? null : ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
-  const shown = shownOf(session, grouping, taking);
+  const shown = line?.shown ?? shownOf(session, grouping, taking);
   const placed = placedFact(grouping, shown);
   // The rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
   // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
@@ -205,6 +208,7 @@ export function SessionRow({
   // group is about, since a cut line keeps its start.
   const meta = [
     place ?? null,
+    line ? lineWords(t, line) : null,
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     // A line holding several quests: this row's session's own, so a duplicate or a sibling's is told apart.
@@ -311,7 +315,7 @@ export function SessionRow({
 
 /** The reasons the reader gives (`SessionReason`) that a row says in a line of their own. */
 const REASON_LINES: ReadonlySet<string> = new Set([
-  'question', 'policy-held', 'unclosed', 'steward-stop', 'sign-in', 'transient', 'carried-on', 'opinion', 'elsewhere',
+  'question', 'policy-held', 'unclosed', 'steward-stop', 'sign-in', 'transient', 'carried-on', 'opinion', 'elsewhere', 'left',
 ]);
 
 /**

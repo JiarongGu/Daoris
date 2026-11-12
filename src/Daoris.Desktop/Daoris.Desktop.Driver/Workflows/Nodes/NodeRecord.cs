@@ -19,8 +19,7 @@ public static class AttemptStates
 
     /// <summary>
     /// Nothing establishes it by itself: reconciliation answered <c>unknown</c>, the step declares neither <c>idempotent</c> nor
-    /// <c>reconcile</c>, or its outcome did not bind. The person sees it, and no new attempt is made by itself.
-    /// </summary>
+    /// <c>reconcile</c>, or its outcome did not bind. The person sees it, and no new attempt is made by itself.</summary>
     public const string Held = "held";
 
     /// <summary>Every state an attempt may be in: a record holding another does not read, since none of the performer's
@@ -221,9 +220,6 @@ public static class NodeWordActs
     /// <summary>A declined request gone on without, with the person's words: a failed request passed over as a skip is.</summary>
     public const string GoOn = "go-on";
 
-    /// <summary>A failed plugin step tried again, as a new attempt under the next number: the table's failed to ready by the person.</summary>
-    public const string TryAgain = "try-again";
-
     /// <summary>
     /// The person's Accept of the work: a <c>review</c> reached on their word at the binding it stands on, kept by the landing's
     /// press.
@@ -259,7 +255,7 @@ public static class NodeWordActs
 
     public static readonly IReadOnlyList<string> Choices = ReturnChoices.All;
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, TryAgain, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
 }
 
 /// <summary>

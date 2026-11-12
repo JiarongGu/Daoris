@@ -4,7 +4,7 @@ import { Pill, QUEST_TONE } from '../design/ui';
 import { shownStatus } from './records';
 
 /** What a quest's status is read from: its own state, its submission in a closure graph, and the hold on it. */
-export type QuestFacts = Pick<Quest, 'status' | 'submission' | 'hold'>;
+export type QuestFacts = Pick<Quest, 'status' | 'submission' | 'hold'> & Partial<Pick<Quest, 'answers'>>;
 
 /**
  * A quest's status where a list or a line draws it: *submitted* for a closure graph's quest whose agent made
@@ -20,7 +20,7 @@ export function QuestStatus({ quest }: { quest: QuestFacts }) {
   const shown = shownStatus(quest);
   return (
     <>
-      <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${shown}`)}>{t(`status.${shown}`)}</Pill>
+      <Pill tone={shown === 'Unfinished' ? 'open' : QUEST_TONE[quest.status]} title={t(`statusHint.${shown}`)}>{t(`status.${shown}`)}</Pill>
       {quest.hold === 'source-reopened' && <Pill tone="open" title={t('quests.card.reopenedHint')}>{t('quests.card.reopened')}</Pill>}
     </>
   );

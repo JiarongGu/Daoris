@@ -2,7 +2,7 @@
 
 Taken 2026-11-11 from inside a driven Claude Code session (the protocol door, `claude-code-acp` 0.84.0, harness
 through the Agent SDK 0.3.284, account home under Daoris's data folder, tree `s-40bdca6b`, main `8aebffc592`).
-D253 point 7 says a session keeps every ability its harness has; the census (`2026-11-10-agent-free-census.md`)
+D253 point 7 says a session keeps every ability its harness has; the census (`archive/2026-11-10-agent-free-census.md`)
 lists what a start narrows. This document checks the lifts and the "narrows nothing" rows from inside the session
 that the lifts are for. Paths are written `<account home>` (the session's `CLAUDE_CONFIG_DIR`), `<person's home>`
 (their own `~/.claude` and `~/.claude.json`), `<spawn>` (Daoris's per-session spawn folder) and `<main checkout>`.

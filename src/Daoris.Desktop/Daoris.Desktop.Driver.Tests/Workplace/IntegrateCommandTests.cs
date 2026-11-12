@@ -88,6 +88,35 @@ public sealed class IntegrateCommandTests
         Assert.Equal("feature/a", IntegrateCommand.Read(["engine", "--plan", "feature/a"], out _)!.Plan);
     }
 
+    /// <summary>The terminal's door for a declaration: <c>--accept</c> and <c>--withdraw</c>, each with <c>--plan</c> alone to write nothing.</summary>
+    [Fact]
+    public void A_declaration_is_accepted_or_withdrawn_with_a_plan_that_writes_nothing()
+    {
+        Assert.Equal(("accept", false), (IntegrateCommand.Read(["engine", "--accept"], out _)!.Act, IntegrateCommand.Read(["engine", "--accept"], out _)!.PlanOnly));
+        Assert.Equal(("withdraw", true), (IntegrateCommand.Read(["engine", "--withdraw", "--plan"], out _)!.Act, IntegrateCommand.Read(["engine", "--withdraw", "--plan"], out _)!.PlanOnly));
+        Assert.Null(IntegrateCommand.Read(["engine", "--accept", "main"], out var problem));
+        Assert.Contains("--plan", problem);
+        Assert.Contains("--accept [--plan] | --withdraw [--plan]", IntegrateCommand.Usage);
+    }
+
+    /// <summary>The change is said in plain words from the route's answer: checks by name with their commands, and no blob id.</summary>
+    [Fact]
+    public void The_change_is_said_as_checks_added_removed_and_changed_with_no_blob_id()
+    {
+        var answer = System.Text.Json.JsonDocument.Parse("""
+            { "start": { "integration": { "state": "changed", "gates": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "tip": { "line": "main", "commit": "c", "gates": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+              "change": { "added": [ { "name": "comments", "run": "node gate.mjs" } ], "removed": [], "changed": [ { "name": "cli", "run": "npm test", "was": "npm run verify" } ], "other": [] } } } }
+            """).RootElement;
+
+        var (blob, waits, lines) = IntegrateGatesCommand.Read(answer, "engine");
+
+        Assert.True(waits);
+        Assert.Equal("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", blob);
+        Assert.Equal(
+            ["integrate: `engine`'s checks on main changed since you accepted them:", "  added `comments`: node gate.mjs", "  changed `cli`: npm test (was: npm run verify)"], lines);
+    }
+
     [Fact]
     public void An_empty_look_says_nothing_is_asked_and_an_act_is_left_to_the_window()
     {

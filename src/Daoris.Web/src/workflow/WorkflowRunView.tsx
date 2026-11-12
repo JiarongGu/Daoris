@@ -17,7 +17,8 @@ import { bindingProblemSaid } from './place/effective';
 import { whySaid } from './routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
-import { CheckHeld } from './CheckHeld';
+import { CheckHeld } from './wait/CheckHeld';
+import { FailedStepHeld } from './wait/FailedStepHeld';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
@@ -225,7 +226,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
-      {step.node === 'check' && <CheckHeld step={step} onHeld={onHeld} />}
+      {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}

@@ -20,6 +20,7 @@
   "note.ended.answered-unfinished": "It went on with #{{awaits}} answered, and ended with the quest still taken (exit {{exit}}).",
   "note.ended.carried-unfinished": "It carried the quest on, and ended with it still taken (exit {{exit}}).",
   "note.ended.done": "The quest reached done.",
+  "note.ended.done-left": "The quest reached done, but it departed from {{left}} of its requirements: part of the work is left.",
   "note.ended.declined": "The session declined; its reason is on the quest.",
   "note.ended.stood-down": "It exited cleanly with the quest taken: someone else has it.",
   "note.ended.source-reopened": "It stopped with its quest still taken, because you reopened the work of quest #{{quest}} it grew from; it goes on in the same tree once you go on with it on the new work.",

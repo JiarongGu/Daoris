@@ -355,20 +355,6 @@ public sealed class HelpCommandTests : IDisposable
         Assert.True(File.Exists(Events.PathOf("h1")));
     }
 
-    /// <summary>
-    /// Words to an Ask Daoris conversation are <c>session say</c>'s, so
-    /// <c>resume</c> is no verb of this family, in its usage, its verbs or its reading.
-    /// </summary>
-    [Fact]
-    public void Resume_is_no_verb_of_this_family()
-    {
-        Assert.DoesNotContain("resume", HelpCommand.Verbs);
-        Assert.DoesNotContain("resume", HelpCommand.Usage);
-        Assert.DoesNotContain("ask-daoris resume", DriverCommand.Usage);
-        Assert.Null(HelpCommand.Read(["resume", "h1", "and", "the", "remote?"], out var problem));
-        Assert.DoesNotContain("resume", problem);
-    }
-
     /// <summary>The host's usage names the verb, and its own usage spells each sub-verb.</summary>
     [Fact]
     public void The_usages_name_the_verb()

@@ -63,7 +63,7 @@ of everything it handed, section by section.
 | `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `BriefLine.cs` (its input records), `BriefReading.cs` (the line read into turns), `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
-| `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
+| `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Events/Domain/LineKeys.cs` (below Context, which reads it too), `Course/Domain/LineCounts.cs`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
 | `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
@@ -258,7 +258,9 @@ of everything it handed, section by section.
     and a tool call the reply has been inside for two minutes is said above the box with how long it has run and *Stop* beside it
     (`LongCallLine`), a word that ends nothing. Every conversation's opening is held to a bound a phase (`ChatOpening`, 60 s): the
     plugins' servers past it are left out, said, and the opening goes on; the steps to the spawn, and the harness's open of its
-    conversation (`TransportProtocol.OpenBound`), where the connector Daoris's work needs comes up, fail the start past it, said
+    conversation (`TransportProtocol.OpenBound`), where the connector Daoris's work needs comes up, fail the start past it, and the native
+    door's harness, given no word while a conversation is opened ahead, fails it past the bound from the first word written to its first
+    reading (`NativeOpening`), said
     as *Ask Daoris could not start: … did not come up*, its process ended, its record ending on that note, and its words kept for the
     next send, which, where no conversation of it is kept, starts it afresh as a refused start's does (`PriorSession.NotUp`); the person's stop
     reaches an opening with no process yet (`SessionProcesses.Openings`) and ends it as their stop. It presses Daoris's verbs, and the person

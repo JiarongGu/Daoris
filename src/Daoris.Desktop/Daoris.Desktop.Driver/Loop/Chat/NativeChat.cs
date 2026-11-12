@@ -25,6 +25,8 @@ internal sealed class NativeChat : ITurnedChat
     /// </summary>
     public Func<ChatMessage, IReadOnlyList<SessionEvent>?>? Shown { get; init; }
 
+    public Action? Written { get; init; }
+
     /// <param name="input">The run's one queue of words, which writes them and keeps them until the harness names the conversation.</param>
     /// <param name="wentOn">Told once the words it goes on with are on stdin.</param>
     public NativeChat(
@@ -72,6 +74,7 @@ internal sealed class NativeChat : ITurnedChat
                 var delivery = await input.SayAsync(new DoorWord(ids, line, Written: () =>
                 {
                     sent();
+                    Written?.Invoke();
                     if (message.GoesOn is not null) wentOn?.Invoke();
                 }), CancellationToken.None).ConfigureAwait(false);
                 if (delivery == Delivery.Refused)

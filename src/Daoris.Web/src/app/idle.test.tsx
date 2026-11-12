@@ -3,10 +3,9 @@ import { act, cleanup, render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// An idle window asks the shell for next to nothing: the installed Daoris used almost two cores with nobody pressing
-// anything. The whole window over a mocked shell and a fake clock, the way `sessionsBadge.test.tsx` holds it, counting every
-// route and service read over a minute. The page's own clocks are what this holds; what the driver tells it (a tick, a change)
-// is the shell's to send only when something moved (`TickLinesTests`).
+// An idle window asks the shell for next to nothing, since a page that polls spends cores with nobody pressing anything: the
+// whole window over a mocked shell and a fake clock, as `sessionsBadge.test.tsx` holds it, counting every route and service read
+// over a minute. The page's own clocks are held here; a tick or a change is the shell's to send when something moved (`TickLinesTests`).
 
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -14,16 +13,7 @@ const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', async () => {
-  const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
-  return {
-    ...actual,
-    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
-    // The newest handler for each event: what the shell's pump would deliver to.
-    useShenoraEvent: (_module: string, type: string, handler: (payload: unknown) => void) => { heard.set(type, handler); },
-    useWindowMaximized: () => false,
-  };
-});
+vi.mock('@shenora/react', async () => (await import('../test/doubles/appShell')).appShellMock(invoke, { notifyReady, holds: false, heard }));
 
 import '../locales/i18n';
 import { App } from './App';

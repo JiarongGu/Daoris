@@ -32,7 +32,9 @@ export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
     builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, files: {}, changes: [],
+    session: 'out', lapses: 0, signInPage: false, renews: true, navigated: null,
   };
+  api.navigated = (url) => { if (api.renews && url.includes('/_apis/connectionData')) api.session = 'in'; };
   const { pulls, calls } = api;
   const reads = new Map();
   const answer = (request, url, text) => {
@@ -112,9 +114,15 @@ export async function standIn() {
     request.on('end', () => {
       const url = new URL(request.url, 'http://stand-in');
       const basic = request.headers.authorization === `Basic ${Buffer.from(`:${TOKEN}`).toString('base64')}`;
-      calls.push({ method: request.method, path: url.pathname, query: url.search, basic, body: text ? JSON.parse(text) : null });
+      const page = request.headers.cookie === 'stand-in-session=1' && request.headers['x-tfs-fedauthredirect'] === 'Suppress';
+      calls.push({ method: request.method, path: url.pathname, query: url.search, basic, page, body: text ? JSON.parse(text) : null });
       const say = (status, json) => { response.writeHead(status, { 'content-type': 'application/json' }); response.end(JSON.stringify(json)); };
-      if (!basic) return say(401, { message: 'TF400813: not authorized' });
+      if (page && api.lapses > 0) {
+        api.lapses -= 1;
+        if (api.signInPage) { response.writeHead(200, { 'content-type': 'text/html' }); return response.end('<html>Sign in</html>'); }
+        return say(401, { message: 'TF400813: not authorized' });
+      }
+      if (!basic && !page) return say(401, { message: 'TF400813: not authorized' });
       if (api.status) return say(api.status, { message: 'the stand-in is not answering' });
       const key = `${request.method} ${url.pathname}`;
       reads.set(key, (reads.get(key) ?? 0) + 1);

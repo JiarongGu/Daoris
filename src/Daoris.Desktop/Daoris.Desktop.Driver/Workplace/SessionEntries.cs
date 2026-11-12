@@ -61,8 +61,8 @@ public sealed record EntryPart(string Session, string? Quest, string Shown, stri
 /// <param name="Key">The service's key, <c>&lt;origin&gt;/&lt;repository&gt;</c>, read as an opaque string.</param>
 /// <param name="Origin">The text before the key's first <c>/</c>: <c>ask:&lt;id&gt;</c>, <c>quest:&lt;id&gt;</c>, <c>session:&lt;id&gt;</c>.</param>
 /// <param name="Repository">The text after it: where the line ran, or <c>intake</c> for an ask's intake.</param>
-/// <param name="Group">The first of needs you, working and pending any part is in, else the state its newest part ended in.</param>
-/// <param name="Leading">The part whose state put it there: the newest of that group's.</param>
+/// <param name="Group">The first of needs you, working and pending any part's line is in (<see cref="LineStanding"/>), else the state its newest part's line ended in.</param>
+/// <param name="Leading">The part whose line's state put it there: the newest of that group's.</param>
 /// <param name="Parts">Its parts, oldest first, so the newest is last.</param>
 public sealed record SessionEntry(string Key, string Origin, string Repository, string Group, string Leading, IReadOnlyList<EntryPart> Parts)
 {
@@ -71,6 +71,9 @@ public sealed record SessionEntry(string Key, string Origin, string Repository, 
     /// sibling quests, whose lines none continues, and where the service named none.
     /// </summary>
     public string? Head { get; init; }
+
+    /// <summary>The records serving its parts (<see cref="EntryCoworker"/>), oldest first: drawn inside it, never listed as entries of their own.</summary>
+    public IReadOnlyList<EntryCoworker> Coworkers { get; init; } = [];
 
     /// <summary>The part a row opens on: the leading one where a part needs the person, works or is pending, else the head.</summary>
     public string Opens => Group is SessionGroup.NeedsYou or SessionGroup.Working or SessionGroup.Pending ? Leading : Head ?? Leading;

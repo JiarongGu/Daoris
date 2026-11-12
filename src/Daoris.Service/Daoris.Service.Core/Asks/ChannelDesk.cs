@@ -495,7 +495,7 @@ public sealed class ChannelDesk(
             var code = quest.Status switch
             {
                 QuestStatus.Taken => "taken",
-                QuestStatus.Done when quest.Held => "awaiting",
+                QuestStatus.Done when quest.Held || quest.Left => "awaiting",
                 QuestStatus.Done => "done",
                 QuestStatus.Declined => "declined",
                 _ => null,

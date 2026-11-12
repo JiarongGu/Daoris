@@ -306,6 +306,7 @@ internal sealed class ChatRun(
         // hold a conversation at all.
         ProtocolChat? chat = null;
         NativeChat? native = null;
+        NativeOpening? nativeOpening = null;
         var mapper = agent.StructuredOutput();
         // The turn's end last judged by its account's usage curve: told under its turns' own lock, in order.
         DateTimeOffset? judged = null;
@@ -408,6 +409,15 @@ internal sealed class ChatRun(
         else if (mapper is not null)
         {
             // Turns are only visible where the wire says where one ends. A text-only pipe takes each line at once, as it always did.
+            // The harness gets no words while the conversation is opened ahead, so its bound runs from the first word written; past it the
+            // process ends with the opening's reason, which the watch concludes the record with.
+            nativeOpening = new NativeOpening(
+                OpeningBound, () => ChatOpening.NotUp(help, $"`{agent.Name}`", OpeningBound), said =>
+                {
+                    Context.Output?.Append(sessionId, $"— {said.Note}");
+                    Context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts });
+                    processes.Stop(sessionId, reason: said);
+                });
             native = new NativeChat(
                 agent, run!.Input, e => Context.Record(sessionId, e), Changed,
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
@@ -417,6 +427,7 @@ internal sealed class ChatRun(
                 })
             {
                 Shown = said => Context.TakeShown(sessionId, said),
+                Written = nativeOpening.Begin,
             };
             native.Turns.Closing = () => Context.Closing;
             native.Turns.Unsent = count => closing.Unsent(sessionId, count);
@@ -487,7 +498,7 @@ internal sealed class ChatRun(
 
         var watch = watching.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Working = working }, actorRun, actorLog,
+            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Working = working, Opening = nativeOpening }, actorRun, actorLog,
             // The native door's failed result read for the account's limit, concluded at its turn's end as a protocol conversation's refused
             // turn is: the account cools, its cooling line stands before the turn's end, and that end moves it to the next account.
             // And an open's refused model kept as the account's refusal before its re-ask walks on.

@@ -75,8 +75,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     an adopted repository by its own `.mcp.json` only where its servers inherit its environment (`Adoption.Drives`). An `npx`
     server starts as node and its package's script, installed once into `cache/toolchain/<package>/<version>`; one that cannot
     start is not handed (`server.refused`). A server driving Daoris's browser runs under `keeper/server-keeper.mjs`, restarted
-    past 512 MB with no call in flight, since Playwright MCP's memory grows with every request; a call naming a `ref` from before
-    the restart gets a fresh snapshot. The keeper lists and calls only the tools the server's plugin declares (its reads and
+    past 512 MB with no call in flight, since Playwright MCP's memory grows with every request. The session's tabs are in a browser
+    context of its own that closes with the server, so the new one is sent to the page the session's newest answer named, and a
+    call naming an element reference from before the restart (`target`, `ref`) gets a fresh snapshot. The keeper lists and calls only the tools the server's plugin declares (its reads and
     writes), answering a call to another without reaching the server, and ends a call past two minutes, said in the conversation
     and cancelled at the server; every mode alike, full access included.
 14. Plugin skills are `SkillSource` values laid out by the door's provider (`ISkillLayout`; Claude Code copies them per session
@@ -235,8 +236,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`
     and the service stores' renames (`SessionColumnNames` and its kin), deleted with nocompat1's steps; a plugin's `session.ended`
     frame's `adapter`, renamed with the work-event grammar's next version; a machine-log line's `adapter`, until its file ages out.
-    An older remote host's `adapter` reads as the door `unknown`. `OldSeamNamesCensusTests` and `StoredOldNamesCensusTests` hold
-    the rest. (D232)
+    An older remote host's `adapter` reads as the door `unknown`. `StoredOldNamesCensusTests` holds the rest. (D232)
 
 ## Where a change goes
 

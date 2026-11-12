@@ -6,6 +6,7 @@
     "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj": "the service's HTTP tests' project file",
     "src/Daoris.Service/Daoris.Service.Tests/GlobalUsings.cs": "a global using of the service's tests",
     "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj": "the service's tests' project file",
+    "src/Daoris.Service/Daoris.Service.Tests/ScratchTemp.cs": "the service's, the HTTP host's and the devkit's tests' module initializer: every test's temporary folder is the checkout's scratch",
     "src/Daoris.Devkit/Daoris.Devkit.Tests/GlobalUsings.cs": "a global using of the devkit's tests",
     "src/Daoris.Devkit/Daoris.Devkit.Tests/Daoris.Devkit.Tests.csproj": "the devkit's tests' project file",
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GlobalUsings.cs": "a global using of the driver's tests, every half",

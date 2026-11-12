@@ -215,7 +215,7 @@ function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null })
  * A molecule: the answers arrive as props, and every press goes out.
  */
 export function PlaceWorkflowView({
-  name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
+  name, page = 'repository', current, reading = false, refusal = null, doors, accepting = false, onVerify, editor,
   view, onView, onAcceptIntegration, landing, onOpenSection, held = null, onHold,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
@@ -332,10 +332,10 @@ export function PlaceWorkflowView({
       body: (
         <PlaceGates
           bare
+          repository={page === 'repository' ? name : ''}
           landed={start.landed}
           integration={start.integration ?? null}
           busy={accepting}
-          onAcceptLanded={onAcceptGates && start.landed.workflow !== 'current' ? onAcceptGates : undefined}
           onAcceptIntegration={onAcceptIntegration}
         />
       ),
@@ -487,7 +487,7 @@ export function PlaceWorkflowView({
           />
         )}
         {landed && start && (
-          <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} apart />
+          <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} />
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
         {!wide && drawn && <div ref={setSlot} className="min-w-0" />}

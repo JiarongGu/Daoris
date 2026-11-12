@@ -51,8 +51,8 @@ const asked = (api, fragment) => api.calls.filter((call) => call.path.includes(f
 
 test('a build taken by a CD-triggered definition, an untriggered one and a disabled one whose only stage is manual is released by the one that deploys', async (t) => {
   const api = await place({
-    definitions: [{ id: 53, name: 'Dev-LumachainReportApi', on: ['dev'] }, { id: 54, name: 'QA-LumachainReportApi' }, { id: 55, name: 'Prod-LumachainReportApi' },
-      { id: 174, name: 'Disabled - ReportAPI', on: ['dev'] }],
+    definitions: [{ id: 53, name: 'Dev-NorthwindPortalApi', on: ['dev'] }, { id: 54, name: 'QA-NorthwindPortalApi' }, { id: 55, name: 'Prod-NorthwindPortalApi' },
+      { id: 174, name: 'Disabled - PortalAPI', on: ['dev'] }],
     made: [{ id: 90, of: 53, environments: [stage(11, 'WebApp-DEV', 'inProgress')] }, { id: 91, of: 174, environments: [manual(21, 'Manual')] }],
   });
   api.onRead = (method, path, n) => {
@@ -62,8 +62,8 @@ test('a build taken by a CD-triggered definition, an untriggered one and a disab
   const { step } = await released(t, api);
 
   assert.deepEqual([step.params.state, step.params.evidence.ref], ['reached', 'azure-devops-pull-request/release@1:i-1']);
-  assert.match(step.params.evidence.message, /Release-90 of Dev-LumachainReportApi from build 20261110\.41 \(cccccccc\): WebApp-DEV succeeded/);
-  assert.match(step.params.evidence.message, /Disabled - ReportAPI/);
+  assert.match(step.params.evidence.message, /Release-90 of Dev-NorthwindPortalApi from build 20261110\.41 \(cccccccc\): WebApp-DEV succeeded/);
+  assert.match(step.params.evidence.message, /Disabled - PortalAPI/);
   assert.equal(api.calls.some((call) => call.method === 'PATCH'), false);
 });
 
@@ -81,22 +81,22 @@ test('a build taken by a dev, a QA and a Prod definition is released by the one 
 
 test('a branch with a slash is taken by the definition whose trigger names it', async (t) => {
   const api = await place({
-    branch: 'globalplatform/identityservice',
-    definitions: [{ id: 6, name: 'Dev-LumachainIdentity', on: ['globalplatform/identityservice'] }, { id: 11, name: 'Prod-LumachainIdentity' }, { id: 17, name: 'QA-LumachainIdentity' }],
+    branch: 'platform/identity',
+    definitions: [{ id: 6, name: 'Dev-NorthwindIdentity', on: ['platform/identity'] }, { id: 11, name: 'Prod-NorthwindIdentity' }, { id: 17, name: 'QA-NorthwindIdentity' }],
     made: [{ id: 90, of: 6, environments: [stage(11, 'Dev', 'succeeded')] }],
   });
 
   const { step } = await released(t, api);
 
   assert.equal(step.params.state, 'reached');
-  assert.match(step.params.evidence.message, /Release-90 of Dev-LumachainIdentity/);
+  assert.match(step.params.evidence.message, /Release-90 of Dev-NorthwindIdentity/);
 });
 
 test('of five definitions, the one triggering on the merged branch is watched, its approval waited on and never given, the master and dev one left alone', async (t) => {
   const api = await place({
-    branch: 'feature/lumaapp',
-    definitions: [{ id: 2, name: 'Report-UI v1', on: ['master', 'dev'] }, { id: 42, name: 'Report-UI', on: ['feature/lumaapp'] }, { id: 45, name: 'QA-LumaApp' },
-      { id: 56, name: 'Deprecated-Prod-LumaApp' }, { id: 148, name: 'QA-LumaApp - Storage Account CDN' }],
+    branch: 'feature/portal-app',
+    definitions: [{ id: 2, name: 'Portal-UI v1', on: ['master', 'dev'] }, { id: 42, name: 'Portal-UI', on: ['feature/portal-app'] }, { id: 45, name: 'QA-PortalApp' },
+      { id: 56, name: 'Deprecated-Prod-PortalApp' }, { id: 148, name: 'QA-PortalApp - Storage Account CDN' }],
     made: [{ id: 90, of: 42, environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Prod', 'notStarted', { preDeployApprovals: [approval('pending')] })] }],
   });
   api.onRead = (method, path, n) => {
@@ -108,7 +108,7 @@ test('of five definitions, the one triggering on the merged branch is watched, i
   const { plugin, step } = await released(t, api);
 
   assert.equal(step.params.state, 'reached');
-  assert.match(step.params.evidence.message, /Release-90 of Report-UI from build 20261110\.41 \(cccccccc\): Dev succeeded; Prod succeeded after an approval by Release Approvers\./);
+  assert.match(step.params.evidence.message, /Release-90 of Portal-UI from build 20261110\.41 \(cccccccc\): Dev succeeded; Prod succeeded after an approval by Release Approvers\./);
   assert.match(await plugin.stop(), /Prod waits on an approval by Release Approvers/);
   assert.equal(api.calls.some((call) => call.method === 'PATCH'), false);
 });

@@ -100,7 +100,7 @@ describe("a place's routes", () => {
   it('write nothing when one is chosen: the choice is a read of its graph, and no press goes out', async () => {
     const onView = vi.fn();
     const presses = {
-      onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn(), onVerify: vi.fn(), editor: editor(),
+      onAcceptIntegration: vi.fn(), onVerify: vi.fn(), editor: editor(),
     };
     draw({ current: withRoute(EFFECTIVE_CURRENT), onView, ...presses });
 
@@ -109,7 +109,6 @@ describe("a place's routes", () => {
 
     expect(onView).toHaveBeenNthCalledWith(1, { route: 'kind:docs' });
     expect(onView).toHaveBeenNthCalledWith(2, { route: 'landed' });
-    expect(presses.onAcceptGates).not.toHaveBeenCalled();
     expect(presses.onAcceptIntegration).not.toHaveBeenCalled();
     expect(presses.onVerify).not.toHaveBeenCalled();
     expect(presses.editor.onUse).not.toHaveBeenCalled();
@@ -244,11 +243,13 @@ describe("the chosen route's chart", () => {
 });
 
 describe("a place's Workflow, its folds and Gates", () => {
-  it('draws Gates as a fold that opens for an acceptance owed, with both choices, and folds once it is settled', () => {
-    draw({ onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn() });
+  it('draws Gates as a fold that opens for an acceptance owed, with one acceptance, and folds once it is settled', () => {
+    draw({ onAcceptIntegration: vi.fn() });
 
     expect(screen.getByRole('button', { name: 'Gates' })).toHaveAttribute('aria-expanded', 'true');
-    expect(within(screen.getByRole('region', { name: 'Gates' })).getAllByRole('checkbox')).toHaveLength(2);
+    const gates = within(screen.getByRole('region', { name: 'Gates' }));
+    expect(gates.queryAllByRole('checkbox')).toHaveLength(0);
+    expect(gates.getAllByRole('button', { name: 'Accept' })).toHaveLength(1);
   });
 
   it('keeps Gates folded and names where it stands once accepted', () => {
@@ -256,28 +257,22 @@ describe("a place's Workflow, its folds and Gates", () => {
 
     const gates = screen.getByRole('button', { name: 'Gates' });
     expect(gates).toHaveAttribute('aria-expanded', 'false');
-    expect(gates).toHaveAccessibleDescription('Accepted, blob 3b18e51');
+    expect(gates).toHaveAccessibleDescription('Accepted');
   });
 
   it('draws the declaration once, in Gates, and not again on the landed route', () => {
-    draw({ onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn(), first: { route: 'landed' } });
+    draw({ onAcceptIntegration: vi.fn(), first: { route: 'landed' } });
 
-    expect(document.querySelectorAll('pre')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Accept the gates' })).toBeNull();
+    expect(document.querySelectorAll('pre')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Accept' })).toHaveLength(1);
   });
 
-  it('presses the landed acceptance and the integration acceptance from the one confirmation', async () => {
-    const onAcceptGates = vi.fn((answered: { done: () => void }) => answered.done());
+  it('presses the one acceptance, for every purpose, once', async () => {
     const onAcceptIntegration = vi.fn((_request: unknown, answered: { done: () => void }) => answered.done());
-    draw({ onAcceptGates, onAcceptIntegration });
+    draw({ onAcceptIntegration });
 
-    // The ticks start empty.
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for landed verification' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
-    expect(onAcceptGates).toHaveBeenCalledOnce();
     expect(onAcceptIntegration).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
   });
 

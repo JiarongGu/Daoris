@@ -76,9 +76,7 @@ public static class RunNodeWords
 
     /// <summary>The kind whose own act <paramref name="act"/> is, which no other kind takes; null for the lifecycle's acts every kind takes.</summary>
     private static IPressed? TakenBy(string act) =>
-        NodeKit.Built.Units.OfType<IPressed>().Append(PluginStepRetry.Unit).FirstOrDefault(pressed => pressed.Takes.Contains(act, StringComparer.Ordinal));
-
-    public const string NotPluginStep = "not-plugin-step";
+        NodeKit.Built.Units.OfType<IPressed>().FirstOrDefault(pressed => pressed.Takes.Contains(act, StringComparer.Ordinal));
 
     /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes.</summary>
     public const string NotReview = "not-review";
@@ -93,8 +91,7 @@ public static class RunNodeWords
     public const string Stale = "stale";
 
     /// <summary>
-    /// The stop of an <c>integrate</c> whose member the integration record says promoted: nothing reverses the line,
-    /// so there is nothing to stop, and the node reads its record's reach.
+    /// The stop of an <c>integrate</c> whose member the integration record says promoted: nothing reverses the line, so nothing to stop.
     /// </summary>
     public const string Promoted = "promoted";
 
@@ -310,7 +307,6 @@ public static class RunNodeWords
         "usage: daoris workflow skip <run> <node> \"…\"  ·  daoris workflow stop <run> <node> [\"…\"]\n"
         + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
         + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
-        + "       daoris workflow try-again <run> <node>  (a failed plugin step, as a new attempt)\n"
         + "       daoris workflow accept <run> <node> [--at <revision>]  ·  daoris workflow changes <run> <node> \"…\"  (a review: your Accept of the work, or what it should change)\n"
         + "       --at names the review record you read, and a review standing on another is refused; without it, the record standing when the\n"
         + "       word is kept is accepted, which proves nothing was read\n"
