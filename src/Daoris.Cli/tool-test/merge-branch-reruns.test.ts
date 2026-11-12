@@ -7,7 +7,6 @@ import { makeFixture } from '../test/_fixture.ts';
 import { tool, refusal, type Gate, type Step, type GateResult, type MemoryWait, processRun, repoPlan } from './support/merge-branch.ts';
 import { PROCESS_FAILURE, TIMED_SPEC, PLAIN_SPEC, measuredLog, planned, fakeStep, signal, within, laneRun, summary, OK_LINES, GiB, standIn, MEMORY_SIGNS, measuredRun, NODE_TITLE_A, NODE_TITLE_B, nodeLog, nodeRun } from './support/merge-branch-kit.ts';
 
-// Split from the merge tool's one test file by concern (MERGEFLOW1); the fixtures and helpers are in support/merge-branch-kit.ts.
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
@@ -21,8 +20,8 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   const expected = (gate: Gate): number | undefined => {
     if (typeof gate.memoryGb === 'number') return gate.memoryGb;
     if (tool.isProcessGate(gate)) return half;
-    if (tool.gateKind(gate.run) === 'rehearsal') return rehearsal;
-    return tool.isHeavyGate(gate) ? suite : 0;
+    if (tool.isHeavyGate(gate)) return suite;
+    return tool.gateKind(gate.run) === 'rehearsal' ? rehearsal : 0;
   };
   assert.deepEqual(needs, Object.fromEntries(repoPlan.map((gate) => [gate.name, expected(gate)])));
   assert.equal(needs['universal'], 0, 'a blocking check is light');

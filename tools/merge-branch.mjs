@@ -455,6 +455,9 @@ import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
+import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
+import { timeoutState } from './merge/timeout.ts';
+import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
@@ -2884,28 +2887,7 @@ function resultLine(root, result) {
 /** A gate as a summary names it, one that died of memory said so. */
 const gateNamed = (result) => (result.cause === 'memory' ? `${result.gate.name} (memory)` : result.gate.name);
 
-/**
- * What a summary says of its flakes, empty when none: a test's flake is recorded, and one of memory is
- * the machine's, not the change's, and said so.
- */
-export function flakeNote(flakes) {
-  const of = (list) => list.map((result) => result.gate.name).join(', ');
-  const tests = flakes.filter((result) => result.cause !== 'memory');
-  const memory = flakes.filter((result) => result.cause === 'memory');
-  const parts = [];
-  if (tests.length) parts.push(`${count(tests.length, 'flake')} (${of(tests)}): record it under FLAKE1`);
-  if (memory.length) {
-    parts.push(`${count(memory.length, 'flake')} of memory (${of(memory)}): ${memory.length === 1 ? 'it' : 'each'} died of memory and passed run again alone, the machine's and not the change's`);
-  }
-  return parts.length ? `, with ${parts.join('; and ')}` : '';
-}
-
-/** The line a failed run's summary adds when a gate of it died of memory, or null. */
-export function memoryLine(failed) {
-  const memory = failed.filter((result) => result.cause === 'memory').map((result) => result.gate.name);
-  if (!memory.length) return null;
-  return `  Of memory, not of a check: ${memory.join(', ')} died of memory; run ${memory.length === 1 ? 'it' : 'them'} again when the machine has memory to spare.`;
-}
+export { flakeNote, memoryLine };
 
 /**
  * The slowest classes of a Process gate's run, under its line. The classes run at once, so their times
@@ -3363,7 +3345,7 @@ function runRecorded(root, gates, dir, {
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
-  const flow = flowDepsOf(flowSeams(), root, verdictsHome(root));
+  const flow = flowDepsOf(flowSeams(), root, verdictsHome(root), kind);
   return runGates(root, gates, dir, {
     waitFor,
     keepGoing,
@@ -3443,7 +3425,7 @@ async function gateMerge(root, state, plan) {
   const notRun = gates.length - results.length;
 
   console.log('');
-  for (const line of settled.lines) console.log(line);
+  for (const line of [...settled.lines, timeoutState.note()]) if (line) console.log(line);
   if (failed.length) {
     const names = failed.map((result) => result.gate.name).join(' ');
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map(gateNamed).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
@@ -7155,6 +7137,15 @@ export async function main(argv) {
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
   if (options.passed) return passedOnly(root, { light: options.light });
+  timeoutState.off = options.noTimeout === true;
+  const verb = options.stale ? 'stale' : options.rerun.length ? 'rerun' : options.resume ? 'continue' : !options.ci && !options.beside && !options.full && options.branches.length ? 'merge' : null;
+  if (verb === null) return mergeVerb(root, options);
+  // One run at a time on a checkout's open merge: a second says who holds it, and never collides.
+  const me = { pid: process.pid, started: processStart(process.pid), at: nowIso(), verb };
+  return holdingCheckout(join(root, CHECKOUT_LOCK), me, (held) => holderRuns(JSON.stringify(held), pidAlive), () => mergeVerb(root, options), (message) => new Refusal(message, 1));
+}
+
+async function mergeVerb(root, options) {
   // With no merge open, --rerun and --stale act on the checkout as it stands.
   if (options.stale) {
     if (mergeInProgress(root)) throw new Refusal('a merge is open here: --rerun <gate>… re-gates it, and runs each gate a fixed path reaches; or git merge --abort');

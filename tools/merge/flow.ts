@@ -9,6 +9,7 @@ import { BuildLedger } from './build-once.ts';
 import { attribute, gateOutcome, mainRedLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
+import { overBudgetNote } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
 
@@ -34,6 +35,10 @@ export type FlowDeps = {
   ledger: BuildLedger;
   listProcesses: () => Proc[];
   killTree: (pid: number) => boolean;
+  /** The gate's wall-clock budget in milliseconds, or null where it has none. */
+  timeoutMs: (gate: PlanGate) => number | null;
+  /** The slowest classes the gate's newest record knew. */
+  lastSlowest: (gate: string) => Slow[];
 };
 
 /** Build servers a test step leaves by design, which the next gate's build reuses: not a leftover to stop. */
@@ -72,13 +77,19 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   }
   const logged = !deps.isProcessGate(gate) ? loggedRun(run, logs.replaceAll('\\', '/'), gate.name) : { run, files: [] as string[] };
   const roots: number[] = [];
+  let expired: string | null = null;
   const mine: StepTrees = {
-    get ended() { return trees?.ended ?? null; },
+    get ended() { return trees?.ended ?? expired; },
     hold(pid) { roots.push(pid); trees?.hold(pid); },
     release(pid) { return trees ? trees.release(pid) : false; },
     end(why) { trees?.end(why); },
   };
   const started = Date.now();
+  const budget = deps.timeoutMs(gate);
+  const timer = budget === null ? null : setTimeout(() => {
+    expired = 'over its budget';
+    for (const pid of roots) deps.killTree(pid);
+  }, budget);
   const startedAt = new Date(started).toISOString();
   let result: GateResult;
   try {
@@ -87,9 +98,14 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     result = { gate, code: null, log: join(logs, `${gate.name}.log`), verdict: 'FAIL', note: '', ms: Date.now() - started, abnormal: true };
     result.note = `ended abnormally: ${error instanceof Error ? error.message : String(error)}; the run goes on with the next gate`;
   }
+  if (timer) clearTimeout(timer);
   result.gate = gate;
   if (key) result.key = key;
-  if (result.verdict === 'FAIL' && typeof result.code === 'number' && abnormalEnd(result.code)) {
+  if (expired !== null && budget !== null && !trees?.ended) {
+    Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note: overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name)) });
+    result.slowest = deps.lastSlowest(gate.name);
+  }
+  if (!result.overBudget && result.verdict === 'FAIL' && typeof result.code === 'number' && abnormalEnd(result.code)) {
     result.abnormal = true;
     result.note = `ended abnormally (exit ${result.code}: a signal or a crash, not a check's verdict); ${result.note}`.replace(/; $/, '');
   }
@@ -109,7 +125,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   return result;
 }
 
-/** The fields a gate's verdict adds to the store beside its tree: the key it was given, and the signatures of a failure. */
+/** The fields a gate's verdict adds to the store beside its tree: the key it carries, and the signatures of a failure. */
 export function verdictExtras(result: GateResult): { key?: VerdictKey; signatures?: string[]; replayedFrom?: string } {
   return {
     ...(result.key ? { key: result.key } : {}),

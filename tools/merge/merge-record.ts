@@ -1,7 +1,7 @@
 /**
  * The merge's own record: one line per merge run in `local/merge-record.jsonl`, appended as the run ends. It carries the branch,
- * each gate's wall time and slowest classes, whether the run was a branch's first pass, the reds set down as main's and what
- * was over budget; `tools/dev-metrics.mjs` reads it for the first-pass figure.
+ * each gate's wall time and slowest classes, whether the run is a branch's first pass, the reds set down as main's and what
+ * ran over budget; `tools/dev-metrics.mjs` reads it for the first-pass figure.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';

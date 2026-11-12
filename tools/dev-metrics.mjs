@@ -10,8 +10,6 @@
  * service (`/api/quests?workspace=`, a read) when `--service` is given, else from `<home>/quests/*.json`. A figure
  * whose source holds nothing is "not recorded" or "not read", with the place it would have to be logged: never a zero.
  * `--merge-queue` is this repository's `local/merge-queue.json`, where integration requests land or are handed back.
- * `--merge-record` is the merge tool's own record, `local/merge-record.jsonl` (under `--repo` when that is given): one line per
- * merge run with each gate's time, its first pass, the reds set down as main's and what ran over its budget.
  * Builder mode times subagent transcripts with the clock `subagent-time.mjs` already keeps.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';

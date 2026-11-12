@@ -9,7 +9,9 @@ import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import type { FlowDeps, GateResult, PlanGate } from './flow.ts';
 import { findingReds, verdictReds, type MainRed } from './main-red.ts';
+import { MERGE_RECORD, readRecords } from './merge-record.ts';
 import { killTree, listProcesses } from './processes.ts';
+import { budgetMs } from './timeout.ts';
 import type { Slow } from './timing.ts';
 import type { StoredVerdict, Toolchain, TreeEntry } from './verdict-store.ts';
 
@@ -63,9 +65,11 @@ let toolchain: Toolchain | null = null;
 const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
 
 /** The deps of one run in the checkout `root`, whose verdict store is `home`'s, with a build ledger of its own. */
-export function flowDepsOf(seams: Seams, root: string, home: string): FlowDeps {
+export function flowDepsOf(seams: Seams, root: string, home: string, kind: string | null): FlowDeps {
   const lanes = seams.lanesOf(root);
   return {
+    timeoutMs: (gate) => budgetMs(gate, kind),
+    lastSlowest: (name) => readRecords(join(home, MERGE_RECORD)).reverse().flatMap((record) => record.gates.filter((each) => each.name === name && each.slowest.length)).at(0)?.slowest ?? [],
     runGate: seams.runGate,
     reaching: (gate, paths) => seams.pathsReaching(gate, paths, lanes),
     reachSource: createHash('sha1').update(JSON.stringify([seams.table, lanes])).digest('hex'),

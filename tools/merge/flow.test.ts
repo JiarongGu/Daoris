@@ -30,6 +30,8 @@ function harness(over: Partial<FlowDeps> = {}) {
     ledger: new BuildLedger(),
     listProcesses: () => [],
     killTree: () => true,
+    timeoutMs: () => null,
+    lastSlowest: () => [],
     ...over,
   };
   return { dir, deps, asked, done: () => rmSync(dir, { recursive: true, force: true }) };
@@ -128,6 +130,31 @@ test('what a long gate left running beneath its steps is stopped, by pid and cre
     const result = await call(h, { gate: { ...gate, reuse: '' } });
     assert.deepEqual(stopped, [200], 'a build server and a sibling\'s process are not the gate\'s to stop');
     assert.deepEqual(result.left, [{ pid: 200, created: '2999-01-01T00:00:00.000Z', stopped: true }]);
+  } finally {
+    h.done();
+  }
+});
+
+test('a gate past its budget has what it started killed, and fails as over-budget with the slowest classes its last record knew', async () => {
+  const killed: number[] = [];
+  const h = harness({
+    timeoutMs: () => 20,
+    lastSlowest: () => [{ name: 'SlowTests', ms: 90_000, tests: 3 }],
+    killTree: (pid) => { killed.push(pid); return true; },
+    runGate: async (_w, each, _l, options) => {
+      const trees = options.trees as { hold(pid: number): void; ended: string | null };
+      trees.hold(77);
+      for (let waited = 0; waited < 2000 && !trees.ended; waited += 5) await new Promise((done) => setTimeout(done, 5));
+      return { gate: each, code: null, verdict: trees.ended ? 'ENDED' : 'PASS', note: 'ended', ms: 20, log: 'l' };
+    },
+  });
+  try {
+    const result = await call(h, { gate: { ...gate, reuse: '' } });
+    assert.equal(result.verdict, 'FAIL');
+    assert.equal(result.overBudget, true);
+    assert.match(result.note, /over-budget: killed after .* min, its budget is 0 min; slowest in its last record: SlowTests 1\.5 min/);
+    assert.equal(result.slowest![0]!.name, 'SlowTests');
+    assert.ok(killed.includes(77), 'what the gate started is killed');
   } finally {
     h.done();
   }

@@ -59,7 +59,6 @@ const SCANNERS = new Set([
   // The live-logins census plants a tree of its own in scratch, a driver file among it, and reads nothing of the repository's.
   'tools/live-logins.test.mjs',
 ]);
-/** The merge tool's tests, split by concern with their shared helpers: each scans what a suite reads, as the one file did. */
 const isScanner = (path: string): boolean => SCANNERS.has(path) || /^src\/Daoris\.Cli\/tool-test\/(merge-branch-[^/]+\.test\.ts|support\/merge-branch-kit\.ts)$/.test(path);
 
 /** Each way a reader reads a desktop source by name, and the project it looks in when the call does not name one. */

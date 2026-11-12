@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { repoRoot, tool, refusal, INTEGRATION_DECLARATIONS, UNION_JOINS } from './support/merge-branch.ts';
 import { PROCESS_FAILURE, CATALOGUE_FAILURE, TIMED_SPEC, PLAIN_SPEC, measuredLog } from './support/merge-branch-kit.ts';
 
-// Split from the merge tool's one test file by concern (MERGEFLOW1); the fixtures and helpers are in support/merge-branch-kit.ts.
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
