@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -43,16 +43,15 @@ function answer(diff: unknown) {
   });
 }
 
-function pane(onSendBack = vi.fn()) {
+function pane() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <DiffPane session="s1a2b3c4" hasTree onSendBack={onSendBack} />
+        <DiffPane session="s1a2b3c4" hasTree />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
-  return onSendBack;
 }
 
 describe('the review of a landed session (REVIEW2)', () => {
@@ -62,8 +61,7 @@ describe('the review of a landed session (REVIEW2)', () => {
 
   /**
    * The installed window's case: the landing tidied the tree. The review says where the work landed and reads its
-   * changes from that branch; accepting, sending back and discarding a tree that is gone are not offered, and
-   * the landing's plan is never asked.
+   * changes from that branch; discarding a tree that is gone is not offered, and the landing's plan is never asked.
    */
   it('reads a tidied landing from its branch, says where it landed, and offers nothing that acts on the tree', async () => {
     answer(FROM_BRANCH);
@@ -74,8 +72,6 @@ describe('the review of a landed session (REVIEW2)', () => {
     expect(note.textContent).toMatch(/landed on feature\/0fda18-fix-the-api-gap/);
     expect(note.textContent).toMatch(/read from that branch in engine's own checkout/);
     expect(screen.getByText(/since 01234567/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
   });
@@ -113,25 +109,18 @@ describe('the review of a landed session (REVIEW2)', () => {
 
     expect(await screen.findByRole('button', { name: 'Discard tree' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'where this work landed' }).textContent).toMatch(/not accepted again/);
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
   });
 
-  /**
-   * The tree is still here and its landed branch is gone: the review is the tree's,
-   * says where it landed before, and every act is offered.
-   */
-  it('gives a tree that carried on after its landing its acts back once the landed branch is gone', async () => {
+  /** The tree is still here and its landed branch is gone: the review is the tree's, says where it landed before, and the tree may go. */
+  it('gives a tree that carried on after its landing its discard back once the landed branch is gone', async () => {
     answer({ ...FROM_BRANCH, base: 'abc1234567890', source: 'tree', landed: { ...LANDED, state: 'gone', asLanded: false } });
-    const onSendBack = pane();
+    pane();
 
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send back…' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Discard tree' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'where this work landed' }).textContent).toMatch(/That branch is gone from engine now/);
-    await waitFor(() => expect(asked('LANDING')).toHaveLength(1));
-    expect(onSendBack).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /Accept|Send back/ })).toBeNull();
+    expect(asked('LANDING')).toHaveLength(0);
   });
 
   /** A tree gone with no landing recorded (a tidy after a merge, a discard): the host's sentence, and no act on a tree. */
@@ -140,10 +129,7 @@ describe('the review of a landed session (REVIEW2)', () => {
     pane();
 
     expect(await screen.findByText(/This session's tree is gone from this machine/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
-    // The work is not landed here, so sending it back is still a door.
-    expect(screen.getByRole('button', { name: 'Send back…' })).toBeTruthy();
     expect(asked('LANDING')).toHaveLength(0);
   });
 });

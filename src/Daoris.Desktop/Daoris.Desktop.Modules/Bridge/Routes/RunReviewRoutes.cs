@@ -23,7 +23,10 @@ public sealed class RunReviewRoutes(DriverLoop loop)
         var review = run is null ? null : await Task.Run(() => RunReviews.Read(_loop.Home, run, press.Attempt > 0 ? press.Attempt : null), cancellationToken).ConfigureAwait(false);
         if (review is null) return new { Run = run, Refused = RunNodeWords.NotRun };
         var decided = _loop.Supervisor.LandingOn(review.Run, review.Node, review.Record?.Attempt ?? review.Standing);
-        return review with { Supervisor = RunReviewSupervisor.Of(decided, review.Record) };
+        var files = review.Record is { Kind: ReviewKinds.Branch or ReviewKinds.Checkout } record && await CheckoutOfAsync(record.Place, cancellationToken).ConfigureAwait(false) is { } root
+            ? await ReviewCommitFiles.ListAsync(root, record, cancellationToken).ConfigureAwait(false)
+            : null;
+        return review with { Supervisor = RunReviewSupervisor.Of(decided, review.Record), Files = files };
     }
 
     /// <summary>The text of <c>path</c> on <c>side</c> of the run's record at <c>attempt</c>, or why it is not drawn (<see cref="ReviewContent"/>).</summary>

@@ -32,9 +32,7 @@ export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answe
  * and a landing is offered its stop alone. Each press goes out with its run and node (`onWord`) and comes back answered: kept closes the ask,
  * a refusal is said in it by its code, in the driver's sentence where the page has no words for the code.
  *
- * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's. A
- * review's *Ask for changes…* sends the person's words back to the work in place of their Accept, so it asks for them.
- *
+ * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's. *
  * A molecule: the step and the press arrive as props.
  */
 export function NodeWord({ run, step, onWord }: {
@@ -59,7 +57,7 @@ export function NodeWord({ run, step, onWord }: {
     );
   }
 
-  const acts = (step.acts ?? []).filter((act): act is NodeAct => ACTS.includes(act as NodeAct));
+  const acts = (step.acts ?? []).filter((act): act is NodeAct => act !== 'changes' && ACTS.includes(act as NodeAct));
   const choosing = acts.some(isReturnAct) && returnWaits(step);
   if (!onWord || acts.length === 0) return null;
 
@@ -73,21 +71,14 @@ export function NodeWord({ run, step, onWord }: {
 
   return (
     <div className="grid min-w-0 gap-1.5">
-      {/* A folder's return waiting on files changed on both sides offers each its three choices. */}
       {choosing && asking === null && <ReturnChoice run={run} step={step} onWord={onWord} refusal={(answer) => nodeWordRefused(t, answer)} />}
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {/* A waiting task's Done, or an approval's Approve and Reject, lead. */}
           {acts.filter(isTaskAct).map((act) => (
             <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
               {t(`workflow.run.node.${act}`)}
             </Button>
           ))}
-          {acts.includes('changes') && (
-            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('changes')}>
-              {t('workflow.run.node.changes')}
-            </Button>
-          )}
           {acts.includes('skip') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('skip')}>
               {t('workflow.run.node.skip')}
@@ -98,13 +89,11 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.stop')}
             </Button>
           )}
-          {/* A ready request under `start: you` waits for the person's send. */}
           {acts.includes('send') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('send')}>
               {t('workflow.run.node.send')}
             </Button>
           )}
-          {/* A declined request is asked again or gone on without. */}
           {acts.includes('ask-again') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('ask-again')}>
               {t('workflow.run.node.askAgain')}
@@ -157,27 +146,6 @@ export function NodeWord({ run, step, onWord }: {
             aria-label={t('workflow.run.node.goOnWords')}
             placeholder={t('workflow.run.node.goOnWords')}
             rows={2}
-            value={words}
-            onChange={(event) => setWords(event.target.value)}
-            className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-          />
-        </InlineConfirm>
-      )}
-      {asking === 'changes' && (
-        <InlineConfirm
-          tone="primary"
-          block
-          label={t('workflow.run.node.changesTitle', { node })}
-          says={t('workflow.run.node.changesSays', { node })}
-          meanIt={t('workflow.run.node.changesMeanIt')}
-          ready={words.trim().length > 0}
-          onConfirm={(answered) => send('changes', answered)}
-          onClose={close}
-        >
-          <textarea
-            aria-label={t('workflow.run.node.changesWords')}
-            placeholder={t('workflow.run.node.changesWords')}
-            rows={3}
             value={words}
             onChange={(event) => setWords(event.target.value)}
             className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"

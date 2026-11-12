@@ -18,7 +18,6 @@ import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
 import { panelTabs } from '../console/streams';
 import type { useAttendedBox } from '../conversation/useAttendedBox';
-import { askOfEntry, entryOfSession, isIntakeEntry } from '../entries';
 import { OpinionGate } from '../gates/OpinionGate';
 import { opinionHolds } from '../gates/opinion';
 import { ReviewGate } from '../gates/ReviewGate';
@@ -33,7 +32,6 @@ import { DiffPane } from '../review/DiffPane';
 import { RunReviewPage } from '../review/run/RunReviewPage';
 import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
-import { takesWords } from '../say';
 import type { HandOverRoster } from '../start/HandOverAsk';
 import { StreamTabs } from './OutputPanel';
 import { NothingFollowed } from './RightDock';
@@ -47,7 +45,7 @@ import type { useFrameLayout } from './useFrameLayout';
  * speaks for.
  */
 export function useRegionSurfaces({
-  t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
+  t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
   session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
 }: {
   reviewRun?: string | null;
@@ -60,7 +58,6 @@ export function useRegionSurfaces({
   onOpenQuest?: (quest: string) => void;
   onAnswerAsk?: (ask: string) => void;
   onOpenBranch?: (repository: string, branch: string) => void;
-  onSendBack?: (repository: string) => void;
   terminals: ReturnType<typeof useTerminals>;
   terminalCwd: string | undefined;
   session: ReturnType<typeof useAttendedSession>;
@@ -77,12 +74,12 @@ export function useRegionSurfaces({
   /** The request the head's *Waiting on* opened *At work* at. */
   atWorkSeek?: ExchangeSeek | null;
 }) {
-  const { attended, entries, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
+  const { attended, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
   const { following, previewing, openPreview, openView, dock, panelView } = views;
   const { placed, collapsed, dockClosed, layout, closeDock } = frame;
-  const { box, taking } = boxState;
-  const { doors, setAnswerFocus } = asks;
-  const { entryAt, discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
+  const { taking } = boxState;
+  const { doors } = asks;
+  const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
 
   // What the session runs beside itself, a tab each in the panel. The panel shows the
@@ -155,19 +152,6 @@ export function useRegionSurfaces({
   ) : null);
   const withWhose = (surface: ReactNode, flush = false) => (elsewhere && following ? <>{whose(flush)}{surface}</> : surface);
 
-  // *Send back…* in a review: the box on that session, with the focus in it, which is what the
-  // glossary's send back means — its work returned to it with a note, so it carries on. Off Sessions, Sessions is opened,
-  // where the box is. Where the session takes no words, the door to the quest composer stays.
-  const sendBack = () => {
-    if (!attended) return;
-    if (!takesWords(box)) {
-      onSendBack?.(attended.repository);
-      return;
-    }
-    if (elsewhere) onOpenSessions?.();
-    setAnswerFocus((was) => ({ session: attended.id, at: (was?.at ?? 0) + 1 }));
-  };
-
   const nothing = () => (elsewhere
     // Off Sessions there is no session list beside it to point at: it says nothing is
     // attended, or that the one attended has ended and is read on Sessions, and offers the view.
@@ -175,22 +159,16 @@ export function useRegionSurfaces({
     : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>);
 
   const reviewSurface = () => {
-    // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands.
-    const followingEntry = following ? entryOfSession(entries, following.id) : null;
     if (reviewRun || following) {
       return withWhose(
-        <RunReviewPage key={reviewRun ?? following?.id} run={reviewRun} session={following?.id ?? null} fallback={ownChanges(followingEntry)} />,
+        <RunReviewPage key={reviewRun ?? following?.id} run={reviewRun} session={following?.id ?? null} fallback={ownChanges()} />,
       );
     }
-    return withWhose(ownChanges(followingEntry));
+    return withWhose(ownChanges());
   };
 
-  const ownChanges = (followingEntry: ReturnType<typeof entryOfSession>) => (
+  const ownChanges = () => (
       <DiffPane
-        // The session's one press, where the part reviewed is the attended one.
-        entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
-        entry={followingEntry?.entry ?? null}
-        ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
         // The followed session's: off Sessions an ended one is reviewed on Sessions, where it is attended.
         session={following?.id ?? null}
         // What its frame says while git reads; off Sessions the line above already names the session.
@@ -198,9 +176,8 @@ export function useRegionSurfaces({
         title={following && !elsewhere ? sessionTitle(following, quest, openings[following.id]) : null}
         // A tree of its OWN: the repository's checkout is never merged or discarded.
         hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
-        onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
         onPreview={following && here ? (path) => openPreview({ path }) : undefined}
-        // Work the line holds by content offers the head's discard in Accept's place, through the head's press.
+        // Work the line holds by content offers the head's discard, through the head's press.
         discards={following && following.id === attended?.id ? discards : null}
         onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
       />

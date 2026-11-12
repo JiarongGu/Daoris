@@ -92,7 +92,6 @@ export const NOT_IN_A_MAIN_AREA: Readonly<Record<string, string>> = {
   './work/rail/SessionRailSearch.stories.tsx': "the session rail's list column (`work/rail/SessionRail.tsx:395`)",
   './work/review/DiffFileRow.stories.tsx': "a row of the review's list, in the side bar or panel (`work/review/ReviewFrame.tsx:175`)",
   './work/review/LandedNote.stories.tsx': "the review's note, in the side bar or panel (`work/review/DiffPane.tsx:512`)",
-  './work/review/PassNote.stories.tsx': "a line of the review's Accept ask, in the side bar or panel (`work/review/DiffPane.tsx:463`)",
   './work/review/PatchView.stories.tsx': "a file's patch in the review and the side bar's preview (`work/review/FilePreview.tsx:95`)",
   './work/terminals/TerminalTabs.stories.tsx': "the terminal view's tabs, a panel or side-bar view (`work/terminals/TerminalView.tsx:163`)",
   // R6 draws a side-bar view at the side bar's floor (300 px), which its `AtTheFloor` stories do, and at 45% of the window.
