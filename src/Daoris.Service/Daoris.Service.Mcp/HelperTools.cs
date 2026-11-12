@@ -4,9 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A helper's two tools (the mixed agents design §3): the working session asks another agent a question, and the
-/// helper the driver started answers it. Each speaks only for the session its connector names, as an agent: the ask is a file
-/// the driver takes, and the person's rule for helpers is the driver's to apply.
+/// A helper's two tools: the working session asks another agent a question, and the helper the driver started answers it, each
+/// for the session its connector names; the ask is a file the driver takes, and the person's rule for helpers is the driver's.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>

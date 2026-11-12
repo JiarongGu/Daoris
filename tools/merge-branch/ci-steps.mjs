@@ -4,7 +4,6 @@
 import { closeSync, openSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// The duration reporter a gate's command carries (`--results-directory … --logger "trx;…"`) changes nothing a half covers.
 const TIMING = String.raw`(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?`;
 const CENSUS = new RegExp(String.raw`^dotnet test (\S+) --filter Category=Census${TIMING}$`);
 const FAST_HALF = new RegExp(String.raw`^dotnet test (\S+) --filter Category!=Process${TIMING}$`);

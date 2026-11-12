@@ -756,7 +756,6 @@ describe('the session tone map', () => {
     // Waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
     expect(SESSION_TONE['awaiting-helper']).toBe('neutral');
     expect(SESSION_DOT['awaiting-helper']).toBe('idle');
-    // Waiting on its own check, the same: its turn has ended and nothing waits on the person.
     expect(SESSION_TONE['awaiting-check']).toBe('neutral');
     expect(SESSION_DOT['awaiting-check']).toBe('idle');
   });

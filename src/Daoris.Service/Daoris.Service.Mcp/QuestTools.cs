@@ -10,10 +10,7 @@ namespace Daoris.Knowledge.Mcp;
 /// <param name="exchange">What judges a publish and an answer, shared with the HTTP host.</param>
 /// <param name="circle">Which workspace <c>quest_list</c> answers from.</param>
 /// <param name="asks">The asks, for the one session that publishes as one — an intake.</param>
-/// <param name="intake">
-/// Which ask this connector speaks for, when the session is an intake; and which session it is, when the driver started
-/// it — what a quest records as its publisher and a take as its taker.
-/// </param>
+/// <param name="intake">Which ask this connector speaks for (an intake), and which session, when the driver started it: a quest's publisher and a take's taker.</param>
 /// <param name="ledger">The ledger, for the one write a session's connector makes on its own record: that it took its quest.</param>
 /// <param name="engines">Each repository's memory, which a listed quest's memory proposals are settled against.</param>
 [McpServerToolType]
