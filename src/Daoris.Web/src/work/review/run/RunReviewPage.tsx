@@ -2,17 +2,13 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ReviewRow, RunReviewAnswer } from './runReviewWire';
 import { useOverruleSupervisor } from '../../../bridge/sessions/supervision';
-import { useRunNodeWord, useRunReview, useRunReviewFile, useSessionDiff, useSessionRunReview } from '../../../bridge/shell';
+import { useRunNodeWord, useRunReview, useRunReviewFile, useSessionRunReview } from '../../../bridge/shell';
 import { sentence } from '../../../locales/format';
-import { languageOf } from '../codeLines';
-import type { DiffLayout } from '../PatchView';
-import { DiffLines } from '../PatchView';
-import { ReviewFiles } from '../ReviewFrame';
-import { lineDiff } from './lineDiff';
+import { RecordFileView } from './RecordFileView';
 import { RunReview } from './RunReview';
-import { contentOf, useViewedMarks } from './viewedMarks';
+import { useViewedMarks } from './viewedMarks';
 
-/** A folder's or a copy's file at the record's two versions, compared line by line, or why it is not drawn. */
+/** A row's file at the record's two versions, compared line by line (a Markdown file rendered), or why it is not drawn. */
 function RecordFileDiff({ run, attempt, row }: { run: string; attempt: number; row: ReviewRow }) {
   const { t } = useTranslation();
   const before = useRunReviewFile(run, attempt, row.path, 'before', { enabled: Boolean(row.before) });
@@ -22,34 +18,7 @@ function RecordFileDiff({ run, attempt, row }: { run: string; attempt: number; r
   if ((row.before && before.isPending) || (row.after && after.isPending)) {
     return <p className="m-0 px-3 pb-2 text-small text-ink-faint">{t('work.runReview.fileReading')}</p>;
   }
-  const { lines, whole } = lineDiff(before.data?.text ?? null, after.data?.text ?? null);
-  return (
-    <div className="px-3 pb-2">
-      {!whole && <p className="m-0 pb-1 text-meta text-ink-faint">{t('work.runReview.fileTooLarge')}</p>}
-      <DiffLines lines={lines} language={languageOf(row.path)} />
-    </div>
-  );
-}
-
-/** A branch's or a checkout's files with their diffs, read from the session that made the newest part, marked viewed by content. */
-function GitFiles({ session, viewed }: { session: string | null; viewed: ReturnType<typeof useViewedMarks> }) {
-  const diff = useSessionDiff(session);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [layout, setLayout] = useState<DiffLayout>('unified');
-  const files = diff.data?.files ?? [];
-  const content = Object.fromEntries(files.map((file) => [file.path, contentOf(file)]));
-  return (
-    <ReviewFiles
-      files={files}
-      open={open}
-      viewed={Object.fromEntries(files.map((file) => [file.path, viewed.isViewed(file.path, content[file.path])]))}
-      layout={layout}
-      onLayout={setLayout}
-      onToggle={(path) => setOpen((was) => ({ ...was, [path]: !was[path] }))}
-      onViewed={(path, next) => viewed.mark(path, content[path] ?? '', next)}
-      truncated={diff.data?.truncated}
-    />
-  );
+  return <RecordFileView path={row.path} before={before.data?.text ?? null} after={after.data?.text ?? null} />;
 }
 
 /** The bar's *Overrule*, through the session the supervisor's decision names. */
@@ -93,7 +62,6 @@ export function RunReviewPage({ run, session, fallback }: { run: string | null; 
   }
   if (answer.refused) return <p className="m-0 p-3 text-small text-ink-faint">{t('work.runReview.notRun')}</p>;
   const record = answer.record ?? null;
-  const newest = record?.parts.at(-1)?.session ?? null;
   return (
     <RunReview
       answer={answer}
@@ -104,7 +72,6 @@ export function RunReviewPage({ run, session, fallback }: { run: string | null; 
       overruling={overrule.busy}
       overruleSaid={overrule.said}
       fileBody={record ? (row) => <RecordFileDiff run={record.run} attempt={record.attempt} row={row} /> : undefined}
-      gitFiles={record && (record.kind === 'branch' || record.kind === 'checkout') ? <GitFiles session={newest} viewed={viewed} /> : null}
     />
   );
 }

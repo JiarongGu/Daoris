@@ -39,6 +39,24 @@ describe('the run\'s review', () => {
     })));
   });
 
+  it('draws a branch\'s files from the record\'s own list, opened on the record\'s versions, and marks them viewed by content', () => {
+    const files = [
+      { path: 'src/flag.ts', change: 'modified', before: 'a1b2c3d4e5f6', after: 'f6e5d4c3b2a1', marks: [] },
+      { path: 'src/new.ts', change: 'added', before: null, after: '0badc0de0badc', marks: [] },
+    ];
+    const body = vi.fn(() => <p>the record's versions</p>);
+    const mark = vi.fn();
+    render(<RunReview answer={{ ...BRANCH_REVIEW, files }} viewed={{ isViewed: () => false, mark }} fileBody={body} />);
+
+    expect(screen.getByText('src/flag.ts')).toBeInTheDocument();
+    expect(screen.getByText('src/new.ts')).toBeInTheDocument();
+    expect(screen.getByText('Versions a1b2c3d → f6e5d4c')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('src/new.ts'));
+    expect(body).toHaveBeenCalledWith(expect.objectContaining({ path: 'src/new.ts' }));
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Viewed' })[0]!);
+    expect(mark).toHaveBeenCalledWith('src/flag.ts', expect.any(String), true);
+  });
+
   it('says a refused Accept in the driver\'s own sentence inside the ask, and changes nothing', async () => {
     const refused = "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.";
     const onWord = vi.fn((ask: NodeWordAsk): Promise<NodeWordAnswer> => Promise.resolve({ run: ask.run, node: ask.node, act: ask.act, done: false, message: refused }));
