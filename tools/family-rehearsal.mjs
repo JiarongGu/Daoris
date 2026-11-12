@@ -4209,10 +4209,13 @@ run(`git ${GIT_ID} merge --squash origin/${landedBranch}`, syncPlatform);
 run(`git ${GIT_ID} commit -q -m "Land beside the line (#1)"`, syncPlatform);
 run(`git push -q origin ${syncLine}`, syncPlatform);
 // The session carried on in its tree after its landing: one commit of its own on its branch.
-const sessionBranch = run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim();
-writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
-run(`git ${GIT_ID} add -A`, syncTree);
-run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
+// With no tree (the run before it failed) nothing is written: a path joined to an empty tree is the working directory's, the repository's own.
+const sessionBranch = existsSync(syncTree) ? run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim() : '';
+if (existsSync(syncTree)) {
+  writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
+  run(`git ${GIT_ID} add -A`, syncTree);
+  run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
+}
 
 const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
 const syncListed = run(`dotnet "${driverDll}" tree sync --repository newcomer`, scratch, cleanEnv);
