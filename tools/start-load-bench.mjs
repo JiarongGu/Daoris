@@ -6,7 +6,7 @@
  *
  * `--logs` is an install's `logs` folder (the files `<date>.<source>.jsonl`). The bench reads only; it opens no store, starts no
  * process and writes nothing, so it can be run against the install the person is using. Each start (`app.started` of the desktop's
- * log) is read to the next, and says what STARTPERF1's measurement read by hand:
+ * log) is read to the next, and says what a first load's measurement reads by hand:
  *
  * - `start.stages`: the process, the home, the driver, the host, the window, the browser, the page's first screen with its data and
  *   the splash, each in ms from the process's start.
@@ -15,8 +15,8 @@
  * - the room's first session look (`help.room.look`), the host's requests that took over two seconds (`request.failed`) and the
  *   window's stalls (`ui.stalled`) in the first minute and a half.
  *
- * Times that this build set out to cut are the page stage, the first look's length and the host's slow requests; a start before this
- * build is read as it was written. `--json` prints the same rows as one JSON document.
+ * The times to read are the page stage, the first look's length and the host's slow requests. `--json` prints the same rows as one
+ * JSON document.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';

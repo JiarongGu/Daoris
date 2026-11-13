@@ -35,7 +35,6 @@ internal sealed record SessionEventHead(
     /// <summary>Every this-many events a number's byte offset is kept.</summary>
     public const int Every = 256;
 
-    /// <summary>The turns the record says ended.</summary>
     public long Turns => Spent.Turns;
 
     public static SessionEventHead Empty { get; } = new(0, 0, "", 0, 0, SessionSpent.None, -1, 0, -1, null, 0, new Dictionary<string, string>(), []);
