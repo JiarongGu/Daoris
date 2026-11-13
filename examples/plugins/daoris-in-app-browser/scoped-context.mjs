@@ -8,7 +8,7 @@ const PAGE_EVENT_METHODS = new Set(['on', 'once', 'addListener', 'off', 'removeL
  * so it never takes, navigates or closes a page of the person's or of another session's. Everything else, cookies and storage
  * included, is the real context's own.
  */
-export function scopeContext(real) {
+export function scopeContext(real, { patience = 15_000 } = {}) {
   const own = new Set();
   const announcements = new EventEmitter();
   announcements.setMaxListeners(0);
@@ -21,10 +21,43 @@ export function scopeContext(real) {
     announcements.emit('page', page);
   };
 
+  // Playwright's own newPage reads the page back the moment the host answers `Target.createTarget`, and a host whose relay announces
+  // the tab afterwards leaves it nothing to read. So the target is made here, and the page is the one announced for that target.
+  const targetOf = async page => {
+    const session = await real.newCDPSession(page);
+    try {
+      return (await session.send('Target.getTargetInfo')).targetInfo.targetId;
+    } finally {
+      await session.detach().catch(() => {});
+    }
+  };
+
+  const openPage = async () => {
+    const browserSession = await real.browser().newBrowserCDPSession();
+    const checked = new Set();
+    try {
+      const { targetId } = await browserSession.send('Target.createTarget', { url: 'about:blank' });
+      const deadline = Date.now() + patience;
+      while (Date.now() < deadline) {
+        for (const page of real.pages()) {
+          if (own.has(page) || checked.has(page)) continue;
+          checked.add(page);
+          const found = await targetOf(page).catch(() => undefined);
+          if (found === targetId) return page;
+          if (found === undefined) checked.delete(page);
+        }
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      throw new Error(`the browser made ${targetId} and it was never announced as a page`);
+    } finally {
+      await browserSession.detach().catch(() => {});
+    }
+  };
+
   const methods = {
     pages: () => real.pages().filter(page => own.has(page)),
-    newPage: async (...args) => {
-      const page = await real.newPage(...args);
+    newPage: async () => {
+      const page = await openPage();
       adopt(page);
       return page;
     },

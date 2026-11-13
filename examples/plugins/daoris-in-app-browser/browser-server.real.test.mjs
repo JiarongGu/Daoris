@@ -1,14 +1,29 @@
-// The server against a real Chromium-family browser launched here, under local/scratch: never Daoris's own browser.
-// Run it with DAORIS_REAL_BROWSER=<path of a Chromium, Chrome or Edge executable>; without it the test is skipped.
+// The server against real browsers launched here, under local/scratch: never the installed Daoris's own browser.
+// DAORIS_REAL_BROWSER=<a Chromium, Chrome or Edge executable> runs it on that browser headless;
+// DAORIS_BROWSER_HOST=<a built Daoris.Desktop executable> runs it on Daoris's own browser host (`--daoris-browser`), whose
+// debug port is a relay of its own. Each is skipped where unset.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const executable = process.env.DAORIS_REAL_BROWSER;
+const hosts = [
+  {
+    name: 'a Chromium-family browser',
+    executable: process.env.DAORIS_REAL_BROWSER,
+    command: (port, profile) => [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', 'about:blank'],
+    environment: () => ({}),
+  },
+  {
+    name: "Daoris's own browser host",
+    executable: process.env.DAORIS_BROWSER_HOST,
+    command: (port, profile) => ['--daoris-browser', `--daoris-profile=${profile}`, `--daoris-port=${port}`],
+    environment: folder => ({ DAORIS_HOME: join(folder, 'home') }),
+  },
+];
 const here = fileURLToPath(new URL('.', import.meta.url));
 const scratch = join(fileURLToPath(new URL('../../../local/scratch/', import.meta.url)), 'browser-share-real');
 
@@ -74,15 +89,18 @@ function session(endpoint, data, client) {
   };
 }
 
-test('sessions share the person\'s context through tabs of their own, and an isolated agent gets a context of its own', { skip: !executable, timeout: 240_000 }, async () => {
-  rmSync(join(scratch, 'profile'), { recursive: true, force: true });
+for (const host of hosts) {
+test(`on ${host.name}, sessions share the person's context through tabs of their own, and an isolated agent gets a context of its own`, { skip: !host.executable, timeout: 240_000 }, async () => {
+  const folder = join(scratch, host.name.startsWith('Daoris') ? 'host' : 'chromium');
+  rmSync(folder, { recursive: true, force: true });
+  mkdirSync(join(folder, 'home'), { recursive: true });
   mkdirSync(join(scratch, 'data'), { recursive: true });
   const data = join(scratch, 'data');
   writeFileSync(join(data, 'isolation.json'), '{"isolated": ["codex"]}');
   const site = await listen();
   const origin = `http://127.0.0.1:${site.address().port}`;
   const port = 19000 + Math.floor(Math.random() * 3000);
-  const browser = spawn(executable, [`--remote-debugging-port=${port}`, `--user-data-dir=${join(scratch, 'profile')}`, '--headless=new', '--no-first-run', '--disable-gpu', 'about:blank'], { stdio: 'ignore' });
+  const browser = spawn(host.executable, host.command(port, join(folder, 'profile')), { stdio: 'ignore', env: { ...process.env, ...host.environment(folder) } });
   const sessions = [];
   try {
     await until(async () => fetch(`http://127.0.0.1:${port}/json/version`).then(r => r.ok, () => false), 'the browser listens');
@@ -125,7 +143,9 @@ test('sessions share the person\'s context through tabs of their own, and an iso
     assert.equal((await targets(port)).filter(t => t.url.includes('set=who')).length, 1, "the person's tab stays open");
   } finally {
     for (const open of sessions) open.child.kill();
-    browser.kill();
+    if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], { stdio: 'ignore' });
+    else browser.kill();
     site.close();
   }
 });
+}

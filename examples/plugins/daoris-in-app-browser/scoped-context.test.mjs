@@ -49,6 +49,27 @@ test("a popup of the session's own page is adopted, and a page of anyone else's 
   assert.deepEqual(view.pages(), [own]);
 });
 
+test("a tab the host announces after answering the call that made it is still the session's own", async () => {
+  const real = fakeContext({ attachDelay: 150 });
+  const view = scopeContext(real);
+  const seen = [];
+  view.on('page', page => seen.push(page));
+  const other = fakePage('https://other.test/');
+  real.appear(other);
+
+  const own = await view.newPage();
+
+  assert.equal(own.targetId, real.created[0].targetId);
+  assert.deepEqual(seen, [own], "the page that appeared meanwhile is another's");
+  assert.deepEqual(view.pages(), [own]);
+});
+
+test('a tab that is never announced fails with the target named, not a type error', async () => {
+  const real = fakeContext({ attachDelay: 60_000 });
+  const view = scopeContext(real, { patience: 200 });
+  await assert.rejects(view.newPage(), /target-\d+ and it was never announced as a page/);
+});
+
 test('everything else reaches the real context as it is', async () => {
   const real = fakeContext({ cookies: [{ name: 'a' }] });
   const view = scopeContext(real);
