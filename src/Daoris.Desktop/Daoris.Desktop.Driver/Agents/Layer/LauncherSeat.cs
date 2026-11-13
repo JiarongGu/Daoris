@@ -31,6 +31,9 @@ internal sealed record LauncherSeat(ContainedKind Kind, StartClass Whose, string
     /// <summary>Told each raw stdout line that is no JSON object, by the one test today's mapper makes: the harness's own words.</summary>
     public Action<string> Outside { get; init; } = _ => { };
 
+    /// <summary>Told each raw stdout frame that is Claude Code's compact boundary (<see cref="NativeCompaction"/>); the layer's events name none.</summary>
+    public Action<WireReading.Compacted> Compacted { get; init; } = _ => { };
+
     /// <summary>Told each stderr line: the transcript's line and the harness's own words, as today's capture keeps them.</summary>
     public Action<string> Error { get; init; } = _ => { };
 }

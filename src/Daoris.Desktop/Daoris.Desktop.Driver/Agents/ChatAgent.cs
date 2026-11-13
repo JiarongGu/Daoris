@@ -16,6 +16,9 @@ internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
     /// <summary>The variables its program reads for the model and the effort, which the open's asked choice reads from its spawn.</summary>
     public SpawnChoiceVariables ChoiceVariables => adapter.Spawned().ChoiceVariables;
 
+    /// <summary>Whether its protocol door reports a compaction as an event (<see cref="ISpawn.NamesCompaction"/>).</summary>
+    public bool NamesCompaction => adapter.Spawned().NamesCompaction;
+
     /// <summary>What the conversation's door can do (<see cref="DoorAbilities"/>).</summary>
     public DoorAbilities Abilities => adapter.Can;
 

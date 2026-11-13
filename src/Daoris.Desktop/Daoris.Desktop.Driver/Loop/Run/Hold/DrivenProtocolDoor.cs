@@ -63,7 +63,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
         Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
         Action<IReadOnlyList<ChatMessage>> handedBack, Func<string, bool>? limitSaid = null,
-        Func<CancellationToken, Task<string>>? compactWords = null)
+        Func<CancellationToken, Task<string>>? compactWords = null, bool namesCompaction = false)
     {
         var context = wiring.Context;
 
@@ -92,6 +92,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
             Ending = ending,
             Configure = session =>
             {
+                session.CompactionNamed = namesCompaction;
                 session.Unoffered = unoffered;
                 session.Permissions = HeldPermissions.Of(context.Events).For(sessionId); // held only under asking's mark
                 session.SetupChanged = setupChanged;

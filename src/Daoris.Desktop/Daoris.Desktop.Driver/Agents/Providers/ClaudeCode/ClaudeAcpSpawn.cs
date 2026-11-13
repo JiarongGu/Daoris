@@ -18,6 +18,8 @@ internal sealed class ClaudeAcpSpawn : ISpawn
 
     public bool ClaudeSeam => true;
 
+    public bool NamesCompaction => true;
+
     public void PointAtClaude(System.Diagnostics.ProcessStartInfo info, string managedClaude) => ClaudeCodeSpawn.PointAt(info, managedClaude);
 
     public SpawnChoiceVariables ChoiceVariables => ClaudeCodeSpawn.ChoiceVariablesOfClaude;

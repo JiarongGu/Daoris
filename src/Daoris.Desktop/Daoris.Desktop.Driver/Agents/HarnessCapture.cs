@@ -173,6 +173,9 @@ internal static class HarnessCapture
             var frame = NativeFrame.Of(line);
             if (children.Read(frame) is { } child) Work(child);
             if (tasks.Read(frame) is { } task) Work(task);
+            // A compaction its harness says, once as its boundary frame goes by.
+            if (NativeCompaction.Read(frame) is { } compacted) sink.Read(compacted);
+
             // What the harness says it loaded, said once as its init frame goes by.
             if (NativeInit.Read(frame) is { } loaded)
             {

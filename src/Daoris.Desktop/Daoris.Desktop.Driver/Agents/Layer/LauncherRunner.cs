@@ -134,7 +134,9 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
                 try
                 {
                     seat.Heard();
-                    if (!NativeFrame.Of(line).IsObject) seat.Outside(line);
+                    var frame = NativeFrame.Of(line);
+                    if (!frame.IsObject) seat.Outside(line);
+                    else if (NativeCompaction.Read(frame) is { } compacted) seat.Compacted(compacted);
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
