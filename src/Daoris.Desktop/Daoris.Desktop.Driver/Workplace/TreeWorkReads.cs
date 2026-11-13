@@ -34,16 +34,16 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// judges the entry), so `status` is not asked again; null asks git.
     /// </param>
     /// <param name="here">The tree's repository and branch as a landing read them a moment ago; null reads them where needed.</param>
+    /// <param name="read">The room memo's status, only while its HEAD, index and file generation still stand.</param>
     internal async Task<TreeWork?> WorkAsync(
-        string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null)
+        string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null, TreeStatus? read = null)
     {
         // Reads only (the remark above): each question of git is asked once, the tree's layout in one start.
         using var once = GitReadOnce.Within(ct);
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
-        // The paths, the head and the branch are one start (status), not three; a status git could not give is asked as before.
         string? judged, own;
-        if (await TreeStatus.ReadAsync(tree, ct).ConfigureAwait(false) is { } status)
+        if ((read ?? await TreeStatus.ReadAsync(tree, ct).ConfigureAwait(false)) is { } status)
         {
             uncommitted ??= status.Changed;
             judged = status.Head;

@@ -5,6 +5,12 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-13 - The room repeated every unchanged tree's status (ROOMLOOK1)
+
+- **Root cause:** `952f960a84` kept commit judgements but unconditionally asked each tree's status again; content-held trees also repeated their ignored-output judgement.
+- **Fix:** the room memo keeps both while HEAD, index and the watched files stand, discards a lost or replaced watch, and keeps no generation changed during its read. Acts still judge afresh.
+- **Verify:** `TreeReadChangesTests`, `TreeReadMemoTests` and `HelpTreesReadTests`, including the 145-tree warm bound and zero git starts.
+
 ## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
 
 - **Symptom:** a run whose branch was already landed and pushed got a second Accept on a merge of its remote line, committed by the

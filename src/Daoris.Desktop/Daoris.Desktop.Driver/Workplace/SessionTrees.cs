@@ -523,6 +523,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="TreeWorkReads.WorkAsync"/>
     public Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default) => WorkReads.WorkAsync(tree, ct);
 
+    internal Task<TreeWork?> WorkWithStatusAsync(string tree, TreeStatus? status, CancellationToken ct) =>
+        WorkReads.WorkAsync(tree, ct, read: status);
+
     /// <inheritdoc cref="TreeWorkReads.UncommittedAsync"/>
     public Task<int?> UncommittedAsync(string tree, CancellationToken ct = default) => WorkReads.UncommittedAsync(tree, ct);
 

@@ -163,7 +163,9 @@ joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiri
 reader for both account discovery and terminal construction. Knowledge's `SkillFiles` validates every copied skill.
 
 The driver's `Workplace/` owns trees, git, landing, keeping and session history, with its pure files in `Workplace/Domain/`
-and tests mirrored under `Driver.Tests/Workplace/`. Namespaces remain `Daoris.Driver`; D212 records its remaining upward cuts.
+and tests mirrored under `Driver.Tests/Workplace/`. The room's tree memo keeps statuses and content proofs until their inputs move;
+file watches cover edits and ignored output, with direct HEAD and index checks and invalidation on watch loss or replacement.
+Namespaces remain `Daoris.Driver`; D212 records its remaining upward cuts.
 Workplace retains landing plans, their replay graph, process wording and git preparation. A landing's replay settles by the
 merge base the backlog and each row table the line's `daoris.gates.json` declares `by: rows` (`BacklogMerge`), and sets apart
 what a union merge joined (`UnionJoins`); each twins the merge tool's rule over one fixture table (INTEGRATE1c). The row tables are

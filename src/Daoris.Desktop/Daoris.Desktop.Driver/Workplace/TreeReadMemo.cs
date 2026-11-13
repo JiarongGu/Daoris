@@ -6,31 +6,25 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Each kept tree's last read, by what it is read from: the trees fact walks a tree again only where something its
-/// work is judged from moved since, and asks one <c>git status</c> of every other.
+/// The room's kept tree judgements: git is asked again where the proof's inputs or the working files moved.
 /// </summary>
 /// <remarks>
-/// <para><b>Why.</b> A tree's walk (<see cref="TreeWorkReads.WorkAsync"/>) is five git starts or more, one after another: on the
-/// install, one repository's part of the trees fact read its 143-145 kept trees in 45-110 s, past its bound, every few minutes,
-/// where nearly every tree held what it held the last time.</para>
-///
 /// <para><b>What a read rests on, read from git's files, no git started.</b> The tree's own: its <c>.git</c> link, its
 /// <c>HEAD</c> and the commit of the branch it names. Its repository's: every branch and remote-tracking ref the walk counts as
 /// holding work, which is every one but a session's (<c>daoris/</c>), loose and packed. And the home's: the landings record
 /// the squash and content proofs read, and the choices the line is read from. A repository whose refs are not files
 /// (<c>reftable</c>), a tree that is no linked tree, and a file that cannot be read are walked as before, and nothing is kept.</para>
 ///
-/// <para>🔴 <b>Never unchanged where it changed.</b> What the working tree holds is in no file of git's, so <c>git status</c> is
-/// asked of every tree every time, and a tree whose status git cannot give is walked. A read is kept only where git counted its
-/// commits. A tree whose commits the line holds by content (<see cref="TreeWork.Held"/>) keeps its proof, which rests on the same
-/// refs exactly, and asks again what it holds beyond its commits, which reads the working tree's ignored paths. A tree's stamp is taken before its walk, so a change during it is a different stamp the next time.</para>
+/// <para>The working files and index are tracked by <see cref="TreeReadChanges"/>. An unchanged generation keeps the status
+/// and any content-held work too; an edit asks those again without repeating a proof whose refs still stand. A failed status
+/// or a change during the read keeps no file generation. This memo serves observations alone: an act still judges afresh.</para>
 ///
 /// <para><b>The line moving on.</b> A landing moves the line, which would walk every tree of the repository again. A tree whose
 /// walk counted no commit stays at none where its own stamp is the same and its repository's refs only moved forward since:
 /// none went, and each that moved is a descendant of where it stood (one <c>merge-base --is-ancestor</c> a moved ref, a pass),
 /// since a commit a ref held is still held then. A tree that counted commits is walked again.</para>
 /// </remarks>
-internal sealed class TreeReadMemo
+internal sealed class TreeReadMemo(IChangeSource? source = null, Func<string, TreeReadStamp?>? stamp = null) : IDisposable
 {
     private static readonly ConcurrentDictionary<string, TreeReadMemo> Homes = new(StringComparer.OrdinalIgnoreCase);
 
@@ -40,12 +34,22 @@ internal sealed class TreeReadMemo
     // The refs each kept read is taken at, by their version, so a later pass can tell whether they only moved forward.
     private readonly ConcurrentDictionary<string, CountedRefs> _versions = new(StringComparer.Ordinal);
 
+    internal TreeReadChanges Changes { get; } = new(source ?? new FolderWatcherSource());
+
+    internal static void Release(string home)
+    {
+        if (Homes.TryRemove(Path.GetFullPath(home), out var memo)) memo.Dispose();
+    }
+
+    public void Dispose() => Changes.Dispose();
+
     /// <summary>The memo of <paramref name="home"/>'s trees, one for the process.</summary>
     internal static TreeReadMemo Of(string home) => Homes.GetOrAdd(Path.GetFullPath(home), _ => new TreeReadMemo());
 
     /// <summary>One read of some trees through <paramref name="trees"/>: each repository's refs and the home's records read once.</summary>
     internal TreeReadPass Begin(SessionTrees trees, LookTimes? times = null)
     {
+        Changes.Prune();
         // What no kept read rests on any more is let go: a gone tree's read, then a version no read is taken at.
         foreach (var tree in _trees.Keys)
         {
@@ -58,7 +62,7 @@ internal sealed class TreeReadMemo
             if (!used.Contains(version)) _versions.TryRemove(version, out _);
         }
 
-        return new TreeReadPass(this, trees, times);
+        return new TreeReadPass(this, trees, times, stamp);
     }
 
     internal bool TryLast(string tree, out Kept kept) => _trees.TryGetValue(tree, out kept!);
@@ -76,6 +80,7 @@ internal sealed class TreeReadMemo
     /// <summary>A tree's kept read: its own stamp, its repository's refs version and the home's stamp it is taken at, and its work.</summary>
     internal sealed record Kept(string Tree, string Refs, string Home, TreeWork Work)
     {
+        internal TreeReadChanges.Version? Files { get; init; }
         /// <summary>A held tree's repository's declared output, once read; it rests on what <see cref="Refs"/> and <see cref="Home"/> hold.</summary>
         internal IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared { get; init; }
     }
@@ -141,11 +146,10 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
     }
 }
 
-/// <summary>
-/// One read of some trees (<see cref="TreeReadMemo"/>): each tree's kept read where nothing it rests on moved, its
-/// <c>git status</c> asked again; a walk where anything did. Safe to use from several trees at once.
-/// </summary>
-internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTimes? times = null)
+internal readonly record struct TreeReadStamp(string Tree, CountedRefs Refs, string GitDir, string Head);
+
+/// <summary>One read of some trees, sharing the repository and home stamps across its concurrent tree judgements.</summary>
+internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTimes? times = null, Func<string, TreeReadStamp?>? readStamp = null)
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, CountedRefs?> _repositories = new(StringComparer.OrdinalIgnoreCase);
@@ -153,11 +157,11 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
     private string? _home;
 
     /// <summary>
-    /// The tree's work (<see cref="SessionTrees.WorkAsync"/>'s answer): the kept read with its status asked again where its stamp
-    /// stands, else the walk, kept where it may be.
+    /// The kept observation while its inputs stand, else git's judgement.
     /// </summary>
     internal async Task<TreeWork?> WorkAsync(string tree, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
         string full;
         try
         {
@@ -168,19 +172,31 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
             return await trees.WorkAsync(tree, ct).ConfigureAwait(false);
         }
 
-        if (!trees.Holds(full) || TreeFolders.TreeGone(full) || Stamp(full) is not { } stamp)
+        if (!trees.Holds(full) || TreeFolders.TreeGone(full) || (readStamp is null ? Stamp(full) : readStamp(full)) is not { } stamp)
         {
             memo.Forget(full);
             return await trees.WorkAsync(tree, ct).ConfigureAwait(false);
         }
 
         var home = Home();
+        var files = memo.Changes.Read(full, stamp.GitDir);
         var watch = Stopwatch.StartNew();
         if (memo.TryLast(full, out var kept) && kept.Tree == stamp.Tree && kept.Home == home
-            && (kept.Refs == stamp.Refs.Version || kept.Work.Commits == 0 && await ForwardAsync(kept.Refs, stamp.Refs, full, ct).ConfigureAwait(false))
-            // The same link to a linked tree still there is the repository's top, as the walk that kept it proved: one start.
-            && await trees.StatusCountAsync(full, ct).ConfigureAwait(false) is { } uncommitted)
+            && (kept.Refs == stamp.Refs.Version || kept.Work.Commits == 0 && await ForwardAsync(kept.Refs, stamp.Refs, full, ct).ConfigureAwait(false)))
         {
+            if (files is not null && kept.Files == files)
+            {
+                times?.AddTree(full, "kept", watch.ElapsedMilliseconds);
+                memo.Keep(full, kept with { Refs = stamp.Refs.Version }, stamp.Refs);
+                return kept.Work;
+            }
+
+            // No file generation to trust, or files moved: ask git as before.
+            if (await trees.StatusCountAsync(full, ct).ConfigureAwait(false) is not { } uncommitted)
+            {
+                memo.Forget(full);
+                return await trees.WorkAsync(tree, ct).ConfigureAwait(false);
+            }
             times?.AddTree(full, "status", watch.ElapsedMilliseconds);
             TreeWork? work = kept.Work with { Uncommitted = uncommitted };
             var declared = kept.Declared;
@@ -196,23 +212,33 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
 
             if (work is not null)
             {
-                memo.Keep(full, kept with { Refs = stamp.Refs.Version, Work = work, Declared = declared }, stamp.Refs);
+                memo.Keep(full, kept with { Refs = stamp.Refs.Version, Work = work, Declared = declared, Files = Unmoved(full, stamp.GitDir, files) }, stamp.Refs);
                 return work;
             }
         }
 
         watch.Restart();
-        var walked = await trees.WorkAsync(tree, ct).ConfigureAwait(false);
+        var status = memo.TryLast(full, out kept) && kept.Tree == stamp.Tree && files is not null && kept.Files == files
+            && kept.Work.Uncommitted is { } changed
+                ? new TreeStatus(changed, WorkingTree.IsCommitId(stamp.Head) ? stamp.Head : null, kept.Work.Branch)
+                : null;
+        var walked = await trees.WorkWithStatusAsync(tree, status, ct).ConfigureAwait(false);
         times?.AddTree(full, "walk", watch.ElapsedMilliseconds);
         if (walked is { Commits: not null })
         {
-            // A held tree's declared output is read with its walk, so its next read starts no more than its two statuses.
+            // Keep the declaration with the proof, so an edit need only judge what lies beyond its commits.
             var declared = walked.Held is null ? null : await DeclaredOrNullAsync(full, stamp.Refs.CommonDir, ct).ConfigureAwait(false);
-            memo.Keep(full, new TreeReadMemo.Kept(stamp.Tree, stamp.Refs.Version, home, walked) { Declared = declared }, stamp.Refs);
+            memo.Keep(full, new TreeReadMemo.Kept(stamp.Tree, stamp.Refs.Version, home, walked)
+            {
+                Declared = declared, Files = walked.Uncommitted is null ? null : Unmoved(full, stamp.GitDir, files),
+            }, stamp.Refs);
         }
         else memo.Forget(full);
         return walked;
     }
+
+    private TreeReadChanges.Version? Unmoved(string tree, string git, TreeReadChanges.Version? before) =>
+        before is not null && memo.Changes.Read(tree, git) == before ? before : null;
 
     private async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>?> DeclaredOrNullAsync(string tree, string common, CancellationToken ct)
     {
@@ -230,7 +256,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
     /// What the tree's read rests on, from git's files: its link, its <c>HEAD</c> and the commit of the branch it names, with its
     /// repository's counted refs. Null where it is no linked tree, its refs are no files, or a file cannot be read.
     /// </summary>
-    private (string Tree, CountedRefs Refs)? Stamp(string tree)
+    private TreeReadStamp? Stamp(string tree)
     {
         try
         {
@@ -253,7 +279,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
                 if (at.Length == 0) return null;
             }
 
-            return (string.Join('\n', linkText, head, at), refs);
+            return new TreeReadStamp(string.Join('\n', linkText, head, at), refs, gitDir, at);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

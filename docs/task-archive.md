@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ROOMLOOK1 — room tree reads (2026-11-13)
+
+> **ROOMLOOK1** (driver): Outcome: unchanged tree status and content-held work stay kept until their inputs move, with watch-loss invalidation and a 145-tree warm look under 500 ms with no git calls; see `docs/areas/conversations-and-context.md`.
+
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.
