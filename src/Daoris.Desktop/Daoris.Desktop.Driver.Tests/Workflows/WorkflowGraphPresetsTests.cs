@@ -95,7 +95,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     {
         Assert.Equal(
             ["merge-after-accept", "merge-automatic", "documents", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "release", "in-place",
-             "plan-review-apply", "in-copy"],
+             "plan-review-apply", "in-copy", "team-part", "ask-delivery"],
             WorkflowDefaults.All.Select(each => each.Id));
         Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Name)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
         Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
@@ -114,6 +114,8 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     [InlineData("in-place", "Each piece of work is done in its department's own place, and you accept it there: nothing lands.")]
     [InlineData("plan-review-apply", "Each piece of work is done in its department's own place, and you accept it there: nothing lands.")]
     [InlineData("in-copy", "Each piece of work is done in its department's own place, and you accept it there: nothing lands.")]
+    [InlineData("team-part", "Each piece of work is integrated into the line once its agent is done, on gates the repository accepted.")]
+    [InlineData("ask-delivery", "You accept each piece of work, and it merges into the line.")]
     public void Each_default_is_sound_says_its_delivery_and_has_its_line(string id, string landing)
     {
         var shipped = WorkflowDefaults.Of(id)!;

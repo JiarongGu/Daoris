@@ -32,10 +32,10 @@ const placedAt = (graph: unknown, rem: number, options: Partial<Parameters<typeo
 describe('the shipped workflows, read from the driver\'s own data', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('are the eleven this drawing is proved over, so a default added or changed is looked at here', () => {
+  it('are the thirteen this drawing is proved over, so a default added or changed is looked at here', () => {
     expect(SHIPPED.map((each) => each.id)).toEqual([
-      'branch-to-push', 'documents', 'in-copy', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept', 'merge-automatic',
-      'plan-review-apply', 'pull-request', 'release',
+      'ask-delivery', 'branch-to-push', 'documents', 'in-copy', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept',
+      'merge-automatic', 'plan-review-apply', 'pull-request', 'release', 'team-part',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
     expect([release.nodes.length, release.wires.length, release.end]).toEqual([12, 14, 'line']);

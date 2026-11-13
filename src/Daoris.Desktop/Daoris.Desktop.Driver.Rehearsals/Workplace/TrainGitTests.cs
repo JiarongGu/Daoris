@@ -97,6 +97,47 @@ public sealed class TrainGitTests : LandedFixture
         var files = (await GitAsync(train.Root, "ls-tree", "--name-only", Line)).Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.All(new[] { "a.txt", "b.txt", "c.txt" }, file => Assert.Contains(file, files));
         Assert.Equal(train.Base, (await GitAsync(train.Root, "rev-parse", "main")).Trim());
+
+        // Each promoted batch is kept on its own numbered ref, the last at the branch's tip.
+        Assert.Equal(
+            [$"{TrainRefs.Prefix}{Ask}/1", $"{TrainRefs.Prefix}{Ask}/2", $"{TrainRefs.Prefix}{Ask}/3"],
+            (await GitAsync(train.Root, "for-each-ref", "--format=%(refname)", $"{TrainRefs.Prefix}{Ask}/")).Split('\n', StringSplitOptions.RemoveEmptyEntries).Order());
+        Assert.Equal((await GitAsync(train.Root, "rev-parse", Line)).Trim(), (await GitAsync(train.Root, "rev-parse", $"{TrainRefs.Prefix}{Ask}/3")).Trim());
+    }
+
+    [Fact]
+    public async Task The_lines_tip_is_merged_into_the_asks_branch_from_objects_alone_and_a_branch_already_holding_it_is_left()
+    {
+        var train = await StartAsync(Part("p1"));
+        await CommitAsync(train.Root, "line.txt", "the line moved\n", "the line moves");
+        var tip = (await GitAsync(train.Root, "rev-parse", "main")).Trim();
+        var before = (await GitAsync(train.Root, "rev-parse", Line)).Trim();
+
+        var merged = await TrainBases.PrepareAsync(train.Root, Ask, "main", default);
+
+        Assert.Equal(TrainBaseKinds.Merged, merged.Kind);
+        Assert.Equal([before, tip], (await GitAsync(train.Root, "rev-list", "--parents", "-n1", Line)).Trim().Split(' ')[1..]);
+        Assert.Equal("the line moved\n", await GitAsync(train.Root, "show", $"{Line}:line.txt"));
+        Assert.Equal(TrainBaseKinds.Current, (await TrainBases.PrepareAsync(train.Root, Ask, "main", default)).Kind);
+    }
+
+    [Fact]
+    public async Task An_asks_branch_that_does_not_stand_is_made_at_the_lines_tip_and_a_conflict_leaves_it_as_it_was()
+    {
+        var root = await RepositoryAsync("engine");
+        var tip = (await GitAsync(root, "rev-parse", "main")).Trim();
+
+        Assert.Equal(TrainBaseKinds.Current, (await TrainBases.PrepareAsync(root, Ask, "main", default)).Kind);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", Line)).Trim());
+
+        await GitAsync(root, "checkout", "--quiet", Line);
+        await CommitAsync(root, "shared.txt", "on the ask\n", "the ask's change");
+        await GitAsync(root, "checkout", "--quiet", "main");
+        await CommitAsync(root, "shared.txt", "on the line\n", "the line's change");
+        var asked = (await GitAsync(root, "rev-parse", Line)).Trim();
+
+        Assert.Equal(TrainBaseKinds.Conflict, (await TrainBases.PrepareAsync(root, Ask, "main", default)).Kind);
+        Assert.Equal(asked, (await GitAsync(root, "rev-parse", Line)).Trim());
     }
 
     [Fact]

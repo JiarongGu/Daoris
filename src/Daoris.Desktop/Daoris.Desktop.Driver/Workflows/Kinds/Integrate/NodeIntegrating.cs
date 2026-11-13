@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class NodeIntegrating(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<IIntegrationDoor?> integration, Func<IIntegrationLines?> lines,
-    Func<DriverConfig?> config, Func<Action<string, string>?> integrated)
+    Func<DriverConfig?> config, Func<Action<string, string>?> integrated, Func<ITrainPlans?> plans)
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IntegrationCardWait> _cards = new(StringComparer.Ordinal);
 
@@ -53,6 +53,12 @@ internal sealed class NodeIntegrating(
         {
             Unit = unit, Tip = landed.Tip, Request = NodeOptions.Text(node, "request"), Conflicts = NodeOptions.Text(node, "conflicts"),
         };
+        // A part's worker lands on its ask's branch through the same queue, its request tagged so the train reads it.
+        if ((governed.Scope?.Quest?.Records.Quest ?? governed.Unit.Records.Quest) is { } quest
+            && await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans(), ct).ConfigureAwait(false) is { } train)
+        {
+            ask = ask with { Train = train };
+        }
 
         // The landing's acceptance read first, with no git and no write: where it is no request, the node waits ready for the owner's card
         // or the steward's act, and nothing is written (a line gaining a policy over standing landings requests none of them).

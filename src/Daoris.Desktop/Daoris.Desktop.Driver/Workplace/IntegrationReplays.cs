@@ -30,6 +30,8 @@ internal sealed record IntegrationReplayAsk(string Repository, string Workspace,
 
     /// <summary>Which queued requests are ready, and in what order, where the line's requests are an ask's parts; null takes the queue as it stands.</summary>
     public TrainSelection? Train { get; init; }
+
+    public string? TrainBase { get; init; }
 }
 
 /// <summary>What a form-and-replay answered (<see cref="IntegrationReplayRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -132,6 +134,12 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         var queued = store.Queued(ask.Repository, ask.Line);
         if (ask.Train is { } train && queued.Count > 0) queued = await train.ReadyAsync(queued, ct).ConfigureAwait(false);
         if (queued.Count == 0) return new(IntegrationReplayRuns.Idle, $"no request of `{ask.Line}` is queued and ready.");
+
+        if (ask.TrainBase is { } trainBase && TrainBranch.AskOf(ask.Line) is { } trainAsk)
+        {
+            var based = await TrainBases.PrepareAsync(ask.Root, trainAsk, trainBase, ct).ConfigureAwait(false);
+            if (based.Kind == TrainBaseKinds.Unread) return new(IntegrationReplayRuns.Unread, based.Said);
+        }
 
         var (code, commit, err) = await WorkingTree.GitAsync(ask.Root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{ask.Line}^{{commit}}"], ct).ConfigureAwait(false);
         if (code != 0 || commit.Trim().Length == 0)

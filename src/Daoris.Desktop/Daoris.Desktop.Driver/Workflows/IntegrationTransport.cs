@@ -196,6 +196,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             {
                 Say = _world.Say, Config = config,
                 Train = new TrainSelection(new TrainParts(store), _world.Plans ?? NoPlans.Read),
+                TrainBase = TrainBranch.AskOf(send.Line) is null ? null : CanonicalLine.Choose(config, send.Repository, send.Workspace, guess: null).Branch,
             },
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
