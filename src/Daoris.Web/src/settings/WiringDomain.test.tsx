@@ -316,11 +316,11 @@ describe('Settings → This Daoris', () => {
     open();
     const terminal = within(await screen.findByRole('region', { name: 'Terminal' }));
 
-    expect(terminal.getByText('daoris.cmd')).toBeTruthy();
+    expect(terminal.getByText('daoris.exe')).toBeTruthy();
     expect(terminal.getByText('missing')).toBeTruthy();
     expect(terminal.getByText("On your account's PATH")).toBeTruthy();
     expect(terminal.getByText('Another')).toBeTruthy();
-    expect(terminal.getByText('D:/somewhere/else/bin/daoris.cmd')).toBeTruthy();
+    expect(terminal.getByText('D:/somewhere/else/bin/daoris.exe')).toBeTruthy();
     // The address file's, and the account's DAORIS_SERVICE_URL, which a terminal reads first.
     expect(terminal.getAllByText('http://localhost:5177')).toHaveLength(2);
     expect(terminal.getByText(/^process 4242, since /)).toBeTruthy();

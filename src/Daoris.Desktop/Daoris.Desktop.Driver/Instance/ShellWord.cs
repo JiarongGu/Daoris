@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// An argument as a command in the driver's words prints it. A command the driver names
 /// in a hold, a refusal or a card's terminal twin is one a person copies into whichever shell they have: PowerShell, Command
-/// Prompt or a POSIX shell, and on Windows the install's <c>daoris</c> is <c>daoris.cmd</c>, which PowerShell finds too.
+/// Prompt or a POSIX shell, and on Windows the install's <c>daoris</c> is <c>daoris.exe</c>, which all three find.
 /// An account's id or a workspace's name may hold a character one of them reads, so a value printed bare can
 /// change the command it is pasted into: <c>R&amp;D</c> pasted into Command Prompt runs <c>D</c>. One spelling serves every
 /// shell: bare where every shell reads the value as itself, in double quotes where they keep it whole in all three, and a
@@ -60,7 +60,7 @@ public static class ShellWord
     private static bool IsBareMark(int value) => value is '.' or '+' or ':' or '@' or '/' or '-';
 
     /// <summary>
-    /// No one spelling keeps it whole in PowerShell 5.1 (through <c>daoris.cmd</c>), Command Prompt and a POSIX shell:
+    /// No one spelling keeps it whole in PowerShell 5.1, Command Prompt and a POSIX shell:
     /// <c>&amp; | &lt; &gt; ^ % $</c>, a backtick, a double quote, <c>\</c>, <c>!</c>, a quote PowerShell reads as one
     /// (U+2018 to U+201E), and a control, format, line or paragraph separator character.
     /// </summary>

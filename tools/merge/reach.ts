@@ -1,10 +1,13 @@
 /**
  * Which gates a change's paths can reach, by the lane table, and why each gate runs or is skipped.
  */
-import { laneMatcher } from '../merge/lanes-file.ts';
-import { REACH } from './reach-table.mjs';
-import { isLongGate } from '../merge/plan.ts';
-import { pad } from '../merge/format.ts';
+import { laneMatcher } from './lanes-file.ts';
+import { REACH } from './reach-table.ts';
+import type { Rule } from './reach-table.ts';
+import { isLongGate } from './plan.ts';
+import type { Planned } from './plan.ts';
+import { pad } from './format.ts';
+import type { Lane } from './lanes.ts';
 
 // test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
@@ -13,7 +16,7 @@ import { pad } from '../merge/format.ts';
  * maps all the code, the census of test units reads every suite's
  * sources, and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
  */
-export const BASELINE = Object.freeze(['universal', 'code-map', 'test-map', 'cli']);
+export const BASELINE: readonly string[] = Object.freeze(['universal', 'code-map', 'test-map', 'cli']);
 
 /**
  * What a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
@@ -22,7 +25,10 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'test-map', 'cli
  * listed and skipped, "in the CI beside" (`--ci`); `--gated` runs what the merge's paths reach, `--full` every gate,
  * `--rerun <gate>` a named one.
  */
-export const BLOCKING = Object.freeze(['universal', 'code-map', 'test-map']);
+export const BLOCKING: readonly string[] = Object.freeze(['universal', 'code-map', 'test-map']);
+
+/** A light check a merge blocks on when one of its paths reaches what it reads: the gate, the paths that reach it and why. */
+export type PathCheck = { gate: string; paths: readonly string[]; why: string };
 
 /**
  * The light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides that each
@@ -35,7 +41,7 @@ export const BLOCKING = Object.freeze(['universal', 'code-map', 'test-map']);
  * `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's `web-unit` would run; the two
  * files run in a minute or two, most of it jsdom starting. The desktop's censuses are a third.
  */
-export const PATH_CHECKS = Object.freeze([
+export const PATH_CHECKS: readonly PathCheck[] = Object.freeze([
   {
     gate: 'web-types',
     paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
@@ -59,39 +65,49 @@ export const PATH_CHECKS = Object.freeze([
 ]);
 
 /** The suites a merge runs whatever it changed: the CLI's verify holds the records, lists and documents, which no path places; about three minutes in a CI run. */
-export const MERGE_SUITES = Object.freeze(['cli']);
+export const MERGE_SUITES: readonly string[] = Object.freeze(['cli']);
 
-const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) => check.gate === gate) ?? null;
+/** The lanes the table places by: each lane's id and its paths. */
+type Placing = readonly Pick<Lane, 'id' | 'paths'>[];
+
+const pathCheckOf = (gate: string, pathChecks: readonly PathCheck[] = PATH_CHECKS): PathCheck | null => pathChecks.find((check) => check.gate === gate) ?? null;
 
 /** Of `paths`, the ones that reach a path check: its own, and those the lane table sends to every gate. */
-const pathCheckPaths = (check, paths, reach, lanes) => {
-  const own = laneMatcher(check.paths);
+const pathCheckPaths = (check: PathCheck, paths: readonly string[], reach: readonly Rule[], lanes: Placing): string[] => {
+  const own = laneMatcher([...check.paths]);
   const readRule = ruleReader(reach, lanes);
   return paths.filter((path) => own(path) || readRule(path)?.gates === '*');
 };
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
-export function ruleFor(path, rules, lanes) {
+export function ruleFor(path: string, rules: readonly Rule[], lanes: Placing): Rule | null {
   return ruleReader(rules, lanes)(path);
 }
 
 /** Compile a reached rule once within this read; a later read sees the configuration afresh. */
-function ruleReader(rules, lanes) {
-  const matchers = new Map();
+function ruleReader(rules: readonly Rule[], lanes: Placing): (path: string) => Rule | null {
+  const matchers = new Map<Rule, (path: string) => boolean>();
   return (path) => rules.find((rule) => {
-    if (!matchers.has(rule)) {
+    let matches = matchers.get(rule);
+    if (!matches) {
       const paths = rule.paths;
       const lane = paths ? null : lanes.find((candidate) => candidate.id === rule.lane);
-      matchers.set(rule, paths ? laneMatcher(paths) : lane ? laneMatcher(lane.paths) : () => false);
+      matches = paths ? laneMatcher([...paths]) : lane ? laneMatcher(lane.paths) : () => false;
+      matchers.set(rule, matches);
     }
-    return matchers.get(rule)(path);
+    return matches(path);
   }) ?? null;
 }
 
-const andMore = (paths) => `${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}`;
+const andMore = (paths: readonly string[]): string => `${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}`;
 
 /** Every gate some rule of the table names: a gate none names is reached by every path. */
-const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*' ? [] : rule.gates)));
+const namedGates = (reach: readonly Rule[]): Set<string> => new Set(reach.flatMap((rule) => (rule.gates === '*' ? [] : rule.gates)));
+
+/** One gate of the plan as a merge reads it: whether it runs, whether the table reaches it, and why. */
+export type Selection = { gate: Planned; run: boolean; reached: boolean; why: string };
+
+type Reading = { lanes?: Placing; reach?: readonly Rule[]; pathChecks?: readonly PathCheck[] };
 
 /**
  * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order. A gate is
@@ -100,11 +116,15 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
-export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH, pathChecks = PATH_CHECKS } = {}) {
+export function selectGates(
+  plan: readonly Planned[],
+  changed: readonly string[],
+  { lanes = [], full = false, gated = false, reach = REACH, pathChecks = PATH_CHECKS }: Reading & { full?: boolean; gated?: boolean } = {},
+): { gates: Selection[]; unplaced: string[] } {
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
-  const reachedBy = new Map();
-  const unplaced = [];
+  const reachedBy = new Map<string, { paths: string[]; rule: Rule }>();
+  const unplaced: string[] = [];
   const readRule = ruleReader(reach, lanes);
   for (const path of changed) {
     const rule = readRule(path);
@@ -114,18 +134,19 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
     }
     for (const gate of rule.gates === '*' ? names : rule.gates) {
       if (!names.has(gate)) continue;
-      if (!reachedBy.has(gate)) reachedBy.set(gate, { paths: [], rule });
-      reachedBy.get(gate).paths.push(path);
+      let by = reachedBy.get(gate);
+      if (!by) reachedBy.set(gate, by = { paths: [], rule });
+      by.paths.push(path);
     }
   }
-  const reachOf = (gate) => {
+  const reachOf = (gate: Planned): { reached: boolean; why: string } => {
     if (unplaced.length) return { reached: true, why: `everything runs: no rule of the lane table places ${andMore(unplaced)}` };
     const by = reachedBy.get(gate.name);
     if (by) return { reached: true, why: `${andMore(by.paths)} (${by.rule.lane ? `${by.rule.lane}: ` : ''}${by.rule.why})` };
     if (!named.has(gate.name)) return { reached: true, why: 'the lane table does not name it, so it runs at every merge' };
     return { reached: false, why: 'no changed path reaches it' };
   };
-  const gates = plan.map((gate) => {
+  const gates = plan.map((gate): Selection => {
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
     if (!full && !gated && MERGE_SUITES.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge: the lists, records and documents it holds a branch cannot place by its paths' };
     const check = pathCheckOf(gate.name, pathChecks);
@@ -153,7 +174,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it is given. The test of the table checks that it and `selectGates` agree on every case.
  */
-export function pathsReaching(gate, paths, { lanes = [], reach = REACH, pathChecks = PATH_CHECKS } = {}) {
+export function pathsReaching(gate: string, paths: readonly string[], { lanes = [], reach = REACH, pathChecks = PATH_CHECKS }: Reading = {}): string[] {
   const check = pathCheckOf(gate, pathChecks);
   if (check) return pathCheckPaths(check, paths, reach, lanes);
   if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
@@ -165,7 +186,7 @@ export function pathsReaching(gate, paths, { lanes = [], reach = REACH, pathChec
 }
 
 /** The selection as lines: each gate run, numbered, with why; then each skipped, with why. */
-export function selectionLines(gates) {
+export function selectionLines(gates: readonly Selection[]): string[] {
   const run = gates.filter((entry) => entry.run);
   const skipped = gates.filter((entry) => !entry.run);
   const out = run.map((entry, i) => `  ${pad(`${i + 1}.`, 4)}${pad(entry.gate.name, 16)} ${pad(entry.gate.kind, 10)} ${entry.why}`);

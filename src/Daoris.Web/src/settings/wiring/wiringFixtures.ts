@@ -91,10 +91,10 @@ export const WIRED: SystemWiring = {
   },
   terminal: {
     launchers: [
-      { name: 'daoris', present: true }, { name: 'daoris.cmd', present: false },
+      { name: 'daoris.exe', present: false },
     ],
     launchersWhy: null, onAccountPath: true, onAccountPathWhy: null, onMachinePath: false, onMachinePathWhy: null,
-    firstDaoris: { is: 'another', path: 'D:/somewhere/else/bin/daoris.cmd' },
+    firstDaoris: { is: 'another', path: 'D:/somewhere/else/bin/daoris.exe' },
     address: { present: true, url: 'http://localhost:5177', pid: 4242, since: '2026-10-16T09:00:00Z', taken: true, why: null },
   },
   knowledge: {

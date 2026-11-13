@@ -6,58 +6,85 @@
  */
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { TS_SUITES, tsReaches, unitReaches } from '../test-map.mjs';
-import { pathReach } from '../process-reach.mjs';
-import { propertiesSetTrue, isMsbuildFile, resultText } from '../merge/wiring.ts';
+import { propertiesSetTrue, isMsbuildFile, resultText } from './wiring.ts';
+import type { KeyContext, Unit } from './class-reuse.ts';
+import type { ReachedUnit } from './reached.ts';
 
 /** The build files MSBuild and NuGet apply to every project below them; any other `.props` builds only the project that imports it. */
 const AUTO_IMPORTED = /^(Directory\.(Build|Packages)\.(props|targets)|Directory\.Build\.rsp|global\.json|nuget\.config)$/i;
 const WIDE_ROOTS = /^(src|tools)\//;
 
+export type DotnetSuite = { suite: string; project: string; census: { classes: { full: string; reach: string[] }[]; sources: string[] } };
+
+export type CensusUnit = ReachedUnit & { reach?: { wide: string[] }; subject?: string };
+
+export type TestMap = { dotnet: DotnetSuite[]; units: CensusUnit[] };
+
+/** The census's readers the key asks, given by the untyped scripts that own them. */
+export type Readers = {
+  tsSuites: readonly { suite: string; whole?: readonly string[] }[];
+  tsReaches: (reach: unknown, path: string) => boolean;
+  unitReaches: (unit: ReachedUnit, path: string, map: TestMap) => boolean;
+  pathReach: (path: string, census: DotnetSuite['census']) => { none?: boolean; whole?: boolean };
+};
+
 /** The key context of `map` over the tree whose files are `files`, read by `read`, under `toolchain` and the gates' declarations. */
-export function reuseContext({ map, files, read, toolchain, gates }) {
+export function reuseContext({ map, files, read, toolchain, gates, readers }: {
+  map: TestMap; files: readonly string[]; read: (path: string) => string; toolchain: string;
+  gates: readonly { name: string; run: string; memoryGb?: number; clock?: boolean }[]; readers: Readers;
+}): KeyContext {
   const setTrue = propertiesSetTrue(files.filter(isMsbuildFile).map(read));
-  const digests = new Map();
-  const digestOf = (path) => {
-    if (!digests.has(path)) digests.set(path, createHash('sha1').update(resultText(path, read(path), setTrue)).digest('hex'));
-    return digests.get(path);
+  const digests = new Map<string, string>();
+  const digestOf = (path: string): string => {
+    let digest = digests.get(path);
+    if (digest === undefined) {
+      digest = createHash('sha1').update(resultText(path, read(path), setTrue)).digest('hex');
+      digests.set(path, digest);
+    }
+    return digest;
   };
   const suiteOf = new Map(map.dotnet.map((each) => [`${each.suite}|${each.project}`, each]));
-  const classOf = new Map();
+  const classOf = new Map<string, { full: string; reach: string[] }>();
   for (const each of map.dotnet) for (const cls of each.census.classes) classOf.set(`${each.suite}|${each.project}|${cls.full}`, cls);
   const unitOf = new Map(map.units.map((each) => [`${each.suite}|${each.unit}`, each]));
-  const placements = new Map();
-  const placed = (suite, path) => {
+  const placements = new Map<DotnetSuite, Map<string, { none?: boolean; whole?: boolean }>>();
+  const placed = (suite: DotnetSuite, path: string): { none?: boolean; whole?: boolean } => {
     const memo = placements.get(suite) ?? new Map();
     placements.set(suite, memo);
-    if (!memo.has(path)) memo.set(path, pathReach(path, suite.census));
-    return memo.get(path);
+    let found = memo.get(path);
+    if (!found) {
+      found = readers.pathReach(path, suite.census);
+      memo.set(path, found);
+    }
+    return found;
   };
+  const suiteFor = (unit: ReachedUnit): DotnetSuite => suiteOf.get(`${unit.suite}|${unit.project}`) as DotnetSuite;
 
   // The build files a test project builds with: those applied to everything below them, and each a project of its closure imports.
   // Each file a project of the test project's closure imports, by name, with the folders of the projects that import it ('*' for one
   // applied to every project below it).
-  const importers = new Map();
-  const importsOf = (suite) => {
-    if (!importers.has(suite.project)) {
+  const importers = new Map<string, Map<string, Set<string>>>();
+  const importsOf = (suite: DotnetSuite): Map<string, Set<string>> => {
+    let imports = importers.get(suite.project);
+    if (!imports) {
       const folders = [suite.project, ...suite.census.sources];
       const ancestors = suite.project.split('/').map((_, at, parts) => parts.slice(0, at).join('/'));
-      const imports = new Map();
+      imports = new Map();
       for (const path of files) {
         const folder = posix.dirname(path) === '.' ? '' : posix.dirname(path);
         const applied = AUTO_IMPORTED.test(posix.basename(path)) && ancestors.includes(folder);
         if (!applied && !(path.endsWith('.csproj') && folders.includes(folder))) continue;
         for (const found of read(path).matchAll(/<Import\b[^>]*\bProject\s*=\s*"([^"]+)"/g)) {
-          const name = found[1].split(/[\\/]/).at(-1).toLowerCase();
+          const name = (found[1] ?? '').split(/[\\/]/).at(-1)!.toLowerCase();
           imports.set(name, new Set([...(imports.get(name) ?? []), applied ? '*' : folder]));
         }
       }
       importers.set(suite.project, imports);
     }
-    return importers.get(suite.project);
+    return imports;
   };
   /** Whether a build file builds a class of `suite` whose reach is `reach` (null: any class): one applied to its project's folder, or one a project it names imports. */
-  const buildsProject = (suite, path, reach) => {
+  const buildsProject = (suite: DotnetSuite, path: string, reach: string[] | null): boolean => {
     const folder = posix.dirname(path);
     const name = posix.basename(path);
     if (AUTO_IMPORTED.test(name)) return folder === '.' || suite.project.startsWith(`${folder}/`);
@@ -67,43 +94,46 @@ export function reuseContext({ map, files, read, toolchain, gates }) {
     return !reach.length || reach.includes('*') || [...by].some((source) => reach.some((area) => area === source || area.startsWith(`${source}/`)));
   };
 
-  const dotnetReaches = (unit, path) => {
-    const suite = suiteOf.get(`${unit.suite}|${unit.project}`);
+  const dotnetReaches = (unit: ReachedUnit, path: string): boolean => {
+    const suite = suiteFor(unit);
     const found = placed(suite, path);
     if (found.none) return false;
-    if (!found.whole) return unitReaches(unit, path, map);
+    if (!found.whole) return readers.unitReaches(unit, path, map);
     if (path.startsWith(`${unit.project}/`)) return true;
     const reach = classOf.get(`${unit.suite}|${unit.project}|${unit.unit}`)?.reach ?? [];
     const source = suite.census.sources.find((folder) => path.startsWith(`${folder}/`));
     if (source) return !reach.length || reach.includes('*') || reach.some((area) => area === source || area.startsWith(`${source}/`));
     return buildsProject(suite, path, reach);
   };
-  const wholeOf = (suite) => TS_SUITES.find((each) => each.suite === suite)?.whole ?? [];
-  const tsUnitReaches = (unit, path) => {
+  const wholeOf = (suite: string): readonly string[] => readers.tsSuites.find((each) => each.suite === suite)?.whole ?? [];
+  const tsUnitReaches = (unit: CensusUnit, path: string): boolean => {
     if (path === unit.file || wholeOf(unit.suite).includes(path)) return true;
     // A unit whose reach the census cannot bound (it runs the tool whole) is reached by its subject's own files; a change to what
     // it only uses is the CI's and the night's to run it for, since it is the slowest of the tool's tests.
-    if (unit.reach.wide.length) return WIDE_ROOTS.test(path) && (path === unit.subject || path.startsWith(`${String(unit.subject).replace(/\.[^.]+$/, '')}/`));
-    return tsReaches(unit.reach, path);
+    if (unit.reach?.wide.length) return WIDE_ROOTS.test(path) && (path === unit.subject || path.startsWith(`${String(unit.subject).replace(/\.[^.]+$/, '')}/`));
+    return readers.tsReaches(unit.reach, path);
   };
-  const reaches = (unit, path) => (unit.kind === 'dotnet' ? dotnetReaches(unit, path) : tsUnitReaches(unit, path));
+  const fullOf = (unit: Unit): CensusUnit => unitOf.get(`${unit.suite}|${unit.unit}`) ?? (unit as CensusUnit);
+  const reaches = (unit: CensusUnit, path: string): boolean => (unit.kind === 'dotnet' ? dotnetReaches(unit, path) : tsUnitReaches(unit, path));
 
-  const candidates = new Map();
+  const candidates = new Map<string, string[]>();
   const declarations = new Map(gates.map((gate) => [gate.name, JSON.stringify([gate.run, gate.memoryGb ?? null, gate.clock ?? false])]));
   return {
-    reaches: (unit, path) => reaches(unitOf.get(`${unit.suite}|${unit.unit}`) ?? unit, path),
+    reaches: (unit, path) => reaches(fullOf(unit), path),
     candidates: (unit) => {
-      const full = unitOf.get(`${unit.suite}|${unit.unit}`) ?? unit;
+      const full = fullOf(unit);
       const group = full.kind === 'dotnet' ? `${full.suite}|${full.project}` : full.suite;
-      if (!candidates.has(group)) {
-        candidates.set(group, full.kind === 'dotnet' ? files.filter((path) => {
-          const suite = suiteOf.get(`${full.suite}|${full.project}`);
-          const found = placed(suite, path);
-          return !found.none && (!found.whole || path.startsWith(`${full.project}/`) || suite.census.sources.some((folder) => path.startsWith(`${folder}/`))
+      let found = candidates.get(group);
+      if (!found) {
+        found = full.kind === 'dotnet' ? files.filter((path) => {
+          const suite = suiteFor(full);
+          const at = placed(suite, path);
+          return !at.none && (!at.whole || path.startsWith(`${full.project}/`) || suite.census.sources.some((folder) => path.startsWith(`${folder}/`))
             || buildsProject(suite, path, null));
-        }) : files);
+        }) : [...files];
+        candidates.set(group, found);
       }
-      return candidates.get(group);
+      return found;
     },
     digestOf,
     declaration: (suite) => declarations.get(suite) ?? '',

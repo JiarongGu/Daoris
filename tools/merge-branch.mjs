@@ -13,16 +13,13 @@
  * took 30, 48 and 126 minutes on one day's three integrations, and everything else about 25. So a merge
  * now runs the gates its changed paths can reach, by the lane table below (`REACH`), and never the long
  * ones (the real-process halves and the deployment rehearsal, which any driver change still
- * reached), which only the full set runs. The lesson of that batch is kept in two places. The table is held by tests to what each suite reads and what each
- * rehearsal runs, so a skipped gate is one that could not see the change. And the full set still runs
- * before the install is built: `publish:desktop` refuses a tree no full set passed (`--passed` below),
- * the same day, so a table that is wrong is caught before the person runs the build.
+ * reached), which only the full set runs. Tests hold the table to what each suite reads and each rehearsal runs, and
+ * `publish:desktop` refuses a tree no full set passed (`--passed` below), so a wrong table is caught before the build.
  *
  * ## What it does
  *
  * 1. Refuses unless the checkout is on `main` with a clean tree, and the branch exists and adds commits.
- * 2. Prints the lanes the branch touched, by id and title, from the repository's `daoris.lanes.json`, and names the
- * steward's records if it edited them. It informs; it never refuses on a lane.
+ * 2. Prints the lanes the branch touched (`merge/lane-report.ts`).
  * 3. The commit check (`merge/attribution.ts`), which `--no-commit-check` skips.
  * 4. The prune (below), unless `--no-prune`: one line per branch, and per half-removed folder, removed or kept.
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left for the parent. Code
@@ -36,18 +33,11 @@
  * 6. The gates, in a fixed order, fast first, in two lanes (below). The plan is every gate `daoris.gates.json` declares, plus
  * every `npm run` step the release workflow runs that the declaration does not (the release and family rehearsals). The order
  * is by kind (a devkit check, then the suites, then the rehearsals); within a kind the declared order holds, and the workflow's
- * own rehearsals go before the declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On
- * 2026-09-30 a long-lived build server carried a broken environment into a publish, so that rehearsal started after `dotnet
- * build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
- * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the census of test
- * units), the CLI's verify (`MERGE_SUITES`), and each path check one of its paths reaches (`PATH_CHECKS`: the web
- * typecheck and structure tests, the desktop's censuses, and `tools/reached-checks.mjs`, the test units the paths reach,
- * bounded per suite); every other gate it reaches is listed and skipped, "in the CI beside".
- * `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
- * merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
- * places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
- * never run by a merge, reached or not (the Process halves, and the release, family and deployment rehearsals): it says it is in the full set before staging. The lines before
- * the run say why each gate runs or is skipped. `--full` runs the whole plan, and `--rerun` runs a long
+ * own rehearsals go before the declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan; it
+ * starts after `dotnet build-server shutdown`, its builds keep servers of their own, and no gate has a step before it.
+ * By default a merge runs the blocking checks, the CLI's verify and each path check its paths reach; `--gated` runs what
+ * the paths reach (`merge/reach.ts`). A long gate (`isLongGate`) is never run by a merge, reached or not: it says it is in
+ * the full set before staging. The lines before the run say why each gate runs or is skipped. `--full` runs the whole plan, and `--rerun` runs a long
  * gate when it is named. The merge is gated before it is committed, so the devkit's universal gates, in their
  * own gate and in `verify`, run through `tools/as-merged.mjs`: its docs gate dates each path from
  * HEAD's history, and there HEAD is the commit the merge would make.
@@ -369,13 +359,17 @@ import {
 import { Refusal, parseArgs, USAGE } from './merge/args.ts';
 import { count, pad, classCount } from './merge/format.ts';
 import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
-import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge-branch/reach.mjs';
+import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
+import { laneReport } from './merge/lane-report.ts';
+import { branchChanges } from './merge/changes.ts';
+import { chooseGates } from './merge/choose-gates.ts';
+import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
 import {
-  isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
+  isProcessGate, isProcessLane, isHeavyGate, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
   rerunPlan, planOnly,
 } from './merge/plan.ts';
-import { REACH } from './merge-branch/reach-table.mjs';
+import { REACH } from './merge/reach-table.ts';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
 import { holderRuns, pidAlive, processStart, sameHolder } from './merge/holder.ts';
@@ -408,10 +402,12 @@ export {
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan, rerunPlan,
 } from './merge/plan.ts';
-export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
-export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
-export { REACH } from './merge-branch/reach-table.mjs';
+export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge/reach.ts';
+export { REACHED_BOUNDS, processSuitesOf, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge/reached.ts';
+export { REACH } from './merge/reach-table.ts';
 export { globToRegExp, laneMatcher } from './merge/lanes-file.ts';
+export { LANES_FILE, classify, lanesProblems, readLanes, unionRecords } from './merge/lanes.ts';
+export { laneReport } from './merge/lane-report.ts';
 
 // test-map: strings name paths as data — what this file names it writes and runs; what it reads is its imports
 const STATE = `${SCRATCH}/merge-batch.json`;
@@ -1558,128 +1554,6 @@ export function memoryGate({
       }
     }
   };
-}
-
-/** The repository's lanes, at its root beside `daoris.json` and `daoris.gates.json`. */
-export const LANES_FILE = 'daoris.lanes.json';
-
-/** How a quest will address a lane (`repository:lane`), so an id is one word of a known alphabet. */
-const LANE_ID = /^[a-z][a-z0-9-]*$/;
-
-/**
- * Why a parsed lanes file cannot be read, one line each, or none. Absence is a rule: no
- * `lanes` and an empty list both mean no lanes. A malformed or repeated id, a lane that owns nothing,
- * two stewards, and a `gates` entry naming no gate in `gateNames` (the declared set) each make it
- * unreadable. Fields it has no rule for are left alone.
- */
-export function lanesProblems(parsed, gateNames = []) {
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return ['the file is not a JSON object'];
-  const problems = [];
-  if (parsed.laneless !== undefined && !Array.isArray(parsed.laneless)) problems.push("'laneless' is not a list");
-  if (parsed.lanes === undefined) return problems;
-  if (!Array.isArray(parsed.lanes)) return [...problems, "'lanes' is not a list"];
-  const seen = new Set();
-  parsed.lanes.forEach((lane, i) => {
-    const id = lane?.id;
-    const name = typeof id === 'string' ? `lane '${id}'` : `lane ${i + 1}`;
-    if (typeof id !== 'string' || !LANE_ID.test(id)) {
-      problems.push(`${name}: its id must be lower-case letters, digits and dashes, starting with a letter`);
-    } else if (seen.has(id)) problems.push(`${name}: the id is used twice`);
-    else seen.add(id);
-    const paths = Array.isArray(lane?.paths) ? lane.paths : [];
-    if (!paths.some((path) => typeof path === 'string' && path && !path.startsWith('!'))) problems.push(`${name}: it has no paths`);
-    if (lane?.gates !== undefined) {
-      if (!Array.isArray(lane.gates)) problems.push(`${name}: 'gates' is not a list`);
-      else {
-        for (const gate of lane.gates.filter((entry) => !gateNames.includes(entry))) {
-          problems.push(`${name}: its gate '${gate}' is not declared in daoris.gates.json`);
-        }
-      }
-    }
-  });
-  const stewards = parsed.lanes
-    .map((lane, i) => (lane?.steward === true ? (typeof lane.id === 'string' ? lane.id : `lane ${i + 1}`) : null))
-    .filter(Boolean);
-  if (stewards.length > 1) problems.push(`two stewards (${stewards.join(', ')}): at most one lane keeps the records`);
-  return problems;
-}
-
-/**
- * `daoris.lanes.json`, or null where a repository has none. An unreadable file is refused, naming each
- * problem. `laneless` is read flat: its groups are for the person reading the map, each saying why its
- * paths have no lane.
- */
-export function readLanes(root) {
-  const file = join(root, LANES_FILE);
-  if (!existsSync(file)) return null;
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (error) {
-    throw new Refusal(`${LANES_FILE} is not valid JSON: ${error.message}`);
-  }
-  const gateNames = existsSync(join(root, 'daoris.gates.json')) ? readDeclared(root).map((gate) => gate.name) : [];
-  const problems = lanesProblems(parsed, gateNames);
-  if (problems.length) throw new Refusal(`${LANES_FILE} cannot be read:\n${problems.map((problem) => `  ${problem}`).join('\n')}`);
-  return {
-    lanes: (parsed.lanes ?? []).map((lane) => ({
-      id: lane.id,
-      title: typeof lane.title === 'string' ? lane.title : '',
-      summary: typeof lane.summary === 'string' ? lane.summary : '',
-      steward: lane.steward === true,
-      paths: lane.paths,
-      ...(lane.gates ? { gates: lane.gates } : {}),
-    })),
-    laneless: (parsed.laneless ?? []).flatMap((group) => group?.paths ?? []),
-  };
-}
-
-/**
- * The paths `.gitattributes` marks `merge=union`, the router it marks `merge=rows` and the
- * decisions it marks `merge=notes`: the records that resolve themselves. The router stays a
- * record when its driver changes, so it is read beside the union ones.
- */
-export function unionRecords(root) {
-  const file = join(root, '.gitattributes');
-  if (!existsSync(file)) return [];
-  return readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n')
-    .map((line) => /^(\S+)\s(?:.*\s)?merge=(?:union|rows|notes)(?:\s|$)/.exec(line)?.[1])
-    .filter((pattern) => pattern && !pattern.startsWith('#'));
-}
-
-/** A `.gitattributes` pattern with no slash matches at any depth, as git reads it. */
-const attributePattern = (pattern) => (pattern.includes('/')
-  ? globToRegExp(pattern.replace(/^\//, ''))
-  : new RegExp(`^(?:.*/)?${globToRegExp(pattern).source.slice(1)}`));
-
-/**
- * Where each changed path belongs, in order: the steward's lane first (its records, which a
- * subagent never edits, the parent's list), then the records that merge by union, then the
- * first other lane that owns it, then the paths the map declares laneless (the docs, the doctrine),
- * else outside every lane: a path the map does not place, which the lanes test refuses. Lanes
- * come back by id and title in the map's order, only those touched; the steward's paths come back on
- * their own, where the parent's did.
- */
-export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) {
-  const steward = lanes.find((lane) => lane.steward);
-  const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
-  const lanePatterns = lanes.filter((lane) => lane !== steward)
-    .map((lane) => ({ id: lane.id, title: lane.title, owns: laneMatcher(lane.paths), files: [] }));
-  const unionPatterns = union.map(attributePattern);
-  const declared = laneMatcher(laneless);
-  const placed = { lanes: [], steward: [], shared: [], laneless: [], outside: [] };
-  for (const path of paths) {
-    if (stewardOwns(path)) placed.steward.push(path);
-    else if (unionPatterns.some((pattern) => pattern.test(path))) placed.shared.push(path);
-    else {
-      const lane = lanePatterns.find((candidate) => candidate.owns(path));
-      if (lane) lane.files.push(path);
-      else if (declared(path)) placed.laneless.push(path);
-      else placed.outside.push(path);
-    }
-  }
-  placed.lanes = lanePatterns.filter((lane) => lane.files.length).map(({ id, title, files }) => ({ id, title, files }));
-  return placed;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -2974,75 +2848,7 @@ function clearLogs(dir) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Reports
-
-/** A lane's row label: its id, then its title, so a lane reads as a dispatch prompt names it. */
-const laneLabel = (lane) => `${pad(lane.id, 14)}${lane.title}`;
-
-export function laneReport(root, branch) {
-  const changed = branchChanges(root, branch);
-  const map = readLanes(root);
-  const out = [`lanes: ${branch} changes ${count(changed.length, 'file')}`];
-  if (!map || map.lanes.length === 0) {
-    out.push(`  (${map ? `${LANES_FILE} declares no lanes` : `no ${LANES_FILE} here`})`);
-    return out;
-  }
-  const placed = classify(changed, { ...map, union: unionRecords(root) });
-  const steward = map.lanes.find((lane) => lane.steward);
-  const row = (label, text) => `  ${pad(label, 32)} ${text}`;
-  const list = (files, max = 6) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
-  for (const lane of placed.lanes) out.push(row(laneLabel(lane), count(lane.files.length, 'file')));
-  if (placed.steward.length) out.push(row(laneLabel(steward), `${count(placed.steward.length, 'file')} (the steward's)`));
-  if (placed.shared.length) out.push(row('shared records', `${count(placed.shared.length, 'file')}: ${list(placed.shared)} (merge by union)`));
-  if (placed.laneless.length) out.push(row('no lane', `${count(placed.laneless.length, 'file')}: ${list(placed.laneless)} (the map declares them laneless)`));
-  if (placed.outside.length) out.push(row('outside every lane', `${count(placed.outside.length, 'file')}: ${list(placed.outside)} (the map places no such path; the lanes test refuses it)`));
-  if (placed.lanes.length > 1) out.push(`  note: it crosses ${placed.lanes.length} lanes`);
-  if (placed.steward.length) out.push(`  note: it edits the steward's records (${placed.steward.join(', ')}); a subagent never does`);
-  return out;
-}
-
-// ---------------------------------------------------------------------------------------------------
 // The verbs
-
-/** What the merge in place changes on main: tracked paths against HEAD, the parent's fixes included, and new files. */
-function mergeChanges(root) {
-  const tracked = zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', 'HEAD']).out);
-  const untracked = zPaths(git(root, ['ls-files', '-z', '--others', '--exclude-standard']).out);
-  return [...new Set([...tracked, ...untracked])];
-}
-
-/** What a branch changes since it left main: a plan's question, asked before anything is merged. */
-const branchChanges = (root, branch) => diffPaths(git, root, [`HEAD...${branch}`]);
-
-/**
- * The gates the merge in place runs, and every gate of the plan with why it runs or is skipped. Checks and
- * suites run at each merge of a batch by its own paths; the rehearsals run once, at the batch's last merge,
- * each one any of the batch's merges reached. `state.reached` keeps what each merge reached, for that.
- */
-function chooseGates(root, state, plan) {
-  const branch = state.branches[state.at];
-  const last = state.at === state.branches.length - 1;
-  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], full: state.full === true, gated: state.gated === true });
-  state.reached = { ...(state.reached ?? {}), [branch]: selection.gates.filter((entry) => entry.run).map((entry) => entry.gate.name) };
-  const waiting = new Set();
-  const display = selection.gates.map((entry) => {
-    if (entry.gate.kind !== 'rehearsal') return entry;
-    if (!last) {
-      if (!entry.run) return entry;
-      waiting.add(entry.gate.name);
-      return { ...entry, run: false, why: `waits for the batch's last branch (${state.branches.at(-1)}); ${entry.why}` };
-    }
-    if (entry.run) return entry;
-    const by = state.branches.filter((other) => other !== branch && state.reached[other]?.includes(entry.gate.name));
-    return by.length ? { ...entry, run: true, why: `reached by ${by.join(', ')}, earlier in this batch` } : entry;
-  });
-  return {
-    gates: display,
-    chosen: display.filter((entry) => entry.run).map((entry) => entry.gate),
-    // What the lane table left out of this merge, not counting a rehearsal that waits for the batch's end.
-    skipped: display.filter((entry) => !entry.run && !waiting.has(entry.gate.name)).length,
-  };
-}
 
 /**
  * The machine's heavy-run admission this tool's heavy gates take a place in (`machine-admission.mjs`), or null where it

@@ -19,7 +19,7 @@
   ["a tilde first", "~lab", "\"~lab\""],
   ["braces, brackets, a star and a question mark", "{a}[b]*?", "\"{a}[b]*?\""],
   ["a dash first", "-x", "\"-x\""],
-  ["an ampersand: PowerShell 5.1 hands daoris.cmd it unquoted", "R&D", "<name>"],
+  ["an ampersand: Command Prompt reads it as a command separator", "R&D", "<name>"],
   ["an ampersand beside a space", "R&D lab", "<name>"],
   ["a pipe", "a|b", "<name>"],
   ["a caret", "a^b", "<name>"],

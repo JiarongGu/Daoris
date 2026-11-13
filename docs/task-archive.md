@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
+
+> **SAYLINES1** (install, driver host): Outcome: the install's `daoris` is `daoris.exe` (`Daoris.Desktop.Command`), a program that starts the desktop's program with each argument whole, in place of the `daoris` script and `daoris.cmd` (a batch file's arguments end at the first line break); `CommandLauncherProcessTests`, `FreeWordsLineBreakTests` (say, reword, helper, ask, quest) and the shell-word test through cmd and PowerShell prove a line break reaches each verb; and `daoris ask --to <repo> --require` is no longer refused `MISSING_PAYLOAD_VALUE` (the requirement is sent as `{ quote, check }`).
+
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.

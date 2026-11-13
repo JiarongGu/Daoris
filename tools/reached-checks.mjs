@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The reached checks of a merge: the test units the merge's changed paths reach, in the suites a merge can run in minutes,
- * run on the merged tree before it is committed (`tools/merge-branch/reached.mjs` chooses and bounds them; the census of
+ * run on the merged tree before it is committed (`tools/merge/reached.ts` chooses and bounds them; the census of
  * test units, `tools/test-map.mjs`, says what each reaches).
  *
  * ## Why
@@ -28,13 +28,17 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { verdictsHome } from './merge-branch.mjs';
-import { census, treeOf } from './test-map.mjs';
-import { reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge-branch/reached.mjs';
-import { reuseContext } from './merge-branch/reached-reuse.mjs';
+import { TS_SUITES, census, treeOf, tsReaches, unitReaches } from './test-map.mjs';
+import { pathReach } from './process-reach.mjs';
+import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
+import { reuseContext } from './merge/reached-reuse.ts';
 import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
 import { toolchainOf } from './merge/flow-deps.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
-import { passesOf, withReport } from './merge-branch/reached-reports.mjs';
+import { passesOf, withReport } from './merge/reached-reports.ts';
+
+/** The census's readers the key of a reached class asks (`merge/reached-reuse.ts` takes them, being typed). */
+const READERS = { tsSuites: TS_SUITES, tsReaches, unitReaches, pathReach };
 
 /** The paths the checkout changes against HEAD: staged, unstaged, a merge's. */
 export function changedPaths(root) {
@@ -48,19 +52,21 @@ export const storeFile = (root) => process.env.DAORIS_REACHED_STORE || join(verd
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
 export function planFor(root, paths, store, { bounds = {} } = {}) {
-  if (paths.length === 0) return { plan: reachedPlan([], paths), night: {}, keys: new Map() };
+  if (paths.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map() };
   const { files, read } = treeOf(root);
   const map = census(files, read);
   const gatesText = read('daoris.gates.json');
   const toolchain = toolchainOf();
-  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates: JSON.parse(gatesText).gates ?? [] });
+  const gates = JSON.parse(gatesText).gates ?? [];
+  const processSuites = processSuitesOf(gates);
+  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS });
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
   const reached = map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
-  const { units, night } = unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches });
+  const { units, night } = unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });
   const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
-  return { plan: reachedPlan(run, paths, { bounds, replayed: counts }), night, keys };
+  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys };
 }
 
 async function main(argv) {

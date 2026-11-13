@@ -71,6 +71,36 @@ public sealed class DriverHostTests : IDisposable
         Assert.Equal(0, service.Requests);
     }
 
+    [Fact]
+    public async Task Repository_deployables_reaches_the_read_through_the_host_entry()
+    {
+        await using var service = CountingService.Start();
+
+        var (code, said) = await RunAsync(service, "repository", "deployables", "unknown-repository");
+
+        Assert.Equal(2, code);
+        Assert.Contains("deployables  `unknown-repository` has no checkout on this machine's registry", said);
+        Assert.Equal(1, service.Requests);
+        Assert.False(File.Exists(LockFile));
+    }
+
+    [Theory]
+    [InlineData("help", "repository", 0)]
+    [InlineData("repository", "", 2)]
+    public async Task Repository_help_lists_deployables_in_English_and_Chinese(string first, string second, int expected)
+    {
+        await using var service = CountingService.Start();
+        string[] words = second.Length == 0 ? [first] : [first, second];
+
+        var (code, said) = await RunAsync(service, words);
+
+        Assert.Equal(expected, code);
+        Assert.Contains("repository deployables <repository>", said);
+        Assert.Contains("read the line's deployables and their release nodes; writes nothing", said);
+        Assert.Contains("只读：列出主线声明的可部署单元及其发布节点，不写入任何内容", said);
+        Assert.Equal(0, service.Requests);
+    }
+
     /// <summary>
     /// 🔴 A loop on a home another live driver holds is refused naming it — which door, its process and
     /// since when — as a refusal (exit 1), before anything reaches the service.

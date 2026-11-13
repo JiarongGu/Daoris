@@ -775,7 +775,7 @@ async function main() {
     `${join(install, HOME, 'plugins')} exists`);
 
   // The doctrine tool: the package the release publishes, laid out as npm lays one out
-  // under app/cli/, at the canon's version, with a launcher for each shell in app/bin/; the packed artefact,
+  // under app/cli/, at the canon's version, with the command, daoris.exe, in app/bin/; the packed artefact,
   // never the source tree. Phase 8 runs it.
   const toolProblems = cliProblems(install, canonVersion);
   check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_PACKAGE.join('/')}/, `
@@ -1486,7 +1486,7 @@ if (!done.ok) throw new Error(done.text);
     });
     return { code: ran.status ?? -1, out: `${ran.stdout ?? ''}${ran.stderr ?? ''}${ran.error ? `\n${ran.error.message}` : ''}` };
   };
-  // Command Prompt, by the line a person types: cmd.exe finds `daoris.cmd` by PATHEXT.
+  // Command Prompt, by the line a person types: cmd.exe finds `daoris.exe` by PATHEXT.
   const prompt = (line) => shellRun(process.env.ComSpec ?? 'cmd.exe', [`/d /s /c "${line}"`], doctrine, true);
 
   const whereDaoris = prompt('where daoris');
@@ -1508,13 +1508,13 @@ if (!done.ok) throw new Error(done.text);
   const toolCheck = prompt('daoris check');
   check('…and `daoris check` runs clean', toolCheck.code === 0, toolCheck.out);
   const unknownVerb = prompt('daoris no-such-verb');
-  check('…and a tool error comes back through the launcher as exit 2', unknownVerb.code === 2, unknownVerb.out);
+  check('…and a tool error comes back through the command as exit 2', unknownVerb.code === 2, unknownVerb.out);
 
-  // PowerShell has no launcher of its own: it finds the batch file by PATHEXT, which this measures.
+  // PowerShell has no launcher of its own: it finds the command by PATHEXT, which this measures.
   const fromPowerShell = shellRun('powershell.exe',
     ['-NoProfile', '-NonInteractive', '-Command', '(Get-Command daoris).Source; daoris --version; exit $LASTEXITCODE']);
   const powerShellLines = fromPowerShell.out.trim().split(/\r?\n/);
-  check(`PowerShell finds the batch file in ${CLI_BIN.join('/')}/, and it prints ${canonVersion}`,
+  check(`PowerShell finds the command in ${CLI_BIN.join('/')}/, and it prints ${canonVersion}`,
     fromPowerShell.code === 0 && firstUnder(fromPowerShell.out, toolBin) && powerShellLines.at(-1)?.trim() === canonVersion,
     fromPowerShell.out);
   const powerShellCheck = shellRun('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'daoris check; exit $LASTEXITCODE']);
@@ -1527,7 +1527,7 @@ if (!done.ok) throw new Error(done.text);
     console.log('        no Git Bash beside git on this runner: its checks are skipped, not passed');
   } else {
     const bashFound = shellRun(bash, ['-c', 'cygpath -w "$(command -v daoris)"']);
-    check(`Git Bash finds the shell script \`daoris\` in ${CLI_BIN.join('/')}/ first`,
+    check(`Git Bash finds the command \`daoris\` in ${CLI_BIN.join('/')}/ first`,
       bashFound.code === 0 && firstUnder(bashFound.out, toolBin), bashFound.out);
     const bashVersion = shellRun(bash, ['-c', 'daoris --version']);
     check(`…and \`daoris --version\` prints ${canonVersion}`,
@@ -1535,7 +1535,7 @@ if (!done.ok) throw new Error(done.text);
     const bashCheck = shellRun(bash, ['-c', 'daoris check']);
     check('…and `daoris check` runs clean from it', bashCheck.code === 0, bashCheck.out);
     const bashUnknown = shellRun(bash, ['-c', 'daoris no-such-verb']);
-    check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
+    check('…and a tool error comes back through the command as exit 2', bashUnknown.code === 2, bashUnknown.out);
   }
 
   // A group of the one tree by the same bare name (the terminal door), on a scratch home of its own so
