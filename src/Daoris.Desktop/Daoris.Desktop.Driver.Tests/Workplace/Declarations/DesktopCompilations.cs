@@ -30,7 +30,7 @@ internal static class DesktopCompilations
     private static readonly CSharpParseOptions Parse = new(LanguageVersion.Latest);
 
     private static readonly SyntaxTree ImplicitUsings = CSharpSyntaxTree.ParseText(
-        string.Join('\n', new[] { "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks", "Daoris.Ports.Browser" }
+        string.Join('\n', new[] { "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks", "Daoris.Ports.Browser", "Daoris.Ports.Clocks" }
             .Select(each => $"global using global::{each};")), Parse, "<implicit usings>");
 
     private static readonly Lazy<ImmutableArray<CSharpCompilation>> Built = new(() => [.. Shipping.AsParallel().AsOrdered().Select(Of)]);

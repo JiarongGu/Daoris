@@ -25,6 +25,7 @@
     <!-- The fakes and the virtual clock the unit tiers share. -->
     <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <Using Include="Daoris.Ports.Browser" />
+    <Using Include="Daoris.Ports.Clocks" />
     <!-- Built first and never referenced (DRV8a): its tests start `daoris-driver` itself, to hold that a
          bare invocation starts nothing and a held home is refused before the service is reached. -->
     <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />

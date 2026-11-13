@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Clock\Daoris.Adapters.Clock.csproj" />
   </ItemGroup>
 
 </Project>

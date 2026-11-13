@@ -8,7 +8,7 @@
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
  * 2. The ambient ports' reads per subdomain, a ratchet that only tightens.
  * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
- *    (`--records <dir>` reads another folder); with no records there is nothing to read and it says so.
+ *    (`--records <dir>` reads another folder; no records, nothing read). Beside it the wall clock's per-file allowance, which only falls.
  *
  * The compiler's check, the banned effects, is the build's: `src/BannedEffects.txt` through `src/Layers.props`.
  */
@@ -17,12 +17,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
+import { checkClock, scanClock } from './layers-census/clock.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 
-export { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient, BUDGET_MS };
+export { checkAmbient, checkBudget, checkClock, checkReferences, parseTrx, scanAmbient, scanClock, BUDGET_MS };
 
-const EMPTY = { packages: {}, ambient: {}, slowTests: {} };
+const EMPTY = { packages: {}, ambient: {}, clock: {}, slowTests: {} };
 
 function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -33,13 +34,13 @@ function main() {
     const tree = { files: repositoryFiles(root), read: (path) => readFileSync(join(root, path), 'utf8') };
     const records = readRecords(recordsAt);
     if (argv.includes('--write')) {
-      const list = { packages: packagesOutside(tree), ambient: scanAmbient(tree), slowTests: slowTestsOf(records) };
+      const list = { packages: packagesOutside(tree), ambient: scanAmbient(tree), clock: scanClock(tree), slowTests: slowTestsOf(records) };
       writeAtomic(listFile, `${JSON.stringify(list, null, 2)}\n`);
       console.log(`layers-census: wrote ${listFile.slice(root.length + 1).replace(/\\/g, '/')}`);
       return 0;
     }
     const list = { ...EMPTY, ...JSON.parse(readFileSync(listFile, 'utf8')) };
-    const problems = [...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkBudget(records, list)];
+    const problems = [...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkClock(scanClock(tree), list.clock), ...checkBudget(records, list)];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
     if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet and the unit budget hold');

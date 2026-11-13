@@ -120,6 +120,7 @@ internal static class DriveConsole
                 ],
                 log, closing.Token),
             closing.Token);
+        SessionWatch.Of(events).Clock = Daoris.Adapters.Clock.MachineClock.Quiet;
         // No session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
         if (loop.QuietEnd is { } quietEnd)
         {

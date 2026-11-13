@@ -2,6 +2,16 @@
   "version": 1,
   "modules": [
     {
+      "id": "Daoris.Adapters.Clock",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Clock",
+      "summary": "the machine's clock: TimeProvider.System and the quiet clock's reading"
+    },
+    {
+      "id": "Daoris.Adapters.Clock.Tests",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
+      "summary": ""
+    },
+    {
       "id": "daoris",
       "path": "src/Daoris.Cli",
       "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
@@ -149,6 +159,21 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Adapters.Clock",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Clock.Tests",
+      "to": "Daoris.Adapters.Clock",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Clock.Tests",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Desktop.Driver",
       "kind": "project"
@@ -172,6 +197,11 @@
       "from": "Daoris.Desktop.Driver",
       "to": "Daoris.Service.Http",
       "kind": "http"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Host",
+      "to": "Daoris.Adapters.Clock",
+      "kind": "project"
     },
     {
       "from": "Daoris.Desktop.Driver.Host",
@@ -211,6 +241,11 @@
     {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules",
+      "to": "Daoris.Adapters.Clock",
       "kind": "project"
     },
     {

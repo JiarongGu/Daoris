@@ -654,7 +654,7 @@ is a port the instance declares (`VerbLeaseReading`, through `VerbLeases.Answer`
 
 What is said sits in `Events/` (FOUNDATION1 mod-vii, D212): the chain and the change watches (`Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`), the machine's facts and its log's reader
 (`MachineFacts`, `MachineLogReader`), the notices (`Notices`, `NoticesRead`, `LookSaid`), the note codes' vocabulary (`NoteCodes`), the session log and its watch (`SessionLog`, `SessionWatch`,
-`RunningCalls`, `HeldPermissions`, `HeardReader`, `QuietClock`) and, in `Events/Domain/`, the vocabularies the notes and the record carry: the session's events and end (`SessionEvents`,
+`RunningCalls`, `HeldPermissions`, `HeardReader`; the quiet clock it counts on is `QuietClock` of `Daoris.Ports`, its machine reading the clock adapter's) and, in `Events/Domain/`, the vocabularies the notes and the record carry: the session's events and end (`SessionEvents`,
 `SessionEnded`, `Observation`), the attention kinds (`AttentionEvent`), the reasons a hand-over, a helper and a partner are refused or moved by (`HandOverWhy`, `HandOverAskWhy`, `HelperWhy`,
 `PartnerWhy`), `SetupSwap`, `CoolingEntry`, `ModelRefusal`, `TurnModels`, the instruction account an event carries (`InstructionAccount`, `HandedSection`, `HandedCut`) and the look's deadline
 (`LookDeadline`). It names no type of a subdomain above it. What a lower reading needs of a higher type is a port the events declare and the higher type answers by being it
