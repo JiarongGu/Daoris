@@ -68,7 +68,7 @@
     {
       "id": "release",
       "title": { "en": "Watch the release", "zh": "跟踪发布" },
-      "about": { "en": "After the merge, acts only on the target its options declare by id: the declared pipeline's build of the merged commit, then the declared stage of the declared release definition's release from that build, or of the pipeline run's own stages, watched to its end. Undeclared or unresolved, it holds listing what it found; it starts that stage, or makes that release, only where its action says so.", "zh": "合并之后，只作用于其选项按编号声明的目标：所声明流水线对合并提交的构建，再跟踪所声明发布定义由该构建创建的发布中所声明的阶段（或流水线运行自身的阶段），直到结束。目标未声明或无法解析时，它会暂停并列出找到的候选项；只有在其操作要求时，才启动该阶段或创建该发布；审批和检查仍由 Azure DevOps 决定。" },
+      "about": { "en": "Acts only on the target its options declare by id: watches the declared stage of the merged build's release, or of its pipeline run, to its end, starting or making only what its action says; unresolved, it holds and lists what it found.", "zh": "合并之后，只作用于其选项按编号声明的目标：所声明流水线对合并提交的构建，再跟踪所声明发布定义由该构建创建的发布中所声明的阶段（或流水线运行自身的阶段），直到结束。目标未声明或无法解析时，它会暂停并列出找到的候选项；只有在其操作要求时，才启动该阶段或创建该发布；审批和检查仍由 Azure DevOps 决定。" },
       "reach": "performed",
       "evidence": { "schema": "azure-devops-pull-request/release@1" },
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
