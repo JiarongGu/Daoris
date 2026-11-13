@@ -17,12 +17,10 @@ public sealed class SystemPlanTools(IntakeScope? intake = null, SessionLedger? l
     [McpServerTool(Name = "system_plan")]
     [Description(
         "Plan changes to the system this session's department is: a system reached only through its console, which you never change "
-        + "directly. Name each resource once, with the whole value it should hold or that it is removed, in the order they should be applied. "
-        + "Daoris hands them to the system's adapter, which reads each resource as it stands and keeps the plan: each change typed as "
-        + "a create, an update or a delete under the version it read. The answer names the plan's number and its resources; a resource "
-        + "already holding what you asked is left out. Nothing in the system changes now: the person reviews the plan, each resource "
-        + "before and after, and it is applied after their Accept. If a resource moved before the apply, you are told its present value "
-        + "and plan again. A later call replaces nothing: it keeps the next plan, and the newest is the one reviewed.")]
+        + "directly. Name each resource once, with the whole value it should hold or that it is removed, in the order to apply. "
+        + "Daoris keeps the plan as creates, updates and deletes against what the adapter read; a resource already holding what you "
+        + "asked is left out. Nothing changes now: the person reviews it and it applies after their Accept. If a resource moved "
+        + "meanwhile you are told its value: plan again. A later call keeps the next plan; the newest is the one reviewed.")]
     public async Task<string> PlanAsync(
         [Description("The changes, in order: each `{ resource, value }` (the resource's whole new value, as text) or `{ resource, remove: true }`.")]
         SystemPlanChange[] changes,

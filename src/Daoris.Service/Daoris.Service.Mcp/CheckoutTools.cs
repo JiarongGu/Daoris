@@ -17,16 +17,14 @@ public sealed class CheckoutTools(IntakeScope? intake = null, SessionLedger? led
 {
     [McpServerTool(Name = "checkout_read")]
     [Description(
-        "Ask Daoris only, and only the checkouts the person granted under Ask Daoris's configured access (reading checkouts): each "
-        + "readable checkout of this conversation's workspace on this machine, unless they turned it off. Read one, by its repository's "
-        + "registered name and a path relative to its checkout: a file's text (at most 200 KB, said when cut) or a folder's entries; or "
-        + "how it stands, `git status` or `git branch --list`. Daoris judges each read: a path out of the checkout (`..`, a drive, a link "
-        + "leading out), git's own folder and anything git ignores are refused, and so is a checkout not granted, saying why. It changes "
-        + "nothing, and never runs another git command.")]
+        "Ask Daoris only, and only checkouts the person granted under Ask Daoris's configured access: read one by its registered "
+        + "name and a path relative to its checkout (a file's text, at most 200 KB, or a folder's entries), or how it stands, "
+        + "`git status` or `git branch --list`. Daoris judges each read: a path out of the checkout, git's own folder, anything git "
+        + "ignores and a checkout not granted are refused. It changes nothing, and never runs another git command.")]
     public Task<string> ReadAsync(
         [Description("The repository, by its registered name.")] string repository,
-        [Description("A path relative to the checkout's top, with forward slashes (`src/Game.cs`): a file to read or a folder to list; none for the top. Only for `read`.")] string? path = null,
-        [Description("`read` (the default: the path's file or folder), `status` (`git status`) or `branches` (`git branch --list`); the last two name no path.")] string? what = null,
+        [Description("Path relative to the checkout's top, forward slashes: a file or folder; none for the top. Only for `read`.")] string? path = null,
+        [Description("`read` (default), `status` or `branches`; the last two name no path.")] string? what = null,
         CancellationToken ct = default) =>
         ReadCheckoutAsync(string.IsNullOrWhiteSpace(what) ? CheckoutBox.Read : what.Trim(), repository, path, ct);
 

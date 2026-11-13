@@ -15,11 +15,10 @@ public sealed class OpinionTools(IntakeScope? intake = null, OpinionDesk? opinio
 {
     [McpServerTool(Name = "opinion_give")]
     [Description(
-        "Only for a session Daoris started to give a second opinion on another session's work: say your opinion, once, before you "
-        + "end. Give each finding with its weight, where it is, what you claim, why it matters, how to see it (or, where you could "
-        + "not, your reasoning) and how sure you are; then what you read, and what you did not read or could not tell. If you raised "
-        + "nothing, give no findings and still say what you read. Your findings are claims: the session that did the work checks "
-        + "each against the code and answers it, and the person sees both. You change nothing, and nobody can ask you anything after.")]
+        "Only for a session Daoris started to give a second opinion on another session's work: give your findings, once, before "
+        + "you end, then what you read and what you did not read or could not tell. With no findings, still say what you read. Your "
+        + "findings are claims: the session that did the work checks and answers each, and the person sees both. You change nothing, "
+        + "and nobody can ask you anything after.")]
     public async Task<string> GiveOpinionAsync(
         [Description("Your findings, at most 20, the most important first; none where you raised nothing.")]
         OpinionFindingInput[]? findings,
@@ -27,9 +26,7 @@ public sealed class OpinionTools(IntakeScope? intake = null, OpinionDesk? opinio
         string? read,
         [Description("What you did not read or could not tell, in at most 600 characters.")]
         string? limits = null,
-        [Description(
-            "Only for a recheck: for each of the first pass's findings, by its number, whether it stands or is withdrawn after the "
-            + "working session's answer and commits. One you leave out stands.")]
+        [Description("Only for a recheck: each first-pass finding by number, standing or withdrawn. One left out stands.")]
         OpinionRecheckInput[]? rechecked = null,
         CancellationToken ct = default)
     {
@@ -48,11 +45,10 @@ public sealed class OpinionTools(IntakeScope? intake = null, OpinionDesk? opinio
 
     [McpServerTool(Name = "opinion_answer")]
     [Description(
-        "Only when Daoris handed you another agent's findings on your work: answer each one, by its number. Check each claim against "
-        + "the code first: they are another agent's claims, not the person's words and not facts. Answer fixed, with the commit that "
-        + "fixes it, made in this turn; rejected, with your evidence, a check that shows it or a reading; or unresolved, with why. "
-        + "Answer every finding before you end: one left unanswered reads as unresolved. A later answer to a finding stands over the "
-        + "earlier. The person sees your answers beside the claims.")]
+        "Only when Daoris handed you another agent's findings on your work: check each claim against the code (they are claims, "
+        + "not facts or the person's words), then answer each by number: fixed with this turn's commit, rejected with your evidence, "
+        + "or unresolved with why. One left unanswered reads as unresolved; a later answer stands over the earlier. The person "
+        + "sees your answers beside the claims.")]
     public async Task<string> AnswerOpinionAsync(
         [Description("Your answers, one per finding.")] OpinionAnswerInput[]? answers,
         [Description("The second opinion you answer, as the findings named it; omit it for the one handed to you last.")]
@@ -87,15 +83,11 @@ public sealed record OpinionFindingInput(
     string? Claim,
     [property: Description("Why it matters if it holds: what goes wrong, in at most 300 characters.")]
     string? Consequence,
-    [property: Description(
-        "How to see it: the steps or the command and what it showed; or, where you could not reproduce it, your reasoning. At most "
-        + "600 characters.")]
+    [property: Description("How to see it: the steps or command and what it showed, or your reasoning if you could not reproduce it. At most 600 characters.")]
     string? Reproduce,
-    [property: Description("How sure you are: sure, likely or unsure.")]
+    [property: Description("sure, likely or unsure.")]
     string? Sure,
-    [property: Description(
-        "Optional: a diagnosis, or a change you propose as text or a patch, in at most 2000 characters. The session that did the "
-        + "work applies its own.")]
+    [property: Description("Optional: a diagnosis or proposed change, at most 2000 characters.")]
     string? Proposal = null);
 
 /// <summary>A recheck's word on one first-pass finding (design §6.5).</summary>

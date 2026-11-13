@@ -20,68 +20,44 @@ public sealed class QuestTools(
 {
     [McpServerTool(Name = "quest_publish")]
     [Description(
-        "Ask ANOTHER repository in this family to do something. Repositories here are not developed "
-        + "across: you never edit a sibling, you publish a quest and its own agent takes it. Say what "
-        + "is needed and why, with the evidence — not the change you would make. Use before touching "
-        + "any repository that is not the one you are working in, and before reading into one: what it "
-        + "owns and why its code is shaped that way is its agent's to say. If your work depends on the "
-        + "answer, wait on this quest with quest_respond (action wait) and end your turn.")]
+        "Ask ANOTHER repository in this family to do something: never edit a sibling or read into it, publish a quest "
+        + "and its own agent takes it. Say what is needed and why, with the evidence, not the change you would make. "
+        + "If your work depends on the answer, wait on it with quest_respond (action wait) and end your turn.")]
     public async Task<string> PublishQuestAsync(
-        [Description("The repository asking — the one you are working in. An intake publishes as its ask, whatever this says.")]
+        [Description("The repository you are working in. An intake publishes as its ask, whatever this says.")]
         string from,
         [Description(
-            "The repository being asked. It must be in the registry as addressable, or nobody there can see it. "
-            + "Where the registry lists its lanes, `repository:lane` asks one of them, and `repository:lane+lane` "
-            + "several — your own repository's lanes included, which is the one way to ask your own repository.")]
+            "The repository asked; it must be addressable in the registry. `repository:lane` asks one lane, "
+            + "`repository:lane+lane` several (your own repository's lanes too).")]
         string to,
         [Description("One line: what is wanted.")] string title,
-        [Description("Why, and the evidence. Whoever works there may see a better answer than you did.")]
+        [Description("Why, and the evidence.")]
         string body,
-        [Description("Addresses the quest carries — a ticket, a page, a document. Absolute http or https only.")]
+        [Description("Absolute http or https addresses.")]
         string[]? links = null,
-        [Description(
-            "Files the quest carries, by path on this machine — a screenshot, a log, a document; a relative path is in the "
-            + "repository you are working in. They stay on this machine and go to whoever takes the quest here; a remote learns only their names.")]
+        [Description("Files by path on this machine (relative: in your repository). A remote learns only their names.")]
         string[]? attachments = null,
-        [Description(
-            "What to ask next, in order, once this quest is DONE — develop, then verify, then report. "
-            + "Each step is published automatically when the one before it closes done, on behalf of "
-            + "the same asker; a decline stops the chain. Write {parent} in a step's title or body for "
-            + "the id of the quest it follows.")]
+        [Description("Steps asked in order once this quest is DONE; a decline stops the chain. {parent} in a title or body is the previous quest's id.")]
         ChainStep[]? then = null,
         [Description(
-            "What the person requires, for a quest an ask asks: each one their own words, quoted exactly as they "
-            + "gave them in the ask or said on it since, with the check that proves the work meets them. A quote "
-            + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
-            + "of the chain inherits them. A quest one repository asks of another carries none.")]
+            "For an ask: what the person requires, each in their own words quoted exactly, with the check that proves it. "
+            + "A quote they never said is refused; your reading goes in the body. Steps inherit them.")]
         Requirement[]? requirements = null,
-        [Description(
-            "A short title: the few words that tell this quest apart in a list, at most 40 characters, about 20 in Chinese. "
-            + "Your own words, never the title cut short. Omit it and the quest is named from its own words.")]
+        [Description("The few words that tell this quest apart in a list, at most 40 characters. Omit and it is named from its words.")]
         string? shortTitle = null,
-        [Description(
-            "`design` for design or decision work, so the machine that takes it starts it on the role taking design work. "
-            + "Omit it for ordinary work; an intake marks it by its own reading of the ask.")]
+        [Description("`design` for design or decision work; omit for ordinary work.")]
         string? weight = null,
-        [Description(
-            "The files the work will change, as repository-relative globs (`src/frame/**`), where you know them. A start whose "
-            + "paths meet another open quest's in that repository is said, and may wait for it. On an ask, these add to the "
-            + "person's own paths and never replace them.")]
+        [Description("Repository-relative globs of the files the work will change (`src/frame/**`); they add to the person's paths.")]
         string[]? paths = null,
         [Description(
-            "Whether the person looks at this chain's work running before it lands, for a quest an ask asks: off, on (the "
-            + "repository's default environment) or an environment's name, set only on the person's own words, which you quote "
-            + "exactly. Every step inherits it. Without their words, propose one with reviewProposal instead. Your off, even on "
-            + "their words, is kept as a proposal: only their own press turns a review off.")]
+            "For an ask: whether the person looks at the work running first: off, on, or an environment's name, only on their own "
+            + "words, quoted exactly. Without them use reviewProposal. Your off is kept as a proposal: only their press turns a review off.")]
         ReviewChoice? review = null,
-        [Description(
-            "For an intake, where the person said nothing on it: the review you propose for this chain and your reason, kept on "
-            + "the ask beside their choice. Only their press applies it; compose no set-up step for a chain you propose off.")]
+        [Description("For an intake where the person said nothing on it: the review you propose and why. Only their press applies it; no set-up step for a chain you propose off.")]
         ReviewProposal? reviewProposal = null,
         [Description(
-            "For an intake: the kind of work you read this ask to be, proposed on the person's own words, which you quote exactly "
-            + "(at most 300 characters) as the reason. It is kept on the ask beside their choice and only their press applies it; "
-            + "you never set a kind or a workflow, and the workspace's own kinds decide which are real.")]
+            "For an intake: the kind of work you read the ask to be, with the person's own words quoted exactly "
+            + "(at most 300 characters) as the reason. It is kept beside their choice and only their press applies it; you never set a kind or workflow.")]
         WorkflowProposal? workflowProposal = null,
         CancellationToken ct = default)
     {
@@ -198,15 +174,14 @@ public sealed class QuestTools(
 
     [McpServerTool(Name = "quest_list")]
     [Description(
-        "Quests across the family: what has been asked of whom, and what is still outstanding. Give a "
-        + "repository name to see only what it owes.")]
+        "Quests across the family: what has been asked of whom, and what is outstanding.")]
     public async Task<string> ListQuestsAsync(
-        [Description("Only quests addressed to this repository. Omit for the whole family.")]
+        [Description("Only quests addressed to this repository.")]
         string? repository = null,
-        [Description("Include finished and declined ones. Default false — outstanding work is the question.")]
+        [Description("Include finished and declined ones.")]
         bool includeClosed = false,
         [Description(WorkspaceArgument)] string? workspace = null,
-        [Description("The page to answer, from 1: a long list, closed quests included, is answered a page at a time, each naming the next.")]
+        [Description("The page, from 1; each page names the next.")]
         int page = 1,
         CancellationToken ct = default)
     {
@@ -390,26 +365,22 @@ public sealed class QuestTools(
 
     [McpServerTool(Name = "quest_respond")]
     [Description(
-        "Answer a quest addressed to your repository: take it, finish it, or decline it with a reason (a real answer, often the "
-        + "right one). Finishing a quest with the person's requirements answers each (answers). Needing another repository's change "
-        + "or fact: quest_publish the question, then wait on its id here (action wait) and end your turn; the driver resumes you "
-        + "in the same tree with the answer. Where quest_list says its graph closes it, finish with ready, not done. Your reason "
-        + "is the handback, the one record later readers see: one that only points elsewhere (\"see my last message\") is refused.")]
+        "Answer a quest addressed to your repository: take it, finish it, or decline it with a reason. Needing another "
+        + "repository's change or fact: quest_publish the question, then wait on its id here (action wait) and end your turn; "
+        + "you resume with the answer. Where quest_list says its graph closes it, finish with ready, not done. Your reason is "
+        + "the handback, the record later readers see: one that only points elsewhere is refused.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
-        [Description("take, done, ready, decline, or wait. ready finishes a quest its graph closes.")] string action,
+        [Description("take, done, ready, decline, or wait.")] string action,
         [Description(
-            "Your handback: required to decline, and worth giving when finishing or saying ready. Say what changed, where (the commits), "
-            + "what you proved, and what you did not, in the note itself: one that only points elsewhere is refused.")]
+            "Your handback, required to decline: what changed, where (the commits), what you proved, and what you did not, "
+            + "in the note itself.")]
         string? reason = null,
-        [Description("For wait: the id of the question you published to another repository.")] string? on = null,
+        [Description("For wait: the id of the question you published.")] string? on = null,
         [Description(
-            "For done or ready, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
-            + "how its check was met; or departed, with the reason and the person's own words it turns on (quote), "
-            + "copied exactly. A done that leaves one unanswered is refused. A departure is shown to the person, and "
-            + "what follows the quest waits for their yes. Where a met requirement names evidence, Daoris reads it in your "
-            + "last commit when you end, and a met answer without it holds the quest for the person, so commit it before "
-            + "you finish. A quest with no requirements takes none.")]
+            "For done or ready on a quest with the person's requirements: one answer for each, by number: met with how, or "
+            + "departed with the reason and the person's words (quote). One left unanswered is refused. A met answer that names "
+            + "evidence is read in your last commit when you end, so commit it before you finish.")]
         RequirementAnswer[]? answers = null,
         CancellationToken ct = default)
     {
@@ -443,16 +414,15 @@ public sealed class QuestTools(
 /// exchange refuses a step without its words naming which step it is.
 /// </summary>
 public sealed record ChainStep(
-    [property: Description("The repository asked at this step. Every step is asked on behalf of the chain's asker.")]
+    [property: Description("The repository asked at this step.")]
     string? To,
-    [property: Description("One line: what is wanted. {parent} becomes the id of the quest this step follows.")]
+    [property: Description("One line: what is wanted.")]
     string? Title,
-    [property: Description("Why, and how to tell it is done — e.g. where to look in the browser. {parent} works here too.")]
+    [property: Description("Why, and how to tell it is done.")]
     string? Body,
     [property: Description(
-        "Only for a set-up step, which shows the work for the person's review: the review environment it is shown in, one the "
-        + "repository declares, never production. It asks the same repository as the step before it, after that repository's "
-        + "last step, and its done waits for the person's review.")]
+        "Only for a set-up step that shows the work for the person's review: the review environment, one the repository declares, "
+        + "never production. It asks the previous step's repository, and its done waits for the person's review.")]
     string? SetUpIn = null);
 
 /// <summary>
@@ -460,13 +430,11 @@ public sealed record ChainStep(
 /// refuses one missing a half, naming which, rather than the door dropping it.
 /// </summary>
 public sealed record Requirement(
-    [property: Description("The person's own words, copied exactly from what they asked or said since — never reworded.")]
+    [property: Description("The person's own words, copied exactly, never reworded.")]
     string? Quote,
-    [property: Description("How to tell the work meets them, in the terms of the repository asked.")]
+    [property: Description("How to tell the work meets them.")]
     string? Check,
-    [property: Description(
-        "Optional: what Daoris reads itself to tell the check was met, at most 5 items. Name a path only where the work "
-        + "plainly leaves a file or folder the person can name.")]
+    [property: Description("Optional, at most 5: what Daoris reads to tell the check was met; a path only where the work plainly leaves one.")]
     RequirementEvidence[]? Evidence = null);
 
 /// <summary>
@@ -474,12 +442,9 @@ public sealed record Requirement(
 /// the exchange refuses an item that names both or neither, or a path that is not one, naming which.
 /// </summary>
 public sealed record RequirementEvidence(
-    [property: Description(
-        "A file or folder the work's last commit must hold: forward slashes, relative to the receiving repository's root, "
-        + "e.g. docs/report.md.")]
+    [property: Description("A file or folder the last commit must hold: forward slashes, relative to the receiving repository's root.")]
     string? Path,
-    [property: Description(
-        "A gate the receiving repository declares. Not read yet: a gate is refused until its landing queue reads gates.")]
+    [property: Description("A gate the receiving repository declares. Not read yet: refused for now.")]
     string? Gate);
 
 /// <summary>
@@ -493,9 +458,7 @@ public sealed record RequirementAnswer(
     string? Met,
     [property: Description("Why the work departed from it, instead of meeting it. Leave empty when it was met.")]
     string? Departed,
-    [property: Description(
-        "With departed only: the person's own words the departure turns on, copied exactly from what they asked or "
-        + "said since. Your reading of their words is the reason, never their words.")]
+    [property: Description("With departed only: the person's own words the departure turns on, copied exactly.")]
     string? Quote);
 
 /// <summary>
@@ -503,11 +466,9 @@ public sealed record RequirementAnswer(
 /// for the person's press. A kind only, never a workflow: the workflow a kind gives is the driving machine's.
 /// </summary>
 public sealed record WorkflowProposal(
-    [property: Description("The kind of work the ask is, a kind's id of the workspace such as docs: lower-case letters, digits and dashes.")]
+    [property: Description("A kind's id of the workspace, such as docs.")]
     string? Kind,
-    [property: Description(
-        "The person's own words that say why, copied exactly from what they asked or said since, in at most 300 characters. "
-        + "A reason that is not their words is refused.")]
+    [property: Description("The person's own words that say why, copied exactly, at most 300 characters; anything else is refused.")]
     string? Reason);
 
 /// <summary>
@@ -515,16 +476,14 @@ public sealed record WorkflowProposal(
 /// that is not one, naming why.
 /// </summary>
 public sealed record ReviewChoice(
-    [property: Description("off, on (the repository's default environment), or an environment's name.")]
+    [property: Description("off, on , or an environment's name.")]
     string? Choice,
-    [property: Description(
-        "The person's own words you set it on, copied exactly from what they asked or said since. Without them, propose one "
-        + "instead.")]
+    [property: Description("The person's own words you set it on, copied exactly.")]
     string? Words);
 
 /// <summary>An intake's review proposal as it writes it: a choice and its reason, for the person's press.</summary>
 public sealed record ReviewProposal(
-    [property: Description("off, on (the repository's default environment), or an environment's name.")]
+    [property: Description("off, on, or an environment's name.")]
     string? Choice,
-    [property: Description("Why, in at most 300 characters, such as that the work changes only a document.")]
+    [property: Description("Why, in at most 300 characters.")]
     string? Reason);

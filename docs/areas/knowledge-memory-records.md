@@ -125,6 +125,11 @@ one job each, checked by `verify`.
     call is refused by the session's work: a tool whose work has nothing to act on says so in its own answer (a brainstorm tool
     with no turn, `checkout_read` outside Ask Daoris, a memory change by a work with no repository of its own, a check by a
     session with no tree). What a one-job session may call is its harness's rules, handed at its start. (from D212, D284)
+    The listing is what every session pays before its first word, so each tool's description and schema text says what an agent
+    needs to choose and call it and no more: the rationale lives here. `McpListingBudgetTests` measures the listing as the wire
+    carries it (34 tools, 41,776 characters, about 13,900 tokens) and fails over its budget or a tool over its own, so a number
+    over budget needs a cut or a reason beside it. Claude Code's deferred tool loading stays off (agents-and-harnesses 12): its
+    search step costs a model round trip before the first move.
 19. `McpRoleFilterTests` holds the tests' `fixtures/call-table.json` to the registration and to the closed set of works, a
     brainstorm placed by its two turns. (from D212, D284)
 20. A connector that names no session (a person's own agent) writes no lineage; its calls run the same. (from D212)

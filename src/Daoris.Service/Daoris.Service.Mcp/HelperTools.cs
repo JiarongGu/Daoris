@@ -15,17 +15,14 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
 {
     [McpServerTool(Name = "helper_ask")]
     [Description(
-        "Ask another agent for a second reading of this repository: an explanation, a check of your reasoning, a place to look. "
-        + "It reads your work as it stands when your turn ends (uncommitted included), changes nothing, takes one turn and asks no "
-        + "one; the person's rule for helpers decides if it starts. Its answer comes back as your next turn, marked as another agent's claim: check it before "
-        + "relying on it. Say what you asked, then end your turn. Asked urgent, an answer reaches a later turn at its next step.")]
+        "Ask another agent for a second reading of this repository. It reads your work as it stands when your turn ends "
+        + "(uncommitted included), changes nothing and takes one turn; the person's rule for helpers decides if it starts. Its "
+        + "answer comes back as your next turn, as another agent's claim: check it before relying on it. Say what you asked, then end your turn.")]
     public async Task<string> AskHelperAsync(
         [Description("The question, with what the helper should read, in at most 4000 characters.")] string? question,
-        [Description("Optional: the agent to ask, as Settings lists it. Left out, Daoris chooses another maker's first.")]
+        [Description("The agent to ask, as Settings lists it. Omit and Daoris chooses.")]
         string? agent = null,
-        [Description(
-            "Optional: true when you go on working and want the answer at your next step, where your door takes words then. Left out, "
-            + "the answer comes as your next turn.")]
+        [Description("True when you go on working and want the answer at your next step; otherwise it is your next turn.")]
         bool? urgent = null,
         CancellationToken ct = default)
     {
