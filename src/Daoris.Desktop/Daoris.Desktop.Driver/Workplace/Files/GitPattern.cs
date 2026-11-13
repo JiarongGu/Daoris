@@ -25,7 +25,8 @@ internal static class GitPattern
     internal static bool Covers(FileRule rule, string top, bool ignoreCase) =>
         rule.FirstForm ? rule.Paths.Any(each => FirstFormMatch(each, top, ignoreCase)) : Covers(rule.Paths, top, ignoreCase);
 
-    internal static Regex RegexOf(string pattern) => Compile(pattern, ignoreCase: true).Test;
+    internal static IReadOnlyList<Regex> RegexesOf(FileRule rule) =>
+        rule.FirstForm || rule.Paths.Any(each => each.StartsWith('!')) ? [] : [.. rule.Paths.Select(each => Compile(each, ignoreCase: true).Test)];
 
     private static bool FirstFormMatch(string path, string top, bool ignoreCase)
     {

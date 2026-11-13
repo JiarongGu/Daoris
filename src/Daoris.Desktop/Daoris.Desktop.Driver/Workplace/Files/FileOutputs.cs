@@ -18,10 +18,7 @@ internal static class FileOutputs
 
     /// <summary>The patterns <paramref name="text"/>'s rule entries of a remade kind cover; none where the text does not read.</summary>
     internal static IReadOnlyList<Regex> Declared(string? text) =>
-        [.. RepositoryFilesReader.Read(text).Rules
-            .Where(rule => Remade.Contains(rule.Kind) && !rule.FirstForm && !rule.Paths.Any(path => path.StartsWith('!')))
-            .SelectMany(rule => rule.Paths)
-            .Select(GitPattern.RegexOf)];
+        [.. RepositoryFilesReader.Read(text).Rules.Where(rule => Remade.Contains(rule.Kind)).SelectMany(GitPattern.RegexesOf)];
 
     /// <summary>The patterns of the rule file at <paramref name="line"/>'s tip in the checkout at <paramref name="root"/>; none where it has none.</summary>
     internal static async Task<IReadOnlyList<Regex>> AtAsync(string root, string line, CancellationToken ct)
