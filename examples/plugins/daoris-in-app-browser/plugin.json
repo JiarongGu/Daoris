@@ -3,13 +3,13 @@
   "formerly": ["in-app-browser"],
   "apiVersion": 1,
   "name": "In-app browser",
-  "version": "2.1.0",
-  "changes": "Each session drives a browser context of its own, its tabs apart from the person's, Ask Daoris's and every other session's, each new tab given the person's sign-in; the context closes when the session ends.",
+  "version": "2.2.0",
+  "changes": "Every session now drives the person's own browser context, so local storage and IndexedDB sign-ins are shared with it, each through tabs of its own that never take the person's or another session's; an agent named in isolation.json gets a context of its own instead, with the person's cookies and open origins' local storage.",
   "description": "Hands every session Daoris's own browser: the Playwright MCP server, attached over CDP to the window the person signs in to and watches. Offers it to Ask Daoris too, once the person approves its tools.",
   "servers": [
     {
       "name": "browser",
-      "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}", "--isolated", "--init-page", "${plugin}/share-sign-in.cjs", "--output-dir", "${data}/output"],
+      "command": ["node", "${plugin}/browser-server.mjs", "--cdp-endpoint", "${browser}", "--data", "${data}", "--output-dir", "${data}/output"],
       "to": ["sessions", "help"],
       "allow": [
         "browser_navigate", "browser_navigate_back", "browser_navigate_forward", "browser_snapshot", "browser_take_screenshot",
