@@ -195,12 +195,7 @@ internal static class SessionsListing
                 : "work to review";
         }
 
-        // Commits its own tree holds that no branch of the person's does, whatever its ending, with the door that lands them.
-        if (row.Lands is { } lands)
-        {
-            yield return $"{lands.Commits} commit{(lands.Commits == 1 ? "" : "s")} on {lands.Branch} in its tree {lands.Tree}, not landed: "
-                + $"daoris tree land {row.Session}";
-        }
+        if (row.Lands is { } lands) yield return LandingHint.Of(row, lands);
 
         // Commits the line holds by content are never offered to land again; the door that discards the tree is, with the ref its
         // commits stay at, or why the tree stays.
