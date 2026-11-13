@@ -201,7 +201,7 @@ public sealed class RepositoryCreateTests : IDisposable
     }
 
     [Fact]
-    public async Task No_git_identity_among_the_workspaces_repositories_is_refused_naming_git_use()
+    public async Task No_git_identity_and_none_of_gits_own_is_refused_naming_git_use()
     {
         var stand = await MakeAsync(each => each.Authors.Clear());
 
@@ -209,6 +209,23 @@ public sealed class RepositoryCreateTests : IDisposable
 
         Assert.False(plan.Applies);
         Assert.Contains("daoris git use", Refused(plan, CreateRefusals.NoIdentity));
+        Assert.NotEmpty(stand.GitOwnAsked);
+    }
+
+    [Fact]
+    public async Task Where_no_identity_commits_the_plan_takes_gits_own_answer_and_shows_it_in_the_history_step()
+    {
+        var stand = await MakeAsync(each =>
+        {
+            each.Authors.Clear();
+            each.GitOwn = new CreateAuthor("Machine Owner", "owner@example.test");
+        });
+
+        var plan = await Plan(stand, Ask());
+
+        Assert.True(plan.Applies);
+        Assert.Equal(new CreateAuthor("Machine Owner", "owner@example.test"), plan.Author);
+        Assert.Contains("Machine Owner <owner@example.test>", plan.Steps.Single(step => step.Id == CreateOperations.History).Said);
     }
 
     [Fact]
@@ -735,6 +752,16 @@ public sealed class RepositoryCreateTests : IDisposable
         public Task<string?> LineOfAsync(RepoView row, DriverConfig config, CancellationToken ct) => Task.FromResult(Lines.GetValueOrDefault(row.Repository));
 
         public Task<CreateAuthor?> AuthorOfAsync(RepoView row, CancellationToken ct) => Task.FromResult(Authors.TryGetValue(row.Repository, out var who) ? who : null);
+
+        public CreateAuthor? GitOwn { get; set; }
+
+        public List<string> GitOwnAsked { get; } = [];
+
+        public Task<CreateAuthor?> GitOwnAuthorAsync(string directory, CancellationToken ct)
+        {
+            GitOwnAsked.Add(directory);
+            return Task.FromResult(GitOwn);
+        }
 
         public string? RemoteStepOf(DriverConfig config, string repository, string workspace) => RemoteStep;
 

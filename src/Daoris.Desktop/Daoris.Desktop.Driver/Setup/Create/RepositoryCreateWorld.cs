@@ -30,6 +30,13 @@ public sealed class RepositoryCreateWorld(ServiceClient service, string home) : 
     public async Task<CreateAuthor?> AuthorOfAsync(RepoView row, CancellationToken ct) =>
         await GitAuthor.OfAsync(home, row.Root!, ct).ConfigureAwait(false) is { } who ? new CreateAuthor(who.Name, who.Email) : null;
 
+    public async Task<CreateAuthor?> GitOwnAuthorAsync(string directory, CancellationToken ct)
+    {
+        var (nameCode, name, _) = await WorkingTree.GitAsync(directory, ["config", "user.name"], ct).ConfigureAwait(false);
+        var (emailCode, email, _) = await WorkingTree.GitAsync(directory, ["config", "user.email"], ct).ConfigureAwait(false);
+        return nameCode == 0 && emailCode == 0 && name.Trim().Length > 0 && email.Trim().Length > 0 ? new CreateAuthor(name.Trim(), email.Trim()) : null;
+    }
+
     public string? RemoteStepOf(DriverConfig config, string repository, string workspace) => CreateRemoteSteps.Of(home, config, repository, workspace);
 
     public Task<(bool Ok, string Message)> RegisterAsync(JsonObject body, CancellationToken ct) => service.RegisterAsync(body, ct);

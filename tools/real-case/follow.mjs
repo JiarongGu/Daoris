@@ -1,3 +1,4 @@
+import { createAndSetUp } from './create.mjs';
 import { parseAsk, parseList, parseRun, standing } from './reads.mjs';
 
 /** The words of the filing: only the installed command's own flags, one ask published at once to its repository. */
@@ -18,7 +19,7 @@ export function askArguments({ caseDef, repository, workspace, workflow, through
  * waits on a person's word, or the time is out. It presses nothing a person decides unless `withWord`, and makes only one act of its
  * own, a retry of a quest whose session failed; each such act is an intervention in the receipt, a defect to fix.
  */
-export async function follow({ caseDef, repository, workspace, workflow, installed, withWord = false, through, clock = Date.now, sleep, pollMs = 5000, timeoutMs = 20 * 60_000, maxRetries = 1 }) {
+export async function follow({ caseDef, repository, workspaceDir, workspace, workflow, installed, withWord = false, through, clock = Date.now, sleep, pollMs = 5000, timeoutMs = 20 * 60_000, maxRetries = 1 }) {
   const t0 = clock();
   const log = { filedAt: new Date(t0).toISOString(), stages: [], words: [], interventions: [], reads: 0 };
   const seen = new Set();
@@ -27,6 +28,10 @@ export async function follow({ caseDef, repository, workspace, workflow, install
     seen.add(stage);
     log.stages.push({ stage, at: new Date(clock()).toISOString(), afterFiledMs: clock() - t0, ...(detail ? { detail } : {}) });
   };
+
+  const created = await createAndSetUp({ installed, name: repository, purpose: caseDef.title, workspace, workspaceDir, mark, clock, sleep, pollMs, timeoutMs });
+  log.creation = created.said;
+  if (!created.ok) return { ...log, outcome: created.outcome, ask: null, quest: null, finalRun: '', required: 0 };
 
   const filing = installed(askArguments({ caseDef, repository, workspace, workflow, through }));
   log.filing = { code: filing.code, said: filing.stdout.trim() || filing.stderr.trim() };
@@ -40,6 +45,7 @@ export async function follow({ caseDef, repository, workspace, workflow, install
   let pressed = false;
   let finalRun = '';
   let outcome = 'timeout';
+  const started = clock();
   for (;;) {
     log.reads += 1;
     const quests = parseList(installed(['quest', 'list', '--repository', repository, '--json']).stdout) ?? [];
@@ -76,7 +82,7 @@ export async function follow({ caseDef, repository, workspace, workflow, install
       }
     }
     if (caseDef.expect.every(e => seen.has(e))) { outcome = 'complete'; break; }
-    if (clock() - t0 > timeoutMs) break;
+    if (clock() - started > timeoutMs) break;
     await sleep(pollMs);
   }
   return { ...log, outcome, ask: ids.ask, quest, required, finalRun, askWords: ids.message };

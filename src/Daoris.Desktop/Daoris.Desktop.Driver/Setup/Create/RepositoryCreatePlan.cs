@@ -74,11 +74,12 @@ public static class RepositoryCreatePlans
                 && !string.Equals(row.Repository, ask.Name, StringComparison.OrdinalIgnoreCase)).ToList();
             line = resume is not null ? resume.Line : ask.Line ?? await LineAsync(gitRows, world, config, ct).ConfigureAwait(false);
             author = resume is not null ? resume.Author : await AuthorAsync(gitRows, world, ct).ConfigureAwait(false);
+            author ??= await GitOwnAsync(gitRows, folder, world, ct).ConfigureAwait(false);
             if (author is null)
             {
                 refusals.Add(new(CreateRefusals.NoIdentity,
-                    $"no git identity is chosen for the repositories of `{workspace}`, so its first commit has no author: choose one with "
-                    + $"`daoris git use --workspace {workspace} --host <host> <identity>`, then press again."));
+                    $"no git identity is chosen for the repositories of `{workspace}` and git has no user.name and user.email of its own, so its first commit has no author: choose one with "
+                    + $"`daoris git use --workspace {workspace} --host <host> <identity>`, or set git's own, then press again."));
             }
         }
 
@@ -153,6 +154,17 @@ public static class RepositoryCreatePlans
         }
 
         return CreateJudge.Most(authors);
+    }
+
+    private static async Task<CreateAuthor?> GitOwnAsync(IReadOnlyList<RepoView> rows, string folder, ICreateWorld world, CancellationToken ct)
+    {
+        var places = rows.Select(row => row.Root!).Concat(folder.Length > 0 ? [Path.GetDirectoryName(folder)!] : []).Where(Directory.Exists);
+        foreach (var place in places)
+        {
+            if (await world.GitOwnAuthorAsync(place, ct).ConfigureAwait(false) is { } own) return own;
+        }
+
+        return null;
     }
 
     private static IReadOnlyList<CreateStep> StepsOf(CreateAsk ask, string workspace, string folder, string? line, CreateAuthor? author, string? remote)
