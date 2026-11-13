@@ -35,12 +35,12 @@ public static class DeliveryGraph
         if (Cycle([.. edges.Where(edge => known.Contains(edge.Deployable) && known.Contains(edge.On))]) is { } cycle)
         {
             var spelt = string.Join(" -> ", cycle.Select(each => each.ToString()));
-            flags.Add(new(TeamFlags.Cycle, null, $"The release orders run in a circle: {spelt}. Nothing can be released first."));
-            questions.Add(new(CycleKey(cycle), DeliveryQuestion.Cycle, $"The release orders run in a circle: {spelt}. Break it with a compatibility change or a staged rollout.")
+            flags.Add(new(TeamFlags.Cycle, null, $"The release orders form a cycle: {spelt}. Nothing can be released first."));
+            questions.Add(new(CycleKey(cycle), DeliveryQuestion.Cycle, $"The release orders form a cycle: {spelt}. Break it with a compatibility change or a staged rollout.")
             {
                 Yes = "The plan is revised with the order you choose.",
-                Blocks = "Every release in the circle.",
-                Default = "None: no deployable in the circle is released until it is settled.",
+                Blocks = "Every release in the cycle.",
+                Default = "None: no deployable in the cycle is released until it is settled.",
             });
         }
 
