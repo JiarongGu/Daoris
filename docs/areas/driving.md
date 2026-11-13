@@ -239,7 +239,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
     probably meant, and is never made. (D65, D133, D277, D282, D284)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
-    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. A parked
+    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. Where
+    the workspace has more than one repository it is the lead of the ask's team (`IntakeLead`): it starts as plan work on the Lead
+    role's order, is told to decide one part or several and to write several through `team_plan`, and the plan door publishes as
+    the writing session, so its tier moves as its `quest_publish` moves it (TEAMWORK1d). A parked
     one ends in the ask's close's own step, with its reason (`AskIntakeClose`, `ledger.intake-closed`), whichever door closed it;
     at the look when the person publishes or deletes the ask, or when one running at the close parks. Where no declaration covers the work and no repository's own files fit it, the
     intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
