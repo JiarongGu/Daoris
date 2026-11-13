@@ -22,7 +22,7 @@ public enum GitRunKind
 /// <param name="Environment">The variables it takes beside the host's; a null value removes the variable.</param>
 /// <param name="Bound">How long it may run.</param>
 /// <param name="Refusal">Why no git runs, in the resolution's words, which an answer carries as git's error and which never falls back to another git.</param>
-public sealed record GitStart(
+public sealed record GitRunSpec(
     string? Program, IReadOnlyList<string> Arguments, IReadOnlyDictionary<string, string?> Environment, TimeSpan Bound, string? Refusal = null);
 
 /// <summary>
@@ -36,7 +36,7 @@ public interface IGitPolicy
     Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct);
 
     /// <summary>How <paramref name="ask"/> starts: its program, its arguments, its variables and its bound, or why no git runs.</summary>
-    Task<GitStart> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct);
+    Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct);
 
     /// <summary>
     /// Keeps <paramref name="run"/>, a whole start and run of <paramref name="ask"/>, in the counts its flow holds, and times it. Any
@@ -49,7 +49,7 @@ public interface IGitPolicy
     /// for the answer any longer. A start that is refused a place throws, and a git that outlived its kill is thrown as the caller's
     /// cancellation (<see cref="Processes.ProcessUnendedException"/>).
     /// </summary>
-    Task<T> PlaceAsync<T>(GitAsk ask, GitStart start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct);
+    Task<T> PlaceAsync<T>(GitAsk ask, GitRunSpec start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct);
 
     /// <summary>Tells that the git of <paramref name="id"/> was not ended by its kill, <paramref name="reason"/> saying why, as it is found.</summary>
     void Unended(int id, string reason);

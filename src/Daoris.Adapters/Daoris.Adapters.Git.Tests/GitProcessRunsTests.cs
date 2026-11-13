@@ -60,12 +60,12 @@ public sealed class GitProcessRunsTests
 
         public Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct) => _plain.AnswerInProcessAsync(ask, ct);
 
-        public Task<GitStart> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
-            Task.FromResult(new GitStart(null, [], new Dictionary<string, string?>(), TimeSpan.FromMinutes(1), "the git chosen cannot run"));
+        public Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
+            Task.FromResult(new GitRunSpec(null, [], new Dictionary<string, string?>(), TimeSpan.FromMinutes(1), "the git chosen cannot run"));
 
         public Task<T> LaunchAsync<T>(GitAsk ask, GitRunKind kind, Func<Task<T>> run) => run();
 
-        public Task<T> PlaceAsync<T>(GitAsk ask, GitStart start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct) =>
+        public Task<T> PlaceAsync<T>(GitAsk ask, GitRunSpec start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct) =>
             throw new InvalidOperationException("a refused git is placed nowhere");
 
         public void Unended(int id, string reason)

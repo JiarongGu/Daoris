@@ -211,11 +211,14 @@ the machine (`GitStartAdmission`), which refuses a git's image holding no place 
 place to it.
 
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
-memos first and asks the port for the rest, and the roots hand `GitProcessRuns`, which answers a read the library can give in process
-and launches every other git, counted, placed and bounded, as the machine's process. A unit test chooses its flow's git through the
+memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the
+machine's process host. It runs each git as a process through the host, which joins it to the git job, and asks the driver's
+`GitRunPolicy` (`IGitPolicy`) for everything that is Daoris's: the program and its variables, the read the library can give in
+process, the scheduler's place, and the count and timing the launch is kept in. A unit test chooses its flow's git through the
 test root's `FlowGit`: `ScriptedGit` answers or watches it, and nothing in the driver stands in for git. Starts and reads around the
 port (a git start composed by hand, git's own files, the library) are counted per file by the layers census (`git`), an allowance
-that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the rehearsal tier.
+that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the adapter's own suite,
+which a merge runs only when the adapter's fingerprint differs from its row of `daoris.adapters.lock`.
 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.

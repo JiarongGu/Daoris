@@ -10,13 +10,13 @@ internal sealed class PlainGitPolicy : IGitPolicy
 {
     public Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct) => Task.FromResult<GitAnswer?>(null);
 
-    public Task<GitStart> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
-        Task.FromResult(new GitStart("git", ask.Arguments, new Dictionary<string, string?>(ask.Environment?.Select(each => KeyValuePair.Create(each.Key, (string?)each.Value)) ?? []),
+    public Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
+        Task.FromResult(new GitRunSpec("git", ask.Arguments, new Dictionary<string, string?>(ask.Environment?.Select(each => KeyValuePair.Create(each.Key, (string?)each.Value)) ?? []),
             ask.Bound ?? TimeSpan.FromMinutes(2)));
 
     public Task<T> LaunchAsync<T>(GitAsk ask, GitRunKind kind, Func<Task<T>> run) => run();
 
-    public Task<T> PlaceAsync<T>(GitAsk ask, GitStart start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct) => run(ct);
+    public Task<T> PlaceAsync<T>(GitAsk ask, GitRunSpec start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct) => run(ct);
 
     public void Unended(int id, string reason)
     {

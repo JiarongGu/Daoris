@@ -35,6 +35,10 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestPorts.cs" Link="TestPorts.cs" />
     <!-- The machine's liveness the test root answers real processes by, until the Process classes leave the unit tier. -->
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <!-- The machine's host and git over it, which the test root hands as Driver.Tests' does. -->
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineProcessHost.cs" Link="Bridge\MachineProcessHost.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineRun.cs" Link="Bridge\MachineRun.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Git\GitProcessRuns.cs" Link="Bridge\GitProcessRuns.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\RoutedHandler.cs" Link="RoutedHandler.cs" />

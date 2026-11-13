@@ -16,7 +16,7 @@ public sealed class GitRunPolicy : IGitPolicy
     public static GitRunPolicy Shared { get; } = new();
 
     // The start as the scheduler classifies it: kept beside the answer so a placed run reads the start it was resolved from.
-    private static readonly ConditionalWeakTable<GitStart, ProcessStartInfo> s_infos = new();
+    private static readonly ConditionalWeakTable<GitRunSpec, ProcessStartInfo> s_infos = new();
 
     private GitRunPolicy()
     {
@@ -33,14 +33,14 @@ public sealed class GitRunPolicy : IGitPolicy
             : null;
     }
 
-    public async Task<GitStart> StartAsync(Ports.Git.GitAsk ask, GitRunKind kind, CancellationToken ct)
+    public async Task<GitRunSpec> StartAsync(Ports.Git.GitAsk ask, GitRunKind kind, CancellationToken ct)
     {
         var bound = ask.Bound ?? GitBounds.Of(ask.Arguments);
         var (info, refusal) = GitRuns.GitStart(ask.Folder, ask.Arguments, ask.Home);
-        if (info is null) return new GitStart(null, [], new Dictionary<string, string?>(), bound, refusal);
+        if (info is null) return new GitRunSpec(null, [], new Dictionary<string, string?>(), bound, refusal);
         foreach (var (name, value) in ask.Environment ?? new Dictionary<string, string>()) info.Environment[name] = value;
         await GitLazyFetch.PrepareAsync(info, ask.Arguments, ct).ConfigureAwait(false);
-        var start = new GitStart(info.FileName, [.. info.ArgumentList], EnvironmentOf(info), bound);
+        var start = new GitRunSpec(info.FileName, [.. info.ArgumentList], EnvironmentOf(info), bound);
         s_infos.Add(start, info);
         return start;
     }
@@ -48,7 +48,7 @@ public sealed class GitRunPolicy : IGitPolicy
     public Task<T> LaunchAsync<T>(Ports.Git.GitAsk ask, GitRunKind kind, Func<Task<T>> run) =>
         GitLaunch.LaunchAsync(GitLaunch.KindOf(ask.Arguments), ask.Arguments, GitLaunch.Budget, RunnerOf(kind), run);
 
-    public Task<T> PlaceAsync<T>(Ports.Git.GitAsk ask, GitStart start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct)
+    public Task<T> PlaceAsync<T>(Ports.Git.GitAsk ask, GitRunSpec start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct)
     {
         var info = s_infos.TryGetValue(start, out var resolved) ? resolved : throw new InvalidOperationException("the git was placed without being resolved by this policy");
         var runner = RunnerOf(kind);

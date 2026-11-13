@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using Daoris.Ports.Ambient;
 using Daoris.Ports.Git;
 using Daoris.Ports.Processes;
 using Daoris.Testing;
@@ -47,7 +48,7 @@ internal static class GitFlow
         FlowGit.Use(new ScriptedGit().Seen(ask => seen(ask.Arguments)).Beyond(Beneath));
 
     /// <summary>The git a choice is put over: the flow's own, else the driver's runs, which a root hands where it chose no FlowGit.</summary>
-    private static IGit Beneath => FlowGit.Chosen ?? TestPorts.Git;
+    private static IGit Beneath => FlowGit.Chosen ?? ((FlowGit)AmbientPorts.Read().Git!).Otherwise;
 
     /// <summary>Answers each git <paramref name="answer"/> gives a reply for, as git's code and streams; every other is asked of the git beneath.</summary>
     internal static IDisposable Answer(Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?> answer) =>

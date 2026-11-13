@@ -44,7 +44,7 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    private async Task<GitAnswer> RunPlacedAsync(GitAsk ask, GitStart start, CancellationToken ct)
+    private async Task<GitAnswer> RunPlacedAsync(GitAsk ask, GitRunSpec start, CancellationToken ct)
     {
         await using var run = await host.StartAsync(SpecOf(ask, start, raw: false), ct).ConfigureAwait(false);
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -92,7 +92,7 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    private async Task<GitBytes> BytesPlacedAsync(GitAsk ask, GitStart start, int limit, CancellationToken ct)
+    private async Task<GitBytes> BytesPlacedAsync(GitAsk ask, GitRunSpec start, int limit, CancellationToken ct)
     {
         await using var run = await host.StartAsync(SpecOf(ask, start, raw: true), ct).ConfigureAwait(false);
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -160,7 +160,7 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    private async Task<int?> StreamPlacedAsync(GitAsk ask, GitStart start, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+    private async Task<int?> StreamPlacedAsync(GitAsk ask, GitRunSpec start, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
     {
         await using var run = await host.StartAsync(SpecOf(ask, start, raw: false), ct).ConfigureAwait(false);
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -195,7 +195,7 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    private static ProcessSpec SpecOf(GitAsk ask, GitStart start, bool raw) =>
+    private static ProcessSpec SpecOf(GitAsk ask, GitRunSpec start, bool raw) =>
         new(start.Program ?? "git", start.Arguments, Purpose, AdmissionClasses.Background)
         {
             WorkingFolder = ask.Folder,

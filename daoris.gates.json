@@ -87,6 +87,14 @@
         "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/",
         "src/Daoris.Ports/Store/", "src/Daoris.Testing/Store/"
       ] },
+    { "name": "adapters-git", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Git.Tests",
+      "paths": [
+        "daoris.gates.json", "Directory.Build.props", "src/Layers.props", "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json",
+        "src/Daoris.Adapters/Daoris.Adapters.Git/", "src/Daoris.Adapters/Daoris.Adapters.Git.Tests/",
+        "src/Daoris.Adapters/Daoris.Adapters.Machine/", "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/",
+        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Git/", "src/Daoris.Ports/Processes/", "src/Daoris.Testing/Git/",
+        "src/Daoris.Testing/Processes/"
+      ] },
     { "name": "adapters-machine", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Machine.Tests",
       "paths": [
         "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
