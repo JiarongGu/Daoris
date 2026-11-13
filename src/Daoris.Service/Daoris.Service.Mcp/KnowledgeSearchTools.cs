@@ -7,8 +7,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// The tools that read the index: <c>knowledge_search</c>, <c>knowledge_get</c>, <c>knowledge_repositories</c>,
-/// <c>knowledge_convergence</c>, <c>registry</c> and <c>knowledge_refresh</c>, over the service and the workspace scope.
-/// How every tool's words are written is said on <see cref="KnowledgeServer"/>.
+/// <c>knowledge_convergence</c>, <c>registry</c> and <c>knowledge_refresh</c>. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
 [McpServerToolType]
 public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScope circle)

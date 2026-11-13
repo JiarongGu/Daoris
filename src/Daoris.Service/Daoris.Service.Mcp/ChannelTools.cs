@@ -5,11 +5,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// An ask's channel, as a session meets it (the co-working design §2.2): <c>channel_post</c> and
-/// <c>channel_read</c>, each speaking only for the session its connector names, whose record's entry names the ask. How every tool's
-/// words are written is said on <see cref="KnowledgeServer"/>.
-/// </summary>
+/// <summary>An ask's channel, as a session meets it: <c>channel_post</c> and <c>channel_read</c>, each speaking only for the session its connector names. Words: <see cref="KnowledgeServer"/>.</summary>
 /// <param name="channel">The channel's judgement, shared with the HTTP host.</param>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 [McpServerToolType]

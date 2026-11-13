@@ -6,8 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A brainstorm pass's two result tools: a generator gives its proposals and the synthesis its
-/// ranking, each once, into the one answer file the driver's spawn names for the turn. Each answers only a turn of its own kind,
+/// A brainstorm pass's two result tools: a generator gives its proposals and the synthesis its ranking, each once, into the one answer file the driver's spawn names for the turn. Each answers only a turn of its own kind,
 /// judges the answer as the driver will and says a refusal's codes back, and is a pass's only connector tool: nothing here reads,
 /// asks, publishes or changes anything else.
 /// </summary>

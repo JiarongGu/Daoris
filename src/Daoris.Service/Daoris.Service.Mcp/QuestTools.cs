@@ -408,11 +408,7 @@ public sealed class QuestTools(
     }
 }
 
-/// <summary>
-/// One step of a chain as an agent writes it — the door's own shape, so each field can
-/// describe itself to the model that fills it. Nullable because an agent may leave one out, and the
-/// exchange refuses a step without its words naming which step it is.
-/// </summary>
+/// <summary>One step of a chain as an agent writes it; nullable because an agent may leave a part out, and the exchange refuses the step naming which.</summary>
 public sealed record ChainStep(
     [property: Description("The repository asked at this step.")]
     string? To,
@@ -425,10 +421,7 @@ public sealed record ChainStep(
         + "never production. It asks the previous step's repository, and its done waits for the person's review.")]
     string? SetUpIn = null);
 
-/// <summary>
-/// One requirement as an agent writes it — nullable for the chain step's reason: the exchange
-/// refuses one missing a half, naming which, rather than the door dropping it.
-/// </summary>
+/// <summary>One requirement as an agent writes it, nullable for the chain step's reason: the exchange refuses one missing a half.</summary>
 public sealed record Requirement(
     [property: Description("The person's own words, copied exactly, never reworded.")]
     string? Quote,
@@ -437,10 +430,7 @@ public sealed record Requirement(
     [property: Description("Optional, at most 5: what Daoris reads to tell the check was met; a path only where the work plainly leaves one.")]
     RequirementEvidence[]? Evidence = null);
 
-/// <summary>
-/// One fact a requirement names as its evidence, as an agent writes it — nullable for the chain step's reason:
-/// the exchange refuses an item that names both or neither, or a path that is not one, naming which.
-/// </summary>
+/// <summary>One fact a requirement names as its evidence, nullable for the chain step's reason: the exchange refuses an item that names both or neither.</summary>
 public sealed record RequirementEvidence(
     [property: Description("A file or folder the last commit must hold: forward slashes, relative to the receiving repository's root.")]
     string? Path,

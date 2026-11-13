@@ -5,9 +5,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// A working session's ask to go on with another agent (the mixed agents design §2 and §5): the agent
-/// writes where its work stands, kept as its own claim, and the person's <c>handOver</c> rule, which the driver applies, settles the
-/// ask.
-/// </summary>
+/// writes where its work stands, kept as its own claim, and the person's <c>handOver</c> rule, which the driver applies, settles the ask.</summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>
 /// <param name="box">Where the ask is written, under the home's sessions folder.</param>

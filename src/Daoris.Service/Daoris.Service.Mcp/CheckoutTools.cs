@@ -6,9 +6,7 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// Ask Daoris's reading of the checkouts (the Ask Daoris modes design §4.1): one typed tool, a request the driver judges
 /// at every call and answers with what it read (<see cref="CheckoutBox"/>). It takes a repository and a path relative to its checkout,
-/// never a path beyond it, and reads only the checkouts the person grants, which the driver reads at every call. It serves every
-/// agent alike, in place of the permission rules only Claude took.
-/// </summary>
+/// never a path beyond it, and reads only the checkouts the person grants, which the driver reads at every call. It serves every agent alike, in place of the permission rules only Claude took.</summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>
 /// <param name="box">Where the request is written and its answer read, under the home.</param>
