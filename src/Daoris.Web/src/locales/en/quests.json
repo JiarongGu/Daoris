@@ -240,6 +240,7 @@
   "quests.flow.kind.reopened": "reopened by you",
   "quests.flow.kind.rebound": "grew again from its source's submission",
   "quests.flow.kind.chosen": "your choice of its kind and workflow",
+  "quests.flow.kind.revised": "reworded or rescoped by a plan revision",
   "quests.flow.kind.unknown": "`{{kind}}`, shown as recorded",
   "quests.flow.evidence.found": "all found",
   "quests.flow.evidence.missing": "not all found",

@@ -78,6 +78,7 @@ internal static class TraceMovesWords
         "reopened" => "the person reopened its submission",
         "rebound" => "grew again from its source's submission",
         "chosen" => "the person chose its kind and workflow",
+        "revised" => "a plan revision reworded or rescoped it",
         _ => $"`{move.Kind}`, shown as recorded",
     };
 
