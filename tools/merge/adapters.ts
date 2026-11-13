@@ -22,9 +22,9 @@ export const LOCK_FILE = 'daoris.adapters.lock';
 export const PORTS_ROOT = 'src/Daoris.Ports';
 
 /** The build files that reach every project: a move in one runs every suite, the price of a fingerprint that never misses one. */
-export const BUILD_FILES = ['Directory.Build.props', 'src/Daoris.Desktop/Directory.Build.props'];
+export const BUILD_FILES = ['Directory.Build.props', 'src/Daoris.Desktop/Directory.Build.props', 'src/Layers.props'];
 
-/** Where each kind of outside pin is written. */
+/** Where each kind of outside pin is written; a package names another versions file in its manifest's `pins`. */
 const NUGET_PINS = 'src/Daoris.Desktop/Directory.Packages.props';
 const TOOL_PINS = 'src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json';
 
@@ -41,6 +41,8 @@ export type Manifest = {
   outside: string[];
   /** The adapters it is built over, by name. */
   over?: string[];
+  /** The central versions file its `nuget:` pins are read from, where it builds on another tree's than the desktop's. */
+  pins?: string;
 };
 
 export type LockRow = {
@@ -66,13 +68,28 @@ export interface Sight {
 
 const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
 
+const escaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** <value> with each `$(Property)` replaced by what <props> sets it to, as the build reads the committed file; null where one is unset. */
+function expanded(value: string, props: string, depth = 0): string | null {
+  if (!value.includes('$(')) return value;
+  if (depth > 8) return null;
+  let unset = false;
+  const next = value.replace(/\$\((\w+)\)/g, (_, property: string) => {
+    const set = new RegExp(`<${escaped(property)}\\b[^>]*>([^<]*)</${escaped(property)}>`).exec(props);
+    if (!set) unset = true;
+    return set?.[1] ?? '';
+  });
+  return unset ? null : expanded(next, props, depth + 1);
+}
+
 /** The version a `nuget:` or `tool:` pin names, read where it is written; null where the pin is not there. */
-export function pinOf(pin: string, sight: Sight): string | null {
+export function pinOf(pin: string, sight: Sight, versions: string = NUGET_PINS): string | null {
   const [kind, name] = pin.split(':', 2);
   if (kind === 'nuget') {
-    const props = sight.text(NUGET_PINS) ?? '';
-    const found = new RegExp(`<PackageVersion Include="${name?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}" Version="([^"]+)"`).exec(props);
-    return found?.[1] ?? null;
+    const props = sight.text(versions) ?? '';
+    const found = new RegExp(`<PackageVersion Include="${escaped(name ?? '')}" Version="([^"]+)"`).exec(props);
+    return found?.[1] === undefined ? null : expanded(found[1], props);
   }
   if (kind === 'tool') {
     const table = JSON.parse(sight.text(TOOL_PINS) ?? '{}') as Record<string, { version?: string } | undefined>;
@@ -92,7 +109,7 @@ export function fingerprintOf(name: string, sight: Sight, seen: string[] = []): 
   const ports: Record<string, string> = {};
   for (const port of [...manifest.ports].sort()) ports[port] = need(sight.tree(`${PORTS_ROOT}/${port}`), `${PORTS_ROOT}/${port}`);
   const outside: Record<string, string> = {};
-  for (const pin of [...manifest.outside].sort()) outside[pin] = need(pinOf(pin, sight), `the pin of ${pin}`);
+  for (const pin of [...manifest.outside].sort()) outside[pin] = need(pinOf(pin, sight, manifest.pins), `the pin of ${pin}`);
   const over: Record<string, string> = {};
   for (const other of [...(manifest.over ?? [])].sort()) over[other] = fingerprintOf(other, sight, [...seen, name]).fingerprint;
   const suite = need(sight.tree(manifest.tests), manifest.tests);

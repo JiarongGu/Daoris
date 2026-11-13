@@ -1,0 +1,7 @@
+{
+  "suite": "adapters-clock",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
+  "contract": ["src/Daoris.Testing/Clocks"],
+  "ports": ["Clocks"],
+  "outside": []
+}

@@ -63,7 +63,7 @@
         "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/",
         "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
-    { "name": "layers", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests && dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
+    { "name": "layers", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", "Directory.Build.props",
         "src/", "tools/fsx.mjs", "tools/layers-census.mjs", "tools/layers-census.json", "tools/layers-census/"
@@ -71,14 +71,27 @@
     { "name": "adapters-lock", "run": "node tools/merge/adapters.ts check",
       "paths": [
         "daoris.adapters.lock", "daoris.gates.json", "Directory.Build.props", "src/Daoris.Desktop/Directory.Build.props",
-        "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json",
-        "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/Store/", "tools/merge/adapters.ts"
+        "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props", "src/Layers.props",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/",
+        "tools/merge/adapters.ts"
+      ] },
+    { "name": "adapters-clock", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
+      "paths": [
+        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
+        "src/Daoris.Adapters/Daoris.Adapters.Clock/", "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests/",
+        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Clocks/", "src/Daoris.Testing/Clocks/"
       ] },
     { "name": "adapters-desktopstore-sqlite", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests",
       "paths": [
         "daoris.gates.json", "Directory.Build.props", "src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props",
         "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/",
         "src/Daoris.Ports/Store/", "src/Daoris.Testing/Store/"
+      ] },
+    { "name": "adapters-machine", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Machine.Tests",
+      "paths": [
+        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
+        "src/Daoris.Adapters/Daoris.Adapters.Machine/", "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/",
+        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Processes/", "src/Daoris.Testing/Processes/"
       ] },
     { "name": "adapters-memory-lyntai", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests",
       "paths": [

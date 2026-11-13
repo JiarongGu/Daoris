@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { emptyLock, fingerprintOf, judge, withRow, type Lock, type LockRow, type Sight } from './adapters.ts';
 
@@ -22,6 +22,7 @@ function commit(changes: Record<string, string | null> = {}): Sight {
     'src/Daoris.Ports/Git': 'tree-port-git',
     'Directory.Build.props': 'blob-root',
     'src/Daoris.Desktop/Directory.Build.props': 'blob-desktop',
+    'src/Layers.props': 'blob-layers',
     ...changes as Record<string, string>,
   };
   const texts: Record<string, string> = {
@@ -49,7 +50,24 @@ test('a fingerprint is the same for the same inputs and moves with each input th
   assert.notEqual(at({ 'src/Daoris.Testing/Store': 'edited' }), base, 'the contract and the fake it is held to');
   assert.notEqual(at({ 'src/Daoris.Ports/Store': 'edited' }), base, 'a port it implements');
   assert.notEqual(at({ 'Directory.Build.props': 'edited' }), base, 'a build file that reaches every project');
+  assert.notEqual(at({ 'src/Layers.props': 'edited' }), base, 'the layers\' settings, which every package takes through the ports');
   assert.notEqual(at({ 'src/Daoris.Desktop/Directory.Packages.props': PINS.replace('10.0.14', '10.0.15') }), base, 'the pin of what it drives');
+});
+
+test('a pin is read from the versions file the manifest names, through the properties that file sets', () => {
+  const versions = 'src/Daoris.Service/Directory.Packages.props';
+  const manifest = JSON.stringify({ ...JSON.parse(MANIFEST), outside: ['nuget:Lyntai.Core'], pins: versions });
+  const props = (released: string) => [
+    `<DaorisLyntaiReleased>${released}</DaorisLyntaiReleased>`,
+    '<DaorisLyntaiVersion Condition="\'$(DaorisLyntaiVersion)\' == \'\'">$(DaorisLyntaiReleased)</DaorisLyntaiVersion>',
+    '<PackageVersion Include="Lyntai.Core" Version="$(DaorisLyntaiVersion)" />',
+  ].join('\n');
+  const read = (released: string) => fingerprintOf(NAME, commit({ 'src/Daoris.Adapters/Daoris.Adapters.Store/adapter.json': manifest, [versions]: props(released) }));
+
+  assert.deepEqual(read('3.5.3').outside, { 'nuget:Lyntai.Core': '3.5.3' });
+  assert.notEqual(read('3.5.4').fingerprint, read('3.5.3').fingerprint, 'a release of what it drives');
+  const unset = commit({ 'src/Daoris.Adapters/Daoris.Adapters.Store/adapter.json': manifest, [versions]: '<PackageVersion Include="Lyntai.Core" Version="$(Nowhere)" />' });
+  assert.throws(() => fingerprintOf(NAME, unset), /the pin of nuget:Lyntai\.Core/, 'a property the file never sets is no version');
 });
 
 test('a port it does not implement, a pin it does not read and a file no input names move nothing', () => {
