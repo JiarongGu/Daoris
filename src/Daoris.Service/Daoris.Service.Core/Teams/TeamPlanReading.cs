@@ -22,7 +22,8 @@ public static class TeamPlanReading
     /// <summary>The reading, or a sentence saying the ask has no plan yet.</summary>
     /// <param name="seen">The blob id each path holds now, where the caller read them: a pack's pointer that differs is named stale.</param>
     public static string Of(
-        string ask, IReadOnlyList<TeamPlan> plans, IReadOnlyList<TeamPartRow> rows, IReadOnlyDictionary<string, string> seen)
+        string ask, IReadOnlyList<TeamPlan> plans, IReadOnlyList<TeamPartRow> rows, IReadOnlyDictionary<string, string> seen,
+        IReadOnlyList<TeamMember> members, IReadOnlyList<TeamDecision> decisions)
     {
         if (plans.Count == 0) return $"Ask `#{ask}` has no plan yet: write one with parts, each a quest a worker takes.";
         var text = new StringBuilder();
@@ -44,6 +45,16 @@ public static class TeamPlanReading
 
             foreach (var edge in plan.Edges) text.AppendLine($"- `{edge.Part}` {edge.Kind} `{edge.On}`: {edge.Why}");
             foreach (var flag in plan.Flags) text.AppendLine($"- flag `{flag.Kind}`: {flag.Text}");
+        }
+
+        foreach (var member in members)
+        {
+            text.AppendLine($"- {member.Role} `{member.Session}` of {(member.Part is null ? "the plan" : $"part `{member.Part}`")}, at revision {member.Revision}");
+        }
+
+        foreach (var decision in decisions)
+        {
+            text.AppendLine($"- decided at revision {decision.Revision}{(decision.Scope is null ? "" : $" of `{decision.Scope}`")}: {decision.Decision} by {decision.Author}, {decision.Reason}");
         }
 
         return text.ToString().TrimEnd();

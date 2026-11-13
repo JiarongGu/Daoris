@@ -40,7 +40,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
         var files = new QuestFiles(Path.Combine(_root, "home"));
         _asks = new AskDesk(service, asks, new QuestExchange(service, _quests, remotes: null, files, sessions, asks), files, sessions);
         _desk = new TeamDesk(
-            await TeamStore.OpenAsync(_connection), _asks,
+            await TeamStore.OpenAsync(_connection), await TeamLedger.OpenAsync(_connection), _asks,
             (_, _) => Task.FromResult(new TeamPathPolicy(["TASKS.md", "docs/areas/**"], ["src/gen/**"])));
         _ask = (await _asks.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
     }
@@ -140,6 +140,37 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.All(split.Plan.Parts, part => Assert.Equal("feature", part.Parent));
         Assert.Equal(3, (await _quests.FromAsync(AskDesk.SenderOf(_ask.Id))).Count);
         Assert.Equal(2, (await _desk.ReadAsync(_ask.Id)).Plans.Count);
+    }
+
+    [Fact]
+    public async Task The_session_that_wrote_a_plan_is_its_lead_and_each_revision_is_a_decision_with_its_reason()
+    {
+        await _desk.SaveAsync(Save([Part("keel")]) with { By = "lead-1" }, Now);
+        await _desk.SaveAsync(Save([Part("keel"), Part("page")], expect: 1) with { By = "lead-2" }, Now.AddMinutes(5));
+        await _desk.SaveAsync(Save([Part("keel"), Part("page")], expect: 2) with { By = "lead-2" }, Now.AddMinutes(6));
+
+        var (members, decisions) = await _desk.TeamAsync(_ask.Id);
+
+        Assert.Equal([("lead-1", 1), ("lead-2", 3)], members.Select(member => (member.Session, member.Revision)));
+        Assert.All(members, member => Assert.Equal((TeamMember.Lead, (string?)null), (member.Role, member.Part)));
+        Assert.Equal(["planned", "revised", "revised"], decisions.Select(decision => decision.Decision));
+        Assert.Equal("split along what a person sees", decisions[1].Reason);
+        Assert.Contains("keel", decisions[0].Act);
+    }
+
+    [Fact]
+    public async Task A_workers_split_makes_it_the_lead_of_its_part_and_a_hand_written_plan_adds_no_member()
+    {
+        var top = await _desk.SaveAsync(Save([Part("feature")]), Now);
+        await _desk.SaveAsync(new TeamSave(_ask.Id, [Part("feature.api")], [], "my own split") { Scope = "feature", By = "worker-1" }, Now.AddMinutes(1));
+
+        var (members, decisions) = await _desk.TeamAsync(_ask.Id);
+
+        var member = Assert.Single(members);
+        Assert.Equal(("worker-1", "feature"), (member.Session, member.Part));
+        Assert.Equal(["person", "worker-1"], decisions.Select(decision => decision.Author));
+        Assert.Equal("feature", decisions[1].Scope);
+        Assert.Equal(1, top.Plan!.Revision);
     }
 
     [Fact]

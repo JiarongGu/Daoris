@@ -11,7 +11,7 @@ public static class AskPlanView
     {
         var id = ask.TrimStart('#');
         var sent = await service.SendAsync(new ReadAskPlan(id), ct).ConfigureAwait(false);
-        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return new(id, []);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return new(id, [], [], []);
 
         return sent.Answer ?? throw new DriverException($"the service would not read ask `#{id}`'s plan: {sent.Reply.Payload}");
     }

@@ -18,7 +18,34 @@ export function AskPlanSection({ plan, onOpenQuest }: { plan: AskPlan; onOpenQue
   return (
     <div className="grid gap-4">
       {plan.plans.map((revision) => <Revision key={revision.scope ?? ''} revision={revision} onOpenQuest={onOpenQuest} />)}
+      <Team plan={plan} />
     </div>
+  );
+}
+
+/** Who is on the team and what was decided, each once: a member by its role and the part it serves, a decision by its revision and its reason. */
+function Team({ plan }: { plan: AskPlan }) {
+  const { t } = useTranslation();
+  if (plan.team.length === 0 && plan.decisions.length === 0) return null;
+  return (
+    <section className="grid gap-1 text-meta text-ink-faint" aria-label={t('asks.plan.team')}>
+      {plan.team.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0">
+          {plan.team.map((member) => (
+            <li key={`${member.part ?? ''}-${member.role}-${member.session}`} className="wrap-anywhere">
+              {t('asks.plan.member', { role: t(`asks.plan.role.${member.role}`, { defaultValue: member.role }), session: member.session, part: member.part ?? t('asks.plan.wholePlan') })}
+            </li>
+          ))}
+        </ul>
+      )}
+      <ul className="m-0 grid list-none gap-1 p-0">
+        {plan.decisions.map((decided) => (
+          <li key={`${decided.scope ?? ''}-${decided.revision}`} className="wrap-anywhere">
+            {t('asks.plan.decided', { revision: decided.revision, author: decided.author, decision: t(`asks.plan.decision.${decided.decision}`, { defaultValue: decided.decision }) })}: {decided.reason}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
