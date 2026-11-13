@@ -104,7 +104,7 @@ internal sealed class SessionSpentKept
     }
 
     /// <summary>One line read as its event, or null for a blank, torn or foreign line, as the record's own reader reads it.</summary>
-    private static SessionEvent? Event(ReadOnlySpan<byte> line)
+    internal static SessionEvent? Event(ReadOnlySpan<byte> line)
     {
         line = line.TrimEnd((byte)'\r');
         if (line.Trim(" \t"u8).IsEmpty) return null;
