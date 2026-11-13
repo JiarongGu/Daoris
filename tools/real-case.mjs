@@ -1,7 +1,6 @@
 /**
  * The real-case catalogue run on an installed Daoris: files one case's real work through the installed command against a
- * scratch repository it makes, follows it by the command's reads, and writes a receipt.
- *
+ * scratch repository the installed `repository create` makes, follows it by the command's reads, and writes a receipt.
  *   node tools/real-case.mjs --list
  *   node tools/real-case.mjs <case> --home <data> --service <url> --workspace-dir <folder> [--workspace <name>] [--daoris <command>]
  *        [--workflow <id>] [--through "<words>"] [--with-word] [--note-intervention "<what you did>"]… [--timeout-min <n>]
@@ -16,7 +15,6 @@ import { join } from 'node:path';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { cases, caseById } from './real-case/catalogue.mjs';
 import { installedCommand } from './real-case/installed.mjs';
-import { createScratchRepository } from './real-case/scratch.mjs';
 import { follow } from './real-case/follow.mjs';
 import { receiptOf, receiptText } from './real-case/receipt.mjs';
 
@@ -45,13 +43,13 @@ export function catalogueText() {
 }
 
 /** Run one case: `installed` is the installed command's stand-in or the real one; `sleep` and `clock` are injectable. */
-export async function runCase(options, { installed, scratch = createScratchRepository, sleep = (ms) => new Promise(r => setTimeout(r, ms)), clock = Date.now } = {}) {
+export async function runCase(options, { installed, sleep = (ms) => new Promise(r => setTimeout(r, ms)), clock = Date.now } = {}) {
   const caseDef = caseById(options.case);
   if (!caseDef.built) throw new Error(`case ${caseDef.id} is listed, not built; it needs:\n  - ${caseDef.needs.join('\n  - ')}`);
   const stamp = new Date(clock()).toISOString().replace(/[-:T]/g, '').slice(0, 14);
-  const repo = scratch({ workspaceDir: options.workspaceDir, caseId: caseDef.id, stamp });
+  const repo = { name: `rcase-${caseDef.id}-${stamp}` };
   const log = await follow({
-    caseDef, repository: repo.name, workspace: options.workspace, workflow: options.workflow, through: options.through,
+    caseDef, repository: repo.name, workspaceDir: options.workspaceDir, workspace: options.workspace, workflow: options.workflow, through: options.through,
     installed, withWord: Boolean(options.withWord), sleep, clock,
     pollMs: Number(options.pollSec ?? 5) * 1000, timeoutMs: Number(options.timeoutMin ?? 20) * 60_000,
   });

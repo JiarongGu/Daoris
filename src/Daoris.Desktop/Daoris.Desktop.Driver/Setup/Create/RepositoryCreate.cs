@@ -148,6 +148,8 @@ public interface ICreateWorld
     /// <summary>What the repository's commits carry as author (the identity <c>git use</c> chose for it), or null where none is.</summary>
     Task<CreateAuthor?> AuthorOfAsync(RepoView row, CancellationToken ct);
 
+    Task<CreateAuthor?> GitOwnAuthorAsync(string directory, CancellationToken ct);
+
     /// <summary>The step of the workflow <paramref name="repository"/> would follow that needs a remote, or null.</summary>
     string? RemoteStepOf(DriverConfig config, string repository, string workspace);
 

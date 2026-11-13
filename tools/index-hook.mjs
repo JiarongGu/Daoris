@@ -9,7 +9,7 @@
  * tree, quietly and always exiting 0, since a checkout hook's status becomes the checkout's. A detached checkout is a tool's
  * tree at a commit (a merge's gate tree, a replay), which nobody reads for where things are, so it is skipped, as is every
  * run under `DAORIS_INDEX_HOOK=0`. A hook that is not this one's is never overwritten. A fresh clone has no index until
- * its first checkout, so `--install` writes one where none stands.
+ * its first checkout, so `--install` writes one where none stands, unless run under the same opt-out.
  *
  * The `notes` driver `.gitattributes` names for `docs/decisions/*.md` merges by union and puts a blank line
  * before each glued `**Note, ` line, so the merge's own result is right. A clone without the driver merges those files as
@@ -81,6 +81,7 @@ export function install({ out, err, cwd, env, script }) {
       return 2;
     }
   }
+  if (env.DAORIS_INDEX_HOOK === '0') return 0;
   const top = spawnGit(['rev-parse', '--show-toplevel'], { cwd, env, encoding: 'utf8' });
   if (top.status === 0 && !existsSync(join(top.stdout.trim(), INDEX, 'README.md'))) {
     const root = top.stdout.trim();

@@ -319,8 +319,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     ends before any content. Its plan (`REGISTRY_CREATE_PLAN`, open; the press's own ground and its view's one judge) reads the
     registry, the workspace's commit identities and the folder, and writes nothing: the folder goes under the parent most of the
     workspace's registered git roots share (`--under` where none can be read), the line is the one most of them land on, the author the
-    identity they commit as; a name registered in any workspace in any case, a folder that exists and is not empty, an unknown workspace,
-    an unusable line, no identity (naming `daoris git use`) and no `git` each refuse it with nothing written. The apply keeps a receipt
+    identity they commit as, else git's own `user.name` and `user.email` in one of their checkouts or the folder's parent; a name registered in any workspace in any case, a folder that exists and is not empty, an unknown workspace,
+    an unusable line, no identity of either kind (naming `daoris git use`) and no `git` each refuse it with nothing written. The apply keeps a receipt
     before its first effect (`data/place-receipts/create/<digest>.json`) and goes in order: the folder; `git init` with one empty commit and
     no remote; the unadopted registration; drive on with hold off, left off with the step and the next press named where the inherited
     workflow holds a `push` or a `pull-request` and the place has no remote; the set-up quest. A failure leaves the folder and the receipt
