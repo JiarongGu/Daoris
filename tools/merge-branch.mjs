@@ -2882,7 +2882,7 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false,
 } = {}) {
   const commit = headCommit(root);
-  const replaying = replay ? fullReplayOf({ root, home: verdictsHome(root), dir, commit: commit ?? '' }) : null;
+  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit: commit ?? '' }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);

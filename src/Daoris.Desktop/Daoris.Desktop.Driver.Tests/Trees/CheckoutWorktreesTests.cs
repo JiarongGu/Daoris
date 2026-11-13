@@ -7,11 +7,11 @@ public sealed class CheckoutWorktreesTests
     [Fact]
     public void A_worktree_listed_under_the_fixtures_folder_is_named_and_one_elsewhere_is_not()
     {
-        var fixtures = Path.Combine(Path.GetTempPath(), "checkout", "_fixtures");
+        var fixtures = Path.Combine(TestHomes.Root, "checkout", "_fixtures");
         var listing = Listing(
-            Path.Combine(Path.GetTempPath(), "checkout").Replace('\\', '/'),
+            Path.Combine(TestHomes.Root, "checkout").Replace('\\', '/'),
             Path.Combine(fixtures, "x", "engine", "s-1").Replace('\\', '/'),
-            Path.Combine(Path.GetTempPath(), "elsewhere", "s-2").Replace('\\', '/'));
+            Path.Combine(TestHomes.Root, "elsewhere", "s-2").Replace('\\', '/'));
 
         var found = CheckoutWorktrees.Under(listing, fixtures);
 
@@ -22,6 +22,6 @@ public sealed class CheckoutWorktreesTests
     [Fact]
     public void A_checkout_with_only_its_own_tree_names_none()
     {
-        Assert.Empty(CheckoutWorktrees.Under(Listing(Path.Combine(Path.GetTempPath(), "checkout")), Path.Combine(Path.GetTempPath(), "checkout", "_fixtures")));
+        Assert.Empty(CheckoutWorktrees.Under(Listing(Path.Combine(TestHomes.Root, "checkout")), Path.Combine(TestHomes.Root, "checkout", "_fixtures")));
     }
 }

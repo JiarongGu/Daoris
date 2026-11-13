@@ -187,11 +187,11 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: ['service', 'driver'],
     why: "the service's and the driver's HistoryWordsTwinTests read the history words' table (HIST1m)",
   },
-  // The call layer's table sits among the service's tests, and the page's read-only copy is held to it cell for cell.
+  // The connector's tool listing sits among the service's tests; the driver's containment test reads it too.
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/call-table.json'],
-    gates: ['service', 'driver', 'web-unit'],
-    why: "McpRoleFilterTests, SuperviseContainmentTests and callTable.test.ts read the call layer's table",
+    gates: ['service', 'driver'],
+    why: "McpRoleFilterTests and SuperviseContainmentTests read the connector's tool listing",
   },
   // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
   {
