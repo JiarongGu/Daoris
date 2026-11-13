@@ -3,8 +3,13 @@
  * summary and recorded with its slowest classes, never refused: the slow tests become rows.
  */
 
-export const GATE_BUDGET_MS = 5 * 60_000;
-export const MERGE_BUDGET_MS = 10 * 60_000;
+import { readFileSync } from 'node:fs';
+
+const { development } = JSON.parse(readFileSync(new URL('../dev-metrics/budgets.json', import.meta.url), 'utf8')) as {
+  development: { gateMs: number; mergeWallMs: number };
+};
+export const GATE_BUDGET_MS = development.gateMs;
+export const MERGE_BUDGET_MS = development.mergeWallMs;
 
 export type Slow = { name: string; ms: number; tests: number };
 export type Timed = { name: string; ms: number; slowest?: Slow[] };

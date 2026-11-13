@@ -1,8 +1,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { collect, builderTimes, render } from './dev-metrics.mjs';
+import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { collect, builderTimes, render, writeSnapshot } from './dev-metrics.mjs';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 const root = join('_fixtures', 'dev-metrics-fixture');
@@ -142,4 +144,178 @@ test('builder time folds the transcripts into wall, tool and model time by kind'
   assert.equal(b.toolMinutes, 1);
   assert.equal(b.byKind['run:build'].minutes, 1);
   assert.equal(builderTimes(dir, ['missing'])[0].found, false);
+});
+
+async function matrixHome(name) {
+  const { DatabaseSync } = await import('node:sqlite');
+  const dir = join(root, name);
+  const data = join(dir, 'data');
+  mkdirSync(data, { recursive: true });
+  mkdirSync(join(dir, 'logs'), { recursive: true });
+  const db = new DatabaseSync(homeEntry(data, 'knowledge'));
+  db.exec(`
+    CREATE TABLE sessions (id TEXT, quest TEXT, took_quest TEXT, entry TEXT, created TEXT, updated TEXT, state TEXT, actor TEXT, from_session TEXT, ran TEXT);
+    CREATE TABLE asks (id TEXT, state TEXT, asked TEXT, updated TEXT, quests TEXT);
+    CREATE TABLE quest_log (quest TEXT, kind TEXT, at TEXT, payload TEXT);
+    CREATE TABLE channel (id TEXT, ask TEXT, at TEXT, to_repo TEXT, session TEXT);
+    CREATE TABLE channel_acks (ask TEXT, entry TEXT, message TEXT, session TEXT, state TEXT, at TEXT);
+    CREATE TABLE event_journal (record TEXT, family TEXT, change TEXT, state_new TEXT, at INTEGER, quest TEXT);
+  `);
+  const insert = (table, row) => db.prepare(`INSERT INTO ${table} (${Object.keys(row).join(',')}) VALUES (${Object.keys(row).map(() => '?').join(',')})`).run(...Object.values(row));
+  const at = (seconds) => new Date(Date.parse('2026-01-02T00:00:00Z') + seconds * 1000).toISOString();
+  for (const [id, q, ask] of [['lead', '111111111111', 'a11111'], ['other', '222222222222', 'b22222']]) {
+    insert('sessions', { id, quest: q, entry: `ask:${ask}/widget-app`, created: at(8), updated: at(180), state: 'Completed', actor: 'build', ran: JSON.stringify({ models: ['reported-model'] }) });
+    insert('asks', { id: ask, state: 'Closed', asked: at(0), updated: at(190), quests: JSON.stringify([q]) });
+    insert('quest_log', { quest: q, kind: 'taken', at: at(5), payload: '{}' });
+    insert('quest_log', { quest: q, kind: 'done', at: at(100), payload: '{}' });
+    insert('event_journal', { record: `session:${id}`, family: 'sessions', change: 'state', state_new: 'Working', quest: q, at: Date.parse(at(10)) });
+  }
+  insert('channel', { id: 'post', ask: 'a11111', at: at(20), to_repo: 'widget-app', session: 'sender' });
+  insert('channel_acks', { ask: 'a11111', entry: 'ask:a11111/widget-app', message: 'post', session: 'lead', state: 'read', at: at(24) });
+  db.close();
+  const quests = join(dir, 'quests.json');
+  writeFileSync(quests, JSON.stringify([
+    { id: '111111111111', from: 'ask #a11111', filed: at(0), updated: at(100), status: 'Done', accepted: at(120) },
+    { id: '222222222222', from: 'ask #b22222', filed: at(0), updated: at(100), status: 'Done' },
+  ]));
+  mkdirSync(homeEntry(data, 'sessions'), { recursive: true });
+  writeFileSync(homeEntry(data, 'sessions', 'lead.events.jsonl'), jl([
+    { kind: 'user', id: 'word', reaches: 'turn-end', at: at(30), origin: 'person' },
+    { kind: 'user', id: 'word', at: at(40), origin: 'person' },
+    { kind: 'receipt', id: 'word', receipt: 'sent', at: at(41) },
+    { kind: 'user', id: 'answer-word', helper: 'helper-session', at: at(55) },
+    { kind: 'receipt', id: 'answer-word', receipt: 'sent', at: at(56) },
+  ]));
+  mkdirSync(homeEntry(data, 'helpers'), { recursive: true });
+  writeFileSync(homeEntry(data, 'helpers', 'h.ask.json'), JSON.stringify({ id: 'h', asker: 'lead', at: at(15), question: 'contract?' }));
+  writeFileSync(homeEntry(data, 'helpers', 'h.state.json'), JSON.stringify({ id: 'h', helper: 'helper-session', state: 'answered', at: at(50), handed: 'answer-word' }));
+  mkdirSync(homeEntry(data, 'workflows', 'runs'), { recursive: true });
+  mkdirSync(homeEntry(data, 'workflows', 'units'), { recursive: true });
+  writeFileSync(homeEntry(data, 'workflows', 'runs', '111111111111.json'), JSON.stringify({ run: '111111111111', ask: 'a11111', at: at(8) }));
+  writeFileSync(homeEntry(data, 'workflows', 'units', 'record.json'), JSON.stringify({
+    unit: 'run:111111111111',
+    statuses: { check: { node: 'check', state: 'reached', since: at(60), attempt: 1, by: 'plugin' }, review: { node: 'review', state: 'held', holds: 'person', since: at(120), attempt: 1 } },
+    attempts: [{ node: 'check', attempt: 1, recordedAt: at(60), state: 'settled', outcome: 'reached', resolution: 'happened', resolvedAt: at(90), call: { step: 'check' } }],
+    history: [{ at: at(60), why: 'person-again', was: { node: 'check', state: 'unknown', since: at(50), holds: 'person', attempt: 0 } }],
+  }));
+  writeFileSync(homeEntry(data, 'landings'), JSON.stringify({ branches: [{ quest: '111111111111', session: 'lead', landedAt: at(150) }] }));
+  writeFileSync(join(dir, 'logs', 'driver.jsonl'), jl([
+    { event: 'watch.looked', time: at(6), data: { ms: 4000 } },
+    { event: 'watch.looked', time: at(12), data: { ms: 8000 } },
+  ]));
+  return { home: data, logs: join(dir, 'logs'), quests, since: '2026-01-02', until: '2026-01-02', now: at(4000) };
+}
+
+test('matrix reads database links, actual lifecycle clocks and ask closures without prompt text', async () => {
+  const r = await collect(await matrixHome('matrix-records'));
+  assert.equal(r.cost.perQuest.find(q => q.quest === '111111111111').sessions, 1);
+  assert.equal(r.throughput.asksClosed, 2);
+  const q = r.lifecycle.find(q => q.quest === '111111111111');
+  assert.equal(q.stages.taken, '2026-01-02T00:00:05.000Z');
+  assert.equal(q.stages.started, '2026-01-02T00:00:10.000Z');
+  assert.equal(q.elapsedMs.takenToStarted, 5000);
+  assert.equal(q.elapsedMs.acceptedToLanded, 30000);
+  assert.match(q.stages.firstCommit, /^not recorded: .*commit/);
+  assert.match(q.stages.pushed, /^not recorded:/);
+});
+
+test('case scopes related records and usage, while preserving global look provenance', async () => {
+  const o = await matrixHome('matrix-case');
+  const r = await collect({ ...o, case: 'ask #a11111' });
+  assert.deepEqual(r.cost.perQuest.map(q => q.quest), ['111111111111']);
+  assert.equal(r.throughput.asksClosed, 1);
+  assert.deepEqual(r.scope.sessions, ['lead']);
+  assert.equal(r.lifecycle.length, 1);
+  assert.equal(r.workflow.length, 1);
+  assert.equal(r.communication.channel[0].latencyMs, 4000);
+  assert.match(r.scope.looks, /global/);
+  await assert.rejects(collect({ ...o, case: 'unknown' }), /case.*unknown/i);
+});
+
+test('workflow attempts keep work clocks, hold clearer and unknown wait boundaries explicit', async () => {
+  const options = await matrixHome('matrix-workflow');
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(homeEntry(options.home, 'knowledge'));
+  db.exec("UPDATE sessions SET state = 'AwaitingPerson' WHERE id = 'lead'");
+  db.close();
+  const r = await collect(options);
+  const step = r.workflow[0].steps.find(s => s.node === 'check');
+  assert.equal(step.workMs, 30000);
+  assert.match(step.waitMs, /^not recorded:/);
+  assert.equal(step.clearedBy, 'person');
+  assert.match(r.personQueue.items.find(i => i.node === 'review').ageMs, /^not recorded:/);
+  assert.equal(r.personQueue.items.find(i => i.session === 'lead').ageMs, 3820000);
+  assert.match(r.personQueue.items.find(i => i.node === 'review').surfacedAt, /^not recorded:/);
+});
+
+test('communications pair identity receipts and never call turn-end or prompt-taking a turn-start', async () => {
+  const r = await collect(await matrixHome('matrix-comms'));
+  assert.equal(r.communication.helpers[0].latencyMs, 41000);
+  assert.equal(r.communication.words[0].deliveredMs, 11000);
+  assert.match(r.communication.words[0].turnStartedMs, /^not recorded: .*turn/);
+  assert.match(r.communication.questResponses[0].latencyMs, /^not recorded:/);
+});
+
+test('budgets produce defect rows and an empty home reports missing figures rather than fabricated zeroes', async () => {
+  const r = await collect(await matrixHome('matrix-budgets'));
+  assert.ok(r.defects.some(d => d.metric === 'look.medianMs' && d.value === 6000));
+  assert.match(render(r), /DEFECT.*look.medianMs/);
+  const empty = await collect({ home: join(root, 'absent'), logs: join(root, 'absent-logs') });
+  assert.match(empty.throughput.questsFiled, /^not recorded:/);
+  assert.match(empty.friction.lookMs, /^not recorded:/);
+  assert.match(empty.cost.total, /^not recorded:/);
+  assert.match(empty.personQueue.coverage, /^not recorded:/);
+});
+
+test('daily JSON snapshots retain separate case receipts and omit machine paths', async () => {
+  const o = await matrixHome('matrix-snapshot');
+  const out = join(root, 'snapshots');
+  const a = await collect({ ...o, case: '111111111111' });
+  const file = writeSnapshot(a, { directory: out, date: '2026-01-02' });
+  assert.ok(existsSync(file));
+  writeSnapshot(await collect({ ...o, case: '222222222222' }), { directory: out, date: '2026-01-02' });
+  const snapshot = JSON.parse(readFileSync(file, 'utf8'));
+  assert.equal(snapshot.receipts.length, 2);
+  assert.equal(snapshot.date, '2026-01-02');
+  assert.ok(!JSON.stringify(snapshot).includes(o.home));
+});
+
+test('the CLI writes its daily snapshot, accepts case ids and reports defects as policy failures', async () => {
+  const o = await matrixHome('matrix-cli');
+  const cwd = join(root, 'cli-output');
+  mkdirSync(cwd, { recursive: true });
+  const result = spawnSync(process.execPath, [resolve('tools/dev-metrics.mjs'), '--home', resolve(o.home), '--logs', resolve(o.logs), '--quests', resolve(o.quests), '--case', '#111111111111', '--since', o.since, '--until', o.until, '--json'], { cwd, encoding: 'utf8', windowsHide: true });
+  assert.equal(result.status, 1, result.stderr);
+  assert.equal(JSON.parse(result.stdout).scope.quests[0], '111111111111');
+  assert.equal(JSON.parse(readFileSync(join(cwd, 'docs', 'metrics', '2026-01-02.json'), 'utf8')).receipts.length, 1);
+  const refused = spawnSync(process.execPath, [resolve('tools/dev-metrics.mjs'), '--case'], { cwd, encoding: 'utf8', windowsHide: true });
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /--case needs a value/);
+});
+
+test('missing token counters remain unknown, case totals exclude other asks and dates', async () => {
+  const o = await matrixHome('matrix-usage');
+  mkdirSync(homeEntry(o.home, 'usage-history'), { recursive: true });
+  writeFileSync(homeEntry(o.home, 'usage-history', 'turns-2026-01.jsonl'), jl([
+    { session: 'lead', actor: 'build', models: ['actual'], input: 7, output: 2, ended: '2026-01-02T00:02:00Z' },
+    { session: 'other', actor: 'build', models: ['other'], input: 999, output: 999, ended: '2026-01-02T00:02:00Z' },
+    { session: 'lead', actor: 'build', input: 999, output: 999, ended: '2026-01-03T00:02:00Z' },
+  ]));
+  const r = await collect({ ...o, case: 'a11111' });
+  assert.equal(r.cost.total.input, 7);
+  assert.match(r.cost.total.cacheRead, /^not recorded:/);
+  assert.equal(r.cost.perRole[0].tokens.output, 2);
+  assert.equal(r.cost.perModel[0].name, 'actual');
+  assert.equal(r.cost.perAsk[0].tokens.input, 7);
+});
+
+test('missing acknowledgements stay visible and a send is not reported as a read', async () => {
+  const o = await matrixHome('matrix-unread');
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(homeEntry(o.home, 'knowledge'));
+  db.exec("UPDATE channel_acks SET state = 'sent'");
+  db.close();
+  const r = await collect(o);
+  assert.match(r.communication.channel[0].latencyMs, /^not recorded:/);
+  assert.equal(r.communication.channel[0].deliveredMs, 4000);
 });
