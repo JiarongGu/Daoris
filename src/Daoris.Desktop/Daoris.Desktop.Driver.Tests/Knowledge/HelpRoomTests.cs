@@ -208,7 +208,7 @@ public sealed class HelpRoomTests : IDisposable
         var rules = HelpRoom.Rules(file, kept, [], ["mcp__tickets__search", "mcp__tickets__get_issue"], ["mcp__tickets__create_issue"]);
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), "mcp__tickets__search", "mcp__tickets__get_issue"], rules.Allow);
-        // A write the person has not accepted is asked, which its asking mode refuses.
+        // A write the person has not accepted is asked, and held for the person.
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
         Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
