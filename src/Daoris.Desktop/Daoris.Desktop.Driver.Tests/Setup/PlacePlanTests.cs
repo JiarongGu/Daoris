@@ -61,8 +61,9 @@ public sealed class PlacePlanTests
         Assert.Equal(new SetupLand("integrate", "you", null, "owner"), engine.After.Land);
         var declaration = engine.Declaration!;
         Assert.Equal(("main", Commit, Blob, Declaring), (declaration.Line, declaration.Commit, declaration.Blob, declaration.Text));
-        var acceptance = Assert.Single(declaration.Acceptances);
-        Assert.Equal((PlacePlans.Integration, IntegrationAcceptance.Unaccepted), (acceptance.Purpose, acceptance.Standing));
+        var acceptance = declaration.Acceptance!;
+        Assert.Equal(IntegrationAcceptance.Unaccepted, acceptance.Standing);
+        Assert.StartsWith("checks changed on main: added `verify`", acceptance.Said, StringComparison.Ordinal);
         Assert.Empty(engine.Lowers);
         Assert.True(plan.Applies);
     }

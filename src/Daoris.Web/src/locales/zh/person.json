@@ -287,7 +287,7 @@
   "person.view.place-adoption": "以委托的形式，请每个仓库自己的会话为智能体做好配置。",
   "person.view.place-adoption-builds": "以委托的形式，请每个仓库自己的会话为智能体做好配置（{{builds}}）。",
   "person.view.place-apply-drive": "道衍驱动它的全部工作。",
-  "person.view.place-accept": "采纳 {{repository}} 的声明，用于 {{purpose}}。",
+  "person.view.place-accept": "采纳 {{repository}} 的声明。",
   "person.view.place-room": "以委托的形式，请 {{repositories}}（工作区 {{workspace}}）自己的会话为 {{room}} 建一个自己的房间：{{purpose}}。这里不写任何内容：房间的文字和它的声明都是该仓库自己的，在它自己的分支上完成。",
   "person.view.place-room-alone": "{{repository}} 未被驱动，所以它的房间委托在通用驱动保持关闭时单独启动。",
   "person.view.place-room-quest": "发出委托「{{title}}」，开头是：{{head}}",

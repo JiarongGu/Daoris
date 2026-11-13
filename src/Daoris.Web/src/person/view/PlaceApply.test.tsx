@@ -9,11 +9,11 @@ import { type PressView, PressViewLine } from '../PressViewLine';
 const APPLY: PressView = {
   kind: 'place-apply',
   facts: { repositories: 'engine, site', workspace: 'aurora', preset: 'merge-after-accept' },
-  command: 'daoris place engine site --preset merge-after-accept --adoption --apply --accept engine:integration',
+  command: 'daoris place engine site --preset merge-after-accept --adoption --apply --accept engine',
   also: [
     { kind: 'place-change', facts: { said: 'Driving', before: 'off', after: 'on', repositories: 'engine, site' } },
     { kind: 'place-adoption', facts: {} },
-    { kind: 'place-accept', facts: { repository: 'engine', purpose: 'integration' } },
+    { kind: 'place-accept', facts: { repository: 'engine' } },
   ],
 };
 
@@ -29,7 +29,7 @@ describe("a place's set-up on the Confirm card", () => {
     expect(screen.getByText(/^Applies the set-up merge-after-accept to engine, site in workspace aurora/)).toBeInTheDocument();
     expect(screen.getByText('Driving: off → on (engine, site).')).toBeInTheDocument();
     expect(screen.getByText("Asks each repository's own session, as a quest, to set it up for agents.")).toBeInTheDocument();
-    expect(screen.getByText('Accepts the declaration of engine for integration.')).toBeInTheDocument();
+    expect(screen.getByText('Accepts the declaration of engine.')).toBeInTheDocument();
     expect(screen.getByText(APPLY.command)).toBeInTheDocument();
   });
 

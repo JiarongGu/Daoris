@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GATESACCEPT1 — a changed `daoris.gates.json` is accepted by the repository's access mode, once, said as the checks that changed (2026-11-13, D283)
+
+> **GATESACCEPT1** (driver, modules, web, terminal): Outcome: the set-up review offers one tick per repository, `Accept these checks`, with the checks changed said in words and no blob id, and `daoris place … --apply --accept <repository>` (PLACE_APPLY's `accept: [{repository}]`) takes the one `DeclarationAcceptance` in place of the per-purpose `landed|integration` choices, which are removed; `PlacePlanTests`, `PlaceApplyTests`, `PlaceApplyViewTests`, `PlaceReview.test.tsx`. The installed look at the owner's window remains the owner's.
+
 ## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
 
 > **SAYLINES1** (install, driver host): Outcome: the install's `daoris` is `daoris.exe` (`Daoris.Desktop.Command`), a program that starts the desktop's program with each argument whole, in place of the `daoris` script and `daoris.cmd` (a batch file's arguments end at the first line break); `CommandLauncherProcessTests`, `FreeWordsLineBreakTests` (say, reword, helper, ask, quest) and the shell-word test through cmd and PowerShell prove a line break reaches each verb; and `daoris ask --to <repo> --require` is no longer refused `MISSING_PAYLOAD_VALUE` (the requirement is sent as `{ quote, check }`).

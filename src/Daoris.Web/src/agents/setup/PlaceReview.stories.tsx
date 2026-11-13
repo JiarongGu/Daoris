@@ -83,7 +83,7 @@ export const ClearedTick: Story = {
   args: plannedFor(draftOf({
     repositories: ['engine'],
     drive: false,
-    cleared: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
+    cleared: [{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
   })),
 };
 export const ClearedTickNarrow: Story = { ...ClearedTick, decorators: [storyWidths.narrow] };
@@ -93,7 +93,7 @@ export const Ticked: Story = {
   args: plannedFor(draftOf({
     repositories: ['engine'],
     drive: false,
-    accept: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
+    accept: [{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
   })),
 };
 

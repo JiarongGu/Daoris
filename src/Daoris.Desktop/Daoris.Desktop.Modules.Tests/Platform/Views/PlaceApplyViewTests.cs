@@ -26,7 +26,7 @@ public sealed class PlaceApplyViewTests
     {
         repositories = new object[]
         {
-            new { repository = "engine", workspace = "aurora", declaration = new { acceptances = new[] { new { purpose = "integration" } } } },
+            new { repository = "engine", workspace = "aurora", declaration = new { acceptance = new { standing = "unaccepted" } } },
             new { repository = "site", workspace = "aurora" },
         },
         changes, refusals = refusals ?? NoRefusals, digest = "abc",
@@ -49,7 +49,7 @@ public sealed class PlaceApplyViewTests
         Assert.Equal(["place-change", "place-adoption", "place-accept"], viewed.View.Also!.Select(said => said.Kind));
         var change = viewed.View.Also![0].Facts;
         Assert.Equal(("Driving", "off", "on", "engine, site"), (change["said"], change["before"], change["after"], change["repositories"]));
-        Assert.Equal("daoris place engine site --preset merge-after-accept --adoption --apply --accept engine:integration", viewed.View.Command);
+        Assert.Equal("daoris place engine site --preset merge-after-accept --adoption --apply --accept engine", viewed.View.Command);
     }
 
     [Fact]
@@ -71,15 +71,15 @@ public sealed class PlaceApplyViewTests
     }
 
     [Theory]
-    [InlineData("engine", "review")]
-    [InlineData("site", "integration")]
-    [InlineData("ghost", "integration")]
-    public async Task An_acceptance_the_plan_does_not_offer_is_refused_at_the_ask_as_the_apply_refuses_it(string repository, string purpose)
+    [InlineData("site")]
+    [InlineData("Site")]
+    [InlineData("ghost")]
+    public async Task An_acceptance_the_plan_does_not_offer_is_refused_at_the_ask_as_the_apply_refuses_it(string repository)
     {
-        var viewed = await View(Planned(Plan([])), new { repositories = new[] { "engine", "site" }, preset = "keep", accept = new[] { new { repository, purpose } } });
+        var viewed = await View(Planned(Plan([])), new { repositories = new[] { "engine", "site" }, preset = "keep", accept = new[] { new { repository } } });
 
         Assert.Null(viewed.View);
-        Assert.Equal($"the plan offers no `{purpose}` acceptance for `{repository}`, so nothing was written.", viewed.Refusal);
+        Assert.Equal($"the plan offers no acceptance for `{repository}`'s declaration, so nothing was written.", viewed.Refusal);
     }
 
     /// <summary>A room is the same apply, judged by the same plan; its card is its own sentence, naming the room and the reason and the first lines of the quest it asks.</summary>

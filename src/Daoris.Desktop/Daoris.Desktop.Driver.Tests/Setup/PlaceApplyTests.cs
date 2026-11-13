@@ -290,7 +290,7 @@ public sealed class PlaceApplyTests : IDisposable
         var digest = await DigestOf(stand, ask);
         stand.Place.TipAfter = (name, reads) => name == "engine" && reads >= 3 ? stand.Place.Inner.Tips[name] with { Gates = new string('c', 40) } : null;
 
-        var result = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Integration));
+        var result = await Apply(stand, ask, digest, new PlaceAccept("engine"));
 
         Assert.Equal(PlaceApplyRefusals.Moved, result.Refused);
         Assert.Contains("another declaration", result.Message);
@@ -305,7 +305,7 @@ public sealed class PlaceApplyTests : IDisposable
         var ask = new PlaceAsk(["engine"], SetupPresets.Integrated);
         var digest = await DigestOf(stand, ask);
 
-        var result = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Integration));
+        var result = await Apply(stand, ask, digest, new PlaceAccept("engine"));
 
         Assert.True(result.Done);
         Assert.Equal(1, stand.Changes);
@@ -315,27 +315,20 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     /// <summary>
-    /// AGENTSPLACE1b3: the two acceptances are two choices (the design §3 Gates). Naming the landed verification's where the plan offers none is
-    /// refused and writes nothing; naming the integration's records only it, its blob, and leaves the landed route's gates unset.
+    /// One acceptance serves every purpose, so naming a repository twice keeps it once, and the plan says it in the checks' words.
     /// </summary>
     [Fact]
-    public async Task The_two_acceptances_stay_distinct_naming_one_never_makes_the_other()
+    public async Task One_acceptance_per_repository_is_kept_once_however_often_it_is_named()
     {
         var stand = Make();
         var ask = new PlaceAsk(["engine"], SetupPresets.Integrated);
         var digest = await DigestOf(stand, ask);
 
-        var landed = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Landed));
-        Assert.Equal(PlaceApplyRefusals.NotOffered, landed.Refused);
-        Assert.Equal(0, stand.Changes);
-        Assert.Null(new PlaceReceipts(_home).Read(digest));
+        var result = await Apply(stand, ask, digest, new PlaceAccept("engine"), new PlaceAccept("Engine"));
 
-        var integration = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Integration));
-
-        Assert.True(integration.Done);
+        Assert.True(result.Done);
         Assert.Equal(Blob, IntegrationAcceptance.Of(stand.Config, "engine"));
-        Assert.Null(WorkflowSelection.ResolveLanded(stand.Config, "engine", "aurora").Gates);
-        Assert.Equal([PlacePlans.Integration], new PlaceReceipts(_home).Read(digest)!.Accepted.Select(each => each.Purpose));
+        Assert.Equal(["engine"], new PlaceReceipts(_home).Read(digest)!.Accepted.Select(each => each.Repository));
     }
 
     /// <summary>
@@ -349,7 +342,7 @@ public sealed class PlaceApplyTests : IDisposable
         var output = new StringWriter();
 
         var code = await PlaceCommand.RunAsync(
-            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
+            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine"], output, stand.Place, stand.Config, _home, Plugins,
             true, instance: null, apply: stand.Doors());
 
         var lines = output.ToString().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
@@ -394,7 +387,7 @@ public sealed class PlaceApplyTests : IDisposable
         };
 
         var code = await PlaceCommand.RunAsync(
-            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
+            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine"], output, stand.Place, stand.Config, _home, Plugins,
             true, terminal, apply: stand.Doors());
 
         Assert.Equal(1, code);
@@ -407,9 +400,8 @@ public sealed class PlaceApplyTests : IDisposable
     [Theory]
     [InlineData("engine --preset merge-after-accept --plan --apply")]
     [InlineData("engine --preset merge-after-accept")]
-    [InlineData("engine --preset merge-after-accept --plan --accept engine:integration")]
-    [InlineData("engine --preset merge-after-accept --apply --accept engine:both")]
-    [InlineData("engine --preset merge-after-accept --apply --accept engine")]
+    [InlineData("engine --preset merge-after-accept --plan --accept engine")]
+    [InlineData("engine --preset merge-after-accept --apply --accept engine:integration")]
     [InlineData("engine --preset merge-after-accept --apply --accept")]
     public async Task Words_the_verb_does_not_take_are_its_usage_exit_2_before_anything_is_planned(string words)
     {
@@ -424,14 +416,13 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     [Fact]
-    public void An_apply_names_each_acceptance_on_its_own_and_hands_the_same_words_back_to_the_verb()
+    public void An_apply_names_each_repository_whose_declaration_it_accepts_and_hands_the_same_words_back_to_the_verb()
     {
-        var (words, problem) = PlaceCommand.Parse(["a", "b", "--preset", SetupPresets.Integrated, "--apply", "--accept", "a:landed,a:integration", "--accept", "b:integration"]);
+        var (words, problem) = PlaceCommand.Parse(["a", "b", "--preset", SetupPresets.Integrated, "--apply", "--accept", "a,b"]);
 
         Assert.Null(problem);
         Assert.True(words!.Apply);
-        Assert.Equal(
-            [("a", PlacePlans.Landed), ("a", PlacePlans.Integration), ("b", PlacePlans.Integration)], words.Accept.Select(each => (each.Repository, each.Purpose)));
+        Assert.Equal(["a", "b"], words.Accept.Select(each => each.Repository));
         Assert.Equal(words, PlaceCommand.Parse(PlaceCommand.ApplyArgsOf(words.Ask, words.Accept)).Words, new WordsComparer());
     }
 
@@ -439,7 +430,7 @@ public sealed class PlaceApplyTests : IDisposable
     {
         public bool Equals(PlaceWords? x, PlaceWords? y) =>
             x is not null && y is not null && x.Apply == y.Apply && x.Ask.Preset == y.Ask.Preset && x.Ask.Repositories.SequenceEqual(y.Ask.Repositories)
-            && x.Accept.Select(each => (each.Repository, each.Purpose)).SequenceEqual(y.Accept.Select(each => (each.Repository, each.Purpose)));
+            && x.Accept.Select(each => each.Repository).SequenceEqual(y.Accept.Select(each => each.Repository));
 
         public int GetHashCode(PlaceWords? words) => 0;
     }
@@ -452,7 +443,7 @@ public sealed class PlaceApplyTests : IDisposable
         var digest = await DigestOf(stand, ask);
         var docs = new PlaceAsk(["docs"], SetupPresets.PullRequest);
 
-        var notOffered = await Apply(stand, ask, digest, new PlaceAccept("atlas", PlacePlans.Integration));
+        var notOffered = await Apply(stand, ask, digest, new PlaceAccept("atlas"));
         var refused = await Apply(stand, docs, await DigestOf(stand, docs));
         var word = await Apply(stand, ask, "not-a-digest");
 

@@ -53,13 +53,12 @@ const ENDED: Record<DrivingState, 'driven' | 'notDriven' | 'adoption'> = {
 /**
  * **Set up…**'s review: the plan the choices made, in one order. What changes, each identical change once with
  * its repositories, beside the driver's reach sentences and the lines it could not read; what stops it, linked back; what it starts and what it
- * lowers of your part; the work driving releases, held on a press that is outside the apply, each repository's outcome beside it; the acceptances,
- * unticked and bound to the declaration read; the terminal line; and one *Apply*.
+ * lowers of your part; the work driving releases, held on a press outside the apply; the one acceptance per repository, unticked and bound to the
+ * declaration read; the terminal line; and one *Apply*.
  *
  * @remarks
  * The page judges nothing: every refusal, reach, lowering and `moved` is the driver's sentence. While a plan is read the last stays, marked
- * *updating*, and *Apply* waits. A done apply says what it started and where each repository stands, and opens the adoption quest by a door;
- * *configuration applied; adoption pending* is said as the driver says it.
+ * *updating*, and *Apply* waits. A done apply says what it started and where each repository stands, and opens the adoption quest by a door.
  *
  * A molecule: the draft, the plan and the last result arrive as props, and every press goes out.
  */
@@ -82,9 +81,9 @@ export function PlaceReview({
   const result = draft.result;
   const partName = (part: PlacePart) => t(part === 'delivery' ? 'agents.setup.set.lands' : `agents.setup.set.${part}`);
   const heldOf = Object.entries(holds).filter(([repository]) => draft.repositories.includes(repository));
-  const tickId = (one: { repository: string; purpose: string; line: string; blob: string }) => `${one.repository}|${one.purpose}|${one.line}|${one.blob}`;
+  const tickId = (one: { repository: string; line: string; blob: string }) => `${one.repository}|${one.line}|${one.blob}`;
   const toggle = (one: PlaceTick, on: boolean) => onAccept([
-    ...draft.accept.filter((was) => !(was.repository === one.repository && was.purpose === one.purpose)),
+    ...draft.accept.filter((was) => was.repository !== one.repository),
     ...(on ? [one] : []),
   ]);
 
@@ -216,38 +215,35 @@ export function PlaceReview({
           </div>
         )}
 
-      {plan !== null && plan.repositories.some((row) => row.declaration && row.declaration.acceptances.length > 0) && (
+      {plan !== null && plan.repositories.some((row) => row.declaration?.acceptance) && (
         <Section id={`${own}-acceptances`} title={t('agents.setup.set.acceptances')}>
-          {plan.repositories.filter((row) => row.declaration && row.declaration.acceptances.length > 0).map((row) => {
+          {plan.repositories.filter((row) => row.declaration?.acceptance).map((row) => {
             const declaration = row.declaration!;
-            const ofRow = (purpose: string) => ({ repository: row.repository, purpose, line: declaration.line, blob: declaration.blob });
+            const acceptance = declaration.acceptance!;
+            const one = { repository: row.repository, line: declaration.line, blob: declaration.blob };
+            const consequence = t(`agents.setup.set.consequence.${acceptance.standing}`, { defaultValue: '' });
             return (
               <Acceptances
                 key={row.repository}
-                title={t('agents.setup.set.declarationAt', { repository: row.repository, line: declaration.line, commit: short(declaration.commit), blob: short(declaration.blob) })}
+                title={t('agents.setup.set.declarationAt', { repository: row.repository, line: declaration.line, commit: short(declaration.commit) })}
                 fold={t('agents.setup.set.readDeclaration')}
-                rows={declaration.acceptances.map((each) => {
-                  const one = ofRow(each.purpose);
-                  const waits = accepts.some((read) => tickId(read) === tickId(one));
-                  const consequence = t(`agents.setup.set.consequence.${each.purpose}.${each.standing}`, { defaultValue: '' });
-                  return {
-                    id: tickId(one),
-                    label: t(`agents.setup.set.accept.${each.purpose}`),
-                    why: each.said,
-                    said: [t(`agents.setup.set.standing.${each.standing}`, { defaultValue: each.standing }), consequence].filter(Boolean).join(' '),
-                    offered: waits,
-                    text: declaration.text ?? null,
-                    textLabel: t('agents.setup.set.declaration', { repository: row.repository, line: declaration.line, commit: short(declaration.commit) }),
-                  };
-                })}
-                ticked={declaration.acceptances.map((each) => ofRow(each.purpose)).filter((one) => ticked.some((chosen) => chosen.repository === one.repository && chosen.purpose === one.purpose)).map(tickId)}
+                rows={[{
+                  id: tickId(one),
+                  label: t('agents.setup.set.accept'),
+                  why: acceptance.said,
+                  said: [t(`agents.setup.set.standing.${acceptance.standing}`, { defaultValue: acceptance.standing }), consequence].filter(Boolean).join(' '),
+                  offered: accepts.some((read) => tickId(read) === tickId(one)),
+                  text: declaration.text ?? null,
+                  textLabel: t('agents.setup.set.declaration', { repository: row.repository, line: declaration.line, commit: short(declaration.commit) }),
+                }]}
+                ticked={ticked.some((chosen) => chosen.repository === one.repository) ? [tickId(one)] : []}
                 onTick={(tick, on) => {
-                  const read = accepts.find((one) => tickId(one) === tick);
+                  const read = accepts.find((each) => tickId(each) === tick);
                   if (read) toggle(read, on);
                 }}
                 disabled={applying}
-                cleared={draft.cleared.filter((one) => one.repository === row.repository).map((one) => t('agents.setup.set.cleared', {
-                  repository: one.repository, blob: short(one.blob), line: one.line, purpose: t(`agents.setup.set.accept.${one.purpose}`),
+                cleared={draft.cleared.filter((each) => each.repository === row.repository).map((each) => t('agents.setup.set.cleared', {
+                  repository: each.repository, line: each.line,
                 }))}
               />
             );

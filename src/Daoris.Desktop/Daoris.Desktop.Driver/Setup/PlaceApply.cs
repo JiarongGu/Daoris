@@ -125,16 +125,16 @@ public static class PlaceApplies
         }
 
         var chosen = new List<PlaceAccept>();
-        foreach (var accept in accepted.DistinctBy(each => (each.Repository.ToLowerInvariant(), each.Purpose)))
+        foreach (var accept in accepted.DistinctBy(each => each.Repository.ToLowerInvariant()))
         {
             var row = plan.Repositories.FirstOrDefault(each => string.Equals(each.Repository, accept.Repository, StringComparison.OrdinalIgnoreCase));
-            if (row?.Declaration is not { } declaration || declaration.Acceptances.All(each => each.Purpose != accept.Purpose))
+            if (row?.Declaration is not { Acceptance: not null } declaration)
             {
                 return Stopped(digest, PlaceApplyRefusals.NotOffered,
-                    $"the plan offers no `{accept.Purpose}` acceptance for `{accept.Repository}`, so nothing was written.");
+                    $"the plan offers no acceptance for `{accept.Repository}`'s declaration, so nothing was written.");
             }
 
-            chosen.Add(new PlaceAccept(row.Repository, accept.Purpose) { Blob = declaration.Blob });
+            chosen.Add(new PlaceAccept(row.Repository) { Blob = declaration.Blob });
         }
 
         var (_, _, refusal) = await ReadAsync(doors, plan, chosen, digest, ct).ConfigureAwait(false);
@@ -151,7 +151,7 @@ public static class PlaceApplies
             .Where(each => Written(each.Change)).Select(each => each.Change.Said).Distinct().ToList();
         if (configured.Count > 0 || chosen.Count > 0)
         {
-            var said = string.Join("; ", configured.Concat(chosen.Select(each => $"accepts `{each.Repository}`'s declaration for {each.Purpose}")));
+            var said = string.Join("; ", configured.Concat(chosen.Select(each => $"accepts `{each.Repository}`'s declaration")));
             operations.Add(new PlaceOperation(PlaceOperations.Configuration, PlaceOperations.Configuration, null, said, PlaceOutcomes.Pending));
         }
 
@@ -348,8 +348,7 @@ public static class PlaceApplies
 
     /// <summary>
     /// The configuration after the plan, over <paramref name="config"/> as the edit read it: each repository's changes made through the doors' own
-    /// edits and held to the plan's, then the chosen acceptances, each by its door's edit. Throws <see cref="PlaceMovedException"/> where a
-    /// repository's changes are no longer the plan's.
+    /// edits and held to the plan's, then the chosen acceptances; <see cref="PlaceMovedException"/> where the changes are no longer the plan's.
     /// </summary>
     private static DriverConfig Judged(
         PlaceApplyDoors doors, DriverConfig config, PlacePlanned plan, PlaceReceipt receipt, IReadOnlyDictionary<string, RepoView> rows,
@@ -524,11 +523,7 @@ public static class PlaceApplies
 
         foreach (var accept in receipt.Accepted)
         {
-            var workspace = RemoteTarget.Workspace(registry.FirstOrDefault(row => string.Equals(row.Repository, accept.Repository, StringComparison.OrdinalIgnoreCase))?.Workspace);
-            var held = accept.Purpose == PlacePlans.Integration
-                ? IntegrationAcceptance.Of(config, accept.Repository)
-                : WorkflowSelection.ResolveLanded(config, accept.Repository, workspace).Gates;
-            if (held != accept.Blob && !(accept.Purpose == PlacePlans.Landed && held is null)) return false;
+            if (IntegrationAcceptance.Of(config, accept.Repository) != accept.Blob) return false;
         }
 
         return true;

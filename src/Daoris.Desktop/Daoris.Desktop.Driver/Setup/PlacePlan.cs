@@ -41,10 +41,7 @@ public interface IPlaceWorld
     Task<PlaceRoomRead> RoomAsync(RepoView repository, DriverConfig config, string path, CancellationToken ct);
 }
 
-/// <summary>
-/// A repository's line as its checkout here holds it: the line, the commit at its tip, the declaration's blob there (<c>none</c> where it
-/// holds none) and its text, and the host of its remote; or why the line could not be read.
-/// </summary>
+/// <summary>A repository's line as its checkout holds it: the commit at its tip, the declaration's blob (<c>none</c>) and text there, its remote's host; or why it could not be read.</summary>
 public sealed record PlaceTip(string? Line, string? Commit, string? Gates, string? Text, string? Host, string? Problem = null);
 
 /// <summary>A work's consent as <see cref="WorkPolicies.Of"/> resolves it at the repository, where it is set, or why it did not resolve.</summary>
@@ -63,11 +60,11 @@ public sealed record PlaceChanged(PlaceChange Change, IReadOnlyList<string> Repo
 /// <summary>A refusal: the repository it is of (null for the ask's own), the part, a code a screen keys on, and the sentence naming its door.</summary>
 public sealed record PlaceRefusal(string? Repository, string Part, string Code, string Sentence);
 
-/// <summary>An acceptance a plan may carry: its purpose (<c>landed</c> or <c>integration</c>), where it stands now, and what accepting does.</summary>
-public sealed record PlaceAcceptance(string Purpose, string Standing, string Said);
+/// <summary>The one acceptance a plan may carry for a declaration, for every purpose it serves: where it stands now, and the checks it changes, said in words.</summary>
+public sealed record PlaceAcceptance(string Standing, string Said);
 
-/// <summary>The declaration at a repository's line's tip: its line, commit, blob and text, and the acceptances it is offered for.</summary>
-public sealed record PlaceDeclaration(string Line, string Commit, string Blob, string? Text, IReadOnlyList<PlaceAcceptance> Acceptances);
+/// <summary>The declaration at a repository's line's tip: its line, commit, blob and text, and the acceptance it is offered for; null where nothing uses it.</summary>
+public sealed record PlaceDeclaration(string Line, string Commit, string Blob, string? Text, PlaceAcceptance? Acceptance);
 
 /// <summary>A queued quest enabling driving would release, by its title.</summary>
 public sealed record PlaceReleased(string Quest, string Title);
@@ -133,10 +130,6 @@ public static class PlacePlans
 
     /// <summary>The key of the change that saves a copy of a shipped default, its own operation in the receipt (<c>WORKFLOW_SAVE</c>).</summary>
     public const string WorkflowSaveKey = "WORKFLOW_SAVE";
-
-    /// <summary>The purposes an acceptance is chosen for, each kept by its own record.</summary>
-    public const string Landed = "landed";
-    public const string Integration = "integration";
 
     public const string NoLandingPlugin = "no-landing-plugin";
 
@@ -427,7 +420,7 @@ public static class PlacePlans
             var (suggested, why) = SetupPresets.Suggestion(before.Match, chosen, declares);
             rows.Add(new PlaceRepository(
                 row.Repository, workspace, before, after, applied.Changes, LowersOf(store, config, applied, row.Repository, workspace), reach, released,
-                DeclarationOf(tip, applied.After, row.Repository, workspace, after), tip.Problem,
+                await DeclarationOfAsync(tip, row.Root, applied.After, row.Repository, workspace, after, declares, ct).ConfigureAwait(false), tip.Problem,
                 new PlaceSuggestion(suggested, !row.Adopted, why)));
             made.AddRange(applied.Changes.Select(change => (change, row.Repository)));
         }
@@ -488,27 +481,21 @@ public static class PlacePlans
         return lowered;
     }
 
-    /// <summary>The declaration at the line's tip and the acceptances the plan's after offers for it: landed verification and integration.</summary>
-    private static PlaceDeclaration? DeclarationOf(PlaceTip tip, DriverConfig after, string repository, string workspace, PlaceSide side)
+    /// <summary>The line's declaration and, where the landed route or the integration uses it, its one acceptance: the standing and the checks changed, in words.</summary>
+    private static async Task<PlaceDeclaration?> DeclarationOfAsync(
+        PlaceTip tip, string? root, DriverConfig after, string repository, string workspace, PlaceSide side, bool declares, CancellationToken ct)
     {
         if (tip is not { Line: { } line, Commit: { } commit, Gates: { } gates }) return null;
-        var acceptances = new List<PlaceAcceptance>();
-        var landed = WorkflowSelection.ResolveLanded(after, repository, workspace);
-        if (landed.Workflow != WorkflowSelection.Current)
-        {
-            acceptances.Add(new(Landed, LandedGates.StateOf(landed, new LandedTip(line, commit, gates)),
-                $"Accept for landed verification: `{landed.Workflow}` verifies the work that lands by this declaration's gates, and a changed "
-                + "declaration stops that verification until you accept it again."));
-        }
+        var verifies = WorkflowSelection.ResolveLanded(after, repository, workspace) is var landed && landed.Workflow != WorkflowSelection.Current;
+        if (!verifies && side.Land?.Method != LandNodes.Integrate) return new PlaceDeclaration(line, commit, gates, tip.Text, null);
 
-        if (side.Land?.Method == LandNodes.Integrate)
-        {
-            acceptances.Add(new(Integration, IntegrationAcceptance.StateOf(IntegrationAcceptance.Of(after, repository), gates),
-                "Accept for integration: the line integrates by this declaration's `integration`, and a changed declaration waits for you "
-                + "while integration goes on under the one last accepted."));
-        }
-
-        return new PlaceDeclaration(line, commit, gates, tip.Text, acceptances);
+        var accepted = IntegrationAcceptance.Of(after, repository) ?? landed.Gates;
+        var change = accepted is null || accepted == IntegrationAcceptance.None
+            ? DeclarationChange.Between(null, tip.Text)
+            : await DeclarationChange.AtAsync(root, accepted, gates, ct).ConfigureAwait(false);
+        var said = change?.Words(line) ?? $"declaration changed on {line}; it is used from now on.";
+        return new PlaceDeclaration(line, commit, gates, tip.Text,
+            new PlaceAcceptance(IntegrationOwed.StandingOf(after, repository, workspace, line, gates, declares), said));
     }
 
     /// <summary>The terminal's twin of a plan: <c>daoris place … --plan</c>, in the order its usage names the words.</summary>

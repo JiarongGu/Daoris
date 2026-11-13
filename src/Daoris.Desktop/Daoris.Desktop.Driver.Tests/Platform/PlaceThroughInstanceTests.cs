@@ -26,7 +26,7 @@ public sealed class PlaceThroughInstanceTests
         var output = new StringWriter();
 
         var exit = await RunAsync(
-            ["engine", "--preset", "integrated", "--apply", "--accept", "engine:integration"], home.Home, home.World("place"), output);
+            ["engine", "--preset", "integrated", "--apply", "--accept", "engine"], home.Home, home.World("place"), output);
 
         Assert.Equal(0, exit);
         Assert.Equal(string.Concat(lines.Select(line => line + Environment.NewLine)), output.ToString());
@@ -34,7 +34,7 @@ public sealed class PlaceThroughInstanceTests
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("PLACE_APPLY", press.GetProperty("type").GetString());
         Assert.Equal(
-            """{"repositories":["engine"],"preset":"integrated","opinion":false,"look":false,"adoption":false,"drive":false,"accept":[{"repository":"engine","purpose":"integration"}],"said":true}""",
+            """{"repositories":["engine"],"preset":"integrated","opinion":false,"look":false,"adoption":false,"drive":false,"accept":[{"repository":"engine"}],"said":true}""",
             press.GetProperty("payload").GetRawText());
     }
 
