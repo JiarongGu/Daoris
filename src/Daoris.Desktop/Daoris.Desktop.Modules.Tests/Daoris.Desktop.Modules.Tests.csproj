@@ -49,6 +49,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChanges.cs" Link="SessionChanges.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChangeShape.cs" Link="SessionChangeShape.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\GitSeed.cs" Link="GitSeed.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\ScratchRemoval.cs" Link="ScratchRemoval.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\AccountStandIn.cs" Link="AccountStandIn.cs" />
     <!-- The benchmark home of a working machine's size over the service's own host, held once: the shell's reads are counted on it. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchHome.cs" Link="BenchHome.cs" />

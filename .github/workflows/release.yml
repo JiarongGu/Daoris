@@ -327,6 +327,9 @@ jobs:
       - name: Driver process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
 
+      - name: Driver rehearsals gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/process.runsettings --nologo
+
       - name: Driver git process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings --nologo
 

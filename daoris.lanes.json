@@ -39,7 +39,8 @@
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/**",
         "src/Daoris.Desktop/Daoris.Desktop.PieceStart/**",
         "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/**",
-        "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/**"
       ],
       "builds": {
         "units": [
@@ -48,7 +49,8 @@
           "src/Daoris.Desktop/Daoris.Desktop.GitDoor/Daoris.Desktop.GitDoor.csproj",
           "src/Daoris.Desktop/Daoris.Desktop.PieceStart/Daoris.Desktop.PieceStart.csproj",
           "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/Daoris.Desktop.OwnerStandIn.csproj",
-          "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj"
+          "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj",
+          "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Daoris.Desktop.Driver.Rehearsals.csproj"
         ],
         "reads": [
           "src/Daoris.Contracts/",

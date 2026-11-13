@@ -321,7 +321,7 @@ export const REACH = Object.freeze([
   { lane: 'web-settings', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {
     lane: 'driver',
-    gates: DRIVER_READERS,
+    gates: [...DRIVER_READERS, 'driver-rehearsals'],
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
   // The driver's tests project builds the launcher (it compiles driver files in by link), so a launcher change
@@ -373,7 +373,7 @@ export const REACH = Object.freeze([
   },
   {
     lane: 'layers',
-    gates: ['layers', ...ADAPTER_SUITES, ...DRIVER_READERS, 'service', 'service-process'],
+    gates: ['layers', ...ADAPTER_SUITES, ...DRIVER_READERS, 'driver-rehearsals', 'service', 'service-process'],
     why: "the ports, the fakes, the adapters and the build settings the application's projects build with: the layers census and the fakes' own tests, the adapters' lock and each adapter's dependency tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },

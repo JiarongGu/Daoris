@@ -12,6 +12,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
     <InternalsVisibleTo Include="Daoris.Desktop.Modules.Tests" />
+    <InternalsVisibleTo Include="Daoris.Desktop.Driver.Rehearsals" />
   </ItemGroup>
 
   <!-- The service's routes as their declarations, the one project this references: never the service's own, whose store it
