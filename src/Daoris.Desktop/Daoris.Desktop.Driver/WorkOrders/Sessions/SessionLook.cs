@@ -27,6 +27,9 @@ public sealed record SessionLook(
     /// <summary>What each judged tree holds, by <see cref="SessionGroups.Normal"/>; a tree not here is not judged, and holds nothing to review.</summary>
     public IReadOnlyDictionary<string, TreeWork> Trees { get; init; } = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The conversations this machine's person named or pinned, by conversation id: what a row says of its conversation.</summary>
+    public IReadOnlyDictionary<string, HelpKept> Titled { get; init; } = new Dictionary<string, HelpKept>(StringComparer.Ordinal);
+
     /// <summary>This machine's archive marks, by session.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Archived { get; init; } = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
 

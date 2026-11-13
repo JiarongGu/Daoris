@@ -3,60 +3,59 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Ask Daoris's conversations between their record and their agent: the person's words said to one while it starts wait here
-/// by its id, in the order said, as its queue, opening; they go to its door the moment it opens, and where it could not start
-/// they are handed back for its record to keep. Held in this process only, as a turn's waiting words are.
+/// Which of Ask Daoris's conversations are between their record and their agent: placed, their start not over. It holds no word:
+/// a word said to one meanwhile is kept on its record, which survives this process, and is handed to its door once the door opens.
 /// </summary>
 public sealed class HelpStarting
 {
     private readonly object _gate = new();
+    private readonly HashSet<string> _starting = new(StringComparer.OrdinalIgnoreCase);
 
-    // Each conversation starting, by its id, with the words said to it meanwhile.
-    private readonly Dictionary<string, List<HeldWord>> _starting = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A conversation is placed: words said to it wait from now until its start is <see cref="Over"/>.</summary>
+    /// <summary>A conversation is placed: it is starting until its start is <see cref="Over"/>.</summary>
     public void Placed(string session)
     {
-        lock (_gate) _starting[session] = [];
+        lock (_gate) _starting.Add(session);
     }
 
-    /// <summary>Hold words said to a conversation starting; false where it is not one starting, which leaves them to the usual judge.</summary>
-    public bool Hold(string session, string text, IReadOnlyList<ChatUpload> files, string? preface)
+    /// <summary>Whether the conversation is starting.</summary>
+    public bool Is(string session)
     {
-        lock (_gate)
-        {
-            if (!_starting.TryGetValue(session, out var words)) return false;
-            words.Add(new HeldWord(text, files, preface));
-            return true;
-        }
+        lock (_gate) return _starting.Contains(session);
     }
 
-    /// <summary>What waits for a conversation starting, as its queue (<c>opening</c>); null where it is not one starting.</summary>
-    public ChatQueue? Queue(string session)
-    {
-        lock (_gate)
-        {
-            if (!_starting.TryGetValue(session, out var words)) return null;
-            return new ChatQueue(
-                false, [.. words.Select(word => new ChatMessage(word.Text, [.. word.Files.Select(file => new KeptFile(file.Name, ""))]))],
-                Opening: true);
-        }
-    }
+    /// <summary>The queue of a conversation starting, <c>opening</c>, with nothing of its own listed: its words are its record's. Null where it is not starting.</summary>
+    public ChatQueue? Queue(string session) => Is(session) ? new ChatQueue(false, [], Opening: true) : null;
 
     /// <summary>
-    /// The start is over: <paramref name="say"/> hands each word to its door in the order said, while no other word can be said
-    /// to it, and what it did not take is answered, for the record to keep. Null <paramref name="say"/> is a start that failed,
-    /// which takes none. Nothing waits here for it after; another conversation's start is left as it is.
+    /// Held while a word is kept on a starting conversation's record, so its start cannot end between the keep and the door's reading
+    /// of what waits; null where the conversation is not starting, and the word goes the way any conversation's goes.
     /// </summary>
-    public IReadOnlyList<HeldWord> Over(string session, Func<HeldWord, bool>? say)
+    public async Task<IDisposable?> KeepingAsync(string session, CancellationToken ct)
     {
-        lock (_gate)
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        if (Is(session)) return new Held(_keeping);
+        _keeping.Release();
+        return null;
+    }
+
+    /// <summary>The start is over, whichever way it came out, once any word being kept is on the record.</summary>
+    public async Task OverAsync(string session)
+    {
+        await _keeping.WaitAsync().ConfigureAwait(false);
+        try
         {
-            if (!_starting.Remove(session, out var words)) return [];
-            return say is null ? [.. words] : words.Where(word => !say(word)).ToList();
+            lock (_gate) _starting.Remove(session);
+        }
+        finally
+        {
+            _keeping.Release();
         }
     }
-}
 
-/// <summary>Words said to Ask Daoris's conversation while it starts: the text, the files as sent, where the person is.</summary>
-public sealed record HeldWord(string Text, IReadOnlyList<ChatUpload> Files, string? Preface);
+    private readonly SemaphoreSlim _keeping = new(1, 1);
+
+    private sealed class Held(SemaphoreSlim gate) : IDisposable
+    {
+        public void Dispose() => gate.Release();
+    }
+}

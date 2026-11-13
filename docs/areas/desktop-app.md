@@ -174,7 +174,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **A session's page**
 
 37. A head shows the state, the title and two facts; a session's title takes one line, a quest's or an ask's two. The acts
-    hold still; the id moves to ⋯ and *Details*. *Started from*, on *Details*' folded line cut with an ellipsis, names as
+    hold still; the id moves to ⋯ and *Details*. A conversation's name is its title above its ask's and its first words, and its pin
+    marks its row: each session's row of `SESSION_GROUPS` carries its conversation's `name` and `pinned` (`conversation_facts`), the ⋯ of a row
+    and of the head offer *Rename…* (its ask under the head) and *Pin* or *Unpin* (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by the part
+    pressed), and *Delete…* says how many parts of its line it takes. *Started from*, on *Details*' folded line cut with an ellipsis, names as
     presses the quest, the ask, the session a hand-over or go-on continues, a conversation's repository or Ask Daoris's room
     (`work/head/startedFrom.tsx`). *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start

@@ -63,10 +63,7 @@ public sealed class HelpRoutes(DriverContext context)
                 $"there is no workspace `{circle}` on this machine — one of {string.Join(", ", held.Select(name => $"`{name}`"))}.");
     }
 
-    /// <summary>
-    /// The conversation placed, started off the request: the room read through the loop's <c>DescribeHelp</c>, then the agent
-    /// spawned. Words said to it meanwhile go to its door in order; where it could not start, its record keeps them as the person's.
-    /// </summary>
+    /// <summary>The conversation placed, started off the request; the words its record kept meanwhile go to its door once it opens.</summary>
     private async Task RunPlacedAsync(ChatRunner chat, HelpPlaced place, DriverConfig config)
     {
         var id = place.SessionId!;
@@ -80,32 +77,15 @@ public sealed class HelpRoutes(DriverContext context)
         }
         catch (Exception)
         {
-            // The runner ended the record saying why; nothing here could say more, and the words below are kept either way.
+            // The runner ended the record saying why.
         }
         finally
         {
-            var left = _loop.HelpStarting.Over(id, start?.SessionId is null ? null : word => Said(chat, id, word));
-            foreach (var word in left)
-            {
-                _loop.Events.Append(id, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = word.Text });
-            }
+            await _loop.HelpStarting.OverAsync(id).ConfigureAwait(false);
+            if (start?.SessionId is not null) await chat.TakeKeptAsync(id).ConfigureAwait(false);
 
-            // What a word said to it now would do, told again: its own queue now, or its record.
             _loop.Words.Tell(id);
             _loop.Nudge();
-        }
-    }
-
-    /// <summary>One held word handed to the conversation's door; false where the door would not take it, so the record keeps it.</summary>
-    private static bool Said(ChatRunner chat, string id, HeldWord word)
-    {
-        try
-        {
-            return chat.Say(id, word.Text, word.Files, word.Preface);
-        }
-        catch (DriverException)
-        {
-            return false;
         }
     }
 

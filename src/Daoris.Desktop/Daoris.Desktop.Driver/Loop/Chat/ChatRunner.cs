@@ -508,6 +508,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         CancellationToken ct = default) =>
         _words.SayKeptAsync(sessionId, message, files, preface, level, key, ct);
 
+    /// <inheritdoc cref="ChatKeptTake.TakeAsync"/>
+    public Task<int> TakeKeptAsync(string sessionId, CancellationToken ct = default) =>
+        new ChatKeptTake(_context, _words).TakeAsync(sessionId, ct);
+
     /// <inheritdoc cref="ChatWords.SayNowAsync"/>
     public Task<SentNow?> SayNowAsync(
         string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>

@@ -38,6 +38,8 @@ export type SessionGrouping = {
   reason?: string;
   shown: string;
   archived: boolean;
+  name?: string | null;
+  pinned?: boolean;
   teammate: boolean;
   strikes?: number | null;
   awaits?: string | null;

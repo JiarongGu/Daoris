@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
 import {
   retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useAskPartner, useCancelTurn, useDeclineHelper, useDeleteSession,
-  useHandOver, useOpenSessionFolder, useOpenWindow, usePartnerAct, useResolveSession, useRetryQuest, useStopSession,
+  useHandOver, useOpenSessionFolder, useOpenWindow, usePartnerAct, usePinConversation, useRenameConversation, useResolveSession, useRetryQuest,
+  useStopSession,
 } from '../bridge/shell';
 import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
@@ -30,6 +31,8 @@ export type SessionDoors = {
   terminal?: (folder: string) => void;
   /** Attend it, then open its delete's ask under its page header (*Delete…*). */
   delete?: (id: string) => void;
+  /** Attend it, then open its name's ask under its page header (*Rename…*). */
+  rename?: (id: string) => void;
   /** Attend it, then open its pause's ask under its page header (*Pause quest…*, *Pause ask…*). */
   pause?: (id: string, target: WorkTarget) => void;
   /** Attend it, then open its hand-over's ask under its page header (*Go on with another agent…*). */
@@ -47,7 +50,7 @@ export type HandOverTold = Answered & { kept: (sentence: string) => void };
 
 /** The acts the frame carries out: a door that has no frame to hand them (the monitor) offers none of them. */
 const FRAME_ACTS = new Set<SessionActId>([
-  'answer', 'stop', 'handOver', 'askHelper', 'askPiece', 'review', 'terminal', 'delete', 'pauseQuest', 'pauseAsk',
+  'answer', 'stop', 'handOver', 'askHelper', 'askPiece', 'review', 'terminal', 'delete', 'rename', 'pauseQuest', 'pauseAsk',
 ]);
 
 /**
@@ -128,6 +131,8 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   const stop = useStopSession();
   const resolve = useResolveSession();
   const remove = useDeleteSession();
+  const rename = useRenameConversation();
+  const pin = usePinConversation();
   const handOver = useHandOver();
   const askHelper = useAskHelper();
   const askPartner = useAskPartner();
@@ -167,7 +172,15 @@ export function useSessionActs({ notify, doors = {}, entries }: {
       case 'askPiece':
       case 'review':
       case 'delete':
+      case 'rename':
         doors[act]?.(session.id);
+        return;
+      case 'pin':
+      case 'unpin':
+        pin.mutate({ id: session.id, pinned: act === 'pin' }, {
+          onSuccess: () => notify(t(act === 'pin' ? 'work.pin.done' : 'work.unpin.done')),
+          onError: failure(notify),
+        });
         return;
       case 'terminal': {
         const at = folderOf(facts);
@@ -400,6 +413,15 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     onError: refusedIn(answered),
   });
 
+  /** The rename's save, told back to its ask: a name, or null for the conversation's first words as its title again. */
+  const renameNow = (session: Session, name: string | null, answered?: Answered) => rename.mutate({ id: session.id, name }, {
+    onSuccess: (answer) => {
+      notify(answer?.name ? t('work.rename.done', { name: answer.name }) : t('work.rename.cleared'));
+      answered?.done();
+    },
+    onError: refusedIn(answered),
+  });
+
   /**
    * *Archive what ended…*'s second press: what its first listed, each judged again by the host as it goes. What
    * changed since the list is kept and counted, never refused as a whole.
@@ -429,6 +451,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     approveHelperNow,
     declineHelperNow,
     deleteNow,
+    renameNow,
     archiveListed,
     /** A helper's ask on its way: its ask's presses wait for it. */
     askingHelper: askHelper.isPending,

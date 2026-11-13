@@ -47,6 +47,9 @@ public sealed class ConversationFacts(string home, Func<StoreSettled>? settled =
             .Where(pair => pair.Value.Archived is not null)
             .ToDictionary(pair => pair.Key, pair => pair.Value.Archived!.Value, StringComparer.Ordinal);
 
+    public IReadOnlyDictionary<string, HelpKept> Titled() =>
+        Query($"SELECT {Columns} FROM conversation_facts WHERE name IS NOT NULL OR pinned IS NOT NULL");
+
     /// <summary>Name a conversation, or clear its name with null or blank words: its first question is its title again.</summary>
     /// <exception cref="DriverException">An id that names no conversation, or a name that is not one short line.</exception>
     public void Rename(string conversation, string? name)

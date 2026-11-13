@@ -181,7 +181,8 @@ export function SessionRow({
   onAct?: (act: SessionActId, id: string) => void;
 }) {
   const { t } = useTranslation();
-  const title = name || sessionTitle(session, quest, opening);
+  // The name the person gave its conversation is its title above all: the ask's name, then what its record says, come after.
+  const title = grouping?.name || name || sessionTitle(session, quest, opening);
   const origin = sessionOrigin(session);
   // Where its work is: where it landed while that reads as landed, as its review does — the landed
   // branch still stands, or the tree is gone — else the tree it opened, unless that is gone too.
@@ -278,6 +279,12 @@ export function SessionRow({
           title={title}
           className={cn('mt-0.5 block truncate text-body', running ? 'text-ink' : 'text-ink-soft')}
         >
+          {grouping?.pinned && (
+            <>
+              <Icon name="pin" size={11} className="mr-1 inline text-ink-faint" />
+              <span className="sr-only">{t('work.pinned')}</span>
+            </>
+          )}
           {title}
         </span>
         <span
