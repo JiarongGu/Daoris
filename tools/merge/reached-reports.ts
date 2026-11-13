@@ -5,7 +5,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
-import { junitPasses, vitestPasses } from './file-passes.ts';
+import { junitPasses, vitestFailures, vitestPasses } from './file-passes.ts';
 import { passedClasses } from './trx-passes.ts';
 import type { Command, ReachedGroup } from './reached.ts';
 
@@ -23,6 +23,12 @@ export function withReport(each: Pick<Command, 'command' | 'args' | 'cwd'>, name
   const at = each.args.indexOf('--test-force-exit') + 1;
   const reporters = ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=junit', `--test-reporter-destination=../../${FOLDER}/${name}.xml`];
   return { args: [...each.args.slice(0, at), ...reporters, ...each.args.slice(at)], report: `${FOLDER}/${name}.xml` };
+}
+
+/** A line for each test a page or merge tool report says failed, with its file, so a failure names its test and can be run alone. */
+export function failedTestLines(group: Pick<ReachedGroup, 'runner'>, report: string): string[] {
+  if (group.runner !== 'vitest' || !existsSync(report)) return [];
+  return vitestFailures(readFileSync(report, 'utf8')).map(({ file, test }) => `${posix.basename(file.replaceAll('\\', '/'))}: failed test '${test}'`);
 }
 
 /** The units of `group` its command's report says passed, or all of them where there is no report and the command exited clean. */

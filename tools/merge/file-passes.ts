@@ -18,6 +18,20 @@ export function junitPasses(xml: string): Set<string> {
   return new Set([...seen].filter((file) => !spoiled.has(file)));
 }
 
+/** Vitest's json report: each failed test with its file, or the file alone (title empty) where it failed before any test ran. */
+export function vitestFailures(json: string): { file: string; test: string }[] {
+  try {
+    const parsed = JSON.parse(json) as { testResults?: Array<{ name?: string; status?: string; message?: string; assertionResults?: Array<{ status?: string; fullName?: string }> }> };
+    return (parsed.testResults ?? []).flatMap((each) => {
+      if (each.status !== 'failed' || typeof each.name !== 'string') return [];
+      const tests = (each.assertionResults ?? []).filter((one) => one.status === 'failed' && one.fullName);
+      return tests.length ? tests.map((one) => ({ file: each.name as string, test: one.fullName as string })) : [{ file: each.name, test: each.message?.split('\n')[0] ?? 'the file did not run' }];
+    });
+  } catch {
+    return [];
+  }
+}
+
 /** Vitest's json report: the files whose status is passed. Paths as the report writes them. */
 export function vitestPasses(json: string): Set<string> {
   try {

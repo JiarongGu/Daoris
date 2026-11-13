@@ -43,6 +43,7 @@ import { join, posix } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { globToRegExp } from './merge/lanes-file.ts';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
+import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -419,7 +420,7 @@ function reachedBy(result, path) {
   if (placed.whole) return '*';
   if (placed.none) return new Set();
   if (placed.classes) return new Set(placed.classes);
-  return new Set(result.classes.filter((each) => !each.reach.length || each.reach.includes('*') || placed.areas.some((area) => each.reach.includes(area))).map((each) => each.full));
+  return new Set(result.classes.filter((each) => classHitByAreas(each, placed, result)).map((each) => each.full));
 }
 
 /** The units of the census `paths` reach, each with the first path that reaches it. */

@@ -15,6 +15,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## CREATESETUP1 — a repository just created is set up where its workspace works in place (2026-11-14)
 
 > **CREATESETUP1** (driver): Outcome: `SetupPress.PlanAsync` asks `ISetupWorld.NothingReadsItAsync` (one commit on every ref, no session record) and treats such a repository as set up apart, so a creation in a workspace working in place asks its set-up quest in the checkout and its plan's step says so; a repository with a second commit or a session keeps the `no-own-tree` refusal.
+## MERGEFLOW1b (part) and REACHREPLAY1 (part) — class-level reach, a builder's recorded passes, reached reds classified (2026-11-14)
+
+> **MERGEFLOW1b (part), REACHREPLAY1 (part)** (tools): Outcome: a driver class reaches a source file by the file that declares what it names, not by the area (667 classes a file on average, 83 now; one file's plan 338 classes, 108); `node tools/reached-checks.mjs --base main` (or `--classes`) records a builder's class passes under the merge's keys, the store saves joined with a run beside it; a reached class that fails runs again alone once (FLAKE, main's red or new red, a vitest failure names its test), and the merge record keeps classes run and replayed per gate, which the gate-level `replayed` flag (false in all 37 merges) never showed.
+
+---
 
 ## TOOLDEFS1 — the tool definitions every session is handed, measured and cut (2026-11-13)
 
