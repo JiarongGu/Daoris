@@ -675,7 +675,8 @@ public sealed class IntakeTests : IDisposable
         foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        var config = (Config() with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent(), "account-1:opus"] } })
+        var commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent(), "account-1:opus"] };
+        var config = (Config() with { Commands = commands })
             .StaffIntake([new ActorChoice("acp-stub", "opus")]);
         Daoris.Driver.Driver Started()
         {

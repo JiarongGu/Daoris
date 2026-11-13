@@ -10,14 +10,14 @@ public sealed record ReadAskPlan(string Id) : IRoute<AskPlanResponse>
     public static string Path => "/api/asks/{id}/plan";
 }
 
-/// <summary>The plans an ask holds, the ask's own first; none before anyone wrote one. <c>Team</c> is who serves it, <c>Decisions</c> what was decided, oldest first.</summary>
+/// <summary>The plans an ask holds, the ask's own first; none before anyone wrote one. <c>Team</c> is who serves it, <c>Decisions</c> the choices taken, oldest first.</summary>
 public sealed record AskPlanResponse(
     string Ask, IReadOnlyList<AskPlanRevisionResponse> Plans, IReadOnlyList<AskPlanMemberResponse> Team, IReadOnlyList<AskPlanDecisionResponse> Decisions);
 
 /// <summary>A session on the ask's team: its <c>Role</c> (<c>lead</c>), the part it serves (null for the ask's own plan) and the newest revision it wrote.</summary>
 public sealed record AskPlanMemberResponse(string? Part, string Role, string Session, int Revision);
 
-/// <summary>What was decided about the plan at a revision, by whom, and what followed. <c>Scope</c> is the part a split is of, or null for the ask's own plan.</summary>
+/// <summary>A choice taken about the plan at a revision, by whom, and what followed. <c>Scope</c> is the part a split is of, or null for the ask's own plan.</summary>
 public sealed record AskPlanDecisionResponse(string? Scope, int Revision, string Decision, string Reason, string Author, string Act);
 
 /// <summary>One plan at its newest revision. <c>Scope</c> is the part a split is of, or null for the ask's own plan.</summary>

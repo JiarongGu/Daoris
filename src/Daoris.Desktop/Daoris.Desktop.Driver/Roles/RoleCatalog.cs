@@ -200,10 +200,7 @@ public sealed class RoleCatalog
         return Fallback(work) is { } fallback ? RoleFor(fallback, place) : new RoleFound(null, NoRole(work));
     }
 
-    /// <summary>
-    /// The work whose role takes <paramref name="work"/> where no role does: design and exact work fall to build, a lead's plan to design, and a
-    /// scout's orientation to exact; null for a work that may not fall.
-    /// </summary>
+    /// <summary>The work whose role takes <paramref name="work"/> where none does: design and exact to build, plan to design, orient to exact.</summary>
     public static string? Fallback(string work) => work switch
     {
         RoleWork.Design or RoleWork.Exact => RoleWork.Build,

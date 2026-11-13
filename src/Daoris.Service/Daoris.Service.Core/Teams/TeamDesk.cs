@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// write returns the quests it made and two parts to one repository and lane are two quests.
 /// </summary>
 /// <param name="store">The revisions and the part-to-quest memory.</param>
-/// <param name="ledger">Who is on the team and what was decided.</param>
+/// <param name="ledger">Who is on the team and the choices taken.</param>
 /// <param name="asks">What publishes a part as the ask's quest.</param>
 /// <param name="policy">The paths no worker changes, by repository.</param>
 public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, Func<string, CancellationToken, Task<TeamPathPolicy>> policy)
@@ -66,7 +66,7 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
     public async Task<(IReadOnlyList<TeamPlan> Plans, IReadOnlyList<TeamPartRow> Parts)> ReadAsync(string ask, CancellationToken ct = default) =>
         (await store.LatestAsync(ask.TrimStart('#'), ct).ConfigureAwait(false), await store.PartsAsync(ask.TrimStart('#'), ct).ConfigureAwait(false));
 
-    /// <summary>Who is on the ask's team and what was decided about it, each oldest first.</summary>
+    /// <summary>Who is on the ask's team and the choices taken about it, each oldest first.</summary>
     public async Task<(IReadOnlyList<TeamMember> Members, IReadOnlyList<TeamDecision> Decisions)> TeamAsync(string ask, CancellationToken ct = default) =>
         (await ledger.MembersAsync(ask.TrimStart('#'), ct).ConfigureAwait(false), await ledger.DecisionsAsync(ask.TrimStart('#'), ct).ConfigureAwait(false));
 

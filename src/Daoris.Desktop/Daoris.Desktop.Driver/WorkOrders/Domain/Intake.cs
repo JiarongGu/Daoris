@@ -20,7 +20,6 @@ public static class IntakePrompt
     /// The workspace's repositories whose access setup takes the intake's route without the person's accept
     /// (<c>routing</c> <c>intake</c>), as <see cref="RoutedByIntake"/> reads them.
     /// </param>
-    /// <param name="lead">Whether it leads the ask's team (<see cref="IntakeLead"/>): it is then told how to write a plan.</param>
     public static string Compose(
         AskView ask, SessionLanguage? language = null, string? browser = null, IReadOnlyList<string>? routedByIntake = null, bool lead = false)
     {

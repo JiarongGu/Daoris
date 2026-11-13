@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The rows that say who is on an ask's team and what was decided about it, beside the plan revisions in the service's store. A member's row
+/// The rows that say who is on an ask's team and the choices taken about it, beside the plan revisions in the service's store. A member's row
 /// moves to the newest revision it served, and a decision at a revision is kept as first written.
 /// </summary>
 public sealed class TeamLedger
@@ -99,7 +99,7 @@ public sealed class TeamLedger
         return rows;
     }, ct);
 
-    /// <summary>What was decided about the ask's team, oldest first.</summary>
+    /// <summary>The choices taken about the ask's team, oldest first.</summary>
     public Task<IReadOnlyList<TeamDecision>> DecisionsAsync(string ask, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<TeamDecision>>(async () =>
     {
         await using var command = _db.Command();

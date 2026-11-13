@@ -15,8 +15,7 @@ namespace Daoris.Knowledge;
 /// <see cref="Intake"/>; the Ask Daoris repository is <see cref="AskDaoris"/>; a chat is <see cref="Chat"/>; otherwise <see cref="Build"/>. A
 /// co-worker is a relation, <c>serves</c>, never a work of its own: a partner's marks are a helper's with a piece. An
 /// empty mark is none, as an absent one is.</para>
-/// <para><see cref="Plan"/> and <see cref="Orient"/> are in it too and read from no marks: a lead is an intake and a scout a helper by their marks, the role that staffs
-/// them kept on the start's binding. <see cref="Design"/>, <see cref="Exact"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design,
+/// <para><see cref="Design"/>,<see cref="Exact"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design,
 /// decision or exact work is built, admitted and read as <see cref="Build"/>, and a brainstorm's pass has no record.</para>
 /// </remarks>
 public static class ParticipantWork

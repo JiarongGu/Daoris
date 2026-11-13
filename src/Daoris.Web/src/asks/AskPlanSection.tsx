@@ -23,7 +23,7 @@ export function AskPlanSection({ plan, onOpenQuest }: { plan: AskPlan; onOpenQue
   );
 }
 
-/** Who is on the team and what was decided, each once: a member by its role and the part it serves, a decision by its revision and its reason. */
+/** Who is on the team and the choices taken, each once: a member by its role and the part it serves, a decision by its revision and its reason. */
 function Team({ plan }: { plan: AskPlan }) {
   const { t } = useTranslation();
   if (plan.team.length === 0 && plan.decisions.length === 0) return null;

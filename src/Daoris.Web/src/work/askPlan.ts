@@ -15,10 +15,10 @@ export type AskPlanRevision = {
 /** A session on the ask's team: its `role` (`lead`), the part it serves (null for the ask's own plan) and the newest revision it wrote. */
 export type AskPlanMember = { part: string | null; role: string; session: string; revision: number };
 
-/** What was decided about the plan at a revision, by whom, and what followed. */
+/** A choice taken about the plan at a revision, by whom, and what followed. */
 export type AskPlanDecision = { scope: string | null; revision: number; decision: string; reason: string; author: string; act: string };
 
-/** The plans an ask holds, the ask's own first, who serves it and what was decided, oldest first. */
+/** The plans an ask holds, the ask's own first, who serves it and the choices taken, oldest first. */
 export type AskPlan = { plans: AskPlanRevision[]; team: AskPlanMember[]; decisions: AskPlanDecision[] };
 
 const text = (value: unknown, fallback = '') => (typeof value === 'string' ? value : fallback);
