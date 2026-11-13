@@ -18,6 +18,8 @@ public sealed class GitRepositoryContractTests : RepositoryContract, IDisposable
 
     protected override IGitRepository Backend => GitRepository.Shared;
 
+    protected override bool CaseIgnored => OperatingSystem.IsWindows();
+
     protected override async Task<string> NewAsync()
     {
         var root = Path.Combine(_scratch, "repository");

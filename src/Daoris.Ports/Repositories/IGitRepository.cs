@@ -80,6 +80,12 @@ public interface IGitRepository
     /// <summary>The text of the file at <paramref name="path"/> in <paramref name="commit"/>; null where there is none or it is not text.</summary>
     Task<string?> TextAtAsync(string folder, string commit, string path, CancellationToken ct);
 
+    /// <summary>Whether git matches its ignore patterns in this checkout without regard to case (<c>core.ignorecase</c>).</summary>
+    Task<bool> IgnoresCaseAsync(string folder, CancellationToken ct);
+
+    /// <summary>The paths the checkout ignores, at their tops and never descending (a folder ends in <c>/</c>); thrown where git could not list them.</summary>
+    Task<IReadOnlyList<string>> IgnoredTopsAsync(string folder, CancellationToken ct);
+
     /// <summary>The ignored tops under <paramref name="within"/> (a folder at its top with its <c>/</c>, else a file); thrown where git could not read the status.</summary>
     Task<IReadOnlyList<string>> IgnoredAsync(string folder, IReadOnlyList<string> within, CancellationToken ct);
 

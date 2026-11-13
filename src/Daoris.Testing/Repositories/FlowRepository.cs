@@ -43,6 +43,10 @@ public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 
     public Task<string?> TextAtAsync(string folder, string commit, string path, CancellationToken ct) => Current.TextAtAsync(folder, commit, path, ct);
 
+    public Task<bool> IgnoresCaseAsync(string folder, CancellationToken ct) => Current.IgnoresCaseAsync(folder, ct);
+
+    public Task<IReadOnlyList<string>> IgnoredTopsAsync(string folder, CancellationToken ct) => Current.IgnoredTopsAsync(folder, ct);
+
     public Task<IReadOnlyList<string>> IgnoredAsync(string folder, IReadOnlyList<string> within, CancellationToken ct) => Current.IgnoredAsync(folder, within, ct);
 
     public Task<IReadOnlyList<GitWorktree>?> WorktreesAsync(string folder, CancellationToken ct) => Current.WorktreesAsync(folder, ct);

@@ -110,6 +110,13 @@ public sealed class MemoryRepository : IGitRepository
     public Task<string?> TextAtAsync(string folder, string commit, string path, CancellationToken ct) =>
         Task.FromResult(Find(folder) is { } tree && _history.Resolve(commit, HeadOf(tree)?.Id) is { } found && found.Tree.TryGetValue(path, out var blob) && blob.Mode == MemoryBlob.File ? blob.Content : null);
 
+    /// <summary>Whether the repository matches its ignore patterns without regard to case, as git on a case-insensitive disk does.</summary>
+    public bool CaseIgnored { get; set; }
+
+    public Task<bool> IgnoresCaseAsync(string folder, CancellationToken ct) => Task.FromResult(CaseIgnored);
+
+    public Task<IReadOnlyList<string>> IgnoredTopsAsync(string folder, CancellationToken ct) => IgnoredAsync(folder, [], ct);
+
     public async Task<IReadOnlyList<string>> IgnoredAsync(string folder, IReadOnlyList<string> within, CancellationToken ct) =>
         [.. (await StatusAsync(folder, ignored: true, ct).ConfigureAwait(false)).Where(each => each.Value == "!!" && Under(each.Key, within)).Select(each => each.Key).Order(StringComparer.Ordinal)];
 

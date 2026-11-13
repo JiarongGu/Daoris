@@ -134,6 +134,18 @@ internal sealed class GitRepository : IGitRepository
 
     public Task<string?> TextAtAsync(string folder, string commit, string path, CancellationToken ct) => GitObjectReads.TextAsync(folder, GitObjectName.At(commit, path), ct);
 
+    public async Task<bool> IgnoresCaseAsync(string folder, CancellationToken ct)
+    {
+        var (code, stdout, _) = await _run(folder, ["--no-optional-locks", "config", "--bool", "core.ignorecase"], ct).ConfigureAwait(false);
+        return code == 0 && stdout.Trim() == "true";
+    }
+
+    public async Task<IReadOnlyList<string>> IgnoredTopsAsync(string folder, CancellationToken ct)
+    {
+        var (code, stdout, stderr) = await _run(folder, ["--no-optional-locks", "ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "-z"], ct).ConfigureAwait(false);
+        return code == 0 ? [.. stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : throw new DriverException($"git ls-files in {folder} failed: {TreeGit.Failure(stderr)}");
+    }
+
     public async Task<IReadOnlyList<string>> IgnoredAsync(string folder, IReadOnlyList<string> within, CancellationToken ct)
     {
         var (code, said, error) = await _run(

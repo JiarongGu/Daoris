@@ -32,10 +32,10 @@ internal static class BaseProducers
                 : $"{top} is beside {projects.Count} project files, so it has no one producer");
         }
 
-        var declared = Declared(await ShowAsync(slot, commit, projects[0], ct).ConfigureAwait(false));
+        var declared = Declared(await FileGit.ShowAsync(slot, commit, projects[0], ct).ConfigureAwait(false));
         for (var above = folder; declared is null; above = FolderOf(above))
         {
-            if (await ShowAsync(slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
+            if (await FileGit.ShowAsync(slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
             {
                 declared = Declared(props);
                 break;
@@ -65,7 +65,6 @@ internal static class BaseProducers
         }
     }
 
-    private static Task<string?> ShowAsync(string slot, string commit, string path, CancellationToken ct) => MachinePorts.Repository.TextAtAsync(slot, commit, path, ct);
 
     /// <summary>The folder holding <paramref name="path"/>, repository-relative and ending <c>/</c>; empty for the top.</summary>
     private static string FolderOf(string path)

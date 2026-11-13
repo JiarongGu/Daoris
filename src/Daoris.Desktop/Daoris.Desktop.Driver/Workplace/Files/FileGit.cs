@@ -9,14 +9,12 @@ internal static class FileGit
 {
     /// <summary>Every path git tracks at <paramref name="commit"/>.</summary>
     internal static async Task<IReadOnlyList<string>> TrackedAsync(string root, string commit, CancellationToken ct) =>
-        Split(await Ask(root, ["ls-tree", "-r", "-z", "--name-only", commit], ct).ConfigureAwait(false));
+        await MachinePorts.Repository.EntriesAsync(root, commit, [], true, ct).ConfigureAwait(false) is { } entries
+            ? [.. entries.Select(entry => entry.Path)]
+            : throw new DriverException($"git ls-tree in {root} failed");
 
     /// <summary>A tracked file's text at <paramref name="commit"/>, or null where the commit holds none.</summary>
-    internal static async Task<string?> ShowAsync(string root, string commit, string path, CancellationToken ct)
-    {
-        var name = GitObjectName.At(commit, path);
-        return await GitObjectReads.TextAsync(root, name, ct).ConfigureAwait(false);
-    }
+    internal static Task<string?> ShowAsync(string root, string commit, string path, CancellationToken ct) => MachinePorts.Repository.TextAtAsync(root, commit, path, ct);
 
     /// <summary>The paths that differ between two commits, by name alone; null where git cannot say (a commit it no longer holds).</summary>
     internal static async Task<IReadOnlyList<string>?> ChangedAsync(string root, string from, string to, CancellationToken ct)
@@ -26,20 +24,16 @@ internal static class FileGit
     }
 
     /// <summary>The paths the working tree ignores, at their tops and never descending, a folder ending in <c>/</c>.</summary>
-    internal static async Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) =>
-        Split(await Ask(root, ["ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "-z"], ct).ConfigureAwait(false));
+    internal static Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) => MachinePorts.Repository.IgnoredTopsAsync(root, ct);
 
     /// <summary>The checkout's <c>core.ignorecase</c>: whether git matches its ignore patterns without regard to case.</summary>
-    internal static async Task<bool> IgnoresCaseAsync(string root, CancellationToken ct)
-    {
-        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "config", "--bool", "core.ignorecase"], ct).ConfigureAwait(false);
-        return code == 0 && stdout.Trim() == "true";
-    }
+    internal static Task<bool> IgnoresCaseAsync(string root, CancellationToken ct) => MachinePorts.Repository.IgnoresCaseAsync(root, ct);
 
     /// <summary>Each linked worktree git lists, by its full path.</summary>
     internal static async Task<IReadOnlyList<string>> WorktreesAsync(string root, CancellationToken ct) =>
-        [.. (await Ask(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false)).ReplaceLineEndings("\n").Split('\n')
-            .Where(line => line.StartsWith("worktree ", StringComparison.Ordinal)).Select(line => line["worktree ".Length..].Trim())];
+        await MachinePorts.Repository.WorktreesAsync(root, ct).ConfigureAwait(false) is { } trees
+            ? [.. trees.Select(tree => tree.Path)]
+            : throw new DriverException($"git worktree in {root} failed");
 
     /// <summary>
     /// Each tracked line at <paramref name="commit"/> that holds one of <paramref name="names"/>, in one search over the files

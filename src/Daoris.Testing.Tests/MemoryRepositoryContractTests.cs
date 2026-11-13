@@ -9,6 +9,8 @@ public sealed class MemoryRepositoryContractTests : RepositoryContract
 
     protected override IGitRepository Backend => _repository;
 
+    protected override bool CaseIgnored => false;
+
     protected override Task<string> NewAsync()
     {
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "memory", Guid.NewGuid().ToString("N")[..8]));

@@ -82,8 +82,20 @@ public abstract class RepositoryContract
         await WriteAsync(root, "src/build.log", "x\n");
 
         Assert.Equal(["obj/", "run.log", "src/build.log"], await Backend.IgnoredAsync(root, [], Ct));
+        Assert.Equal(["obj/", "run.log", "src/build.log"], await Backend.IgnoredTopsAsync(root, Ct));
         Assert.Equal(["obj/"], await Backend.IgnoredAsync(root, ["obj"], Ct));
         Assert.Equal(["src/build.log"], await Backend.IgnoredAsync(root, ["src"], Ct));
+    }
+
+    /// <summary>Whether this backend's repository matches ignore patterns without regard to case, as git does on the machine's own disk.</summary>
+    protected abstract bool CaseIgnored { get; }
+
+    [Fact]
+    public async Task Whether_ignore_patterns_match_without_regard_to_case_is_the_repositorys_own_setting()
+    {
+        var root = await NewAsync();
+
+        Assert.Equal(CaseIgnored, await Backend.IgnoresCaseAsync(root, Ct));
     }
 
     [Fact]
