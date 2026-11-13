@@ -81,7 +81,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 17a. Daoris's GitHub and Azure DevOps plugins declare a `goal` on their `pull-request` step and carry its create, status and
     complete as tools, so the loop's step session performs it (workflows rule 31a), an attempt delivered on `work/perform` before
     staying theirs to settle by their `check`; they answer `work/state`, call their service's
-    REST API with the token their own `login` keeps in their private storage (rule 29), say a refused token at `status`, run no
+    REST API with the token their own `login` keeps in their private storage (rule 29), say a refused or missing token at `status` (a read, which exits 0 whatever it answers, so it is never a failed command), run no
     git, `gh` or `az`, and declare node alone. Azure DevOps's step sets auto-complete where its options say so, and its `release`
     step watches the merged commit's release or pipeline stages to their end, as its README says. Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its

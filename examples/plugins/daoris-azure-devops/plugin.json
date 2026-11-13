@@ -3,7 +3,7 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "changes": "Its release step says at the first look when no release exists for the merged build and none comes (no continuous-deployment trigger of the release definitions taking the build takes its branch), failing no-release in those words so the step holds for the person, rather than after findSeconds; with the createRelease option it makes that release from the build and watches it.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {

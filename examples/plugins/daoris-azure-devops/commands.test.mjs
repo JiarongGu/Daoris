@@ -22,7 +22,10 @@ test('login asks for the token hidden, keeps it in its own storage, and status s
 
   const asked = await run(plugin, 'login');
   assert.deepEqual(asked.ask, { name: 'token', prompt: 'Personal access token', masked: true });
-  assert.equal((await run(plugin, 'status')).exit, 1);
+  // A read that answers is no failure, whatever it answers: Daoris records any other exit as a failed command.
+  const none = await run(plugin, 'status');
+  assert.equal(none.exit, 0);
+  assert.match(none.said[0], /^No token is kept: run `daoris daoris-azure-devops login`\.$/);
 
   const kept = await run(plugin, 'login', { token: TOKEN });
   assert.equal(kept.exit, 0);
@@ -39,7 +42,9 @@ test('a token the API refuses is said refused by status, and a plugin handed no 
   const root = checkout('https://dev.azure.com/acme/Proj/_git/app');
   const plugin = await begun(t, { DAORIS_HOST_API: api.address, ...signedIn('not-the-token') });
   await plugin.ask('hook/work/state', { root, branch: 'daoris/work', pullRequest: `${WEB}/pullrequest/1`, origin: null, line: 'main' });
-  assert.match((await run(plugin, 'status')).said[0], /^Azure DevOps refused the kept token at /);
+  const refusal = await run(plugin, 'status');
+  assert.match(refusal.said[0], /^Azure DevOps refused the kept token at /);
+  assert.equal(refusal.exit, 0);
 
   const bare = await begun(t, {});
   assert.match((await run(bare, 'login')).said[0], /no private storage/);
