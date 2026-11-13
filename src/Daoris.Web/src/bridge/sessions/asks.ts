@@ -9,6 +9,7 @@ import {
   lineChannelOf, postedOf,
 } from '../../work/channel';
 import { type AskPlan, askPlanOf } from '../../asks/askPlan';
+import type { PlanSettle } from '../../asks/plan/PlanSettle';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
@@ -116,6 +117,19 @@ export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: b
     refetchOnWindowFocus: false,
   });
   return query.data ?? null;
+};
+
+export type { PlanSettle };
+
+/** `ASK_PLAN_SETTLE`: rejects with the service's sentence where it refuses; the plan it answers replaces the cached one at once. */
+export const useSettleAskPlan = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ask, settle }: { ask: string; settle: PlanSettle }): Promise<AskPlan | null> => askPlanOf(await call('ASK_PLAN_SETTLE', { ask, ...settle })),
+    onSuccess: (plan, { ask }) => {
+      if (plan) client.setQueryData([...keys.allAsks, 'plan', ask], plan);
+    },
+  });
 };
 
 /**

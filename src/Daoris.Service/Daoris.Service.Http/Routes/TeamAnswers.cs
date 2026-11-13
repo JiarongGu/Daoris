@@ -6,13 +6,18 @@ namespace Daoris.Knowledge.Http.Routes;
 internal static class TeamAnswers
 {
     public static AskPlanResponse Plan(
-        string ask, IReadOnlyList<TeamPlan> plans, IReadOnlyList<TeamPartRow> rows, IReadOnlyList<TeamMember> members, IReadOnlyList<TeamDecision> decisions) =>
+        string ask, IReadOnlyList<TeamPlan> plans, IReadOnlyList<TeamPartRow> rows, IReadOnlyList<TeamMember> members, IReadOnlyList<TeamDecision> decisions,
+        IReadOnlyDictionary<string, string>? seen = null) =>
         new(
-            ask.TrimStart('#'), [.. plans.OrderBy(plan => plan.Depth).ThenBy(plan => plan.Scope, StringComparer.Ordinal).Select(plan => Revision(plan, rows))],
+            ask.TrimStart('#'),
+            [.. plans.OrderBy(plan => plan.Depth).ThenBy(plan => plan.Scope, StringComparer.Ordinal).Select(plan => Revision(plan, rows, seen ?? new Dictionary<string, string>()))],
             [.. members.Select(member => new AskPlanMemberResponse(member.Part, member.Role, member.Session, member.Revision))],
             [.. decisions.Select(decision => new AskPlanDecisionResponse(decision.Scope, decision.Revision, decision.Decision, decision.Reason, decision.Author, decision.Act))]);
 
-    private static AskPlanRevisionResponse Revision(TeamPlan plan, IReadOnlyList<TeamPartRow> rows) => new(
+    public static IReadOnlyList<AskPlanQuestionResponse> Questions(IEnumerable<DeliveryQuestion> questions) =>
+        [.. questions.Select(question => new AskPlanQuestionResponse(question.Key, question.Kind, question.Text, question.Yes, question.Blocks, question.Default))];
+
+    private static AskPlanRevisionResponse Revision(TeamPlan plan, IReadOnlyList<TeamPartRow> rows, IReadOnlyDictionary<string, string> seen) => new(
         plan.Scope, plan.Revision, plan.Depth, plan.Why,
         [.. plan.Parts.Select(part => new AskPlanPartResponse(
             part.Id, part.Repository, rows.FirstOrDefault(row => row.Part == part.Id)?.Quest, part.Outcome, part.Lanes, part.Claims))],
@@ -22,9 +27,10 @@ internal static class TeamAnswers
             each.Ref.Repository, each.Ref.Id, [.. each.Provides.Select(Use)], [.. each.Consumes.Select(Use)]))],
         [.. plan.Releases.Select(edge => new AskPlanReleaseResponse(
             edge.Deployable.ToString(), edge.On.ToString(), edge.Why, edge.Source,
-            edge.Evidence is { } evidence ? $"{evidence.Repository}: {evidence.File}{(evidence.Range.Length > 0 ? ":" + evidence.Range : "")}" : null))],
-        [.. DeliveryGraph.Queue(plan.Questions, plan.Releases, new Dictionary<string, string>()).Select(question =>
-            new AskPlanQuestionResponse(question.Key, question.Kind, question.Text, question.Yes, question.Blocks, question.Default))]);
+            edge.Evidence is { } evidence ? new AskPlanEvidenceResponse(evidence.Repository, evidence.File, evidence.Range, evidence.Blob) : null,
+            edge.Waived, DeliveryGraph.Stale([edge], seen).Count > 0))],
+        Questions(DeliveryGraph.Open(plan, seen)),
+        [.. plan.Answers.Select(answer => new AskPlanAnswerResponse(answer.Key, answer.Words, answer.At))]);
 
     private static string Use(DeliveryUse use) => $"{use.Resource} ({use.Mode})";
 }

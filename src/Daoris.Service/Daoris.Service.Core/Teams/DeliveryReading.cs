@@ -11,12 +11,18 @@ public static class DeliveryReading
         foreach (var edge in plan.Releases)
         {
             var cited = edge.Evidence is { } evidence ? $" ({edge.Source}: {evidence.Repository} `{evidence.File}`{(evidence.Range.Length > 0 ? $":{evidence.Range}" : "")} at {evidence.Blob})" : $" ({edge.Source})";
-            yield return $"- release `{edge.Deployable}` after `{edge.On}`: {edge.Why}{cited}{(stale.Contains(edge) ? " STALE: its evidence moved; confirm or drop it." : "")}";
+            var standing = edge.Waived is { } waived ? $" WAIVED by the person: {waived}" : stale.Contains(edge) ? " STALE: its evidence moved; confirm or drop it." : "";
+            yield return $"- release `{edge.Deployable}` after `{edge.On}`: {edge.Why}{cited}{standing}";
         }
 
-        foreach (var question in DeliveryGraph.Queue(plan.Questions, plan.Releases, seen))
+        foreach (var question in DeliveryGraph.Open(plan, seen))
         {
             yield return $"- question `{question.Key}` ({question.Kind}) for the person: {question.Text}";
+        }
+
+        foreach (var answer in plan.Answers)
+        {
+            yield return $"- answered by the person, `{answer.Key}`: {answer.Words}";
         }
     }
 }

@@ -181,6 +181,7 @@ public sealed record DeleteAsk(string Id) : IRoute<DeletedResponse>
 [JsonSerializable(typeof(ReadAsk))]
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(ReadAskPlan))]
+[JsonSerializable(typeof(SettleAskPlan))]
 [JsonSerializable(typeof(AskPlanResponse))]
 [JsonSerializable(typeof(ReadAskChannel))]
 [JsonSerializable(typeof(ChannelResponse))]

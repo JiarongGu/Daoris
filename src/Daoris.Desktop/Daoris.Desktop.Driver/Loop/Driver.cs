@@ -404,6 +404,7 @@ public sealed class Driver(
 
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
+        using var facts = GitFacts.Within(ct);
         var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
         {
