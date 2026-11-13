@@ -5,6 +5,42 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
+
+> **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.
+
+## DELIVERY1 row a — deployables declared, release targets named by their deployable, read-only release discovery (2026-11-13, D290)
+
+> **DELIVERY1 a** (service, driver, examples): Outcome: a repository declares its deployables in `daoris.json`; the Azure DevOps plugin's release target names its deployable and `deploysOn`, and its read-only `discover-releases` lists the definitions, stages and actions a deployable could release through and proposes `deploysOn` without choosing (4.1.0); `daoris repository deployables <repository>` shows them. The plugin tools' process test, red on main since integration B made a status read exit 0, fixed in the merge. Merged in `eb23c11ebd`; the run-time check and the registry's deployables are left on the row.
+
+## ACCESS1 d, g and n (part), LANDAGAIN1, and DELIVERY1's design (2026-11-13, D284, D290)
+
+> **ACCESS1 d/g/n (part)** (driver, service): Outcome: the role verbs, brainstorms and nine more service doors answer any caller, an agent's process included; a role holder's act inside an agent's job is judged by its proof; a restricted Ask Daoris's asks are held for the person, not refused. **LANDAGAIN1** (driver): a line's landing judges its newest session with a tree (sessions listed oldest first by their records), so a second Accept moves an already-pushed landing branch on; a superseded part is said once; `landing.auto` names its run. **DELIVERY1's design** (records): `docs/2026-11-13-delivery-framework-design.md` and D290. Main's reds settled in the same merge: `GraphRunLandStartTests` expects `moved`, the process-reach census reads a linked `Category.cs`, the tree-release and re-landing tests take their times from the held clock or their records. Merged in `11923fe90c`.
+
+## MAINRED2 and MERGETS1 step 2 — a red on main excuses only the same test; the merge tool's leaves as typed modules (2026-11-13)
+
+> **MAINRED2** (tools): Outcome: a failure counts as main's red only when main holds the same test under the same gate and signature; a failure read with no test name is the branch's; a finding with no test excuses nothing and is named on its gate; a finding not seen for a day is named stale (a stale gate-level finding had let a branch's new web-rules failures through). **MERGETS1 step 2**: format, paths, lanes-file, holder, step-trees and args moved to typed modules in `tools/merge/`, and git, attribution and the clock out of the runner, each with its Vitest file; the runner 428,978 to 419,904 bytes. Merged in `ca67516651`.
+
+## RELEASETARGET1 points 1-2, five session defects, OUTPUTS1 part 1, four end-to-end fixes (2026-11-13, D288, D289)
+
+> **RELEASETARGET1 (points 1-2)** (examples, driver): Outcome: the Azure DevOps plugin (4.0.1) acts only on a release target its options declare by id (pipeline, definition, stage, action, success); none, a partial one or a changed one holds before any write, listing the candidates; a release is made only from the exact merged build and never twice; a repository's option values over the shared workflow. **QUESTPAUSE1**: a quest held by another's pause says so and resume names the pause. **CARRYADAPTER1**: a failed record's carry-on takes its role's staffing as it stands. **INTAKEEND1**: an ask's close ends its waiting intake. **TURNSTATE1**: a chat between turns reads idle. **HELPERCARRY1**: a helper's answer reaches the line's new part. **OUTPUTS1 part 1** (D289): the Outputs view and the Accept card; part 2 is on the row. **End to end**: a merged run's tree released by the look's sweep once its tidy ended the part, the plugin page following Ask Daoris's access mode, the dev-report plugin offered by the publish, a plugin's status read exiting 0. Merged in `ac9c9784bc`.
+
+## Main's reds made green — the git acts' holder, the read cache's settled clock, the limit carry's race (2026-11-13)
+
+> **Main's reds** (driver tests, driver): Outcome: the commit, stage, stash and switch acts' tests hold the lease and run as the ledger gives it; `GitReadsTests` on the settled clock; a word said while a limit move waited is judged again (`TurnsSince`), and four limit classes red together went green four runs in a row; a close no longer gives a conversation waiting on its limit a restart word. Left red: the older-build delayed-move case in two classes and `GitStreamEndsTests` (GITSTREAM1). Merged in `7c51477717`.
+
+## CENSUSCOMPILE1, MERGETS1 step 1, LAYERS1 rows b, c, d and k (2026-11-13, D286, D287)
+
+> **CENSUSCOMPILE1** (driver tests): Outcome: each desktop project compiles once per test run (`DesktopCompilations`, `SharedModels`); the census gate 4-11 min to 1 m 30 s. **MERGETS1 step 1** (tools): Vitest for the tools (unit project in `verify`, end to end in the tool tests), D287's `.d.mts` beside an untyped script, the merge record's wall time and flakes, `npm ci` once where a lockfile moved, the plan knowing the ports, adapters and test kit. **LAYERS1 b, c, d, k** (driver, tools): `Daoris.Adapters.DesktopStore.Sqlite`, `.Clock`, `.Machine` and `.Memory.Lyntai` behind their ports, each fake in `Daoris.Testing` checked by a contract on both sides, each with its lock row and gate; `Daoris.Desktop.Driver.Rehearsals` composes the real ports for tests proving a real process. Merged in `0e6934a59b`; what is left is on the rows.
+
+## LOOKTIME1 (part) — a look reads each run once, every pass timed, a moved quest wakes the node pass (2026-11-13)
+
+> **LOOKTIME1 (part)** (driver): Outcome: a look's outcomes read from the runs already listed, a workflow decoded once per read, every pass timed under its own name, a ledger wake naming quests starting the node pass at once; 120 runs 20.3 s to 0.19 s warm on the bench, installed looks from a median of 4-7 min to 3-5 s. Merged in `305b90efad`; the early Accept's wait and the notices' log re-read are on the row.
+
+## RUNREWIND1 — a landed run keeps its landed branch; the release step says when no release comes (2026-11-13)
+
+> **RUNREWIND1** (driver, examples): Outcome: the work inventory links the quest a session served (the chain's named-for quest only where a record keeps none), so another repository's later branch no longer becomes a landed run's; once a landing has reached, the steps bound to the landed branch keep it, and only a new quest in the chain or the person's word takes the run back; a step attempt running when its run went back keeps its plugin informed. The Azure DevOps plugin (3.4.0) fails `no-release` at its first look when no release will come for the merged build, held for the person; `createRelease` makes that release once. Merged in `facf05101b`.
+
 ## MERGEFLOW1b (part) — `reached` reuses passes per class, dependency tiers, the time ratchet judged on a merge's own records (2026-11-13)
 
 > **MERGEFLOW1b (part)** (tools): Outcome: `reached` keeps a pass per test class (per node and page file too) keyed by every file reaching it, its suite's declaration and the toolchain, replayed on the same inputs; a command names at most 120 units, a suite runs at most 40 classes nearest the change; `tiers.needs` runs a Process class at a merge only when a changed path is its dependency's code; `--rerun` takes `--no-timeout`; `--queue` names a stale run and `--queue --recheck` clears requests main holds; the time ratchet runs once, last, on the merge's own timing records. A broad replay's `reached` took 7 min 49 s, the rest on the row. Merged in `03fc4536ca`.
