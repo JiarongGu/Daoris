@@ -22,10 +22,24 @@ internal static class GitLibrary
 
     private static readonly Lazy<bool> s_settled = new(Settle, LazyThreadSafetyMode.ExecutionAndPublication);
     private static readonly SemaphoreSlim s_calls = new(AtOnce, AtOnce);
-    private static int s_open;
+    private static readonly Lock s_openGate = new();
+    private static readonly Dictionary<string, int> s_openIn = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The repositories open now: zero between calls, never above <see cref="AtOnce"/>.</summary>
-    internal static int Open => Volatile.Read(ref s_open);
+    /// <summary>The repositories open now over <paramref name="folder"/> alone (zero between its calls, never above <see cref="AtOnce"/>): what its asker owns, whatever else the process asks.</summary>
+    internal static int OpenIn(string folder)
+    {
+        lock (s_openGate) return s_openIn.GetValueOrDefault(folder);
+    }
+
+    private static void Opened(string folder, int by)
+    {
+        lock (s_openGate)
+        {
+            var now = s_openIn.GetValueOrDefault(folder) + by;
+            if (now == 0) s_openIn.Remove(folder);
+            else s_openIn[folder] = now;
+        }
+    }
 
     /// <summary>
     /// <paramref name="call"/>'s answer over <paramref name="folder"/>'s repository, opened for it alone; null where refused or failed.
@@ -63,7 +77,7 @@ internal static class GitLibrary
         where T : class
     {
         if (!s_settled.Value) return (null, GitLibraryJournal.Native);
-        Interlocked.Increment(ref s_open);
+        Opened(folder, 1);
         var lease = GitLibraryFaults.Enter(folder);
         try
         {
@@ -77,7 +91,7 @@ internal static class GitLibrary
         finally
         {
             GitLibraryFaults.Leave(lease);
-            Interlocked.Decrement(ref s_open);
+            Opened(folder, -1);
         }
     }
 

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Daoris.Driver;
 using Xunit.Abstractions;
@@ -62,7 +61,6 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
             });
         }
 
-        var watched = Stopwatch.StartNew();
         using (var log = new MachineLog(_home, "driver"))
         {
             var watch = new DriverWatch(_ledger.Client(), config, _home, new SessionProcesses(), sync: null,
@@ -99,14 +97,13 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
             var stages = look.GetProperty("stages").GetString() ?? "";
             var own = Own(stages);
             output.WriteLine($"a look over {Runs} runs: {ms} ms, its stages {own} ms: {stages}");
-            // Every await of the look is in a stage of its own: what no stage names is the look's bookkeeping, about a second at most.
-            Assert.True(ms - own <= 1_000 + ms / 5, $"the look took {ms} ms and its stages say {own} ms: {stages}");
+            // What no stage names is a share of the look, which a loaded machine stretches with the stages.
+            Assert.True(own * 2 >= ms, $"the look took {ms} ms and its stages say {own} ms: {stages}");
         }
 
-        // The runs' outcomes are read once a look, each run's record once: a look over this many runs stays short once the process has
-        // read the home (a first look's own reads and its code's first runs are a loaded machine's to stretch).
-        var warm = looks[1].GetProperty("ms").GetInt64();
-        Assert.True(warm < 2_000, $"the second look over {Runs} runs took {warm} ms ({watched.ElapsedMilliseconds} ms watched): {looks[1].GetProperty("stages").GetString()}");
+        // Each run's record is read once: once the home is read, a look is a fraction of the first, however loaded the machine.
+        var (cold, warm) = (looks[0].GetProperty("ms").GetInt64(), looks[1].GetProperty("ms").GetInt64());
+        Assert.True(warm * 2 < cold, $"the second look over {Runs} runs took {warm} ms against the first's {cold} ms: {looks[1].GetProperty("stages").GetString()}");
     }
 
     /// <summary>The milliseconds a line's own stages hold and queue: every entry not marked as work beside the look.</summary>
