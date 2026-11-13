@@ -198,8 +198,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
     after its step failed), so the run goes on to its monitor and the held list clears.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its
-    branch deleted through the journal with its Undo, `tidied` written when every part ended, else `partly` for the next pass;
-    nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
+    branch deleted through the journal with its Undo, or kept where a tree has it checked out (a run's own tree then goes at the
+    look's sweep, rule 31b), `tidied` written when every part ended, else `partly` for the next pass; nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
     (`tidy-merged`) and a `push` no `branch` landing leads to (`land-tail`). (D241, D245, D247)
 31b. A `release` ends the trees a run owns once its work has landed: it is performed through its door, once per node and attempt
     (`TreeReleases`), and removes each session branch the run owns (`GrownBranch.Run`, written on its record at every governed
@@ -208,8 +208,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     said in the step's words. It reaches either way and fails nothing; in a graph that sets nothing apart it finds no tree and says
     so. A save refuses one no way from a `land` reaches (`release-landing`). The shipped development workflows put one after the
     landing (after the line, or the tidy), the editor draws it in `Git` after the line, and a drawn graph matches its shipped copy
-    with or without it (`MigratedGraphs.Shape`). A run that holds none, ended or abandoned, has its trees ended by the look's sweep
-    (driving rule 51). (D228)
+    with or without it (`MigratedGraphs.Shape`). A tree whose part a run's `tidy` ended, and the trees of a run that holds no
+    `release`, ended or abandoned, are ended by the look's sweep (driving rule 51). (D228)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
     goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
     `workflows/agent-steps/<invocation>.json`, and the step's session starts off the pass: staffed as the place's builds, a chat on

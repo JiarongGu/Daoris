@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.0.0",
-  "changes": "Its release step acts only on the target its options declare by id (pipeline, releaseDefinition, stage, action, success): with none declared, or one that no longer resolves, it fails no-target or target-changed listing what it found, and writes nothing; it never starts or makes a release on a definition it found itself; create-and-start makes the release from the exact merged build, saying first which stages the creation starts, and a retry finds it rather than making a second. The stages, deploy and createRelease options, and names in place of ids, are gone.",
+  "version": "4.0.1",
+  "changes": "Its release step acts only on the target its options declare by id (pipeline, releaseDefinition, stage, action, success): with none declared, or one that no longer resolves, it fails no-target or target-changed listing what it found, and writes nothing; it never starts or makes a release on a definition it found itself; create-and-start makes the release from the exact merged build, saying first which stages the creation starts, and a retry finds it rather than making a second. The stages, deploy and createRelease options, and names in place of ids, are gone. Its status answers whether a token is kept, or was refused, as a read that succeeds.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
