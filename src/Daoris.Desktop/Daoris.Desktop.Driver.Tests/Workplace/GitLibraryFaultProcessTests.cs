@@ -118,14 +118,13 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
             ProgramHome.Named = before;
         }
 
-        // The process's one lease file also takes other calls of the process (another case's, while this home is named), so only the
-        // lines of this call's repository are read as its own.
         var opened = inside.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal($"package\t{Uri.EscapeDataString(GitLibraryFaults.Package)}", opened[0]);
         var own = opened.Select(line => line.Split('\t')).Single(parts => parts is ["open", _, var repository] && Uri.UnescapeDataString(repository) == root);
         var after = ReadLease().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.DoesNotContain($"close\t{own[1]}", opened);
-        Assert.Contains($"close\t{own[1]}", after);
+        var closed = $"close\t{own[1]}";
+        Assert.DoesNotContain(closed, opened);
+        Assert.Contains(closed, after);
     }
 
     private string ReadLease()

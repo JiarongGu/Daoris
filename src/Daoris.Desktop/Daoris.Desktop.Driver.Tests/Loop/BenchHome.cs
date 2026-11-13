@@ -132,7 +132,6 @@ internal sealed class BenchHome : IAsyncDisposable
     private static void Build(string folder, int files)
     {
         const int PerFolder = 500;
-        // Each file is a create the machine's scanner looks at, so the folders are written side by side.
         Parallel.For(0, (files + PerFolder - 1) / PerFolder, new ParallelOptions { MaxDegreeOfParallelism = 8 }, module =>
         {
             var into = Path.Combine(folder, $"module-{module:D3}", "obj-free");

@@ -26,10 +26,10 @@ public sealed class TreeWalkStartsTests(ITestOutputHelper output) : LandedFixtur
         return (opened.Path, trees);
     }
 
-    private async Task<(TreeWork? Work, string[][] Starts)> WalkAsync(SessionTrees trees, string tree)
+    private async Task<(TreeWork? Work, string[][] Starts)> WalkAsync(SessionTrees trees, string tree, TreeReadMemo? memo = null)
     {
         using var count = GitLaunch.Count();
-        var work = await TreeReadMemo.Of(Home).Begin(trees).WorkAsync(tree, CancellationToken.None);
+        var work = await (memo ?? TreeReadMemo.Of(Home)).Begin(trees).WorkAsync(tree, CancellationToken.None);
         var starts = count.Starts.Select(start => start.Arguments.ToArray()).ToArray();
         foreach (var start in starts) output.WriteLine($"git {string.Join(' ', start)}");
         return (work, starts);
@@ -55,20 +55,19 @@ public sealed class TreeWalkStartsTests(ITestOutputHelper output) : LandedFixtur
     public async Task A_kept_read_of_a_tree_the_line_holds_by_content_asks_one_status_after_an_edit()
     {
         var (tree, trees) = await SquashedTreeAsync();
-        var before = (await WalkAsync(trees, tree)).Work;
+        var source = new FakeChangeSource();
+        using var memo = new TreeReadMemo(source);
+        var before = (await WalkAsync(trees, tree, memo)).Work;
         Assert.Equal(0, before?.Uncommitted);
         await File.WriteAllTextAsync(Path.Combine(tree, "edit.txt"), "edit\n");
 
-        // The kept read trusts the tree's watcher, which delivers the edit a moment after it is written, so the reads before it are
-        // the kept one and ask nothing; the first to see the edit asks its one status.
-        (TreeWork? Work, string[][] Starts) seen = (before, []);
-        for (var attempt = 0; attempt < 100 && seen.Work?.Uncommitted is not > 0; attempt++)
-        {
-            await Task.Delay(100);
-            seen = await WalkAsync(trees, tree);
-        }
+        // The kept read rests on the tree's watcher, which delivers the edit after it is written: before it does, the kept read answers
+        // and asks nothing; once it has, the read sees the edit with its one status.
+        Assert.Empty((await WalkAsync(trees, tree, memo)).Starts);
+        source.On(Path.GetFullPath(tree))!.Raise("edit.txt");
+        var (work, starts) = await WalkAsync(trees, tree, memo);
 
-        Assert.True(seen.Work?.Uncommitted > 0, "the kept read never saw the edit");
-        Assert.Equal(1, Asked(seen.Starts, "status"));
+        Assert.Equal(1, work?.Uncommitted);
+        Assert.Equal(1, Asked(starts, "status"));
     }
 }
