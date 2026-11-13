@@ -102,9 +102,9 @@ public sealed class GitLibraryRefsTests : LandedFixture
         var held = await BuildRepositoryAsync("held");
         var other = await BuildRepositoryAsync("other");
         using var release = new ManualResetEventSlim();
-        using var inside = new ManualResetEventSlim();
-        var holding = GitLibrary.AskAsync(held, GitLibraryQuestion.Refs, _ => { inside.Set(); release.Wait(); return "held"; }, CancellationToken.None);
-        inside.Wait();
+        var inside = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var holding = GitLibrary.AskAsync(held, GitLibraryQuestion.Refs, _ => { inside.TrySetResult(); release.Wait(); return "held"; }, CancellationToken.None);
+        await inside.Task.WaitAsync(Poll.Patience);
 
         Assert.Equal((1, 0), (GitLibrary.OpenIn(held), GitLibrary.OpenIn(other)));
         Assert.NotNull(await GitLibraryRefs.ListingAsync(other, CancellationToken.None));
