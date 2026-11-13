@@ -52,6 +52,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
 
         var asked = AskAsync(module, "SESSION_DIFF", new { id = Session, read = "r1" });
         var git = await FirstStartAsync();
+        await StartsSettledAsync();
 
         var left = await AnswerAsync(module, "READ_LEAVE", new { read = "r1" });
         Assert.True(left.GetProperty("left").GetBoolean());
@@ -65,7 +66,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         await AllExitedAsync();
         var started = Starts.Count;
         await Task.Delay(TimeSpan.FromMilliseconds(500));
-        Assert.Equal(started, Starts.Count);
+        Assert.True(started == Starts.Count, $"a git started after the leave: {string.Join(" | ", Commands)}");
         Assert.Equal(0, module.Reads.Waiting);
     }
 
@@ -79,8 +80,10 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         var git = await FirstStartAsync();
         var second = AskAsync(module, "SESSION_DIFF", new { id = Session, read = "r2" });
         await WaitingAsync(module, 2);
-        // Joined by session, the read ids kept out of the flight's key: one read, one graph, which asks the tree's top once.
-        Assert.Single(Commands, command => command.Contains("--show-toplevel", StringComparison.Ordinal));
+        // Joined by session, the read ids kept out of the flight's key: one read, one graph, which asks the tree's branch once (its
+        // top the library answers, starting no git).
+        Assert.Single(Commands, command => command.Contains("symbolic-ref", StringComparison.Ordinal));
+        Assert.DoesNotContain(Commands, command => command.Contains("--show-toplevel", StringComparison.Ordinal));
 
         Assert.True((await AnswerAsync(module, "READ_LEAVE", new { read = "r1" })).GetProperty("left").GetBoolean());
         Assert.Equal(IpcErrorCodes.OperationCancelled, (await first.WaitAsync(Poll.Patience)).Error?.Code);
@@ -192,6 +195,21 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         get
         {
             lock (_watched) return [.. _commands];
+        }
+    }
+
+    /// <summary>The read's gits that start at once are all started, so a leave counts only what it cuts, not a start still in flight.</summary>
+    private async Task StartsSettledAsync()
+    {
+        var count = Starts.Count;
+        for (var stable = 0; stable < 10; stable++)
+        {
+            await Task.Delay(30);
+            if (Starts.Count != count)
+            {
+                count = Starts.Count;
+                stable = -1;
+            }
         }
     }
 

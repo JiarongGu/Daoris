@@ -23,6 +23,8 @@ public sealed class MachineProcessHost(
         var asked = Stopwatch.GetTimestamp();
         await using var place = await places.PlaceAsync(placed?.AdmissionClass ?? specification.AdmissionClass, ct).ConfigureAwait(false);
         var entered = Stopwatch.GetTimestamp();
+        // A start cancelled while it waited for its place, and given the place as it was, starts nothing.
+        ct.ThrowIfCancellationRequested();
         var info = InfoOf(specification);
         try
         {
