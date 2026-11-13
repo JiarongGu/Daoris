@@ -199,6 +199,8 @@ const DESK: Record<string, string> = {
   ].join('\n'),
   'src/Desk/Desk.Core/Desk.Core.csproj': '<Project Sdk="Microsoft.NET.Sdk" />',
   'src/Desk/Desk.Core/Alpha/AlphaThing.cs': 'namespace Desk;\npublic sealed class AlphaThing { }\n',
+  // In Alpha's area, named by no class: a change to it reaches no class that names only AlphaThing.
+  'src/Desk/Desk.Core/Alpha/AlphaSpare.cs': 'namespace Desk;\npublic sealed class AlphaSpare { }\n',
   'src/Desk/Desk.Core/Beta/BetaThing.cs': 'namespace Desk;\npublic sealed class BetaThing { }\n',
   'src/Desk/Desk.Core/Gamma/Shining.cs': 'namespace Desk;\npublic static class Shining { public static string Shine(this string text) => text; }\n',
   'src/Desk/Desk.Tool/Desk.Tool.csproj': [
@@ -307,7 +309,7 @@ test('a changed path reaches the classes whose reach holds it; what acts unnamed
     const placed = reach.pathReach(path, census);
     return placed.classes ? { classes: short(placed.classes) } : placed;
   };
-  assert.deepEqual(at('src/Desk/Desk.Core/Alpha/AlphaThing.cs'), { areas: ['src/Desk/Desk.Core/Alpha'] });
+  assert.deepEqual(at('src/Desk/Desk.Core/Alpha/AlphaThing.cs'), { areas: ['src/Desk/Desk.Core/Alpha'], file: 'src/Desk/Desk.Core/Alpha/AlphaThing.cs' });
   assert.deepEqual(at('src/Desk/Desk.Tests/AlphaTests.cs'), { classes: ['AlphaTests'] });
   assert.deepEqual(at('src/Desk/Desk.Tests/BetaFixture.cs'), { classes: ['BetaTests'] }, 'a helper reaches the classes that read it');
   assert.deepEqual(at('src/Desk/Desk.Tests/fixtures/alpha-rows.json'), { classes: ['AlphaTests'] }, 'a fixture the classes whose strings name it');
@@ -330,6 +332,8 @@ test('one module changed reaches its classes and the planted class with no reach
   let reached = reach.classesReached(['src/Desk/Desk.Core/Alpha/AlphaThing.cs'], census);
   assert.deepEqual(short(reached.classes), ['AlphaTests', 'LonelyTests', 'PartlyTests']);
   assert.equal(reached.by.get('Desk.Tests.AlphaTests'), 'src/Desk/Desk.Core/Alpha/AlphaThing.cs');
+  reached = reach.classesReached(['src/Desk/Desk.Core/Alpha/AlphaSpare.cs'], census);
+  assert.deepEqual(short(reached.classes), ['LonelyTests'], 'a file in the same area that no class names reaches only the class with no reach');
   reached = reach.classesReached(['src/Desk/Desk.Core/Beta/BetaThing.cs'], census);
   assert.deepEqual(short(reached.classes), ['BetaTests', 'LonelyTests', 'ToolTests'], 'the tool compiles Beta in, so the class that starts it is reached');
   reached = reach.classesReached(['src/Desk/Desk.Tests/GlobalUsings.cs', 'src/Desk/Desk.Core/Alpha/AlphaThing.cs'], census);
