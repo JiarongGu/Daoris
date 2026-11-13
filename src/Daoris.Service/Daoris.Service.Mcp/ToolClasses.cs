@@ -52,6 +52,7 @@ public static class ToolClasses
         ["memory_write"] = ToolClass.Acts,
         ["memory_end"] = ToolClass.Acts,
         ["system_plan"] = ToolClass.Acts,
+        ["team_plan"] = ToolClass.Acts,
     };
 
     /// <summary>The class of <paramref name="tool"/>, or null for a name this table does not class.</summary>

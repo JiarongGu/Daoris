@@ -13,7 +13,7 @@ import { useScope } from '../data/scope';
 import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
-  useAttention, useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
+  useAskPlan, useAttention, useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
 } from '../bridge/shell';
 import { staleOnAsk } from '../work/attention/attention';
 import type { ElsewhereAsk } from '../work/channel';
@@ -157,6 +157,7 @@ export function useAsksPart({
   const channel = useChannel(chosen, { enabled: active });
   // Who is at work on the chosen ask: shell-only like the channel, and asked again at each `atWork` wake.
   const atWork = useAskAtWork(chosen, { enabled: active && channel.available });
+  const plan = useAskPlan(chosen, { enabled: active && channel.available });
   const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
   const postChannel = usePostChannel();
   const markChannel = useMarkChannel();
@@ -347,6 +348,7 @@ export function useAsksPart({
           intake={intakeOf(shown)}
           lines={askLines(entries, shown.id)}
           channel={channelDoor(shown)}
+          plan={plan}
           atWork={channel.available
             ? {
               held: atWork.data,

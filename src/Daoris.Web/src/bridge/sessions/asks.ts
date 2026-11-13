@@ -8,6 +8,7 @@ import {
   type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, type LineChannel,
   lineChannelOf, postedOf,
 } from '../../work/channel';
+import { type AskPlan, askPlanOf } from '../../work/askPlan';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
@@ -100,6 +101,21 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
     refetchOnWindowFocus: false,
   });
   return { asks: query.data ?? [], loading: query.isPending && query.fetchStatus !== 'idle', available: isAvailable };
+};
+
+/**
+ * An ask's plan (`ASK_PLAN`): its parts with the quest each became, the edges between them, what the judge found and each split a
+ * worker made of its own part. Under the asks' key, so a tick asks it again. Null while it is read and in a browser, which has no driver.
+ */
+export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: boolean } = {}): AskPlan | null => {
+  const { isAvailable } = useShenora();
+  const query = useQuery({
+    queryKey: [...keys.allAsks, 'plan', ask ?? 'none'] as const,
+    queryFn: async () => askPlanOf(await call('ASK_PLAN', { ask })),
+    enabled: isAvailable && enabled && ask !== null,
+    refetchOnWindowFocus: false,
+  });
+  return query.data ?? null;
 };
 
 /**

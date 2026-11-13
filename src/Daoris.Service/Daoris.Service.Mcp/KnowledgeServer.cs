@@ -37,6 +37,7 @@ public static class KnowledgeServer
         typeof(BrainstormTools),
         typeof(CheckoutTools),
         typeof(SystemPlanTools),
+        typeof(TeamTools),
     ];
 
     /// <summary>The connector's host, before its services are added: its configuration read from its build's folder, no file of it watched.</summary>

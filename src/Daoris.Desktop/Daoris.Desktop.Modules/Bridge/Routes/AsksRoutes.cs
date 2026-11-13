@@ -36,6 +36,15 @@ public sealed class AsksRoutes(DriverLoop loop)
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
 
+    /// <summary>An ask's plan as the person reads it, each part with its quest; moves nothing.</summary>
+    [DriverRoute("ASK_PLAN", PipeClass.Open)]
+    [ByEvent("ASK_PLAN", Untold = "the service's plan rows, which `team_plan` writes and no scope or slice tells")]
+    private async Task<object?> AskPlanAsync(AskPlanRead press, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        return await service.AskPlanAsync(Asked(press.Ask), cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// The person's post: their words, to everyone or one of the ask's repositories (<c>to</c>), answering a message (<c>re</c>)
     /// or not. Their words, so every session on the ask reads them. Answers <c>posted</c> with the message kept, or
