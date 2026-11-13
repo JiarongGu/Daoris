@@ -945,7 +945,7 @@ describe('acting on what a session landed', () => {
   /**
    * A failed session's commits stay in its tree, so the page offers to land
    * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
-   * beside what it left, and *Review* opens the run's review, where the one Accept is pressed; the page draws no Accept.
+   * beside what it left, and *Review* opens the run's outputs; the Accept is the card's.
    */
   it('offers a failed session’s commits on its page, and opens the run’s review from its Review door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -966,7 +966,6 @@ describe('acting on what a session landed', () => {
     const door = await head.findByRole('button', { name: 'Review' });
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
-    // The conversation's Accept card asks for the session's run; the run's own review waits for the door.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1' }) });
 
     await userEvent.click(door);
@@ -976,7 +975,7 @@ describe('acting on what a session landed', () => {
 
   /**
    * Where more than one part of the attended line of work offers work to land, its page draws no Accept of the line's: a part's
-   * work is accepted on its own run's review, and the one for an ask's lines is Sessions' list by ask.
+   * work is accepted on its run's card, and the one for an ask's lines is Sessions' list by ask.
    */
   it('draws no Accept for a line of work’s parts on a session’s page, its Review door the only press', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
@@ -1008,7 +1007,7 @@ describe('acting on what a session landed', () => {
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
 
-    // Its changes draw no press of their own either: accepting is the review page's.
+    // Its changes draw no press of their own either: accepting is the card's.
     await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
@@ -1157,7 +1156,7 @@ describe('acting on what a session landed', () => {
 
   /**
    * Where a level asks a second opinion, the session's page draws it before the *Review* door
-   * from the landing's plan, its findings read from the gate; the Accept that answers a dispute is the review page's.
+   * from the landing's plan, its findings read from the gate; the Accept that answers a dispute is the card's.
    * *Ask again* is the driver's own press.
    */
   it('draws the second opinion on a session’s page, with Review the door to where its dispute is answered', async () => {
@@ -1359,7 +1358,7 @@ describe('acting on what a session landed', () => {
     expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
   });
 
-  /** Sending work back is the review page's, never the session's own changes. */
+  /** Sending work back is the card's, never the session's own changes. */
   it('offers no send-back door beside a session’s own changes', async () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));

@@ -633,7 +633,7 @@ describe('the Work frame', () => {
   });
 
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
-    // Everything moved to the panel, the workflow and *At work* among it, and the side bar closed: it
+    // All moved to the panel, the workflow and *At work* among it, and the side bar closed: it
     // is not drawn at all.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');

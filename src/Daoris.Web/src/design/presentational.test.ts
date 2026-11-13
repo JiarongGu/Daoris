@@ -48,7 +48,6 @@ const ORGANISMS = new Set<string>([
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',
   './work/review/DiffPane.tsx',
-  // A run's outputs and its Accept card: each holds the run's review read and its presses, so the view and the card below hold none.
   './work/outputs/OutputsPage.tsx',
   './work/review/card/ReviewCards.tsx',
   './work/console/MonitorWindow.tsx',
