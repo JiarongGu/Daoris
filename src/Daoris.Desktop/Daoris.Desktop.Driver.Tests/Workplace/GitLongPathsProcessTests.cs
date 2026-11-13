@@ -58,12 +58,15 @@ public sealed class GitLongPathsProcessTests : IDisposable
         Assert.True(code == 0, error);
     }
 
-    /// <summary>A checkout with a tracked file at about 240 characters, and a session's tree of it where that file passes 260.</summary>
+    /// <summary>A tracked file at 240 characters, in a session's tree where its folder passes 260 too, however deep the checkout lies.</summary>
     private async Task<string> DeepTreeAsync()
     {
         await GitSeed.PlainAsync(Repo, "engine");
+        var depth = 270 - (Tree.Length - Repo.Length);
         var folder = Repo;
-        while (folder.Length < 200) folder = Path.Combine(folder, new string('d', 30));
+        while (folder.Length + 32 < depth) folder = Path.Combine(folder, new string('d', 30));
+        folder = Path.Combine(folder, new string('d', depth - folder.Length - 1));
+        Assert.True(Path.Combine(Tree, Path.GetRelativePath(Repo, folder)).Length > 260, folder);
         Directory.CreateDirectory(folder);
         var file = Path.Combine(folder, new string('f', Math.Max(1, 240 - folder.Length - 1)) + ".txt");
         File.WriteAllText(file, "committed\n");

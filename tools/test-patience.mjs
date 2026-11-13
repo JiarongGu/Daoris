@@ -7,8 +7,8 @@
  * A bound that waits on a signal (a stub's or a plugin's answer, a file or a process a child is to produce or end, a poll's
  * condition) elapses only when the code is wrong, so it costs a passing test nothing, and a few seconds of one's own failed
  * merge-queue gates beside a loaded machine. Such a wait reads `PATIENCE`, which `src/Daoris.Cli/test/_fixture.ts` exports,
- * as the desktop tests read `Poll.Patience`. The census reads the CLI's tests, the tool-tests and the tools'
- * own tests (`tools/*.test.mjs`) for a fixed wait of a second or more and under the patience, in the shapes a wait is written:
+ * as the desktop tests read `Poll.Patience`. The census reads the CLI's tests, the tool-tests, the tools'
+ * own tests (`tools/*.test.mjs`) and the merge tool's (`tools/merge/`) for a fixed wait of a second or more and under the patience, in the shapes a wait is written:
  *
  *   - a key: `timeout`, `timeoutMs`, `waitMs`, `wait`, `within`, `limitMs`, `bound`, `boundMs`, `patience`, `deadline` or `start`
  *     given a number (`{ timeout: 30_000 }`, `wait = 10_000`), and a parameter's default `ms = 5000`;
@@ -35,6 +35,7 @@ export const TREES = [
   { dir: 'src/Daoris.Cli/test', keep: (name) => name.endsWith('.ts') },
   { dir: 'src/Daoris.Cli/tool-test', keep: (name) => name.endsWith('.ts') },
   { dir: 'tools', keep: (name) => name.endsWith('.test.mjs') },
+  { dir: 'tools/merge', keep: (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts') },
 ];
 const SKIPPED = new Set(['node_modules', 'bin', 'obj', 'fixtures']);
 export const KINDS = ['claim', 'staging', 'input'];

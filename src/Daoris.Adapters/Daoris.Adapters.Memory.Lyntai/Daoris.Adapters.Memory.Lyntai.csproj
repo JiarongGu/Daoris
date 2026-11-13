@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The memory engine's Lyntai adapter: the one project that names Lyntai's memory and storage types. The service's application reads
+    and writes each repository's memory through the port a host hands it. Its Lyntai version is the service tree's, read from that tree's
+    central versions, so a local build of Lyntai's line (LYNTAILOCAL1) reaches the adapter and the service alike. It sits under no tree's
+    Directory.Build.props, so it takes that version by name rather than the tree's central management.
+  -->
+  <Import Project="..\..\Daoris.Service\Directory.Packages.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RootNamespace>Daoris.Adapters.Memory.Lyntai</RootNamespace>
+    <AssemblyName>Daoris.Adapters.Memory.Lyntai</AssemblyName>
+    <Description>the memory engine's port over Lyntai's graph engine and its SQLite file</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lyntai.Core" Version="$(DaorisLyntaiVersion)" />
+    <PackageReference Include="Lyntai.Storage.Sqlite" Version="$(DaorisLyntaiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Its dependency tests and the service's rehearsals read the store under the engines, to see what a read moved. -->
+    <InternalsVisibleTo Include="Daoris.Adapters.Memory.Lyntai.Tests" />
+    <InternalsVisibleTo Include="Daoris.Service.Application.Rehearsals" />
+  </ItemGroup>
+
+</Project>

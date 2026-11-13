@@ -10,7 +10,7 @@
   <PropertyGroup>
     <RootNamespace>Daoris.Ports</RootNamespace>
     <AssemblyName>Daoris.Ports</AssemblyName>
-    <Description>the effect contracts of the application: git, processes, the store's unit of work, the browser and the harness</Description>
+    <Description>the effect contracts of the application: git, processes, the store's unit of work, the browser, the harness and the memory engine</Description>
   </PropertyGroup>
 
 </Project>

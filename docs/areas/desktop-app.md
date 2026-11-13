@@ -23,7 +23,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `Modules/Platform/` | `StatePublisher`, `StateSlices`, the instance pipe and its `Pipe*` parts, `LogModule` |
 | `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers, the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
-| `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate and the one management of what starts (rule 63) |
+| `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
 | web `work/` | Sessions: `WorkFrame`, its hooks and parts by folder (`head/`, `conversation/`, `start/`, `review/`, `waits/`, `rail/`, `attention/`), a session's note |
 | web `menus/`, `notifications/` | The command table, keys, the right-click menu; the bell, *Notifications* and *What needs you* |

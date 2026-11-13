@@ -71,7 +71,7 @@ public sealed class RuleWiderPlaceStore(string home, Func<StoreSettled>? settled
         }
     }
 
-    private static (string Repository, string? Workspace) Row(SqliteDataReader row) => (row.GetString(0), row.GetString(1));
+    private static (string Repository, string? Workspace) Row(DbDataReader row) => (row.GetString(0), row.GetString(1));
 
     private static bool Same(IReadOnlyDictionary<string, string> kept, IReadOnlyDictionary<string, string> read) =>
         kept.Count == read.Count && read.All(pair => kept.TryGetValue(pair.Key, out var workspace) && string.Equals(workspace, pair.Value, StringComparison.OrdinalIgnoreCase));

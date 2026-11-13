@@ -1,8 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using Daoris.Driver;
 
-namespace Daoris.Desktop.Driver.Tests;
+namespace Daoris.Adapters.Machine.Tests;
 
 /// <summary>
 /// The lease's test of a live process, shared by <c>HomeLease</c> and the
@@ -10,7 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// time it named, within a second; an id no process has, or one running under another start, is gone; a process whose start time cannot be
 /// read counts as alive, since nothing can tell.
 /// </summary>
-/// <remarks>Nothing here starts a process: this test process is a live one, and an id no process has is a gone one.</remarks>
 public sealed class ProcessLivenessTests
 {
     /// <summary>A process id no process has: Windows hands out multiples of four, from the bottom.</summary>

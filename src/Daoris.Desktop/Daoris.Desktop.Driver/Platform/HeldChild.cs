@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Text;
+using Daoris.Ports.Processes;
 using Microsoft.Win32.SafeHandles;
 
 namespace Daoris.Driver;
@@ -53,9 +54,10 @@ internal sealed class HeldChild : IDisposable
     public static HeldChild Start(ProcessJob job, ProcessStartInfo info, bool input)
     {
         if (!OperatingSystem.IsWindows()) throw new DriverException("there is no job to hold the step's processes in off Windows, so it was not run.");
+        StartPlace? place;
         try
         {
-            GitPlace.Admit(info, ProcessPurpose.Git);
+            place = MachinePorts.Admit(info.FileName, ProcessPurpose.Git);
         }
         catch (GitStartRefusedException refused)
         {
@@ -108,7 +110,7 @@ internal sealed class HeldChild : IDisposable
             stdout.DisposeLocalCopyOfClientHandle();
             stderr.DisposeLocalCopyOfClientHandle();
             if (!input) stdin.Dispose();
-            GitPlace.Current?.Bind(made.ProcessId);
+            place?.Bind(made.ProcessId);
             var started = GetProcessTimes(made.Process, out var creation, out _, out _, out _) ? DateTime.FromFileTimeUtc(creation).Ticks : DateTime.UtcNow.Ticks;
             return new HeldChild(made.Process, made.Thread, made.ProcessId, started, stdin, stdout, stderr);
         }

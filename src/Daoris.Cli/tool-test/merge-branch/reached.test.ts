@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { withReport } from '../../../../tools/merge-branch/reached-reports.mjs';
 import { repoRoot, tool } from '../support/merge-branch.ts';
 
 // The units a merge's paths reach, as the census of test units answers (`unitsReached`): each with the path that reached it.
@@ -58,18 +59,24 @@ test('a .NET suite runs as one filtered command per test project, its fast half 
     dotnet('driver', 'ATests', 'x'), dotnet('driver', 'BTests', 'x'), dotnet('modules', 'MTests', 'x', modules),
     web('src/Daoris.Web/src/work/WorkFrame.test.tsx', 'x'),
     node('tool-tests', 'src/Daoris.Cli/tool-test/merge-branch/reach.test.ts', 'x'),
+    { ...node('tool-tests', 'tools/merge/merge.e2e.ts', 'x'), kind: 'vitest' },
   ];
-  const commands = tool.reachedCommands(tool.reachedPlan(units, []));
-  assert.deepEqual(commands.map((each) => each.label), ['driver', 'modules', 'web-unit', 'tool-tests']);
+  const plan = tool.reachedPlan(units, []);
+  assert.deepEqual(plan.groups.map((group) => `${group.suite}/${group.runner}`), ['driver/dotnet', 'modules/dotnet', 'web-unit/vitest', 'tool-tests/vitest', 'tool-tests/node'], 'a suite of two runners is a group of each');
+  const commands = tool.reachedCommands(plan);
+  assert.deepEqual(commands.map((each) => each.label), ['driver', 'modules', 'web-unit', 'tool-tests', 'tool-tests']);
   assert.deepEqual(commands[0], {
     label: 'driver', cwd: '.', command: 'dotnet',
     args: ['test', DRIVER, '--filter', '(Category!=Process)&(FullyQualifiedName~Daoris.Desktop.ATests|FullyQualifiedName~Daoris.Desktop.BTests)'],
   });
   assert.deepEqual(commands[1]!.args.slice(0, 2), ['test', modules]);
   assert.deepEqual(commands[2], {
-    label: 'web-unit', cwd: '.', command: 'npm', args: ['--prefix', 'src/Daoris.Web', 'run', 'test', '--', 'src/work/WorkFrame.test.tsx'],
+    label: 'web-unit', cwd: 'src/Daoris.Web', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', 'src/work/WorkFrame.test.tsx'],
   });
   assert.deepEqual(commands[3], {
+    label: 'tool-tests', cwd: '.', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', '--config', 'tools/vitest.config.ts', 'tools/merge/merge.e2e.ts'],
+  });
+  assert.deepEqual(commands[4], {
     label: 'tool-tests', cwd: 'src/Daoris.Cli', command: 'node',
     args: ['--test', '--test-timeout=1800000', '--test-force-exit', 'tool-test/merge-branch/reach.test.ts'],
   });
@@ -117,4 +124,12 @@ test('the tool reads the census of this repository: a changed tool reaches the t
   const none = run('--plan', '--paths', '');
   assert.equal(none.status, 0, none.stderr);
   assert.match(none.stdout, /no reached unit/);
+});
+
+test('a Vitest command writes its JSON report where the repository keeps timings, read from the folder it runs in', () => {
+  const web = withReport({ cwd: 'src/Daoris.Web', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', 'a.test.ts'] }, 'r-1');
+  assert.deepEqual(web.args.slice(3), ['--reporter=default', '--reporter=json', '--outputFile.json=../../_fixtures/test-timing/r-1.json']);
+  assert.equal(web.report, '_fixtures/test-timing/r-1.json');
+  const tools = withReport({ cwd: '.', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', '--config', 'tools/vitest.config.ts', 'x.e2e.ts'] }, 'r-2');
+  assert.equal(tools.args.at(-1), '--outputFile.json=_fixtures/test-timing/r-2.json');
 });

@@ -116,10 +116,10 @@ public static class StaffPolicies
 
     private sealed record Stored(string? Policy, string? Staffing, long? Revision, string? Since, string? State, string? Choices, long? Last);
 
-    private static Stored Raw(SqliteDataReader row) => new(
+    private static Stored Raw(DbDataReader row) => new(
         Text(row, 0), Text(row, 1), row.IsDBNull(2) ? null : row.GetInt64(2), Text(row, 3), Text(row, 4), Text(row, 5), row.IsDBNull(6) ? null : row.GetInt64(6));
 
-    private static string? Text(SqliteDataReader row, int column) => row.IsDBNull(column) ? null : row.GetString(column);
+    private static string? Text(DbDataReader row, int column) => row.IsDBNull(column) ? null : row.GetString(column);
 
     /// <summary>The state of a stored row: set while its digest is the role's choices' as they stand.</summary>
     private static StaffPolicyRead Judged(Stored stored)

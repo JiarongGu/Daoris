@@ -1,5 +1,8 @@
 using System.Text;
+using Daoris.Adapters.DesktopStore.Sqlite;
+using Daoris.Adapters.Machine;
 using Daoris.Driver;
+using Daoris.Ports.Ambient;
 
 // The desktop's program: every group of `daoris …`, which the install's launcher in app/bin/ runs, what the family
 // rehearsal drives, and what the desktop shell embeds. A person's words are routed once, at the entry, by the one command tree
@@ -30,6 +33,17 @@ using Daoris.Driver;
 // The holder key leaves this process first, so no start it builds can copy it. The verb is its one reader:
 // `session supervise` reads what is taken, and nothing else does.
 HolderKey.Take();
+
+// This process is a root: it chooses the ports the library reads, once, before anything opens the store or starts a process.
+AmbientPorts.Set(new PortSet
+{
+    Clock = TimeProvider.System,
+    Store = SqliteDesktopStores.Engines,
+    Admission = StartPlaces.Shared,
+    Liveness = MachineLiveness.Shared,
+    StartPolicy = GitStartAdmission.Admit,
+    Seal = KeySeal.Port,
+});
 
 if (OperatingSystem.IsWindows())
 {

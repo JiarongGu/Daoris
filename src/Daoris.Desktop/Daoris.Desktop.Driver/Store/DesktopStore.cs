@@ -1,29 +1,14 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The desktop's store: <c>data/desktop.db</c>, one SQLite file the driver library alone
-/// opens, machine-local and never synced, holding what Daoris owns and more than one reader or writer sets: its own tables
-/// (<c>store_version</c>, <c>store_revisions</c>, <c>store_runs</c> and <c>imports</c>) and each family's, one numbered step each.
-/// </summary>
+/// <summary>The desktop's store, <c>data/desktop.db</c>: one SQLite file the driver library alone opens, machine-local and never synced.</summary>
 /// <remarks>
-/// <para><b>One connection per process</b> behind a lock, as the service's <c>ConnectionGate</c> keeps its own: write-ahead
-/// logging, so a reader never waits on the writer; <c>synchronous = FULL</c>, since a claim or a mark lost to a power cut could repeat an
-/// effect; and a busy wait of five seconds, then a refusal said in the process's own words (<see cref="DesktopStoreBusyException"/>).</para>
-/// <para><b>Every write is one transaction under the write lock taken at its start</b> (<c>BEGIN IMMEDIATE</c>), and <b>the writer stamp is read
-/// inside it</b>, before anything changes: a process that opened the store before another's migration, and kept its connection, cannot write
-/// after it (<see cref="DesktopStoreNewerException"/>).</para>
-/// <para><b>Migrations</b> are numbered steps in code (<see cref="DesktopStoreSteps"/>), forward only, each in one exclusive transaction: the first
-/// process to open an older store migrates it while the others wait on the write lock, and the stamp is never lowered. A step that raises the
-/// stamp waits for the start's confirmation, <see cref="Settled"/>'s reading, so a build rolled back before it confirmed still writes the store.</para>
-/// <para><b>Wakes.</b> A write moves its family's revision in the same transaction and, once committed, touches the wake file
-/// <c>data/desktop.db.wake</c>, which holds nothing; what watches it reads the revisions. No reader watches it yet.</para>
-/// <para><b>The git door</b> reads through <see cref="DesktopStoreReader"/>, read-only, once its families move and its start passes the
-/// limit; until then it opens none.</para>
+/// The engine (connection, pragmas, write lock, the stamp read under it, the revision, the wake file) is the port's,
+/// <see cref="IDesktopStoreEngine"/>, which the root hands in the ambient set; this class is the policy over it: the numbered steps,
+/// forward only, a stamp-raising one held for the start's confirmation (<see cref="Settled"/>), the run recorded, the imports.
 /// </remarks>
 public sealed class DesktopStore : IDisposable
 {
@@ -53,9 +38,6 @@ public sealed class DesktopStore : IDisposable
 
     public const int ConversationFactsVersion = HandOffsVersion + 1;
 
-    /// <summary>How long a write waits on the file's lock before it is refused, in seconds.</summary>
-    private const int BusySeconds = 5;
-
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>
     public const string WakeSuffix = ".wake";
 
@@ -70,7 +52,7 @@ public sealed class DesktopStore : IDisposable
 
     private readonly object _turn = new();
 
-    private readonly SqliteConnection _connection;
+    private readonly IDesktopStoreEngine _engine;
 
     private readonly IReadOnlyList<StoreMigration> _steps;
 
@@ -84,16 +66,13 @@ public sealed class DesktopStore : IDisposable
 
     private bool _registered;
 
-    private bool _disposed;
-
-    private DesktopStore(string location, SqliteConnection connection, DesktopStoreOptions options)
+    private DesktopStore(IDesktopStoreEngine engine, DesktopStoreOptions options, string build)
     {
-        Location = location;
-        _connection = connection;
+        _engine = engine;
         _steps = options.Steps ?? Steps;
         _settled = options.Settled ?? (() => StoreSettled.Not("no reading of the start's confirmation was handed to the store"));
         _clock = options.Clock ?? TimeProvider.System;
-        _build = options.Build ?? typeof(DesktopStore).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0";
+        _build = build;
         _kind = options.Kind;
         Own = options.Writer;
         Run = options.Run ?? Guid.NewGuid().ToString("N");
@@ -106,7 +85,7 @@ public sealed class DesktopStore : IDisposable
     public static string WakeOf(string location) => location + WakeSuffix;
 
     /// <summary>The store's file.</summary>
-    public string Location { get; }
+    public string Location => _engine.Location;
 
     /// <summary>The wake file a write touches once it has committed.</summary>
     public string Wake => WakeOf(Location);
@@ -117,10 +96,7 @@ public sealed class DesktopStore : IDisposable
     /// <summary>This process's run: the id its first write records in <c>store_runs</c>.</summary>
     public string Run { get; }
 
-    /// <summary>
-    /// Why a migration is waiting, in words, or null where none is: the start's confirmation is not settled and the next step raises the
-    /// stamp. Read again by <see cref="Migrate"/> at each come-up and look until it is null.
-    /// </summary>
+    /// <summary>Why a migration is waiting, in words, or null where none is: the start is not settled and the next step raises the stamp.</summary>
     public string? Held { get; private set; }
 
     /// <summary>The schema version and the writer stamp the file holds now.</summary>
@@ -128,71 +104,57 @@ public sealed class DesktopStore : IDisposable
     {
         get
         {
-            lock (_turn)
-            {
-                ThrowIfDisposed();
-                return ReadStamp(null);
-            }
+            var stamp = _engine.Stamp();
+            return (stamp.Version, stamp.Writer);
         }
     }
 
     /// <summary>Whether the file's writer stamp is past this build's: it is read as it stands and written by no one here.</summary>
     public bool Newer => Stamp.Writer > Own;
 
-    /// <summary>
-    /// The store at <paramref name="location"/>, made if there is none and migrated as far as the start allows; its folder is made, and
-    /// nothing is written to a store a newer Daoris stamped.
-    /// </summary>
+    /// <summary>The store at <paramref name="location"/>, made if there is none and migrated as far as the start allows; nothing is written to one a newer Daoris stamped.</summary>
     /// <exception cref="DesktopStoreBusyException">Another process held the write lock past the wait.</exception>
     public static DesktopStore Open(string location, DesktopStoreOptions? options = null)
     {
         options ??= new DesktopStoreOptions();
-        if (Path.GetDirectoryName(Path.GetFullPath(location)) is { Length: > 0 } folder) Directory.CreateDirectory(folder);
-        var connection = new SqliteConnection(new SqliteConnectionStringBuilder
-        {
-            DataSource = location,
-            Mode = SqliteOpenMode.ReadWriteCreate,
-            Pooling = false,
-            DefaultTimeout = BusySeconds,
-        }.ToString());
-        DesktopStore? store = null;
+        var engines = StoreEngineSource.Current;
+        var build = options.Build ?? typeof(DesktopStore).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0";
+        IDesktopStoreEngine engine;
         try
         {
-            connection.Open();
-            Pragma(connection, $"PRAGMA busy_timeout = {BusySeconds * 1000}");
-            Pragma(connection, "PRAGMA journal_mode = WAL");
-            Pragma(connection, "PRAGMA synchronous = FULL");
-            Pragma(connection, "PRAGMA journal_size_limit = 33554432");
-            // A move's claim names a row of `store_runs` and a word in transfer its move, and the store holds them to it.
-            Pragma(connection, "PRAGMA foreign_keys = ON");
-            store = new DesktopStore(location, connection, options);
+            engine = engines.Open(location, new DesktopStoreEngineOptions(options.Writer, options.Clock ?? TimeProvider.System, build));
+        }
+        catch (StoreLockBusyException busy)
+        {
+            throw new DesktopStoreBusyException(busy.InnerException ?? busy);
+        }
+
+        var store = new DesktopStore(engine, options, build);
+        try
+        {
             store.Migrate();
             return store;
         }
-        catch (Exception error)
+        catch
         {
-            if (store is not null) store.Dispose();
-            else connection.Dispose();
-            if (error is SqliteException busy && Busy(busy)) throw new DesktopStoreBusyException(busy);
+            store.Dispose();
             throw;
         }
     }
 
     /// <summary>
-    /// Migrate as far as the start allows, which is every step but one that raises the stamp while the confirmation is not settled: that
-    /// one is held, <see cref="Held"/> says why, and the call is made again at each come-up and look until it is not. A step another
-    /// process has already run is skipped, and a file stamped past this build is left as it is.
+    /// Migrate as far as the start allows: every step but one that raises the stamp while the confirmation is not settled, which is held
+    /// (<see cref="Held"/> says why) and asked again at each come-up and look. A step another process has run is skipped.
     /// </summary>
     /// <returns>True where nothing is waiting.</returns>
     public bool Migrate()
     {
         lock (_turn)
         {
-            ThrowIfDisposed();
             Held = null;
             foreach (var step in _steps.OrderBy(each => each.Version))
             {
-                var stamp = ReadStamp(null);
+                var stamp = _engine.Stamp();
                 if (stamp.Writer > Own) return true;
                 if (stamp.Version >= step.Version) continue;
 
@@ -203,78 +165,42 @@ public sealed class DesktopStore : IDisposable
                     return false;
                 }
 
-                Apply(step);
+                Guarded(() => _engine.Apply(step.Version, step.Writer, (connection, transaction) => step.Apply(new DesktopWrite(connection, transaction))));
             }
 
             return true;
         }
     }
 
-    /// <summary>
-    /// One write transaction: <c>BEGIN IMMEDIATE</c>, the writer stamp read under the lock and refused where it is past this build's, this
-    /// process's run recorded, <paramref name="work"/>, the family's revision moved, the commit; then the wake file touched. Rolled back
-    /// where the work throws.
-    /// </summary>
+    /// <summary>One write transaction under the write lock: the stamp refused where it is past this build's, this process's run recorded, <paramref name="work"/>, the family's revision moved, the commit, the wake. Rolled back where the work throws.</summary>
     /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's.</exception>
     /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing is written.</exception>
     public T Write<T>(string family, Func<DesktopWrite, T> work)
     {
-        T result;
-        lock (_turn)
+        var registering = false;
+        var result = Guarded(() => _engine.Write(family, (connection, transaction, stamp) =>
         {
-            ThrowIfDisposed();
-            using var transaction = Begin();
-            try
-            {
-                var stamp = ReadStamp(transaction);
-                if (stamp.Writer > Own) throw new DesktopStoreNewerException(stamp.Writer, Own);
-                if (stamp.Version == 0) throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
-                var write = new DesktopWrite(_connection, transaction, stamp.Version);
-                var registering = !_registered;
-                if (registering) Register(write);
-                result = work(write);
-                write.Execute(
-                    "INSERT INTO store_revisions (family, revision) VALUES ($family, 1) ON CONFLICT (family) DO UPDATE SET revision = revision + 1",
-                    ("$family", family));
-                transaction.Commit();
-                if (registering) _registered = true;
-            }
-            catch (SqliteException error) when (Busy(error))
-            {
-                throw new DesktopStoreBusyException(error);
-            }
-        }
-
-        Touch();
+            var write = new DesktopWrite(connection, transaction, stamp.Version);
+            registering = !_registered;
+            if (registering) Register(write);
+            return work(write);
+        }));
+        if (registering) _registered = true;
         return result;
     }
 
-    /// <summary>
-    /// This process's run recorded in <c>store_runs</c>, and nothing else: no family's revision moves and no wake is touched. A shell's come-up enters before it reads the runs, so another shell coming up on the home finds it there.
-    /// </summary>
+    /// <summary>This process's run recorded in <c>store_runs</c> and nothing else: no revision moves and no wake is touched, so a shell's come-up enters before it reads the runs.</summary>
     /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's: nothing is written.</exception>
     /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing is written.</exception>
     public void Enter()
     {
-        lock (_turn)
+        if (_registered) return;
+        Guarded(() => _engine.Write<bool>(null, (connection, transaction, _) =>
         {
-            ThrowIfDisposed();
-            if (_registered) return;
-            using var transaction = Begin();
-            try
-            {
-                var stamp = ReadStamp(transaction);
-                if (stamp.Writer > Own) throw new DesktopStoreNewerException(stamp.Writer, Own);
-                if (stamp.Version == 0) throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
-                Register(new DesktopWrite(_connection, transaction));
-                transaction.Commit();
-                _registered = true;
-            }
-            catch (SqliteException error) when (Busy(error))
-            {
-                throw new DesktopStoreBusyException(error);
-            }
-        }
+            Register(new DesktopWrite(connection, transaction));
+            return true;
+        }));
+        _registered = true;
     }
 
     /// <summary><see cref="Write{T}"/> for work that answers nothing.</summary>
@@ -285,24 +211,18 @@ public sealed class DesktopStore : IDisposable
             return true;
         });
 
-    /// <summary>
-    /// Rows read by <paramref name="map"/> from one statement, in a snapshot of their own; a read never waits on a writer under write-ahead
-    /// logging and writes nothing.
-    /// </summary>
-    public IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map, params (string Name, object? Value)[] values)
-    {
-        lock (_turn)
+    /// <summary>Rows read by <paramref name="map"/> from one statement, in a snapshot of their own; a read never waits on a writer.</summary>
+    public IReadOnlyList<T> Query<T>(string sql, Func<DbDataReader, T> map, params (string Name, object? Value)[] values) =>
+        _engine.Read(connection =>
         {
-            ThrowIfDisposed();
-            using var command = _connection.CreateCommand();
+            using var command = connection.CreateCommand();
             command.CommandText = sql;
-            foreach (var (name, value) in values) command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+            command.Bind(values);
             using var reader = command.ExecuteReader();
             var rows = new List<T>();
             while (reader.Read()) rows.Add(map(reader));
             return rows;
-        }
-    }
+        });
 
     /// <summary>Each family's revision, as the last write left it; a family nothing has written has none.</summary>
     public IReadOnlyDictionary<string, long> Revisions() =>
@@ -346,42 +266,26 @@ public sealed class DesktopStore : IDisposable
                 reader.GetString(8)),
             ("$family", family), ("$path", path)).FirstOrDefault();
 
-    public void Dispose()
-    {
-        lock (_turn)
-        {
-            if (_disposed) return;
-            _disposed = true;
-            _connection.Dispose();
-        }
-    }
+    public void Dispose() => _engine.Dispose();
 
-    /// <summary>One migration step in its own exclusive transaction, read again inside it: another process may have run it first.</summary>
-    private void Apply(StoreMigration step)
+    /// <summary>The engine's refusals said in the process's own words.</summary>
+    private T Guarded<T>(Func<T> body)
     {
         try
         {
-            using var transaction = Begin();
-            var stamp = ReadStamp(transaction);
-            if (stamp.Writer > Own || stamp.Version >= step.Version) return;
-            step.Apply(new DesktopWrite(_connection, transaction));
-            using var command = _connection.CreateCommand();
-            command.Transaction = transaction;
-            command.CommandText =
-                """
-                INSERT INTO store_version (one, version, writer, build, at) VALUES (1, $version, $writer, $build, $at)
-                ON CONFLICT (one) DO UPDATE SET version = MAX(version, excluded.version), writer = MAX(writer, excluded.writer), build = excluded.build, at = excluded.at
-                """;
-            command.Parameters.AddWithValue("$version", step.Version);
-            command.Parameters.AddWithValue("$writer", Math.Max(stamp.Writer, step.Writer));
-            command.Parameters.AddWithValue("$build", _build);
-            command.Parameters.AddWithValue("$at", Now());
-            command.ExecuteNonQuery();
-            transaction.Commit();
+            return body();
         }
-        catch (SqliteException error) when (Busy(error))
+        catch (StoreLockBusyException busy)
         {
-            throw new DesktopStoreBusyException(error);
+            throw new DesktopStoreBusyException(busy.InnerException ?? busy);
+        }
+        catch (StoreNewerException newer)
+        {
+            throw new DesktopStoreNewerException(newer.Stamped, newer.Own);
+        }
+        catch (StoreWithoutSchemaException)
+        {
+            throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
         }
     }
 
@@ -392,49 +296,6 @@ public sealed class DesktopStore : IDisposable
         write.Execute(
             "INSERT OR IGNORE INTO store_runs (run, kind, pid, started, began) VALUES ($run, $kind, $pid, $started, $began)",
             ("$run", Run), ("$kind", _kind), ("$pid", Environment.ProcessId), ("$started", StartOf(self)), ("$began", Now()));
-    }
-
-    private SqliteTransaction Begin()
-    {
-        try
-        {
-            return _connection.BeginTransaction(deferred: false);
-        }
-        catch (SqliteException error) when (Busy(error))
-        {
-            throw new DesktopStoreBusyException(error);
-        }
-    }
-
-    /// <summary>The version and stamp the file holds, read inside <paramref name="transaction"/> where one is open; (0, 0) for a file with none.</summary>
-    private (int Version, int Writer) ReadStamp(SqliteTransaction? transaction)
-    {
-        using var has = _connection.CreateCommand();
-        has.Transaction = transaction;
-        has.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'store_version'";
-        if (has.ExecuteScalar() is null) return (0, 0);
-        using var command = _connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = "SELECT version, writer FROM store_version WHERE one = 1";
-        using var reader = command.ExecuteReader();
-        return reader.Read() ? (reader.GetInt32(0), reader.GetInt32(1)) : (0, 0);
-    }
-
-    /// <summary>The wake file touched after a commit: a file that holds nothing, whose change is what a watcher reads. It never fails the write.</summary>
-    private void Touch()
-    {
-        try
-        {
-            using (new FileStream(Wake, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
-            {
-            }
-
-            File.SetLastWriteTimeUtc(Wake, DateTime.UtcNow);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // The write is committed; the watchers' own period is the fallback for a wake that did not land.
-        }
     }
 
     private string Now() => _clock.GetUtcNow().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
@@ -450,15 +311,4 @@ public sealed class DesktopStore : IDisposable
             return null;
         }
     }
-
-    private static bool Busy(SqliteException error) => error.SqliteErrorCode is 5 or 6;
-
-    private static void Pragma(SqliteConnection connection, string sql)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        command.ExecuteNonQuery();
-    }
-
-    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 }

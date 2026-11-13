@@ -328,7 +328,7 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
         string line, IReadOnlyList<(IReadOnlyDictionary<string, long> Read, AloneScan Carry)> lines, IReadOnlyList<AloneEpoch> epochs, IReadOnlyList<AloneAdmitted> admitted) =>
         lines.Count == 0 || epochs.Count == 0 ? null : new AloneRows(line, epochs, admitted, lines[0].Read, lines[0].Carry);
 
-    private static (IReadOnlyDictionary<string, long> Read, AloneScan Carry) LineOf(SqliteDataReader row)
+    private static (IReadOnlyDictionary<string, long> Read, AloneScan Carry) LineOf(DbDataReader row)
     {
         var read = JsonSerializer.Deserialize<Dictionary<string, long>>(row.GetString(0));
         using var carry = JsonDocument.Parse(row.GetString(1));
@@ -340,11 +340,11 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
                 [.. root.GetProperty("answered").EnumerateArray().Select(each => each.GetString()!)]));
     }
 
-    private static AloneEpoch EpochOf(SqliteDataReader row) => new(
+    private static AloneEpoch EpochOf(DbDataReader row) => new(
         row.GetInt32(0), row.GetString(1), row.IsDBNull(2) ? null : row.GetString(2), row.GetInt32(3), row.GetString(4),
         row.IsDBNull(5) ? null : row.GetString(5), Moment(row.GetString(6)));
 
-    private static AloneAdmitted AdmittedOf(SqliteDataReader row) =>
+    private static AloneAdmitted AdmittedOf(DbDataReader row) =>
         new(row.GetInt64(0), row.GetInt32(1), row.GetString(2), JsonSerializer.Deserialize<string[]>(row.GetString(3)) ?? [],
             row.IsDBNull(4) ? null : row.GetString(4), Moment(row.GetString(5)))
         {
@@ -416,5 +416,5 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
 
     private static DateTimeOffset Moment(string text) => DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 
-    private static DateTimeOffset? MomentOrNull(SqliteDataReader row, int column) => row.IsDBNull(column) ? null : Moment(row.GetString(column));
+    private static DateTimeOffset? MomentOrNull(DbDataReader row, int column) => row.IsDBNull(column) ? null : Moment(row.GetString(column));
 }

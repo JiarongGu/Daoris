@@ -6,10 +6,12 @@ using Lyntai.Storage;
 using Lyntai.Storage.Sqlite;
 using Lyntai.Storage.Sqlite.Migrations;
 
-namespace Daoris.Knowledge;
+namespace Daoris.Adapters.Memory.Lyntai;
+
+using Daoris.Ports.Memory;
 
 /// <summary>
-/// Each repository's memory as Lyntai's graph engine keeps it: one engine per
+/// The memory engine's port over Lyntai (the ports-and-adapters design, §2.2): each repository's memory as Lyntai's graph engine keeps it, one engine per
 /// repository, named by its registry name, over one SQLite file of this machine's beside <c>knowledge.db</c>. Every engine is opened with
 /// <c>ReinforceOn = None</c>, so a recall or an expansion touches, links and logs nothing of the owner's. Another repository reads one
 /// through Lyntai's view, taken from a reader's engine over the same store and name, never the owner's instance.
@@ -78,7 +80,7 @@ public sealed class LyntaiMemory : IMemoryEngines
                     new GraphMemoryOptions
                     {
                         ReinforceOn = key.Item2 == MemoryReinforcement.None ? MemoryReinforcementActs.None : MemoryReinforcementActs.All,
-                        ReceiptRetention = MemoryApplier.ReceiptRetention,
+                        ReceiptRetention = MemoryKeyReceipt.Retention,
                     },
                     new GraphMemorySeams { Clock = _time.GetUtcNow }),
                 Store,
@@ -248,7 +250,7 @@ public sealed class LyntaiMemory : IMemoryEngines
     }
 
     /// <summary>Another repository's reader's view of one memory: Lyntai's, whose type has no write and whose reads move nothing.</summary>
-    private sealed class LyntaiView(Lyntai.Memory.IMemoryView view, string name, IMemoryGraphStore store) : IMemoryView
+    private sealed class LyntaiView(global::Lyntai.Memory.IMemoryView view, string name, IMemoryGraphStore store) : IMemoryView
     {
         public async Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default) =>
             [.. (await view.RecallAsync(new MemoryViewQuery(query, Limit: limit, Detail: MemoryDetail.Full), ct).ConfigureAwait(false))
@@ -273,7 +275,7 @@ public sealed class LyntaiMemory : IMemoryEngines
     }
 
     /// <summary>The coordinator's check as Lyntai's view asks it, by the repository its engine is named for.</summary>
-    private sealed class Asking(IMemoryViewCheck check) : Lyntai.Memory.IMemoryViewCheck
+    private sealed class Asking(IMemoryViewCheck check) : global::Lyntai.Memory.IMemoryViewCheck
     {
         public Task<bool> PermitsAsync(MemoryRef reference, CancellationToken ct = default) =>
             check.PermitsAsync(new MemoryReference(reference.Engine, reference.Id), ct);

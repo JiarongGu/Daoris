@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
@@ -66,6 +65,16 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         """
         using Daoris.Driver;
 
+        // A shell is a root: it hands the library the store's engine and the machine's ports.
+        Daoris.Ports.Ambient.AmbientPorts.Set(new Daoris.Ports.Ambient.PortSet
+        {
+            Clock = TimeProvider.System,
+            Store = Daoris.Adapters.DesktopStore.Sqlite.SqliteDesktopStores.Engines,
+            Admission = Daoris.Adapters.Machine.StartPlaces.Shared,
+            Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
+            StartPolicy = GitStartAdmission.Admit,
+            Seal = Daoris.Adapters.Machine.KeySeal.Port,
+        });
         var (verb, home, record) = (args[0], args[1], args[2]);
         StoreProcess.Kind = verb == "drive" ? StoreProcess.Host : StoreProcess.Shell;
         var store = new MoveStore(home, () => StoreSettled.Yes);
@@ -125,12 +134,12 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         }
         """;
 
-    /// <summary>The child's project: the driver library these tests run against, and the store's two packages at the desktop's pins.</summary>
+    /// <summary>The child's project: the driver library these tests run against, and the store's and the machine's adapters its root hands.</summary>
     private static string Project()
     {
-        var pins = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Directory.Packages.props"));
-        string Pin(string package) => Regex.Match(pins, $"""<PackageVersion Include="{Regex.Escape(package)}" Version="([^"]+)" />""").Groups[1].Value;
         var driver = typeof(MoveStore).Assembly.Location;
+        var store = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj");
+        var machine = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.Machine", "Daoris.Adapters.Machine.csproj");
         return $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
@@ -141,9 +150,9 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
                 <Nullable>enable</Nullable>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="Microsoft.Data.Sqlite" Version="{Pin("Microsoft.Data.Sqlite")}" />
-                <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="{Pin("SQLitePCLRaw.bundle_e_sqlite3")}" />
                 <Reference Include="Daoris.Desktop.Driver"><HintPath>{driver}</HintPath></Reference>
+                <ProjectReference Include="{store}" />
+                <ProjectReference Include="{machine}" />
               </ItemGroup>
             </Project>
             """;

@@ -59,7 +59,7 @@ public sealed class RoleStaffingTests : IDisposable
         }
         """;
 
-    private IReadOnlyList<T> Rows<T>(string sql, Func<SqliteDataReader, T> map)
+    private IReadOnlyList<T> Rows<T>(string sql, Func<System.Data.Common.DbDataReader, T> map)
     {
         using var reader = DesktopStoreReader.Open(Db);
         return reader is null ? [] : reader.Query(sql, map);

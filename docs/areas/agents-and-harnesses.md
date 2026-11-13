@@ -137,8 +137,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 **Accounts**
 
 26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters; an `account-N`
-    keeps its name as its id); removing it deletes the folder. An API key is an account too: kept in `keys.json`, sealed with
-    DPAPI for the Windows user (`KeySeal`; an unsealed key is sealed at the file's next write), handed only to a start's process in
+    keeps its name as its id); removing it deletes the folder. An API key is an account too: kept in `keys.json`, sealed by the
+    machine's seal the root hands (`SecretSeal`; the machine adapter's `KeySeal`, DPAPI for the Windows user; an unsealed key is
+    sealed at the file's next write), handed only to a start's process in
     the tool's variable, shown by its last four characters. An agent held by a key alone (dsh) reads an account by its key: none
     reads signed out, as *no key*; a key never read is checked once by the provider's cheap read (`IKeyCheck`), a refused key
     reading signed out. Every place that tells the person how to add or mend such an account says the key's way (`agent key`,

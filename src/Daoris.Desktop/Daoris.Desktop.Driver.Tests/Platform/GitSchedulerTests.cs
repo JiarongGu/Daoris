@@ -494,7 +494,7 @@ public sealed class GitSchedulerTests
     public async Task The_gate_refuses_a_gits_image_started_outside_the_scheduler_for_every_purpose_and_starts_it_inside_a_place()
     {
         var made = 0;
-        var starts = new ProcessStarts(4, _ =>
+        var starts = new ProcessStarts(new Daoris.Testing.ScriptedProcesses(4), _ =>
         {
             Interlocked.Increment(ref made);
             return null;

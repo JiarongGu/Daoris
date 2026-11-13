@@ -1,0 +1,7 @@
+{
+  "suite": "adapters-desktopstore-sqlite",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests",
+  "contract": ["src/Daoris.Testing/Store"],
+  "ports": ["Store"],
+  "outside": ["nuget:Microsoft.Data.Sqlite", "nuget:SQLitePCLRaw.bundle_e_sqlite3"]
+}

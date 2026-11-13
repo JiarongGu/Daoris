@@ -24,7 +24,7 @@ public sealed class NoticeStoreTests : IDisposable
 
     private string File_ => Notices.PathOf(_home);
 
-    private IReadOnlyList<T> InStore<T>(string sql, Func<Microsoft.Data.Sqlite.SqliteDataReader, T> map)
+    private IReadOnlyList<T> InStore<T>(string sql, Func<System.Data.Common.DbDataReader, T> map)
     {
         using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(_home))!;
         return reader.Query(sql, map);

@@ -22,7 +22,6 @@ import {
 // The service hosts' one build recipe, which the desktop's `--service` publishes by.
 // @ts-expect-error — untyped workspace tooling; see above
 import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
-// @ts-expect-error — untyped workspace tooling; see above
 import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/doctrine/canon.ts';
 import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/platform/driverprogram.ts';

@@ -84,8 +84,7 @@ async function main(argv) {
     mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
     rmSync(join(root, report), { force: true });
     console.log(`reached: ${each.label}: ${each.command} ${each.args.slice(0, 2).join(' ')} …`);
-    // npm is a script on Windows and needs a shell; its arguments are paths, so nothing in them is read by it.
-    const ran = spawnSync(each.command, args, { cwd: each.cwd, stdio: 'inherit', windowsHide: true, shell: each.command === 'npm' && process.platform === 'win32' });
+    const ran = spawnSync(each.command, args, { cwd: each.cwd, stdio: 'inherit', windowsHide: true });
     if (ran.status !== 0) failed.push(each.label);
     for (const unit of passesOf(group, ran.status, join(root, report), root)) {
       store.add(unitId(unit), keys.get(unitId(unit)), new Date().toISOString());

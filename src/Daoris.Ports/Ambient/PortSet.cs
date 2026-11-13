@@ -27,9 +27,14 @@ public sealed record PortSet
     /// <summary>Says whether a process still runs.</summary>
     public IProcessLiveness? Liveness { get; init; }
 
-    /// <summary>The desktop's store.</summary>
-    public IDesktopUnitOfWork? Store { get; init; }
+    /// <summary>How the desktop's store is opened and its files connected to.</summary>
+    public DesktopStoreEngines? Store { get; init; }
 
     /// <summary>The browser.</summary>
     public IInAppBrowser? Browser { get; init; }
+
+    /// <summary>The application's admission of each start, asked before the machine places it.</summary>
+    public StartPolicy? StartPolicy { get; init; }
+
+    public SecretSeal? Seal { get; init; }
 }

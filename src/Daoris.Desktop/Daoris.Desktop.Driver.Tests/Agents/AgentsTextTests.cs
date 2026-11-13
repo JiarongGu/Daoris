@@ -235,9 +235,9 @@ public sealed partial class AgentsTextTests
     private static partial Regex Settled();
 
     /// <summary>A kept key, sealed anew each time, is spelled by the key it opens to, <c>&lt;sealed sk-…&gt;</c>: an unsealed one matches none.</summary>
-    private static string Opened(string text) => SealedKey().Replace(text, kept => $"<sealed {KeySeal.Open(kept.Value) ?? "?"}>");
+    private static string Opened(string text) => SealedKey().Replace(text, kept => $"<sealed {ScriptedSeal.Port.Open(kept.Value) ?? "?"}>");
 
-    [GeneratedRegex(KeySeal.Prefix + "[A-Za-z0-9+/=]+")]
+    [GeneratedRegex(ScriptedSeal.Prefix + "[A-Za-z0-9+/=]+")]
     private static partial Regex SealedKey();
 
     /// <summary>An account's id as <see cref="AccountNames.NewId"/> draws it: a run's own, the table spells it <c>&lt;id&gt;</c>.</summary>

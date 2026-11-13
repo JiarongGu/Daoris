@@ -1,7 +1,7 @@
 using System.Text;
-using Daoris.Knowledge;
+using Daoris.Ports.Memory;
 
-namespace Daoris.Service.Tests;
+namespace Daoris.Testing;
 
 /// <summary>
 /// A stand-in for Lyntai's engines, one per repository, repeating the effects it names:

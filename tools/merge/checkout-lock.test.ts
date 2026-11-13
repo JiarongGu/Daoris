@@ -1,15 +1,15 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fixtureFolder } from './fixture-home.ts';
 import { holderLine, holdingCheckout, releaseCheckout, takeCheckout, type Holder } from './checkout-lock.ts';
 
 const me: Holder = { pid: 100, started: 1000, at: '2026-11-13T10:00:00Z', verb: 'rerun' };
 const other: Holder = { pid: 200, started: 2000, at: '2026-11-13T10:01:00Z', verb: 'merge' };
 
 test('one run holds the checkout; a second is refused with the holder\'s pid, start and verb, and a dead holder is taken over', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'checkout-lock-'));
+  const { dir, remove } = fixtureFolder('checkout-lock');
   try {
     const file = join(dir, 'local', 'merge-run.lock');
     assert.deepEqual(takeCheckout(file, me, { runs: () => true }), { taken: true });
@@ -25,12 +25,12 @@ test('one run holds the checkout; a second is refused with the holder\'s pid, st
     releaseCheckout(file, other);
     assert.equal(existsSync(file), false);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    remove();
   }
 });
 
 test('a run held under the lock lets it go however it ends, and a second is refused naming the first', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'checkout-lock-'));
+  const { dir, remove } = fixtureFolder('checkout-lock');
   try {
     const file = join(dir, 'merge-run.lock');
     const refuse = (message: string) => new Error(message);
@@ -43,17 +43,17 @@ test('a run held under the lock lets it go however it ends, and a second is refu
     await assert.rejects(holdingCheckout(file, me, () => true, async () => { throw new Error('boom'); }, refuse), /boom/);
     assert.equal(existsSync(file), false, 'and when it threw');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    remove();
   }
 });
 
 test('a lock that does not read is no run\'s, and is replaced', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'checkout-lock-'));
+  const { dir, remove } = fixtureFolder('checkout-lock');
   try {
     const file = join(dir, 'merge-run.lock');
     writeFileSync(file, 'garbage');
     assert.deepEqual(takeCheckout(file, me, { runs: () => true }), { taken: true });
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    remove();
   }
 });

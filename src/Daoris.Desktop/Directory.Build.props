@@ -50,4 +50,14 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\BannedSymbols.Effects.txt" />
   </ItemGroup>
 
+  <!--
+    The store's engine types (src/BannedSymbols.Store.txt), which an application or unit-test project takes by setting DaorisBannedStore
+    once it names none: the engine is the SQLite adapter's and the application asks the ports for its connections. Kept apart from the
+    effects above so a project takes the one its uses allow, each row of the census taking its own symbols to zero for what it moved.
+  -->
+  <ItemGroup Condition="'$(DaorisBannedStore)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" Condition="'$(IsTestProject)' == 'true'" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\BannedSymbols.Store.txt" />
+  </ItemGroup>
+
 </Project>

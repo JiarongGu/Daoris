@@ -446,7 +446,7 @@ public sealed class ProcessStartsCensusTests
     public void Every_console_start_hides_its_window_but_the_ones_named_with_their_reason()
     {
         var sources = NoConsoleStarts.Read(NoConsoleStarts.Src(), "Daoris.Desktop/Daoris.Desktop.Driver", "Daoris.Desktop/Daoris.Desktop.Driver.Host",
-            "Daoris.Desktop/Daoris.Desktop.Driver.Tests", "Daoris.Devkit", "Daoris.Service").ToList();
+            "Daoris.Desktop/Daoris.Desktop.Driver.Tests", "Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals", "Daoris.Devkit", "Daoris.Service").ToList();
         var (problems, starts) = NoConsoleStarts.Scan(sources);
 
         Assert.True(starts >= 20, $"expected to find the projects' starts, found {starts}");
@@ -454,11 +454,12 @@ public sealed class ProcessStartsCensusTests
         Assert.Empty(NoConsoleStarts.Stale(sources));
     }
 
-    /// <summary>Every direct start a driver test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/>.</summary>
+    /// <summary>Every direct start a driver test or rehearsal makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/>.</summary>
     [Fact]
     public void Every_direct_start_a_driver_test_makes_is_named_with_its_purpose()
     {
-        var problems = TestProcessStarts.Problems(TestProcessStarts.Sources("Daoris.Desktop.Driver.Tests"), "Daoris.Desktop.Driver.Tests");
+        var problems = new[] { "Daoris.Desktop.Driver.Tests", "Daoris.Desktop.Driver.Rehearsals" }
+            .SelectMany(project => TestProcessStarts.Problems(TestProcessStarts.Sources(project), project)).ToList();
 
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
@@ -492,8 +493,12 @@ public sealed class ProcessStartsCensusTests
         Assert.Single(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", marked)]).Problems);
     }
 
-    /// <summary>Every production source of the desktop's projects, by its path under the desktop folder, comments read out.</summary>
-    private static IEnumerable<(string File, string Source)> Sources()
+    private static readonly Lazy<IReadOnlyList<(string File, string Source)>> Read = new(() => [.. ReadSources()]);
+
+    /// <summary>Every production source of the desktop's projects, by its path under the desktop folder, comments read out: read once a run.</summary>
+    private static IEnumerable<(string File, string Source)> Sources() => Read.Value;
+
+    private static IEnumerable<(string File, string Source)> ReadSources()
     {
         var root = EveryChildIsHandedTheToolsTests.SourceRoot();
         foreach (var project in Projects)

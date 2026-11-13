@@ -42,7 +42,7 @@ internal static class BannedNames
         {
             var text = tree.GetText().ToString();
             if (!unspelled && !spelled.Any(name => text.Contains(name, StringComparison.Ordinal))) continue;
-            var model = compilation.GetSemanticModel(tree);
+            var model = SharedModels.Of(compilation, tree);
             foreach (var node in tree.GetRoot().DescendantNodes())
             {
                 switch (node)
