@@ -9,6 +9,7 @@ namespace Daoris.Knowledge;
 public sealed record DeliveryEdge(DeliveryRef Deployable, DeliveryRef On, string Why, string Source, DeliveryEvidence? Evidence)
 {
     /// <summary>The person's reason for waiving this order, or null while it stands; a waived order releases nothing first and goes stale no more.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public string? Waived { get; init; }
 
     /// <summary>A declaration: one deployable provides what another consumes as <c>mirror</c> or <c>reads</c>.</summary>
