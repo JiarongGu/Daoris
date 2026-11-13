@@ -17,7 +17,7 @@ test('the tool reads the census of this repository: a changed module reaches the
   const planned = run('--plan', '--paths', 'tools/merge/reached.ts');
   assert.equal(planned.status, 0, planned.stderr);
   assert.match(planned.stdout, /reached: tool-tests: (\d+ of )?\d+ reached units? run/);
-  assert.match(planned.stdout, /tool-tests: node --test .*tool-test\/merge-branch\//);
+  assert.match(planned.stdout, /tool-tests: node .*vitest\.mjs run .*tools\/merge\/reached\.e2e\.ts/);
   // No path changed, none reached.
   const none = run('--plan', '--paths', '');
   assert.equal(none.status, 0, none.stderr);
