@@ -2,16 +2,16 @@
  * What the merge tool's test files share: its typed exports, the tools beside it they read, the records' shapes, and
  * where the tool and the repository are.
  */
-import { dirname, join, posix } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
-import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { BASELINE } from '../../../../tools/merge/reach.ts';
+import { REACH } from '../../../../tools/merge/reach-table.ts';
+import { repoRoot, unnamedGates } from '../../../../tools/merge/repo-gates.ts';
 
 // The census of test units reads this file's strings as the lane table's data, not as reads.
 // test-map: strings name paths as data
 
-export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
+export { repoRoot };
 export const TOOL = join(repoRoot, 'tools', 'merge-branch.mjs');
 
 export interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
@@ -78,14 +78,6 @@ export interface Trees { ended: string | null; hold: (pid: number) => void; rele
 export type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
 export interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
-/** A unit of the census of test units that a change reaches, with the path that reached it. */
-export interface ReachedUnit { suite: string; kind: string; unit: string; name: string; file: string; by: string; project?: string; settings?: string | null; needs?: string[] }
-export interface ReachedPlan {
-  groups: { runner: 'dotnet' | 'vitest' | 'node'; suite: string; project?: string; settings?: string | null; units: ReachedUnit[] }[];
-  left: Record<string, number>;
-  reached: number;
-  replayed?: Record<string, number>;
-}
 export interface Verdict {
   gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null;
   /** A Process half's classes: how many ran, how many it kept by reach, and the oldest verdict it kept (its own start when none). */
@@ -269,10 +261,6 @@ export const tool = await import(
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
   selectionLines: (gates: Selected[]) => string[];
-  reachedPlan: (units: ReachedUnit[], changed: string[], options?: { bounds?: Partial<Record<'dotnet' | 'vitest' | 'node', number>>; replayed?: Record<string, number> }) => ReachedPlan;
-  unitsOfMerge: (units: ReachedUnit[], paths: string[], seams: { tiers: Record<string, string[]>; reaches: (unit: ReachedUnit, path: string) => boolean }) => { units: ReachedUnit[]; night: Record<string, number> };
-  reachedCommands: (plan: ReachedPlan) => { label: string; cwd: string; command: string; args: string[] }[];
-  reachedLines: (plan: ReachedPlan) => string[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; gated?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
   pathsReaching: (gate: string, paths: string[], options?: { lanes?: Lane[]; reach?: readonly Rule[] }) => string[];
@@ -403,50 +391,13 @@ export function refusal(fn: () => unknown): { exitCode: number; message: string 
   throw new Error('expected a refusal, but the call returned');
 }
 
-export const repoPlan = tool.readPlan(repoRoot);
-export const repoLanes = tool.readLanes(repoRoot)!.lanes;
-// `runs` and `selected` are what `--gated` runs (what a merge's paths reach, the long gates apart): the lane table's
-// own answer, which these tests hold to the code. `mergeRuns` is what a merge runs by default: the blocking checks only.
-export const selected = (paths: string[], full = false, gated = true) => tool.selectGates(repoPlan, paths, { lanes: repoLanes, full, gated }).gates;
-export const mergeRuns = (paths: string[], full = false): string[] => selected(paths, full, false).filter((entry) => entry.run).map((entry) => entry.gate.name);
-/** What a merge runs. */
-export const runs = (paths: string[], full = false): string[] => selected(paths, full).filter((entry) => entry.run).map((entry) => entry.gate.name);
-/** What the lane table says can see the change, run or not: what holds the table to the code. */
-export const reaches = (paths: string[]): string[] => selected(paths).filter((entry) => entry.reached).map((entry) => entry.gate.name);
-/** The gates whose verdicts a change to these paths makes stale, in the plan's order. */
-export const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
-export const BASE = ['universal', 'code-map', 'test-map', 'cli'];
-export const ALL = repoPlan.map((gate) => gate.name);
-export const ALWAYS_REACHED = ['comments']; // no reach rule names it, so whatever changed reaches it
-// The real-process halves and the deployment rehearsal run only in the full set.
-export const LONG = ['service-process', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'deployment'];
-/** What a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
-export const BLOCKING = ['universal', 'code-map', 'test-map'];
-/** The kept names' table: among the driver's tests, and the page's twin reads it too. */
-export const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
-/** The backlog merges' table: among the driver's tests, and the merge tool's twin reads it too. */
-export const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json';
-/** The joins union leaves and the merge sets apart: among the driver's tests, and the merge tool's twin reads it too. */
-export const UNION_JOINS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json';
-/** The integration declarations' table: among the driver's tests, and the merge tool's twin reads it too. */
-export const INTEGRATION_DECLARATIONS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json';
-/**
- * The driver's sources whose declarations the page's twin vitests parse. Each by its
- * name, at whatever depth of the driver's folder it is tracked.
- */
-export const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'LandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs', 'TraceChains.cs', 'LandedKind.cs'];
-export const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
-export const PAGE_PARSED = PAGE_PARSED_NAMES
-  .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
-/** The page-parsed rule, by the names it holds wherever the driver keeps them. */
-export const isPageParsedRule = (rule: Rule) => rule.paths?.some((path) => PAGE_PARSED_NAMES.some((name) => path === `${DRIVER_FOLDER}**/${name}`)) ?? false;
-
-// A declaration, so the lane table's tests above can use it.
-export function trackedFiles(): string[] {
-  const listed = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
-  assert.equal(listed.status, 0, listed.stderr);
-  return listed.stdout.split('\n').filter(Boolean);
-}
+// The lane table's own tests (Vitest, `tools/merge/`) read the repository through `tools/merge/repo-gates.ts`; these tests share it.
+export {
+  repoPlan, repoLanes, selected, mergeRuns, runs, reaches, stalens, ALL, LONG, BLOCKING, KEPT_NAMES, BACKLOG_MERGES, UNION_JOINS,
+  INTEGRATION_DECLARATIONS, PAGE_PARSED_NAMES, DRIVER_FOLDER, PAGE_PARSED, isPageParsedRule, trackedFiles,
+} from '../../../../tools/merge/repo-gates.ts';
+export const BASE = [...BASELINE];
+export const ALWAYS_REACHED = unnamedGates(REACH);
 
 export const processRun = (project: string) => `dotnet test ${project} --settings src/Daoris.Desktop/process.runsettings`;
 
