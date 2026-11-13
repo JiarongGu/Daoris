@@ -244,7 +244,7 @@ async function main() {
   // everything it starts sits under `app/`.
   const stages = publishStages(repoRoot, artifacts);
 
-  // The command, beside them: `daoris.exe`, which hands the desktop's program its arguments whole (SAYLINES1).
+  // The command, beside them: `daoris.exe`.
   console.log(`desktop-publish: publishing the command into ${CLI_BIN.join('/')}/…`);
   const commandStage = join(stages, 'command');
   run(commandPublishCommand(commandStage, artifacts));

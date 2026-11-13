@@ -15,8 +15,7 @@ import { makeFixture } from '../_fixture.ts';
  * `fixtures/shell-words.json`, row for row.
  *
  * The table is a claim about shells, so it is held against them here, where the install's command is: every spelled row is handed through the install's own
- * `daoris.exe` (published from its project, as the publish lays it) by the shells this platform has, and must arrive as one argument, itself. The
- * install is Windows's: elsewhere there is no command to hold the table against.
+ * `daoris.exe`, published as the install lays it, by the shells here (Windows has the install), and must arrive as one argument, itself.
  */
 
 const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -29,11 +28,7 @@ const ROWS = JSON.parse(readFileSync(
 const SPELLED = ROWS.filter(([, , word]) => word !== '<name>');
 const UNSPELLED = ROWS.filter(([, , word]) => word === '<name>');
 
-/**
- * 🔴 Words of several lines arrive whole (SAYLINES1): the command was a batch file, whose arguments end at the first line break, so
- * `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest. Typed in PowerShell, the one shell
- * here whose line carries a break, through the install's own `daoris.exe`.
- */
+/** Words of several lines arrive whole: PowerShell is the one shell here whose line carries a break. */
 test('words of several lines typed in PowerShell reach the installed daoris whole, line breaks and all', { skip: process.platform !== 'win32' }, () => {
   const fx = makeFixture('shell-words-lines');
   const env = install(fx.root);
@@ -65,7 +60,7 @@ function install(root: string): NodeJS.ProcessEnv {
   const program = join(root, ...DRIVER_HOME, DRIVER_EXE);
   mkdirSync(bin, { recursive: true });
   mkdirSync(dirname(program), { recursive: true });
-  // The command as the publish makes it and lays it: its builds in a folder of this fixture's, never the project's own beside another run's.
+  // Built into the fixture's own folder, never the project's beside another run's.
   const published = join(root, 'command-publish');
   execSync(commandPublishCommand(published, join(root, 'artifacts')), { cwd: repository, stdio: 'pipe', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   layCommand(published, root);

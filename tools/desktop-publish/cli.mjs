@@ -46,8 +46,7 @@ function cliProblem(unpacked) {
  * Lay the doctrine tool out in an install: the tarball `npm pack` made of
  * `src/Daoris.Cli`, unpacked by the CLI's own tar reader into `<install>/app/cli/node_modules/daoris/`, and
  * `<install>/app/bin/` made empty for the programs laid out in it after. Both folders are staged beside and swapped in whole, so a
- * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one
- * standing. Nothing is written under the home.
+ * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one standing. Nothing is written under the home.
  * Fresh package and launcher folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries.
  *
  * @returns the package's version, which is the canon's.
@@ -82,7 +81,6 @@ export async function layCli(tarball, install, renameOptions = {}, build = null)
     if (build) writeBuildStamp(unpacked, build);
     renameHeld(unpacked, join(modules, CLI_PACKAGE.at(-1)), renameOptions);
 
-    // The command's folder, empty: `daoris.exe` is a program, published and laid out by the publish after this (`layCommand`).
     mkdirSync(stagedBin, { recursive: true });
   } catch (error) {
     unstage();

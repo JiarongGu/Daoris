@@ -24,10 +24,7 @@ public static class AskNewCommand
         InstanceDoor.ThroughAsync(instance, PersonPresses.AskNew, Payload(ask),
             () => RunAsync(ask, reviews, workflows, output, ct), output, ct);
 
-    /// <summary>
-    /// The press's payload, in the route's own field names (<c>AskNewPress</c>): a requirement is sent as <c>{ quote, check }</c>, camelCase as
-    /// every other field is, since the pipe binds a payload by name and serializing the wire record as it stands sends <c>Quote</c> and <c>Check</c>.
-    /// </summary>
+    /// <summary>The press's payload in the route's field names: a requirement is <c>{ quote, check }</c>, which the pipe binds by name.</summary>
     public static Dictionary<string, object?> Payload(AskNew ask) =>
         InstanceDoor.Said(
             ("workspace", ask.Workspace), ("sentence", ask.Sentence), ("to", ask.To), ("links", Some(ask.Links)), ("files", Some(ask.Files)),

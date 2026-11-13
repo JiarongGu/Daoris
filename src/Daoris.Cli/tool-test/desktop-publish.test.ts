@@ -1165,12 +1165,8 @@ test('the launchers are where the tools’ environment puts them first on every 
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'DaorisHome.InstallBinLayout');
 });
 
-/**
- * 🔴 `daoris`'s command is a program, never a batch file (SAYLINES1): a batch file's `%*` ends at the first line break, so a verb's words
- * of several lines reached the desktop's program as their first line. The command is the build of `Daoris.Desktop.Command`, which starts the
- * desktop's program from its own folder; its name and the path it takes are two spellings, held here to the publish's.
- */
-test('SAYLINES1 daoris’s command is one program that runs the desktop’s program from its own folder, whole', () => {
+/** The command is a program, never a batch file: its name and its path to the desktop's program are held here to the publish's. */
+test('daoris’s command is one program that runs the desktop’s program from its own folder, whole', () => {
   assert.deepEqual([...CLI_LAUNCHERS], ['daoris.exe']);
   assert.equal(COMMAND, CLI_LAUNCHERS[0]);
   const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -1185,7 +1181,7 @@ test('SAYLINES1 daoris’s command is one program that runs the desktop’s prog
   assert.doesNotMatch(launcher, /\bnode\b.*Process|cmd\.exe|ShellExecute = true/, 'the command starts the program itself, through no shell');
 });
 
-test('SAYLINES1 the command is published framework-dependent and laid out whole in app/bin/, and a publish that made none is refused', () => {
+test('the command is published framework-dependent and laid out whole in app/bin/, and a publish that made none is refused', () => {
   const folder = join(tmpdir(), 'an-install', 'command');
   const command: string = commandPublishCommand(folder);
   assert.ok(command.startsWith(`dotnet publish "${COMMAND_PROJECT}" -c Release -r win-x64 --self-contained false`), command);

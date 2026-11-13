@@ -5,11 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 The install's <c>daoris.exe</c> hands the desktop's program every argument whole (SAYLINES1). The command was a batch file, whose
-/// <c>%*</c> ends at the first line break: <c>daoris session say &lt;id&gt; "several lines"</c> delivered the first line and said nothing
-/// of the rest. The program here is the native fixture <see cref="DriverProgramWordsProcessTests.Echo"/> builds, laid out as the desktop's
-/// program is, and the command is the build of <c>Daoris.Desktop.Command</c> laid out in an install's <c>app/bin/</c>, started as a terminal
-/// starts <c>daoris</c>: the program reads its words back by .NET's own reading of its command line, and the command's exit is its own.
+/// 🔴 The install's <c>daoris.exe</c> hands the desktop's program every argument whole, line breaks included. The program is the fixture
+/// <see cref="DriverProgramWordsProcessTests.Echo"/> builds, laid out as the desktop's program is; the command is the build of
+/// <c>Daoris.Desktop.Command</c> laid out in <c>app/bin/</c>. The program reads its words back by .NET's own reading of its command line.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

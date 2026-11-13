@@ -83,11 +83,7 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         Assert.All(standIn.Heard, heard => Assert.Equal(Key, heard.Key));
     }
 
-    /// <summary>
-    /// 🔴 <c>daoris ask --to &lt;repo&gt; --require "&lt;words&gt;" "&lt;check&gt;"</c> reaches the route: the terminal serialized each requirement as the wire record
-    /// (<c>Quote</c>, <c>Check</c>), the pipe binds <c>quote</c>, and every such ask was refused <c>MISSING_PAYLOAD_VALUE</c> whatever the words.
-    /// The payload is what the terminal sends, serialized as the instance client serializes it, and the words keep their line break.
-    /// </summary>
+    /// <summary>🔴 <c>ask --to &lt;repo&gt; --require</c> reaches the route as the terminal sends it, its words' line breaks kept.</summary>
     [Fact]
     public async Task A_new_ask_with_a_requirement_reaches_the_route_with_its_words_whole()
     {
@@ -195,7 +191,6 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
 
         public IReadOnlyList<(string Path, string? Key)> Heard { get { lock (_heard) return [.. _heard]; } }
 
-        /// <summary>The body each request carried, as sent.</summary>
         public IReadOnlyList<string> Bodies { get { lock (_heard) return [.. _bodies]; } }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)

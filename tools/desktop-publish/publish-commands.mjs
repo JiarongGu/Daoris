@@ -105,12 +105,7 @@ export function layPieceStart(published, install) {
   for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
 }
 
-/**
- * The install's command (SAYLINES1): one program, published framework-dependent and laid out in `app/bin/` whole beside the git doors, the
- * partner's launcher and `daoris-driver`'s folder. It starts the desktop's program with its arguments whole, which the batch file it
- * replaces could not: a batch file's arguments end at the first line break. A twin of `CommandLauncher.Program`, which
- * `CommandLauncherProcessTests` holds to this name.
- */
+/** The install's command: one program, published and laid out in `app/bin/` whole as the git doors are; a twin of `CommandLauncher.Program`. */
 export const COMMAND_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Command';
 export const COMMAND = CLI_LAUNCHERS[0];
 

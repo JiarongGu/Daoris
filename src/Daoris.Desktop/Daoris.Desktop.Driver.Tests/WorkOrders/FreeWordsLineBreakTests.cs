@@ -4,10 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 Words of several lines reach every verb that takes free words whole (SAYLINES1). A batch file ended the command's arguments at the first line
-/// break and said nothing of the rest, so a go for a release reached a session without its steps and its limit; the install's <c>daoris.exe</c>
-/// hands the program each argument whole (<c>CommandLauncherProcessTests</c>), and each verb here keeps the line breaks it is handed, in the
-/// words it sends, as they were typed: say, ask (its words, its requirements and its through words), quest, reword and helper.
+/// 🔴 Each verb that takes free words keeps the line breaks it is handed: say, ask (words, requirements, through words), quest, reword and
+/// helper. <c>CommandLauncherProcessTests</c> holds that the install's <c>daoris.exe</c> hands them to the program whole.
 /// </summary>
 public sealed class FreeWordsLineBreakTests
 {

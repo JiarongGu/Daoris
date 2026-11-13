@@ -4,11 +4,9 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris.exe</c>, the install's command: a small program of Daoris's own in <c>app/bin/</c> (<c>Daoris.Desktop.Command</c>) that starts the
-/// desktop's program (<c>app/daoris-driver/daoris-driver.exe</c>) with the arguments it was given, whole, and ends with its exit code. It
-/// takes the place of a batch file, which cannot do this: a batch file's <c>%*</c> ends at the first line break, so words of several lines
-/// reached the program as their first line, and said nothing of the rest. A program's command line carries a line break inside a quoted
-/// argument as it carries any character, and <see cref="ProcessStartInfo.ArgumentList"/> quotes each argument the way the program reads it back.
+/// <c>daoris.exe</c>, the install's command (<c>Daoris.Desktop.Command</c>): starts <c>app/daoris-driver/daoris-driver.exe</c> with its arguments
+/// whole and ends with its exit code. A batch file's <c>%*</c> ends at the first line break; a program's command line carries one inside a
+/// quoted argument, and <see cref="ProcessStartInfo.ArgumentList"/> quotes each argument the way the program reads it back.
 /// </summary>
 /// <remarks>
 /// The program's standard streams, environment and working folder are the command's own, since nothing is redirected: its words in, its

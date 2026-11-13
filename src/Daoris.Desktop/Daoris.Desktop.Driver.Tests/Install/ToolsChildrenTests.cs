@@ -169,6 +169,7 @@ public sealed class ToolsChildrenTests : IDisposable
         {
             case "bin":
                 Touch(Path.Combine(bin, "daoris.exe"));
+                Touch(Path.Combine(bin, "daoris.dll"));
                 break;
             case "app":
                 Directory.CreateDirectory(Path.Combine(_root, "app"));

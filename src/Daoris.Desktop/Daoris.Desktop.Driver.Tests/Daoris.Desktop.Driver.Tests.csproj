@@ -41,7 +41,7 @@
     <!-- Built first and never referenced (COAGENT1b): the partner's launcher compiles driver files in by link, and
          `PieceLauncherProcessTests` starts the built program in a piece's job. -->
     <ProjectReference Include="..\Daoris.Desktop.PieceStart\Daoris.Desktop.PieceStart.csproj" ReferenceOutputAssembly="false" />
-    <!-- Built first and never referenced (SAYLINES1): the install's command compiles one driver file in by link, and
+    <!-- Built first and never referenced: the install's command compiles one driver file in by link, and
          `CommandLauncherProcessTests` starts the built program with words of several lines. -->
     <ProjectReference Include="..\Daoris.Desktop.Command\Daoris.Desktop.Command.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first and never referenced (D249): a test's owner, compiling the one management in by link, which
