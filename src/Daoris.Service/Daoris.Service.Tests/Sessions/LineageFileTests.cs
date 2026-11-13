@@ -63,10 +63,6 @@ public sealed class LineageFileTests : IDisposable
         Assert.Null(file.Path);
     }
 
-    /// <summary>
-    /// A connector told a session is guarded for it even where its id or home names no file;
-    /// only one told none, a person's own agent's, is not.
-    /// </summary>
     [Fact]
     public void The_home_is_the_rules_home_the_driver_named_else_the_daoris_home_and_the_session_is_the_connectors()
     {

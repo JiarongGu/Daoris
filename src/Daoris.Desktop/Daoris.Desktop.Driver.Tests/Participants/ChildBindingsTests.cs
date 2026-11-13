@@ -295,8 +295,7 @@ public sealed class ChildBindingsTests
     }
 
     /// <summary>
-    /// The connector's <c>CallerProof</c> is the twin: an id the harness sent that could not be
-    /// read is kept as such, so a call it names is unknown, never the root's.
+    /// An id the harness sent that could not be read is kept as such, so a call it names is unknown, never the root's.
     /// </summary>
     [Fact]
     public void A_malformed_id_reads_as_unknown_never_as_the_root_s()

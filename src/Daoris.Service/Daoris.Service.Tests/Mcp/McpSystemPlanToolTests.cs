@@ -5,14 +5,13 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A session working in a system department plans through one typed tool, <c>system_plan</c>: each call is a keyed request in the
-/// home's session requests for the session's own record, which the loop running it takes, hands to the system's adapter and answers
-/// beside with the plan's number and its resources. The connector judges only what it can: that it speaks for a session, and that the
-/// call names changes; which system, and what they come to there, are the driver's and the adapter's.
+/// A session in a system department plans through <c>system_plan</c>: each call is a keyed request in the home's session requests for
+/// the session's own record, which the loop running it takes, hands to the system's adapter and answers beside with the plan's number
+/// and its resources. The connector judges that it speaks for a session and that the call names changes;
+/// which system, and what they come to there, are the driver's and the adapter's.
 /// </summary>
 /// <remarks>
-/// A twin: the request's fields are the driver's <c>SessionRequests</c> (<c>text</c> holding the changes), held there by
-/// <c>SystemPlanningTests</c> with the same names; the two change together.
+/// A twin: the request's fields are the driver's <c>SessionRequests</c>, held there by <c>SystemPlanningTests</c>; the two change together.
 /// </remarks>
 public sealed class McpSystemPlanToolTests : McpToolsFixture
 {

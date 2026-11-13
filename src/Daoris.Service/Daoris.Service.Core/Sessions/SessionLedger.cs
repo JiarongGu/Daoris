@@ -28,9 +28,7 @@ namespace Daoris.Knowledge;
 /// This machine's home, where a park's question is filed (<see cref="QuestionBox"/>), or null on a host with none: a supervisor's word is
 /// then refused <see cref="SessionSayRefusal.NoHome"/>, since its question cannot be checked.
 /// </param>
-/// <param name="opinions">
-/// The second opinions, where findings an open moved to a new part are followed: the part that holds them answers them.
-/// </param>
+/// <param name="opinions">The second opinions, where findings an open moved to a new part are followed: the part that holds them answers them.</param>
 public sealed class SessionLedger(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null,
     OpinionStore? opinions = null)

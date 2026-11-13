@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The connector lists every tool it registers to a session of any work and refuses no call by that work (ACCESS1 row h):
+/// The connector lists every tool it registers to a session of any work and refuses no call by that work:
 /// <c>fixtures/call-table.json</c> names every work and every registered tool, and a tool added later is listed to every work.
 /// </summary>
 public sealed class McpRoleFilterTests

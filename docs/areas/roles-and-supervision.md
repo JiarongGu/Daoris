@@ -23,7 +23,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 | `Modules/Bridge/` | The decision door (`SupervisorDecisionDoor`, one row per kind under `SupervisorKinds/`), the steward's act rows |
 | `Modules/Platform/` | The roles' terminals this run (`StandingConfirmation`), the delegate proof, Ask Daoris's press views (`Views/`) and press record |
 | `Help/`, `Help/SecondCheck/`, `Knowledge/` | Ask Daoris's modes, configured access, go links and room; the second check's selection, packets and readings |
-| `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
+| `Participants/Domain/StartAdmission.cs` | Who may ask for a co-worker |
 | `Web/agents/roles/`, `Web/agents/setup/`, `Web/work/head/` | The role editor and policy form, a place's Roles and *Who decides here*, the supervisor's cards |
 
 ## Its rules
@@ -327,7 +327,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 - **An Ask Daoris door, only where one is wanted:** a view in `Modules/Platform/Views/` registered in `PressViews.All`, its
   sentence under `person.view.<kind>`, the room's line and its doors-table row.
 - **Tests:** driver `Roles/*Tests`, `Help/`, `Knowledge/HelpRoom*Tests`; modules `DriverModuleRole*Tests`, `RoleActTests`,
-  `Holder*Tests`; service `McpRoleFilterTests`, `SupervisorWordTests`; web `agents/roles/`, `agents/setup/`. Gates: `driver`,
+  `Holder*Tests`; service `SupervisorWordTests`; web `agents/roles/`, `agents/setup/`. Gates: `driver`,
   `modules`, `censuses`, `service`, `web-unit`, `universal`.
 
 ## Contradictions

@@ -295,8 +295,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 Through the connector's lineage record: a build's subagent is served the memory reads, answered from the stand-in, and its write,
-    /// end and proposal reach their tools as its session's own, none refused for being a subagent's; the stand-in is left unchanged.
+    /// 🔴 A build's subagent is served the memory reads, and its write, end and proposal reach their tools as its session's own.
     /// </summary>
     [Fact]
     public async Task A_child_is_served_every_memory_tool_as_its_sessions()

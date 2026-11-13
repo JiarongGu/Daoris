@@ -34,8 +34,7 @@ public sealed class ParticipantWorkTests : McpToolsFixture
     }
 
     /// <summary>
-    /// Census A, the partner's half: a stored record's work is the work its marks answer, and a partner where the table says one, on every
-    /// row; a difference would be a listed decision.
+    /// Census A: a stored record is a partner where the table says one, on every row.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rows))]

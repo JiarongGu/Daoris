@@ -22,7 +22,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 |---|---|
 | `Service/Asks/` | The channel: its store (messages, read marks, acknowledgments, cursors), `ChannelDesk` (post, read, receipts, Daoris's lines, the judge), `ChannelParts` (a line's own channel and posts to one part, never synced), `LineChannel`, `TeammateAskChannel`, the members (`ChannelMembers`, `ChannelMemberRoll`), the bounds and refusals (`ChannelTerms.cs`), `HistoryDesk` |
 | `Service/Sessions/`, `Service/Quests/` | The sender rule (`Senders`, twinned in the driver and the web, held to `fixtures/senders.json`), the one door for solicited answers (`SolicitedAnswers`), the helper's, partner's, brainstorm's and meeting's desks; the quest exchange and its addresses |
-| `Mcp/` | `channel_post` and `channel_read`; which work may call which tool (`CallTable`, `ToolClasses`, held by a census) |
+| `Mcp/` | `channel_post` and `channel_read`; every tool's class (`ToolClasses`, held by a census) |
 | `Driver/WorkOrders/` | `Exchanges.Of`, delivery to running parts (`ChannelReach`), the terminal's channel verb and its member forms, *At work*'s reading, the members' look |
 | `Driver/Participants/`, `Driver/Loop/` | Helpers, partners and opinions: their admission, waits, person acts and runs; brainstorms and meetings at the look; the routing line (`RoutingStanding`) |
 | `Driver/Course/` | The answers-alone count and its hold |
@@ -232,7 +232,7 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 - **When a word reaches an agent**: the course's inbox and turns (`Driver/Course/`) and the service's say door. Channel delivery
   is `Driver/WorkOrders/ChannelReach.cs` beside `Service/Asks/`.
 - **Who a word is from**: all three sender readers and `fixtures/senders.json` in one change.
-- **Which tools a work gets**: `Mcp/CallTable.cs`; a new tool needs its class in `Mcp/ToolClasses.cs`.
+- **A new connector tool**: every work is served it; it needs its class in `Mcp/ToolClasses.cs`.
 - **Helpers and partners**: `Driver/Participants/` (`Domain`, `Helpers`, `Partners`), `Driver/Loop/DriverHelpers.cs`,
   `DriverPartners.cs`, and the service's desks in `Service/Sessions/`.
 - **Brainstorms and meetings**: `Driver/Loop/DriverBrainstorms.cs`, `DriverMeetings.cs`, `Driver/WorkOrders/Brainstorm*`, and
