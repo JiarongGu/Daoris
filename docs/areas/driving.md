@@ -201,7 +201,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson`, then `Completed`, `Declined`,
-    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree. (D46, D51, D83)
+    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
+    newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83)
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its own quest
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
@@ -283,7 +284,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     carried; with a tree, only this home's tree on a branch that moved and that no run owns (rule 51). Landed work goes only once it is on the line, and a branch
     its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
     keeping pass purges it. (D88, D195)
-49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or untracked work
+49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
+    `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
+    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`). Uncommitted or untracked work
     keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)

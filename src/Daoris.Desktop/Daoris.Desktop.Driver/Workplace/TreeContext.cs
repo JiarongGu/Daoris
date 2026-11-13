@@ -91,9 +91,8 @@ internal sealed class TreeContext
 
     /// <summary>
     /// The output a repository declares, which an unforced removal of its tree takes with it (<see cref="TreeScratch.DeclaredAsync"/>):
-    /// its <c>integration.scratch</c>, read from the declaration the owner accepted for integration at its line's tip alone, and the
-    /// generated index its manifest at that tip declares. None where the choices could not be read or the line is not known, so the tree
-    /// keeps what it names.
+    /// its accepted <c>integration.scratch</c> and its manifest's generated index, at its line's tip. None where the choices could not
+    /// be read or the line is not known, so the tree keeps what it names.
     /// </summary>
     /// <param name="line">The repository's line where the caller read it already; null reads it here.</param>
     internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchAsync(

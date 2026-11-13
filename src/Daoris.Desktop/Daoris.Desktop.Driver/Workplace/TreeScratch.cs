@@ -44,11 +44,7 @@ internal static class TreeScratch
         return text is null ? [] : ParseDeclared(text);
     }
 
-    /// <summary>
-    /// Everything a repository declares as output an unforced removal takes with a tree: its accepted <c>integration.scratch</c>
-    /// (<see cref="AcceptedAsync"/>), and the index its manifest declares and every checkout writes again (<see cref="GeneratedIndex"/>),
-    /// both read at <paramref name="line"/>'s tip; none where the line is not known.
-    /// </summary>
+    /// <summary>The output a removal takes with a tree: the accepted <see cref="AcceptedAsync"/> and the declared <see cref="GeneratedIndex"/>, at the line's tip.</summary>
     internal static async Task<IReadOnlyList<Regex>> DeclaredAsync(
         DriverConfig config, string root, string repository, string? line, CancellationToken ct)
     {

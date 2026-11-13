@@ -612,18 +612,15 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// A writer of the checkout waits for the newest part of an open quest only while it will go on, never for one completed,
-    /// declined or failed with no limit; the tree-keeping set (<see cref="BranchTidying.LineTrees"/>) counts every part that may still
-    /// be carried on in its tree, which a declined one never is.
+    /// A writer waits for an open quest's newest part only while it goes on; <see cref="BranchTidying.LineTrees"/> counts each (declined: TidyHoldersTests).
     /// </summary>
     [Theory]
-    [InlineData("completed", false, true, false)]
-    [InlineData("declined", false, false, false)]
-    [InlineData("failed", false, true, false)]
-    [InlineData("failed", true, true, true)]
-    [InlineData("stopped", false, true, true)]
-    [InlineData("awaiting-person", false, true, true)]
-    public void A_writer_waits_for_the_newest_part_of_an_open_quest_only_while_it_will_go_on(string state, bool limit, bool keeps, bool waits)
+    [InlineData("completed", false, false)]
+    [InlineData("failed", false, false)]
+    [InlineData("failed", true, true)]
+    [InlineData("stopped", false, true)]
+    [InlineData("awaiting-person", false, true)]
+    public void A_writer_waits_for_the_newest_part_of_an_open_quest_only_while_it_will_go_on(string state, bool limit, bool waits)
     {
         QuestView[] quests = [new("q1", "game", "engine", "Cap", "Cap the work", "Open")];
         PriorSession[] records =
@@ -632,21 +629,8 @@ public sealed class BranchTidyingTests : IDisposable
             new("s1", "/trees/s1", state) { Quest = "q1", Limit = limit, Created = _now },
         ];
 
-        Assert.Equal(keeps ? new[] { "/trees/s1" } : [], BranchTidying.LineTrees(records, quests));
+        Assert.Equal(["/trees/s1"], BranchTidying.LineTrees(records, quests));
         Assert.Equal(waits ? new[] { "/trees/s1" } : [], BranchTidying.LineWaiters(records, quests));
-    }
-
-    /// <summary>
-    /// The person's decline of a parked session leaves its quest taken: its tree is held by no session for that, so the clean-up
-    /// judges it by its content alone, as any ended session's.
-    /// </summary>
-    [Fact]
-    public void A_declined_session_of_a_quest_still_taken_holds_no_tree()
-    {
-        QuestView[] quests = [new("q1", "game", "engine", "Cap", "Cap the work", "Taken")];
-        PriorSession[] records = [new("s1", "/trees/s1", "declined") { Quest = "q1", Created = _now }];
-
-        Assert.Empty(BranchTidying.LineTrees(records, quests));
     }
 
     /// <summary>A repository held by a writer of its checkout is said as that writer, never as a session starting.</summary>

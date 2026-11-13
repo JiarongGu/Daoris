@@ -101,7 +101,7 @@ internal static class TidyHolders
 
     private static bool Declined(PriorSession record) => record.State.Equals("declined", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The tree of the newest part of each quest still open or taken, unless that part declined; a teammate's record is none here.</summary>
+    /// <summary>The tree of the newest part of each quest still open or taken, unless it declined (never carried on); a teammate's is none.</summary>
     public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
         LineHolders(records, quests).Select(each => each.Tree);
 
@@ -116,7 +116,6 @@ internal static class TidyHolders
             .Where(record => !record.Teammate && record.Quest is { Length: > 0 } quest && open.Contains(quest))
             .GroupBy(record => record.Quest!, StringComparer.OrdinalIgnoreCase)
             .Select(line => line.MaxBy(record => record.Created ?? DateTimeOffset.MinValue)!)
-            // A declined part is never carried on (the person's decline of a parked session leaves its quest taken), so it holds no tree.
             .Where(record => record.Tree is { Length: > 0 } && !Declined(record) && (!goingOn || GoesOn(record)))
             .Select(record => new TreeHolder(record.Tree!, record.Session));
     }
