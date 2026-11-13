@@ -6,20 +6,36 @@ namespace Daoris.Adapters.Machine;
 
 /// <summary>
 /// The machine's processes: a start is admitted by the application's policy, placed by the machine's places for its class, made on
-/// the thread pool, bound to the place the policy answered, and read on both streams as it writes them.
+/// the thread pool, handed to the owner and bound to the place the policy answered, and read on both streams as it writes them.
 /// </summary>
-public sealed class MachineProcessHost(IMachineAdmission places, StartPolicy policy) : IProcessHost
+public sealed class MachineProcessHost(
+    IMachineAdmission places, StartPolicy policy, ProcessOwner? owner = null, Func<ProcessStartInfo, Process?>? start = null) : IProcessHost
 {
+    private readonly Func<ProcessStartInfo, Process?> _start = start ?? Process.Start;
+
+    /// <summary>Told each start's wait for a place and its creation inside it, in ticks of <see cref="Stopwatch"/>, from the flow that asked.</summary>
+    public Action<long, long>? Timed { get; init; }
+
     public async ValueTask<IChildRun> StartAsync(ProcessSpec specification, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         var placed = policy(specification.Program, specification.Purpose);
+        var asked = Stopwatch.GetTimestamp();
         await using var place = await places.PlaceAsync(placed?.AdmissionClass ?? specification.AdmissionClass, ct).ConfigureAwait(false);
+        var entered = Stopwatch.GetTimestamp();
         var info = InfoOf(specification);
-        var process = await Task.Run(() => Process.Start(info), CancellationToken.None).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"{specification.Program} did not start");
-        placed?.Bind(process.Id);
-        return new MachineRun(process, specification.Input);
+        try
+        {
+            var process = await Task.Run(() => _start(info), CancellationToken.None).ConfigureAwait(false)
+                ?? throw new InvalidOperationException($"{specification.Program} did not start");
+            owner?.Take(process, specification.Purpose);
+            placed?.Bind(process.Id);
+            return new MachineRun(process, specification.Input, specification.RawOutput, owner?.End);
+        }
+        finally
+        {
+            Timed?.Invoke(entered - asked, Stopwatch.GetTimestamp() - entered);
+        }
     }
 
     private static ProcessStartInfo InfoOf(ProcessSpec specification)
@@ -31,7 +47,7 @@ public sealed class MachineProcessHost(IMachineAdmission places, StartPolicy pol
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.UTF8,
+            StandardOutputEncoding = specification.RawOutput ? null : Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
             WorkingDirectory = specification.WorkingFolder ?? "",
         };

@@ -1,5 +1,6 @@
 using System.Text;
 using Daoris.Adapters.DesktopStore.Sqlite;
+using Daoris.Adapters.Git;
 using Daoris.Adapters.Machine;
 using Daoris.Driver;
 using Daoris.Ports.Ambient;
@@ -35,15 +36,20 @@ using Daoris.Ports.Ambient;
 HolderKey.Take();
 
 // This process is a root: it chooses the ports the library reads, once, before anything opens the store or starts a process.
+var processes = new MachineProcessHost(StartPlaces.Shared, GitStartAdmission.Admit, new ProcessOwner(OwnedProcesses.Own, OwnedProcesses.End))
+{
+    Timed = ProcessStarts.Told,
+};
 AmbientPorts.Set(new PortSet
 {
     Clock = TimeProvider.System,
     Store = SqliteDesktopStores.Engines,
     Admission = StartPlaces.Shared,
+    Processes = processes,
     Liveness = MachineLiveness.Shared,
     StartPolicy = GitStartAdmission.Admit,
     Seal = KeySeal.Port,
-    Git = GitProcessRuns.Shared,
+    Git = new GitProcessRuns(processes, GitRunPolicy.Shared),
 });
 
 if (OperatingSystem.IsWindows())

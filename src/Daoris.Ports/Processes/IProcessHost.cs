@@ -18,15 +18,20 @@ public interface IChildRun : IAsyncDisposable
 
     DateTimeOffset Created { get; }
 
-    /// <summary>What it writes, as it is written, to its standard output and its standard error.</summary>
+    /// <summary>What it writes, as it is written, to its standard output and its standard error; to its standard error alone where raw output is asked.</summary>
     IAsyncEnumerable<ProcessOutput> Output(CancellationToken ct);
+
+    /// <summary>What it writes to its standard output as bytes, as they are written, where its specification asked for raw output; none otherwise.</summary>
+    IAsyncEnumerable<ReadOnlyMemory<byte>> Bytes(CancellationToken ct);
 
     /// <summary>Writes to its standard input, which its specification left open.</summary>
     ValueTask WriteAsync(ReadOnlyMemory<byte> input, CancellationToken ct);
 
+    ValueTask CloseInputAsync();
+
     /// <summary>Waits for it to end and answers how.</summary>
     ValueTask<ProcessEnd> EndAsync(CancellationToken ct);
 
-    /// <summary>Ends it and what it started.</summary>
-    ValueTask StopAsync(CancellationToken ct);
+    /// <summary>Ends it and what it started, and waits a bounded time for its exit: null where it exited, else why it is not known to have.</summary>
+    ValueTask<string?> StopAsync(CancellationToken ct);
 }

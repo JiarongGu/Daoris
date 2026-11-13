@@ -66,15 +66,19 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         using Daoris.Driver;
 
         // A shell is a root: it hands the library the store's engine and the machine's ports.
+        var host = new Daoris.Adapters.Machine.MachineProcessHost(
+            Daoris.Adapters.Machine.StartPlaces.Shared, GitStartAdmission.Admit,
+            new Daoris.Adapters.Machine.ProcessOwner(OwnedProcesses.Own, OwnedProcesses.End)) { Timed = ProcessStarts.Told };
         Daoris.Ports.Ambient.AmbientPorts.Set(new Daoris.Ports.Ambient.PortSet
         {
             Clock = TimeProvider.System,
             Store = Daoris.Adapters.DesktopStore.Sqlite.SqliteDesktopStores.Engines,
             Admission = Daoris.Adapters.Machine.StartPlaces.Shared,
+            Processes = host,
             Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
             StartPolicy = GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
-            Git = GitProcessRuns.Shared,
+            Git = new Daoris.Adapters.Git.GitProcessRuns(host, GitRunPolicy.Shared),
         });
         var (verb, home, record) = (args[0], args[1], args[2]);
         StoreProcess.Kind = verb == "drive" ? StoreProcess.Host : StoreProcess.Shell;
@@ -141,6 +145,7 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         var driver = typeof(MoveStore).Assembly.Location;
         var store = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj");
         var machine = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.Machine", "Daoris.Adapters.Machine.csproj");
+        var git = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.Git", "Daoris.Adapters.Git.csproj");
         return $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
@@ -154,6 +159,7 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
                 <Reference Include="Daoris.Desktop.Driver"><HintPath>{driver}</HintPath></Reference>
                 <ProjectReference Include="{store}" />
                 <ProjectReference Include="{machine}" />
+                <ProjectReference Include="{git}" />
               </ItemGroup>
             </Project>
             """;

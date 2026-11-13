@@ -302,6 +302,9 @@ jobs:
       - name: Desktop store adapter gate
         run: dotnet test src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests --nologo
 
+      - name: Git adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Git.Tests --nologo
+
       - name: Machine adapter gate
         run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Machine.Tests --nologo
 

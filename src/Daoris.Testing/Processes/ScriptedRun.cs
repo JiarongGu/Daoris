@@ -14,9 +14,12 @@ internal sealed class ScriptedRun : IChildRun
     private readonly TaskCompletionSource<ProcessEnd> _end = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly List<byte[]> _written = [];
 
-    internal ScriptedRun(ScriptedProcesses owner, int id, DateTimeOffset created, ScriptedAnswer answer)
+    private readonly bool _raw;
+
+    internal ScriptedRun(ScriptedProcesses owner, int id, DateTimeOffset created, ScriptedAnswer answer, bool raw = false)
     {
         _owner = owner;
+        _raw = raw;
         _answer = answer;
         Id = id;
         Created = created;
@@ -38,9 +41,25 @@ internal sealed class ScriptedRun : IChildRun
 
     public async IAsyncEnumerable<ProcessOutput> Output([EnumeratorCancellation] CancellationToken ct)
     {
-        foreach (var line in _answer.Output) yield return new ProcessOutput(ProcessStream.Output, line + "\n");
+        if (!_raw)
+        {
+            foreach (var line in _answer.Output) yield return new ProcessOutput(ProcessStream.Output, line + "\n");
+        }
+
         await _end.Task.WaitAsync(ct).ConfigureAwait(false);
     }
+
+    public async IAsyncEnumerable<ReadOnlyMemory<byte>> Bytes([EnumeratorCancellation] CancellationToken ct)
+    {
+        if (_raw)
+        {
+            foreach (var line in _answer.Output) yield return System.Text.Encoding.UTF8.GetBytes(line + "\n");
+        }
+
+        await _end.Task.WaitAsync(ct).ConfigureAwait(false);
+    }
+
+    public ValueTask CloseInputAsync() => ValueTask.CompletedTask;
 
     public ValueTask WriteAsync(ReadOnlyMemory<byte> input, CancellationToken ct)
     {
@@ -51,13 +70,13 @@ internal sealed class ScriptedRun : IChildRun
 
     public ValueTask<ProcessEnd> EndAsync(CancellationToken ct) => new(_end.Task.WaitAsync(ct));
 
-    public ValueTask StopAsync(CancellationToken ct)
+    public ValueTask<string?> StopAsync(CancellationToken ct)
     {
         Finish(new ProcessEnd(-1, Stopped: true));
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult<string?>(null);
     }
 
-    public ValueTask DisposeAsync() => StopAsync(CancellationToken.None);
+    public async ValueTask DisposeAsync() => await StopAsync(CancellationToken.None).ConfigureAwait(false);
 
     private void Finish(ProcessEnd end)
     {

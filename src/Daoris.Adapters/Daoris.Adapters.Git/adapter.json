@@ -1,0 +1,8 @@
+{
+  "suite": "adapters-git",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.Git.Tests",
+  "contract": ["src/Daoris.Testing/Git"],
+  "ports": ["Git", "Processes"],
+  "outside": ["tool:git"],
+  "over": ["Daoris.Adapters.Machine"]
+}

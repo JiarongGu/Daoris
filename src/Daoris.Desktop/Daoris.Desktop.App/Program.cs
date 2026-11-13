@@ -55,16 +55,24 @@ internal static class Program
         // This process is the shell, and its run of the desktop store says so, before anything of it opens the store.
         Daoris.Driver.StoreProcess.Kind = Daoris.Driver.StoreProcess.Shell;
 
-        // The shell is a root: it chooses the ports the library reads, once, before anything opens the store or starts a process.
+        // The shell is a root: it chooses the ports the library reads, once, before anything opens the store or starts a process. The
+        // machine's host joins each process it starts to its purpose's job, and git runs through it under the driver's own policy.
+        var processes = new Daoris.Adapters.Machine.MachineProcessHost(
+            Daoris.Adapters.Machine.StartPlaces.Shared, Daoris.Driver.GitStartAdmission.Admit,
+            new Daoris.Adapters.Machine.ProcessOwner(Daoris.Driver.OwnedProcesses.Own, Daoris.Driver.OwnedProcesses.End))
+        {
+            Timed = Daoris.Driver.ProcessStarts.Told,
+        };
         Daoris.Ports.Ambient.AmbientPorts.Set(new Daoris.Ports.Ambient.PortSet
         {
             Clock = TimeProvider.System,
             Store = Daoris.Adapters.DesktopStore.Sqlite.SqliteDesktopStores.Engines,
             Admission = Daoris.Adapters.Machine.StartPlaces.Shared,
+            Processes = processes,
             Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
             StartPolicy = Daoris.Driver.GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
-            Git = Daoris.Driver.GitProcessRuns.Shared,
+            Git = new Daoris.Adapters.Git.GitProcessRuns(processes, Daoris.Driver.GitRunPolicy.Shared),
         });
 
         // The home before anything else: an install's `data/` folder is the Daoris home for this

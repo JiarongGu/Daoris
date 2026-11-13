@@ -93,6 +93,17 @@ public abstract class GitContract
     }
 
     [Fact]
+    public async Task An_input_is_written_whole_to_git_as_UTF8_without_a_mark()
+    {
+        var hashed = new Script("hash-object --stdin", new GitAnswer(0, "ce013625030ba8dba906f756967f9e9ca394464a\n", ""));
+
+        var answer = await Backend(hashed).RunAsync(Ask("hash-object", "--stdin") with { Input = "hello\n" }, CancellationToken.None);
+
+        Assert.True(answer.Ok);
+        Assert.Equal("ce013625030ba8dba906f756967f9e9ca394464a", answer.Output.Trim());
+    }
+
+    [Fact]
     public async Task An_ask_made_with_a_cancelled_token_is_not_run()
     {
         using var cancelled = new CancellationTokenSource();

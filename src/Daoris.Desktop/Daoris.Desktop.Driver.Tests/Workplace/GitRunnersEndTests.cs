@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Daoris.Ports.Processes;
 
 namespace Daoris.Desktop.Driver.Tests;
 

@@ -21,7 +21,7 @@ const MODULES_READERS = ['modules', 'censuses', 'modules-process', 'deployment']
 const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 
 // The adapters' lock and each adapter's dependency tests, which a port, a contract case or an adapter moves.
-const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-machine', 'adapters-memory-lyntai'];
+const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-git', 'adapters-machine', 'adapters-memory-lyntai'];
 
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.

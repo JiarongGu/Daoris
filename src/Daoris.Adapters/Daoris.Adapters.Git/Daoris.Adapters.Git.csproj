@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The git adapter, ring 1: git run as the machine's processes behind the git port, started through the processes' port. Which git runs,
+    the scheduler's place, the count and the library's answers are the application's, handed in as the git policy; the application
+    reaches this adapter through the ports a root hands it and never names it. It takes no package.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RootNamespace>Daoris.Adapters.Git</RootNamespace>
+    <AssemblyName>Daoris.Adapters.Git</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>
