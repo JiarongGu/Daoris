@@ -59,7 +59,6 @@ public sealed record ReviewReference
 
     public string? Tip { get; init; }
 
-    /// <summary>The commit the run's chain grew from the line (<see cref="RunWorkBase"/>), frozen with the tip so a landing moves no comparison.</summary>
     public string? Base { get; init; }
 
     /// <summary>A checkout's turns, each its <c>HEAD</c> at its start and end, in order: the commits between two turns are not this work's.</summary>
