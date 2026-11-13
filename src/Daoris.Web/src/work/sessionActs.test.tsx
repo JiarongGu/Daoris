@@ -124,6 +124,36 @@ describe('the acts on a session', () => {
     vi.unstubAllGlobals();
   });
 
+  /** A pin is carried out at once; a name is asked under the header, and its save (or its giving up) is told back to the ask. */
+  it('pins and unpins a conversation by the session pressed, and saves or gives up its name through the ask', async () => {
+    invoke.mockImplementation(async (_module: string, type: string, args: { payload: { name?: string } }) => (type === 'CONVERSATION_RENAME'
+      ? { session: 's1a2b3c4', conversation: 'c1', name: args.payload.name ?? null }
+      : { session: 's1a2b3c4', conversation: 'c1', pinned: '2026-10-02T10:00:00Z' }));
+    const rename = vi.fn();
+    const { result, notify } = acts({ rename });
+
+    act(() => result.current.run('pin', { session: session() }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Pinned the conversation: it is listed first in its group.'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CONVERSATION_PIN', { payload: { id: 's1a2b3c4', pinned: true } });
+    act(() => result.current.run('unpin', { session: session() }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Unpinned the conversation.'));
+
+    // *Rename…* is the frame's: its ask opens under the header.
+    act(() => result.current.run('rename', { session: session() }));
+    expect(rename).toHaveBeenCalledWith('s1a2b3c4');
+
+    const named = { done: vi.fn(), refused: vi.fn() };
+    act(() => result.current.renameNow(session(), 'Workspaces', named));
+    await waitFor(() => expect(named.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CONVERSATION_RENAME', { payload: { id: 's1a2b3c4', name: 'Workspaces' } });
+    expect(notify).toHaveBeenCalledWith('Named the conversation Workspaces.');
+
+    const cleared = { done: vi.fn(), refused: vi.fn() };
+    act(() => result.current.renameNow(session(), null, cleared));
+    await waitFor(() => expect(cleared.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CONVERSATION_RENAME', { payload: { id: 's1a2b3c4' } });
+  });
+
   /** What only the frame can do goes to the frame's door, and is offered only where the frame handed one. */
   it('hands the frame what is the frame’s, and can run it only where the frame handed its door', () => {
     const doors = { answer: vi.fn(), stop: vi.fn(), review: vi.fn(), terminal: vi.fn() };

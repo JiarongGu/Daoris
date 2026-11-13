@@ -35,9 +35,9 @@ export type PlaceChange = { key: string; part: string; said: string; before: str
 
 export type PlaceRefusal = { repository?: string | null; part: string; code: string; sentence: string };
 
-export type PlaceAcceptance = { purpose: 'landed' | 'integration'; standing: string; said: string };
+export type PlaceAcceptance = { standing: string; said: string };
 
-export type PlaceDeclaration = { line: string; commit: string; blob: string; text?: string | null; acceptances: PlaceAcceptance[] };
+export type PlaceDeclaration = { line: string; commit: string; blob: string; text?: string | null; acceptance?: PlaceAcceptance | null };
 
 export type PlaceSide = {
   driven: boolean;
@@ -81,7 +81,7 @@ export type PlacePlanned = {
   digest: string;
 };
 
-export type PlaceAccept = { repository: string; purpose: string };
+export type PlaceAccept = { repository: string };
 
 /** An acceptance ticked, bound to the declaration it is ticked at: the line and blob the plan read. The route is sent only the {@link PlaceAccept}. */
 export type PlaceTick = PlaceAccept & { line: string; blob: string };
@@ -220,21 +220,17 @@ export const refusalsOf = (plan: PlacePlanned | null, part: PlacePart): PlaceRef
   (plan?.refusals ?? []).filter((each) => partOf(each) === part);
 
 /**
- * Where a refusal's cause is put right, by its code: the line's landing rows (a second opinion's reviewers, a review environment, the line), or
- * the workflow's own steps, where a tick would add one to the workflow the place keeps.
+ * Where a refusal's cause is put right, by its code: the line's landing rows, or the workflow's own steps.
  */
 export const doorOf = (code: string): 'landing' | 'steps' | null =>
   code === 'no-reviewers' || code === 'no-review-environment' || code === 'no-line' ? 'landing' : code === 'keeps-workflow' ? 'steps' : null;
 
-/** The acceptances the plan offers, each repository's declaration standing for a purpose that has not been accepted at its blob, with the line and blob read. */
+/** The acceptances the plan offers, each repository whose declaration is not accepted at its blob, with the line and blob read. */
 export const offered = (plan: PlacePlanned | null): PlaceTick[] =>
   (plan?.repositories ?? []).flatMap((row) =>
-    (row.declaration?.acceptances ?? [])
-      .filter((each) => each.standing === 'changed' || each.standing === 'unaccepted')
-      .map((each) => ({ repository: row.repository, purpose: each.purpose, line: row.declaration!.line, blob: row.declaration!.blob })));
-
-export const isChosen = (accept: readonly PlaceAccept[], one: PlaceAccept) =>
-  accept.some((each) => each.repository === one.repository && each.purpose === one.purpose);
+    row.declaration?.acceptance && (row.declaration.acceptance.standing === 'changed' || row.declaration.acceptance.standing === 'unaccepted')
+      ? [{ repository: row.repository, line: row.declaration.line, blob: row.declaration.blob }]
+      : []);
 
 /**
  * The ticks that still hold against the plan read, and the ones cleared: a tick for an acceptance the plan offers at another line or blob than it
@@ -244,7 +240,7 @@ export function reconcileTicks(accept: readonly PlaceTick[], plan: PlacePlanned)
   const now = offered(plan);
   const cleared: PlaceTick[] = [];
   const kept = accept.filter((tick) => {
-    const read = now.find((each) => each.repository === tick.repository && each.purpose === tick.purpose);
+    const read = now.find((each) => each.repository === tick.repository);
     if (!read || (read.line === tick.line && read.blob === tick.blob)) return true;
     cleared.push(read);
     return false;
@@ -255,8 +251,8 @@ export function reconcileTicks(accept: readonly PlaceTick[], plan: PlacePlanned)
 /** What Apply sends: the ticks still offered by the plan at the line and blob they were ticked at, as the route reads them. */
 export const acceptOf = (accept: readonly PlaceTick[], plan: PlacePlanned | null): PlaceAccept[] =>
   offered(plan)
-    .filter((read) => accept.some((tick) => tick.repository === read.repository && tick.purpose === read.purpose && tick.line === read.line && tick.blob === read.blob))
-    .map(({ repository, purpose }) => ({ repository, purpose }));
+    .filter((read) => accept.some((tick) => tick.repository === read.repository && tick.line === read.line && tick.blob === read.blob))
+    .map(({ repository }) => ({ repository }));
 
 /** The place a set-up is for, as its page names it: the id the list chose, and for a workspace the repositories it drives now. */
 export type SetUpPlace = { id: string; kind: 'repository' | 'workspace'; name: string; workspace: string; driven: string[] };

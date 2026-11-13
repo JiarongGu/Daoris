@@ -193,7 +193,7 @@ internal sealed class AskPublishing(
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}) — it becomes nothing more.", ask);
         }
 
-        if (await guard.JudgeAsync(ask, to, session, ct).ConfigureAwait(false) is { } once) return once;
+        if (await guard.JudgeAsync(ask, to, session, ct, part: draft?.Part is not null).ConfigureAwait(false) is { } once) return once;
 
         // An intake's review proposal, judged before anything is published, so a refused one leaves nothing behind.
         var agent = byAgent || !string.IsNullOrWhiteSpace(session);

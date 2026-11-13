@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The key a workflow's <c>request</c> node publishes its quest under:
-/// <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, the run, the node's id and the publication's number. It widens the quest's id
+/// The key a quest is published under: a workflow's <c>request</c> node's <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, the run, the node's id and the
+/// publication's number, or an ask's plan's <c>&lt;ask&gt;/&lt;part&gt;/1</c> (<see cref="TeamDesk"/>). It widens the quest's id
 /// (<see cref="QuestStore.MakeId"/>), so two runs asking in the same words make two quests and the same key sent again is its own quest.
 /// </summary>
 public static partial class QuestRequests

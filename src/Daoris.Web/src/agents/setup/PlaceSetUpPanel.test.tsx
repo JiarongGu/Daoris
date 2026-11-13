@@ -189,13 +189,13 @@ describe('Set up…, on a place\'s page', () => {
     await open(/^engine/);
     await userEvent.click(await screen.findByRole('radio', { name: /Integrated into the line/ }));
     await review();
-    const tick = await screen.findByRole('checkbox', { name: /Accept for integration/ });
+    const tick = await screen.findByRole('checkbox', { name: /Accept these checks/ });
     expect(tick).not.toBeChecked();
     await waitFor(() => expect(applyButton()).toBeEnabled());
     await userEvent.click(tick);
     await userEvent.click(applyButton());
     const ask: PlaceAsk = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
-    await waitFor(() => expect(sent('PLACE_APPLY')).toEqual([{ ...ask, digest: planOf(ask).digest, accept: [{ repository: 'engine', purpose: 'integration' }] }]));
+    await waitFor(() => expect(sent('PLACE_APPLY')).toEqual([{ ...ask, digest: planOf(ask).digest, accept: [{ repository: 'engine' }] }]));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLACE_APPLY', expect.objectContaining({ timeoutMs: expect.any(Number) }));
     expect(await screen.findByRole('status')).toHaveTextContent('configuration applied; adoption pending');
   });
@@ -205,7 +205,7 @@ describe('Set up…, on a place\'s page', () => {
     await open(/^engine/);
     await userEvent.click(await screen.findByRole('radio', { name: /Integrated into the line/ }));
     await review();
-    await screen.findByRole('checkbox', { name: /Accept for integration/ });
+    await screen.findByRole('checkbox', { name: /Accept these checks/ });
     await waitFor(() => expect(applyButton()).toBeEnabled());
     await userEvent.click(applyButton());
     await waitFor(() => expect(sent('PLACE_APPLY')[0]).toMatchObject({ accept: [] }));
@@ -216,15 +216,15 @@ describe('Set up…, on a place\'s page', () => {
     await open(/^engine/);
     await userEvent.click(await screen.findByRole('radio', { name: /Integrated into the line/ }));
     await review();
-    await userEvent.click(await screen.findByRole('checkbox', { name: /Accept for integration/ }));
-    expect(screen.getByRole('checkbox', { name: /Accept for integration/ })).toBeChecked();
+    await userEvent.click(await screen.findByRole('checkbox', { name: /Accept these checks/ }));
+    expect(screen.getByRole('checkbox', { name: /Accept these checks/ })).toBeChecked();
     // The blob moves while the person reads; the next plan read is of another ask, and the tick made against the earlier blob does not hold.
     blob = 'ffffffffffffffffffffffffffffffffffffffff';
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
     await review();
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('the declaration changed to blob fffffff at main since you chose Accept for integration, so the choice was cleared.'));
-    expect(screen.getByRole('checkbox', { name: /Accept for integration/ })).not.toBeChecked();
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('the declaration changed at main since you chose to accept it, so the choice was cleared.'));
+    expect(screen.getByRole('checkbox', { name: /Accept these checks/ })).not.toBeChecked();
     await waitFor(() => expect(applyButton()).toBeEnabled());
     await userEvent.click(applyButton());
     await waitFor(() => expect(sent('PLACE_APPLY')[0]).toMatchObject({ accept: [] }));

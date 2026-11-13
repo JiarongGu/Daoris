@@ -38,6 +38,10 @@ Row: <ROW> in TASKS.md. Contract: <document, section>. Main is at <sha>.
 Lanes the row names: <lane ids>. Branches in flight hold: <files>.
 ```
 
+A planned batch has no hand-written briefs: when the ask holds a plan (`team_plan`, read with `json: true`), save it under
+`local/scratch/` and run `node tools/team-briefs.mjs <plan.json> --base <sha>`, which composes each part's brief below from
+its pack, claims and edges. Hand-fill the lines only for a row with no plan.
+
 The worker, with `subagent_type: branch-worker` and the model its role takes:
 
 ```

@@ -287,7 +287,7 @@
   "person.view.place-adoption": "Asks each repository's own session, as a quest, to set it up for agents.",
   "person.view.place-adoption-builds": "Asks each repository's own session, as a quest, to set it up for agents ({{builds}}).",
   "person.view.place-apply-drive": "Daoris drives all its work.",
-  "person.view.place-accept": "Accepts the declaration of {{repository}} for {{purpose}}.",
+  "person.view.place-accept": "Accepts the declaration of {{repository}}.",
   "person.view.place-room": "Asks {{repositories}}'s own session (workspace {{workspace}}), as a quest, to give {{room}} a room of its own: {{purpose}}. Nothing is written here: the room's text and its declaration are the repository's own, made on its own branch.",
   "person.view.place-room-alone": "{{repository}} is not driven here, so its room quest starts alone while general driving stays off.",
   "person.view.place-room-quest": "Asks the quest “{{title}}”, which opens: {{head}}",

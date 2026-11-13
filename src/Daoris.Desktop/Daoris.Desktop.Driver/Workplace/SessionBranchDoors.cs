@@ -26,8 +26,10 @@ public static class SessionBranchDoors
     /// <param name="session">The session the branch's tree is (<see cref="SessionOfTree"/>), or null.</param>
     public static string? LandingOffered(SweepItem item, SessionRecord? session) =>
         item is { Kind: SweepKind.Unlanded, Commits: > 0, Tree: not null } && session is { Live: false, Teammate: false }
-            ? $"if its work is wanted: `daoris tree land {session.Id}` accepts it (session {session.Id}, {session.State}, its tree here)"
+            ? $"if its work is wanted: its run's Accept lands it, `{OpenRun(session.Id)}` opens the run (session {session.Id}, {session.State}, its tree here)"
             : null;
+
+    public static string OpenRun(string session) => $"daoris workflow run --session {session}";
 
     /// <summary>
     /// The records a clean-up's list names each kept branch's session from, or none where the service does not answer

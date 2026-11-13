@@ -91,12 +91,12 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void The_map_names_the_core_s_ten_modules_and_the_door_s_test_folder()
+    public void The_map_names_the_core_s_eleven_modules_and_the_door_s_test_folder()
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
         Assert.Equal(
-            ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
+            ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Teams", "Sessions", "Review", "Help", "Knowledge"],
             map.Modules);
         Assert.Equal(["Mcp"], map.TestFolders);
     }

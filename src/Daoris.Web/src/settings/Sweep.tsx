@@ -260,8 +260,8 @@ export function BranchRow({ name, moving, word, children, under }: {
  * ask stays open until the driver answers, and says a branch it kept inside itself.
  *
  * **A kept branch whose tree is still here says how it lands**: where the driver says `landable`,
- * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris tree land`
- * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
+ * the row names the session its tree is and how it ended, and that its page offers Accept, as its run's Accept
+ * does from the terminal (`daoris workflow run --session`), whose list prints that line beside the same row. Words only: the press is the session's.
  */
 export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, onWithdraw, withdrawing = null, sync }: {
   /** Undefined while the driver is asked; empty when there is no session branch at all. */

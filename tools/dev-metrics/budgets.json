@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "look": { "medianMs": 3000, "p90Ms": 6000, "maxMs": 30000 },
+  "quest": { "publishedToTakenLooks": 1, "takenToStartedMs": 60000, "acceptedToLandedLooks": 2, "orderViolations": 0 },
+  "workflow": { "mechanicalWorkLooks": 1, "unnamedWaiters": 0 },
+  "actors": { "untypedFailures": 0, "silentFailures": 0 },
+  "communication": { "deliveryLooks": 1, "lostWords": 0 },
+  "askDaoris": { "firstReplyMs": 15000 },
+  "personQueue": { "unseenAgeMs": 3600000 },
+  "cost": { "policy": "trend per actor, role, model, quest and ask; no numeric ceiling" },
+  "leftovers": { "completedCaseItems": 0 },
+  "development": { "gateMs": 300000, "mergeWallMs": 600000, "firstPassPercent": 80, "fullSetWallMs": 1800000, "gatesOverBudget": 0 },
+  "browser": { "openMs": 2000 }
+}

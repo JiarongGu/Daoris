@@ -1,4 +1,4 @@
 {
-  "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
+  "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Teams", "Sessions", "Review", "Help", "Knowledge"],
   "testFolders": ["Mcp"]
 }

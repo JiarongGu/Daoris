@@ -44,6 +44,15 @@ internal static class TreeScratch
         return text is null ? [] : ParseDeclared(text);
     }
 
+    /// <summary>The output a removal takes with a tree: the accepted <see cref="AcceptedAsync"/> and the declared <see cref="GeneratedIndex"/>, at the line's tip.</summary>
+    internal static async Task<IReadOnlyList<Regex>> DeclaredAsync(
+        DriverConfig config, string root, string repository, string? line, CancellationToken ct)
+    {
+        if (line is null || !BranchName.IsValid(line)) return [];
+        var accepted = await AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
+        return await GeneratedIndex.AtAsync(root, line, ct).ConfigureAwait(false) is { } index ? [.. accepted, .. Globs([index])] : accepted;
+    }
+
     /// <summary>
     /// The declared globs of a gates file's text, read through the declaration's one reader (<see cref="IntegrationDeclaration.Read"/>),
     /// each as a pattern over a repository-relative path (<c>/</c> separated, case-insensitive): <c>*</c> within one segment, <c>**</c>
@@ -54,7 +63,10 @@ internal static class TreeScratch
     /// </summary>
     internal static IReadOnlyList<Regex> ParseDeclared(string text) =>
         // A declaration that does not read declares nothing, which keeps a tree rather than discarding one.
-        [.. (IntegrationDeclaration.Read(text).Facts?.Scratch ?? []).Select(Glob).OfType<Regex>()];
+        Globs(IntegrationDeclaration.Read(text).Facts?.Scratch ?? []);
+
+    /// <summary>Each declared glob as its pattern (<see cref="ParseDeclared"/>'s rules), passing over one they refuse.</summary>
+    internal static IReadOnlyList<Regex> Globs(IEnumerable<string> globs) => [.. globs.Select(Glob).OfType<Regex>()];
 
     private static Regex? Glob(string text)
     {

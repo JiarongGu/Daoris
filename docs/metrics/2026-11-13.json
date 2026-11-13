@@ -1,0 +1,636 @@
+{
+  "schema": 1,
+  "date": "2026-11-13",
+  "receipts": [
+    {
+      "generatedAt": "2026-11-13T11:05:53.589Z",
+      "scope": {
+        "requested": [
+          "6619a7793f30"
+        ],
+        "quests": [
+          "6619a7793f30"
+        ],
+        "asks": [
+          "50975a"
+        ],
+        "sessions": [
+          "db512a63"
+        ],
+        "looks": "global driver loop in the date range; look events carry no case identity",
+        "completed": false
+      },
+      "budgets": {
+        "file": "tools/dev-metrics/budgets.json",
+        "values": {
+          "schema": 1,
+          "look": {
+            "medianMs": 3000,
+            "p90Ms": 6000,
+            "maxMs": 30000
+          },
+          "quest": {
+            "publishedToTakenLooks": 1,
+            "takenToStartedMs": 60000,
+            "acceptedToLandedLooks": 2,
+            "orderViolations": 0
+          },
+          "workflow": {
+            "mechanicalWorkLooks": 1,
+            "unnamedWaiters": 0
+          },
+          "actors": {
+            "untypedFailures": 0,
+            "silentFailures": 0
+          },
+          "communication": {
+            "deliveryLooks": 1,
+            "lostWords": 0
+          },
+          "askDaoris": {
+            "firstReplyMs": 15000
+          },
+          "personQueue": {
+            "unseenAgeMs": 3600000
+          },
+          "cost": {
+            "policy": "trend per actor, role, model, quest and ask; no numeric ceiling"
+          },
+          "leftovers": {
+            "completedCaseItems": 0
+          },
+          "development": {
+            "gateMs": 300000,
+            "mergeWallMs": 600000,
+            "firstPassPercent": 80,
+            "fullSetWallMs": 1800000,
+            "gatesOverBudget": 0
+          },
+          "browser": {
+            "openMs": 2000
+          }
+        }
+      },
+      "range": {
+        "since": "2026-11-13",
+        "until": "2026-11-13"
+      },
+      "source": {
+        "quests": "knowledge.db quests",
+        "workspaces": [
+          "games"
+        ],
+        "questRecords": 1,
+        "tables": {
+          "quests": true,
+          "sessions": true,
+          "asks": true,
+          "quest_log": true,
+          "channel": true,
+          "channel_acks": true,
+          "channel_addressed": true,
+          "channel_addressed_acks": true,
+          "event_journal": true,
+          "said_settled": true
+        }
+      },
+      "throughput": {
+        "questsFiled": 1,
+        "questsDone": 0,
+        "asksFiled": 1,
+        "asksClosed": 0
+      },
+      "leadTime": {
+        "filedToDone": "not recorded: quests.filed and done timestamp pairs",
+        "doneToLine": "not recorded: quest done and landing line removal timestamp pairs",
+        "doneNotOnLine": 0
+      },
+      "cost": {
+        "perQuest": [
+          {
+            "quest": "6619a7793f30",
+            "sessions": 1,
+            "tokens": "not recorded: usage-history turns in the selected range and scope"
+          }
+        ],
+        "perActor": {},
+        "total": "not recorded: usage-history turns in the selected range and scope",
+        "perRole": [],
+        "perModel": [],
+        "perAsk": [
+          {
+            "ask": "50975a",
+            "tokens": "not recorded: usage-history turns in the selected range and scope"
+          }
+        ],
+        "modelAllocation": "a multi-model turn is a joint total; the record does not allocate its tokens between models"
+      },
+      "completion": {
+        "requirements": 0,
+        "met": 0,
+        "departed": 0,
+        "unanswered": 0
+      },
+      "firstPass": "not recorded: merge queue records; pass --merge-queue <local/merge-queue.json>",
+      "mergeFlow": "not recorded: merge run records; pass --merge-record <local/merge-record.jsonl>",
+      "friction": {
+        "permissionRefused": 0,
+        "permissionRefusedByTool": {},
+        "refusalsToAgents": 0,
+        "lookSlow": 1402,
+        "lookMs": {
+          "n": 2464,
+          "median": 4311,
+          "mean": 6921.2,
+          "p90": 14017,
+          "max": 161666,
+          "total": 17053764
+        }
+      },
+      "leftovers": {
+        "trees": 1,
+        "sessionBranchesPresent": "not recorded: case branch identity in landing records or session branch name",
+        "landedBranchesPresent": 0,
+        "staleWorktrees": "not recorded: git worktree prunable inventory correlated with case sessions"
+      },
+      "askDaoris": {
+        "conversations": "not recorded: usage-history Ask Daoris turns in range",
+        "turns": "not recorded: usage-history Ask Daoris turns in range",
+        "tokens": "not recorded: usage-history turns in the selected range and scope",
+        "actsInFullAccess": 0,
+        "cardsAsked": 0,
+        "replies": []
+      },
+      "lyntai": {
+        "searches": 0,
+        "searchesWithHits": 0,
+        "hitsFetchedSameSession": 0,
+        "cited": "not recorded: the handback or session log of memory entry ids cited by a result",
+        "gets": 0,
+        "writes": 0,
+        "proposes": 0,
+        "latencyMs": "not recorded: memory tool call start and completion timestamp pairs",
+        "latencyNote": "a call's first and last event in the session stream: includes any permission wait; the connector's own log (the mcp log) records only app.started and app.stopped",
+        "store": {
+          "entries": 0,
+          "nodes": 0
+        }
+      },
+      "lifecycle": [
+        {
+          "quest": "6619a7793f30",
+          "sessions": [
+            "db512a63"
+          ],
+          "stages": {
+            "published": "2026-11-13T10:17:46.0002695+00:00",
+            "taken": "2026-11-13T10:20:18.4608486+00:00",
+            "started": "2026-11-13T10:18:15.344Z",
+            "firstCommit": "2026-11-13T21:22:21+11:00",
+            "done": "not recorded: quest_log done.at or quest submission.at",
+            "submitted": "not recorded: quest_log submitted.at or quest submission.at",
+            "held": "not recorded: workflow hold entry timestamp; quest submitted is readiness, not a hold",
+            "questAccepted": "not recorded: quest_log accepted.at or quest.accepted (departure/evidence yes, separate from workflow Accept)",
+            "accepted": "not recorded: workflow review Accept completion timestamp; quest.accepted is a different yes",
+            "landed": "not recorded: landings branches.landedAt",
+            "pushed": "not recorded: push completion timestamp; landings.pushed/pushedTip records no clock",
+            "prMerged": "not recorded: landings pullRequestState.at when state=merged",
+            "released": "not recorded: plugin release node completion timestamp bound to this quest and commit in workflow observations; built-in release cleans a tree"
+          },
+          "transitions": [
+            {
+              "stage": "published",
+              "at": "2026-11-13T10:17:46.0002695+00:00"
+            },
+            {
+              "stage": "taken",
+              "at": "2026-11-13T10:20:18.4608486+00:00"
+            }
+          ],
+          "stageClock": "first retained clock per stage; transitions retain repeated takes, submissions and reopens",
+          "firstCommitClock": "git first-parent committer timestamp; the session tree must still be readable",
+          "elapsedMs": {
+            "publishedToTaken": 152460,
+            "takenToStarted": -123116,
+            "startedToFirstCommit": 245656,
+            "firstCommitToDone": "not recorded: session first commit clock and quest done.at",
+            "doneToHeld": "not recorded: workflow hold entry timestamp",
+            "doneToAccepted": "not recorded: quest done and acceptance timestamps",
+            "doneToQuestAccepted": "not recorded: quest done and departure/evidence yes timestamps",
+            "acceptedToLanded": "not recorded: acceptance and landing timestamps",
+            "doneToLanded": "not recorded: quest done and landing timestamps",
+            "landedToPushed": "not recorded: push completion timestamp",
+            "pushedToPrMerged": "not recorded: push and PR merge completion timestamps",
+            "prMergedToReleased": "not recorded: release completion timestamp"
+          }
+        }
+      ],
+      "workflow": [
+        {
+          "run": "6619a7793f30",
+          "boundAt": "2026-11-13T10:18:14Z",
+          "ended": "not recorded: workflows/units run ended record",
+          "steps": [
+            {
+              "unit": "run:6619a7793f30",
+              "node": "apart",
+              "kind": "isolate",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "work",
+              "kind": "claimed",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "requests",
+              "kind": "work.requests",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "holds",
+              "kind": "quest.holds",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "content",
+              "kind": "content.holds",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "landing",
+              "kind": "land",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "performed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            },
+            {
+              "unit": "run:6619a7793f30",
+              "node": "line",
+              "kind": "line",
+              "attempt": "not recorded: workflow node attempt number",
+              "reach": "observed",
+              "state": "not recorded: workflow node status",
+              "attemptState": "not recorded: workflow dispatched attempt state",
+              "startedAt": "not recorded: workflows/units status.since or attempt.recordedAt",
+              "endedAt": "not recorded: workflow outcome timestamp (node status keeps start only; history is bounded)",
+              "waitMs": "not recorded: workflow ready timestamp (person-again history or retry due) and attempt start",
+              "workMs": "not recorded: workflow attempt outcome timestamp beside recordedAt",
+              "workClock": "node history clearing an active attempt; otherwise missing",
+              "holds": [],
+              "waiting": false,
+              "holdReason": "not recorded: workflow node holds reason",
+              "waiter": "not recorded: workflow wait owner identity; status.holds is a reason, not a person",
+              "clearedBy": "not recorded: workflow hold-clear actor in node history or attempt.resolution",
+              "holdObservedAt": "not recorded: workflow.held log with node and session/run, or active pressed review/go-ahead status.since",
+              "ageMs": "not recorded: workflow.held first observation timestamp; status.since clocks the attempt, not the hold"
+            }
+          ],
+          "coverage": "not recorded: complete node transition log; workflows/units history keeps cleared states only, newest 200"
+        }
+      ],
+      "communication": {
+        "channel": [],
+        "helpers": [],
+        "words": [],
+        "questResponses": [],
+        "lostWords": 0,
+        "coverage": "not recorded: complete communication loss ledger, including quest response acknowledgements and recipients without a session record"
+      },
+      "actors": [
+        {
+          "role": "build",
+          "starts": 1,
+          "carryOns": 0,
+          "handOvers": 0,
+          "failures": {},
+          "untypedFailures": 0,
+          "ran": [
+            {
+              "session": "db512a63",
+              "asked": {
+                "agent": "codex-acp",
+                "model": {
+                  "source": "account-default",
+                  "value": null,
+                  "carried": false
+                },
+                "effort": {
+                  "source": "account-default",
+                  "value": null,
+                  "carried": false
+                },
+                "namedModel": null
+              },
+              "chosen": {
+                "rule": "weight",
+                "by": "weight",
+                "condition": null,
+                "from": null
+              },
+              "model": "not recorded: sessions.ran reported model",
+              "tier": "not recorded: actual executed tier in sessions.ran; requested effort is not proof"
+            }
+          ],
+          "carryOnCoverage": "not recorded: same-session carry-on event census; from_session counts new parts only",
+          "failureCoverage": "current failed session records with updated in range; recovered failures require the historical transition ledger"
+        }
+      ],
+      "browser": {
+        "openMs": "not recorded: browser plugin session tab open request and completion clock",
+        "signInShared": "not recorded: browser probe local storage key names; no credential values"
+      },
+      "personQueue": {
+        "items": [],
+        "coverage": "not recorded: complete needs-you snapshot (NeedsAPerson.Rows); records above cover session parks, quest holds, proposals, go-aheads, helper approvals and workflow holds",
+        "readLog": "not recorded: needs-you per-item read log"
+      },
+      "checks": [
+        {
+          "metric": "look.medianMs",
+          "scope": "global loop",
+          "value": 4311,
+          "budget": 3000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "look.p90Ms",
+          "scope": "global loop",
+          "value": 14017,
+          "budget": 6000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "look.maxMs",
+          "scope": "global loop",
+          "value": 161666,
+          "budget": 30000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "quest.orderViolations",
+          "quest": "6619a7793f30",
+          "stages": [
+            "takenToStarted"
+          ],
+          "value": 1,
+          "budget": 0,
+          "unit": "stages",
+          "verdict": "defect"
+        },
+        {
+          "metric": "quest.publishedToTaken",
+          "quest": "6619a7793f30",
+          "value": 8,
+          "budget": 1,
+          "unit": "looks",
+          "verdict": "defect"
+        },
+        {
+          "metric": "quest.takenToStarted",
+          "quest": "6619a7793f30",
+          "value": -123116,
+          "budget": 60000,
+          "unit": "ms",
+          "verdict": "pass"
+        },
+        {
+          "metric": "quest.acceptedToLanded",
+          "quest": "6619a7793f30",
+          "value": "not recorded: watch.looked log covering both endpoints to count completed looks",
+          "budget": 2,
+          "unit": "looks",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "workflow.mechanicalWork",
+          "run": "6619a7793f30",
+          "node": "landing",
+          "value": "not recorded: watch.looked log covering both endpoints to count completed looks",
+          "budget": 1,
+          "unit": "looks",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "communication.lostWords",
+          "value": 0,
+          "budget": 0,
+          "unit": "items",
+          "verdict": "pass"
+        },
+        {
+          "metric": "actors.untypedFailures",
+          "role": "build",
+          "value": 0,
+          "budget": 0,
+          "unit": "items",
+          "verdict": "pass"
+        },
+        {
+          "metric": "actors.silentFailures",
+          "value": "not recorded: failure/outcome ledger proving a session failed silently",
+          "budget": 0,
+          "unit": "items",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "askDaoris.firstReplyMs",
+          "value": "not recorded: Ask Daoris person word and first assistant reply events in range",
+          "budget": 15000,
+          "unit": "ms",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "leftovers.trees",
+          "value": "not recorded: completed case receipt before leftovers are judged",
+          "budget": 0,
+          "unit": "items",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "leftovers.sessionBranchesPresent",
+          "value": "not recorded: completed case receipt before leftovers are judged",
+          "budget": 0,
+          "unit": "items",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "leftovers.landedBranchesPresent",
+          "value": "not recorded: completed case receipt before leftovers are judged",
+          "budget": 0,
+          "unit": "items",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "leftovers.staleWorktrees",
+          "value": "not recorded: completed case receipt before leftovers are judged",
+          "budget": 0,
+          "unit": "items",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "development.firstPassPercent",
+          "value": "not recorded: merge-record firstPass per branch",
+          "budget": 80,
+          "unit": "%",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "development.fullSetWallMs",
+          "value": "not recorded: full-set gate run wall-time receipt",
+          "budget": 1800000,
+          "unit": "ms",
+          "verdict": "not recorded"
+        },
+        {
+          "metric": "browser.openMs",
+          "value": "not recorded: browser plugin session tab open request and completion clock",
+          "budget": 2000,
+          "unit": "ms",
+          "verdict": "not recorded"
+        }
+      ],
+      "defects": [
+        {
+          "metric": "look.medianMs",
+          "scope": "global loop",
+          "value": 4311,
+          "budget": 3000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "look.p90Ms",
+          "scope": "global loop",
+          "value": 14017,
+          "budget": 6000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "look.maxMs",
+          "scope": "global loop",
+          "value": 161666,
+          "budget": 30000,
+          "unit": "ms",
+          "verdict": "defect"
+        },
+        {
+          "metric": "quest.orderViolations",
+          "quest": "6619a7793f30",
+          "stages": [
+            "takenToStarted"
+          ],
+          "value": 1,
+          "budget": 0,
+          "unit": "stages",
+          "verdict": "defect"
+        },
+        {
+          "metric": "quest.publishedToTaken",
+          "quest": "6619a7793f30",
+          "value": 8,
+          "budget": 1,
+          "unit": "looks",
+          "verdict": "defect"
+        }
+      ]
+    }
+  ]
+}

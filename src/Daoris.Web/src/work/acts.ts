@@ -13,7 +13,7 @@ import type { SessionWhere } from './rail/SessionRow';
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
   | 'answer' | 'stop' | 'handOver' | 'askHelper' | 'askPiece' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry'
-  | 'review' | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
+  | 'review' | 'openFolder' | 'terminal' | 'detach' | 'rename' | 'pin' | 'unpin' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
 /**
  * The order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands. Another
@@ -21,7 +21,7 @@ export type SessionActId =
  */
 export const ACT_ORDER: readonly SessionActId[] = [
   'answer', 'stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review',
-  'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
+  'openFolder', 'terminal', 'detach', 'rename', 'pin', 'unpin', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
 /**
@@ -47,6 +47,9 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   openFolder: { label: 'work.act.openFolder', icon: 'folder' },
   terminal: { label: 'work.act.terminal', icon: 'terminal' },
   detach: { label: 'work.monitor.detach', icon: 'external' },
+  rename: { label: 'work.act.rename', icon: 'edit' },
+  pin: { label: 'work.act.pin', icon: 'pin' },
+  unpin: { label: 'work.act.unpin', icon: 'pin' },
   archive: { label: 'work.act.archive', icon: 'archive' },
   unarchive: { label: 'work.act.unarchive', icon: 'unarchive' },
   // The bin, since nothing brings it back; an archive is the box.
@@ -122,6 +125,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  * - **Ask another agent to work on a piece…** in the header of a session of this machine's own that leads pieces, driven or a
  *   conversation and has not ended (`takesPartner`): it opens the Pieces section's own ask, so the page only.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
+ * - **Rename…** and **Pin** (**Unpin** where its conversation is pinned) for a conversation of this machine's own that is not an intake,
+ *   a helper's or a reviewer's: the name and the pin are the conversation's, whichever of its parts is pressed.
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
  * - **Delete…** where the reader says the delete would be taken: a conversation that served no
  *   quest, its record one the ledger would delete, its tree and landing gone from here. Offered only there.
@@ -176,6 +181,11 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
       offered.add('terminal');
     }
     offered.add('detach');
+    // A conversation's name and pin are this machine's person's, kept for every conversation but a record of another's machine.
+    if (!wordless && !intake) {
+      offered.add('rename');
+      offered.add(grouping?.pinned ? 'unpin' : 'pin');
+    }
     if (grouping?.deletable) offered.add('delete');
   }
   if ((grouping?.group === 'failed' || grouping?.group === 'done') && !grouping.archived) offered.add('archive');

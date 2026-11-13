@@ -56,8 +56,9 @@ public sealed partial class SayKeysCensusTests
         var source = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "SessionWords.cs"))
             + File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "HeldWordsQueue.cs"));
 
-        // Asking `ending` where the host's marks keep the moving open and the head.
-        Assert.Equal(2, Regex.Matches(source, Regex.Escape("service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question)")).Count);
+        // The pump's say, asking `ending` where the host's marks keep the moving open and the head.
+        Assert.Single(Regex.Matches(source, Regex.Escape("service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question)")));
+        Assert.Single(Regex.Matches(source, @"service\.SayAsync\(\s*id, word\.Text, word\.Files, ct, key: word\.Key, level: running \? MessageLevels\.Spelled\(word\.Level\) : null, running: running,\s*ending: keeps, question: word\.Question\)"));
         // With the walk to the line's head it is on, which a forward after `continued` carries; and the press's question.
         Assert.Contains(
             "SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice, word.Question, walk ?? new HeadWalk(next))",

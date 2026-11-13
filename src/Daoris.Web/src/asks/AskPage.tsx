@@ -11,6 +11,8 @@ import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
 import { type ChannelAnswered, type ChannelForward, ChannelSection } from './ChannelSection';
 import type { Channel, ChannelItem, ChannelPost } from '../work/channel';
+import type { AskPlan } from './askPlan';
+import { AskPlanSection } from './AskPlanSection';
 import { AtWorkAskView, type AtWorkAskViewProps } from '../work/atWork/AtWorkAskView';
 import { clearOffered, type HistoryDoor } from '../work/history/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
@@ -105,7 +107,10 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
 export function AskPage({
   ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
   work, history, considered = [], nameOf, environments, onChooseReview, onTakeBackThrough, onChooseKind, workflow, lines = [], channel, staleGoAheads, atWork,
+  plan,
 }: {
+  /** Its plan as the shell reads it (`useAskPlan`): the parts and the quest each became. Absent in a browser or before anyone wrote one, and then no section is drawn. */
+  plan?: AskPlan | null;
   /**
    * Who is at work on the ask: its read as the query holds it, and the doors the section
    * presses. Drawn above the ask's quests and replacing nothing. `words` is the channel's newest three messages, the page's own read
@@ -571,6 +576,13 @@ export function AskPage({
               </li>
             ))}
           </ul>
+        </PageSection>
+      )}
+
+      {/* Its plan, once someone wrote one: the parts, each the quest it became, and the order between them. */}
+      {plan && plan.plans.length > 0 && (
+        <PageSection title={t('asks.plan.title')}>
+          <AskPlanSection plan={plan} onOpenQuest={onOpenQuest} />
         </PageSection>
       )}
 

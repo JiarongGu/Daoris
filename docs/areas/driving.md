@@ -152,8 +152,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     new part opens and is handed Daoris's brief, composed without a model. (D137, D189)
 26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a shutdown, was a
     person's stop they released, or parked and was answered. It goes on with the agent its record ran on, except a failed record
-    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`).
-    (D80, D83, D104)
+    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`). A session
+    of the quest that asks for the take while the session here that took it ended failed or stopped is answered as the taker: the
+    take passes to it (`QuestRetakes`), so a retry never stands down against a holder that is gone; a running holder or another
+    machine's take is still refused. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
+    carries it on. (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
 
@@ -202,7 +205,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson`, then `Completed`, `Declined`,
-    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree. (D46, D51, D83)
+    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
+    newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83)
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its own quest
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
@@ -247,7 +251,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
     that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
     creates nothing; a verdict past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a receiver holding an open, taken
-    or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
+    or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing; a part of the ask's
+    plan (`Service/Teams/`, `team_plan`) is the one exception, published under its own key `<ask>/<part>/1`, so two parts to one
+    repository and lane are two quests and a retried plan returns the quests it made (TEAMWORK1d). Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
     never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)
@@ -270,7 +276,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     row each in Sessions, placed by the line's state; a co-worker is in the entry of the part it serves (`coworkers`), never an
     entry of its own. The list, the head, *What needs you* and the terminal say the line's state, and any part opens as its
     line's newest part, at that part. A tree holding commits no run waits on is offered on its
-    session, bar one running. `daoris session list --group` takes the five and `archived`. (D132, D273, D280, D282)
+    session, bar one running; the terminal's list and the clean-up's say the verb that lands it, the run's Accept
+    (`daoris workflow accept <run> <node>` where the run waits for it, else `daoris workflow run --session <id>`), never `tree
+    land`, which presses nothing (`LandingHint`). `daoris session list --group` takes the five and `archived`. (D132, D273, D280, D282)
 46. The records of one line share their `line`, and the lines of one ask or quest in one repository share an entry key,
     `<origin>/<repository>`, which an Accept lands together (`LandingEntries`); an entry's slice partition is its leading session. A line's
     head is found by walking `from` forward, at most 256 hops; a cycle or the bound reads as no head. (D167, D212)
@@ -284,7 +292,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     carried; with a tree, only this home's tree on a branch that moved and that no run owns (rule 51). Landed work goes only once it is on the line, and a branch
     its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
     keeping pass purges it. (D88, D195)
-49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or untracked work
+49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
+    `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
+    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`). Uncommitted or untracked work
     keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)

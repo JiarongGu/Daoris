@@ -69,7 +69,7 @@ of everything it handed, section by section.
 | `ConversationArchive` | `Workplace/ConversationArchive.cs` | The archive judged and kept per conversation: archiving a part archives its conversation, refused whole where any part is live or needs the person; unarchiving or a word to any part shows it again |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history list over the facts: a briefed continuation (facts `from` with `handed` brief) folds into one row |
 | `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
-| `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
+| `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart; `Workplace/TreeReadMemo.cs` keeps status until HEAD, index or watched files move and rejudges proofs when refs or home records move; `TreeReadChanges.cs` invalidates lost or replaced watches, so an unchanged part starts no git |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
 
@@ -257,7 +257,7 @@ of everything it handed, section by section.
 42. Ask Daoris is a conversation in its own room, each conversation its own: any number run at once, in one workspace or
     many, answering at once, and one answering a turn never holds another's open, start, go-on or words. Every *New conversation* press and
     `START_HELP` places a conversation of its own, never handed one running or starting, so a new conversation's first word
-    starts its own turn (`HelpStarting` holds the words of each starting conversation by its id). What they share is the
+    starts its own turn (`HelpStarting` marks the conversations starting and holds no word: a word said to one is kept on its record at once, under the press's key, and handed to its door, under its record id, when it opens, marked attempted before the wire; where the start fails it waits on the record for the go-on). What they share is the
     workspace's room folder, whose files each open and go-on writes whole under the room's own gate (`HelpRoomWrites`),
     never a turn's, and which name no conversation's focus. The person never ends a conversation: the composer's one *Stop*, offered while a reply runs on any door,
     stops that reply's whole process tree (`STOP_SESSION`), and every conversation shown, stopped, ended, failed or lost,

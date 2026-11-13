@@ -297,11 +297,28 @@ public sealed class SessionWords : IDisposable
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
 
-        // Ask Daoris's conversation placed and still starting: its words wait for its door, as its queue, opening.
-        if (_loop.HelpStarting.Hold(id, text, files, preface))
+        // Ask Daoris's conversation placed and still starting: its words are kept on its record at once, where its door takes them
+        // from the moment it opens, and wait as its queue, opening. Nothing holds them in this process.
+        WordsAnswer? startAnswer = null;
+        string? startHead = null;
+        var starting = false;
+        using (var keeping = await _loop.HelpStarting.KeepingAsync(id, ct).ConfigureAwait(false))
+        {
+            if (keeping is not null)
+            {
+                starting = true;
+                var startFiles = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
+                var startWord = new HeldSay(text, [.. startFiles.Select(file => file.Name)], door, choice, key ?? PressKey(), level, question);
+                (startAnswer, startHead) = await KeepOrHoldAsync(id, startWord, ct, running: true, moving: true).ConfigureAwait(false);
+            }
+        }
+
+        if (starting)
         {
             Tell(id);
-            return new(true, null, null);
+            return startHead is { } startOnward
+                ? await OnAsync(startOnward, text, files, preface, door, ct, level, key, choice, question, walk).ConfigureAwait(false)
+                : startAnswer;
         }
 
         var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
@@ -545,7 +562,7 @@ public sealed class SessionWords : IDisposable
     /// </param>
     /// <param name="moving">A conversation move stands for the record: the word kept is the move's, which shows it at its destination, never here.</param>
     private async Task<(WordsAnswer? Answer, string? Head)> KeepOrHoldAsync(
-        string id, HeldSay word, CancellationToken ct, bool keeps = false, bool moving = false)
+        string id, HeldSay word, CancellationToken ct, bool keeps = false, bool moving = false, bool running = false)
     {
         var service = _loop.Service ?? throw new DriverException(NotUp);
         var waiting = _held.WaitingFor(id);
@@ -564,7 +581,9 @@ public sealed class SessionWords : IDisposable
             SayAnswer said;
             try
             {
-                said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question).ConfigureAwait(false);
+                said = await service.SayAsync(
+                    id, word.Text, word.Files, ct, key: word.Key, level: running ? MessageLevels.Spelled(word.Level) : null, running: running,
+                    ending: keeps, question: word.Question).ConfigureAwait(false);
             }
             catch (Exception error) when (WordsRead.Unanswered(error))
             {

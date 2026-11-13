@@ -4,8 +4,8 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>An acceptance the person chose in a plan: the repository and its purpose (<see cref="PlacePlans.Landed"/> or <see cref="PlacePlans.Integration"/>).</summary>
-public sealed record PlaceAccept(string Repository, string Purpose)
+/// <summary>The acceptance the person chose in a plan: the repository whose declaration is accepted, for every purpose it serves (<see cref="DeclarationAcceptance"/>).</summary>
+public sealed record PlaceAccept(string Repository)
 {
     /// <summary>The declaration's blob the plan read, which the acceptance keeps: set from the plan, never from the caller.</summary>
     public string? Blob { get; init; }
@@ -100,7 +100,7 @@ public static class PlaceDigests
                 .Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
             if (row.Declaration is { } declaration)
             {
-                parts.Add(["declaration", declaration.Line, declaration.Blob, .. declaration.Acceptances.Select(each => $"{each.Purpose}={each.Standing}")]);
+                parts.Add(["declaration", declaration.Line, declaration.Blob, declaration.Acceptance?.Standing ?? ""]);
             }
         }
 

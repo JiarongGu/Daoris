@@ -269,7 +269,7 @@ describe('discarding a failed attempt\'s branch from the session branches card',
 });
 
 // A kept branch whose tree is still here and holds commits no branch of the person's holds says
-// which session it is and how it ended, and how to land it: its page's Accept, or `daoris tree land` from a terminal,
+// which session it is and how it ended, and how to land it: its page's Accept, or its run's Accept from a terminal,
 // the line the terminal's list prints beside the same row. A row the driver offers no landing beside says none.
 
 describe('the landing a kept branch offers', () => {
@@ -284,7 +284,8 @@ describe('the landing a kept branch offers', () => {
     draw({ branches: KEPT });
 
     expect(row('daoris/s-4e6837ed')).toHaveTextContent(
-      'From session f41led00 (failed), its tree still here: its page offers Accept, which lands it, as daoris tree land f41led00 does.');
+      'From session f41led00 (failed), its tree still here: its page offers Accept, which lands it, as its run\'s Accept does from a terminal: daoris workflow run --session f41led00 opens it.');
+    expect(row('daoris/s-4e6837ed')).not.toHaveTextContent('daoris tree land');
     expect(row('daoris/s-56cb4d29')).toHaveTextContent('From session f1n1sh00 (completed), its tree still here');
     expect(row('daoris/s-gone')).not.toHaveTextContent('From session');
   });
@@ -294,7 +295,8 @@ describe('the landing a kept branch offers', () => {
     try {
       draw({ branches: KEPT });
       expect(row('daoris/s-4e6837ed')).toHaveTextContent(
-        '来自会话 f41led00（失败），它的工作树还在：在它的页面上采纳即可将其落地，与 daoris tree land f41led00 相同。');
+        '来自会话 f41led00（失败），它的工作树还在：在它的页面上采纳即可将其落地，在终端里则由它的运行的采纳来落地：daoris workflow run --session f41led00 可打开该运行。');
+      expect(row('daoris/s-4e6837ed')).not.toHaveTextContent('daoris tree land');
     } finally {
       await i18n.changeLanguage('en');
     }

@@ -48,6 +48,7 @@ internal sealed class AskQuests(QuestExchange exchange, QuestFiles? askFiles)
                 Review = draft?.Review,
                 // The intake's kind proposal: the exchange checks its reason quotes this ask's words.
                 WorkflowProposal = draft?.WorkflowProposal,
+                Request = draft?.Part,
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it: the intake that read the ask.
                 PublishedBy = session,

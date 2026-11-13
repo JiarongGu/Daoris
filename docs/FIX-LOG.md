@@ -69,6 +69,11 @@ repository.
 - **Root cause:** the test's loop (82ea70a3ea) wrote the answer file in place, and the tool polls every 10 ms; read between the file's creation and its write, an empty or partial answer parsed as a shape the tool does not read. The driver writes an answer whole.
 - **Fix:** the loop writes beside and renames into place.
 - **Verification:** the class passes three runs in a row and six at once.
+## 2026-11-13 - The room repeated every unchanged tree's status (ROOMLOOK1)
+
+- **Root cause:** `952f960a84` kept commit judgements but unconditionally asked each tree's status again; content-held trees also repeated their ignored-output judgement.
+- **Fix:** the room memo keeps both while HEAD, index and the watched files stand, discards a lost or replaced watch, and keeps no generation changed during its read. Acts still judge afresh.
+- **Verify:** `TreeReadChangesTests`, `TreeReadMemoTests` and `HelpTreesReadTests`, including the 145-tree warm bound and zero git starts.
 
 ## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
 

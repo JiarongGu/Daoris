@@ -1,0 +1,59 @@
+using System.ComponentModel;
+using ModelContextProtocol.Server;
+
+namespace Daoris.Knowledge.Mcp;
+
+/// <summary>
+/// The plan door, <c>team_plan</c>, served to every caller: it reads an ask's plan, or writes its next revision. A session answering an ask
+/// plans the ask; a worker serving a part splits that part, with itself as its lead. Each part written is published as a quest under its id,
+/// so writing the same part again returns its quest.
+/// </summary>
+/// <param name="teams">What judges, keeps and publishes a plan.</param>
+/// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
+/// <param name="ledger">The ledger, for the session's record: the ask or the part it serves.</param>
+[McpServerToolType]
+public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, SessionLedger? ledger = null)
+{
+    [McpServerTool(Name = "team_plan")]
+    [Description(
+        "Read or write the plan of an ask: its parts, the edges between them and what each part's worker is handed. Leave `parts` out to "
+        + "read the plan, its flags and each part's quest. Give `parts` to write the next revision whole: each part is a feature a person "
+        + "can see working, in one repository and lane, with its claims (path globs it will change), its proof and its pack; each becomes a quest "
+        + "under its id, so writing a part again returns its quest and a reworded part changes nothing already published. An edge is `after` "
+        + "(a build dependency) or `orders` (a landing order only), each with its reason. A cycle, an edge to a part nobody wrote, and a "
+        + "claim on a record or a generated output are saved with a flag, never refused; the integrator writes records and generated files. "
+        + "A worker serving a part writes the split of its own part, one level down, with itself as lead. One part is a valid plan.")]
+    public async Task<string> PlanAsync(
+        [Description("The ask, where this session does not answer one or serve a part of one.")] string? ask = null,
+        [Description("The parts of the next revision, whole: id, repository, title, body, outcome, and optionally lanes, weight, requirements, claims, reads, proof, pack.")]
+        TeamPart[]? parts = null,
+        [Description("The edges: part, on, kind (`after` or `orders`), milestone (oriented, submitted or landed) and why.")]
+        TeamEdge[]? edges = null,
+        [Description("One paragraph: why these parts, and what changed since the last revision. Needed with `parts`.")] string? why = null,
+        [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
+        [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
+        [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale.")]
+        Dictionary<string, string>? seen = null,
+        [Description("To read: answer the plans whole as JSON, which `node tools/team-briefs.mjs` composes each part's brief from.")]
+        bool? json = null,
+        CancellationToken ct = default)
+    {
+        var session = intake?.Session;
+        var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
+        var scope = await teams.ScopeOfAsync(record, ct).ConfigureAwait(false);
+        var target = scope?.Ask ?? ask?.TrimStart('#');
+        if (string.IsNullOrWhiteSpace(target)) return "Name the ask (`ask`): this session answers none and serves no part of one.";
+
+        if (parts is null or { Length: 0 })
+        {
+            var (plans, rows) = await teams.ReadAsync(target, ct).ConfigureAwait(false);
+            return json == true ? TeamPlanReading.Json(target, plans, rows) : TeamPlanReading.Of(target, plans, rows, seen ?? []);
+        }
+
+        var save = new TeamSave(target, parts, edges ?? [], why ?? "")
+        {
+            Scope = scope?.Scope, Expect = revision ?? 0, By = session, Base = baseCommit,
+        };
+        return (await teams.SaveAsync(save, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Message;
+    }
+}

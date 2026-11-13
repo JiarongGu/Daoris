@@ -29,21 +29,15 @@ export const SETUP_PRESETS: PresetWorkflow[] = [
 const BLOB = '3b18e512dba79e4c8300dd08aeb37f8e728b8dad';
 const TEXT = 'integration:\n  request: land\n  gates: [lint, tests]\n';
 
-const declaration = (purposes: ('landed' | 'integration')[], standing = 'unaccepted'): PlaceDeclaration => ({
+const declaration = (accepting: boolean, standing = 'unaccepted'): PlaceDeclaration => ({
   line: 'main',
   commit: 'aa11bb2c3d4e',
   blob: BLOB,
   text: TEXT,
-  acceptances: purposes.map((purpose) => ({
-    purpose,
-    standing,
-    said: purpose === 'integration'
-      ? 'Accept for integration: the line integrates by this declaration\'s `integration`, and a changed declaration waits for you.'
-      : 'Accept for landed verification: `web-verify` verifies the work that lands by this declaration\'s gates.',
-  })),
+  acceptance: accepting ? { standing, said: 'checks changed on main: added `lint`, `tests`; they run from now on.' } : null,
 });
 
-/** A digest the ask alone makes, so a changed ask is a changed plan. */
+/** A digest the ask alone makes. */
 export const digestOf = (ask: PlaceAsk): string => {
   let hash = 7;
   for (const each of JSON.stringify(ask)) hash = (hash * 31 + each.charCodeAt(0)) >>> 0;
@@ -76,10 +70,7 @@ export const KEPT_ROW: Partial<PlaceRepositoryPlan> = {
   suggested: { preset: 'merge-after-accept', adoption: false, why: WHY.kept },
 };
 
-/**
- * The plan a repository set asks of: *A pull request* is refused for `site`, which has no landing plugin; *Integrated* offers `engine`'s
- * declaration for acceptance; driving releases `engine`'s queued work; and a delivery lowers the part the person has in what lands.
- */
+/** The plan a set asks of: *A pull request* is refused for `site`; *Integrated* offers `engine`'s declaration; driving releases its queued work. */
 export function planOf(ask: PlaceAsk, mix: Record<string, Partial<PlaceRepositoryPlan>> = {}): PlacePlanned {
   const delivers = ask.preset !== 'not-driven';
   const rows: PlaceRepositoryPlan[] = ask.repositories.map((name) => {
@@ -103,7 +94,7 @@ export function planOf(ask: PlaceAsk, mix: Record<string, Partial<PlaceRepositor
       changes,
       lowers: delivers && ask.preset !== 'merge-after-accept' ? ['your part in what lands: it lands after your accept now, and would not'] : [],
       released: ask.drive && name === 'engine' ? [{ quest: 'q-12', title: 'Tidy the docs' }, { quest: 'q-15', title: 'Add the retry' }] : [],
-      declaration: name === 'engine' ? declaration(ask.preset === 'integrated' ? ['integration'] : []) : null,
+      declaration: name === 'engine' ? declaration(ask.preset === 'integrated') : null,
       ...mix[name],
     };
   });

@@ -19,7 +19,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
-        "review_ready", "review_serve", "system_plan",
+        "review_ready", "review_serve", "system_plan", "team_plan",
     ];
 
     /// <summary>A host registered as <c>Program.cs</c> registers its tools, over whatever services the test hands it.</summary>
@@ -75,7 +75,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
                 "BrainstormTools", "ChannelTools", "CheckTools", "CheckoutTools", "GoAheadTools", "HandOverTools", "HandbackTools",
                 "HelperTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
-                "ReviewTools", "RuleProposalTools", "SystemPlanTools",
+                "ReviewTools", "RuleProposalTools", "SystemPlanTools", "TeamTools",
             ],
             KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
     }
@@ -86,12 +86,17 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     /// the workspace scope is the registration's own.
     /// </summary>
     [Fact]
-    public void Every_tool_class_is_built_from_the_hosts_services()
+    public async Task Every_tool_class_is_built_from_the_hosts_services()
     {
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var teams = new TeamDesk(
+            await TeamStore.OpenAsync(_connection), new AskDesk(_service, await AskStore.OpenAsync(_connection), exchange, _files),
+            (_, _) => Task.FromResult(TeamPathPolicy.None));
         using var host = Host(services => services
             .AddSingleton(_service)
             .AddSingleton(_quests)
-            .AddSingleton(new QuestExchange(_service, _quests, files: _files))
+            .AddSingleton(teams)
+            .AddSingleton(exchange)
             .AddSingleton(new AmbientWorkspace(Path.Combine(_root, "family", "Asker"))));
 
         foreach (var type in KnowledgeServer.ToolTypes)

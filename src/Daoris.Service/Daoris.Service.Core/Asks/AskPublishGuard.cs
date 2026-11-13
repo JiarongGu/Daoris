@@ -17,14 +17,14 @@ internal sealed class AskPublishGuard(QuestExchange exchange, SessionStore? sess
 
     /// <summary>The answer in place of a publish of <paramref name="ask"/> to <paramref name="to"/>, or null where the publish goes on.</summary>
     /// <param name="session">The session publishing, where one is named; null for the person's press.</param>
-    public async Task<AskOutcome?> JudgeAsync(Ask ask, string to, string? session, CancellationToken ct)
+    public async Task<AskOutcome?> JudgeAsync(Ask ask, string to, string? session, CancellationToken ct, bool part = false)
     {
         var address = QuestAddress.Parse(to.Trim());
         var by = string.IsNullOrWhiteSpace(session) ? null : session.Trim();
         var asked = await exchange.Store.FromAsync(AskDesk.SenderOf(ask.Id), ct: ct).ConfigureAwait(false);
         // Another hand's publish to a receiver already asked is the same work asked twice; one publisher's several quests to one receiver
-        // are its pieces of the work, and its exact retry is the exchange's to answer.
-        if (asked.FirstOrDefault(quest => quest.Status != QuestStatus.Declined && Same(quest, address)
+        // are its pieces of the work, and its exact retry is the exchange's to answer; a plan's part carries its own key, so it is never the same work twice.
+        if (!part && asked.FirstOrDefault(quest => quest.Status != QuestStatus.Declined && Same(quest, address)
                 && !string.Equals(quest.PublishedBy, by, StringComparison.Ordinal)) is { } first)
         {
             return new(

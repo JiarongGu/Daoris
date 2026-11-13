@@ -178,7 +178,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     /// The person's message as a live chat's door takes it: the files kept for this conversation, and the preface, the briefing and the process
     /// it is handed once, ahead of its first words. Nothing is kept for a chat nothing here holds.
     /// </summary>
-    private (ChatMessage Message, ChatExtras Extras) Compose(string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface)
+    internal (ChatMessage Message, ChatExtras Extras) Compose(string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface)
     {
         var held = context.Turned.ContainsKey(sessionId) || context.Talking.ContainsKey(sessionId);
         IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(context.Home, sessionId, files) : [];

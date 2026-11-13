@@ -36,6 +36,11 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
             await Service.Asks.FindAsync(request.Id, ct) is { } ask
                 ? AskAnswers.ToAsk(ask, Service.Files, host.MachineLocal(http))
                 : Refusal.NotFound($"No ask `#{request.Id.TrimStart('#')}`."));
+        routes.Map<ReadAskPlan, AskPlanResponse>(async (request, _, ct) =>
+        {
+            var (plans, rows) = await Service.Teams.ReadAsync(request.Id, ct);
+            return TeamAnswers.Plan(request.Id, plans, rows);
+        });
         routes.Map<ReadAskChannel, ChannelResponse>(ReadChannelAsync);
         routes.Map<ListElsewhereAsks, ElsewhereAsksResponse>(async (_, _, ct) =>
             new ElsewhereAsksResponse([.. (await Service.Channel.ElsewhereAsync(ct)).Select(a =>

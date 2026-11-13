@@ -612,12 +612,10 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// A writer of the checkout waits for the newest part of an open quest only while it will go on, never for one completed,
-    /// declined or failed with no limit; the tree-keeping set (<see cref="BranchTidying.LineTrees"/>) counts them all.
+    /// A writer waits for an open quest's newest part only while it goes on; <see cref="BranchTidying.LineTrees"/> counts each (declined: TidyHoldersTests).
     /// </summary>
     [Theory]
     [InlineData("completed", false, false)]
-    [InlineData("declined", false, false)]
     [InlineData("failed", false, false)]
     [InlineData("failed", true, true)]
     [InlineData("stopped", false, true)]

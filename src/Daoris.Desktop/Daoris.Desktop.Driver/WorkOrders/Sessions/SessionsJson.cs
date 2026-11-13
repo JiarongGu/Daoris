@@ -24,6 +24,8 @@ internal static class SessionsJson
                 writer.WriteString("reason", row.Reason);
                 writer.WriteString("shown", row.Shown);
                 writer.WriteBoolean("archived", row.Archived);
+                writer.WriteString("name", row.Name);
+                writer.WriteBoolean("pinned", row.Pinned);
                 writer.WriteBoolean("teammate", row.Teammate);
                 if (row.Strikes is { } strikes) writer.WriteNumber("strikes", strikes); else writer.WriteNull("strikes");
                 writer.WriteString("awaits", row.Awaits);

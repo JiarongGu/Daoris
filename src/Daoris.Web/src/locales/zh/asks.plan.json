@@ -1,0 +1,15 @@
+{
+  "asks.plan.title": "计划",
+  "asks.plan.own": "计划，第 {{revision}} 版",
+  "asks.plan.split": "{{part}} 的拆分，第 {{revision}} 版",
+  "asks.plan.depth": "第 {{count}} 层",
+  "asks.plan.quest": "委托 #{{id}}",
+  "asks.plan.noQuest": "尚无委托",
+  "asks.plan.after": "{{part}} 建立在 {{on}} 之上",
+  "asks.plan.orders": "{{part}} 在 {{on}} 之后合入",
+  "asks.plan.flag.cycle": "循环",
+  "asks.plan.flag.missing-reference": "缺少部分",
+  "asks.plan.flag.claim-record": "占用了记录",
+  "asks.plan.flag.claim-generated": "占用了生成文件",
+  "asks.plan.flag.claim-overlap": "共用路径"
+}
