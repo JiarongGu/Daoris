@@ -123,6 +123,9 @@ internal static class DriveUsagePlace
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.
+          repository deployables <repository>
+              read the line's deployables and their release nodes; writes nothing.
+              只读：列出主线声明的可部署单元及其发布节点，不写入任何内容。
           repository create <name> --purpose "…" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work "…"] [--plan]
               open a new department: its folder beside the workspace's repositories (or under --under), an empty
               history with one commit as the identity they use, its registration, its drive and its set-up quest,

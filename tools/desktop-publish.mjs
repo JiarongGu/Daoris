@@ -78,7 +78,7 @@ import { isMain } from './fsx.mjs';
 import { running } from './processes.mjs';
 import { publishHost } from './service-publish.mjs';
 import { STAGE, STAGED, buildId, promoteStage, recordedShellFiles, refusal, stageRefusal, unstage, writeManifest } from './desktop-publish/staging.mjs';
-import { appPublishCommand, artifactsOf, driverPublishCommand, gitDoorPublishCommand, launcherPublishCommand, layGitDoors, layPieceStart, pieceStartPublishCommand, publishStages } from './desktop-publish/publish-commands.mjs';
+import { appPublishCommand, artifactsOf, commandPublishCommand, driverPublishCommand, gitDoorPublishCommand, launcherPublishCommand, layCommand, layGitDoors, layPieceStart, pieceStartPublishCommand, publishStages } from './desktop-publish/publish-commands.mjs';
 import { GATE_TREE, childArgs, gatedSource, gitIn, mainCheckout, recordStage, recordStaged, samePath, stageReport, stagedAdvice } from './desktop-publish/gate-tree.mjs';
 import { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
 import { sessionRefusal } from './desktop-publish/session.mjs';
@@ -89,8 +89,8 @@ import { layCli } from './desktop-publish/cli.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
 export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, RETIRED_LAUNCHERS, RETIRED_IN_APP, RETIRED_BROWSER_EXE, retiredPaths, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
-export { CLI_HOME, CLI_PACKAGE, CLI_ENTRY, CLI_BIN, CLI_LAUNCHERS, cliLaunchers, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
-export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart } from './desktop-publish/publish-commands.mjs';
+export { CLI_HOME, CLI_PACKAGE, CLI_ENTRY, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
+export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand } from './desktop-publish/publish-commands.mjs';
 export { layCli } from './desktop-publish/cli.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
@@ -243,6 +243,17 @@ async function main() {
   // small launcher, framework-dependent and single-file, wearing the application's icon, and
   // everything it starts sits under `app/`.
   const stages = publishStages(repoRoot, artifacts);
+
+  // The command, beside them: `daoris.exe`.
+  console.log(`desktop-publish: publishing the command into ${CLI_BIN.join('/')}/…`);
+  const commandStage = join(stages, 'command');
+  run(commandPublishCommand(commandStage, artifacts));
+  try {
+    layCommand(commandStage, root);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
   rmSync(stages, { recursive: true, force: true });
 
   // The doctrine tool: `src/Daoris.Cli` packed as the release packs it, `npm pack` in
@@ -328,12 +339,12 @@ async function main() {
   cpSync(join(launcherStage, LAUNCHER), join(root, LAUNCHER));
 
   // The doctrine tool, beside the application: the package under `app/cli/`, as npm
-  // lays one out, and a launcher for each shell in `app/bin/`. Nothing goes on any PATH from here.
+  // lays one out, and the folder `app/bin/` for the programs laid out in it below. Nothing goes on any PATH from here.
   const build = { id: buildId(), commit: commitOf(repoRoot) };
   try {
     const tool = await layCli(cliTarball, root, {}, build);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
-      + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}.`);
+      + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}, laid out below.`);
   } catch (error) {
     console.error(error.message);
     process.exit(1);

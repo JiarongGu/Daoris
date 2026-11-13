@@ -32,8 +32,8 @@ public static class SystemWiring
     /// <summary>The machine log's days (<see cref="MachineLog.KeptDays"/>).</summary>
     private const int LogDays = MachineLog.KeptDays;
 
-    /// <summary>Each launcher an install's <c>app/bin/</c> carries (<c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c> and <c>DRIVER_LAUNCHERS</c>).</summary>
-    public static IReadOnlyList<string> Launchers { get; } = ["daoris", "daoris.cmd"];
+    /// <summary>The command an install's <c>app/bin/</c> carries (<c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c>).</summary>
+    public static IReadOnlyList<string> Launchers { get; } = ["daoris.exe"];
 
     /// <summary>Why an entry stays at its old place: what names it by path, or that it moves at a start after an update.</summary>
     private static string Stays(HomeEntry entry) => entry.Name switch

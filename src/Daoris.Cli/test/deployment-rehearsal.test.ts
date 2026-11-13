@@ -224,13 +224,13 @@ test('a door answers as itself: exit 128 and a refusal in its own name', () => {
  */
 test('the daoris a shell found is the install’s only when the first one it lists is in app/bin itself', () => {
   const bin = join('C:', 'work', 'install', ...CLI_BIN);
-  assert.equal(firstUnder(`${join(bin, 'daoris')}\r\n${join(bin, 'daoris.cmd')}\r\n`, bin), true);
-  assert.equal(firstUnder(`${join(bin, 'daoris.cmd').toUpperCase()}\n`, bin), true);
+  assert.equal(firstUnder(`${join(bin, 'daoris')}\r\n${join(bin, 'daoris.exe')}\r\n`, bin), true);
+  assert.equal(firstUnder(`${join(bin, 'daoris.exe').toUpperCase()}\n`, bin), true);
   assert.equal(firstUnder(`${join(bin, 'daoris').replace(/\\/g, '/')}\n`, bin), true);
   // Another daoris listed first is the one the shell runs, whatever comes after it.
-  assert.equal(firstUnder(`${join('C:', 'npm', 'daoris.cmd')}\n${join(bin, 'daoris.cmd')}\n`, bin), false);
-  assert.equal(firstUnder(`${join(`${bin}-old`, 'daoris.cmd')}\n`, bin), false);
-  assert.equal(firstUnder(`${join(bin, 'nested', 'daoris.cmd')}\n`, bin), false);
+  assert.equal(firstUnder(`${join('C:', 'npm', 'daoris.exe')}\n${join(bin, 'daoris.exe')}\n`, bin), false);
+  assert.equal(firstUnder(`${join(`${bin}-old`, 'daoris.exe')}\n`, bin), false);
+  assert.equal(firstUnder(`${join(bin, 'nested', 'daoris.exe')}\n`, bin), false);
   assert.equal(firstUnder('', bin), false);
   assert.equal(firstUnder('INFO: Could not find files for the given pattern(s).\n', bin), false);
 });

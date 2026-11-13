@@ -525,14 +525,14 @@ public sealed class SystemWiringTests : IDisposable
         var (install, home, driver) = Install();
         var bin = Path.Combine(install, "app", "bin");
         Directory.CreateDirectory(bin);
-        foreach (var name in new[] { "daoris", "daoris.cmd" }) File.WriteAllText(Path.Combine(bin, name), "");
+        File.WriteAllText(Path.Combine(bin, "daoris.exe"), "");
         var other = Scratch("other-bin");
 
         var wiring = SystemWiring.Read(Terminal(home, driver,
             account: Env(("PATH", $"{other}{Path.PathSeparator}{bin}"), ("PATHEXT", ".COM;.EXE;.CMD"))));
 
         var terminal = wiring["terminal"]!.AsObject();
-        Assert.Equal(2, terminal["launchers"]!.AsArray().Count(row => (bool)row!["present"]!));
+        Assert.Equal(1, terminal["launchers"]!.AsArray().Count(row => (bool)row!["present"]!));
         Assert.True((bool)terminal["onAccountPath"]!);
         Assert.False((bool)terminal["onMachinePath"]!);
         Assert.Equal("this", (string?)terminal["firstDaoris"]!["is"]);

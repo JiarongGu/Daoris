@@ -175,7 +175,8 @@ as a pack.
 40. Each half of the tree is declared by the code that owns it: a program group by `[CommandGroup]` on its library command,
     collected at start, one owner per group; a doctrine command by its row in the CLI's `COMMANDS`. Neither half holds the
     other's list. A management verb is a driver group, never a CLI row. No word is kept for an older name: an old form is no
-    command. (from D194, D228, D232)
+    command. `repository deployables <repository>` reaches the host's read; its group help lists the read in English and Chinese.
+    (from D194, D228, D232)
 
 **The devkit's universal gates**
 

@@ -154,12 +154,13 @@ finishes first and the whole set runs once.
     ci` in that folder once before its first gate, and every gate waits for it (`tools/merge/lock-install.ts`). The merge also runs the CLI's verify (`MERGE_SUITES`:
     the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs` runs the test units the census says
     the paths reach in the driver's, modules', service's, page's and tools' suites, nearest the change first, bounded per suite by
-    `tools/merge-branch/reached.mjs`, the rest counted), so a list, census or structure red never lands. `reached` reuses a pass
+    `tools/merge/reached.ts`, the rest counted), so a list, census or structure red never lands. `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source areas it names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global
     using` of a namespace, a comment, a group no file switches on) left out because the one build verifies it; a class whose key
     passed (`local/reached-classes.json`) is replayed, so a change to a widely referenced project runs exactly the classes that
-    name it and a change no class reads runs none. A unit class runs when a changed path reaches it; a Process class, which
+    name it and a change no class reads runs none. A unit class runs when a changed path reaches it; a Process class (a suite whose
+    gate runs with the Process settings, the rehearsals project's among them), which
     names its real dependency with a `Needs` trait, runs only where a changed path is that dependency's code (`tiers.needs` in
     `daoris.gates.json`), and the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes

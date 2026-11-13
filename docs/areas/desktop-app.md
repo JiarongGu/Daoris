@@ -238,12 +238,16 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     H.264, AAC and HEVC (through the machine's decoder); the codecs are patent-licensed and the package carries no licence.
     `CodecPlaybackProcessTests` plays each with its page shown, since Chrome loads no media in a hidden page. (from D99, D85, D234)
 55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. Daoris's own
-    plugin runs it `--isolated`: each session, Ask Daoris included, drives a context of its own, closed with the session, never
-    the person's tabs or another session's; each new tab is given the cookies of the browser's own context, where the person
-    signs in (`share-sign-in.cjs`, its `--init-page`), and nothing goes back. Measured: on shared tabs a second session's snapshot
-    broke the first one's clicks (5 s each); apart, about 0.6 s. The person's Edge on a Daoris profile stays an option. Daoris
-    keeps sign-ins across a restart itself. A plugin whose manifest says `hooks.browser` is handed the endpoint as `DAORIS_BROWSER`
-    and works in a tab of its own in the signed-in profile, which a fresh context does not carry. (from D78, D84, D277, D281)
+    plugin starts Playwright MCP from a script of its own (`browser-server.mjs`) over the browser's one context, the person's:
+    every session, Ask Daoris included, shares its cookies, local storage and IndexedDB both ways, through a scoped view that
+    lists only the tabs the session opened (and their popups), so it never takes, navigates or closes the person's tabs or another
+    session's, and closing it closes only those. The browser announces a new default-context tab as an `other` target and a page a
+    moment later, which Playwright drops, so the server reaches it through a relay that holds an `other` and asks the browser about it until it is a page. Where the plugin's `isolation.json` names an agent (by MCP client name,
+    `role:<role>`, or `*`), that agent gets a context of its own instead, started with the person's cookies and the local storage
+    of the origins the person has open and giving nothing back; nothing set means shared. Measured: on shared tabs without the view,
+    a second session's snapshot broke the first one's clicks (5 s each); apart, about 0.6 s. The person's Edge on a Daoris profile
+    stays an option. Daoris keeps sign-ins across a restart itself. A plugin whose manifest says `hooks.browser` is handed the
+    endpoint as `DAORIS_BROWSER` and works in a tab of its own in the signed-in profile. (from D78, D84, D277, D281, D292)
 
 **The setup guide and the views**
 

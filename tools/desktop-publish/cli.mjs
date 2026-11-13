@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeBuildStamp } from '../../src/Daoris.Cli/src/platform/build-stamp.ts';
 import { extractTarGz } from '../../src/Daoris.Cli/src/platform/tarball.ts';
 import { renameHeld } from '../fsx.mjs';
-import { CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_PACKAGE, cliLaunchers } from './launchers.mjs';
+import { CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_PACKAGE } from './launchers.mjs';
 import { SHELL_HOME } from './names.mjs';
 import { unstage } from './staging.mjs';
 
@@ -45,9 +45,8 @@ function cliProblem(unpacked) {
 /**
  * Lay the doctrine tool out in an install: the tarball `npm pack` made of
  * `src/Daoris.Cli`, unpacked by the CLI's own tar reader into `<install>/app/cli/node_modules/daoris/`, and
- * the launchers written into `<install>/app/bin/`. Both folders are staged beside and swapped in whole, so a
- * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one
- * standing. Nothing is written under the home.
+ * `<install>/app/bin/` made empty for the programs laid out in it after. Both folders are staged beside and swapped in whole, so a
+ * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one standing. Nothing is written under the home.
  * Fresh package and launcher folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries.
  *
  * @returns the package's version, which is the canon's.
@@ -83,9 +82,6 @@ export async function layCli(tarball, install, renameOptions = {}, build = null)
     renameHeld(unpacked, join(modules, CLI_PACKAGE.at(-1)), renameOptions);
 
     mkdirSync(stagedBin, { recursive: true });
-    for (const [name, text] of Object.entries(cliLaunchers())) {
-      writeFileSync(join(stagedBin, name), text, { mode: 0o755 });
-    }
   } catch (error) {
     unstage();
     throw new Error(`desktop-publish: the doctrine tool's package ${tarball} ${error.message}`);

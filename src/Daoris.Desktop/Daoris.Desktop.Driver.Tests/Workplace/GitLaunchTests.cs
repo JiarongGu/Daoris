@@ -203,7 +203,7 @@ public sealed class GitLaunchTests
     /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned).</summary>
     internal static readonly string[] StartingFiles =
     [
-        "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
+        "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "CommandLauncher.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
         "HeavyStep.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
         "GitProcessRuns.cs", "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
