@@ -16,7 +16,7 @@ internal static class HelpPlacement
     ///
     /// <para><b>A plugin's server reaches it only where the plugin declares it for Ask Daoris</b>, and
     /// only once the person approved its exact tools (<see cref="HelpGrants"/>): its reads and the writes they
-    /// accepted are allowed, any other write asked, which its mode refuses. It is handed none, since a browser brought up for
+    /// accepted are allowed, any other write asked and held for the person. It is handed none, since a browser brought up for
     /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
     ///
     /// <para>Its tools default to its room's workspace (<see cref="HelpCircle.Of"/>): its connector's circle, and the

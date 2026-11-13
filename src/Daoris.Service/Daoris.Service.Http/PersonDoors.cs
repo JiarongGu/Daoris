@@ -288,8 +288,8 @@ public static class PersonDoors
         new("POST", "/api/supervise", DoorClass.Driver, "a supervisor's record, opened for the decision an agent-held supervisor makes"),
         new("POST", "/api/step-sessions", DoorClass.Driver, "a workflow step's session's record, opened at the run's place"),
 
-        // The person's alone (19, and the forms above): the review, what a review is set to, the yes and the done, a
-        // go-ahead's answer, their words, closing and deleting, and the registry's verbs.
+        // The person's (and the forms above), each the answer to a wait or what a wait reads: the review, what a review is set to, the
+        // yes and the done, a go-ahead's answer, their words and choices, and a memory end's approval.
         new("POST", "/api/quests/{id}/review", DoorClass.Person, "a review's verdict") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:verdict") },
         new("POST", "/api/quests/{id}/set-up-step", DoorClass.Person, "a set-up step") { Marks = OwnerMark.None("it publishes a new step, and a publication never marks") },
         new("POST", "/api/asks", DoorClass.Person, "an ask") { Marks = OwnerMark.None("it publishes an ask, and a publication never marks") },
@@ -328,23 +328,22 @@ public static class PersonDoors
         new("DELETE", "/api/asks/{id}", DoorClass.Agent, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Agent, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/sessions/{id}", DoorClass.Agent,"a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
-        new("POST", "/api/sessions/{id}/release-place", DoorClass.Person, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
-        new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
-        // Only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
-        // for their yes, which a terminal's confirmation in the window is.
-        new("POST", "/api/brainstorms", DoorClass.Person, "a brainstorm's question") { Marks = OwnerMark.None("a brainstorm, no quest") },
-        new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send") { Marks = OwnerMark.None("a brainstorm, no quest") },
-        new("POST", "/api/brainstorms/{id}/stop", DoorClass.Person, "a brainstorm's stop") { Marks = OwnerMark.None("a brainstorm, no quest") },
-        new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        // No workflow step waits on a place, on history or on a brainstorm, so any caller moves them.
+        new("POST", "/api/sessions/{id}/release-place", DoorClass.Agent, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
+        new("POST", "/api/history/clear", DoorClass.Agent, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
+        new("POST", "/api/brainstorms", DoorClass.Agent, "a brainstorm's question") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("POST", "/api/brainstorms/{id}/send", DoorClass.Agent, "a brainstorm's send") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("POST", "/api/brainstorms/{id}/stop", DoorClass.Agent, "a brainstorm's stop") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("DELETE", "/api/brainstorms/{id}", DoorClass.Agent, "a brainstorm's clear") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Agent,"a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
         // Only the person, on the machine whose take lost, brings it forward; a local host's alone.
         new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Agent,"a lost take brought forward") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:dismissed") },
-        // Only the person says a machine left their workspace, which a bind to a retired machine would hold off.
-        new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
-        new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
-        new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },
-        new("POST", "/api/registry/{repository}/excludes", DoorClass.Person, "a folder's excludes rewritten") { Marks = OwnerMark.None("a folder's excludes, the registry's") },
-        new("POST", "/api/registry/import", DoorClass.Person, "a folder's import") { Marks = OwnerMark.None("a folder's import, the registry's") },
+        // A machine's retirement and the registry's verbs: any caller's, as no workflow step waits on them.
+        new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Agent, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
+        new("DELETE", "/api/registry/{repository}", DoorClass.Agent, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
+        new("POST", "/api/registry/{repository}/workspace", DoorClass.Agent, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },
+        new("POST", "/api/registry/{repository}/excludes", DoorClass.Agent, "a folder's excludes rewritten") { Marks = OwnerMark.None("a folder's excludes, the registry's") },
+        new("POST", "/api/registry/import", DoorClass.Agent, "a folder's import") { Marks = OwnerMark.None("a folder's import, the registry's") },
         // The answers to a terminal's ask, never themselves asked for.
         Confirm,
         Refuse,

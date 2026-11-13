@@ -650,11 +650,11 @@ public sealed class ConfirmationTests
         var (host, _) = Keyed();
         using var _host = host;
 
-        var deleted = await AskAsync(host, "DELETE", "/api/registry/my%20repo", null, session: "s1");
-        var row = deleted.Json.GetProperty("confirmation");
-        Assert.Equal("a repository's retire", row.GetProperty("act").GetString());
-        Assert.Equal("/api/registry/my%20repo", row.GetProperty("path").GetString());
-        Assert.Equal([("repository", "string", "my repo")], Typed(row.GetProperty("values")));
+        var accepted = await AskAsync(host, "POST", "/api/quests/my%20quest/accept", null, session: "s1");
+        var row = accepted.Json.GetProperty("confirmation");
+        Assert.Equal("the yes to a departure", row.GetProperty("act").GetString());
+        Assert.Equal("/api/quests/my%20quest/accept", row.GetProperty("path").GetString());
+        Assert.Equal([("id", "string", "my quest")], Typed(row.GetProperty("values")));
         Assert.Empty(Typed(row.GetProperty("fields")));
         // Answered, it waits no more: this test asks six.
         Assert.Equal(200, (await RefuseAsync(host, row.GetProperty("id").GetString()!)).Status);
@@ -681,12 +681,12 @@ public sealed class ConfirmationTests
             [("/verdict", "string", "null"), ("/setUp/machine", "null", "null"), ("/setUp/sequence", "string", "3")],
             Typed(spelled.Json.GetProperty("confirmation").GetProperty("fields")));
 
-        var cleared = await AskAsync(host, "POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3"},{}]}""", session: "s4");
+        var stepped = await AskAsync(host, "POST", "/api/asks", """{"then":[{"to":"quest","title":"3"},{}]}""", session: "s4");
         Assert.Equal(
-            [("/units/0/kind", "string", "quest"), ("/units/0/id", "string", "3"), ("/units/1", "object", "{}")],
-            Typed(cleared.Json.GetProperty("confirmation").GetProperty("fields")));
-        var none = await AskAsync(host, "POST", "/api/history/clear", """{"units":[]}""", session: "s5");
-        Assert.Equal([("/units", "array", "[]")], Typed(none.Json.GetProperty("confirmation").GetProperty("fields")));
+            [("/then/0/to", "string", "quest"), ("/then/0/title", "string", "3"), ("/then/1", "object", "{}")],
+            Typed(stepped.Json.GetProperty("confirmation").GetProperty("fields")));
+        var none = await AskAsync(host, "POST", "/api/asks", """{"then":[]}""", session: "s5");
+        Assert.Equal([("/then", "array", "[]")], Typed(none.Json.GetProperty("confirmation").GetProperty("fields")));
 
         // A value the door takes as any JSON is shown whole, as it binds.
         var state = await AskAsync(
@@ -707,15 +707,15 @@ public sealed class ConfirmationTests
     {
         var (host, _) = Keyed();
         using var _host = host;
-        const string Wire = "/api/registry/engine/workspace";
+        const string Wire = "/api/asks/engine/through";
 
         var refused = new (string Method, string Path, string? Body, string What)[]
         {
-            ("POST", Wire, """{"":{"workspace":"w"}}""", "an empty name above the door's fields"),
-            ("POST", Wire, """{"workspac":"w"}""", "near spellings the binder ignores"),
-            ("POST", Wire, """{"workspace":"a","Workspace":"b"}""", "a name twice, as the binder reads names"),
+            ("POST", Wire, """{"":{"words":"w"}}""", "an empty name above the door's fields"),
+            ("POST", Wire, """{"word":"w"}""", "near spellings the binder ignores"),
+            ("POST", Wire, """{"words":"a","Words":"b"}""", "a name twice, as the binder reads names"),
             ("POST", "/api/quests/12/review", """{"verdict":"reviewed","setUp":{"machine":"m-1","sequence":3,"extra":1}}""", "a nested name the door does not bind"),
-            ("POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3","all":true}]}""", "a name inside a list"),
+            ("POST", "/api/asks", """{"then":[{"to":"quest","title":"3","all":true}]}""", "a name inside a list"),
             ("POST", "/api/quests/12/accept", "{}", "a body on a door that binds none"),
             ("POST", "/api/sync?workspac=default", null, "a query name the door does not bind"),
             ("POST", "/api/sync?workspace=a&Workspace=b", null, "a query name twice"),
@@ -730,9 +730,9 @@ public sealed class ConfirmationTests
 
         Assert.Empty(await ListedAsync(host));
 
-        var one = await AskAsync(host, "POST", Wire, """{"Workspace":"w"}""");
+        var one = await AskAsync(host, "POST", Wire, """{"Words":"w"}""");
         Assert.Equal(200, one.Status);
-        Assert.Equal([("/Workspace", "string", "w")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));
+        Assert.Equal([("/Words", "string", "w")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));
     }
 
     /// <summary>
@@ -756,10 +756,10 @@ public sealed class ConfirmationTests
         var large = JsonSerializer.Serialize(new { workspace = "default", sentence = new string('a', PersonConfirmations.BodyLimit) });
         Assert.Equal(400, (await AskAsync(host, "POST", "/api/asks", large)).Status);
 
-        var units = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2 + 1).Select(n => $$"""{"kind":"quest","id":"{{n}}"}"""));
-        Assert.Equal(400, (await AskAsync(host, "POST", "/api/history/clear", $$"""{"units":[{{units}}]}""")).Status);
-        var within = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2).Select(n => $$"""{"kind":"quest","id":"{{n}}"}"""));
-        Assert.Equal(200, (await AskAsync(host, "POST", "/api/history/clear", $$"""{"units":[{{within}}]}""", session: "s0")).Status);
+        var steps = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2 + 1).Select(n => $$"""{"to":"quest","title":"{{n}}"}"""));
+        Assert.Equal(400, (await AskAsync(host, "POST", "/api/asks", $$"""{"then":[{{steps}}]}""")).Status);
+        var within = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2).Select(n => $$"""{"to":"quest","title":"{{n}}"}"""));
+        Assert.Equal(200, (await AskAsync(host, "POST", "/api/asks", $$"""{"then":[{{within}}]}""", session: "s0")).Status);
 
         for (var n = 1; n < PersonConfirmations.Most; n++) await AskedAsync(host, "POST", "/api/asks", "{}", session: $"s{n}");
         AssertRefused(await AskAsync(host, "POST", "/api/asks", "not json at all", session: "s9"), PersonDoors.ConfirmationsFull, "a sixth that is no JSON");
@@ -792,7 +792,7 @@ public sealed class ConfirmationTests
 
         // No such quest: made at the Confirm, its door refuses it.
         Assert.Equal(409, (await ConfirmAsync(host, await Asked("POST", "/api/quests/id-in-the-path/done", body))).Status);
-        Assert.Equal(200, (await RefuseAsync(host, await Asked("DELETE", "/api/registry/id-in-the-path", null))).Status);
+        Assert.Equal(200, (await RefuseAsync(host, await Asked("POST", "/api/quests/id-in-the-path/accept", null))).Status);
         var withdrawn = await Asked("POST", "/api/quests/id-in-the-path/review", review, "s-review");
         Assert.Equal(200, (await WithdrawAsync(host, withdrawn, tokens[^1])).Status);
         Assert.Equal(200, (await ConfirmAsync(host, await Asked("POST", "/api/asks", ask, "s1"))).Status);
@@ -812,7 +812,7 @@ public sealed class ConfirmationTests
         Assert.Equal(
             [
                 ("asked", "POST", "/api/quests/{id}/done"), ("stale", "POST", "/api/quests/{id}/done"),
-                ("asked", "DELETE", "/api/registry/{repository}"), ("refused", "DELETE", "/api/registry/{repository}"),
+                ("asked", "POST", "/api/quests/{id}/accept"), ("refused", "POST", "/api/quests/{id}/accept"),
                 ("asked", "POST", "/api/quests/{id}/review"), ("withdrawn", "POST", "/api/quests/{id}/review"),
                 ("asked", "POST", "/api/asks"), ("made", "POST", "/api/asks"),
                 ("asked", "POST", "/api/asks"), ("asked", "POST", "/api/asks"),
@@ -914,22 +914,14 @@ public sealed class ConfirmationProcessTests : IDisposable
             input => input.WriteLine(KeyedHost.Key));
         using var client = new HttpClient { Timeout = Poll.Patience };
 
-        // A retire whose name holds a space, sent escaped: the address the client asked for is the one made, and its door reads the
-        // name unescaped. Nothing by that name is registered here, so the door answers that it retired nothing.
-        const string Retire = "/api/registry/my%20repo";
-        Assert.Equal(403, (await SendAsync(client, host.Url, "DELETE", Retire, null)).Status);
-        var (retire, retireToken) = await AskedAsync(client, host.Url, "DELETE", Retire, null);
+        // A yes whose quest's id holds a space, sent escaped: the door reads it unescaped, and its refusal names that quest.
+        const string Accept = "/api/quests/my%20quest/accept";
+        Assert.Equal(403, (await SendAsync(client, host.Url, "POST", Accept, null)).Status);
+        var (retire, retireToken) = await AskedAsync(client, host.Url, "POST", Accept, null);
         var retired = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{retire}/confirm", null, person: KeyedHost.Key);
-        Assert.True(retired.Status == 200, $"{retired.Status}: {retired.Body}");
-        using (var made = JsonDocument.Parse(retired.Body))
-        {
-            var confirmation = made.RootElement.GetProperty("confirmation");
-            Assert.Equal("made", confirmation.GetProperty("state").GetString());
-            Assert.Contains("\"repository\":\"my repo\"", confirmation.GetProperty("answer").GetString());
-        }
+        Assert.Contains("my quest", retired.Body);
 
-        // An ask with a body: made at the Confirm, the door binds it whole. This machine holds no workspace, so the door's own
-        // refusal names the one the body named, and that is the reason its asker reads.
+        // An ask with a body, bound whole at the Confirm; no workspace is held here, so its door's refusal names the body's.
         const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
         var (second, secondToken) = await AskedAsync(client, host.Url, "POST", "/api/asks", Body);
         var answered = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{second}/confirm", null, person: KeyedHost.Key);

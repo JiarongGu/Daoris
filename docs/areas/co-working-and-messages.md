@@ -8,7 +8,7 @@ Each ask has a channel; a line on no ask has its own; a post may go to everyone,
 What moves is one of three acts: say, request or hand over. One read composes a line's requests (the exchanges) from the records that carry them.
 A session may ask a helper (reads, answers once), the person may ask a partner (writes one piece in its own clone), and the landing rule asks a reviewer (a second opinion).
 Work for another repository is a quest; a lead or a chat is told one routing line about its own lanes.
-Brainstorms and meetings are bounded operations the person starts; they talk and change nothing.
+Brainstorms and meetings are bounded operations any caller starts, the person or an agent; they talk and change nothing.
 *At work* and the head's *Waiting on* draw the exchanges; *What needs you* lists each obligation once; the steward desk takes requests for the steward as claims.
 Who said a word is read from its marks and its door, never from its text.
 
@@ -176,9 +176,9 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 
 **Brainstorms and meetings**
 
-40. A brainstorm is a bounded driver operation: one frozen packet from Daoris's knowledge, shown to the person and sent by their
-    press to agents of different makers; generate, synthesize, challenge; a ranked document kept on this machine, never a
-    change. (from D176)
+40. A brainstorm is a bounded driver operation: one frozen packet from Daoris's knowledge, shown before it goes and sent by any
+    caller's press (the person's, Ask Daoris's or a session's terminal) to agents of different makers; generate, synthesize,
+    challenge; a ranked document kept on this machine, never a change. (from D176, D284)
 41. No pass may ask for a brainstorm, a helper or a reviewer, or post to a channel. Fan-out is Daoris's fixed plan, never an
     agent's. (from D176)
 42. A meeting is the person and named agents in one conversation Daoris relays, each message attributed from its turn's binding.

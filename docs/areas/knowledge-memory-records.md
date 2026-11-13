@@ -107,7 +107,7 @@ one job each, checked by `verify`.
     `git`, `folder` or `system`: an import and the page's add say it from the root, the driver's follow reads a folder's again and registers
     one that became a git checkout as `git`, `connect`'s silence keeps the row's, and a row that never said is a repository's,
     held where its root stops being one. A folder's registration also keeps the person's own `excludes`, globs its manifest passes by
-    beside the defaults: silence preserves them, an empty list clears them, and the person rewrites them whole after the add through `POST /api/registry/{repository}/excludes`, refused for a repository that is no folder. A system's has no root and keeps its adapter as `system`,
+    beside the defaults: silence preserves them, an empty list clears them, and any caller rewrites them whole after the add through `POST /api/registry/{repository}/excludes`, refused for a repository that is no folder. A system's has no root and keeps its adapter as `system`,
     `<plugin>/<system>`, preserved when unstated; the page's *A system…* and `daoris repository add --system <plugin>/<system> [<name>]`
     add one, refused where no plugin installed and on declares that system (`SystemAdd`). (from D34, D48, D70, D254)
 
