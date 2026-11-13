@@ -35,6 +35,7 @@ import { type LineSupervision, supervisionChip } from './lineSupervision';
 import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
 import type { HeadLink } from './headRows';
 import type { AskOrigin } from './startedFrom';
+import { RenameAsk } from './RenameAsk';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useHeadAsks } from './useHeadAsks';
@@ -96,7 +97,7 @@ export function useAttendedHead({
   taking: Record<string, boolean>;
 }) {
   const {
-    stopAsking, setStopAsking, deleteAsking, setDeleteAsking, handOverAsking, setHandOverAsking, helperAsking, setHelperAsking,
+    stopAsking, setStopAsking, deleteAsking, setDeleteAsking, renameAsking, setRenameAsking, handOverAsking, setHandOverAsking, helperAsking, setHelperAsking,
     handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
   } = asks;
   // What *Try now* on a waiting line came to where it is refused, by the session it is pressed on.
@@ -209,8 +210,10 @@ export function useAttendedHead({
   const originAsk: AskOrigin | null = originAskId
     ? { id: originAskId, words: (entryAsks ?? []).find((ask) => ask.id === originAskId)?.sentence ?? null }
     : null;
+  // The name the person gave its conversation is its title above all; else its ask's name, else what its record says.
   const attendedTitle = attended
-    ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
+    ? grouping?.name
+      ?? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
       ?? sessionTitle(attended, quest, openings[attended.id])
     : '';
   // Whom it continues and whom a helper helps: the record's own links, joined to the sessions the frame holds, for
@@ -290,9 +293,18 @@ export function useAttendedHead({
       ) : deleteAsking === attended.id && headActs.includes('delete') ? (
         <DeleteAsk
           key={attended.id}
+          parts={attendedEntry?.parts.length ?? 1}
           busy={actions.deleting}
           onDelete={(answered) => actions.deleteNow(attended, answered)}
           onClose={() => setDeleteAsking((was) => (was === attended.id ? null : was))}
+        />
+      ) : renameAsking === attended.id && headActs.includes('rename') ? (
+        <RenameAsk
+          key={attended.id}
+          title={attendedTitle}
+          named={Boolean(grouping?.name)}
+          onSave={(name, answered) => actions.renameNow(attended, name, answered)}
+          onClose={() => setRenameAsking((was) => (was === attended.id ? null : was))}
         />
       ) : handOverAsking === attended.id && headActs.includes('handOver') ? (
         <HandOverAsk

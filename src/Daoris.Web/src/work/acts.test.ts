@@ -29,12 +29,12 @@ const quest = (status: Quest['status']): Quest => aQuest({
 describe('the acts a session is offered', () => {
   it('offers a running driven session its stop, its quest’s pause, its folder and a terminal there, in §3.1’s order', () => {
     expect(offeredActs({ session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT }, 'row'))
-      .toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'copy']);
   });
 
   it('offers a session waiting on you its answer on its row, and not in its header, where its card keeps it', () => {
     const waiting = { session: session({ state: 'awaiting-person' }), grouping: placed({ group: 'needs-you', shown: 'awaiting-person' }), root: ROOT };
-    expect(offeredActs(waiting, 'row')).toEqual(['answer', 'stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs(waiting, 'row')).toEqual(['answer', 'stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'copy']);
     expect(offeredActs(waiting, 'header')).not.toContain('answer');
   });
 
@@ -83,7 +83,7 @@ describe('the acts a session is offered', () => {
       grouping: placed({ group: 'working', shown: 'answered' }),
       root: ROOT,
     };
-    expect(offeredActs(answered, 'row')).toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs(answered, 'row')).toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'copy']);
   });
 
   it('offers a parked quest’s last session Try again, and a stopped one Try again only where its stop holds its quest', () => {
@@ -125,11 +125,25 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ ...ended, grouping: null }, 'row')).not.toContain('archive');
   });
 
+  /** A conversation's name and pin are kept for it by the person: offered on every session of this machine's that is one, *Unpin* where it is. */
+  it('offers Rename… and Pin on a session of this machine’s, Unpin where it is pinned, and neither on an intake or a teammate’s record', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
+    const row = (over: Partial<SessionGrouping> = {}) => ({ session: chat, grouping: placed({ group: 'done', shown: 'completed', ...over }), root: ROOT });
+    expect(offeredActs(row(), 'row')).toEqual(expect.arrayContaining(['rename', 'pin']));
+    expect(offeredActs(row({ pinned: true }), 'header')).toEqual(expect.arrayContaining(['rename', 'unpin']));
+    expect(offeredActs(row({ pinned: true }), 'header')).not.toContain('pin');
+    const intake = session({ quest: null, kind: 'chat', ask: '0fda18', repository: 'ask #0fda18', tree: null });
+    expect(offeredActs({ session: intake, root: null }, 'row')).not.toContain('rename');
+    const teammate = session({ id: 'laptop/s1', quest: null, kind: 'chat', state: 'completed', tree: null });
+    expect(offeredActs({ session: teammate, grouping: placed({ group: 'done', shown: 'completed', teammate: true }), root: null }, 'row'))
+      .not.toContain('pin');
+  });
+
   /** Delete… only where the reader says the delete would be taken, at both doors. */
   it('offers Delete… only where the reader says deletable, after the archive marks and before the id', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
     const deletable = { session: chat, grouping: placed({ group: 'done', shown: 'completed', deletable: true }), root: ROOT };
-    expect(offeredActs(deletable, 'row')).toEqual(['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy']);
+    expect(offeredActs(deletable, 'row')).toEqual(['handOver', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'archive', 'delete', 'copy']);
     expect(offeredActs(deletable, 'header')).toContain('delete');
 
     expect(offeredActs({ ...deletable, grouping: placed({ group: 'done', shown: 'completed' }) }, 'row')).not.toContain('delete');
@@ -164,7 +178,7 @@ describe('the acts a session is offered', () => {
   it('offers a conversation of this machine its hand-over after its stop, working or not, and no other session', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
     expect(offeredActs({ session: chat, root: ROOT }, 'header'))
-      .toEqual(['handOver', 'askHelper', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['handOver', 'askHelper', 'review', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'copy']);
     expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
     // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none.
     expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
@@ -182,7 +196,7 @@ describe('the acts a session is offered', () => {
     const driven = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
     // A live quest session's head offers *Hand over…* too, through the judge its terminal's verb shares.
     expect(offeredActs(driven, 'header'))
-      .toEqual(['stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'rename', 'pin', 'copy']);
     expect(offeredActs(driven, 'row')).not.toContain('handOver');
     expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).not.toContain('handOver');
     expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).toContain('askHelper');

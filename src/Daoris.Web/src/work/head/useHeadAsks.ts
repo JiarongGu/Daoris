@@ -28,6 +28,8 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
   const [stopAsking, setStopAsking] = useState<string | null>(null);
   // The session whose delete asks under the header, the stop's way: of that session only.
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
+  // The session whose rename asks under the header, the stop's way: of that session only.
+  const [renameAsking, setRenameAsking] = useState<string | null>(null);
   // The session whose hand-over asks under the header, the stop's way: of that session only.
   const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
   // The session whose helper's ask opens under the header, the stop's way: of that session only.
@@ -49,6 +51,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
   useEffect(() => {
     setStopAsking((asked) => (asked === selected ? asked : null));
     setDeleteAsking((asked) => (asked === selected ? asked : null));
+    setRenameAsking((asked) => (asked === selected ? asked : null));
     setHandOverAsking((asked) => (asked === selected ? asked : null));
     setHelperAsking((asked) => (asked === selected ? asked : null));
     setPieceAsking((asked) => (asked === selected ? asked : null));
@@ -81,6 +84,17 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setHelperAsking(null);
       setPauseAsking(null);
       setDeleteAsking(id);
+    },
+    // *Rename…*: attended, its name's ask under its header, as a stop asks.
+    rename: (id) => {
+      chosen();
+      attend(id);
+      setStopAsking(null);
+      setDeleteAsking(null);
+      setHandOverAsking(null);
+      setHelperAsking(null);
+      setPauseAsking(null);
+      setRenameAsking(id);
     },
     // *Go on with another agent…* and *Stop and hand over…*: attended, the hand-over's ask under its header.
     handOver: (id) => {
@@ -141,7 +155,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
   };
 
   return {
-    archivingEnded, setArchivingEnded, stopAsking, setStopAsking, deleteAsking, setDeleteAsking, handOverAsking, setHandOverAsking,
+    archivingEnded, setArchivingEnded, stopAsking, setStopAsking, deleteAsking, setDeleteAsking, renameAsking, setRenameAsking, handOverAsking, setHandOverAsking,
     helperAsking, setHelperAsking, pieceAsking, setPieceAsking, handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
     answerFocus, setAnswerFocus, doors,
   };

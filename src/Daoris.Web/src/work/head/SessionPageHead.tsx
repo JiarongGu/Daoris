@@ -224,9 +224,11 @@ export function StopAsk({ sentence, busy = false, onStop, onClose }: {
  * as the stop's ask does: what goes, then *Delete session* and *Never mind*. The page offers *Delete…* only where the
  * driver said it would be taken, so the sentence is one for every session that reaches it. The one inline confirmation.
  */
-export function DeleteAsk({ busy = false, onDelete, onClose }: {
+export function DeleteAsk({ busy = false, parts = 1, onDelete, onClose }: {
   /** A delete on its way: the presses wait for it. */
   busy?: boolean;
+  /** How many parts of its line the delete takes with it: more than one is said, never left for the person to find out. */
+  parts?: number;
   /** The second press, told how the delete ended. */
   onDelete: (answered: Answered) => void;
   /** Put down, or the delete landed. */
@@ -237,7 +239,7 @@ export function DeleteAsk({ busy = false, onDelete, onClose }: {
     <InlineConfirm
       className="mt-2.5"
       label={t('work.delete.title')}
-      says={t('work.delete.means')}
+      says={parts > 1 ? t('work.delete.parts', { count: parts }) : t('work.delete.means')}
       meanIt={t('work.act.deleteMeanIt')}
       busy={busy}
       onConfirm={onDelete}

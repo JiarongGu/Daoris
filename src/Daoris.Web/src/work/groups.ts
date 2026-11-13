@@ -38,6 +38,10 @@ export type SessionGrouping = {
   reason?: string;
   shown: string;
   archived: boolean;
+  /** The name this machine's person gave its conversation, which its row and head wear in place of its first question; null for none. */
+  name?: string | null;
+  /** Whether the person pinned its conversation: its row is marked and listed first within its group. */
+  pinned?: boolean;
   teammate: boolean;
   strikes?: number | null;
   awaits?: string | null;

@@ -250,7 +250,7 @@ of everything it handed, section by section.
 42. Ask Daoris is a conversation in its own room, each conversation its own: any number run at once, in one workspace or
     many, answering at once, and one answering a turn never holds another's open, start, go-on or words. Every *New conversation* press and
     `START_HELP` places a conversation of its own, never handed one running or starting, so a new conversation's first word
-    starts its own turn (`HelpStarting` holds the words of each starting conversation by its id). What they share is the
+    starts its own turn (`HelpStarting` marks the conversations starting and holds no word: a word said to one is kept on its record at once, under the press's key, and handed to its door, under its record id, when it opens, marked attempted before the wire; where the start fails it waits on the record for the go-on). What they share is the
     workspace's room folder, whose files each open and go-on writes whole under the room's own gate (`HelpRoomWrites`),
     never a turn's, and which name no conversation's focus. The person never ends a conversation: the composer's one *Stop*, offered while a reply runs on any door,
     stops that reply's whole process tree (`STOP_SESSION`), and every conversation shown, stopped, ended, failed or lost,
