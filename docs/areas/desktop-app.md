@@ -77,11 +77,14 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     retire, wire and import, a plugin's replace, a run's node acts, a git identity or access change): where Daoris runs it is
     the person's press of a `Person` route (rule 14), made by the in-process client that holds the key; with none running the
     verb acts alone or refuses. (from D156, D253)
-13. Reads are open. An agent's doors are judged as an agent's, and are any caller's: an ask's close and delete, a quest's, a
-    session's and a lost take's bring-forward or dismissal ended its keyless refusal (D284), the key now only saying whose
-    press it is. The remaining person's doors (a verdict, a yes, a go-ahead's answer, an ask's or a quest's workflow and
-    review choice, their words, the registry's) need the key until they are workflow waits or opened in turn. An unclassed
-    write is refused. A refusal is a 403 with a code, never a 500. (from D156, D284)
+13. Reads are open. An agent's doors are judged as an agent's, and are any caller's, the key only saying whose press it is
+    (D284): an ask's close and delete, a quest's and a session's delete, a lost take's bring-forward or dismissal, a brainstorm's
+    or a meeting's ask, send, stop and clear, a history clear, a parked line's place let go, a machine's retirement and the
+    registry's retire, re-wiring, excludes and import. The remaining person's doors each answer a wait or set what a wait reads (a
+    verdict, a yes, a done, a reopen and its continue, a go-ahead's answer, an ask's and a quest's workflow, review choice and
+    through words, an ask itself with its choices, a set-up step, their words and the channel's, a memory end's approval) and need
+    the key until the approval request puts another caller's press to the wait's party. An unclassed write is refused. A refusal
+    is a 403 with a code, never a 500. (from D156, D284)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the Confirm, default no, until answered or taken back (under the tier `act`,
     rule 15, with no row); a main window in front says it by a toast, and one heard out of focus is said once the window comes
