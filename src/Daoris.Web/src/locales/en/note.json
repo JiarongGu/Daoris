@@ -540,6 +540,7 @@
   "note.opening.why.first-order": "it comes first in the order of Daoris's accounts",
   "note.ledger.answered": "Answered:",
   "note.ledger.parked": "It stopped to ask the person; its question is in its transcript.",
+  "note.ledger.intake-closed": "The person closed ask #{{ask}}:",
   "note.ledger.went-on": "Went on with your words at {{at}}.",
   "note.ledger.went-on-findings": "Went on with another agent's findings at {{at}}.",
   "note.ledger.went-on-both": "Went on with your words and another agent's findings at {{at}}.",

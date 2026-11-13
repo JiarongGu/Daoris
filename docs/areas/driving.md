@@ -235,8 +235,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
     probably meant, and is never made. (D65, D133, D277, D282, D284)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
-    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
-    parked one ends when the person answers the ask. Where no declaration covers the work and no repository's own files fit it, the
+    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. A parked
+    one ends in the ask's close's own step, with its reason (`AskIntakeClose`, `ledger.intake-closed`), whichever door closed it;
+    at the look when the person publishes or deletes the ask, or when one running at the close parks. Where no declaration covers the work and no repository's own files fit it, the
     intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
     (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
     that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
