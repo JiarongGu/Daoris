@@ -8,10 +8,10 @@ namespace Daoris.Knowledge;
 /// <param name="Revision">From 1, within the scope.</param>
 /// <param name="By">The session that wrote it, or null for a person's hand.</param>
 /// <param name="Why">One paragraph: why these parts, and what changed since the last revision.</param>
-/// <param name="At">When it was written.</param>
+/// <param name="At">When it is written.</param>
 public sealed record TeamPlan(string Ask, string? Scope, int Revision, string? By, string Why, DateTimeOffset At)
 {
-    /// <summary>The line's commit the plan was read at, where the writer names one.</summary>
+    /// <summary>The line's commit the plan reads, where the writer names one.</summary>
     public string? Base { get; init; }
 
     /// <summary>The parts, each stripped of the claims the judge refused.</summary>

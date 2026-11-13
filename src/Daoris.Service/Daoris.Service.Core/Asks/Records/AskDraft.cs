@@ -14,10 +14,7 @@ public sealed record AskDraft(string? Title, string? Body)
     /// <summary>Files beyond the ask's own — the ask's always travel too.</summary>
     public IReadOnlyList<QuestUpload> Uploads { get; init; } = [];
 
-    /// <summary>
-    /// The part of the ask's plan this quest is, <see cref="QuestRequests"/>' key <c>&lt;ask&gt;/&lt;part&gt;/1</c>: the quest is published under it, so the same
-    /// key asked again is the same quest, and two parts to one receiver are two quests. Null for every quest no plan publishes.
-    /// </summary>
+    /// <summary>The key <c>&lt;ask&gt;/&lt;part&gt;/1</c> a plan's part is published under (<see cref="QuestRequests"/>); null for a quest no plan publishes.</summary>
     public string? Part { get; init; }
 
     /// <summary>What to ask next once this closes done — judged by the exchange, like any chain.</summary>

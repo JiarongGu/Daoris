@@ -36,11 +36,9 @@ public sealed class AsksRoutes(DriverLoop loop)
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
 
-    /// <summary>
-    /// An ask's plan as the person reads it: the lead's, Ask Daoris's or a hand's parts with the quest each is, the edges between them,
-    /// what the judge found, and each split a worker made of its own part. Moves nothing; none where no plan was written.
-    /// </summary>
+    /// <summary>An ask's plan as the person reads it, each part with its quest; moves nothing.</summary>
     [DriverRoute("ASK_PLAN", PipeClass.Open)]
+    [ByEvent("ASK_PLAN", Untold = "the service's plan rows, which `team_plan` writes and no scope or slice tells")]
     private async Task<object?> AskPlanAsync(AskPlanRead press, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();

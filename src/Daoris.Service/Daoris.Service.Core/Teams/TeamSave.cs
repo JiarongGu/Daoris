@@ -16,6 +16,6 @@ public sealed record TeamSave(string Ask, IReadOnlyList<TeamPart> Parts, IReadOn
     /// <summary>The session writing, or null for a person's hand.</summary>
     public string? By { get; init; }
 
-    /// <summary>The line's commit the plan was read at.</summary>
+    /// <summary>The line's commit the plan reads.</summary>
     public string? Base { get; init; }
 }

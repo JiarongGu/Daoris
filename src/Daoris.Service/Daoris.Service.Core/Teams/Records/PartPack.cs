@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 public sealed record PartPack
 {
-    /// <summary>Where to read, each with the blob id it was read at.</summary>
+    /// <summary>Where to read, each with the blob id read.</summary>
     public IReadOnlyList<PackPointer> Pointers { get; init; } = [];
 
     /// <summary>The tests the worker runs, each with its filter, as words.</summary>

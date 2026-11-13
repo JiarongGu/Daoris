@@ -1,9 +1,9 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a plan was not kept.</summary>
+/// <summary>Why a plan is not kept.</summary>
 public enum TeamRefusal
 {
-    /// <summary>It was kept.</summary>
+    /// <summary>It is kept.</summary>
     None,
 
     /// <summary>No such ask.</summary>

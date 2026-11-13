@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// A pack is stale by pointer: when the line moves, each pointer's blob id is compared with the file's now, and only the pointers that moved
-/// are marked, so a scout is asked again for those alone and a pack whose files did not change stays as it was.
+/// are marked, so a scout is asked again for those alone and a pack whose files did not change stays untouched.
 /// </summary>
 public static class PackStaleness
 {
