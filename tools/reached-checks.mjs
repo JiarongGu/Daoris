@@ -23,9 +23,14 @@
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes; each pass is recorded for the merge
  * to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
+ * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
+ * one the merge queue's gates take, and says what it waits for; a light group runs at once. The place is let go as the group ends,
+ * and by this process's death where it is killed. The merge's own `reached` gate runs inside the queue's place, with no Daoris home,
+ * so it takes none of its own.
+ *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
@@ -37,6 +42,30 @@ import { PassedClasses, classKey, splitByReuse } from './merge/class-reuse.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
 import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
+import { inPlace } from './merge/reached-admit.ts';
+import { createAdmission } from './machine-admission.mjs';
+
+/** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. */
+const execAsync = (command, args, cwd) => new Promise((done) => {
+  const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true });
+  child.on('error', () => done(null));
+  child.on('close', (code) => done(code));
+});
+
+/** The machine's admission as a builder takes it, its holds let go where an interrupt ends the process before a `finally` runs. */
+export function builderAdmission(admission = createAdmission({ kind: 'session' })) {
+  const held = new Set();
+  const letGo = () => held.forEach((hold) => hold.release());
+  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { letGo(); process.exit(signal === 'SIGINT' ? 130 : 143); });
+  return {
+    take: async (options) => {
+      const hold = await admission.take(options);
+      if (!hold) return null;
+      held.add(hold);
+      return { release: () => { held.delete(hold); hold.release(); } };
+    },
+  };
+}
 
 /** The paths changed against HEAD (an open merge's), or against where the branch left `base` (a builder's, new files too). */
 export function changedPaths(root, base = null) {
@@ -106,9 +135,12 @@ async function main(argv) {
   const checkout = verdictsHome(root);
   const findings = readJson(join(checkout, CI_FINDINGS)).findings ?? [];
   const verdicts = readJson(join(checkout, CLASS_VERDICTS_FILE)).gates ?? {};
-  const outcome = runPlan({
+  const admission = builderAdmission();
+  const processSuites = processSuitesOf(keyContextOf(root).gates);
+  const outcome = await runPlan({
     root, plan, keys, store, replayed, say: (line) => console.log(line),
-    exec: (command, args, cwd) => spawnSync(command, args, { cwd, stdio: 'inherit', windowsHide: true }).status,
+    exec: execAsync,
+    inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
   });
   store.save();
