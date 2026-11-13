@@ -297,16 +297,6 @@
  * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order, as before,
  * for a loaded machine; a batch keeps it once given. The web gate keeps its own cap on its workers.
  *
- * ## The light lane's gates side by side
- *
- * Up to `LIGHT_WIDTH` (three) light gates run at once, each starting, in the light lane's order, once
- * a place is free and no gate running builds a component it builds. A gate's components (`gateComponents`) are its
- * command's and those of the root scripts it names, read through: the CLI's `npm run verify` ends in the devkit's
- * universal gates, so it runs in turn with universal, code-map and devkit; `npm run test:web` builds the HTTP host its
- * own build writes into, so it runs in turn with service; driver and modules share the desktop's. A gate that builds
- * none (orient-index) runs beside any. `LIGHT_WIDTH` says why three. A run of one light gate alone, or of Process gates
- * alone, runs in turn.
- *
  * ## A Process half on its fast half's build
  *
  * A Process half whose test project's fast half (`reuses`: the light
@@ -316,59 +306,6 @@
  * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
  * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
  * is `--no-build` already. One at a time reuses too.
- *
- * ## The family rehearsal beside the git half
- *
- * A full set's wall is mostly the Process lane, one gate at a time, the git half longest. So a rehearsal
- * of `BESIDE_GIT_HALF` (`runsBesideGitHalf`) runs beside a git half (`isGitHalf`, the driver's `git.process.runsettings`
- * half, `beside` in the schedule): it goes in the lane right after the last git half, and a Process-lane gate starts once
- * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
- * serial halves among them, and the rehearsal still waits for the whole light lane.
- *
- * A rehearsal runs beside a Process half only where they share no build output. The git half builds the desktop's
- * projects into their own `bin/` and `obj/` and runs from them, and only the desktop's (a test holds that). So the family
- * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
- * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
- * build, in folders no git half builds; and it shuts no build server down. A test reads its tool for both.
- *
- * A git half that re-runs its failures alone waits for the rehearsal beside it to end, and no Process-lane gate
- * starts meanwhile, the next rehearsal beside it neither. A rehearsal that died and is run again whole does not
- * wait: that re-run is about a process that ended, and two gates each waiting for the other to end would never start.
- *
- * ## The release rehearsal beside the git half too
- *
- * The release rehearsal packs the CLI in its own folder: `prepack` stages the canon, the README, the LICENSE and a built
- * `dist/` there, which the CLI's bin prefers over its sources, and `postpack` removes them. It builds no .NET project,
- * starts no host, takes no port and runs no git of its own. No desktop test reads the CLI's folder outside `src/` and
- * `test/`, which no pack writes, nor runs its bin (a test reads every desktop source for both), so no Process half sees the
- * staging. So it is of `BESIDE_GIT_HALF`, before the family in the plan's order, and runs beside the git half, whose
- * classes no neighbour's load can fail; the family, which runs the CLI's bin, starts once it has ended, and two
- * Process-lane gates at once stays the ceiling. The driver's other Process half and the modules' run beside nothing: they
- * hold the clock-bound classes. It waits for the whole light lane, whose cli gate runs the bin, and the deployment
- * rehearsal, which packs the same folder, waits for it.
- *
- * ## The deployment rehearsal beside the git half last
- *
- * The deployment rehearsal (12 to 14 minutes) publishes every desktop project and both service hosts, packs the CLI in its
- * folder as the release rehearsal does, builds the driver's host, runs the CLI's bin and opens the installed window. Its
- * publishes are told an output of its own (`desktop-publish --artifacts-path`, `_fixtures/rehearsal-builds/deployment`),
- * where their `obj/`, `bin/` and stages go, and its host's build goes there by `ownBuild`; and every build it makes keeps
- * build servers of its own (`OWN_BUILD_SERVERS` in the kit, a run beside's `BESIDE_ENVIRONMENT`), so it no longer starts
- * after a shutdown of every server on the machine, which beside the git half would stop the builds of all beside it. So it
- * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
- * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it.
- * It stays apart from the family: each of its three publishes packs the CLI in place, and a
- * `dist/` half written or removed under one of the family's many runs of the bin is state, not load.
- *
- * ## The web gate's unit run beside service
- *
- * In a full set the light lane's floor is the service suite then the web gate, about 10 minutes under load, because the
- * web gate builds the HTTP host the service suite builds. Its first step, the page's vitests, builds nothing. So it is a
- * light gate of its own, `web-unit` (`npm run test:web:unit`), of no component, and runs beside service; `web` runs the
- * page's build, the HTTP host's and Playwright (`npm run test:web:e2e`), after service as before. `npm run test:web` runs
- * both, for a person. Both are heavy, and `web` is declared first (`LIGHT_WIDTH` says why). The cap on
- * vitest's workers is the page's own config, so it holds wherever the unit run runs. A vitest's read outside the page
- * reaches `web-unit`, and the browser suite's reads reach `web`.
  *
  * ## A batch
  *
@@ -436,7 +373,8 @@ import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from '.
 import {
   isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
-} from './merge-branch/plan.mjs';
+  rerunPlan, planOnly,
+} from './merge/plan.ts';
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
@@ -468,8 +406,8 @@ export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } fro
 export {
   isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, stagePlan, isHeavyGate,
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
-  workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
-} from './merge-branch/plan.mjs';
+  workflowScripts, gatePlan, readDeclared, declaredIn, readPlan, rerunPlan,
+} from './merge/plan.ts';
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
 export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
@@ -838,26 +776,6 @@ function refreshKnowledgeServer(root) {
   console.log(run.status === 0
     ? `knowledge server: ${last(run.stdout).replace(/^knowledge-server: /, '')}`
     : `knowledge server: NOT rebuilt, and the merge stands (${last(run.stderr) || last(run.stdout) || `exit ${run.status}`}); npm run knowledge:build says why`);
-}
-
-// ---------------------------------------------------------------------------------------------------
-// A fixed gate re-runs alone
-
-/**
- * What `--rerun` runs and keeps, in the plan's order: each named gate, each chosen gate with no verdict yet, and each chosen
- * gate whose verdict a changed path reaches (`stale` maps it to those paths, none when its tree cannot be compared); every other
- * chosen gate's verdict is kept. `fresh` is the gates run for want of a verdict, `stale` the ones run again, each with the
- * verdict it no longer keeps.
- */
-export function rerunPlan(plan, chosen, results, named, stale = {}) {
-  const isStale = (name) => Object.hasOwn(stale, name);
-  const run = plan.filter((name) => named.includes(name) || (chosen.includes(name) && (!results[name] || isStale(name))));
-  const kept = plan.filter((name) => chosen.includes(name) && !named.includes(name) && results[name] && !isStale(name))
-    .map((name) => ({ name, verdict: results[name].verdict, at: results[name].at }));
-  const fresh = run.filter((name) => !named.includes(name) && !results[name]);
-  const again = run.filter((name) => !named.includes(name) && results[name])
-    .map((name) => ({ name, verdict: results[name].verdict, at: results[name].at, paths: stale[name] }));
-  return { run, kept, fresh, stale: again };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -3083,12 +3001,6 @@ export function laneReport(root, branch) {
   return out;
 }
 
-function planLines(plan) {
-  return plan.map((gate, i) => {
-    return `  ${pad(`${i + 1}.`, 4)}${pad(gate.name, 16)} ${pad(gate.kind, 10)} ${gate.run}`;
-  });
-}
-
 // ---------------------------------------------------------------------------------------------------
 // The verbs
 
@@ -3739,41 +3651,17 @@ async function resume(root, options) {
   return mergeNext(root, state);
 }
 
-function planOnly(root, options) {
-  const plan = readPlan(root);
-  const lanes = readLanes(root)?.lanes ?? [];
-  const reachedAny = new Set();
-  console.log(`plan (nothing is merged; the current branch is ${treeState(root).branch || 'a detached HEAD'}):`);
-  options.branches.forEach((branch, i) => {
-    requireBranch(root, branch);
-    const commits = parseCommits(git(root, ['log', COMMIT_FORMAT, `HEAD..${branch}`]).out);
-    console.log('');
-    console.log(`${i + 1}. ${branch}: ${count(commits.length, 'commit')} ${MAIN} lacks`);
-    for (const line of laneReport(root, branch)) console.log(`  ${line}`);
-    const problems = options.commitCheck ? commitProblems(root, branch, commits) : [];
-    console.log(problems.length ? `  commit check would refuse it:\n${problems.map((problem) => `    ${problem}`).join('\n')}` : '  commit check: nothing to refuse');
-    // What this branch's paths reach, each gate with why it runs or is skipped.
-    const selection = selectGates(plan, branchChanges(root, branch), { lanes, full: options.full, gated: options.gated });
+/** What `--plan` asks of this tool's own units: the lane report, the gates a branch reaches, the prune and the owed line. */
+const planSeams = {
+  laneReport,
+  reaches(root, branch, plan, { full, gated }) {
+    const selection = selectGates(plan, branchChanges(root, branch), { lanes: readLanes(root)?.lanes ?? [], full, gated });
     const runs = selection.gates.filter((entry) => entry.run);
-    console.log(`  gates it reaches: ${runs.length} of ${plan.length}${options.full ? ' (--full)' : ''}`);
-    for (const line of selectionLines(selection.gates)) console.log(`  ${line}`);
-    for (const entry of runs) reachedAny.add(entry.gate.name);
-  });
-  console.log('');
-  if (options.autoPrune) {
-    printPrunePlan(root, planPrune(root, { hold: options.branches, atMerge: true }), true);
-  } else {
-    console.log('prune: skipped (--no-prune)');
-  }
-  console.log('');
-  const order = plan.filter((gate) => reachedAny.has(gate.name));
-  console.log(`gates, in order${options.branches.length > 1 ? ' (the rehearsals run after the last branch only, each one any branch reached)' : ''}:`);
-  for (const line of planLines(order)) console.log(line);
-  const owed = owedLine(plan.length - order.length);
-  if (owed) console.log(owed);
-  console.log(`logs: ${SCRATCH}/merge-<branch>/<gate>.log`);
-  return 0;
-}
+    return { runs: runs.map((entry) => entry.gate.name), lines: selectionLines(selection.gates) };
+  },
+  prune: (root, hold) => printPrunePlan(root, planPrune(root, { hold, atMerge: true }), true),
+  owed: owedLine,
+};
 
 function dropBatch(root) {
   const state = readState(root);
@@ -6940,7 +6828,7 @@ export async function main(argv) {
   if (options.messageFile !== null) return enqueueVerb(root, options);
   if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);
   if (options.prune) return pruneOnly(root, options);
-  if (options.plan) return planOnly(root, options);
+  if (options.plan) return planOnly(root, options, planSeams);
   if (options.passed) return passedOnly(root, { light: options.light });
   timeoutState.off = options.noTimeout === true;
   const verb = options.stale ? 'stale' : options.rerun.length ? 'rerun' : options.resume ? 'continue' : !options.ci && !options.beside && !options.full && options.branches.length ? 'merge' : null;
