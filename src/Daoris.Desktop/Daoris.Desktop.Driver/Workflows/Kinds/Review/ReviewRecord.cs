@@ -59,6 +59,8 @@ public sealed record ReviewReference
 
     public string? Tip { get; init; }
 
+    public string? Base { get; init; }
+
     /// <summary>A checkout's turns, each its <c>HEAD</c> at its start and end, in order: the commits between two turns are not this work's.</summary>
     public IReadOnlyList<ReviewInterval> Turns { get; init; } = [];
 

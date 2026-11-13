@@ -76,14 +76,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     puts the folder back, or names the `.removing-*` folder the plugin lies in. (D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (D120)
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: Daoris's own `daoris-github`,
-    `daoris-azure-devops` and `daoris-in-app-browser`. None installs without a press. The driver looks beside the application
+    `daoris-azure-devops`, `daoris-in-app-browser` and `daoris-dev-report`. None installs without a press. The driver looks beside the application
     first, then beside the home. An offer is listed as installed where its id or one it formerly was is. (D103, D274)
 17a. Daoris's GitHub and Azure DevOps plugins declare a `goal` on their `pull-request` step and carry its create, status and
     complete as tools, so the loop's step session performs it (workflows rule 31a), an attempt delivered on `work/perform` before
     staying theirs to settle by their `check`; they answer `work/state`, call their service's
-    REST API with the token their own `login` keeps in their private storage (rule 29), say a refused token at `status`, run no
+    REST API with the token their own `login` keeps in their private storage (rule 29), say a refused or missing token at `status` (a read, which exits 0 whatever it answers, so it is never a failed command), run no
     git, `gh` or `az`, and declare node alone. Azure DevOps's step sets auto-complete where its options say so, and its `release`
-    step watches the merged commit's release or pipeline stages to their end, as its README says. Where no token is kept or Azure
+    step acts only on the target its options declare by id (pipeline, release definition, stage, action, success), a repository's
+    values over the shared workflow (workflows rule 3a): undeclared or unresolved, it fails `no-target` or `target-changed` listing
+    what it found, writes nothing and is held for the person; it starts the declared stage, or makes the release from the exact merged
+    build (never twice), only where its action says so, as its README says. (D288) Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
     manifest's `hooks.browser` hands each process the in-app browser's DevTools address as `DAORIS_BROWSER` (`PluginBrowser`), the
     calls are page-side `fetch`es that read no cookie, and each answer's evidence ends `Way: the token.` or `Way: the browser.`
@@ -128,8 +131,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 22. A sample frame names no repository: an empty scratch root and a `GIT_DIR` that is not there. (D101)
 23. A tool is found and checked only at a trial or on a press, never at a load or on a timer. A check's `fix` (such as `az login`)
     runs only on the person's press, in a console they see. Daoris never signs in or downloads. (D150)
-24. A server goes to sessions by default. One handed to Ask Daoris reaches it only once the person approved its exact tools; a
-    write only as an accepted write; a generic execution tool never. A server run through `npx` names its package and version, and
+24. A server goes to sessions by default. One handed to Ask Daoris in restricted mode reaches it only once the person approved its
+    exact tools; a write only as an accepted write; a generic execution tool never. In full access Ask Daoris is handed every server
+    whole and asks nothing, and the plugin's page and `plugin show` follow its mode: no server waits for an approval. A server run through `npx` names its package and version, and
     a session is handed node and that package's script, installed once into the toolchain, never `npx` itself; one driving Daoris's
     browser stays under a 512 MB ceiling by a restart between calls (agents area, rule 13). An approval is the person's and stands
     while the plugin is switched off, but a switched-off plugin's grant is handed nothing. (D170)

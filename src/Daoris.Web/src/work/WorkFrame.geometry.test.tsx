@@ -361,7 +361,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   it('opens the dock on demand: closed to its strip until the person opens it, and then remembered', async () => {
     window.localStorage.removeItem('daoris.dockClosed');
     show('s1a2b3c4');
-    await screen.findByRole('button', { name: 'Open Review' });
+    await screen.findByRole('button', { name: 'Open Outputs' });
     expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Open Timeline' }));
@@ -378,8 +378,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
     expect(window.localStorage.getItem('daoris.dockClosed')).toBe('1');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open Review' }));
-    expect(await screen.findByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Open Outputs' }));
+    expect(await screen.findByRole('tab', { name: 'Outputs' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('keeps each session\'s own tab in the dock', async () => {
@@ -391,11 +391,11 @@ describe('the frame\'s geometry (FRAME6)', () => {
       </QueryClientProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     attend('c0ffee11');
     expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
     attend('s1a2b3c4');
-    expect(await screen.findByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('tab', { name: 'Outputs' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('fills the frame when asked, drawing the same surface rather than a new one', async () => {

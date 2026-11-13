@@ -735,7 +735,7 @@ describe('reviewing what a session landed', () => {
   /** The dock opens on the timeline: a running session is watched far more often than reviewed. */
   it('docks the timeline beside the session, and asks for no diff until someone looks', async () => {
     show('s1a2b3c4');
-    await screen.findByRole('tab', { name: 'Review' });
+    await screen.findByRole('tab', { name: 'Outputs' });
 
     expect(screen.getByRole('tab', { name: 'Timeline' }).getAttribute('aria-selected')).toBe('true');
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
@@ -747,7 +747,7 @@ describe('reviewing what a session landed', () => {
    */
   it('lays the changes out unified or side by side, and remembers which', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     await userEvent.click(await screen.findByText('src/chunk.ts'));
 
     const layout = screen.getByRole('radiogroup', { name: 'Layout' });
@@ -764,7 +764,7 @@ describe('reviewing what a session landed', () => {
 
   it('reads the landed work off the checkout when the review tab is opened', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
 
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
     // Within the review's own bound: the bridge's 30 seconds would give up on a diff git takes most of a minute over.
@@ -790,7 +790,7 @@ describe('reviewing what a session landed', () => {
       (type === 'SESSION_DIFF' ? new Promise(() => {}) : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
 
     expect(await screen.findByText('Reading the changes in engine…')).toBeTruthy();
     expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
@@ -808,7 +808,7 @@ describe('reviewing what a session landed', () => {
       : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
 
     expect(await screen.findByText(/9 more files changed/)).toBeTruthy();
   });
@@ -826,7 +826,7 @@ describe('reviewing what a session landed', () => {
     });
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
 
     expect(await screen.findByText(/work is not on this machine/)).toBeTruthy();
   });
@@ -838,7 +838,7 @@ describe('reviewing what a session landed', () => {
       (type === 'SESSION_DIFF' ? { ...DIFF, files: [], uncommitted } : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
 
     expect(await screen.findByText('src/draft.ts')).toBeTruthy();
     expect(screen.queryByText('Nothing landed')).toBeNull();
@@ -879,7 +879,7 @@ describe('acting on what a session landed', () => {
 
   const review = async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     await screen.findByText('src/chunk.ts');
   };
 
@@ -945,7 +945,7 @@ describe('acting on what a session landed', () => {
   /**
    * A failed session's commits stay in its tree, so the page offers to land
    * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
-   * beside what it left, and *Review* opens the run's review, where the one Accept is pressed; the page draws no Accept.
+   * beside what it left, and *Review* opens the run's outputs; the Accept is the card's.
    */
   it('offers a failed session’s commits on its page, and opens the run’s review from its Review door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -966,7 +966,7 @@ describe('acting on what a session landed', () => {
     const door = await head.findByRole('button', { name: 'Review' });
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1' }) });
 
     await userEvent.click(door);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1', session: null, attempt: 0 }) }));
@@ -975,7 +975,7 @@ describe('acting on what a session landed', () => {
 
   /**
    * Where more than one part of the attended line of work offers work to land, its page draws no Accept of the line's: a part's
-   * work is accepted on its own run's review, and the one for an ask's lines is Sessions' list by ask.
+   * work is accepted on its run's card, and the one for an ask's lines is Sessions' list by ask.
    */
   it('draws no Accept for a line of work’s parts on a session’s page, its Review door the only press', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
@@ -1007,8 +1007,8 @@ describe('acting on what a session landed', () => {
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
 
-    // Its changes draw no press of their own either: accepting is the review page's.
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    // Its changes draw no press of their own either: accepting is the card's.
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
     expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
@@ -1156,7 +1156,7 @@ describe('acting on what a session landed', () => {
 
   /**
    * Where a level asks a second opinion, the session's page draws it before the *Review* door
-   * from the landing's plan, its findings read from the gate; the Accept that answers a dispute is the review page's.
+   * from the landing's plan, its findings read from the gate; the Accept that answers a dispute is the card's.
    * *Ask again* is the driver's own press.
    */
   it('draws the second opinion on a session’s page, with Review the door to where its dispute is answered', async () => {
@@ -1259,7 +1259,7 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     const review = await screen.findByRole('tabpanel');
     await within(review).findByText('src/chunk.ts');
     await within(review).findByRole('button', { name: 'Discard branch…' });
@@ -1358,7 +1358,7 @@ describe('acting on what a session landed', () => {
     expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
   });
 
-  /** Sending work back is the review page's, never the session's own changes. */
+  /** Sending work back is the card's, never the session's own changes. */
   it('offers no send-back door beside a session’s own changes', async () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
@@ -1401,7 +1401,7 @@ describe('acting on what a session landed', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
     await screen.findByText('src/chunk.ts');
 
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();

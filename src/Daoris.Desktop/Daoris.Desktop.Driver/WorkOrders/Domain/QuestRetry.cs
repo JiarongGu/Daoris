@@ -38,11 +38,17 @@ public static class QuestRetry
                 return new(quest, RetryDecision.Approved, held.Session, config => config, held.Actor ?? RoleWork.Build);
             case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
                 // A pause is the reason before a stop and the strikes: Resume moves it, and nothing is written.
+                // A quest's pause holds every quest its work published too: that pause is named, so the resume it points to is the one
+                // that carries the quest on.
                 throw pause.Scope == WorkScope.Ask
                     ? new ChoiceRefusal(ChoiceRefusal.Paused, $"#{quest} is paused with ask #{pause.Id}; Resume carries it on.",
                         ("id", quest), ("pause", pause.Id))
-                    : new ChoiceRefusal(ChoiceRefusal.Paused, $"#{quest} is paused on its own; Resume carries it on.",
-                        ("id", quest), ("pause", pause.Id), ("context", "quest"));
+                    : string.Equals(DriverConfigEdits.PauseId(pause.Id), quest, StringComparison.OrdinalIgnoreCase)
+                        ? new ChoiceRefusal(ChoiceRefusal.Paused, $"#{quest} is paused on its own; Resume carries it on.",
+                            ("id", quest), ("pause", pause.Id), ("context", "quest"))
+                        : new ChoiceRefusal(ChoiceRefusal.Paused,
+                            $"#{quest} is paused with quest #{pause.Id}, whose work published it; resuming #{pause.Id} carries it on.",
+                            ("id", quest), ("pause", pause.Id), ("context", "published"));
             default:
                 throw new ChoiceRefusal(ChoiceRefusal.NotHeld,
                     $"#{quest} is neither parked nor held by your stop on this machine, so there is nothing to try again.", ("id", quest));

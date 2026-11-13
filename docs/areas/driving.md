@@ -150,7 +150,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold. Otherwise a
     new part opens and is handed Daoris's brief, composed without a model. (D137, D189)
 26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a shutdown, was a
-    person's stop they released, or parked and was answered. (D80, D83, D104)
+    person's stop they released, or parked and was answered. It goes on with the agent its record ran on, except a failed record
+    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`).
+    (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
 
@@ -237,8 +239,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
     probably meant, and is never made. (D65, D133, D277, D282, D284)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
-    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
-    parked one ends when the person answers the ask. Where no declaration covers the work and no repository's own files fit it, the
+    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. A parked
+    one ends in the ask's close's own step, with its reason (`AskIntakeClose`, `ledger.intake-closed`), whichever door closed it;
+    at the look when the person publishes or deletes the ask, or when one running at the close parks. Where no declaration covers the work and no repository's own files fit it, the
     intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
     (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
     that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
@@ -246,11 +249,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
     never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
-45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards only what
+45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)
+    is named with that pause by *Try again* and by its own resume, which changes nothing and names the resume that carries it on
+    (`PauseHolder`). Work is abandoned by a listed second press that discards only what
     nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
-    unfinished), failed (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done
+    unfinished), failed (nothing carries it on), working (live or going on; an open conversation whose turn ended, its record
+    still `working`, shows `idle`), pending (queued, or its next start held) and done
     (completed, stopped, declined, stood down). A done whose own record says work is left is never the plain done: the quest's newest
     session is needs you with reason `left` where its answers departed from a requirement the person has not yet accepted
     (`QuestLeft.Waits`), or where its run holds a step failed and kept for the person after the done, no word on it
@@ -282,8 +288,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's
-    tree is ended by its graph's `release` (workflows rule 31b) or, for a run that ended settled or whose record is gone, by the
-    look's sweep (`TreeReleases.SweepAsync`, in the lease holder's tidy of each repository, said once in its report). The sweep
+    tree is ended by its graph's `release` (workflows rule 31b) or by the look's sweep (`TreeReleases.SweepAsync`, in the lease
+    holder's tidy of each repository, said once in its report): for a branch whose part the run's `tidy` ended once its pull request
+    merged (`TidiedParts`), whatever the run does after and whether or not its graph carries a `release`, and for a run that ended
+    settled or whose record is gone. The sweep
     leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's
     own unforced proof, so a tree with uncommitted work or commits no branch of the person's holds stays and its reason is kept
     on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a

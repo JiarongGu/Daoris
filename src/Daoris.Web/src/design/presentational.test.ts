@@ -48,7 +48,8 @@ const ORGANISMS = new Set<string>([
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',
   './work/review/DiffPane.tsx',
-  './work/review/run/RunReviewPage.tsx',
+  './work/outputs/OutputsPage.tsx',
+  './work/review/card/ReviewCards.tsx',
   './work/console/MonitorWindow.tsx',
   './work/rail/SessionRail.tsx',
   // The one owner of each act on a session: it holds the bridge's hooks, so the row, the list and

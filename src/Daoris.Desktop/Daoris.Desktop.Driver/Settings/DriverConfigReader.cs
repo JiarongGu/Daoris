@@ -77,6 +77,7 @@ internal static class DriverConfigReader
             // An entry with a problem, or naming nothing, is not read.
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
+            WorkflowValues = WorkflowValuesKey.Map(root),
             // A default that is no workflow's id is not read.
             DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
                 && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,

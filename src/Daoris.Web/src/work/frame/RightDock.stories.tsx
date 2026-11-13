@@ -39,7 +39,7 @@ export const Docked: Story = {};
 export const Cramped: Story = { args: { mode: 'cramped', width: 300 } };
 
 /** Over the whole frame — the same surface drawn larger, with the way back beside the session. */
-export const Full: Story = { args: { mode: 'full', tab: 'review' } };
+export const Full: Story = { args: { mode: 'full', tab: 'outputs' } };
 
 /** Over the whole frame because the window is narrow: only widening undoes it, so no way back is offered. */
 export const FullInANarrowWindow: Story = { args: { mode: 'full', autoFull: true } };
@@ -53,7 +53,7 @@ export const Closed: Story = { args: { mode: 'closed', width: 32 } };
  * the row's end names every one.
  */
 export const HoldingMovedViews: Story = {
-  args: { views: ['timeline', 'review', 'ask', 'console'], tab: 'console', width: 300, onMove: () => {}, onReset: () => {} },
+  args: { views: ['timeline', 'outputs', 'ask', 'console'], tab: 'console', width: 300, onMove: () => {}, onReset: () => {} },
 };
 
 /**
@@ -65,7 +65,7 @@ export const HoldingMovedViews: Story = {
  */
 export const FourTabsAtANarrowSideBar: Story = {
   args: {
-    views: ['timeline', 'review', 'ask'], tab: 'preview', width: 430, onMove: () => {},
+    views: ['timeline', 'outputs', 'ask'], tab: 'preview', width: 430, onMove: () => {},
     preview: { name: 'budget-report.md', path: 'docs/streaming/budget-report.md', onClose: () => {} },
   },
 };
@@ -88,7 +88,7 @@ export const WithAPreview: Story = { args: { tab: 'preview', preview: PREVIEW } 
  * when the name is longer, and the rest are their icons.
  */
 export const APreviewAtTheFloor: Story = {
-  args: { views: ['timeline', 'review', 'ask'], tab: 'preview', preview: PREVIEW, width: 300, onMove: () => {} },
+  args: { views: ['timeline', 'outputs', 'ask'], tab: 'preview', preview: PREVIEW, width: 300, onMove: () => {} },
 };
 
 /** Closed with a preview open: its strip carries the file's door after the views'. */
@@ -100,17 +100,17 @@ export const ClosedWithAPreview: Story = { args: { mode: 'closed', width: 32, pr
  */
 export const OffSessionsOnAskDaoris: Story = {
   args: {
-    views: ['timeline', 'review', 'ask'], tab: 'ask',
+    views: ['timeline', 'outputs', 'ask'], tab: 'ask',
     children: <div className="p-3 text-small text-ink-soft">Ask Daoris: its conversation and its box.</div>,
   },
 };
 
 /** Its timeline there, once the session attended in Sessions has ended: it says so, and offers Sessions. */
 export const OffSessionsTheAttendedSessionEnded: Story = {
-  args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended onOpenSessions={() => {}} /> },
+  args: { views: ['timeline', 'outputs', 'ask'], tab: 'timeline', children: <NothingFollowed ended onOpenSessions={() => {}} /> },
 };
 
 /** And with nothing attended at all: no session list is named on a view that has none. */
 export const OffSessionsNothingAttended: Story = {
-  args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended={false} onOpenSessions={() => {}} /> },
+  args: { views: ['timeline', 'outputs', 'ask'], tab: 'timeline', children: <NothingFollowed ended={false} onOpenSessions={() => {}} /> },
 };

@@ -131,11 +131,14 @@ internal sealed class WordsHandedOn(LoopContext context, Driver driver)
     /// <summary>
     /// Which of a record's waiting words a new session is handed: the person's; a resume's, Daoris's too
     /// (<see cref="HandedToResume"/>); a carry-on the roster's switch made, Daoris's that state a fact with them
-    /// (<see cref="DaorisWords.NewPartCarries"/>). What the new session's keyed open names to move, and what it takes off the old record where
-    /// the open moved nothing.
+    /// (<see cref="DaorisWords.NewPartCarries"/>); and in each, a helper's answer it never took (<see cref="HelperAnswersCarried"/>). What
+    /// the new session's keyed open names to move, and what it takes off the old record where the open moved nothing.
     /// </summary>
-    internal static Func<SaidWordView, bool> Hands(bool resumed, bool switched) =>
-        switched ? DaorisWords.NewPartCarries : resumed ? DriverContinuations.HandedToResume : word => word.Persons;
+    internal static Func<SaidWordView, bool> Hands(bool resumed, bool switched)
+    {
+        Func<SaidWordView, bool> own = switched ? DaorisWords.NewPartCarries : resumed ? DriverContinuations.HandedToResume : word => word.Persons;
+        return word => own(word) || HelperAnswersCarried.Is(word);
+    }
 
     /// <summary>
     /// The words a new session is not handed stay on the record they were said to: another agent's findings would reach

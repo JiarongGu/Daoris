@@ -38,7 +38,8 @@ public sealed class AskDesk
         // The files an ask keeps, until it becomes quests: the home's AskFiles.
         var askFiles = files?.For(HomeEntry.AskFiles);
         standings = new(asks, exchange);
-        publishing = new(service, asks, exchange, askFiles, standings, new AskQuests(exchange, askFiles), new AskPublishGuard(exchange, sessions));
+        publishing = new(service, asks, exchange, askFiles, standings, new AskQuests(exchange, askFiles), new AskPublishGuard(exchange, sessions),
+            sessions is null ? null : new AskIntakeClose(asks, sessions));
         choices = new(asks, standings);
         goAheads = new(asks, standings);
         deletes = new(asks, exchange, askFiles, standings);

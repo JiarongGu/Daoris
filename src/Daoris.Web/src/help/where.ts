@@ -69,11 +69,11 @@ export function itemOf(view: View, chosen: string | null | undefined, standing: 
 }
 
 const VIEW_NAMES: Record<ViewId, string> = {
-  notifications: 'Notifications', timeline: 'the timeline', review: 'the review', workflow: 'the workflow', atWork: 'At work',
+  notifications: 'Notifications', timeline: 'the timeline', outputs: 'Outputs', workflow: 'the workflow', atWork: 'At work',
   ask: 'Ask Daoris', console: 'the console', terminal: 'the terminal',
 };
 
-/** "the timeline, the review and Ask Daoris", or "nothing". */
+/** "the timeline, Outputs and Ask Daoris", or "nothing". */
 function listed(views: readonly ViewId[]): string {
   const names = views.map((view) => VIEW_NAMES[view]);
   if (names.length === 0) return 'nothing';

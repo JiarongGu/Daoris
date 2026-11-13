@@ -25,13 +25,13 @@ const PROJECT = '/acme/Proj/_apis';
 
 /**
  * Azure DevOps' calls as its REST API answers them, admitting one token as Basic's password; else `status`, while set. A test writes
- * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`, `files`, `changes`), `patch` to answer a
- * pull request's update with a refusal, and `onRead(method, path, n)` to move it on as it is read.
+ * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`, `files`, `changes`), `patch` to refuse a
+ * pull request's update, `onRead(method, path, n)` to move it on as it is read, and `lose(method, path)` to drop a carried-out call's answer.
  */
 export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
-    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, files: {}, changes: [],
+    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, lose: null, files: {}, changes: [],
     session: 'out', lapses: 0, signInPage: false, renews: true, navigated: null,
   };
   api.navigated = (url) => { if (api.renews && url.includes('/_apis/connectionData')) api.session = 'in'; };
@@ -102,7 +102,8 @@ export async function standIn() {
       const artifact = taken?.artifacts.find((each) => each.alias === sent.artifacts?.[0]?.alias);
       if (!artifact) return [400, { message: 'no such release definition or artifact alias' }];
       const id = Math.max(0, ...api.releases.map((each) => each.id)) + 1;
-      const made = { id, name: `Release-${id}`, releaseDefinition: { id: taken.id }, environments: structuredClone(taken.environments ?? []),
+      const made = { id, name: `Release-${id}`, releaseDefinition: { id: taken.id }, description: sent.description,
+        environments: (taken.environments ?? []).map((each) => ({ status: 'notStarted', ...structuredClone(each), id: each.id + 1000, definitionEnvironmentId: each.id })),
         artifacts: [{ type: 'Build', alias: artifact.alias, sourceId: `${artifact.definitionReference.project.id}:${artifact.definitionReference.definition.id}`,
           definitionReference: { version: { id: sent.artifacts[0].instanceReference.id } } }] };
       api.releases.push(made);
@@ -139,7 +140,9 @@ export async function standIn() {
       const key = `${request.method} ${url.pathname}`;
       reads.set(key, (reads.get(key) ?? 0) + 1);
       api.onRead?.(request.method, url.pathname, reads.get(key));
-      return say(...answer(request, url, text));
+      const answered = answer(request, url, text);
+      if (api.lose?.(request.method, url.pathname)) return request.socket.destroy();
+      return say(...answered);
     });
   });
   await new Promise((done) => server.listen(0, '127.0.0.1', done));

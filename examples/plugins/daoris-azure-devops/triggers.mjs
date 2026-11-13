@@ -1,6 +1,5 @@
-// What starts what: whether any pipeline of the repository builds a merge commit (its CI trigger's branch and path filters, a YAML
-// pipeline's read from the file at that commit), which release definitions an artifact's build triggers, and which stages of a release
-// start by themselves. Anything not read in a shape known here answers "unknown", so a doubt keeps the step waiting rather than ending it.
+// What starts what: whether a pipeline builds a merge commit (its CI trigger's branch and path filters, a YAML pipeline's read from the
+// file at that commit), which release definitions an artifact's build triggers, and which stages a release's creation starts by itself. Anything not read in a shape known here answers "unknown", so a doubt keeps the step waiting rather than ending it.
 import { call, project, withoutHeads } from './azure.mjs';
 
 const escaped = (text) => text.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
@@ -106,23 +105,19 @@ async function changesOf(repo, commit) {
   return listed.length === 0 || counted > listed.length ? null : listed;
 }
 
-/**
- * Words saying why no pipeline of the repository builds `commit` merged into `target`, or null where one may, or where that is not known:
- * every pipeline's CI trigger is off, or leaves out the branch, or leaves out every path the commit changed.
- */
-export async function builtNothing(repo, repositoryId, commit, target) {
+/** Why `pipeline` does not build `commit` merged into `target` (its CI trigger off, or leaving out the branch or every path), else null. */
+export async function builtNothing(repo, repositoryId, commit, target, pipeline) {
   const definitions = (await project(repo, 'GET', `/build/definitions?repositoryId=${encodeURIComponent(repositoryId)}&repositoryType=TfsGit&includeAllProperties=true`)).json?.value;
-  if (!Array.isArray(definitions) || definitions.length === 0) return null;
+  const definition = Array.isArray(definitions) ? definitions.find((each) => each.id === pipeline) : undefined;
+  if (!definition) return null;
   const changed = await changesOf(repo, commit);
   if (!changed) return null;
   const branch = withoutHeads(target);
-  for (const definition of definitions) {
-    const ci = await ciOf(repo, definition, commit);
-    if (ci === null) return null;
-    if (ci !== 'none' && selects(ci.branches, branch, branchHit) && changed.some((path) => selects(ci.paths, pathName(path), pathHit))) return null;
-  }
+  const ci = await ciOf(repo, definition, commit);
+  if (ci === null) return null;
+  if (ci !== 'none' && selects(ci.branches, branch, branchHit) && changed.some((path) => selects(ci.paths, pathName(path), pathHit))) return null;
   const shown = changed.length > 3 ? `${changed.slice(0, 3).join(', ')} and ${changed.length - 3} more` : changed.join(', ');
-  return `no pipeline of the repository builds ${commit.slice(0, 8)} on \`${branch}\`, which changed ${shown}`;
+  return `pipeline ${pipeline} does not build ${commit.slice(0, 8)} on \`${branch}\`, which changed ${shown}`;
 }
 
 const numeric = (value) => (/^\d+$/.test(String(value ?? '').trim()) ? Number(value) : null);
@@ -140,12 +135,10 @@ export function triggeredBy(definitions, build) {
   });
 }
 
-/** Whether no stage of a release starts by itself: each is begun by hand (it names no event or stage that starts it). */
-export function startsByHand(release) {
-  const stages = release.environments ?? [];
-  if (stages.length === 0 || stages.some((stage) => !Array.isArray(stage.conditions))) return false;
+/** The stages a release's creation starts by itself, on its start event or chained after one; one not read counts, so a doubt is said. */
+export function selfStarting(stages) {
   const byName = new Map(stages.map((stage) => [stage.name, stage]));
-  const itself = (stage, seen = new Set()) => !seen.has(stage.name) && stage.conditions.some((each) =>
-    each.conditionType === 'event' || (each.conditionType === 'environmentState' && byName.has(each.name) && itself(byName.get(each.name), seen.add(stage.name))));
-  return !stages.some((stage) => itself(stage));
+  const itself = (stage, seen = new Set()) => !Array.isArray(stage.conditions) || (!seen.has(stage.name) && stage.conditions.some((each) =>
+    each.conditionType === 'event' || (each.conditionType === 'environmentState' && byName.has(each.name) && itself(byName.get(each.name), seen.add(stage.name)))));
+  return stages.filter((stage) => itself(stage)).map((stage) => stage.name);
 }

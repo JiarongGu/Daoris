@@ -105,7 +105,7 @@ internal static class NodeGoverning
         var reads = new RunReads(read, owners);
         foreach (var run in runs ?? [])
         {
-            if (Governs(run, read, reads, owners, steps, identities, said) is { } one) governed.Add(one);
+            if (Governs(config, run, read, reads, owners, steps, identities, said) is { } one) governed.Add(one);
         }
 
         return governed;
@@ -113,16 +113,17 @@ internal static class NodeGoverning
 
     /// <summary>
     /// A graph's nodes as the runtime evaluates and starts them: a plugin's performed or observed node under its plugin's step, where that step is
-    /// declared at the node's version and reach, else as the graph declares it and never sent or begun.
+    /// declared at the node's version and reach, else as the graph declares it and never sent or begun; a run's with its repository's values.
     /// </summary>
     private static (Dictionary<string, NodeDeclaration> Declared, HashSet<string> Dispatchable, HashSet<string> Observable) Declare(
-        NodeGraph graph, IReadOnlyList<NodeDeclaration> steps)
+        NodeGraph graph, IReadOnlyList<NodeDeclaration> steps, Func<NodeDeclaration, NodeDeclaration>? valued = null)
     {
         var dispatchable = new HashSet<string>(StringComparer.Ordinal);
         var observable = new HashSet<string>(StringComparer.Ordinal);
         var declared = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
-        foreach (var node in graph.Nodes)
+        foreach (var written in graph.Nodes)
         {
+            var node = valued?.Invoke(written) ?? written;
             declared[node.Id] = node;
 
             // A kind started on a port through the attempt journal is given its kind's perform once judged, as a plugin's node its step's; its
@@ -200,10 +201,11 @@ internal static class NodeGoverning
     /// has not come back here, or no start or first look asked a pass for it.
     /// </summary>
     private static GovernedUnit? Governs(
-        GraphRun run, NodeUnitsRead read, RunReads reads, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
-        ICollection<string>? said)
+        DriverConfig config, GraphRun run, NodeUnitsRead read, RunReads reads, RunOwners owners, IReadOnlyList<NodeDeclaration> steps,
+        Dictionary<string, string> identities, ICollection<string>? said)
     {
         var binding = run.Binding;
+        NodeDeclaration Valued(NodeDeclaration node) => NodeValues.Over(config, binding.Repository, binding.Workflow, node);
         if (run.Version is not { Graph: { } graph, GraphDigest: { } digest })
         {
             // A run governed here, not ended: its record is held whole. One never governed here has nothing to hold.
@@ -224,7 +226,7 @@ internal static class NodeGoverning
             if (run.Ended is not null) return null;
             var at = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, VerifyFiles.Lines, WorkRecord.DriverWriter),
                 new WorkSubject(binding.Run, line.Commit), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its verification runs"), []);
-            var (checks, sent, seen) = Declare(graph, steps);
+            var (checks, sent, seen) = Declare(graph, steps, Valued);
             var verifies = new RunScope(run, at) { Root = line.Root, Identity = IdentityOf(identities, line.Root), Tip = line.Commit };
             return new GovernedUnit(at, graph, digest, binding.Run, checks, sent,
                 new WatchedUnit(repository, binding.Workspace, line.Root, "", line.Commit, null, null, []) { Unit = run.Unit })
@@ -295,7 +297,7 @@ internal static class NodeGoverning
             Identity = identity,
         };
 
-        var (declared, dispatchable, observable) = Declare(graph, steps);
+        var (declared, dispatchable, observable) = Declare(graph, steps, Valued);
         var watched = new WatchedUnit(repository, binding.Workspace, root, branch is null ? "" : RunBranches.Standing(branch), "", null, null, [])
         {
             Unit = branch?.Id ?? run.Unit, Identity = identity,

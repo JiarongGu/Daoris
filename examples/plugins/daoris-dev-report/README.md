@@ -12,6 +12,12 @@ kept in the plugin's own private storage (`reports.json`, one record per report,
 `daoris plugin add examples/plugins/daoris-dev-report`, then switch on its storage and, for sessions, its tools in Plugins.
 `daoris plugin try examples/plugins/daoris-dev-report` runs its checks without installing.
 
+## What it needs
+
+- **node** 18 or later on the PATH, which runs its `plugin.mjs`.
+- **Its storage switched on** in Plugins, where the reports are kept.
+- **Its tools switched on** for the places whose sessions file reports.
+
 ## `report`
 
 A tool for agents (`daoris-plugins`'s `daoris-dev-report_report`), also run from the window's round card.

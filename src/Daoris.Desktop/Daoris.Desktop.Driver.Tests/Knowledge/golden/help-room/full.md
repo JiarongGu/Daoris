@@ -399,7 +399,7 @@ VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the sess
 Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
 attended session. Eight views stand in the two regions and move between them:
-Notifications, the timeline, the review, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the
+Notifications, the timeline, Outputs, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the
 terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the
 console, which starts where the attended session works. A session's console takes no typing; the
 terminal is the person's, never a session's. At work lists the session's parts and its subagents, each with
@@ -419,9 +419,9 @@ and a press on the current place in the activity bar. Hidden, it leaves a narrow
 You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on
 `Ctrl+Shift+Alt+L`.
 
-A file path in a session's tool card, or a file's button in the review's list, opens a preview of that
+A file path in a session's tool card, or a file's button in Outputs' list, opens a preview of that
 file as a tab of the right side bar: the file in the session's tree as it is on disk now, read-only,
-the lines a read named marked, and its changes one press away where the review holds them. One preview
+the lines a read named marked, and its changes one press away where Outputs holds them. One preview
 a session; opening another replaces it, and its own × goes back. In this conversation a path is plain text.
 
 You cannot see the window. Where the person is, and where the views stand, comes with their
