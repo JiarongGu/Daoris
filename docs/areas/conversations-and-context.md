@@ -122,7 +122,7 @@ of everything it handed, section by section.
 13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`. Then its
     own conversation resumes, every waiting word in its first turn. A go-on gets no block and no brief. (from D137, D230)
     The shell's close, whoever closes it, keeps Daoris's restart word on each conversation it cut (a turn running, a start or go-on
-    pending, words held), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
+    pending, words held, never one waiting on its limit, whose wake carries its words), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
     (`stopped-daoris`). The next start takes it up as words kept: its own conversation resumes with the word, or a lost one goes on
     briefed (rule 14), its line saying *Daoris restarted* (`resumed.opening`, why `restart`). One between turns ends `chat.closed`,
     or `chat.restarted` at an update, and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
