@@ -171,7 +171,6 @@ const cases: [string, string[], string[]][] = [
     ['nothing at all', [], BASE],
 ];
 
-// One test per case, so each is bounded by its own work, not by the machine's speed over all of them.
 for (const [what, paths, listed] of cases) {
   test(`a merge runs the baseline and what a changed path can reach: ${what}`, () => {
     // In the plan's order: the web's typecheck is a check, before the CLI's verify.
