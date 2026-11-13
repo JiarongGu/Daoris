@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
+    <!-- The fakes the unit tier shares: the desktop store's engine the test root chooses. -->
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
     <!-- The generator of the page's window routes, whose output is held to the marks it reads. -->
@@ -30,6 +32,7 @@
     <!-- The git a test's own fixture starts, past Git for Windows' launcher (GITSTART1, GITSTART6): the driver tests'
          helper, compiled in, so both projects' fixtures start git one way. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="TestGit.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\TestPorts.cs" Link="TestPorts.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\RoutedHandler.cs" Link="RoutedHandler.cs" />

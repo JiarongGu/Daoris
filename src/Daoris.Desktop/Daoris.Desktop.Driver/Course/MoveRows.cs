@@ -51,7 +51,7 @@ internal static class MoveRows
             row => new StoreRun(row.GetString(0), row.GetString(1), row.GetInt32(2), row.IsDBNull(3) ? null : row.GetInt64(3), row.GetString(4)),
             ("$run", run)).FirstOrDefault();
 
-    internal static MoveRecord Map(SqliteDataReader row)
+    internal static MoveRecord Map(DbDataReader row)
     {
         string? Text(string column)
         {

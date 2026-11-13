@@ -66,7 +66,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
     private long SetBuildPolicy(StaffPolicy policy, long? read = null) =>
         RoleDoor.Apply(Staffing, RoleChange.Set(Role("build")), null, null, new RolePolicyPress(policy, Read: read));
 
-    private IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map)
+    private IReadOnlyList<T> Query<T>(string sql, Func<System.Data.Common.DbDataReader, T> map)
     {
         using var reader = DesktopStoreReader.Open(Staffing.Location);
         return reader is null ? [] : reader.Query(sql, map);

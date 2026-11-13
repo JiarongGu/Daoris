@@ -78,6 +78,15 @@ test('LAYERS1: Ports references nothing, and Testing only Ports', () => {
   assert.match(problems[2], /references the project Daoris\.Desktop\.Driver/);
 });
 
+test('LAYERS1: the store\'s fake runs on SQLite and takes its package and bundle, and no other', () => {
+  const found = tree({
+    'src/Daoris.Testing/Daoris.Testing.csproj': project(['Daoris.Ports'], ['xunit', 'Microsoft.Data.Sqlite', 'SQLitePCLRaw.bundle_e_sqlite3', 'Newtonsoft.Json']),
+  });
+  const problems = checkReferences(found, clean);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /Daoris\.Testing takes the package Newtonsoft\.Json/);
+});
+
 test('LAYERS1: an application takes no package but analyzers and test libraries, but those on the list that only shrinks', () => {
   const found = tree({
     [at('src/X', 'Daoris.Desktop.Driver')]: project([], ['Microsoft.Data.Sqlite', 'Microsoft.CodeAnalysis.BannedApiAnalyzers']),

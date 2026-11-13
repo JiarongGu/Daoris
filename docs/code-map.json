@@ -12,6 +12,16 @@
       "summary": ""
     },
     {
+      "id": "Daoris.Adapters.DesktopStore.Sqlite",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite",
+      "summary": ""
+    },
+    {
+      "id": "Daoris.Adapters.DesktopStore.Sqlite.Tests",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests",
+      "summary": ""
+    },
+    {
       "id": "daoris",
       "path": "src/Daoris.Cli",
       "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
@@ -174,6 +184,26 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Adapters.DesktopStore.Sqlite",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.DesktopStore.Sqlite.Tests",
+      "to": "Daoris.Adapters.DesktopStore.Sqlite",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.DesktopStore.Sqlite.Tests",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.App",
+      "to": "Daoris.Adapters.DesktopStore.Sqlite",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Desktop.Driver",
       "kind": "project"
@@ -201,6 +231,11 @@
     {
       "from": "Daoris.Desktop.Driver.Host",
       "to": "Daoris.Adapters.Clock",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Host",
+      "to": "Daoris.Adapters.DesktopStore.Sqlite",
       "kind": "project"
     },
     {
@@ -266,6 +301,11 @@
     {
       "from": "Daoris.Desktop.Modules.Tests",
       "to": "Daoris.Desktop.Modules",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules.Tests",
+      "to": "Daoris.Testing",
       "kind": "project"
     },
     {

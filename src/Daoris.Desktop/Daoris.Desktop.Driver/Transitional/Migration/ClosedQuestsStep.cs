@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 /// The closed quests from before an id had twelve characters: a Done or Declined quest with a six-character id is finished
 /// history nothing reads, and the lookups that read it under either width are gone. Where a remote numbered one of its operations it may
 /// be held elsewhere, so its row goes and a <c>deleted</c> tombstone is appended to its log as the service's remover of a closed quest
-/// appends it, for the next sync to carry; any other goes with its whole log. An open or taken one stays, to close first, and so does a
-/// numbered one on a store with no machine row, which has nothing to stamp the tombstone with.
+/// appends it, for the next sync to carry; any other goes with its whole log. An open or taken one stays, and so does a numbered one on a store with no machine row.
 /// </summary>
 public sealed class ClosedQuestsStep : IHomeMigrationStep
 {
@@ -21,13 +20,12 @@ public sealed class ClosedQuestsStep : IHomeMigrationStep
         var path = DaorisHome.Entry(run.Home, HomeEntry.Knowledge);
         if (!File.Exists(path)) return;
         run.Keep(path);
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadWrite);
         foreach (var table in new[] { "quests", "quest_log" })
         {
             using var probe = connection.CreateCommand();
             probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name";
-            probe.Parameters.AddWithValue("$name", table);
+            probe.Bind("$name", table);
             if (Convert.ToInt32(probe.ExecuteScalar(), CultureInfo.InvariantCulture) == 0) return;
         }
 
@@ -37,7 +35,7 @@ public sealed class ClosedQuestsStep : IHomeMigrationStep
         {
             select.Transaction = transaction;
             select.CommandText = "SELECT id FROM quests WHERE length(id) = $length AND status IN ('Done', 'Declined')";
-            select.Parameters.AddWithValue("$length", LegacyIdLength);
+            select.Bind("$length", LegacyIdLength);
             using var reader = select.ExecuteReader();
             while (reader.Read()) closed.Add(reader.GetString(0));
         }
@@ -58,7 +56,7 @@ public sealed class ClosedQuestsStep : IHomeMigrationStep
             command.CommandText = (numbered ? "" : "DELETE FROM quest_log WHERE quest = $id; ")
                                   + (!numbered && forwards ? "DELETE FROM quest_forwards WHERE quest = $id; " : "")
                                   + "DELETE FROM quests WHERE id = $id";
-            command.Parameters.AddWithValue("$id", id);
+            command.Bind("$id", id);
             command.ExecuteNonQuery();
             if (numbered) Tombstone(connection, transaction, id, machine!);
             removed++;
@@ -69,7 +67,7 @@ public sealed class ClosedQuestsStep : IHomeMigrationStep
     }
 
     /// <summary>A <c>deleted</c> operation after the machine's highest sequence, as the service's append numbers it.</summary>
-    private static void Tombstone(SqliteConnection connection, SqliteTransaction transaction, string id, string machine)
+    private static void Tombstone(DbConnection connection, DbTransaction transaction, string id, string machine)
     {
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -81,23 +79,23 @@ public sealed class ClosedQuestsStep : IHomeMigrationStep
                        COALESCE((SELECT sequence FROM quest_machine WHERE one = 1 AND id = $machine), 0)) + 1),
                     $at, '{}')
             """;
-        command.Parameters.AddWithValue("$quest", id);
-        command.Parameters.AddWithValue("$machine", machine);
-        command.Parameters.AddWithValue("$at", Moments.Write(DateTimeOffset.UtcNow));
+        command.Bind("$quest", id);
+        command.Bind("$machine", machine);
+        command.Bind("$at", Moments.Write(DateTimeOffset.UtcNow));
         command.ExecuteNonQuery();
     }
 
-    private static object? Scalar(SqliteConnection connection, SqliteTransaction transaction, string sql, (string Name, string Value)[] parameters)
+    private static object? Scalar(DbConnection connection, DbTransaction transaction, string sql, (string Name, string Value)[] parameters)
     {
         try
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = sql;
-            foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
+            foreach (var (name, value) in parameters) command.Bind(name, value);
             return command.ExecuteScalar();
         }
-        catch (SqliteException) when (sql.Contains("quest_machine", StringComparison.Ordinal))
+        catch (DbException) when (sql.Contains("quest_machine", StringComparison.Ordinal))
         {
             return null;
         }

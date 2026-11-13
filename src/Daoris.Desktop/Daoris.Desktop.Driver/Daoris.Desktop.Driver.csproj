@@ -5,6 +5,8 @@
        action. -->
   <PropertyGroup>
     <RootNamespace>Daoris.Driver</RootNamespace>
+    <!-- The store's engine types are the SQLite adapter's: this project names none of them (src/BannedSymbols.Store.txt). -->
+    <DaorisBannedStore>true</DaorisBannedStore>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,8 @@
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
+    <Using Include="Daoris.Ports.Store" />
+    <Using Include="System.Data.Common" />
   </ItemGroup>
 
   <!-- The desktop store's package and its native bundle (FOUNDATION1 z-i, D212 §13.2), pinned at the service's versions in

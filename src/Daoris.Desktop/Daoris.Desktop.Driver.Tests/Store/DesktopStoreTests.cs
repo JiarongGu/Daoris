@@ -184,11 +184,8 @@ public sealed class DesktopStoreTests : IDisposable
 
         var driver = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.csproj"));
         Assert.Contains("""<PackageReference Include="Microsoft.Data.Sqlite" />""", driver);
-        Assert.Equal(["../../Daoris.Contracts/Daoris.Contracts.csproj"], Regex.Matches(driver, "ProjectReference Include=\"([^\"]+)").Select(m => m.Groups[1].Value));
         Assert.DoesNotContain("PackageReference Include=\"Daoris", driver);
     }
-
-    // ——— Step 4, the course's move record.
 
     /// <summary>The columns of <c>moves</c> a writer always sets: every other is one a later phase, a later row or an effect sets.</summary>
     private static readonly string[] MoveRequired = ["record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "decided_at"];

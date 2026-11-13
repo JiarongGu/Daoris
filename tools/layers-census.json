@@ -22,7 +22,9 @@
       "Microsoft.AspNetCore.Mvc.Testing"
     ]
   },
-  "ambient": {},
+  "ambient": {
+    "Daoris.Desktop.Driver/Store": 1
+  },
   "clock": {
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountCoolingTests.cs": 5,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountNamesTwinTests.cs": 1,

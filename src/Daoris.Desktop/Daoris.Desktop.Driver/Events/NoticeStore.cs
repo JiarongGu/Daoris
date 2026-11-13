@@ -181,7 +181,7 @@ internal static class NoticeStore
             ("$repository", notice.Repository), ("$state", notice.State), ("$route", notice.Route), ("$act", notice.Act),
             ("$code", notice.Code), ("$count", notice.Count));
 
-    private static Notice Map(SqliteDataReader row)
+    private static Notice Map(DbDataReader row)
     {
         string? Text(int at) => row.IsDBNull(at) ? null : row.GetString(at);
         return new(
