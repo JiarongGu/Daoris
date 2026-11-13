@@ -48,6 +48,7 @@
   "work.attention.ask.acceptRule": "It widens what agents may do: {{change}}. Sessions started from now on are handed it.",
   "work.attention.ask.choose": "Publish it to a repository workspace {{workspace}} can ask.",
   "work.attention.ask.choosePlaceholder": "Choose a repository",
+  "work.attention.plan-question": "a release question for you",
   "work.attention.unanswerable": "nobody here can take this",
   "work.attention.unanswerableWhy": "`{{repository}}` is not on this deployment's register, so no agent will ever pull this quest.",
   "work.attention.since": "waiting {{span}}",

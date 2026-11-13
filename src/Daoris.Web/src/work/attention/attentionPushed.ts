@@ -52,6 +52,7 @@ export type PushedAttention = {
   publishTo?: string[];
   choices?: string[];
   ask?: string;
+  question?: { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
   number?: number;
   /** A go-ahead's act, which its title says. */
   goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;

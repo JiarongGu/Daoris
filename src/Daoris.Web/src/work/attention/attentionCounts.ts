@@ -61,6 +61,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   proposal: 'quests',
   intake: 'quests',
   unanswerable: 'quests',
+  'plan-question': 'quests',
   'parked-quest': 'quests',
   'steward-stopped': 'quests',
   'policy-hold': 'quests',

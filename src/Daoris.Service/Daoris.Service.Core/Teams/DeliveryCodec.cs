@@ -7,7 +7,7 @@ internal static class DeliveryCodec
 {
     public static void Write(Utf8JsonWriter writer, TeamPlan plan)
     {
-        if (plan.Deployables.Count == 0 && plan.Releases.Count == 0 && plan.Questions.Count == 0) return;
+        if (plan.Deployables.Count == 0 && plan.Releases.Count == 0 && plan.Questions.Count == 0 && plan.Answers.Count == 0 && plan.Waivers.Count == 0) return;
         Array(writer, "deployables", plan.Deployables, (w, each) =>
         {
             w.WriteStartObject();
@@ -27,6 +27,26 @@ internal static class DeliveryCodec
             w.WriteString("why", edge.Why);
             w.WriteString("source", edge.Source);
             if (edge.Evidence is { } evidence) Evidence(w, "evidence", evidence);
+            if (edge.Waived is { } waived) w.WriteString("waived", waived);
+            w.WriteEndObject();
+        });
+        Array(writer, "answers", plan.Answers, (w, answer) =>
+        {
+            w.WriteStartObject();
+            w.WriteString("key", answer.Key);
+            w.WriteString("words", answer.Words);
+            w.WriteString("at", Moments.Write(answer.At));
+            w.WriteEndObject();
+        });
+        Array(writer, "waivers", plan.Waivers, (w, waiver) =>
+        {
+            w.WriteStartObject();
+            w.WritePropertyName("deployable");
+            RefObject(w, waiver.Deployable);
+            w.WritePropertyName("on");
+            RefObject(w, waiver.On);
+            w.WriteString("reason", waiver.Reason);
+            w.WriteString("at", Moments.Write(waiver.At));
             w.WriteEndObject();
         });
         Array(writer, "questions", plan.Questions, (w, question) =>
@@ -51,7 +71,12 @@ internal static class DeliveryCodec
         })],
         Releases = [.. JsonFields.Items(root, "releases").Select(edge => new DeliveryEdge(
             ReadRefObject(edge, "deployable"), ReadRefObject(edge, "on"), JsonFields.Text(edge, "why") ?? "",
-            JsonFields.Text(edge, "source") ?? DeliveryEdge.Policy, ReadEvidence(edge, "evidence")))],
+            JsonFields.Text(edge, "source") ?? DeliveryEdge.Policy, ReadEvidence(edge, "evidence")) { Waived = JsonFields.Text(edge, "waived") })],
+        Answers = [.. JsonFields.Items(root, "answers").Select(answer => new DeliveryAnswer(
+            JsonFields.Text(answer, "key") ?? "", JsonFields.Text(answer, "words") ?? "", Moments.Read(answer, "at") ?? DateTimeOffset.UnixEpoch))],
+        Waivers = [.. JsonFields.Items(root, "waivers").Select(waiver => new DeliveryWaiver(
+            ReadRefObject(waiver, "deployable"), ReadRefObject(waiver, "on"), JsonFields.Text(waiver, "reason") ?? "",
+            Moments.Read(waiver, "at") ?? DateTimeOffset.UnixEpoch))],
         Questions = [.. JsonFields.Items(root, "questions").Select(question => new DeliveryQuestion(
             JsonFields.Text(question, "key") ?? "", JsonFields.Text(question, "kind") ?? DeliveryQuestion.Open, JsonFields.Text(question, "text") ?? "")
         {

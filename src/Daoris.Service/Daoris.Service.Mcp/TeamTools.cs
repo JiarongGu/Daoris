@@ -37,7 +37,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
-        [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale.")]
+        [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale, and so is a release order whose evidence (keyed `repository:file`) differs, which is asked of the person once. The person's answers and waivers are on the plan you read and are carried by each revision you write; you never write them.")]
         Dictionary<string, string>? seen = null,
         [Description("To read: answer the plans whole as JSON, which `node tools/team-briefs.mjs` composes each part's brief from.")]
         bool? json = null,

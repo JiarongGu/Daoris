@@ -48,6 +48,7 @@
   "work.attention.ask.acceptRule": "它会放宽智能体可以做的事：{{change}}。此后启动的会话都会拿到它。",
   "work.attention.ask.choose": "发布给工作区 {{workspace}} 能委托的一个仓库。",
   "work.attention.ask.choosePlaceholder": "选择仓库",
+  "work.attention.plan-question": "有个发布问题等你回答",
   "work.attention.unanswerable": "这里没人能接",
   "work.attention.unanswerableWhy": "`{{repository}}` 不在本部署的注册表上，不会有任何智能体来拉取这条委托。",
   "work.attention.since": "已等待 {{span}}",

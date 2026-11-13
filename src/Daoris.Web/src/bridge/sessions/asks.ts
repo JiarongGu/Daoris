@@ -118,6 +118,20 @@ export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: b
   return query.data ?? null;
 };
 
+/** The person's answer to an open question of an ask's delivery plan, or their waiver of a release order with a reason. */
+export type PlanSettle = { key: string; words: string } | { deployable: string; on: string; reason: string };
+
+/** `ASK_PLAN_SETTLE`: rejects with the service's sentence where it refuses; the plan it answers replaces the cached one at once. */
+export const useSettleAskPlan = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ask, settle }: { ask: string; settle: PlanSettle }): Promise<AskPlan | null> => askPlanOf(await call('ASK_PLAN_SETTLE', { ask, ...settle })),
+    onSuccess: (plan, { ask }) => {
+      if (plan) client.setQueryData([...keys.allAsks, 'plan', ask], plan);
+    },
+  });
+};
+
 /**
  * The channel of the line `session` is a part of, where that line is on no ask held here (`CHANNEL_LINE`): a chat's, a quest
  * session's, a teammate's ask's. Told by event, and under the asks' key, so a tick asks it again with each channel. Null while it is

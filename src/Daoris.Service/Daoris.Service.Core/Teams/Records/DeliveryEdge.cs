@@ -8,6 +8,9 @@ namespace Daoris.Knowledge;
 /// <param name="Evidence">The place the reason stands on; null for <see cref="Policy"/> and <see cref="Person"/>.</param>
 public sealed record DeliveryEdge(DeliveryRef Deployable, DeliveryRef On, string Why, string Source, DeliveryEvidence? Evidence)
 {
+    /// <summary>The person's reason for waiving this order, or null while it stands; a waived order releases nothing first and goes stale no more.</summary>
+    public string? Waived { get; init; }
+
     /// <summary>A declaration: one deployable provides what another consumes as <c>mirror</c> or <c>reads</c>.</summary>
     public const string Declaration = "declaration";
 

@@ -2,10 +2,10 @@ namespace Daoris.Contracts.Asks;
 
 // An ask's plan as the page reads it, read-only: it is written through the connector's `team_plan` door. Local hosts only.
 
-/// <summary>An ask's plan: the newest revision of its own plan, then of each split a worker made of its own part.</summary>
-public sealed record ReadAskPlan(string Id) : IRoute<AskPlanResponse>
+/// <summary>An ask's plan: the newest revision of its own plan, then of each split a worker made of its own part. <c>Seen</c> is the blob each <c>repository:file</c> of evidence holds where the reader looked.</summary>
+public sealed record ReadAskPlan(string Id, IReadOnlyDictionary<string, string>? Seen = null) : IRoute<AskPlanResponse>
 {
-    public static string Method => "GET";
+    public static string Method => "POST";
     public static string Path => "/api/asks/{id}/plan";
 }
 
@@ -23,13 +23,14 @@ public sealed record AskPlanDecisionResponse(string? Scope, int Revision, string
 public sealed record AskPlanRevisionResponse(
     string? Scope, int Revision, int Depth, string Why, IReadOnlyList<AskPlanPartResponse> Parts,
     IReadOnlyList<AskPlanEdgeResponse> Edges, IReadOnlyList<AskPlanFlagResponse> Flags, IReadOnlyList<AskPlanDeployableResponse> Deployables,
-    IReadOnlyList<AskPlanReleaseResponse> Releases, IReadOnlyList<AskPlanQuestionResponse> Questions);
+    IReadOnlyList<AskPlanReleaseResponse> Releases, IReadOnlyList<AskPlanQuestionResponse> Questions, IReadOnlyList<AskPlanAnswerResponse> Answers);
 
 /// <summary>What a repository releases as its declaration reads: <c>Provides</c> and <c>Consumes</c> each as <c>resource (mode)</c>.</summary>
 public sealed record AskPlanDeployableResponse(string Repository, string Id, IReadOnlyList<string> Provides, IReadOnlyList<string> Consumes);
 
-/// <summary>A release order: <c>Deployable</c> after <c>On</c> (each <c>repository/id</c>), why, its <c>Source</c> (<c>declaration</c>, <c>stage-condition</c>, <c>contract</c>, <c>code-read</c>, <c>policy</c> or <c>person</c>) and the <c>Evidence</c> it stands on, null with none.</summary>
-public sealed record AskPlanReleaseResponse(string Deployable, string On, string Why, string Source, string? Evidence);
+/// <summary>A release order: <c>Deployable</c> after <c>On</c> (each <c>repository/id</c>), why, its <c>Source</c> (<c>declaration</c>, <c>stage-condition</c>, <c>contract</c>, <c>code-read</c>, <c>policy</c> or <c>person</c>), the <c>Evidence</c> it stands on (null with none), the person's <c>Waived</c> reason, and whether the evidence moved (<c>Stale</c>).</summary>
+public sealed record AskPlanReleaseResponse(
+    string Deployable, string On, string Why, string Source, AskPlanEvidenceResponse? Evidence, string? Waived = null, bool Stale = false);
 
 /// <summary>A question for the person about the delivery, asked once under its <c>Key</c>: what yes does, what waits, and the default.</summary>
 public sealed record AskPlanQuestionResponse(string Key, string Kind, string Text, string Yes, string Blocks, string Default);
