@@ -18,7 +18,7 @@ public static class DeployablesWords
         }
         else
         {
-            var blob = declared.Blob is { } id ? $", {DeclarationNames.Manifest} `{TextBounds.ShortCommit(id, 7)}`" : "";
+            var blob = declared.Blob is { } id ? $", {DeclarationNames.Manifest} blob `{id}`" : "";
             lines.Add($"deployables  {repository}: {declared.Items.Count} {at}{blob}");
             foreach (var target in targets.Targets)
             {

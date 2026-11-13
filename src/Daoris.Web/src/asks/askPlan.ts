@@ -7,16 +7,24 @@ export type AskPlanEdge = { part: string; on: string; kind: string; why: string 
 /** What the plan's judge found; `kind` names it and `text` is the sentence the supervisor reads. */
 export type AskPlanFlag = { kind: string; part: string | null; text: string };
 
-/** A release order: `deployable` after `on` (each `repository/id`), the `source` it stands on and the evidence's place, null for an order with none. */
-export type AskPlanRelease = { deployable: string; on: string; why: string; source: string; evidence: string | null };
+/** The place a release order's reason stands on: a file, the range and the blob the lead read. */
+export type AskPlanEvidence = { repository: string; file: string; range: string; blob: string };
+
+/** A release order: `deployable` after `on` (each `repository/id`), its `source` and the evidence's place; `waived` is the person's reason, `stale` says the file moved. */
+export type AskPlanRelease = {
+  deployable: string; on: string; why: string; source: string; evidence: AskPlanEvidence | null; waived: string | null; stale: boolean;
+};
 
 /** A question only the person can settle about the delivery, asked once under its `key`. */
 export type AskPlanQuestion = { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
 
+/** What the person said to a question of the delivery, which settled it. */
+export type AskPlanAnswer = { key: string; words: string; at: string };
+
 /** One plan at its newest revision: the ask's own (`scope` null) or a worker's split of one part (`depth` 2 and below). */
 export type AskPlanRevision = {
   scope: string | null; revision: number; depth: number; why: string; parts: AskPlanPart[]; edges: AskPlanEdge[]; flags: AskPlanFlag[];
-  releases: AskPlanRelease[]; questions: AskPlanQuestion[];
+  releases: AskPlanRelease[]; questions: AskPlanQuestion[]; answers: AskPlanAnswer[];
 };
 
 /** A session on the ask's team: its `role` (`lead`), the part it serves (null for the ask's own plan) and the newest revision it wrote. */
@@ -32,6 +40,12 @@ const text = (value: unknown, fallback = '') => (typeof value === 'string' ? val
 const words = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
 const rows = (value: unknown): Record<string, unknown>[] =>
   Array.isArray(value) ? value.filter((each): each is Record<string, unknown> => typeof each === 'object' && each !== null) : [];
+
+const evidenceOf = (value: unknown): AskPlanEvidence | null => {
+  if (typeof value !== 'object' || value === null) return null;
+  const each = value as Record<string, unknown>;
+  return { repository: text(each.repository), file: text(each.file), range: text(each.range), blob: text(each.blob) };
+};
 
 /**
  * The shell's answer for an ask's plan (`ASK_PLAN`), or null where it is not one (a shell from before the route answers something
@@ -62,8 +76,9 @@ export function askPlanOf(raw: unknown): AskPlan | null {
       flags: rows(plan.flags).map((flag) => ({ kind: text(flag.kind), part: typeof flag.part === 'string' ? flag.part : null, text: text(flag.text) })),
       releases: rows(plan.releases).map((release) => ({
         deployable: text(release.deployable), on: text(release.on), why: text(release.why), source: text(release.source),
-        evidence: typeof release.evidence === 'string' ? release.evidence : null,
+        evidence: evidenceOf(release.evidence), waived: typeof release.waived === 'string' ? release.waived : null, stale: release.stale === true,
       })),
+      answers: rows(plan.answers).map((answer) => ({ key: text(answer.key), words: text(answer.words), at: text(answer.at) })),
       questions: rows(plan.questions).map((question) => ({
         key: text(question.key), kind: text(question.kind), text: text(question.text), yes: text(question.yes),
         blocks: text(question.blocks), default: text(question.default),

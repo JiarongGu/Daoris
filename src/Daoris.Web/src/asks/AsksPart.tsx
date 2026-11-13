@@ -13,7 +13,7 @@ import { useScope } from '../data/scope';
 import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
-  useAskPlan, useAttention, useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
+  useAskPlan, useAttention, useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel, useSettleAskPlan,
 } from '../bridge/shell';
 import { staleOnAsk } from '../work/attention/attention';
 import type { ElsewhereAsk } from '../work/channel';
@@ -130,6 +130,7 @@ export function useAsksPart({
   const close = useCloseAsk();
   const remove = useDeleteAsk();
   const answerGoAhead = useAnswerGoAhead();
+  const settlePlan = useSettleAskPlan();
   // Who needs the person as.NET judged it, read from memory: which of an ask's go-aheads are stale. A
   // browser judges none.
   const attention = useAttention();
@@ -364,6 +365,9 @@ export function useAsksPart({
           onClose={(reason, answered) => onClose(shown.id, reason, answered)}
           onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
+          onSettlePlan={channel.available
+            ? (settle, answered) => settlePlan.mutate({ ask: shown.id, settle }, { onSuccess: () => answered.done(), onError: (error) => answered.refused(sentence(error)) })
+            : undefined}
           onAnswerGoAhead={(number, approved, words, answered) =>
             onAnswerGoAhead(shown.id, number, approved, words, answered, staleGoAheads?.[number] !== undefined)}
           staleGoAheads={staleGoAheads}

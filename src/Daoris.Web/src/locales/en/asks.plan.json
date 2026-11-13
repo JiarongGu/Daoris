@@ -30,5 +30,14 @@
   "asks.plan.questions": "Questions for you",
   "asks.plan.question.yes": "Yes: {{text}}",
   "asks.plan.question.blocks": "Waits on it: {{text}}",
-  "asks.plan.question.default": "If not answered: {{text}}"
+  "asks.plan.question.default": "If not answered: {{text}}",
+  "asks.plan.answer.words": "Your answer",
+  "asks.plan.answer.press": "Answer",
+  "asks.plan.answered": "You answered {{key}}",
+  "asks.plan.stale": "evidence changed",
+  "asks.plan.waived": "waived",
+  "asks.plan.waived.reason": "Waived by you: {{reason}}",
+  "asks.plan.waive.open": "Waive this order",
+  "asks.plan.waive.reason": "Why this order is waived",
+  "asks.plan.waive.press": "Waive"
 }

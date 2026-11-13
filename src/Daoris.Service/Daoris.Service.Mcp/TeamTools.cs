@@ -29,7 +29,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         [Description("The edges: `kind` is `after` or `orders`; `milestone` is oriented, submitted or landed.")]
         TeamEdge[]? edges = null,
         [Description("One paragraph: why these parts, and what changed since the last revision. Needed with `parts`.")] string? why = null,
-        [Description("Across repositories: what each releases, from its `deployables` (`daoris repository deployables`). The judge orders them: a `mirror` or `reads` of what another provides is a release order.")]
+        [Description("Across repositories: what each releases, from its `deployables` (`daoris repository deployables`). A `mirror` or `reads` of what another provides is a release order.")]
         DeliveryDeployable[]? deployables = null,
         [Description("Release orders you read beyond the declarations: `source` is `stage-condition`, `contract` or `code-read` (with `evidence`), or `policy`/`person`. No evidence is `policy`.")]
         DeliveryEdge[]? releases = null,
@@ -37,7 +37,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
-        [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale.")]
+        [Description("To read: the blob each path holds now, as `{path: blob}`; a pack pointer or release order's evidence (`repository:file`) differing is named stale.")]
         Dictionary<string, string>? seen = null,
         [Description("To read: answer the plans whole as JSON, which `node tools/team-briefs.mjs` composes each part's brief from.")]
         bool? json = null,

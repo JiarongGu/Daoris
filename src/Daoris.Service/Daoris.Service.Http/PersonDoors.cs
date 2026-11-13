@@ -189,6 +189,7 @@ public static class PersonDoors
         new("GET", "/api/asks/{id}", DoorClass.Open),
         // An ask's channel: a read that moves no mark, so a driver and a page may both look.
         new("GET", "/api/asks/{id}/channel", DoorClass.Open),
+        new("POST", "/api/asks/{id}/plan", DoorClass.Open),
         // The asks the mirrored messages name that this machine does not hold: a read of kept messages, moving nothing.
         new("GET", "/api/channel/elsewhere", DoorClass.Open),
         // What waits for one part, the messages to it and on its line's own channel, read by the driver that runs it; moves nothing.
@@ -298,6 +299,7 @@ public static class PersonDoors
         // a review is set to is; an agent proposes a kind and never sets one.
         new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow") { Marks = OwnerMark.None("an ask's kind and workflow, chosen before its quests start") },
         new("POST", "/api/asks/{id}/through", DoorClass.Person, "an ask's through words") { Marks = OwnerMark.None("an ask's through words, which its runs read") },
+        new("POST", "/api/asks/{id}/plan/settle", DoorClass.Person, "an answer or a waiver on an ask's plan") { Marks = OwnerMark.None("an answer or a waiver on the plan's next revision, which names no quest") },
         // A quest published with no ask has its own, set on its page before it starts, the person's alike.
         new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow") { Marks = OwnerMark.None("a quest's kind and workflow, chosen before it starts; its status does not move") },
         // The person's message on the ask's channel is their words, with every reach they have; an agent

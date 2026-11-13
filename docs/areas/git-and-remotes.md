@@ -247,8 +247,13 @@ which a merge runs only when the adapter's fingerprint differs from its row of `
 - `GitKeepersCensusTests`, `GitLifetimesTests`, `GitEndingsCensusTests` and `GitStartsCensusTests` hold the classes, each run with
   every member left out and one planted omission; `GitSchedulerProcessTests` holds the scheduler on real git.
 
-The refs' one listing and a plain read's merge-bases, counts and changed names are answered in git's words by LibGit2Sharp where
-admitted (`GitLibraryReads`), starting nothing; everything else is git's.
+The refs' one listing and a plain read's merge-bases, counts, changed names and `rev-parse --verify --quiet` of `HEAD` or a full ref
+name (with or without `^{commit}`; a short name, an operator or a dangling ref is git's), and a plain `rev-parse HEAD`, are
+answered in git's words by LibGit2Sharp where admitted (`GitLibraryReads`, `GitLibraryVerify`), starting nothing; everything else is
+git's. The look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
+are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; the rest of a look's starts are
+`worktree list --porcelain` (seven in a resume tick, each a judgement's own), the combined layout read, `--show-toplevel` and
+the object reads, which GITTICK2 takes.
 
 - `GitLibrary` opens a `Repository` per call, eight at once, libgit2's search paths emptied. `GitLibraryAdmission` refuses, at each
   question, any format but SHA-1 objects with files refs, any replacement, a pack rewrite under way (`GitLibraryHousekeeping`,
