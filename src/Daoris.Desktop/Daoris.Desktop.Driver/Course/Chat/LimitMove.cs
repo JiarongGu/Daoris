@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace Daoris.Driver;
 
@@ -112,6 +113,19 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     /// </remarks>
     public async Task<StartedFrom?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
+    {
+        // A turn that ended while the move stood was judged then and moved nothing: the move it stood for is judged again, reading it.
+        var stale = new StrongBox<bool>();
+        while (true)
+        {
+            stale.Value = false;
+            var moved = await MoveOnceAsync(sessionId, config, onEnded, stale, ct).ConfigureAwait(false);
+            if (!stale.Value) return moved;
+        }
+    }
+
+    private async Task<StartedFrom?> MoveOnceAsync(
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, StrongBox<bool> stale, CancellationToken ct)
     {
         // A hand-over's box an older build left, or its move the store carries and has not begun, holds the record from a move.
         if (context.Closing || context.GoingOn.ContainsKey(sessionId) || handOver.Holds(sessionId)) return null;
@@ -260,6 +274,13 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             }
 
             holding = true;
+            if (TurnsSince.Ended(context.Events.After(sessionId, 0).Events, seen.Count))
+            {
+                move.Superseded();
+                record = null;
+                stale.Value = true;
+                return null;
+            }
 
             // The brief of its line before the refused turns, which go after it as the person's words, so they are told once.
             var brief = await ContextBriefs.ComposeAsync(
