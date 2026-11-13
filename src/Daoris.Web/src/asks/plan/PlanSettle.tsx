@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PlanSettle } from '../bridge/shell';
-import { Button } from '../design/ui';
-import { type Answered, Refused } from '../work/InlineConfirm';
+import { Button } from '../../design/ui';
+import { type Answered, Refused } from '../../work/InlineConfirm';
 
-/** The person's answer to a question of an ask's delivery plan, or their waiver of a release order, and how it ended. */
+/** The person's answer to an open question of an ask's delivery plan, or their waiver of a release order with a reason. */
+export type PlanSettle = { key: string; words: string } | { deployable: string; on: string; reason: string };
+
+/** A settle, and how it ended. */
 export type PlanSettling = (settle: PlanSettle, answered: Answered) => void;
 
 /**

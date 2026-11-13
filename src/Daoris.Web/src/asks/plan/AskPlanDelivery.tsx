@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Pill } from '../design/ui';
-import type { AskPlanEvidence, AskPlanRelease, AskPlanRevision } from './askPlan';
+import { Button, Pill } from '../../design/ui';
+import type { AskPlanEvidence, AskPlanRelease, AskPlanRevision } from '../askPlan';
 import { PlanSettleForm, type PlanSettling } from './PlanSettle';
 
 const place = (evidence: AskPlanEvidence) => `${evidence.repository} ${evidence.file}${evidence.range ? `:${evidence.range}` : ''}`;

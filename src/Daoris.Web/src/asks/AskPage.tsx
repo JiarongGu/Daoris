@@ -13,7 +13,7 @@ import { type ChannelAnswered, type ChannelForward, ChannelSection } from './Cha
 import type { Channel, ChannelItem, ChannelPost } from '../work/channel';
 import type { AskPlan } from './askPlan';
 import { AskPlanSection } from './AskPlanSection';
-import type { PlanSettling } from './PlanSettle';
+import type { PlanSettling } from './plan/PlanSettle';
 import { AtWorkAskView, type AtWorkAskViewProps } from '../work/atWork/AtWorkAskView';
 import { clearOffered, type HistoryDoor } from '../work/history/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';

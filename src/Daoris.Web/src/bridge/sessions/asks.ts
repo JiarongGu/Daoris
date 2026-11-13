@@ -9,6 +9,7 @@ import {
   lineChannelOf, postedOf,
 } from '../../work/channel';
 import { type AskPlan, askPlanOf } from '../../asks/askPlan';
+import type { PlanSettle } from '../../asks/plan/PlanSettle';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
@@ -118,8 +119,7 @@ export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: b
   return query.data ?? null;
 };
 
-/** The person's answer to an open question of an ask's delivery plan, or their waiver of a release order with a reason. */
-export type PlanSettle = { key: string; words: string } | { deployable: string; on: string; reason: string };
+export type { PlanSettle };
 
 /** `ASK_PLAN_SETTLE`: rejects with the service's sentence where it refuses; the plan it answers replaces the cached one at once. */
 export const useSettleAskPlan = () => {
