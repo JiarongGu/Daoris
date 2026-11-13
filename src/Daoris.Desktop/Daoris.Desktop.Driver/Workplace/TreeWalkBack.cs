@@ -5,6 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What one walk of a tree read beyond its answer, handed back so the kept read holds it without asking git again: the repository's declared
 /// output the proof read, and the paths of the one <c>status</c> that proof made (set only where the tree is held by content).
+/// A walk given a <see cref="TreeStatus.Unasked"/> head and branch asks its one status where it learns which paths it needs.
 /// </summary>
 internal sealed class TreeWalkBack
 {

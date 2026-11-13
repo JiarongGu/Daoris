@@ -44,7 +44,6 @@ internal sealed record TreeStatus(int Changed, string? Head, string? Branch)
         return seen == 2 ? new TreeStatus(changed, head, branch) : null;
     }
 
-    /// <summary>A head and a branch read from the tree's own files, its paths not yet counted, so one <c>status</c> is asked where the walk knows which.</summary>
     internal static TreeStatus Unasked(string? head, string? branch) => new(-1, head, branch);
 
     internal bool Counted => Changed >= 0;
