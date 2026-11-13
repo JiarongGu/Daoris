@@ -105,7 +105,8 @@ var embedder = HostComposition.BuildEmbedder(serviceOptions);
 // A quest's files are kept under the home of the machine that has them — this one, always:
 // the MCP host is a local door. No home, no keeper, and a publish carrying files is refused.
 var composed = await ServiceFactory.CreateAsync(
-    serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
+    serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment(),
+    memory: HostComposition.BuildMemory(serviceOptions.DatabasePath));
 
 // An index a newer Daoris wrote is left as it is, and this connector still serves what is not derived. Said
 // once, here: on stderr with the folder to update, since that stream is this machine's, and in the log by its versions.

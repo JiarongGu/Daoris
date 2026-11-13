@@ -37,7 +37,8 @@
         "src/Daoris.Cli/test/fixtures/", "src/Daoris.Contracts/", "src/Daoris.Desktop/README.md",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Participants/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
-        "src/Daoris.Service/", "src/Daoris.Web/.gitignore", "src/Daoris.Web/README.md", "src/Daoris.Web/index.html",
+        "src/Daoris.Service/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/", "src/Daoris.Testing/Memory/",
+        "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "src/Daoris.Web/.gitignore", "src/Daoris.Web/README.md", "src/Daoris.Web/index.html",
         "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/playwright.config.ts",
         "src/Daoris.Web/tsconfig.json", "src/Daoris.Web/tsconfig.tsbuildinfo", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/", "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs",
@@ -50,7 +51,8 @@
         "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md", "src/Daoris.Service/Daoris.Service.Core/",
         "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Http.Tests/",
         "src/Daoris.Service/Daoris.Service.Mcp/", "src/Daoris.Service/Daoris.Service.Shared/",
-        "src/Daoris.Service/Daoris.Service.Tests/", "tools/fsx.mjs"
+        "src/Daoris.Service/Daoris.Service.Tests/", "src/Daoris.Service/Daoris.Service.Application.Rehearsals/",
+        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/", "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit --results-directory _fixtures/test-timing --logger \"trx;LogFileName=devkit.trx\"",
       "paths": [
@@ -58,7 +60,8 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Contracts/", "src/Daoris.Devkit/", "src/Daoris.Service/Daoris.Service.slnx",
         "src/Daoris.Service/Directory.Build.props", "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md",
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
-        "src/Daoris.Service/Daoris.Service.Shared/", "tools/fsx.mjs"
+        "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/",
+        "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
     { "name": "layers", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests && dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
       "paths": [
@@ -76,6 +79,12 @@
         "daoris.gates.json", "Directory.Build.props", "src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props",
         "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/",
         "src/Daoris.Ports/Store/", "src/Daoris.Testing/Store/"
+      ] },
+    { "name": "adapters-memory-lyntai", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests",
+      "paths": [
+        "daoris.gates.json", "Directory.Build.props", "src/Daoris.Service/Directory.Packages.props",
+        "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/",
+        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/", "src/Daoris.Testing/Memory/"
       ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },

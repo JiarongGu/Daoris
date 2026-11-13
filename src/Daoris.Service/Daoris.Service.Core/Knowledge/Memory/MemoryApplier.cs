@@ -150,9 +150,6 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
     /// <summary>The key a write's relation is made under, a call of its own (Lyntai's keyed write states no relation).</summary>
     private static string RelationKey(string op) => $"{op}-relation";
 
-    /// <summary>How long an engine's receipt answers (Lyntai's default): past it, no receipt no longer means no effect.</summary>
-    public static readonly TimeSpan ReceiptRetention = TimeSpan.FromDays(30);
-
     private async Task<MemoryOutcome> RecoverAsync(IMemoryEngine engine, MemoryOp op, CancellationToken ct)
     {
         try
@@ -161,7 +158,7 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
             if (await engine.ReceiptAsync(op.Id, ct).ConfigureAwait(false) is { } receipt) return await ByReceiptAsync(engine, op, receipt, ct).ConfigureAwait(false);
             // The effect and its receipt commit together, so no receipt is no effect, until the receipt could have expired: then the
             // person decides, as for an outcome nothing explains.
-            if (_time.GetUtcNow() - (op.Began ?? op.At) >= ReceiptRetention) return MemoryOutcome.Held;
+            if (_time.GetUtcNow() - (op.Began ?? op.At) >= MemoryKeyReceipt.Retention) return MemoryOutcome.Held;
             return await ApplyAsync(engine, op, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OperationCanceledException)

@@ -103,7 +103,8 @@
           "src/Daoris.Service/Daoris.Service.Http/Daoris.Service.Http.csproj",
           "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj",
           "src/Daoris.Service/Daoris.Service.Mcp/Daoris.Service.Mcp.csproj",
-          "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj"
+          "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj",
+          "src/Daoris.Service/Daoris.Service.Application.Rehearsals/Daoris.Service.Application.Rehearsals.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }
@@ -132,7 +133,9 @@
           "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/Daoris.Adapters.DesktopStore.Sqlite.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/Daoris.Adapters.DesktopStore.Sqlite.Tests.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.Machine/Daoris.Adapters.Machine.csproj",
-          "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj"
+          "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/Daoris.Adapters.Memory.Lyntai.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

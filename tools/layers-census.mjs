@@ -19,10 +19,13 @@ import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
 import { checkClock, scanClock } from './layers-census/clock.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
+import { checkMemory } from './layers-census/memory.mjs';
 import { checkProcesses, scanProcesses } from './layers-census/processes.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 
-export { checkAmbient, checkBudget, checkClock, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanProcesses, BUDGET_MS };
+export {
+  checkAmbient, checkBudget, checkClock, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanProcesses, BUDGET_MS,
+};
 
 const EMPTY = { packages: {}, ambient: {}, clock: {}, processes: {}, slowTests: {} };
 
@@ -45,7 +48,7 @@ function main() {
     const list = { ...EMPTY, ...JSON.parse(readFileSync(listFile, 'utf8')) };
     const problems = [
       ...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkClock(scanClock(tree), list.clock),
-      ...checkProcesses(scanProcesses(tree), list.processes), ...checkBudget(records, list),
+      ...checkProcesses(scanProcesses(tree), list.processes), ...checkBudget(records, list), ...checkMemory(tree),
     ];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);

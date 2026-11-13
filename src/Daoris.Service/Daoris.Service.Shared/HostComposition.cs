@@ -1,3 +1,4 @@
+using Daoris.Adapters.Memory.Lyntai;
 using Lyntai;
 using Lyntai.Inference;
 using Lyntai.Providers.Http;
@@ -36,6 +37,9 @@ internal static class HostComposition
                 () => new HttpClient(),
                 new LyntaiOptions());
     }
+
+    /// <summary>Each repository's memory: Lyntai's engines beside the index at <paramref name="databasePath"/>; null for one held in memory.</summary>
+    public static IMemoryEngines? BuildMemory(string databasePath) => LyntaiMemory.Beside(databasePath);
 
     /// <summary>
     /// Where the index lives by default — one file under the Daoris home, shared by every

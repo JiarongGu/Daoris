@@ -1,6 +1,6 @@
-using Daoris.Knowledge;
+using Daoris.Ports.Memory;
 
-namespace Daoris.Service.Tests;
+namespace Daoris.Testing.Tests;
 
 /// <summary>
 /// The stand-in the memory tools and the coordinator's record are proved over repeats what Lyntai's engine does that

@@ -10,4 +10,5 @@
   <Project Path="Daoris.Service.Http/Daoris.Service.Http.csproj" />
   <Project Path="Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj" />
   <Project Path="Daoris.Service.Tests/Daoris.Service.Tests.csproj" />
+  <Project Path="Daoris.Service.Application.Rehearsals/Daoris.Service.Application.Rehearsals.csproj" />
 </Solution>

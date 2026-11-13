@@ -15,6 +15,9 @@
     <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
     <Using Include="Daoris.Contracts" />
     <Using Include="Daoris.Contracts.Quests" />
+    <!-- Lyntai's memory engines, composed here and run by the memory coordinator. -->
+    <ProjectReference Include="../../Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj" />
+    <Using Include="Daoris.Ports.Memory" />
     <!-- Host-side composition both hosts share as SOURCE: it builds providers, so it cannot live in
          Core (D22, D24) — and it must not be written twice. -->
     <Compile Include="../Daoris.Service.Shared/HostComposition.cs" Link="HostComposition.cs" />

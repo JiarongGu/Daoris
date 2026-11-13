@@ -180,10 +180,12 @@ finishes first and the whole set runs once.
 23. The application depends on ports and is tested on fakes (D286). An effect the application performs is a port of
     `Daoris.Ports`, which references the standard library alone: the platform's own where there is one (`TimeProvider`,
     `HttpMessageHandler`, `DbConnection` behind the unit of work), a new interface only for git, processes, the browser, the
-    harness and the store's unit of work, and a delegate or a value record for anything else an adapter supplies. Each fake is in
-    `Daoris.Testing` and is held to its port by one contract case class that the real adapter runs too. No application or unit-test
+    harness and the store's unit of work, and a delegate or a value record for anything else an adapter supplies; the service's
+    memory engine keeps the port it already had. Each fake is in
+    `Daoris.Testing` and is held to its port by one contract case class that the real adapter runs too. A class that proves the
+    application over a real adapter and has no fake twin yet is in the application's rehearsal project, which its gate still runs. No application or unit-test
     project references an adapter (`Daoris.Adapters.*`) or a package beyond analyzers and the test libraries, but the census's
-    list, which only shrinks. A static funnel may read the ambient `PortSet` through `AmbientPorts` only as a bridge: a service
+    list, which only shrinks, and no application file names Lyntai's memory or storage types. A static funnel may read the ambient `PortSet` through `AmbientPorts` only as a bridge: a service
     locator, counted per subdomain by the census's ratchet, which only tightens and starts at zero, and one a root sets once. The
     set is named for what it holds, not `Machine`, which names the adapter that implements the processes. A unit test over one
     second fails the census, named, unless it is on its list of slower tests, which only shrinks; it reads the duration records

@@ -138,7 +138,8 @@ under its session. The transaction that records the session's commit point relea
 tree's record naming a landing. A write is then `ready`, an end or a replacement `awaiting` its approver, and each names the models of the
 turn whose start and end hold its instant, `unknown` where no handed line does.
 
-Each repository's memory is Lyntai's graph engine over `memory.db` beside the index (`LyntaiMemory`, KNOWCENTRAL2d), opened
+Each repository's memory is Lyntai's graph engine over `memory.db` beside the index (`LyntaiMemory`, KNOWCENTRAL2d, in the
+`Daoris.Adapters.Memory.Lyntai` adapter the hosts compose; the core reads it through the memory port), opened
 with no reinforcement, so a read moves nothing. A connector stages its session's writes and ends, which that session and one
 continuing it alone find; a session's end names their models from the turn lines the driver hands. Only the service applies
 (`MemoryApplier`, run from the HTTP host's start by `MemoryCoordinator`): it marks a row `applying` in its own transaction, calls
