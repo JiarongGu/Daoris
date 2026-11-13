@@ -4,7 +4,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Refusal } from './args.mjs';
+import { Refusal } from '../merge/args.ts';
 
 // test-map: strings name paths as data — the projects and commands named here are what the plan reads gates by, not reads
 

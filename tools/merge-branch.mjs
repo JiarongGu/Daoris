@@ -21,30 +21,24 @@
  * ## What it does
  *
  * 1. Refuses unless the checkout is on `main` with a clean tree, and the branch exists and adds commits.
- * 2. Prints the lanes the branch touched, by id and title, from the repository's `daoris.lanes.json`
- *, and names the steward's records if it edited them. It informs; it
- * never refuses on a lane.
- * 3. The commit check: every commit the branch adds carries its `Co-Authored-By:` line (a merge of main
- * into the branch needs none), and the branch's worktree, if it has one, holds nothing uncommitted
- * (work a hand-back calls done and left out of the merge). `--no-commit-check` skips it.
+ * 2. Prints the lanes the branch touched, by id and title, from the repository's `daoris.lanes.json`, and names the
+ * steward's records if it edited them. It informs; it never refuses on a lane.
+ * 3. The commit check (`merge/attribution.ts`), which `--no-commit-check` skips.
  * 4. The prune (below), unless `--no-prune`: one line per branch, and per half-removed folder, removed or kept.
- * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
- * for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
- * their `merge=union` attribute, and the backlog by its merge base: a line a side added is kept,
- * one a side removed is dropped, one line both changed is left, one line
- * said either way. A folder `daoris.gates.json` declares generated is written from the merged tree and
- * staged before the gates choose (`readGenerated`), so a conflict in it alone does not stop the
- * merge, and one beside others is written once they are resolved. Before it, each decision file the merge
- * changed has a blank line set before a note's label union left under another note, one line said per
- * note; and each other union record it changed, before a heading union left under
- * another entry's last line, one line said per heading.
- * 6. The gates, in a fixed order, fast first, in two lanes (below). The plan is every gate `daoris.gates.json`
- * declares, plus every `npm run` step the release workflow runs that the declaration does not (the
- * release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
- * rehearsals); within a kind the declared order holds, and the workflow's own rehearsals go before the
- * declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
- * long-lived build server carried a broken environment into a publish, so that rehearsal started after
- * `dotnet build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
+ * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left for the parent. Code
+ * is never resolved for anyone; the append-only records resolve themselves by their `merge=union` attribute, and the backlog
+ * by its merge base: a line a side added is kept, one a side removed is dropped, one line both changed is left, one line said
+ * either way. A folder `daoris.gates.json` declares generated is written from the merged tree and staged before the gates
+ * choose (`readGenerated`), so a conflict in it alone does not stop the merge, and one beside others is written once they are
+ * resolved. Before it, each decision file the merge changed has a blank line set before a note's label union left under
+ * another note, one line said per note; and each other union record it changed, before a heading union left under another
+ * entry's last line, one line said per heading.
+ * 6. The gates, in a fixed order, fast first, in two lanes (below). The plan is every gate `daoris.gates.json` declares, plus
+ * every `npm run` step the release workflow runs that the declaration does not (the release and family rehearsals). The order
+ * is by kind (a devkit check, then the suites, then the rehearsals); within a kind the declared order holds, and the workflow's
+ * own rehearsals go before the declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On
+ * 2026-09-30 a long-lived build server carried a broken environment into a publish, so that rehearsal started after `dotnet
+ * build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
  * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the census of test
  * units), the CLI's verify (`MERGE_SUITES`), and each path check one of its paths reaches (`PATH_CHECKS`: the web
  * typecheck and structure tests, the desktop's censuses, and `tools/reached-checks.mjs`, the test units the paths reach,
@@ -435,9 +429,9 @@ import {
   promotion, queueLines, readAdmission, readIntegrationPolicy, readQueue, sameCandidate, recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate,
   scopedSet, scopedTier, settleContained, sightingOf, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
-import { Refusal, parseArgs, USAGE } from './merge-branch/args.mjs';
-import { count, pad, classCount } from './merge-branch/format.mjs';
-import { laneMatcher, globToRegExp } from './merge-branch/lanes-file.mjs';
+import { Refusal, parseArgs, USAGE } from './merge/args.ts';
+import { count, pad, classCount } from './merge/format.ts';
+import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
 import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge-branch/reach.mjs';
 import {
   isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
@@ -446,10 +440,10 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
-import { holderRuns, pidAlive, processStart, sameHolder } from './merge-branch/holder.mjs';
+import { holderRuns, pidAlive, processStart, sameHolder } from './merge/holder.ts';
 import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
-import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
-import { stepTrees } from './merge-branch/step-trees.mjs';
+import { diffPaths, isInside, zPaths, SCRATCH } from './merge/paths.ts';
+import { stepTrees } from './merge/step-trees.ts';
 import { abnormalEnd } from './merge/processes.ts';
 import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
@@ -462,8 +456,14 @@ import { saidDrained } from './merge/said-drained.ts';
 import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
-export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
-export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
+import {
+  git, unmergedPaths, parseWorktrees, isIgnored, MAIN, lines, gitDirs, requireMain, mergeInProgress, treeState, notClean, requireBranch,
+  preconditions, locate,
+} from './merge/git.ts';
+import { nowIso, when } from './merge/clock.ts';
+import { branchCommits, commitProblems, parseCommits, COMMIT_FORMAT, commitAttributionProblems } from './merge/attribution.ts';
+export { parseWorktrees } from './merge/git.ts';
+export { stepTrees, endTree, descendants } from './merge/step-trees.ts';
 export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
   isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, stagePlan, isHeavyGate,
@@ -473,13 +473,9 @@ export {
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
 export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
-export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
+export { globToRegExp, laneMatcher } from './merge/lanes-file.ts';
 
-// test-map: strings name paths as data — the records, tools and commands this file names are what it writes and runs; what it
-// reads is its imports
-
-export const MAIN = 'main';
-const SCRATCH = 'local/scratch';
+// test-map: strings name paths as data — what this file names it writes and runs; what it reads is its imports
 const STATE = `${SCRATCH}/merge-batch.json`;
 
 /**
@@ -864,11 +860,6 @@ export function rerunPlan(plan, chosen, results, named, stale = {}) {
   return { run, kept, fresh, stale: again };
 }
 
-/** A moment as people read it in a summary: minutes, in UTC, which is how the record keeps it. */
-export const when = (iso) => (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(iso) ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : 'an unknown time');
-
-const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record: which gate passed which tree
 
@@ -885,6 +876,14 @@ export function verdictsHome(root) {
     homes.set(root, first && first.path && !first.bare ? resolve(first.path) : root);
   }
   return homes.get(root);
+}
+
+/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. In the main checkout. */
+function requireVerdictsIgnored(root) {
+  const home = verdictsHome(root);
+  if (!isIgnored(home, VERDICTS_FILE)) {
+    throw new Refusal(`${VERDICTS_FILE} is not ignored ${samePath(home, root) ? 'here' : 'in the main checkout, where every worktree records'}, so each verdict written would change the tree it is a verdict on`);
+  }
 }
 
 /** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
@@ -1763,188 +1762,6 @@ export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) 
   }
   placed.lanes = lanePatterns.filter((lane) => lane.files.length).map(({ id, title, files }) => ({ id, title, files }));
   return placed;
-}
-
-// ---------------------------------------------------------------------------------------------------
-// Git
-
-function git(cwd, args, { allowFail = false, env } = {}) {
-  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
-  if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
-  if (result.status !== 0 && !allowFail) {
-    throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
-  }
-  return { status: result.status, out: result.stdout.trimEnd(), err: result.stderr.trim() };
-}
-
-/**
- * What a `git check-ignore -q` probe answered: status 0 is ignored, 1 is not, and anything else (128, or a
- * git that could not answer under load) is a tool error, not a false "not ignored".
- */
-export function ignoredVerdict({ status, err }, path) {
-  if (status === 0) return true;
-  if (status === 1) return false;
-  throw new Refusal(`git check-ignore ${path} failed (status ${status}): ${err || 'no message'}`);
-}
-
-const isIgnored = (cwd, path) => ignoredVerdict(git(cwd, ['check-ignore', '-q', path], { allowFail: true }), path);
-
-const lines = (text) => text.split('\n').filter((line) => line.trim());
-
-// Each git start costs tens of milliseconds on Windows, so the checkout's git folder is asked for once,
-// with its top level, and an open merge is read from the MERGE_HEAD file git writes there.
-const gitDirs = new Map();
-function locate(cwd) {
-  const [top, gitDir] = git(cwd, ['rev-parse', '--show-toplevel', '--absolute-git-dir']).out.split('\n').map((line) => line.trim());
-  const root = resolve(top);
-  gitDirs.set(root, resolve(gitDir));
-  return root;
-}
-const mergeInProgress = (root) => existsSync(join(gitDirs.get(root), 'MERGE_HEAD'));
-const unmergedPaths = (root) => lines(git(root, ['--no-optional-locks', 'diff', '--name-only', '--diff-filter=U']).out);
-
-/**
- * `git status --porcelain=v2 --branch`, read: the current branch ('' when detached) and each changed or
- * untracked path with its two-letter code (`??` untracked).
- */
-export function parseStatus(text) {
-  let branch = '';
-  const changed = [];
-  for (const line of text.replace(/\r\n/g, '\n').split('\n')) {
-    if (line.startsWith('# branch.head ')) {
-      const head = line.slice('# branch.head '.length).trim();
-      branch = head === '(detached)' ? '' : head;
-    } else if (line.startsWith('? ')) changed.push({ code: '??', path: line.slice(2) });
-    else if (/^[12u] /.test(line)) {
-      // Fields before the path: 8 for an ordinary entry, 9 for a rename (then `path<TAB>from`), 10 unmerged.
-      const fields = line.split(' ');
-      const skip = { 1: 8, 2: 9, u: 10 }[line[0]];
-      changed.push({ code: fields[1], path: fields.slice(skip).join(' ').split('\t')[0] });
-    }
-  }
-  return { branch, changed };
-}
-
-/** A tree that is not clean, each changed or untracked path with its code, the first twelve. */
-const notClean = (changed) => {
-  const shown = changed.slice(0, 12).map(({ code, path }) => `  ${code} ${path}`).join('\n');
-  return `the tree is not clean:\n${shown}${changed.length > 12 ? `\n  … ${changed.length - 12} more` : ''}`;
-};
-
-/** Why a merge cannot start from what git reported, or null. */
-export function startRefusal({ branch, merging, changed, ignored }) {
-  if (branch !== MAIN) {
-    return `the current branch is '${branch || 'a detached HEAD'}', not ${MAIN}: merges land on ${MAIN}, from its own checkout`;
-  }
-  if (merging) return 'a merge is already in progress: resolve it and run --continue, or git merge --abort';
-  if (changed.length) return notClean(changed);
-  if (!ignored) return `${SCRATCH}/ is not ignored here, so the gate logs would dirty the tree`;
-  return null;
-}
-
-const treeState = (root) => parseStatus(git(root, ['--no-optional-locks', 'status', '--porcelain=v2', '--branch']).out);
-
-function requireMain(root) {
-  const refusal = startRefusal({ branch: treeState(root).branch, merging: false, changed: [], ignored: true });
-  if (refusal) throw new Refusal(refusal);
-}
-
-/** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it). */
-function preconditions(root) {
-  const facts = { ...treeState(root), merging: mergeInProgress(root), ignored: true };
-  const refusal = startRefusal(facts);
-  if (refusal) throw new Refusal(refusal);
-  // Asked last, and only of a checkout that passed the rest: it is one more git start.
-  if (!isIgnored(root, `${SCRATCH}/merge-probe.log`)) {
-    throw new Refusal(startRefusal({ ...facts, ignored: false }));
-  }
-  requireVerdictsIgnored(root);
-}
-
-/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. In the main checkout. */
-function requireVerdictsIgnored(root) {
-  const home = verdictsHome(root);
-  if (!isIgnored(home, VERDICTS_FILE)) {
-    throw new Refusal(`${VERDICTS_FILE} is not ignored ${samePath(home, root) ? 'here' : 'in the main checkout, where every worktree records'}, so each verdict written would change the tree it is a verdict on`);
-  }
-}
-
-/** The branch's tip, or a refusal naming it. */
-function requireBranch(root, branch) {
-  const tip = git(root, ['rev-parse', '--verify', '--quiet', `${branch}^{commit}`], { allowFail: true });
-  if (tip.status !== 0) throw new Refusal(`no branch '${branch}'`);
-  return tip.out.trim();
-}
-
-/** The log format `parseCommits` reads: short sha, parents, subject, the Co-Authored-By values. */
-export const COMMIT_FORMAT = '--format=%h%x1f%p%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly)%x1e';
-
-/** A branch's commits from `git log` in `COMMIT_FORMAT`: sha, whether it is a merge, subject, trailer. */
-export function parseCommits(text) {
-  return text.split('\x1e').map((entry) => entry.trim()).filter(Boolean).map((entry) => {
-    const [sha = '', parents = '', subject = '', trailer = ''] = entry.split('\x1f');
-    return { sha, merge: parents.trim().split(/\s+/).length > 1, subject, trailer: trailer.trim() };
-  });
-}
-
-/** The commits main lacks, one git start for both the count and the commit check. */
-function branchCommits(root, branch) {
-  const commits = parseCommits(git(root, ['log', COMMIT_FORMAT, `HEAD..${branch}`]).out);
-  if (commits.length === 0) throw new Refusal(`'${branch}' has nothing main lacks: it is merged already`);
-  return commits;
-}
-
-/**
- * `git worktree list --porcelain`, read: each worktree's path, the branch it has out ('' when detached),
- * whether it is locked and git's reason, and whether git says its folder is gone. The first is the main
- * checkout.
- */
-export function parseWorktrees(porcelain) {
-  const trees = [];
-  for (const line of porcelain.replace(/\r\n/g, '\n').split('\n')) {
-    const tree = trees.at(-1);
-    if (line.startsWith('worktree ')) {
-      trees.push({ path: line.slice('worktree '.length).trim(), branch: '', locked: false, lockReason: '', prunable: false, bare: false });
-    } else if (!tree) continue;
-    else if (line.startsWith('branch refs/heads/')) tree.branch = line.slice('branch refs/heads/'.length).trim();
-    else if (/^locked(?: |$)/.test(line)) Object.assign(tree, { locked: true, lockReason: line.slice('locked'.length).trim() });
-    else if (/^prunable(?: |$)/.test(line)) tree.prunable = true;
-    else if (line.trim() === 'bare') tree.bare = true;
-  }
-  return trees;
-}
-
-/** The path of the worktree `git worktree list --porcelain` shows a branch checked out in, or null. */
-export function worktreeFor(porcelain, branch) {
-  return (branch && parseWorktrees(porcelain).find((tree) => tree.branch === branch)?.path) || null;
-}
-
-/**
- * What the commit check finds wrong: a commit of the branch's own without the trailer (a merge of main
- * into it carries none, and needs none), and work left uncommitted in its worktree.
- */
-export function commitAttributionProblems(commits) {
-  // Makers of this repository's built-in agents (Adapters.cs), and Daoris itself for the commits its
-  // driver writes (DaorisMaker.cs). Claude's harness has historically written its model name alone,
-  // so accept Claude and Codex names as well as explicit makers.
-  const maker = /\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b/i;
-  const expected = 'expected its own maker and running model: Anthropic (Claude), OpenAI (Codex), DeepSeek, or Daoris';
-  return commits.filter((commit) => !commit.merge && !commit.trailer.split('\n').some((line) => {
-    const name = /^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$/.exec(line)?.[1];
-    return name && maker.test(name);
-  })).map((commit) => `${commit.sha} ${commit.subject}: ${commit.trailer ? 'no allowed maker in its Co-Authored-By line' : 'no Co-Authored-By line'}; ${expected}`);
-}
-
-function commitProblems(root, branch, commits) {
-  const problems = commitAttributionProblems(commits);
-  const tree = worktreeFor(git(root, ['worktree', 'list', '--porcelain']).out, branch);
-  if (tree && existsSync(tree)) {
-    const left = lines(git(tree, ['--no-optional-locks', 'status', '--porcelain']).out);
-    if (left.length) {
-      problems.push(`its worktree holds uncommitted work, which the merge would leave out:\n${left.slice(0, 12).map((line) => `    ${line}`).join('\n')}`);
-    }
-  }
-  return problems;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -3866,6 +3683,7 @@ async function mergeNext(root, state) {
 
 async function start(root, options) {
   preconditions(root);
+  requireVerdictsIgnored(root);
   const pending = readState(root);
   if (pending && pending.at < pending.branches.length - 1) {
     throw new Refusal(`a batch is recorded with ${pending.branches.slice(pending.at + 1).join(', ')} still to merge: run --continue, or --drop-batch to forget it`);
@@ -3913,6 +3731,7 @@ async function resume(root, options) {
     return 0;
   }
   preconditions(root);
+  requireVerdictsIgnored(root);
   if (!landed) {
     throw new Refusal(`the merge of ${branch} is not committed (it is not in ${MAIN}'s history): commit it after reading the diff and writing the records, or --drop-batch`);
   }

@@ -10,39 +10,6 @@ import { repoRoot, tool, refusal, trackedFiles } from './support/merge-branch.ts
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-
-// ---------------------------------------------------------------------------------------------------
-// The lane map
-
-test('a lane path is a glob: * stays in a folder, ** crosses folders, {a,b} is either', () => {
-  const deep = tool.globToRegExp('src/Daoris.Web/src/settings/**');
-  assert.ok(deep.test('src/Daoris.Web/src/settings/PluginsDomain.tsx'));
-  assert.ok(deep.test('src/Daoris.Web/src/settings/deeper/x.ts'));
-  assert.ok(!deep.test('src/Daoris.Web/src/settingsX/y.ts'));
-
-  const shallow = tool.globToRegExp('src/Daoris.Web/src/SettingsView*.tsx');
-  assert.ok(shallow.test('src/Daoris.Web/src/SettingsView.shell.test.tsx'));
-  assert.ok(!shallow.test('src/Daoris.Web/src/settings/SettingsView.tsx'));
-
-  const either = tool.globToRegExp('src/App{,.test}.tsx');
-  assert.ok(either.test('src/App.tsx') && either.test('src/App.test.tsx') && !either.test('src/App.stories.tsx'));
-  assert.ok(tool.globToRegExp('a.b').test('a.b') && !tool.globToRegExp('a.b').test('axb'), 'a dot is a dot');
-});
-
-
-test("a lane's `!` path carves a narrower lane's paths out of a wider one (LEFT1)", () => {
-  const shell = tool.laneMatcher(['src/Daoris.Web/**', '!src/Daoris.Web/src/settings/**', '!src/Daoris.Web/src/SettingsView*.tsx']);
-  assert.ok(shell('src/Daoris.Web/src/queries.ts'));
-  assert.ok(shell('src/Daoris.Web/vite.config.ts'));
-  assert.ok(shell('src/Daoris.Web/src/settingsX/y.ts'), 'a carve-out is its own glob, not a prefix');
-  assert.ok(!shell('src/Daoris.Web/src/settings/DriverDomain.tsx'));
-  assert.ok(!shell('src/Daoris.Web/src/SettingsView.tsx'));
-  assert.ok(!shell('src/Daoris.Cli/src/cli.ts'));
-  // A lane of carve-outs alone owns nothing.
-  assert.ok(!tool.laneMatcher(['!src/**'])('README.md'));
-});
-
-
 test("a branch's files are placed in lanes, the steward's lane, the shared records, no lane, or outside every lane", () => {
   const map = tool.readLanes(repoRoot)!;
   const placed = tool.classify([
@@ -184,10 +151,8 @@ test('every lane path and every laneless path matches a tracked file, and no tra
 
 
 /**
- * A path outside every lane would sit there unremarked, and a new source tree with it.
- * Every tracked file has a place: a lane (the steward's among them), a record that
- * merges by union, or the map's `laneless` list (the docs, the doctrine, the harness's settings). A new
- * top-level path fails here until the map places it on purpose.
+ * Every tracked file has a place: a lane (the steward's among them), a record that merges by union, or the map's
+ * `laneless` list. A new top-level path fails here until the map places it on purpose.
  */
 test('every tracked file has a place, so a new path is placed on purpose, never left outside silently', () => {
   const map = tool.readLanes(repoRoot)!;

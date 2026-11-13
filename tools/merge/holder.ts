@@ -4,14 +4,17 @@
  */
 import { spawnSync } from 'node:child_process';
 
+type Asked = { status: number | null; stdout?: unknown };
+type Run = (command: string, args: string[], options: { encoding: 'utf8'; windowsHide?: boolean; env?: NodeJS.ProcessEnv }) => Asked;
+
 /** Whether a process runs with this pid: signal 0 asks without sending, and EPERM is one that runs as someone else. */
-export function pidAlive(pid) {
+export function pidAlive(pid: number): boolean {
   if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    return error?.code === 'EPERM';
+    return (error as NodeJS.ErrnoException | null)?.code === 'EPERM';
   }
 }
 
@@ -19,7 +22,7 @@ export function pidAlive(pid) {
 export const START_TOLERANCE_MS = 2000;
 
 /** When the process `pid` began, in epoch milliseconds; null where it does not run or the machine would not say. */
-export function processStart(pid, { platform = process.platform, run = spawnSync } = {}) {
+export function processStart(pid: number, { platform = process.platform, run = spawnSync as Run }: { platform?: string; run?: Run } = {}): number | null {
   if (!Number.isInteger(pid) || pid <= 0) return null;
   if (pid === process.pid) return Math.round(Date.now() - process.uptime() * 1000);
   const asked = platform === 'win32'
@@ -34,9 +37,9 @@ export function processStart(pid, { platform = process.platform, run = spawnSync
 }
 
 /** Whether the run a lock file's `text` names still runs: its pid is alive and began when the lock says. */
-export function holderRuns(text, alive) {
+export function holderRuns(text: string, alive: (pid: number) => boolean): boolean {
   try {
-    const held = JSON.parse(text);
+    const held = JSON.parse(text) as { pid?: unknown; started?: unknown } | null;
     const pid = Number(held?.pid);
     return alive(pid) && sameHolder(pid, held?.started);
   } catch {
@@ -48,8 +51,8 @@ export function holderRuns(text, alive) {
  * Whether the process now holding `pid` is the one that began at `started`. A record with no start and a machine that will not
  * say are taken as the same, so the pid alone decides there.
  */
-export function sameHolder(pid, started, startOf = processStart) {
-  if (!Number.isFinite(started)) return true;
+export function sameHolder(pid: number, started: unknown, startOf: (pid: number) => number | null = processStart): boolean {
+  if (typeof started !== 'number' || !Number.isFinite(started)) return true;
   const now = startOf(pid);
   return now === null || Math.abs(now - started) <= START_TOLERANCE_MS;
 }

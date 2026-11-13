@@ -41,7 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { isMain } from './fsx.mjs';
-import { globToRegExp } from './merge-branch/lanes-file.mjs';
+import { globToRegExp } from './merge/lanes-file.ts';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 
