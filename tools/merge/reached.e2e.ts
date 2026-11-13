@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { repoRoot } from './repo-gates.ts';
 
 // test-map: strings name paths as data — the changed path is what the plan is asked about
-// reaches: tools/reached-checks.mjs — the tool the test runs, whose closure is the typed modules under tools/merge it imports
+// reaches: tools/reached-checks.mjs — the tool the test runs
+// reaches: tools/merge — the typed modules that tool imports (a declared reach is not followed through its imports)
 
 test('the tool reads the census of this repository: a changed module reaches the tool-tests, --plan runs nothing, and a clean checkout reaches nothing', () => {
   const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], {
