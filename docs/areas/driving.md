@@ -251,7 +251,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
-    unfinished), failed (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done
+    unfinished), failed (nothing carries it on), working (live or going on; an open conversation whose turn ended, its record
+    still `working`, shows `idle`), pending (queued, or its next start held) and done
     (completed, stopped, declined, stood down). A done whose own record says work is left is never the plain done: the quest's newest
     session is needs you with reason `left` where its answers departed from a requirement the person has not yet accepted
     (`QuestLeft.Waits`), or where its run holds a step failed and kept for the person after the done, no word on it

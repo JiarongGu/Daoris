@@ -446,7 +446,7 @@ public sealed class SessionGroupsTests
         // turn runs, nothing. Never a discard while it is open: its tree is still in use.
         ["an open conversation between turns offers its tree's work to land, and stays working"] =
             new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 1))], between: ["s1"]),
-                "s1", SessionGroup.Working, "working")
+                "s1", SessionGroup.Working, "idle")
             {
                 Also = row =>
                 {
@@ -462,7 +462,7 @@ public sealed class SessionGroupsTests
             },
         ["an open conversation between turns whose work the line holds by content offers no discard"] =
             new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 0) { Held = Squashed })], between: ["s1"]),
-                "s1", SessionGroup.Working, "working")
+                "s1", SessionGroup.Working, "idle")
             {
                 Also = row => Assert.Equal((null, null), (row.Lands, row.Discards)),
             },
