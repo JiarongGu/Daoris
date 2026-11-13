@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { TS_SUITES, census, treeOf, tsReaches, unitReaches } from '../test-map.mjs';
+import { privateDigest } from '../private-gate-files.mjs';
 import { halfOf, pathReach, reachSettings, withSettings } from '../process-reach.mjs';
 import { PassedClasses } from '../merge/class-reuse.ts';
 import { toolchainOf } from '../merge/flow-deps.ts';
@@ -26,7 +27,9 @@ export function keyContextOf(root) {
   const gatesText = read('daoris.gates.json');
   const gates = JSON.parse(gatesText).gates ?? [];
   const toolchain = toolchainOf();
-  return { map, gates, gatesText, context: reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS }) };
+  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS });
+  const privates = privateDigest(root);
+  return { map, gates, gatesText, context: { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` } };
 }
 
 /**
@@ -62,20 +65,20 @@ export function fullReplayOf({ root, checkout, dir, commit, say = console.log, w
     settle(gate, result) {
       const held = pending.get(gate.name);
       if (!held || !result.trx || !existsSync(result.trx)) return;
-      recordPasses({ units: held.units, keys: held.keys, trx: readFileSync(result.trx, 'utf8'), verdict: result.verdict, store, at: new Date().toISOString(), run: commit.slice(0, 7) });
+      recordPasses({ units: held.units, keys: held.keys, trx: readFileSync(result.trx, 'utf8'), verdict: result.verdict, store, at: new Date().toISOString(), run: String(commit ?? '').slice(0, 7) });
       store.save();
     },
   };
 }
 
-/** What a full set replayed, as lines: the gates passed on a standing pass, and the classes left out of the halves that ran. */
-export function replaySummary(results) {
+/** Says what a full set replayed: the gates passed on a standing pass, and the classes left out of the halves that ran. */
+export function replaySummary(results, say = console.log) {
   const gates = results.filter((result) => result.replayed && !result.classReplay);
   const classes = results.filter((result) => result.classReplay);
   const left = classes.reduce((sum, result) => sum + result.classReplay.replayedCount, 0);
   const lines = [`replayed: ${gates.length} of ${results.length} gates on a standing pass of the same inputs${gates.length ? ` (${gates.map((result) => result.gate.name).join(', ')})` : ''}`];
   if (classes.length) lines.push(`replayed: ${left} classes of ${classes.length} Process halves left out of their runs (${classes.map((result) => `${result.gate.name} ${result.classReplay.replayedCount}`).join(', ')})`);
-  return lines;
+  for (const line of lines) say(line);
 }
 
 /** The sweeps a full set satisfies: each Process half that passed, run or replayed by key, as strict as a whole run. */

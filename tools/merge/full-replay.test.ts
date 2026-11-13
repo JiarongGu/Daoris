@@ -1,6 +1,12 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { privateDigest } from '../private-gate-files.mjs';
+import { BuildLedger } from './build-once.ts';
+import { runOne, verdictExtras, type FlowDeps } from './flow.ts';
+import { LockInstalls } from './lock-install.ts';
+import type { StoredVerdict } from './verdict-store.ts';
 import { PassedClasses, classKey, unitId, type KeyContext, type Unit } from './class-reuse.ts';
 import { fixtureFolder } from './fixture-home.ts';
 import { classPass, planClasses, recordPasses, replayLine } from './full-replay.ts';
@@ -82,6 +88,49 @@ test('only a class the report shows passing is recorded, and a flake records non
 
 test('a class a run did not report stays unrecorded, so one the census never saw cannot be replayed', () => {
   assert.deepEqual([...classPass(trx([['1', a.unit, 'Passed']]))], [a.unit]);
+});
+
+test('a change to a private file the tool copies into the tree changes its digest, and a missing one is told from an empty one', () => {
+  const { dir, remove } = fixtureFolder('full-replay-private');
+  try {
+    mkdirSync(join(dir, 'local'), { recursive: true });
+    const missing = privateDigest(dir);
+    writeFileSync(join(dir, 'local', 'sensitive-patterns.txt'), '');
+    const empty = privateDigest(dir);
+    writeFileSync(join(dir, 'local', 'sensitive-patterns.txt'), 'bad');
+    const bad = privateDigest(dir);
+    assert.equal(new Set([missing, empty, bad]).size, 3);
+    assert.equal(privateDigest(dir), bad);
+  } finally {
+    remove();
+  }
+});
+
+test('a gate whose private files changed is run again, not replayed', async () => {
+  const { dir, remove } = fixtureFolder('full-replay-flow');
+  try {
+    mkdirSync(join(dir, 'logs'));
+    let digest = 'one';
+    let ran = 0;
+    const stored: StoredVerdict[] = [];
+    const deps = {
+      runGate: async (_w: string, each: never) => { ran += 1; return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 1, log: join(dir, 'logs', 'g.log') }; },
+      reaching: (_g: string, paths: string[]) => paths, reachSource: 't', readVerdicts: () => stored, entriesOf: () => [{ path: 'a', blob: 'b' }], diffOf: () => [],
+      toolchain: { node: 'v', dotnet: '1' }, slowestOf: () => [], failuresOf: () => [], isProcessGate: () => false, ledger: new BuildLedger(), listProcesses: () => [],
+      killTree: () => true, timeoutMs: () => null, lastSlowest: () => [], replayAll: true, privateOf: () => digest,
+      installs: new LockInstalls({ changed: () => [], current: () => false, install: async () => ({ ok: true, note: '' }), say: () => {} }),
+    } as unknown as FlowDeps;
+    const ask = () => runOne(deps, { where: dir, gate: { name: 'g', run: 'x', reuse: '' }, logs: join(dir, 'logs'), beside: {}, tree: 'T', trees: null, step: undefined, noBuild: false });
+    const first = await ask();
+    stored.push({ gate: 'g', verdict: 'PASS', tree: 'T', at: 'a', ...verdictExtras(first) });
+    await ask();
+    assert.equal(ran, 1, 'the same private files replay');
+    digest = 'two';
+    await ask();
+    assert.equal(ran, 2, 'a changed private file withdraws the pass');
+  } finally {
+    remove();
+  }
 });
 
 test('the run settings a gate names are part of its declaration', () => {

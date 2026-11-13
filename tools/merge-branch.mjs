@@ -340,7 +340,7 @@ import {
 } from './ci-background.mjs';
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
-import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
+import { copyPrivateFiles, privateDigest, privateGateFiles } from './private-gate-files.mjs';
 import { DEPENDENCY_FOLDERS, NPM_CI, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
 export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
@@ -2869,7 +2869,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 /** What `merge/flow-deps.ts` runs on: this tool's gate runner, reach table, failure reader and stores. */
 const flowSeams = () => ({
   runGate, pathsReaching, table: REACH, lanesOf: (root) => readLanes(root)?.lanes ?? [], slowestClasses, failuresOf, signatureKey, isProcessGate,
-  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired,
+  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired, privateOf: privateDigest,
 });
 
 /**
@@ -2882,7 +2882,7 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false,
 } = {}) {
   const commit = headCommit(root);
-  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit: commit ?? '' }) : null;
+  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
@@ -3121,7 +3121,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   options.onResults?.(results);
   const home = verdictsHome(root);
   writeSweep(home, noteSweeps(sweepRecord(home, plan), sweptBy(results, head, nowIso(), isProcessGate)));
-  for (const line of replaySummary(results)) console.log(line);
+  replaySummary(results);
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');

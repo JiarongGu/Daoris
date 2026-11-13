@@ -43,6 +43,7 @@ export type FlowDeps = {
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
   replayAll?: boolean;
+  privateOf?: (where: string) => string;
 };
 
 /** A gate's run cut down to the classes no pass covers (`run` null: every class has one, so nothing runs), with the replay. */
@@ -57,7 +58,7 @@ const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string): Ve
   try {
     return keyOf({
       gate, entries: deps.entriesOf(where, tree), reaching: (paths) => deps.reaching(gate.name, paths), toolchain: deps.toolchain,
-      extra: gate.reuse === 'inputs+diff' ? deps.diffOf(where).join('\n') : '', reachTable: deps.reachSource,
+      extra: `${gate.reuse === 'inputs+diff' ? deps.diffOf(where).join('\n') : ''}\0${deps.privateOf?.(where) ?? ''}`, reachTable: deps.reachSource,
     });
   } catch {
     return null;
