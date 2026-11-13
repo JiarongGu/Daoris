@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## WFNEW1 — `workflow new <id> --from <id>@<v>` saves the copy (2026-11-14)
+
+> **WFNEW1** (driver): Outcome: `WorkflowOperations.SourceAsync` read a saved source only to refuse it (a graph version got the "holds no steps" words that point at `export`); a saved graph version, the newest where none is named, is now copied whole into the new workflow (`--with-opinion`, `--with-look` and `--name` apply, `--plan` saves nothing), while a version of steps, an unkept version and an id already saved are still named and write nothing. Tests: `WorkflowCopyOfSavedTests`.
+
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
 > **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.
