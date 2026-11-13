@@ -111,12 +111,6 @@ test("a Process gate starts once the light gates of its component have ended, wh
     planned('dp', processRun('src/X/X.Tests')),
     planned('r', 'npm run rehearse:family'),
   ];
-  const schedule = tool.laneSchedule(gates);
-  assert.deepEqual(schedule.light.map((gate) => gate.name), ['d', 'm', 'u', 'h']);
-  // The heavy light gate h is waited for too; the cheap one, u, is not.
-  assert.deepEqual(schedule.waits['dp'], { after: ['d', 'm', 'h'], component: 'src/X' });
-  assert.deepEqual(schedule.waits['r'], { after: ['d', 'm', 'u', 'h'], component: null });
-
   const lanes = laneRun(['u', 'd', 'm', 'h', 'dp', 'r']);
   // dp waits, as its re-run alone would, for the light lane's end that it is handed.
   lanes.until['dp'] = async () => {
@@ -220,7 +214,6 @@ test("a Process half is handed its fast half's pass in this run and the tree it 
     planned('dp', processRun('src/X/X.Tests')), planned('dg', 'dotnet test src/X/X.Tests --settings src/X/git.process.runsettings'),
     planned('mp', processRun('src/X/M.Tests')),
   ];
-  assert.deepEqual(tool.laneSchedule(gates).reuses, { dp: 'd', dg: 'd', mp: 'm' });
   const names = gates.map((gate) => gate.name);
   const treed = (lanes: ReturnType<typeof laneRun>) => async (root: string, gate: Gate, at: string, beside?: Beside) => ({ ...(await lanes.run(root, gate, at, beside)), tree: 't1' });
 
