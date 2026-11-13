@@ -30,7 +30,7 @@ public sealed class DeployablesCommandTests
 
         Assert.Equal(0, exit);
         var said = output.ToString();
-        Assert.StartsWith("deployables  schema-owner: 2 on `main` at `0123456`, daoris.json blob `a1b2c3d`", said, StringComparison.Ordinal);
+        Assert.StartsWith("deployables  schema-owner: 2 on `main` at `0123456`, daoris.json blob `a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2`", said, StringComparison.Ordinal);
         Assert.Contains("released by deliver/release-api, deploying on start", said, StringComparison.Ordinal);
         Assert.Contains("no release node names it: its target is undeclared", said, StringComparison.Ordinal);
         Assert.Empty(world.Sent);

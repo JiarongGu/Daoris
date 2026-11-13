@@ -28,6 +28,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
         ["wordsKeptFrom"] = null, ["goAheads"] = new JsonArray(), ["reviewChoices"] = null, ["reviewProposals"] = null,
         ["workflowChoices"] = null, ["workflowProposals"] = null, ["short"] = null,
         ["throughWords"] = new JsonArray(new JsonObject { ["words"] = "please do without my accept", ["at"] = "2026-10-19T08:30:00+00:00" }),
+        ["planQuestions"] = new JsonArray(new JsonObject { ["key"] = "contract:viewers", ["kind"] = "open", ["text"] = "Viewers or admins?", ["yes"] = "Both.", ["blocks"] = "The web app.", ["default"] = "Admins." }),
     };
 
     /// <summary>A loop come up over the stand-in service, and its asks' slice.</summary>
@@ -84,7 +85,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
         Assert.Contains("workflowProposals", page);
         Assert.Equal("id", service[0]);
         Assert.Contains("words", service);
-        Assert.Equal("throughWords", service[^1]);
+        Assert.Equal("planQuestions", service[^1]);
         Assert.All(AsksStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(AsksStateSlice.Fields.Intersect(AsksStateSlice.PulledOnly));
         var classed = AsksStateSlice.Fields.Concat(AsksStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);

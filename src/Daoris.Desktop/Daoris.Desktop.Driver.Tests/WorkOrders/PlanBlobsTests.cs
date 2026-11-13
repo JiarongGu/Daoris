@@ -4,6 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>What a shown plan's evidence holds on this machine's line, read from git objects: the blob of each cited file, and nothing for what cannot be read.</summary>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PlanBlobsTests : IAsyncLifetime
 {
@@ -24,7 +27,7 @@ public sealed class PlanBlobsTests : IAsyncLifetime
 
     public Task DisposeAsync()
     {
-        if (Directory.Exists(_folder)) Directory.Delete(_folder, recursive: true);
+        GitSeed.Discard(_folder);
         return Task.CompletedTask;
     }
 
