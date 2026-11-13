@@ -84,7 +84,7 @@ internal static class GitLibraryRefs
     /// LibGit2Sharp's own configuration of a linked tree reads that tree's directory alone. Null where the tree's
     /// <c>config.worktree</c> names a branch or a remote, or a value is not the repository's own.
     /// </summary>
-    private static Dictionary<string, List<string>>? Branching(GitLibraryCall call)
+    internal static Dictionary<string, List<string>>? Branching(GitLibraryCall call)
     {
         var own = Path.Combine(call.GitDir, "config.worktree");
         if (File.Exists(own) && File.ReadAllText(own) is var text
@@ -107,7 +107,7 @@ internal static class GitLibraryRefs
     }
 
     /// <summary>The branch's upstream in full, null where it has none; false where git must say it.</summary>
-    private static bool Upstream(Dictionary<string, List<string>> config, string branch, out string? upstream)
+    internal static bool Upstream(Dictionary<string, List<string>> config, string branch, out string? upstream)
     {
         upstream = null;
         if (!config.TryGetValue($"branch.{branch}.merge", out var merges) || !config.TryGetValue($"branch.{branch}.remote", out var remotes)) return true;
@@ -145,7 +145,7 @@ internal static class GitLibraryRefs
     }
 
     /// <summary>git's strict shortening of a full name: the shortest rule's name that no other rule resolves, else the full name.</summary>
-    private static string Shorten(GitLibraryCall call, string full)
+    internal static string Shorten(GitLibraryCall call, string full)
     {
         for (var rule = Rules.Length - 1; rule > 0; rule--)
         {

@@ -24,11 +24,11 @@ public sealed class GitProcessRuns : IGit
     public async Task<GitAnswer> RunAsync(Ports.Git.GitAsk ask, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        // A read the library answers starts no git. One with variables, an input or a bound of its own is always git's.
-        if (ask.Environment is null && ask.Input is null && ask.Bound == GitBounds.Of(ask.Arguments)
+        // A read the library answers starts no git; one with variables (an empty set is none), an input or a bound of its own is git's.
+        if (ask.Environment is null or { Count: 0 } && ask.Input is null && ask.Bound == GitBounds.Of(ask.Arguments)
             && await GitLibraryReads.AnswerAsync(ask.Folder, ask.Arguments, ct).ConfigureAwait(false) is { } answered)
         {
-            return new GitAnswer(answered.Code, answered.Stdout, "");
+            return new GitAnswer(answered.Code, answered.Stdout, answered.Stderr);
         }
 
         // Counted, classified and timed at the one seam; the arguments go on as they came.

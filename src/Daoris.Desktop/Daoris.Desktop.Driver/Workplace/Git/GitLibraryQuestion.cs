@@ -13,4 +13,6 @@ internal enum GitLibraryQuestion
     Names,
 
     Revisions,
+
+    Layout,
 }

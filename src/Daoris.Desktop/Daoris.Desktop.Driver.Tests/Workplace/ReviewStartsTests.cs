@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The fixtures' origin is added after its repository, so it has no <c>refs/remotes/origin/HEAD</c>: origin's <c>HEAD</c> is read
-/// from git's own files, and the guess at the line starts git for <c>main</c> alone (G2), or none where origin's <c>HEAD</c> is set.
+/// from git's own files, and the guess at the line is the library's, so it starts none.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -41,16 +41,16 @@ public sealed class ReviewStartsTests : LandedFixture
         [.. count.Starts.Where(start => start.Budget is GitBudget.Review or GitBudget.Untracked).Select(start => start.Node)];
 
     [Fact]
-    public async Task The_ordinary_review_starts_seven_and_the_lines_one_guess_before_the_offer()
+    public async Task The_ordinary_review_starts_seven_and_the_lines_guess_none()
     {
         var (_, trees, tree, began) = await TreeAsync();
 
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["own.txt"], review!.Diff!.Files.Select(file => file.Path));
-        // 7: T W S, P, T D, H; and the line's guess, G2 (main), origin's HEAD read unset from its files.
-        Assert.Equal(["T", "W", "S", "P", "G2", "T", "D", "H"], Nodes(count));
-        Assert.Equal(7 + 1, count.In(GitBudget.Review));
+        // 7: T W S, P, T D, H; and the line's guess (main) is the library's, origin's HEAD read unset from its files.
+        Assert.Equal(["T", "W", "S", "P", "T", "D", "H"], Nodes(count));
+        Assert.Equal(7, count.In(GitBudget.Review));
         // The work is beyond the line and nothing landed it, so the offer reads after, in a budget of its own.
         Assert.NotNull(review.Offer);
         Assert.True(count.In(GitBudget.Offer) >= 3, $"the offer started {count.In(GitBudget.Offer)}");
@@ -78,7 +78,7 @@ public sealed class ReviewStartsTests : LandedFixture
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["a.txt", "b.txt", "c.txt"], review!.Uncommitted!.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
-        Assert.Equal(["T", "W", "S", "A", "U", "P", "G2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "A", "U", "P", "T", "D", "H"], Nodes(count));
         Assert.Equal(2, count.In(GitBudget.Untracked));
         TodaysArguments(count);
     }
@@ -94,7 +94,7 @@ public sealed class ReviewStartsTests : LandedFixture
 
         var (_, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["T", "W", "S", "P", "G2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "P", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
@@ -116,7 +116,7 @@ public sealed class ReviewStartsTests : LandedFixture
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["own.txt"], review!.Diff!.Files.Select(file => file.Path));
-        Assert.Equal(["T", "W", "S", "P", "G2", "M", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "P", "M", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
@@ -139,7 +139,7 @@ public sealed class ReviewStartsTests : LandedFixture
 
         var (_, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["T", "W", "S", "E", "P", "G2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "E", "P", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
