@@ -67,7 +67,11 @@ public sealed class McpCheckoutToolTests : McpToolsFixture
                     continue;
                 }
 
-                File.WriteAllText(found[..^".json".Length] + ".answer.json", answer);
+                // The driver writes an answer whole (a file renamed into place): written in place, the tool's poll could read it
+                // empty or half written, and say it answered in a shape it does not read.
+                var answered = found[..^".json".Length] + ".answer.json";
+                File.WriteAllText(answered + ".tmp", answer);
+                File.Move(answered + ".tmp", answered);
                 using var document = JsonDocument.Parse(text);
                 return document.RootElement.Clone();
             }

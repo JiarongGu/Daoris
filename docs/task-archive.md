@@ -13,6 +13,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
 
 > **SAYLINES1** (install, driver host): Outcome: the install's `daoris` is `daoris.exe` (`Daoris.Desktop.Command`), a program that starts the desktop's program with each argument whole, in place of the `daoris` script and `daoris.cmd` (a batch file's arguments end at the first line break); `CommandLauncherProcessTests`, `FreeWordsLineBreakTests` (say, reword, helper, ask, quest) and the shell-word test through cmd and PowerShell prove a line break reaches each verb; and `daoris ask --to <repo> --require` is no longer refused `MISSING_PAYLOAD_VALUE` (the requirement is sent as `{ quote, check }`).
+## GITSTREAM1 — the cancelled-read tests' hang is a textconv helper (2026-11-13)
+
+> **GITSTREAM1** (driver; `GitStreamEndsTests`): Outcome: both cases stand the hang in a `diff.hang.textconv` helper (set by the fixture's attributes) over `diff HEAD~1 HEAD -- hang.txt` and `cat-file --batch --textconv` (its input line names the path after the object), commands the scheduler lets run; the same pass made green the other known reds (limit-move older-build copy, stash drop's session, the driven-move fixture's leak guard, the modules' heard-file read, the connector tool's answer write).
+
+---
 
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
