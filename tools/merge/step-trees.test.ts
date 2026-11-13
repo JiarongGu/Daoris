@@ -1,6 +1,6 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { tool } from '../support/merge-branch.ts';
+import * as tool from './step-trees.ts';
 
 type Ran = { status?: number | null; stdout?: string | null };
 

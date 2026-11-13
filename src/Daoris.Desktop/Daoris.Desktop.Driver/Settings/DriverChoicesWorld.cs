@@ -20,7 +20,7 @@ public sealed record DriverChoicesWorld
     /// <summary>The moment a standing answer is set, and a workflow's version saved.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 
-    /// <summary>Whether an agents' job holds this process (<see cref="OwnAgentJob.Holds"/>), where a write of the person's roles is refused; a test hands its own.</summary>
+    /// <summary>Whether an agents' job holds this process (<see cref="OwnAgentJob.Holds"/>), where the growth switch is not lifted; a test hands its own.</summary>
     public Func<bool?> InAgentJob { get; init; } = OwnAgentJob.Holds;
 
     /// <summary>

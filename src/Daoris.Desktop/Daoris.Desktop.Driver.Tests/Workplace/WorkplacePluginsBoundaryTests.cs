@@ -217,8 +217,8 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     public void The_landing_line_carries_codes_and_counts_alone()
     {
         Assert.Equal(
-            ["session", "repository", "workspace", "code", "commits", "uncommitted"],
-            LandingLine.Auto("s1", "engine", "aurora", "landed", 1, 0).Data.Select(each => each.Key));
+            ["session", "repository", "workspace", "code", "commits", "uncommitted", "run"],
+            LandingLine.Auto("s1", "engine", "aurora", "landed", 1, 0, "q1").Data.Select(each => each.Key));
     }
 
     [Fact]

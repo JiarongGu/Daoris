@@ -281,9 +281,9 @@ public sealed class PipeStandingTests : Bridge
         Assert.Contains(Lines("supervisor.refused"), line => line.GetProperty("data").GetProperty("why").GetString() == SupervisorWhy.NotHolder);
     }
 
-    /// <summary>A caller in an agent's job is refused before its proof is read, and a role act no terminal holds is refused.</summary>
+    /// <summary>A holder in an agent's job acts by its proof, and a role act no terminal holds is refused.</summary>
     [Fact]
-    public async Task A_contained_caller_and_a_dark_build_are_refused_before_any_proof()
+    public async Task A_contained_holder_acts_and_a_dark_build_covers_nothing()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -295,9 +295,9 @@ public sealed class PipeStandingTests : Bridge
         ((StandingConfirmationTests.Placed)judge.Caller).Answer = StandingPlace.InAgentJob;
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
         var nonce = NonceOf(await client.HelloAsync(HomeId))!;
-        var refused = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, nonce, generation)));
-        Assert.Equal(StandingWhy.InAgentJob, CodeOf(refused));
-        Assert.Empty(driver.Seen);
+        var ran = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, nonce, generation)));
+        Assert.True(ran.GetProperty("success").GetBoolean());
+        Assert.Single(driver.Seen);
 
         // A home's own judge over the seed's catalogue: your rules alone hold the supervisor, so nothing is covered whatever is sent.
         using var darkLog = new MachineLog(Home, "dark");
@@ -313,7 +313,7 @@ public sealed class PipeStandingTests : Bridge
             var darkNonce = NonceOf(await darkClient.HelloAsync(HomeIdentity.Read(Path.Combine(Home, "dark-home"))!))!;
             var answer = await darkClient.AnswerAsync(await darkClient.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, darkNonce, generation)));
             Assert.Equal(SupervisorWhy.NotStaffed, CodeOf(answer));
-            Assert.Empty(driver.Seen);
+            Assert.Single(driver.Seen);
         }
     }
 

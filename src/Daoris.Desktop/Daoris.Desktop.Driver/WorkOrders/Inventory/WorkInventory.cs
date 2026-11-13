@@ -233,7 +233,7 @@ public static partial class WorkInventory
             if (!attached.TryGetValue(found.Id, out var list)) attached[found.Id] = list = [];
             list.Add(tree);
             treeOf[Full(tree.Path)] = found.Id;
-            // Each session that recorded the tree executed its unit, after what its landings name.
+            // Each session that recorded the tree executed its unit; UnitExecutors orders them with what its landings name.
             if (!aside && !found.Unowned)
             {
                 foreach (var recorder in RecordedBy(facts, tree)) found.Sessions.Add(recorder);
@@ -411,7 +411,7 @@ public static partial class WorkInventory
             new WorkOwner(draft.Repository, draft.Workspace, record, record == WorkRecord.Sessions ? WorkRecord.ServiceWriter : WorkRecord.DriverWriter),
             new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch ?? draft.Standing, end.Revision), end, entries)
         {
-            Executors = [.. draft.Sessions],
+            Executors = UnitExecutors.OldestFirst(draft.Sessions, facts.Recorded),
             Links = quests,
             Records = new WorkUnitRecords(branch, [.. draft.Landings], null),
         };

@@ -11,10 +11,9 @@ namespace Daoris.Driver;
 /// write, since no one else owns it. Never a session tree, and never asked about by git — it is no
 /// repository, and git asked about it walks UP.</para>
 ///
-/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and presses Daoris's verb, and what it is
-/// handed at spawn reads the checkouts reading across allows, and nothing else: over the protocol
-/// door anything unlisted is refused by construction. A change is the person's, on a screen or at a
-/// terminal; a press waits on the card the person confirms.</para>
+/// <para><b>What runs unasked.</b> Its allow-list reads the family and presses Daoris's verb, and what it is
+/// handed at spawn reads the checkouts reading across allows; in restricted mode anything else is asked by its harness and held
+/// for the person, on either door.</para>
 ///
 /// <para><b>By section.</b> What it says is <see cref="HelpRoomSections.All"/>, in order: each section a
 /// file of its own under <c>Knowledge/Room/</c> that says one thing and describes the facts it says, so a new
@@ -44,11 +43,9 @@ public static class HelpRoom
     /// (<see cref="HelpAccess"/>), only by the person's choice.
     /// </summary>
     /// <remarks>
-    /// 🔴 A session runs in its harness's own <c>auto</c> mode, which judges each action
-    /// itself — and the first real conversation ran shell commands under it, reading a checkout to
-    /// research its answer. A helper that can run a command can run <c>daoris …</c>, a change
-    /// nobody confirmed. In this mode every tool off the room's allow-list asks, and over the
-    /// protocol door every ask is refused by construction. Never wider than the agent's default.
+    /// In this mode every tool off the room's allow-list asks, and each ask is held for the person (<see cref="ChatHolds"/> on the
+    /// protocol door, the ask hook on the native one), drawn under the conversation where they answer it. Never wider than the
+    /// agent's default.
     /// </remarks>
     public const string Posture = "default";
 
@@ -171,15 +168,15 @@ public static class HelpRoom
     /// <param name="reads">
     /// The checkouts it may read (the readable ones the person left on): with any, the connector's <c>checkout_read</c>, whose
     /// every call the driver judges (<see cref="HelpCheckouts"/>). Never a <c>Read</c> rule or a git prefix on a checkout,
-    /// which held no agent that takes no rules; anything else is asked in its mode, and refused.
+    /// which held no agent that takes no rules; anything else is asked in its mode and held for the person.
     /// </param>
     /// <param name="plugins">
     /// The tools of the servers plugins hand it that it may call, as the person approved them:
     /// <see cref="HelpGrantSet.Allow"/>, each a server's tool and nothing else. The person's denies still win.
     /// </param>
     /// <param name="asked">
-    /// The writes of an approved server the person did not accept (<see cref="HelpGrantSet.Ask"/>): asked, which its asking mode
-    /// refuses, so a write is never made silently.
+    /// The writes of an approved server the person did not accept (<see cref="HelpGrantSet.Ask"/>): asked, and held for the person,
+    /// so a write is never made silently.
     /// </param>
     /// <param name="workspace">
     /// The workspace its tools are bound to (<see cref="HelpCircle"/>), whose denies the person wrote it is handed;

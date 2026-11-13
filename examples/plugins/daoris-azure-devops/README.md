@@ -147,6 +147,8 @@ Its options, where a repository's values over a shared workflow set them:
 
 | Option | What it says |
 |---|---|
+| `deployable` | the deployable the node releases, as its repository's `daoris.json` declares it; its holds and outcomes name it |
+| `deploysOn` | the earliest act that deploys into the target: `push`, `pull-request`, `merge` or `start`; `push` where not set, so every exposing act waits |
 | `pipeline` | the build pipeline's id; required |
 | `releaseDefinition` | the classic release definition's id, or `none` for the pipeline run's own stages; required |
 | `stage` | the stage: the definition's stage id, or with `none` the run's stage identifier; required |
@@ -157,6 +159,17 @@ Its options, where a repository's values over a shared workflow set them:
 
 An attempt a process before this one began is taken up from its start: it reads the release and the stage before it makes or starts
 either, so nothing is made or started twice.
+
+A repository with two deployables on one build (a schema's migration and its API, say) has two release nodes, each naming its
+deployable and its own stage; a declared pipeline Azure DevOps no longer holds fails `target-changed` like a definition gone.
+
+### `discover-releases`
+
+A read, marked as a tool and never a write: given the repository's origin (and a pipeline's id to narrow it), it lists each pipeline,
+the release definitions taking its builds with their links, their continuous-deployment branches, and each stage in rank with the
+stages whose success starts it and a proposed `deploysOn` (`merge` where a release's creation starts the stage and CD takes named
+branches, `push` where CD takes every branch, `start` otherwise). It answers the same list as `data`, and says it is candidates only:
+the person or the planner declares a target from it; the command chooses none. A release step's hold lists what it finds the same way.
 
 ## The token
 

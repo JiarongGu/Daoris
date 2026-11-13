@@ -157,21 +157,20 @@ public sealed class PersonDoorTableTests
         ("DELETE", "/api/asks/{id}", Agent),
         ("DELETE", "/api/quests/{id}", Agent),
         ("DELETE", "/api/sessions/{id}", Agent),
-        ("POST", "/api/sessions/{id}/release-place", Person),
-        ("POST", "/api/history/clear", Person),
-        // Only the person starts one, sends its packet and clears it; an agent asks them instead.
-        ("POST", "/api/brainstorms", Person),
-        ("POST", "/api/brainstorms/{id}/send", Person),
-        ("POST", "/api/brainstorms/{id}/stop", Person),
-        ("DELETE", "/api/brainstorms/{id}", Person),
+        ("POST", "/api/sessions/{id}/release-place", Agent),
+        ("POST", "/api/history/clear", Agent),
+        ("POST", "/api/brainstorms", Agent),
+        ("POST", "/api/brainstorms/{id}/send", Agent),
+        ("POST", "/api/brainstorms/{id}/stop", Agent),
+        ("DELETE", "/api/brainstorms/{id}", Agent),
         ("POST", "/api/quests/{id}/conflicts/dismiss", Agent),
         // A bring-forward of a machine's lost take; a local host's alone.
         ("POST", "/api/quests/{id}/conflicts/forward", Agent),
-        ("POST", "/api/sync/machines/{machine}/retire", Person),
-        ("DELETE", "/api/registry/{repository}", Person),
-        ("POST", "/api/registry/{repository}/workspace", Person),
-        ("POST", "/api/registry/{repository}/excludes", Person),
-        ("POST", "/api/registry/import", Person),
+        ("POST", "/api/sync/machines/{machine}/retire", Agent),
+        ("DELETE", "/api/registry/{repository}", Agent),
+        ("POST", "/api/registry/{repository}/workspace", Agent),
+        ("POST", "/api/registry/{repository}/excludes", Agent),
+        ("POST", "/api/registry/import", Agent),
         ("POST", "/api/confirmations/{id}/confirm", Person),
         ("POST", "/api/confirmations/{id}/refuse", Person),
 
@@ -197,11 +196,11 @@ public sealed class PersonDoorTableTests
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
         Assert.Equal(40, Routes.Count(route => route.Class == Open));
-        // An outside agent's read, post and leave, and the person's admission of it.
-        Assert.Equal(14, Routes.Count(route => route.Class == Agent));
+        // An outside agent's read, post and leave, the person's admission of it, and every door no workflow step waits on.
+        Assert.Equal(25, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(34, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(35, Routes.Count(route => route.Class == Person));
+        Assert.Equal(24, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

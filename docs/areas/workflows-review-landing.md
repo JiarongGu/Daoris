@@ -20,6 +20,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
+| `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
 | `Review/` | The look and the opinion (`Review/Domain/`), entry Accepts, the session-tree gates, the heavy executor |
@@ -42,6 +43,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options (`NodeValues`)
    wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
    binding stay the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
+3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
+   (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
+   and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
+   an entry that does not read is left out and said, the others stand). A release node's values name the deployable under
+   `deployable` and the earliest act that deploys into its target under `deploysOn` (`push`, `pull-request`, `merge` or `start`; read
+   as `push` where undeclared, so every exposing act waits); a repository with two deployables on one build has two release nodes.
+   `DeployableTargets` keys each deployable to the nodes naming it: undeclared where none does, several where two of one workflow do,
+   and a node naming a deployable the manifest does not declare is said. Daoris reads those two names alone; the target's ids are the
+   release step's plugin's to resolve. `daoris repository deployables <repository>` says it, writing nothing. (D290)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
    every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
@@ -176,7 +186,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     hold and the delivery key, so a press and a pass land one delivery; with no review before it, it goes active with no press.
     One whose subject moved runs again at the new tip once every delivery at the old reads certain. Branch-side steps bind the tip
     of the branch the work stands on, read in the tree of its newest executor; a hold keeps its reason on the node, said by the
-    plan and the run view. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
+    plan and the run view. A unit's executors are oldest first by when their records were made, and the `land` judges the newest
+    with a tree by that time (`LandSessions`), so a session that went on in a tree stands for the one it went on from and a branch
+    already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, and
+    each `landing.auto` line names the run whose `land` tried it. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
     without replay, saying the proof (`LineHolds`). Where the tip no longer reads, an unbound step takes the commit its session
     branch records the line holding, so work merged outside the run ends it. `claimed` reaches at the first whole look reading its
     quest done, by any session. A merge whose tree is gone plans to the settings' line, else the one its branch grew from. (D227)
@@ -380,3 +393,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-PIPELINE1 g, h**: this repository's pipeline on the install, a stage after the check.
 - **WORKFLOWEDIT1c**, **LANDNODE1j**, **REVIEWFLOW1c**, **LANDPRESS1**: the installed window.
 - **PROCSTEPS1** (`docs/2026-11-09-process-steps-design.md`): `resolve`'s loop resolvers, `merge`, `tidy`'s removals, the cut-over.
+- **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
+  its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
+  production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes
+  is judged and journaled; until then nothing reads a `wait.unit`'s commitment at run time and an ask's release order is kept by hand.
