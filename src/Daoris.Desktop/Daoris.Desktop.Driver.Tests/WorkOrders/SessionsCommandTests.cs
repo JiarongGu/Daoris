@@ -463,16 +463,11 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(SessionsCommand.JsonPartFields, parts[1].EnumerateObject().Select(field => field.Name));
     }
 
-    /// <summary>
-    /// A session whose tree holds commits no branch of the person's holds offers its landing at the terminal as on the
-    /// screen: <c>--json</c> carries the reader's <c>lands</c> whole, and the listing's line names the branch, its tree and
-    /// the door that accepts it, whatever group the session rests in. A row with none says nothing of landing.
-    /// </summary>
+    /// <summary>A session whose tree holds commits no branch holds offers its landing in <c>--json</c>; the listing's line is <c>LandingHintTests</c>'s.</summary>
     [Fact]
     public void A_session_with_commits_to_land_names_its_branch_its_tree_and_the_door()
     {
         var failed = new SessionGrouping("f41led00", SessionGroup.Done, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
-        var finished = new SessionGrouping("f1n1sh00", SessionGroup.Done, "completed") { Lands = new LandOffer("daoris/s-56cb4d29", "s-56cb4d29", 2, null) };
         var bare = new SessionGrouping("n0th1ng0", SessionGroup.Done, "failed");
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([failed, bare]));
@@ -482,15 +477,6 @@ public sealed class SessionsCommandTests : IDisposable
             (lands.GetProperty("branch").GetString(), lands.GetProperty("tree").GetString(), lands.GetProperty("commits").GetInt32(),
                 lands.GetProperty("uncommitted").GetInt32()));
         Assert.Equal(JsonValueKind.Null, rows[1].GetProperty("lands").ValueKind);
-
-        var record = new SessionRecord("f41led00", "engine", "failed") { Quest = "q1" };
-        Assert.Contains(
-            "1 commit on daoris/s-4e6837ed in its tree s-4e6837ed, not landed: daoris tree land f41led00",
-            SessionsCommand.Facts(failed, record));
-        Assert.Contains(
-            "2 commits on daoris/s-56cb4d29 in its tree s-56cb4d29, not landed: daoris tree land f1n1sh00",
-            SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
-        Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("land", StringComparison.Ordinal));
     }
 
     /// <summary><c>--json</c> carries the branch a moved tree is on in <c>work</c>, as the screen's answer does.</summary>

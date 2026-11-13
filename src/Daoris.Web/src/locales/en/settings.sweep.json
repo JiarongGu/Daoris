@@ -22,7 +22,7 @@
   "settings.sweep.kind.dirty": "Its tree has uncommitted work.",
   "settings.sweep.kind.inUse": "A session still running or waiting holds its tree.",
   "settings.sweep.kind.other": "Judged `{{kind}}`: a word unknown to this window.",
-  "settings.sweep.lands": "From session `{{session}}` ({{state}}), its tree still here: its page offers Accept, which lands it, as `daoris tree land {{session}}` does.",
+  "settings.sweep.lands": "From session `{{session}}` ({{state}}), its tree still here: its page offers Accept, which lands it, as its run's Accept does from a terminal: `daoris workflow run --session {{session}}` opens it.",
   "settings.sweep.clean": "Clean up {{count}} branch",
   "settings.sweep.clean_other": "Clean up {{count}} branches",
   "settings.sweep.look": "Look again",

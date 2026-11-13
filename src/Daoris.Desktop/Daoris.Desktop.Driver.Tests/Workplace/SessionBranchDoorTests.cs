@@ -72,7 +72,7 @@ public sealed class SessionBranchDoorTests : IDisposable
 
         Assert.Equal(tree && state is not null ? "4e6837ed" : null, session?.Id);
         if (!offered) Assert.Null(offer);
-        else Assert.Equal($"if its work is wanted: `daoris tree land 4e6837ed` accepts it (session 4e6837ed, {state}, its tree here)", offer);
+        else Assert.Equal($"if its work is wanted: its run's Accept lands it, `daoris workflow run --session 4e6837ed` opens the run (session 4e6837ed, {state}, its tree here)", offer);
     }
 
     /// <summary>Records the service does not answer name no session, so a clean-up's list stands without its landing lines.</summary>
