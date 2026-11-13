@@ -339,6 +339,11 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Desktop.Driver",
       "kind": "project"

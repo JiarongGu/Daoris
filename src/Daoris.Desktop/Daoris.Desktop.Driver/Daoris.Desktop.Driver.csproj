@@ -21,14 +21,12 @@
     <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
   </ItemGroup>
 
-  <!-- The effect contracts the driver depends on and the adapters implement. Git's port is named by its types, since the driver
-       has a `GitAsk` of its own. -->
+  <!-- The effect contracts the driver depends on and the adapters implement. -->
   <ItemGroup>
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
     <Using Include="Daoris.Ports.Store" />
-    <Using Include="Daoris.Ports.Git.GitWait" Alias="GitWait" />
     <Using Include="System.Data.Common" />
   </ItemGroup>
 
