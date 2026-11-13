@@ -492,8 +492,12 @@ public sealed class ProcessStartsCensusTests
         Assert.Single(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", marked)]).Problems);
     }
 
-    /// <summary>Every production source of the desktop's projects, by its path under the desktop folder, comments read out.</summary>
-    private static IEnumerable<(string File, string Source)> Sources()
+    private static readonly Lazy<IReadOnlyList<(string File, string Source)>> Read = new(() => [.. ReadSources()]);
+
+    /// <summary>Every production source of the desktop's projects, by its path under the desktop folder, comments read out: read once a run.</summary>
+    private static IEnumerable<(string File, string Source)> Sources() => Read.Value;
+
+    private static IEnumerable<(string File, string Source)> ReadSources()
     {
         var root = EveryChildIsHandedTheToolsTests.SourceRoot();
         foreach (var project in Projects)

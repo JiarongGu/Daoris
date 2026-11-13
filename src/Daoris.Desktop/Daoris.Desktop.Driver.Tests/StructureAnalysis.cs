@@ -16,7 +16,8 @@ internal sealed record StaticRule(string File, int Line, string Member);
 
 /// <summary>
 /// What the structure gate reads of the driver's sources through Roslyn's semantic model: one compilation of
-/// every source over the base library and the store's SQLite package, which are all the driver references, and, in it, each name that binds to a type a source declares
+/// every source over the base library and the store's SQLite package, which are all the driver references (for the driver's own tree,
+/// the declarations' compilation of it, <see cref="DesktopCompilations"/>), and, in it, each name that binds to a type a source declares
 /// as an edge from the file that names it to the file that declares the type. The binding is the compiler's, so every spelling of a
 /// reference is one (plain, namespace-qualified, <c>global::</c>-qualified, through an alias or a static import), a member's occurrence is
 /// the member's and no type's whatever it is called, and a <c>record struct</c> is a struct. A comment, a string and a <c>cref</c> are no
@@ -64,6 +65,9 @@ internal sealed class StructureAnalysis
     });
 
     private readonly CSharpCompilation _compilation;
+    private readonly IReadOnlyList<SyntaxTree> _walked;
+    private readonly HashSet<string> _walkedPaths;
+    private readonly string _folder;
     private sealed record TypeDescription(string Name, IReadOnlyList<string> Files);
     private readonly ConcurrentDictionary<INamedTypeSymbol, Lazy<TypeDescription>> _descriptions = new(SymbolEqualityComparer.Default);
 
@@ -75,9 +79,12 @@ internal sealed class StructureAnalysis
 
     internal int SymbolQueries => _symbolQueries;
 
-    private StructureAnalysis(CSharpCompilation compilation)
+    private StructureAnalysis(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> walked, string folder)
     {
         _compilation = compilation;
+        _walked = walked;
+        _walkedPaths = walked.Select(tree => tree.FilePath).ToHashSet(StringComparer.Ordinal);
+        _folder = folder;
     }
 
     /// <summary>Every name bound to a type another file declares, once per file and type, in order of file and line.</summary>
@@ -95,11 +102,13 @@ internal sealed class StructureAnalysis
     /// <summary>Each top-level type a source declares, by name.</summary>
     public IReadOnlySet<string> DeclaredTypes { get; private set; } = new HashSet<string>();
 
-    /// <summary>The compiler's errors over the sources, by id, with a count and one example each: what the binding could not resolve.</summary>
+    /// <summary>The compiler's errors over the walked sources, by id, with a count and one example each: what the binding could not resolve.</summary>
     public IReadOnlyDictionary<string, (int Count, string Example)> Errors()
     {
         var found = new SortedDictionary<string, (int Count, string Example)>(StringComparer.Ordinal);
-        foreach (var diagnostic in _compilation.GetDiagnostics().Where(each => each.Severity == DiagnosticSeverity.Error))
+        var left = _compilation.SyntaxTrees.Where(tree => tree.FilePath != "<implicit usings>" && !_walkedPaths.Contains(tree.FilePath)).ToHashSet();
+        foreach (var diagnostic in _compilation.GetDiagnostics()
+                     .Where(each => each.Severity == DiagnosticSeverity.Error && !(each.Location.SourceTree is { } tree && left.Contains(tree))))
         {
             found.TryGetValue(diagnostic.Id, out var seen);
             found[diagnostic.Id] = (seen.Count + 1, seen.Count == 0 ? diagnostic.ToString() : seen.Example);
@@ -120,21 +129,30 @@ internal sealed class StructureAnalysis
             [implicitUsings, .. trees],
             BaseLibrary.Value,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable, allowUnsafe: true));
-        var analysis = new StructureAnalysis(compilation);
-        analysis.Read(trees, reuse: true);
+        return Over(compilation, trees, "");
+    }
+
+    /// <summary>The analysis of <paramref name="walked"/> trees of a shared compilation, named under <paramref name="folder"/>; an unwalked tree's types are no edge's.</summary>
+    internal static StructureAnalysis Over(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> walked, string folder)
+    {
+        var analysis = new StructureAnalysis(compilation, walked, folder);
+        analysis.Read(reuse: true);
         return analysis;
     }
 
     /// <summary>The original repeated work over the very same compilation, retained as an equivalence oracle.</summary>
     internal StructureAnalysis WithoutReuse()
     {
-        var analysis = new StructureAnalysis(_compilation);
-        analysis.Read(_compilation.SyntaxTrees.Where(tree => tree.FilePath != "<implicit usings>").ToList(), reuse: false);
+        var analysis = new StructureAnalysis(_compilation, _walked, _folder);
+        analysis.Read(reuse: false);
         return analysis;
     }
 
-    private void Read(List<SyntaxTree> trees, bool reuse)
+    private string Named(string path) => path.StartsWith(_folder, StringComparison.Ordinal) ? path[_folder.Length..] : path;
+
+    private void Read(bool reuse)
     {
+        var trees = _walked;
         // A name can only bind to a type that has its name, or an alias, or an attribute written without its suffix: so only those
         // names are asked of the compiler, which leaves what it binds untouched and the walk to a fraction of every name.
         var named = new HashSet<string>(StringComparer.Ordinal);
@@ -175,8 +193,9 @@ internal sealed class StructureAnalysis
         var globals = new ConcurrentBag<(string File, int Line, string Name)>();
         Parallel.ForEach(trees, tree =>
         {
-            var model = _compilation.GetSemanticModel(tree);
+            var model = SharedModels.Of(_compilation, tree);
             var root = tree.GetRoot();
+            var file = Named(tree.FilePath);
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var satisfied = new HashSet<string>(StringComparer.Ordinal);
             foreach (var node in root.DescendantNodes())
@@ -185,20 +204,20 @@ internal sealed class StructureAnalysis
                 {
                     case SimpleNameSyntax name when named.Contains(name.Identifier.ValueText) && !(name is IdentifierNameSyntax { IsVar: true })
                         && (!reuse || !satisfied.Contains(name.Identifier.ValueText)):
-                        if (Bind(model, tree, name, seen, edges, reuse) && unique.Contains(name.Identifier.ValueText)) satisfied.Add(name.Identifier.ValueText);
+                        if (Bind(model, file, name, seen, edges, reuse) && unique.Contains(name.Identifier.ValueText)) satisfied.Add(name.Identifier.ValueText);
                         break;
                     case MethodDeclarationSyntax method when method.Modifiers.Any(SyntaxKind.StaticKeyword)
                         && !method.Modifiers.Any(SyntaxKind.AsyncKeyword)
                         && method.ReturnType.ToString() is "bool" or "bool?":
-                        rules.Add(new(tree.FilePath, Line(tree, method), $"{OwnerOf(method)}.{method.Identifier.ValueText}"));
+                        rules.Add(new(file, Line(tree, method), $"{OwnerOf(method)}.{method.Identifier.ValueText}"));
                         break;
                     case UsingDirectiveSyntax { GlobalKeyword.RawKind: not 0 } global:
-                        globals.Add((tree.FilePath, Line(tree, global), global.NamespaceOrType.ToString().Replace("global::", "", StringComparison.Ordinal)));
+                        globals.Add((file, Line(tree, global), global.NamespaceOrType.ToString().Replace("global::", "", StringComparison.Ordinal)));
                         break;
                 }
             }
 
-            if (root.DescendantTokens().Any(token => token.IsKind(SyntaxKind.AsyncKeyword))) asyncFiles.Add(tree.FilePath);
+            if (root.DescendantTokens().Any(token => token.IsKind(SyntaxKind.AsyncKeyword))) asyncFiles.Add(file);
         });
 
         Edges = edges.OrderBy(edge => edge.File, StringComparer.Ordinal).ThenBy(edge => edge.Line).ThenBy(edge => edge.Type, StringComparer.Ordinal).ToList();
@@ -225,7 +244,7 @@ internal sealed class StructureAnalysis
         node.Ancestors().OfType<BaseTypeDeclarationSyntax>().FirstOrDefault()?.Identifier.ValueText ?? "";
 
     /// <summary>Takes the type a name binds to, when it is one a source declares in another file, as an edge.</summary>
-    private bool Bind(SemanticModel model, SyntaxTree tree, SimpleNameSyntax name, HashSet<string> seen, ConcurrentBag<TypeEdge> edges, bool reuse)
+    private bool Bind(SemanticModel model, string file, SimpleNameSyntax name, HashSet<string> seen, ConcurrentBag<TypeEdge> edges, bool reuse)
     {
         Interlocked.Increment(ref _symbolQueries);
         var symbol = model.GetSymbolInfo(name).Symbol;
@@ -240,8 +259,8 @@ internal sealed class StructureAnalysis
         var description = reuse
             ? _descriptions.GetOrAdd(original, static (symbol, analysis) => new(() => analysis.Describe(symbol)), this).Value
             : Describe(original);
-        if (description.Files.Count == 0 || description.Files.Contains(tree.FilePath, StringComparer.Ordinal)) return false;
-        if (seen.Add(description.Name)) edges.Add(new(tree.FilePath, Line(tree, name), description.Name, description.Files));
+        if (description.Files.Count == 0 || description.Files.Contains(file, StringComparer.Ordinal)) return false;
+        if (seen.Add(description.Name)) edges.Add(new(file, Line(name.SyntaxTree, name), description.Name, description.Files));
         return true;
     }
 
@@ -249,7 +268,7 @@ internal sealed class StructureAnalysis
     {
         Interlocked.Increment(ref _typeDescriptionsRead);
         var files = original.DeclaringSyntaxReferences.Select(reference => reference.SyntaxTree.FilePath)
-            .Where(path => path != "<implicit usings>").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            .Where(_walkedPaths.Contains).Select(Named).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         var parts = new Stack<string>();
         for (var at = original; at is not null; at = at.ContainingType) parts.Push(at.Name);
         return new(string.Join('.', parts), files);
