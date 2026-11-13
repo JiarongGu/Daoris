@@ -366,7 +366,7 @@ are roots that wire and grow by a one-line door at most.
 | a part of the look | a pass of its own marked `[LookPass]`, reaching the driver on `ILookWiring`, sharing on `LookState` written by one pass | `DriverPartsTests` |
 | a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
 | a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
-| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs: a look's stages add up to it, a warm look under 2 s), `NodeWakesTests` |
+| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs: a look's stages add up to it, a warm look under half the cold one), `NodeWakesTests` |
 | what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |

@@ -111,6 +111,6 @@ public sealed class GitLibraryHoldTests : LandedFixture
         var sentToGit = string.Join(", ", GitLibraryJournal.Of(root)?.Reasons.Select(each => $"{each.Key} {each.Value}") ?? []);
         Assert.True(answered > 0, $"the library answered no read; they went to git: {sentToGit}");
         Assert.All(overlapped, each => Assert.True(each, $"a command ran with no library read beside it: {answered} answered of {begun}; the others went to git: {sentToGit}"));
-        Assert.Equal(0, GitLibrary.Open);
+        Assert.Equal(0, GitLibrary.OpenIn(root));
     }
 }

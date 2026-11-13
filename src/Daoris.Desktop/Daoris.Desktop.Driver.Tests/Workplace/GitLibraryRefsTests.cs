@@ -63,11 +63,11 @@ public sealed class GitLibraryRefsTests : LandedFixture
             Assert.Null(GitLibraryAdmission.RefusalOf(folder, GitLibraryQuestion.Refs));
             Assert.Equal(git, await GitLibraryRefs.ListingAsync(folder, CancellationToken.None));
             Assert.Equal(git, await RefSnapshot.ReadAsync(folder, CancellationToken.None));
+            Assert.Equal(0, GitLibrary.OpenIn(folder));
         }
 
         Assert.Contains("refs/heads/main ", (await GitListingAsync(root))!);
         Assert.Contains(" refs/remotes/origin/main remotes/origin/main ", (await GitListingAsync(root))!);
-        Assert.Equal(0, GitLibrary.Open);
     }
 
     [GitLegFact]
@@ -77,7 +77,7 @@ public sealed class GitLibraryRefsTests : LandedFixture
         var most = 0;
         var calls = Enumerable.Range(0, 40).Select(_ => GitLibrary.AskAsync(root, GitLibraryQuestion.Refs, call =>
         {
-            var open = GitLibrary.Open;
+            var open = GitLibrary.OpenIn(root);
             InterlockedMax(ref most, open);
             Thread.Sleep(20);
             return call.Repository.Head.CanonicalName;
@@ -85,7 +85,7 @@ public sealed class GitLibraryRefsTests : LandedFixture
 
         Assert.All(await Task.WhenAll(calls), head => Assert.Equal("refs/heads/main", head));
         Assert.InRange(most, 2, GitLibrary.AtOnce);
-        Assert.Equal(0, GitLibrary.Open);
+        Assert.Equal(0, GitLibrary.OpenIn(root));
 
         static void InterlockedMax(ref int most, int seen)
         {
@@ -94,6 +94,25 @@ public sealed class GitLibraryRefsTests : LandedFixture
                 if (Interlocked.CompareExchange(ref most, seen, was) == was) return;
             }
         }
+    }
+
+    [GitLegFact]
+    public async Task A_repository_held_open_over_one_folder_is_not_counted_over_another()
+    {
+        var held = await BuildRepositoryAsync("held");
+        var other = await BuildRepositoryAsync("other");
+        using var release = new ManualResetEventSlim();
+        using var inside = new ManualResetEventSlim();
+        var holding = GitLibrary.AskAsync(held, GitLibraryQuestion.Refs, _ => { inside.Set(); release.Wait(); return "held"; }, CancellationToken.None);
+        inside.Wait();
+
+        Assert.Equal((1, 0), (GitLibrary.OpenIn(held), GitLibrary.OpenIn(other)));
+        Assert.NotNull(await GitLibraryRefs.ListingAsync(other, CancellationToken.None));
+        Assert.Equal(0, GitLibrary.OpenIn(other));
+
+        release.Set();
+        await holding;
+        Assert.Equal(0, GitLibrary.OpenIn(held));
     }
 
     [GitLegFact]

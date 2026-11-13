@@ -3,10 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A chat in a repository is told its routing standing in
-/// its standing block, with its first message, and the record keeps a note of the block; a go-on resumes the same conversation and is never
-/// handed it again. A real process (node) on the protocol door, with no model and no account, and the in-process ledger of
-/// <see cref="ChatGoOnTests"/>.
+/// A chat in a repository is told its routing standing in its standing block, with its first message, and the record keeps a note of
+/// it; a go-on is never handed it again. A real process (node) on the protocol door, and the ledger of <see cref="ChatGoOnTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -28,7 +26,14 @@ public sealed class ChatRoutingProcessTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private string HeardText() => File.Exists(Heard) ? File.ReadAllText(Heard) : "";
+    /// <summary>Read shared for writing: a read that denies the stand-in's append makes it throw, and its note is lost.</summary>
+    private string HeardText()
+    {
+        if (!File.Exists(Heard)) return "";
+        using var file = new FileStream(Heard, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(file);
+        return reader.ReadToEnd();
+    }
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
