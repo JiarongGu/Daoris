@@ -112,6 +112,8 @@ public sealed class RepositoryCreateGrowthTests : IDisposable
 
         public Task<CreateAuthor?> AuthorOfAsync(RepoView row, CancellationToken ct) => Task.FromResult<CreateAuthor?>(Fixture);
 
+        public Task<CreateAuthor?> GitOwnAuthorAsync(string directory, CancellationToken ct) => Task.FromResult<CreateAuthor?>(null);
+
         public string? RemoteStepOf(DriverConfig config, string repository, string workspace) => null;
 
         public Task<(bool Ok, string Message)> RegisterAsync(JsonObject body, CancellationToken ct) => Task.FromResult((true, ""));
