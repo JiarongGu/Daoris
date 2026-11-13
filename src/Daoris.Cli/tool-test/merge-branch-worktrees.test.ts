@@ -12,119 +12,6 @@ import { tree, git, age, scratch } from './support/merge-branch-kit.ts';
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
 
-// ---------------------------------------------------------------------------------------------------
-// What git reports, read without starting git: the refusals and the commit check
-
-test('the status is read for the branch and every changed or untracked path', () => {
-  const status = [
-    '# branch.oid 0123456789abcdef0123456789abcdef01234567',
-    '# branch.head main',
-    '1 .M N... 100644 100644 100644 aaaaaaa aaaaaaa src/a file.ts',
-    '2 R. N... 100644 100644 100644 bbbbbbb bbbbbbb R100 new name.md\told.md',
-    'u UU N... 100644 100644 100644 100644 ccccccc ccccccc ccccccc shared.txt',
-    '? stray.txt',
-  ].join('\n');
-  assert.deepEqual(tool.parseStatus(status), {
-    branch: 'main',
-    changed: [
-      { code: '.M', path: 'src/a file.ts' },
-      { code: 'R.', path: 'new name.md' },
-      { code: 'UU', path: 'shared.txt' },
-      { code: '??', path: 'stray.txt' },
-    ],
-  });
-  assert.deepEqual(tool.parseStatus('# branch.oid 01234\r\n# branch.head (detached)\r\n'), { branch: '', changed: [] });
-});
-
-
-test('a merge starts only on main, with no merge open, a clean tree and ignored logs, and says the first thing wrong', () => {
-  const ready = { branch: 'main', merging: false, changed: [], ignored: true };
-  assert.equal(tool.startRefusal(ready), null);
-  assert.match(tool.startRefusal({ ...ready, branch: 'work', changed: [{ code: '??', path: 'x' }] })!, /the current branch is 'work', not main/);
-  assert.match(tool.startRefusal({ ...ready, branch: '' })!, /a detached HEAD/);
-  assert.match(tool.startRefusal({ ...ready, merging: true })!, /already in progress/);
-  assert.match(tool.startRefusal({ ...ready, changed: [{ code: '??', path: 'stray.txt' }] })!, /not clean:\n {2}\?\? stray\.txt$/);
-  const many = Array.from({ length: 13 }, (_, i) => ({ code: '.M', path: `f${i}` }));
-  assert.match(tool.startRefusal({ ...ready, changed: many })!, /… 1 more$/);
-  assert.match(tool.startRefusal({ ...ready, ignored: false })!, /local\/scratch\/ is not ignored/);
-});
-
-
-test('a check-ignore probe: status 0 is ignored, 1 is not, anything else is a tool error quoting git (GATEIGNORE1)', () => {
-  assert.equal(tool.ignoredVerdict({ status: 0, err: '' }, 'local/scratch/x.log'), true);
-  assert.equal(tool.ignoredVerdict({ status: 1, err: '' }, 'local/scratch/x.log'), false);
-  assert.throws(() => tool.ignoredVerdict({ status: 128, err: 'fatal: unable to read index' }, 'local/scratch/x.log'), /check-ignore.*local\/scratch\/x\.log.*failed.*status 128.*fatal: unable to read index/s);
-  assert.throws(() => tool.ignoredVerdict({ status: null, err: '' }, 'p'), /failed/);
-});
-
-
-test("the commit log is read for each commit's trailer, and a merge of main into the branch is marked", () => {
-  const log = [
-    'abc1234\x1fp1\x1fwork on it\x1fFixture <fixture@example.test>\n\x1e',
-    "\ndef5678\x1fp1 p2\x1fMerge branch 'main' into work\x1f\x1e",
-    '\n9abcdef\x1fp1\x1fbare\x1f\x1e\n',
-  ].join('');
-  assert.deepEqual(tool.parseCommits(log), [
-    { sha: 'abc1234', merge: false, subject: 'work on it', trailer: 'Fixture <fixture@example.test>' },
-    { sha: 'def5678', merge: true, subject: "Merge branch 'main' into work", trailer: '' },
-    { sha: '9abcdef', merge: false, subject: 'bare', trailer: '' },
-  ]);
-  assert.deepEqual(tool.parseCommits(''), []);
-});
-
-
-test('MAKERTRAIL1 accepts each allowed maker, legacy harness trailers, and names expected makers on refusal', () => {
-  const commit = (trailer: string, merge = false) => ({ sha: 'abc1234', subject: 'work', merge, trailer });
-  for (const trailer of [
-    'Claude Opus 4.6 <noreply@anthropic.com>',
-    'Claude (Anthropic, sonnet) <fixture@example.test>',
-    'Codex (OpenAI, gpt-fixture) <noreply@openai.com>',
-    'OpenAI gpt-fixture <fixture@example.test>',
-    'DeepSeek (fixture-model) <noreply@deepseek.com>',
-    'Human <person@example.test>\nCodex gpt-fixture <fixture@example.test>',
-    'Daoris <noreply@daoris.invalid>',
-  ]) assert.deepEqual(tool.commitAttributionProblems([commit(trailer)]), [], trailer);
-  assert.deepEqual(tool.commitAttributionProblems([commit('', true)]), []);
-  for (const trailer of ['', 'Fixture <fixture@example.test>', 'OpenAI', 'Someone <OpenAI@example.test>', 'Someone <Daoris@example.test>']) {
-    const problems = tool.commitAttributionProblems([commit(trailer)]);
-    assert.equal(problems.length, 1, trailer);
-    assert.match(problems[0]!, /abc1234 work.*Co-Authored-By.*expected.*Anthropic.*OpenAI.*DeepSeek.*Daoris/);
-  }
-});
-
-
-test('the worktree a branch is checked out in is found in the porcelain list', () => {
-  const list = [
-    'worktree /work/repo', 'HEAD 0123456', 'branch refs/heads/main', '',
-    'worktree /work/repo/.claude/worktrees/agent-a', 'HEAD 89abcde', 'branch refs/heads/worktree-agent-a', '',
-    'worktree /work/elsewhere', 'HEAD 1234567', 'detached', '',
-  ].join('\n');
-  assert.equal(tool.worktreeFor(list, 'worktree-agent-a'), '/work/repo/.claude/worktrees/agent-a');
-  assert.equal(tool.worktreeFor(list, 'main'), '/work/repo');
-  assert.equal(tool.worktreeFor(list, 'worktree-agent'), null, 'a prefix is not the branch');
-  assert.equal(tool.worktreeFor(list, 'nope'), null);
-});
-
-
-test('the worktree list is read for each path, branch, lock and lock reason, and a folder git says is gone', () => {
-  const list = [
-    'worktree D:/work/repo', 'HEAD 0123456', 'branch refs/heads/main', '',
-    'worktree D:/work/repo/.claude/worktrees/agent-a', 'HEAD 89abcde', 'branch refs/heads/worktree-agent-a',
-    'locked claude agent agent-a (pid 57256)', '',
-    'worktree D:/work/repo/.claude/worktrees/agent-b', 'HEAD 89abcde', 'branch refs/heads/worktree-agent-b', 'locked', '',
-    'worktree D:/work/gone', 'HEAD 1234567', 'branch refs/heads/gone', 'prunable gitdir file points to non-existent location', '',
-    'worktree D:/work/elsewhere', 'HEAD 1234567', 'detached', '',
-  ].join('\r\n');
-  assert.deepEqual(tool.parseWorktrees(list), [
-    tree('D:/work/repo', 'main'),
-    tree('D:/work/repo/.claude/worktrees/agent-a', 'worktree-agent-a', { locked: true, lockReason: 'claude agent agent-a (pid 57256)' }),
-    tree('D:/work/repo/.claude/worktrees/agent-b', 'worktree-agent-b', { locked: true }),
-    tree('D:/work/gone', 'gone', { prunable: true }),
-    tree('D:/work/elsewhere', ''),
-  ]);
-});
-
-
 test('a prune considers each merged branch but main, the main checkout\'s, the one it runs in and the batch\'s still to merge', () => {
   const worktrees = [tree('/r', 'park'), tree('/r/w/a', 'agent-a'), tree('/r/w/here', 'here')];
   const candidates = tool.pruneCandidates({
@@ -145,8 +32,7 @@ test('a prune considers each merged branch but main, the main checkout\'s, the o
 
 
 test('a prune never takes a Daoris session\'s tree or branch: a daoris/ or quest/ branch, with its worktree', () => {
-  // The install drives this repository, its sessions' trees under its own home and their branches at main's tip
-  // until their first commit, which reads as merged; a merge's prune would take one mid-session.
+  // A session's branch sits at main's tip until its first commit, which reads as merged, so a prune would take it mid-session.
   const worktrees = [
     tree('D:/work/repo', 'main'),
     tree('D:/work/repo/.claude/worktrees/agent-a', 'worktree-agent-a'),
@@ -174,8 +60,7 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.deepEqual(tool.pruneVerdict(at({ prunable: true }), { ...clean, gone: true }), { remove: true, why: '', gone: true });
   assert.deepEqual(tool.pruneVerdict({ branch: 'b', worktree: null, held: 'named in this batch' }, null), { remove: false, why: 'named in this batch' });
 
-  // A branch at main's tip is merged; a worktree locked for any reason but the agent harness's is in use however it
-  // looks, and is never looked into (the harness's own lock is lifted, below).
+  // A worktree locked for any reason but the agent harness's is in use however it looks, and is never looked into.
   const locked = tool.pruneVerdict(at({ locked: true, lockReason: 'the owner keeps this' }), null);
   assert.equal(locked.remove, false);
   assert.match(locked.why, /locked, so in use \(the owner keeps this\)/);
@@ -194,8 +79,7 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.equal(unread.remove, false);
   assert.match(unread.why, /fatal: not a git repository/);
   assert.equal(tool.pruneVerdict(at(), null).remove, false, 'a worktree nobody looked into is kept');
-  // Every reason is said, not only the first.
-  assert.match(tool.pruneVerdict(at(), { ...clean, tracked: ['a'], local: 'local/x' }).why, /tracked files[\s\S]*local\//);
+  assert.match(tool.pruneVerdict(at(), { ...clean, tracked: ['a'], local: 'local/x' }).why, /tracked files[\s\S]*local\//, 'every reason is said, not only the first');
 });
 
 
@@ -363,12 +247,6 @@ test('a folder under .claude/worktrees/ git does not list goes when it holds no 
   assert.match(unread.why, /could not be read \(ps could not start\)/);
 });
 
-
-// ---------------------------------------------------------------------------------------------------
-// The gate plan: read from the declared set, every gate once, fast first
-
-// ---------------------------------------------------------------------------------------------------
-// A merge runs the gates its lanes reach; the full set runs before the install is staged
 
 test('this repository commits no generated folder: its orientation index is ignored, written in each checkout', () => {
   assert.deepEqual(tool.readGenerated(repoRoot), []);

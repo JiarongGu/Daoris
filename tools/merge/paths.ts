@@ -26,3 +26,5 @@ export function isInside(folder: string, file: string, platform: Platform = { is
   const rel = platform.relative(folder, file);
   return rel !== '' && !platform.isAbsolute(rel) && rel.split(platform.sep)[0] !== '..';
 }
+
+export const SCRATCH = 'local/scratch';
