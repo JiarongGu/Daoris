@@ -128,7 +128,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
     review: (id) => {
       chosen();
       attend(id);
-      setDocked((was) => ({ ...was, [id]: 'review' }));
+      setDocked((was) => ({ ...was, [id]: 'outputs' }));
       closeDock(false);
     },
     // A terminal in its folder, only where the terminal is a view here: the panel's, shown if it is hidden.

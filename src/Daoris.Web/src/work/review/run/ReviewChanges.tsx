@@ -21,10 +21,10 @@ export function RecordRows({ rows, viewed, body }: { rows: ReviewRow[]; viewed: 
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const done = rows.filter((row) => viewed.isViewed(row.path, contentOf(row))).length;
   return (
-    <section aria-label={t('work.runReview.changes')}>
+    <section aria-label={t('work.outputs.changes')}>
       <header className="flex flex-wrap items-baseline gap-x-2 border-b border-line px-3 py-1.5">
-        <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.runReview.files', { count: rows.length })}</span>
-        {done > 0 && <span className="text-meta tabular-nums text-ink-faint">{t('work.runReview.viewedCount', { done, total: rows.length })}</span>}
+        <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.files', { count: rows.length })}</span>
+        {done > 0 && <span className="text-meta tabular-nums text-ink-faint">{t('work.outputs.viewedCount', { done, total: rows.length })}</span>}
       </header>
       <ul className="m-0 list-none p-0">
         {rows.map((row) => {
@@ -42,21 +42,21 @@ export function RecordRows({ rows, viewed, body }: { rows: ReviewRow[]; viewed: 
                 >
                   {body && <Icon name={open[row.path] ? 'chevronDown' : 'chevronRight'} size={12} />}
                   <PathText path={row.path} className="min-w-0 truncate text-small" />
-                  <span className="shrink-0 text-meta text-ink-faint">{t(`work.runReview.change.${row.change}`, { defaultValue: row.change })}</span>
+                  <span className="shrink-0 text-meta text-ink-faint">{t(`work.outputs.change.${row.change}`, { defaultValue: row.change })}</span>
                 </button>
                 <span className="font-mono text-meta text-ink-faint">
-                  {t('work.runReview.versions', { before: short(row.before, t('work.runReview.versionNone')), after: short(row.after, t('work.runReview.versionNone')) })}
+                  {t('work.outputs.versions', { before: short(row.before, t('work.outputs.versionNone')), after: short(row.after, t('work.outputs.versionNone')) })}
                 </span>
                 <CheckField
                   className="text-meta"
-                  label={t('work.runReview.viewed')}
+                  label={t('work.outputs.viewed')}
                   checked={seen}
                   onChange={(next) => viewed.mark(row.path, content, next)}
                 />
               </div>
               {row.marks.length > 0 && (
                 <p className="m-0 px-3 pb-1 text-meta text-warn">
-                  {row.marks.map((mark) => t(`work.runReview.mark.${mark}`, { defaultValue: mark })).join(' · ')}
+                  {row.marks.map((mark) => t(`work.outputs.mark.${mark}`, { defaultValue: mark })).join(' · ')}
                 </p>
               )}
               {open[row.path] && body?.(row)}
@@ -75,13 +75,13 @@ export function RecordRows({ rows, viewed, body }: { rows: ReviewRow[]; viewed: 
 export function PlanOperations({ system, operations }: { system: string; operations: ReviewOperation[] | null | undefined }) {
   const { t } = useTranslation();
   return (
-    <section aria-label={t('work.runReview.plan', { system })} className="px-3 py-2">
-      <h3 className="m-0 mb-1.5 text-small font-semibold"><Inline text={t('work.runReview.plan', { system })} /></h3>
+    <section aria-label={t('work.outputs.plan', { system })} className="px-3 py-2">
+      <h3 className="m-0 mb-1.5 text-small font-semibold"><Inline text={t('work.outputs.plan', { system })} /></h3>
       {operations && operations.length > 0 ? (
         <ul className="m-0 grid list-none gap-1 p-0">
           {operations.map((operation) => (
             <li key={operation.resource} className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 text-small">
-              <span className="text-ink-soft">{t(`work.runReview.op.${operation.op}`, { defaultValue: operation.op })}</span>
+              <span className="text-ink-soft">{t(`work.outputs.op.${operation.op}`, { defaultValue: operation.op })}</span>
               <span className="min-w-0 font-mono text-ink">{operation.resource}</span>
               {(operation.before != null || operation.after != null) && (
                 <span className="col-start-2 font-mono text-meta text-ink-faint">
@@ -91,7 +91,7 @@ export function PlanOperations({ system, operations }: { system: string; operati
             </li>
           ))}
         </ul>
-      ) : <p className="m-0 text-small text-ink-faint">{t('work.runReview.planUnread')}</p>}
+      ) : <p className="m-0 text-small text-ink-faint">{t('work.outputs.planUnread')}</p>}
     </section>
   );
 }

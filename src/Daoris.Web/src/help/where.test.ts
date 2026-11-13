@@ -115,13 +115,13 @@ describe('where the person is', () => {
   it('says which views each region holds, and whether it is showing', () => {
     expect(prefaceOf({
       view: 'sessions', workspace: null,
-      layout: { right: ['timeline', 'ask'], panel: ['console', 'review'], rightShown: true, panelShown: false },
+      layout: { right: ['timeline', 'ask'], panel: ['console', 'outputs'], rightShown: true, panelShown: false },
     })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline and Ask Daoris, '
-      + 'and is open; the panel holds the console and the review, and is hidden.');
+      + 'and is open; the panel holds the console and Outputs, and is hidden.');
     expect(prefaceOf({
       view: 'sessions', workspace: null,
-      layout: { right: ['timeline', 'review', 'ask', 'console'], panel: [], rightShown: false, panelShown: true },
-    })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline, the review, '
+      layout: { right: ['timeline', 'outputs', 'ask', 'console'], panel: [], rightShown: false, panelShown: true },
+    })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline, Outputs, '
       + 'Ask Daoris and the console, and is closed; the panel holds nothing.');
     // On every view, since the frame is; only a caller with no frame leaves it out.
     expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console'], rightShown: true, panelShown: true } }))
@@ -167,7 +167,7 @@ describe('where the person is', () => {
     const crowded = prefaceOf({
       view: 'sessions', workspace: 'aurora', draft,
       session: { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'x'.repeat(2000) },
-      layout: { right: ['timeline', 'review', 'ask', 'console'], panel: ['terminal', 'atWork'], rightShown: true, panelShown: true },
+      layout: { right: ['timeline', 'outputs', 'ask', 'console'], panel: ['terminal', 'atWork'], rightShown: true, panelShown: true },
     });
     expect(crowded.slice(0, 1200)).toContain('the draft is told beside their words');
   });

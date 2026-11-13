@@ -7,11 +7,11 @@ import type { Place, ViewId } from './placements';
 export type ViewEntry = { id: ViewId; label: string; icon: IconName };
 
 const VIEW_NAME: Record<ViewId, string> = {
-  notifications: 'notifications.title', timeline: 'work.review.timelineTab', review: 'work.review.tab', workflow: 'work.views.workflow',
+  notifications: 'notifications.title', timeline: 'work.review.timelineTab', outputs: 'work.outputs.title', workflow: 'work.views.workflow',
   atWork: 'work.atWork.view', ask: 'help.title', console: 'work.views.console', terminal: 'work.views.terminal',
 };
 const VIEW_ICON: Record<ViewId, IconName> = {
-  notifications: 'bell', timeline: 'quests', review: 'diff', workflow: 'workflow', atWork: 'atWork', ask: 'help', console: 'frameWork',
+  notifications: 'bell', timeline: 'quests', outputs: 'diff', workflow: 'workflow', atWork: 'atWork', ask: 'help', console: 'frameWork',
   terminal: 'terminal',
 };
 

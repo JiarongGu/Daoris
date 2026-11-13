@@ -15,6 +15,7 @@ import type { coolingFor } from '../say';
 import type { Roster } from '../start/agentRoster';
 import { type EarlierPart, EarlierParts } from './EarlierParts';
 import { lineMembersBefore } from '../lineState';
+import { ReviewCards } from '../review/card/ReviewCards';
 import { SessionConversation } from './SessionConversation';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
@@ -26,9 +27,10 @@ import type { useWords } from './useWords';
  */
 export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
-  channel,
+  channel, onOpenOutputs,
 }: {
   t: TFunction;
+  onOpenOutputs?: (run: string, attempt: number | null) => void;
   /** The home of the channel messages its turns took: who posted each, and the door that opens its channel's panel. */
   channel?: ComponentProps<typeof SessionConversation>['channel'];
   session: ReturnType<typeof useAttendedSession>;
@@ -133,6 +135,7 @@ export function AttendedConversation({
               agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
             }}
           />
+          <ReviewCards session={attended.id} onOpenOutputs={onOpenOutputs} />
         </div>
       </FileOpener.Provider>
     </div>

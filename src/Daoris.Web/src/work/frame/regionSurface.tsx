@@ -28,7 +28,7 @@ import type { useAttendedSession } from '../head/useAttendedSession';
 import { SessionTimeline } from '../head/SessionTimeline';
 import { ownTree, sessionTitle } from '../identity';
 import { DiffPane } from '../review/DiffPane';
-import { RunReviewPage } from '../review/run/RunReviewPage';
+import { OutputsPage } from '../outputs/OutputsPage';
 import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
 import type { HandOverRoster } from '../start/HandOverAsk';
@@ -46,8 +46,10 @@ import type { useFrameLayout } from './useFrameLayout';
 export function useRegionSurfaces({
   t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
   session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
+  reviewAttempt = null,
 }: {
   reviewRun?: string | null;
+  reviewAttempt?: number | null;
   t: TFunction;
   notify: Notify;
   ask?: ReactNode;
@@ -65,7 +67,7 @@ export function useRegionSurfaces({
   views: ReturnType<typeof useDockViews>;
   frame: ReturnType<typeof useFrameLayout>;
   boxState: ReturnType<typeof useAttendedBox>;
-  onReviewRun: (run: string) => void;
+  onReviewRun: (run: string, attempt?: number | null) => void;
   agentRoster: HandOverRoster;
   attend: (id: string) => void;
   runNodeWord: ReturnType<typeof useRunNodeWord>;
@@ -156,10 +158,16 @@ export function useRegionSurfaces({
     ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
     : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>);
 
-  const reviewSurface = () => {
+  const outputsSurface = () => {
     if (reviewRun || following) {
       return withWhose(
-        <RunReviewPage key={reviewRun ?? following?.id} run={reviewRun} session={following?.id ?? null} fallback={ownChanges()} />,
+        <OutputsPage
+          key={`${reviewRun ?? following?.id}:${reviewAttempt ?? ''}`}
+          run={reviewRun}
+          session={following?.id ?? null}
+          attempt={reviewAttempt ?? 0}
+          fallback={ownChanges()}
+        />,
       );
     }
     return withWhose(ownChanges());
@@ -292,7 +300,7 @@ export function useRegionSurfaces({
     if (view === 'ask') return ask;
     if (view === 'notifications') return notifications;
     if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
-    if (view === 'review') return reviewSurface();
+    if (view === 'outputs') return outputsSurface();
     if (view === 'workflow') return workflowSurface();
     if (view === 'atWork') return atWorkSurface();
     if (view === 'console' && where === 'right') {
