@@ -84,16 +84,8 @@ public static class WorkflowValuesKey
         writer.WriteEndObject();
     }
 
-    /// <summary>
-    /// <paramref name="node"/> as a run of <paramref name="repository"/> bound to <paramref name="workflow"/> reads it: the repository's values
-    /// for that node laid over its own options, each value replacing the option of its name; the node itself where none are kept.
-    /// </summary>
-    public static NodeDeclaration Over(IReadOnlyDictionary<string, Values> map, string repository, string workflow, NodeDeclaration node)
-    {
-        if (!map.TryGetValue(repository.Trim(), out var values) || !values.ByWorkflow.TryGetValue(workflow, out var nodes)
-            || !nodes.TryGetValue(node.Id, out var options)) return node;
-        var laid = new Dictionary<string, string>(node.Options, StringComparer.Ordinal);
-        foreach (var (name, json) in options) laid[name] = json;
-        return node with { Options = laid };
-    }
+    /// <summary>The values <paramref name="repository"/> keeps for node <paramref name="node"/> of <paramref name="workflow"/>, or null where it keeps none.</summary>
+    public static IReadOnlyDictionary<string, string>? Of(IReadOnlyDictionary<string, Values> map, string repository, string workflow, string node) =>
+        map.TryGetValue(repository.Trim(), out var values) && values.ByWorkflow.TryGetValue(workflow, out var nodes)
+            && nodes.TryGetValue(node, out var options) ? options : null;
 }

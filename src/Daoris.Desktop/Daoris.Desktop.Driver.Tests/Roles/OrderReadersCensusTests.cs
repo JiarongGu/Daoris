@@ -17,6 +17,7 @@ public sealed partial class OrderReadersCensusTests
         ("Daoris.Desktop.Driver/Roles/RoleOrders.cs", "the arranged reader every line's order but a start's own goes through"),
         ("Daoris.Desktop.Driver/Roles/RoleCatalog.cs", "the catalogue's order of the role that takes a work, the start plan's input"),
         ("Daoris.Desktop.Driver/Roles/StartPlan.cs", "the start's own walk, arranged by the policy before any account is asked"),
+        ("Daoris.Desktop.Driver/Roles/FailedCarryOn.cs", "whether a failed record's agent is still among its role's choices, never which goes first"),
         ("Daoris.Desktop.Driver/Roles/StaffPolicyDoor.cs", "the probe of a role's next new start, which arranges it itself"),
         ("Daoris.Desktop.Driver/Participants/RoleStructure.cs", "the structure the screen reads, which shows the stored choices"),
         ("Daoris.Desktop.Driver/Participants/Helpers/HelperChoice.cs", "the fence a helper's rule decides; the reviewer walk arranges its alternatives within one agent"),

@@ -293,10 +293,6 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, WorkflowValuesKey.Values> WorkflowValues { get; init; } =
         new Dictionary<string, WorkflowValuesKey.Values>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary><paramref name="node"/> as a run of <paramref name="repository"/> bound to <paramref name="workflow"/> reads it.</summary>
-    public NodeDeclaration ValuesOver(string repository, string workflow, NodeDeclaration node) =>
-        WorkflowValuesKey.Over(WorkflowValues, repository, workflow, node);
-
     /// <summary>
     /// The saved workflow a place follows where nothing above it names one: the home's default, level <see cref="WorkflowLevels.Home"/>
     /// of the choosing order, seeded once into a fresh home by <see cref="HomeSeed"/>. Null names none, and a place then follows Current.

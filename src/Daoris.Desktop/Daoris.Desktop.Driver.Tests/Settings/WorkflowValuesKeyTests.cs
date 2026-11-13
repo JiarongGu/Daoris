@@ -23,14 +23,14 @@ public sealed class WorkflowValuesKeyTests
     {
         var config = DriverConfigReader.Parse(Json);
 
-        var over = config.ValuesOver("APP", "merge-after-accept", Release);
+        var over = NodeValues.Over(config,"APP", "merge-after-accept", Release);
 
         Assert.Equal("7", over.Options["pipeline"]);
         Assert.Equal("\"start-stage\"", over.Options["action"]);
         Assert.Equal("600", over.Options["findSeconds"]);
-        Assert.Same(Release, config.ValuesOver("app", "another-workflow", Release));
-        Assert.Same(Release, config.ValuesOver("tools", "merge-after-accept", Release));
-        Assert.Same(Release, config.ValuesOver("elsewhere", "merge-after-accept", Release));
+        Assert.Same(Release, NodeValues.Over(config,"app", "another-workflow", Release));
+        Assert.Same(Release, NodeValues.Over(config,"tools", "merge-after-accept", Release));
+        Assert.Same(Release, NodeValues.Over(config,"elsewhere", "merge-after-accept", Release));
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class WorkflowValuesKeyTests
         Assert.Equal(["app"], config.WorkflowValues.Keys);
         var again = DriverConfigReader.Parse(DriverConfigWriter.Written(config));
 
-        Assert.Equal("42", again.ValuesOver("app", "merge-after-accept", Release).Options["releaseDefinition"]);
+        Assert.Equal("42", NodeValues.Over(again, "app","merge-after-accept", Release).Options["releaseDefinition"]);
         Assert.Empty(DriverConfigReader.Parse("{}").WorkflowValues);
         Assert.DoesNotContain(WorkflowValuesKey.Key, DriverConfigWriter.Written(DriverConfigReader.Parse("{}")), StringComparison.Ordinal);
     }

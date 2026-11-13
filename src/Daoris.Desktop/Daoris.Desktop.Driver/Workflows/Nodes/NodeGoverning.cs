@@ -205,7 +205,7 @@ internal static class NodeGoverning
         Dictionary<string, string> identities, ICollection<string>? said)
     {
         var binding = run.Binding;
-        NodeDeclaration Valued(NodeDeclaration node) => config.ValuesOver(binding.Repository, binding.Workflow, node);
+        NodeDeclaration Valued(NodeDeclaration node) => NodeValues.Over(config, binding.Repository, binding.Workflow, node);
         if (run.Version is not { Graph: { } graph, GraphDigest: { } digest })
         {
             // A run governed here, not ended: its record is held whole. One never governed here has nothing to hold.
