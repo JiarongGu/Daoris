@@ -9,6 +9,12 @@ namespace Daoris.Knowledge;
 /// <param name="policy">The paths no worker changes, by repository.</param>
 public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, Func<string, CancellationToken, Task<TeamPathPolicy>> policy)
 {
+    /// <summary>The scout's half: its ask judged against the plan, and its pack and membership kept.</summary>
+    public TeamScouts Scouts { get; } = new(store, ledger);
+
+    /// <summary>The worker's half: the session opened on a part's quest is a member of the team.</summary>
+    public TeamWorkers Workers { get; } = new(store, ledger);
+
     /// <summary>Judge, keep and publish a plan revision; see the class.</summary>
     public async Task<TeamOutcome> SaveAsync(TeamSave save, DateTimeOffset now, CancellationToken ct = default)
     {

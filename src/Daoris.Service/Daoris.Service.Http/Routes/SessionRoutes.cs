@@ -62,6 +62,12 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
         }
 
         if (request.Opens is not null) return await KeyedAsync(outcome, http);
+        // A session opened on a part's quest is a worker of that part's team.
+        if (outcome is { Refusal: SessionOpenRefusal.None, Session: { } opened } && Service.Teams is { } teams)
+        {
+            await teams.Workers.KeepAsync(opened.Id, request.Quest!, DateTimeOffset.UtcNow, ct);
+        }
+
         return await OpenedAsync(outcome, http, SessionOpenRefusal.QuestNotFound,
             SessionOpenRefusal.QuestNotOpen, SessionOpenRefusal.TakenElsewhere, SessionOpenRefusal.RepositoryBusy);
     }

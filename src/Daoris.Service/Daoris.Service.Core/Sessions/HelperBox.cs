@@ -54,11 +54,16 @@ public sealed class HelperBox(string? home)
     /// The asker's level: the answer at its next step, where its door takes words then; kept as `urgent: true`.
     /// An ordinary ask keeps no field, which reads as today's delivery.
     /// </param>
-    public (string? Id, string Message) Ask(Session? asker, string? named, string? question, string? agent, DateTimeOffset at, bool urgent = false)
+    /// <param name="scout">
+    /// The part the helper is to orient, judged by the plan's door before this: the helper is then a scout, and the lead that asks may be an intake,
+    /// which asks no other helper. Kept as `scout` on the ask, which the driver reads to start the pass under the Scout role.
+    /// </param>
+    public (string? Id, string Message) Ask(
+        Session? asker, string? named, string? question, string? agent, DateTimeOffset at, bool urgent = false, HelperScout? scout = null)
     {
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to bring an answer back to. Nothing was asked.");
-        if (Unfit(asker) is { } unfit) return (null, $"{unfit} Nothing was asked.");
+        if (Unfit(asker, scout is not null) is { } unfit) return (null, $"{unfit} Nothing was asked.");
 
         var words = question?.Trim() ?? "";
         if (words.Length == 0) return (null, "A helper needs the question: what you want answered, with what it should read. Nothing was asked.");
@@ -81,8 +86,24 @@ public sealed class HelperBox(string? home)
             else writer.WriteString("agent", chosen);
             writer.WriteString("askedBy", "agent");
             if (urgent) writer.WriteBoolean("urgent", true);
+            if (scout is not null)
+            {
+                writer.WriteStartObject("scout");
+                writer.WriteString("ask", scout.Ask);
+                writer.WriteString("part", scout.Part);
+                writer.WriteString("repository", scout.Repository);
+                writer.WriteEndObject();
+            }
+
             writer.WriteString("at", Moments.Write(at));
         });
+
+        if (scout is not null)
+        {
+            return (id,
+                $"Asked `#{id}` to orient part `{scout.Part}`: the driver starts a scout in `{scout.Repository}` at its next look, and its pack is "
+                + $"kept with the plan, so read it with `team_plan` for ask `#{scout.Ask}` and write what it names into the next revision. End your turn or go on with another part.");
+        }
 
         return (id,
             $"Asked `#{id}`: the driver takes it at its next look, and starts it once your turn has ended, since it reads your work "
@@ -131,16 +152,44 @@ public sealed class HelperBox(string? home)
     /// Whether an asker's record is no working session that may ask: a helper, a reviewer, an intake or Ask Daoris never asks for a helper,
     /// and a teammate's record is no session here. The sentence says which, or null when it may.
     /// </summary>
-    private static string? Unfit(Session asker) =>
+    private static string? Unfit(Session asker, bool scouting) =>
         asker.Opinion is { } opinion
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper."
         : asker.Serves is { } serves
             ? $"Session `{asker.Id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper."
-        : asker.Ask is { } ask
+        // A lead that is an intake asks a scout, for the part it plans; it asks no other helper.
+        : asker.Ask is { } ask && !scouting
             ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, which does no work in a repository, and an intake cannot ask for a helper."
         : SessionLedger.IsHelp(asker)
             ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper."
         : null;
+
+    /// <summary>The part the ask the session was started for is to orient, or null where that ask is no scout's, or none is started for the session.</summary>
+    public HelperScout? ScoutOf(Session helper)
+    {
+        if (Home is null || helper.Serves is null) return null;
+        var folder = DaorisHome.Entry(Home, HomeEntry.Helpers);
+        if (!Directory.Exists(folder)) return null;
+        var ask = Directory.EnumerateFiles(folder, "*.state.json")
+            .Select(path => ReadState(Home, Path.GetFileName(path)[..^".state.json".Length]))
+            .FirstOrDefault(state => state is { State: "started" or "answered" } && string.Equals(state.Helper, helper.Id, StringComparison.Ordinal));
+        if (ask is null) return null;
+        try
+        {
+            var path = PathOf(Home, ask.Id, "ask");
+            if (!File.Exists(path)) return null;
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            if (!document.RootElement.TryGetProperty("scout", out var scout) || scout.ValueKind != JsonValueKind.Object) return null;
+            string? Text(string name) => scout.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+            return Text("ask") is { Length: > 0 } of && Text("part") is { Length: > 0 } part && Text("repository") is { Length: > 0 } repository
+                ? new HelperScout(of, part, repository)
+                : null;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>One ask's state as the driver wrote it, or null when there is none or it is unreadable.</summary>
     public static HelperState? ReadState(string home, string id)
