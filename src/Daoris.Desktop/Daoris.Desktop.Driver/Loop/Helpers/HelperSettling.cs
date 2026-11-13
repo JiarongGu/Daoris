@@ -11,7 +11,10 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     internal async Task<LookLine> RunHelperAsync(HelperAsk ask, PriorSession asker, HelperRule rule, HelperFiles files, CancellationToken ct)
     {
         string? tip = null, root = null;
-        var folder = asker.Tree is { Length: > 0 } named ? new LinePlaces(_context.Home).Of(named).Folder : null;
+        // A scout reads the repository's own checkout, its line as it stands; any other helper reads its asker's tree.
+        var folder = ask.Scout is { } scouted
+            ? (await _context.Service.RegistryAsync(ct).ConfigureAwait(false)).FirstOrDefault(row => ScoutsRepository(row, scouted, asker))?.Root
+            : asker.Tree is { Length: > 0 } named ? new LinePlaces(_context.Home).Of(named).Folder : null;
         if (folder is not null) (tip, root) = await owner.ReadTreeAsync(folder, ct).ConfigureAwait(false);
         if (tip is null || root is null)
         {
@@ -35,14 +38,21 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         // The asker's work in progress, captured whole with its manifest at this
         // turn boundary, or refused in its code; its manifest kept before the helper starts, and its commit the copy's.
-        var read = await owner.CaptureAsync(folder!, ct).ConfigureAwait(false);
-        if (read.Captured is not { } capture)
+        // A scout has no work in progress to carry: its copy is the line's commit.
+        HelperCaptured? capture = null;
+        if (ask.Scout is null)
         {
-            return await owner.RefuseAsync(ask, read.Code ?? HelperWhy.Unreadable, null, files, ct, read.Detail).ConfigureAwait(false);
+            var read = await owner.CaptureAsync(folder!, ct).ConfigureAwait(false);
+            if (read.Captured is not { } captured)
+            {
+                return await owner.RefuseAsync(ask, read.Code ?? HelperWhy.Unreadable, null, files, ct, read.Detail).ConfigureAwait(false);
+            }
+
+            files.WriteCapture(ask.Id, captured);
+            capture = captured;
         }
 
-        files.WriteCapture(ask.Id, capture);
-        var passAsk = new HelperPassAsk(ask, asker.Repository ?? "", root, capture.Commit)
+        var passAsk = new HelperPassAsk(ask, ask.Scout?.Repository ?? asker.Repository ?? "", root, capture?.Commit ?? tip)
         {
             Capture = capture,
             Workspace = asker.Workspace,
@@ -69,6 +79,11 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct, run.Limit, run.Transient).ConfigureAwait(false);
     }
+
+    /// <summary>Whether <paramref name="row"/> is the repository <paramref name="part"/> changes, in the workspace its lead works in.</summary>
+    private static bool ScoutsRepository(RepoView row, HelperScoutPart part, PriorSession lead) =>
+        string.Equals(row.Repository, part.Repository, StringComparison.OrdinalIgnoreCase)
+        && (lead.Workspace is not { Length: > 0 } workspace || string.Equals(row.Workspace, workspace, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a
@@ -144,6 +159,15 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     /// <param name="seen">How the look's own list showed the asker (<see cref="Seen"/>), kept with a hand held; null from a pass's own settling.</param>
     internal async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct, string? seen = null)
     {
+        // A scout's answer is a pack the service keeps with the plan, where the lead reads it through the plan door: an intake lead takes
+        // no word, so none is handed, and the ask is settled.
+        if (ask.Scout is not null)
+        {
+            files.WriteState(state with { Handed = HelperState.KeptForPlan });
+            owner.Forget(ask.Id);
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is answered by scout {state.Helper}: its pack for part `{ask.Scout.Part}` is kept with ask `#{ask.Scout.Ask}`'s plan.");
+        }
+
         // An answer kept for the person reaches no part of the line until they pass it. The helper's
         // own conversation holds it, and nothing counts it, since it never reached the lead by itself.
         if (ask.ForPerson && state.Passed is null)

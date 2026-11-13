@@ -103,7 +103,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         var home = _context.Home;
         var output = _context.Output;
         var named = $"ask `{ask.Ask.Id}`";
-        var opened = await service.Helpers.OpenAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct).ConfigureAwait(false);
+        var opened = await service.Helpers.OpenAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct, ask.Ask.Scout?.Repository).ConfigureAwait(false);
         if (!opened.Opened)
         {
             return new HelperPassRun(null, $"refused  helper for {named}: {opened.Message}") { Code = HelperWhy.NotStarted };
@@ -131,6 +131,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 // A follow-up is handed the ask it follows as Daoris's record, and says where its answer goes.
                 Earlier = new HelperFiles(home).EarlierOf(ask.Ask),
                 ForPerson = ask.Ask.ForPerson,
+                Scout = ask.Ask.Scout,
             };
             var target = new SessionTarget(
                 QuestId: "", $"Helper for session {ask.Ask.Asker}", "", "Daoris", ask.Repository, copy.Path, service.BaseUrl)

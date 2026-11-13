@@ -18,6 +18,9 @@ public sealed record HelperPacket(string Asker, string Repository, string Tip, s
 
     /// <summary>The answer goes to the person, not the session.</summary>
     public bool ForPerson { get; init; }
+
+    /// <summary>The part the helper is to orient as a scout; null for every other helper.</summary>
+    public HelperScoutPart? Scout { get; init; }
 }
 
 /// <summary>
@@ -42,6 +45,7 @@ public static class HelperInstruction
     /// <summary>The instruction for <paramref name="packet"/>.</summary>
     public static string Compose(HelperPacket packet)
     {
+        if (packet.Scout is not null) return ScoutInstruction.Compose(packet);
         var text = new StringBuilder();
         text.Append($"You are helping another session that is working in `{packet.Repository}`. ")
             .Append("It asked you one question, below. You did not do its work, and you will not change anything: you read, and you answer.\n\n")

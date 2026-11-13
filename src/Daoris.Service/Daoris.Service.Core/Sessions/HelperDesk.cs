@@ -60,6 +60,12 @@ public sealed record HelperOpen(string Asker, string Door, string Tree)
 
     /// <summary>The asker's commit the clone stands at.</summary>
     public string? BaseCommit { get; init; }
+
+    /// <summary>
+    /// The repository a scout reads, where the helper is the scout of a part its asker leads: the asker is then a lead (an ask's intake, or a worker),
+    /// which works in no clone of this repository, so the record is made here and not in the asker's.
+    /// </summary>
+    public string? ScoutIn { get; init; }
 }
 
 /// <summary>
@@ -98,7 +104,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             string? wrong =
                 asker.Opinion is { } reads ? $"Session `{asker.Id}` reads another session's work for second opinion `{reads}`, and a reviewer cannot ask for a helper"
                 : asker.Serves is { } serves ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot ask for a helper"
-                : asker.Ask is { } ask ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, and an intake cannot ask for a helper"
+                // An ask's intake is the lead of its team, and asks a scout for a part; it asks no other helper.
+                : asker.Ask is { } ask && open.ScoutIn is null ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, and an intake cannot ask for a helper"
                 // The store's own guard, held to the driver's start layer by fixtures/helper-askers.json.
                 : SessionLedger.IsHelp(asker) ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper"
                 : string.Equals(Trees.Normalize(asker.Tree), tree, StringComparison.Ordinal)
@@ -106,19 +113,20 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 : null;
             if (wrong is not null) return Refused(HelperRefusal.BadShape, wrong);
 
-            if (await sessions.ActiveForAsync(asker.Repository, tree, inside).ConfigureAwait(false) is { } holder)
+            var repository = open.ScoutIn is { Length: > 0 } scouted ? scouted.Trim() : asker.Repository;
+            if (await sessions.ActiveForAsync(repository, tree, inside).ConfigureAwait(false) is { } holder)
             {
-                return Refused(HelperRefusal.Busy, $"`{asker.Repository}`'s tree `{tree}` already has an active session, `{holder.Id}`: a helper's clone is its own");
+                return Refused(HelperRefusal.Busy, $"`{repository}`'s tree `{tree}` already has an active session, `{holder.Id}`: a helper's clone is its own");
             }
 
             var helper = await sessions.CreateAsync(
-                    quest: null, asker.Repository, open.Door.Trim(), now, asker.Workspace, SessionKind.Chat,
+                    quest: null, repository, open.Door.Trim(), now, asker.Workspace, SessionKind.Chat,
                     doorVersion: open.DoorVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
                     ct: inside, serves: asker.Id, ownEntry: true, actor: "helper")
                 .ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,
-                $"Session `{helper.Id}` reads `{asker.Repository}` in a clone of its own, to answer session `{asker.Id}`.")
+                $"Session `{helper.Id}` reads `{repository}` in a clone of its own, to answer session `{asker.Id}`.")
             {
                 Session = helper,
             };

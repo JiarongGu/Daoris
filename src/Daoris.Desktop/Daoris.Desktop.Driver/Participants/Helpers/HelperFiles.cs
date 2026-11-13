@@ -39,11 +39,21 @@ public sealed class HelperFiles(string home)
                     // Absent, a first ask whose answer goes to the lead.
                     After = Text(element, "after") is { Length: > 0 } after ? after : null,
                     To = Text(element, "to") == HelperAsk.ToPerson ? HelperAsk.ToPerson : null,
+                    Scout = ScoutOf(element),
                 });
             }
         }
 
         return [.. asks.OrderBy(ask => ask.At).ThenBy(ask => ask.Id, StringComparer.Ordinal)];
+    }
+
+    /// <summary>The part a lead's ask names to be oriented, or null where the ask carries none or it is not whole.</summary>
+    private static HelperScoutPart? ScoutOf(JsonElement ask)
+    {
+        if (!ask.TryGetProperty("scout", out var scout) || scout.ValueKind != JsonValueKind.Object) return null;
+        return Text(scout, "ask") is { Length: > 0 } of && Text(scout, "part") is { Length: > 0 } part && Text(scout, "repository") is { Length: > 0 } repository
+            ? new HelperScoutPart(of, part, repository)
+            : null;
     }
 
     /// <summary>One ask's state, or null where the driver wrote none or it is unreadable.</summary>

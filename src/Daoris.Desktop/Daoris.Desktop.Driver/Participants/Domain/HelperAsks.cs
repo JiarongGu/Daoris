@@ -47,6 +47,12 @@ public sealed record HelperAsk(string Id, string Asker, string Question, string?
 
     public const string ToPerson = "person";
 
+    /// <summary>
+    /// The part of a team's plan the helper is to orient, which makes it a scout: the pass starts under the Scout role in that part's repository,
+    /// and its answer is a pack the service keeps with the plan instead of a word to its asker. Null for every other ask.
+    /// </summary>
+    public HelperScoutPart? Scout { get; init; }
+
     /// <summary>Whether the answer is the person's, not the lead's.</summary>
     public bool ForPerson => To == ToPerson;
 }
@@ -68,6 +74,9 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 
     /// <summary>The <see cref="Handed"/> mark of an answer kept for the person: settled for the lead, which never waits on it.</summary>
     public const string KeptForPerson = "person";
+
+    /// <summary>The <see cref="Handed"/> mark of a scout's answer: its pack is kept with the plan by the service, which the lead reads there, so no word goes to the lead.</summary>
+    public const string KeptForPlan = "plan";
 
     /// <summary>
     /// When the person pressed <i>Pass to the lead</i> on an answer kept for them: the look hands it to
