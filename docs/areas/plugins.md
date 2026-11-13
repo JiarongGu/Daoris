@@ -76,7 +76,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     puts the folder back, or names the `.removing-*` folder the plugin lies in. (D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (D120)
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: Daoris's own `daoris-github`,
-    `daoris-azure-devops` and `daoris-in-app-browser`. None installs without a press. The driver looks beside the application
+    `daoris-azure-devops`, `daoris-in-app-browser` and `daoris-dev-report`. None installs without a press. The driver looks beside the application
     first, then beside the home. An offer is listed as installed where its id or one it formerly was is. (D103, D274)
 17a. Daoris's GitHub and Azure DevOps plugins declare a `goal` on their `pull-request` step and carry its create, status and
     complete as tools, so the loop's step session performs it (workflows rule 31a), an attempt delivered on `work/perform` before
