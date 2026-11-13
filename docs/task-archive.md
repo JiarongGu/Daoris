@@ -5,6 +5,16 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREECLEAN2 — `tree clean` takes the trees it has no reason to keep (2026-11-14)
+
+> **TREECLEAN2** (driver): Outcome: the paths the repository's own `daoris.files.json` calls an output, an intermediate, a cache or scratch, read at the line's tip (`FileOutputs`), are declared output a removal takes with its tree whatever bytes the checkout holds (the generated contract files and `_fixtures/` outputs no longer keep a landed tree); a refused tidy or removal says a session was starting only where a start holds the repository, and a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`).
+
+## LANDEDHOLD1 — a run whose branch the line already holds stops waiting on its earlier steps (2026-11-14)
+
+> **LANDEDHOLD1** (driver): Outcome: the quest's holds read the run's branch first (`BranchOnLine`): where the line holds its tip by any proof but *empty*, the hold reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, ending the run landed; a branch the line does not hold at its tip leaves the hold unchanged.
+
+---
+
 ## TOOLDEFS1 — the tool definitions every session is handed, measured and cut (2026-11-13)
 
 > **TOOLDEFS1** (service connector): Outcome: `McpListingBudgetTests` measures the connector's `tools/list` as served (characters and an estimated token count) against a listing budget and a per-tool budget; the descriptions and parameter text of the quest, opinion, brainstorm, question, channel, memory, search and other tools were cut to what an agent needs to choose and call them, every caller still listed every tool (34 tools, 52,247 to 41,776 characters, about 17,400 to 13,900 tokens). Claude Code's deferred tool loading stays off by D230's choice (its search step is a model round trip before the first move).

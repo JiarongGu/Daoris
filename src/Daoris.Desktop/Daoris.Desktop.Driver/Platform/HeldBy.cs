@@ -23,4 +23,7 @@ public static class HeldBy
 
     /// <summary>A step reserving one of its trees for its resolver (<c>TreeReserving</c>).</summary>
     public const string Reserving = "reserving";
+
+    /// <summary>A writer holds it alone and has not said what it is beside the lock (yet, or its words are stale).</summary>
+    public const string Writing = "writing";
 }

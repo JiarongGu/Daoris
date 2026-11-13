@@ -12,6 +12,9 @@ public sealed record WireRun(string GraphDigest, string Run)
 {
     public NodeScope Scope => new(GraphDigest, Run);
 
+    /// <summary>The run's own branch where it has one: the work the line may already hold, which the quest's holds read before they wait.</summary>
+    public WorkUnit? RunBranch { get; init; }
+
     /// <summary>The clock a start is stamped with, so a node says since when it waits; null stamps none.</summary>
     public Func<DateTimeOffset>? Clock { get; init; }
 

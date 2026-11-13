@@ -303,7 +303,7 @@ internal sealed class AutoTidies(
         if (candidates.Count == 0 && landings.Count == 0) return Pass(stays);
 
         using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
-        if (hold is null) return Pass([], TidyKept.Starting, TreeLock.HolderOf(context.Home, root));
+        if (hold is null) return Pass([], TidyKept.Starting, TreeLock.RefusedBy(context.Home, root));
         var (busy, unsaidNow) = await BusyAsync().ConfigureAwait(false);
         if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
 

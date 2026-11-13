@@ -121,6 +121,7 @@ internal static class NodeEvaluations
         var run = new WireRun(governed.GraphDigest, governed.Run)
         {
             Clock = clock,
+            RunBranch = scope.Branch,
             Revisions = revisions,
             Subjects = subjects,
             NodeRevisions = own,

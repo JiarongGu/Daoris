@@ -73,7 +73,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         if (service is not null)
         {
-            if (removing is null) return new(false, TreeLock.Starting(owner.Repository, TreeLock.HolderOf(context.Home, full)));
+            if (removing is null) return new(false, TreeLock.Starting(owner.Repository, TreeLock.RefusedBy(context.Home, full)));
             if ((await service.ActiveSessionsAsync(ct).ConfigureAwait(false)).Any(session => session.Tree is { Length: > 0 } tree && SamePath(tree, full)))
                 return new(false, SessionBranchDiscard.Held(owner.Repository, follows.BranchOfTree(full)?.Branch ?? Path.GetFileName(full)));
             if (force && SessionLocks.HolderOf(full) is { } holder
