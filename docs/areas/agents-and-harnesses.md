@@ -70,9 +70,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 13. A start's connectors are one `ConnectorPlan` per workspace (`ConnectorPlans.For`): Daoris's connector, the plugins' and the
     browser's for a session, Daoris's alone for a reviewer, helper, partner or brainstorm pass; a source not permitted, a name
     twice or a missing required server is refused by name. The protocol door's open carries the plan; Claude Code's native door
-    writes it to a `.mcp.json` under the home (`--mcp-config`). Only a supervisor's turn leaves the agent's own servers out, held
-    to the person's tier, its handed file and Daoris's servers (`HandSourcesAlone`), its shell tools denied. A native door drives
-    an adopted repository by its own `.mcp.json` only where its servers inherit its environment (`Adoption.Drives`). An `npx`
+    writes it to a `.mcp.json` under the home (`--mcp-config`), including the located Daoris connector with the session's identity
+    on fresh quest starts and carry-ons, without relying on a repository's `.mcp.json`. Only a supervisor's turn leaves the agent's
+    own servers out, held to the person's tier, its handed file and Daoris's servers (`HandSourcesAlone`), its shell tools denied.
+    A native door is admitted only for an adopted repository whose servers inherit its environment (`Adoption.Drives`). An `npx`
     server starts as node and its package's script, installed once into `cache/toolchain/<package>/<version>`; one that cannot
     start is not handed (`server.refused`). A server driving Daoris's browser runs under `keeper/server-keeper.mjs`, restarted
     past 512 MB with no call in flight, since Playwright MCP's memory grows with every request. The session's tabs are in a browser

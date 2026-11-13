@@ -25,8 +25,7 @@ public static class OpinionPermissions
 
     /// <summary>
     /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks, a repository's
-    /// memory it reads, and its one say. The service's <c>CallTable.ReviewerServed</c> serves a reviewer the same on every
-    /// door, held to this list by its tests.
+    /// memory it reads, and its one say: the reviewer's posture, handed as the harness's rules where its agent takes them.
     /// </summary>
     private static readonly string[] Offered =
     [

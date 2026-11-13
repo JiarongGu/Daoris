@@ -9,7 +9,7 @@ export type GateDeclaration = { name: string; run: string; memoryGb?: number; cl
 export type TreeEntry = { path: string; blob: string };
 export type Toolchain = { node: string; dotnet: string };
 export type VerdictKey = { inputs: string; config: string; toolchain: string };
-export type StoredVerdict = { gate: string; verdict: string; tree: string; at: string; key?: VerdictKey };
+export type StoredVerdict = { gate: string; verdict: string; tree: string; at: string; key?: VerdictKey; commit?: string | null };
 export type Replay = { from: string; at: string; note: string };
 
 const sha = (text: string): string => createHash('sha1').update(text).digest('hex');
@@ -51,6 +51,6 @@ export function replayFor(stored: StoredVerdict[], key: VerdictKey): Replay | nu
   return {
     from: newest.tree,
     at: newest.at,
-    note: `replayed from tree ${newest.tree} at ${newest.at}: its reached inputs, command and toolchain are unchanged`,
+    note: `replayed from tree ${newest.tree} at ${newest.at}${newest.commit ? ` (run of ${newest.commit.slice(0, 7)})` : ''}: its reached inputs, command and toolchain are unchanged`,
   };
 }

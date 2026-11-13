@@ -26,7 +26,7 @@
   "work.attention.setUpShown": "Shown in `{{environment}}`; it said nothing of what it showed.",
   "work.attention.door.answer": "Answer…",
   "work.attention.door.intake": "Answer ask #{{id}}",
-  "work.attention.door.review": "Review",
+  "work.attention.door.review": "Open outputs",
   "work.attention.door.left": "See what is left",
   "work.attention.door.open": "Open",
   "work.attention.door.confirmation": "Confirm or refuse…",

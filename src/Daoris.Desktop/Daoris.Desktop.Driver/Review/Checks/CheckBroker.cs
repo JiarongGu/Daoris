@@ -53,7 +53,11 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
             await using (var log = new StreamWriter(_files.LogOf(next.Id), append: false, Utf8) { AutoFlush = true })
             {
                 var world = new HeavyRunWorld(home, folder, System.Environment.GetEnvironmentVariable);
-                exit = await _run(new HeavyRunAsk(next.Gate) { Command = next.Command }, world, log, ct).ConfigureAwait(false);
+                exit = await _run(new HeavyRunAsk(next.Gate)
+                {
+                    Command = next.Command,
+                    Observed = next.By == CheckAsk.ByDaoris && next.Gate is not null && next.Command is null,
+                }, world, log, ct).ConfigureAwait(false);
             }
 
             return Keep(new CheckState(next.Id, exit == 0 ? CheckStates.Reached : CheckStates.Failed, DateTimeOffset.UtcNow)

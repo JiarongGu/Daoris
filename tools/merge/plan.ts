@@ -16,7 +16,7 @@ export type Kind = 'check' | 'suite' | 'rehearsal';
 
 /** A gate as the declaration writes it. */
 export type Gate = {
-  name: string; run: string; cwd?: string; clock?: boolean; memoryGb?: number; reuse?: string; regenerate?: string; timeoutMinutes?: number;
+  name: string; run: string; cwd?: string; clock?: boolean; alone?: boolean; memoryGb?: number; reuse?: string; regenerate?: string; timeoutMinutes?: number;
 };
 
 /** A gate as the plan orders it: its name made a path segment, its kind, and (for the declared runner) the name the declaration writes. */
@@ -285,6 +285,10 @@ export function laneSchedule<G extends Named>(
   }
   const planned = gates.filter((gate) => !isProcessLane(gate));
   const components: Record<string, string[]> = Object.fromEntries(planned.map((gate) => [gate.name, gateComponents(gate, scripts)]));
+  // A gate declared `"alone": true` (the censuses, whose timings the time check judges) holds every component another gate builds,
+  // so it starts when no gate that builds runs and none starts while it runs; only a gate that builds nothing may run beside it.
+  const everything = [...new Set(Object.values(components).flat())];
+  for (const gate of planned) if ((gate as { alone?: boolean }).alone) components[gate.name] = everything;
   const sharing = (component: string | null): G[] => planned.filter((other) => component !== null && (components[other.name] ?? []).includes(component));
   const first = new Set(process.flatMap((gate) => sharing(dotnetComponent(gate.run))).map((gate) => gate.name));
   const light = [...planned.filter((gate) => first.has(gate.name)), ...planned.filter((gate) => !first.has(gate.name))];
@@ -366,6 +370,7 @@ export function gatePlan(declared: Gate[], workflow = '', { keepDeclared = false
         kind,
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
         ...(gate.clock ? { clock: true } : {}),
+        ...(gate.alone ? { alone: true } : {}),
         ...(typeof gate.memoryGb === 'number' ? { memoryGb: gate.memoryGb } : {}),
         ...(typeof gate.reuse === 'string' ? { reuse: gate.reuse } : {}),
         ...(typeof gate.regenerate === 'string' ? { regenerate: gate.regenerate } : {}),
@@ -407,9 +412,9 @@ export function declaredIn(text: string, label: string): Gate[] {
   // inputs be replayed; `"regenerate"` is the command that makes a generated input the gate checks current before it runs.
   // `"timeoutMinutes"` is the gate's wall-clock budget; absent, the lane's (`merge/timeout.ts`).
   return gates.map((gate) => {
-    const { name, run, cwd, clock, memoryGb, reuse, regenerate, timeoutMinutes } = gate as Gate & { clock?: unknown };
+    const { name, run, cwd, clock, alone, memoryGb, reuse, regenerate, timeoutMinutes } = gate as Gate & { clock?: unknown; alone?: unknown };
     return {
-      name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}),
+      name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}), ...(alone === true ? { alone: true } : {}),
       ...(typeof memoryGb === 'number' ? { memoryGb } : {}), ...(typeof timeoutMinutes === 'number' ? { timeoutMinutes } : {}),
       ...(typeof reuse === 'string' ? { reuse } : {}), ...(typeof regenerate === 'string' ? { regenerate } : {}),
     };

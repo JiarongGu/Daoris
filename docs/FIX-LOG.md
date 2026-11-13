@@ -28,6 +28,47 @@ repository.
 - **Fix:** declare the sub-verb and list its read in the shared help with English and Chinese descriptions.
 - **Verification:** `DriverHostTests` starts the host used by the installed command: the read reaches the registry, and both
   `help repository` and bare `repository` list it. All three cases failed before the fix; `CommandTreeTests` covers the routed words.
+## 2026-11-13 - A limit move's older-build copy was counted twice: the brief quotes the sibling part's word
+
+- **Symptom:** `LimitMoveOlderBuildProcessTests` and `EndedLimitMoveOlderBuildProcessTests`, the delayed older move's case: "Expected (1, 1), Actual (1, 2)", a word apparently delivered twice.
+- **Root cause:** the test's count (`Heard`) counted every mention in every prompt. Since a record carries its conversation's id as its line (c525293cea), the older move's late successor is in the same line as the newer move's part, and its continuation brief quotes that sibling's turn, word included, as a past exchange (`> word`). One prompt, one delivery; the mention in the quote was counted as a second. Not b806f6c557, which changed no brief.
+- **Fix:** the two cases count the word as a word to act on (`HeardAsWord`), the brief's quotes of past exchanges left out; a failing case says what was heard.
+- **Verification:** both cases failed with (1, 2) and pass three runs in a row.
+
+## 2026-11-13 - A stash drop's refusal case held a session that does not refuse
+
+- **Symptom:** `StashDropsGitTests.The_switch_off_and_a_session_in_the_checkout_each_refuse_a_drop` failed: the drop beside a session was not refused.
+- **Root cause:** a press in the repository's own checkout (a place) is refused only by a turn running there or a step's reservation (3b98114728); the test's holder named a session with neither.
+- **Fix:** the holder is a session whose turn runs (`Runs = true`).
+- **Verification:** the case failed on the unrefused drop and passes three runs in a row with its class.
+
+## 2026-11-13 - The cancelled-read tests stood the hang in an alias git's scheduler no longer lets run
+
+- **Symptom:** both `GitStreamEndsTests` cases failed every run ("git's alias never began").
+- **Root cause:** `alias.hang` is unendable since b050836157 and refused by the tests' strict gate since 28c451b4a8.
+- **Fix:** the hang is a `diff.hang.textconv` helper set by the fixture's attributes, run by `diff HEAD~1 HEAD -- hang.txt` and `cat-file --batch --textconv` (whose input line is `<object> <path>`: with the object alone git stops with "missing path").
+- **Verification:** both cases failed first and pass three runs in a row.
+
+## 2026-11-13 - A driven-move fixture could outlive its repository and register a worktree on the real one
+
+- **Symptom:** the full set's gate tree held `_fixtures/driven-move-crash/<id>/work/trees/default/engine/s-<id>` registered as a worktree of the repository itself, with a branch and an "opening this tree" lock.
+- **Root cause:** `DrivenMoveHarness` ended a loop that did not stop within its patience as if it had, then removed the fixture; the loop's next git ran where its repository was gone and climbed to the checkout's.
+- **Fix:** a loop that did not end leaves the fixture in place and fails the case; every case then asks `CheckoutWorktrees` whether the checkout holds a worktree under its `_fixtures`, and fails if so.
+- **Verification:** `CheckoutWorktreesTests` holds the guard; the class passes three runs in a row. The leak itself was seen once, so the ordering is the reasoned cause.
+
+## 2026-11-13 - A stand-in's log was read while the stand-in wrote it
+
+- **Symptom:** `DriverModuleStartWithProcessTests.A_start_on_words_answers_sent_and_the_conversation_is_handed_them` failed with an `IOException`: `heard.txt` "being used by another process".
+- **Root cause:** the poll read the file with `File.ReadAllText`, which opens it with no share for the stand-in's append; the same fix was made for the driver's own stand-ins (df813c44f3).
+- **Fix:** the modules' two heard-file polls read through `StubFile.Text`, which shares read and write.
+- **Verification:** the class passes three runs in a row; the read is the shared one the driver tests use.
+
+## 2026-11-13 - The connector tool's stand-in loop wrote its answer in place, and the tool read it half written
+
+- **Symptom:** `McpCheckoutToolTests` failed only under load: "Daoris answered in a shape this connector does not read" for a plain refusal, and an `ArgumentOutOfRangeException` (startIndex -106, the length of that sentence) for the large answer.
+- **Root cause:** the test's loop (82ea70a3ea) wrote the answer file in place, and the tool polls every 10 ms; read between the file's creation and its write, an empty or partial answer parsed as a shape the tool does not read. The driver writes an answer whole.
+- **Fix:** the loop writes beside and renames into place.
+- **Verification:** the class passes three runs in a row and six at once.
 
 ## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
 

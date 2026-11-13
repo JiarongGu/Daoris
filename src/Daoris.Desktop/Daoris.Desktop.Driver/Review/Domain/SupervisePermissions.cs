@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The rules a supervisor's turn is handed where its agent takes Daoris's rules: the reviewer's read-only shape, with the harness's shell
 /// tools denied whole, so no command runs whatever an allow names (the person's interpreter's, a widening's, the copy's), and none of the
-/// reviewer's git reading or its say; its connector offers the reads the call table serves it. It reads through the harness's read tools
+/// reviewer's git reading or its say; its connector offers the reads and the harness's rules hold it to them. It reads through the harness's read tools
 /// and is handed what it decides on, and its decision takes effect only through its kind's keeping under its role's grants.
 /// </summary>
 public static class SupervisePermissions
@@ -13,7 +13,7 @@ public static class SupervisePermissions
     /// <summary>The harness's shell tools as the tree guard's matcher names them, each denied whole.</summary>
     public static IReadOnlyList<string> Shell { get; } = ["Bash", "PowerShell"];
 
-    /// <summary>Its connector's tools it may call: the service's <c>CallTable.SupervisorServed</c>, held alike by its tests.</summary>
+    /// <summary>Its connector's tools it may call: the reads alone, held to the connector's registered tools by its tests.</summary>
     public static IReadOnlyList<string> Offered { get; } =
     [
         "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",

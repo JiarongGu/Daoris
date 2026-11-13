@@ -38,7 +38,8 @@ public sealed class ReviewCommitsTests : IDisposable
         await Git("checkout", "--quiet", "-b", "work");
         var tip = await Commit("notes.md", "two\n");
         await Commit("notes.md", "three, after the review\n");
-        var branch = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T) { Reference = new() { Branch = "work", Line = "main", Tip = tip } };
+        var branch = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T) { Reference = new() { Branch = "work", Line = "main", Tip = tip, Base = start } };
+        var unbased = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T) { Reference = new() { Branch = "work", Line = "main", Tip = tip } };
         var checkout = new ReviewRecord("q1", "review", 1, ReviewKinds.Checkout, "r2", T)
         {
             Reference = new() { Turns = [new ReviewInterval("t1", T, T, start, tip)] },
@@ -47,6 +48,7 @@ public sealed class ReviewCommitsTests : IDisposable
         Assert.Equal("two\n", (await ReviewCommits.ReadAsync(_root, branch, "notes.md", ReviewContent.After)).Text);
         Assert.Equal("one\n", (await ReviewCommits.ReadAsync(_root, branch, "notes.md", ReviewContent.Before)).Text);
         Assert.Equal("one\n", (await ReviewCommits.ReadAsync(_root, checkout, "notes.md", ReviewContent.Before)).Text);
+        Assert.Null(await ReviewCommits.CommitAsync(_root, unbased, ReviewContent.Before, default));
         Assert.Equal(ReviewContent.NotRow, (await ReviewCommits.ReadAsync(_root, branch, "gone.md", ReviewContent.After)).Refused);
         Assert.Equal(ReviewContent.NotRow, (await ReviewCommits.ReadAsync(_root, branch, "../outside.md", ReviewContent.After)).Refused);
     }

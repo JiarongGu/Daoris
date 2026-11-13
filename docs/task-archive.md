@@ -5,9 +5,19 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CENSUSCOMPILE1 and CENSUSALONE1 — the census classes' time (2026-11-13)
+
+> **CENSUSCOMPILE1** (driver tests): Outcome: the three say-door censuses and `CheckoutWritersCensusTests` read the desktop sources through one shared reading (`SourceTexts`, `SayDoorSources`) that the desktop compilations use too, finding each file's say calls once; alone `ContinuedReaders`, `SayKeys` and `SettledReaders` fell from 6.4, 7.8 and 10.6 s to under 0.8 s each, their entries left the time ratchet's list, and `CheckoutWriters` lost its per-file comment blanking on files with no git call. The structure case and `ReviewGraphCensusTests` are bound by their own analysis and cases, not by reading, and are listed with their reason.
+>
+> **CENSUSALONE1** (tools): Outcome: a gate declared `"alone": true` holds every component another gate builds (`laneSchedule`), so the censuses gate runs with no building gate beside it and the time check judges its timings clean; the gate's own minute is what a merge gains.
 ## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
 
 > **SAYLINES1** (install, driver host): Outcome: the install's `daoris` is `daoris.exe` (`Daoris.Desktop.Command`), a program that starts the desktop's program with each argument whole, in place of the `daoris` script and `daoris.cmd` (a batch file's arguments end at the first line break); `CommandLauncherProcessTests`, `FreeWordsLineBreakTests` (say, reword, helper, ask, quest) and the shell-word test through cmd and PowerShell prove a line break reaches each verb; and `daoris ask --to <repo> --require` is no longer refused `MISSING_PAYLOAD_VALUE` (the requirement is sent as `{ quote, check }`).
+## GITSTREAM1 — the cancelled-read tests' hang is a textconv helper (2026-11-13)
+
+> **GITSTREAM1** (driver; `GitStreamEndsTests`): Outcome: both cases stand the hang in a `diff.hang.textconv` helper (set by the fixture's attributes) over `diff HEAD~1 HEAD -- hang.txt` and `cat-file --batch --textconv` (its input line names the path after the object), commands the scheduler lets run; the same pass made green the other known reds (limit-move older-build copy, stash drop's session, the driven-move fixture's leak guard, the modules' heard-file read, the connector tool's answer write).
+
+---
 
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 

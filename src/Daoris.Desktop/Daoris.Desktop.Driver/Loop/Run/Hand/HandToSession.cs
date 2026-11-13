@@ -306,7 +306,14 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             {
                 var (spawn, notice) = wiring.Prepare(adapter, held, selection, carried is null ? null : LimitCarried.Prepared(context, adapter, held, carried));
                 if (carried is not null) LimitCarried.Compact(spawn, carried);
-                var served = adapter.ServerHanding()?.Hand(spawn, home, connectors);
+                string? served = null;
+                if (adapter.ServerHanding() is { } handing)
+                {
+                    var connector = wiring.Connector(sessionId, scope: null, proc: null);
+                    if (connector is null) notice = Driver.JoinNotices(notice, DrivenProtocolDoor.NoConnectorForSession);
+                    served = handing.Hand(spawn, home, ConnectorPlans.For(
+                        sessionId, start.Workspace, connector is null ? servers : [connector, .. servers]));
+                }
                 // The skills plugins hand sessions, composed under the home, gone with the session.
                 var (skills, skillPlugins) = SpawnSkills.Hand(
                     context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions, OwnTools.Machine(home, spawn));

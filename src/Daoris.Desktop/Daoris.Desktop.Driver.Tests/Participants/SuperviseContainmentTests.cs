@@ -48,13 +48,13 @@ public sealed class SuperviseContainmentTests : IDisposable
     }
 
     [Fact]
-    public void Its_offered_reads_are_the_call_table_s_supervise_column()
+    public void Its_offered_reads_are_tools_the_connector_registers()
     {
         using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
             WorkspaceRoot.Folder, "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "call-table.json")));
-        var column = table.RootElement.GetProperty("columns").GetProperty("supervise").GetProperty("only").EnumerateArray().Select(each => each.GetString()!);
+        var registered = table.RootElement.GetProperty("registered").EnumerateArray().Select(each => each.GetString()!).ToList();
 
-        Assert.Equal(column.Order(StringComparer.Ordinal), SupervisePermissions.Offered.Order(StringComparer.Ordinal));
+        Assert.All(SupervisePermissions.Offered, tool => Assert.Contains(tool, registered));
     }
 
     [Theory]

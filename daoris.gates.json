@@ -154,7 +154,7 @@
         "src/Daoris.Web/tsconfig.tsbuildinfo", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"", "reuse": "inputs",
+    { "name": "censuses", "alone": true, "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"", "reuse": "inputs",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Daoris.Desktop.App/", "src/Daoris.Desktop/Daoris.Desktop.Driver/",

@@ -73,7 +73,7 @@ internal static class DesktopCompilations
     internal static CSharpCompilation Of(string project) => Compiled.GetOrAdd(project, named => new(() =>
     {
         Made.AddOrUpdate(named, 1, (_, made) => made + 1);
-        return Compile(named, [.. Sources(named).AsParallel().AsOrdered().Select(path => (Relative(path), File.ReadAllText(path)))], named != "Daoris.Desktop.Driver");
+        return Compile(named, [.. Sources(named).AsParallel().AsOrdered().Select(path => (Relative(path), SourceTexts.Of(path)))], named != "Daoris.Desktop.Driver");
     })).Value;
 
     /// <summary>A compilation of <paramref name="sources"/> (each a path under the desktop tree and its text), named as an assembly.</summary>

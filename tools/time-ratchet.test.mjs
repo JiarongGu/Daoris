@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, scanRecords, tighten } from './time-ratchet.mjs';
+import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, scanRecords, slowestClasses, tighten } from './time-ratchet.mjs';
 
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
   `<UnitTestResult executionId="x" testName="${name}" duration="${duration}" outcome="${outcome}" />`).join('')}</Results></TestRun>`;
@@ -51,9 +51,12 @@ test('a junit report keys a test under its suites', () => {
   ]);
 });
 
+const WHY = 'a real git process is started for each case, and the case checks what the process wrote';
+const entry = (ms, why = WHY, row) => ({ ms, why, ...(row ? { row } : {}) });
+
 test('a test over its limit and not listed fails, one listed may run up to its time and no longer', () => {
   const found = { 'A.slow': { ms: 200_000, limit: 120_000 }, 'B.listed': { ms: 150_000, limit: 120_000 }, 'C.worse': { ms: 190_000, limit: 120_000 } };
-  const problems = checkTimes(found, { 'B.listed': 150_000, 'C.worse': 180_000 });
+  const problems = checkTimes(found, { 'B.listed': entry(150_000), 'C.worse': entry(180_000) });
   assert.equal(problems.length, 2);
   assert.match(problems[0], /A\.slow took 200000 ms.*takes no new test/);
   assert.match(problems[1], /C\.worse.*does not get slower/);
@@ -61,7 +64,37 @@ test('a test over its limit and not listed fails, one listed may run up to its t
 
 test('an entry that starts a key covers every test under it', () => {
   const found = { 't.mjs::queue > one': { ms: 90_000, limit: 5_000 }, 't.mjs::other': { ms: 90_000, limit: 5_000 } };
-  assert.equal(checkTimes(found, { 't.mjs::queue': 100_000 }).length, 1);
+  assert.equal(checkTimes(found, { 't.mjs::queue': entry(100_000) }).length, 1);
+});
+
+test('an entry with no reason, a short one, or one that only repeats the test name fails, naming the entry', () => {
+  const list = {
+    'A.B.none': { ms: 1 },
+    'A.B.short': { ms: 1, why: 'slow' },
+    'A.B.Restates_the_name_of_the_test_itself': { ms: 1, why: 'Restates the name of the test itself' },
+    'A.B.number': 5,
+    'A.B.fine': entry(1, WHY, 'TESTSLOW1'),
+  };
+  const problems = reasonProblems(list);
+  assert.equal(problems.length, 4);
+  for (const key of ['none', 'short', 'Restates_the_name', 'number']) assert.ok(problems.some((line) => line.includes(key)), key);
+  assert.deepEqual(reasonProblems({ 'A.B.fine': entry(1) }), []);
+});
+
+test('every test over its limit says its reason, or that it has none', () => {
+  const found = { 'A.listed': { ms: 150_000, limit: 120_000 }, 'B.bare': { ms: 150_000, limit: 120_000 } };
+  const lines = reasonLines(found, { 'A.listed': entry(150_000, WHY, 'TESTSLOW1') });
+  assert.match(lines[0], /A\.listed.*150000 ms.*a real git process.*TESTSLOW1/);
+  assert.match(lines[1], /B\.bare.*no reason: optimize it or say why/);
+});
+
+test('the slowest classes of a record are the top by total time, each with its reason', () => {
+  const tests = [
+    { key: 'N.Slow.one(a: 1)', ms: 5000 }, { key: 'N.Slow.two', ms: 4000 }, { key: 'N.Quick.one', ms: 10 }, { key: 'f.test.ts::suite a', ms: 7000 }, { key: 'f.test.ts::suite b', ms: 1000 },
+  ];
+  const top = slowestClasses(tests, 2, { 'N.Slow': entry(5000, WHY, 'TESTSLOW1') });
+  assert.deepEqual(top.map((each) => [each.name, each.ms, each.count]), [['f.test.ts', 8000, 2], ['N.Slow', 9000, 2]].sort((a, b) => b[1] - a[1]));
+  assert.equal(top.find((each) => each.name === 'N.Slow').row, 'TESTSLOW1');
 });
 
 test('a merge judges only the records its own gates wrote: a stale record is not read, and none written means a pass', () => {
@@ -88,7 +121,7 @@ test('a merge whose own census run is over its listed time fails the ratchet', (
   try {
     const since = Date.now() - 60_000;
     writeFileSync(join(dir, 'censuses.trx'), trx([['C.Census', '00:00:41']]));
-    const problems = checkTimes(scanRecords(dir, '.', { since }).over, { 'C.Census': 35_000 });
+    const problems = checkTimes(scanRecords(dir, '.', { since }).over, { 'C.Census': entry(35_000) });
     assert.equal(problems.length, 1);
     assert.match(problems[0], /C\.Census took 41000 ms, longer than its listed 35000 ms/);
   } finally {
@@ -103,10 +136,10 @@ test('the ratchet verify runs stands aside inside a merge, and says so', () => {
 });
 
 test('the list is cut to what the records show and never grows', () => {
-  const list = { 'A.stays': 300_000, 'B.faster': 300_000, 'C.unseen': 300_000 };
+  const list = { 'A.stays': entry(300_000), 'B.faster': entry(300_000), 'C.unseen': entry(300_000) };
   const found = { 'A.stays': { ms: 200_000, limit: 120_000 }, 'New.slow': { ms: 999_000, limit: 120_000 } };
   const seen = new Set(['A.stays', 'B.faster', 'New.slow']);
-  assert.deepEqual(tighten(found, list, seen), { 'A.stays': 200_000, 'C.unseen': 300_000 });
+  assert.deepEqual(tighten(found, list, seen), { 'A.stays': entry(200_000), 'C.unseen': entry(300_000) });
 });
 
 test('records on disk are scanned by their file and an absent folder holds nothing', () => {

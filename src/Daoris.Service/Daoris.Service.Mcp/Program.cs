@@ -177,9 +177,6 @@ builder.Services
     // part: a child calls with this process's session, so the environment cannot tell it apart.
     .RecordCallLineage(LineageFile.FromEnvironment())
     .NoteCallPlaces(CallPlaceFile.FromEnvironment())
-    // Every call judged by the session's work before its tool runs (the call layer's table), whatever rules its agent
-    // takes: a brainstorm pass is placed first by the turn named on this connector, else the work is its record's.
-    .RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)
     // Every answer ends with what waits for the session on its ask's channel, once per new message: the pull
     // an agent meets at its next call, whatever its door.
     .TellWhatWaits(new WaitingLine(composed.Channel, intake).NextAsync)

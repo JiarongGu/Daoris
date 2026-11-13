@@ -366,3 +366,17 @@ test('the plan lists each gate numbered with its name, kind and command', () => 
   assert.match(lines[0]!, /^ {2}1\. {1,2}a +suite +node a\.mjs$/);
   assert.match(lines[1]!, /^ {2}2\. {1,2}b +rehearsal +npm run rehearse$/);
 });
+
+test('a gate declared alone holds every component another gate builds, so it never runs beside one; the declared census gate is alone', () => {
+  const gates = [
+    planned('d', 'dotnet test src/X/X.Tests'),
+    planned('s', 'dotnet test src/Y/Y.Tests'),
+    { ...planned('c', 'dotnet test src/X/X.Tests --filter Category=Census'), alone: true },
+  ];
+  const { components } = laneSchedule(gates);
+  assert.deepEqual([...components['c']!].sort(), ['src/X', 'src/Y']);
+  assert.deepEqual(components['d'], ['src/X']);
+  assert.equal(repoPlan.find((gate) => gate.name === 'censuses')?.alone, true);
+  const every = laneSchedule(repoPlan, { scripts }).components;
+  for (const gate of light) for (const component of every[gate.name]!) assert.ok(every['censuses']!.includes(component), `${gate.name}'s ${component}`);
+});

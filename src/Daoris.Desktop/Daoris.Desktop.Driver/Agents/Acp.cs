@@ -221,6 +221,13 @@ public sealed class AcpSession(
     /// </summary>
     public AcpUsage? Usage => TurnStages.Of<AcpMeasure>().Usage;
 
+    /// <summary>Told when the harness compacted the session's context, read from its counter falling (<see cref="ContextDrop"/>).</summary>
+    public event Action Compacted
+    {
+        add => TurnStages.Of<AcpMeasure>().Compacted += value;
+        remove => TurnStages.Of<AcpMeasure>().Compacted -= value;
+    }
+
     /// <summary>
     /// Told what a <c>usage_update</c> says about the account's windows, as the adapter's meta carries them, for the agent's table to
     /// read. Raised on the reader's thread; a listener's failure is its own.

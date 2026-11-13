@@ -117,7 +117,12 @@ export function reuseContext({ map, files, read, toolchain, gates, readers }: {
   const reaches = (unit: CensusUnit, path: string): boolean => (unit.kind === 'dotnet' ? dotnetReaches(unit, path) : tsUnitReaches(unit, path));
 
   const candidates = new Map<string, string[]>();
-  const declarations = new Map(gates.map((gate) => [gate.name, JSON.stringify([gate.run, gate.memoryGb ?? null, gate.clock ?? false])]));
+  // The run settings a command names are part of what it is: a change to the filter or the environment they hold is another run.
+  const settingsOf = (run: string): string | null => {
+    const path = /(?:--settings|-s)[ =:]+"?([^"\s]+)"?/.exec(run)?.[1]?.replaceAll('\\', '/');
+    return path && files.includes(path) ? digestOf(path) : null;
+  };
+  const declarations = new Map(gates.map((gate) => [gate.name, JSON.stringify([gate.run, gate.memoryGb ?? null, gate.clock ?? false, settingsOf(gate.run)])]));
   return {
     reaches: (unit, path) => reaches(fullOf(unit), path),
     candidates: (unit) => {

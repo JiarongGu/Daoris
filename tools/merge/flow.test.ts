@@ -232,3 +232,58 @@ test('a gate whose failure was read whole fails the merge under a finding of mai
   assert.deepEqual(settled.held, []);
   assert.match(settled.lines.join('\n'), /web-rules: a finding of main's names no test, so it excuses none of its failures/);
 });
+
+const plain = { name: 'deployment', run: 'npm run rehearse:deploy', reuse: '' };
+const askNarrowed = (h: ReturnType<typeof harness>, narrow: NonNullable<Parameters<typeof runOne>[1]['narrow']>) => runOne(h.deps, {
+  where: h.dir, gate: plain, logs: join(h.dir, 'logs'), beside: {}, tree: 'T2', trees: null, step: undefined, noBuild: false, narrow,
+});
+
+test('a full set replays a gate that declares no reuse, from the run it names; a merge does not', async () => {
+  const h = harness();
+  try {
+    const key = verdictExtras(await call(h, { gate: plain })).key!;
+    const standing: StoredVerdict[] = [{ gate: 'deployment', verdict: 'PASS', tree: 'T1', at: '2026-11-12T10:00:00Z', commit: 'abc1234def', key }];
+    const full = harness({ readVerdicts: () => standing, replayAll: true });
+    const result = await call(full, { gate: plain });
+    assert.equal(full.asked.length, 0);
+    assert.match(result.note, /replayed from tree T1.*abc1234/);
+    const merge = harness({ readVerdicts: () => standing });
+    await call(merge, { gate: plain });
+    assert.equal(merge.asked.length, 1);
+    full.done();
+    merge.done();
+  } finally {
+    h.done();
+  }
+});
+
+test('a full set never replays a red or a flake of the same key', async () => {
+  const h = harness();
+  try {
+    const key = verdictExtras(await call(h, { gate: plain })).key!;
+    for (const verdict of ['FAIL', 'FLAKE']) {
+      const again = harness({ replayAll: true, readVerdicts: () => [{ gate: 'deployment', verdict: 'PASS', tree: 'T0', at: 'a', key }, { gate: 'deployment', verdict, tree: 'T1', at: 'b', key }] });
+      await call(again, { gate: plain });
+      assert.equal(again.asked.length, 1, verdict);
+      again.done();
+    }
+  } finally {
+    h.done();
+  }
+});
+
+test('a gate narrowed to the classes no pass covers runs the narrowed command, keyed as the declared gate; none left passes unrun', async () => {
+  const h = harness({ replayAll: true });
+  try {
+    const narrowed = await askNarrowed(h, () => ({ run: 'npm run narrowed', replay: { replayedCount: 3, ran: 1, runs: ['abc1234'], oldest: 'x' } }));
+    assert.equal(h.asked[0]!.run, 'npm run narrowed');
+    assert.equal(narrowed.classReplay?.ran, 1);
+    assert.deepEqual(verdictExtras(narrowed).key, verdictExtras(await call(harness(), { gate: plain })).key);
+    const none = await askNarrowed(h, () => ({ run: null, replay: { replayedCount: 4, ran: 0, runs: ['abc1234'], oldest: 'x' } }));
+    assert.equal(h.asked.length, 1);
+    assert.equal(none.verdict, 'PASS');
+    assert.match(none.note, /4 classes replayed/);
+  } finally {
+    h.done();
+  }
+});

@@ -5,8 +5,7 @@
 The knowledge service reads the checkouts registered on this machine and keeps one derived index of what they wrote: rules,
 knowledge, skills, decisions and their notes, fixes, finished tasks, the router, a declared documents folder and the generated
 index of where things are. It answers searches by words, and by meaning where the deployment names a model. Every hit names its
-lines and the commit it was read at. Sessions reach it through the MCP connector, which serves each session only the tools its
-kind of work may call. The memory coordinator keeps one memory per repository, owned by that repository's sessions and changed
+lines and the commit it was read at. Sessions reach it through the MCP connector, which serves every tool to every caller. The memory coordinator keeps one memory per repository, owned by that repository's sessions and changed
 only through a log of operations. A workspace may be wired to a remote: quests sync as operations, records as feeds, and nothing
 leaves the machine unless the repository's manifest says it may. This repository keeps its own records in declared files with
 one job each, checked by `verify`.
@@ -40,8 +39,8 @@ one job each, checked by `verify`.
 | Knowledge tools | `Mcp/KnowledgeSearchTools.cs` | `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `registry`, `knowledge_refresh` |
 | Memory tools | `Mcp/MemoryTools.cs` | `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose`; a search across a workspace's repositories gives each a fair share of its ten places, taking turns in repository order with each engine's own order within, since the engines give no score to merge by |
 | `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |
-| `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
-| Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
+| `ToolClasses` | `Mcp/ToolClasses.cs` | Every registered tool's class; every tool is served to every caller |
+| Call filters | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage record, missing arguments, the waiting line |
 | Call keys | `Core/Sessions/CallLineage.cs`, `Core/Sessions/CallKeys/` | A call's `_meta` lineage read by one ordered list of agents' keys, one file per agent (Claude Code's first, so a call carrying both is read as its); the list is held to the driver census's `service.callKeys` twin |
 | `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, the waits no session holds `MemoryOpWaits`, its rows' types `Memory/Records/` |
 | `IMemoryEngines`, `MemoryEngine` | `src/Daoris.Ports/Memory/` | The memory engine's port: one engine per repository, its reads, its guarded writes and its read-only view for others |
@@ -120,18 +119,18 @@ one job each, checked by `verify`.
     store is the file and its log together. Serving never
     builds. A workspace's own server is built by `node tools/knowledge-server.mjs build` into `local/`, and a running session
     moves onto a new build at its next request. (from D63, D151, D236)
-17. Every registered tool has a class: read, restricted or publish. A tool with no class is refused to every named session.
-    (from D173)
-18. The call table serves by work. A session in a repository gets the 18 core tools (knowledge, memory, quests, its line, the
-    registry, a helper's ask, the channel, handbacks) plus its kind's own. Ask Daoris gets every tool but the brainstorm turns,
-    memory changes and `helper_ask`, which an intake is refused too: neither works in a repository of its own. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
-    the reads. `system_plan` is served only to a quest's session whose department is registered as a system (`SessionWork.InSystem`,
-    read from the registration), and refused to every other work, so no repository's session lists it. (from D212, D230, D270)
-19. `tools/list` names only what the table serves, and a refused call answers a sentence and a closed code before the tool
-    runs. `McpRoleFilterTests` holds the table to the tests' `fixtures/call-table.json`. (from D212, D230)
-20. A connector that names no session (a person's own agent) is not filtered by the table. (from D212)
-21. A tool other than a read runs only for a caller whose lineage proves a root; a child may publish a plain quest and nothing
-    else. A missing argument is answered from the tool's schema; argument values are never logged. (from D173)
+17. Every registered tool has a class, read or acts, which names the act a call that reached beyond its place is recorded as; a
+    class refuses no caller. (from D173, D284)
+18. The connector serves every tool to every caller. `tools/list` names every registered tool to a session of any work, and no
+    call is refused by the session's work: a tool whose work has nothing to act on says so in its own answer (a brainstorm tool
+    with no turn, `checkout_read` outside Ask Daoris, a memory change by a work with no repository of its own, a check by a
+    session with no tree). What a one-job session may call is its harness's rules, handed at its start. (from D212, D284)
+19. `McpRoleFilterTests` holds the tests' `fixtures/call-table.json` to the registration and to the closed set of works, a
+    brainstorm placed by its two turns. (from D212, D284)
+20. A connector that names no session (a person's own agent) writes no lineage; its calls run the same. (from D212)
+21. Every call's lineage is recorded for the driver to bind a native child to its session's part, and decides nothing: a
+    subagent's call counts as its session's, so its full `quest_publish` passes. A missing argument is answered from the tool's
+    schema; argument values are never logged. (from D173, D284)
 22. An answer ends with one line of what waits on the ask's channel when a message waits that no line named yet, except `channel_read`'s own. (from D188)
 
 **Memory**
@@ -218,7 +217,7 @@ one job each, checked by `verify`.
 - **A new knowledge read over HTTP:** its records in `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs` and its handler in
   the HTTP host's `Routes/KnowledgeRoutes.cs`.
 - **A new connector tool:** its own `*Tools.cs` in `Mcp/`, one line in `KnowledgeServer.ToolTypes`, a class in `ToolClasses`,
-  its cells in `CallTable` and `fixtures/call-table.json`.
+  its name in `fixtures/call-table.json`'s `registered` list.
 - **Memory behaviour:** `Knowledge/Memory/`; a new state or kind goes in `Memory/Records/MemoryOpKind.cs` and `MemoryOpState.cs`, never as a branch elsewhere.
 - **A new kind that syncs:** a `<Kind>Sync.cs` in `Remote/`, a door on `IRemote`, and its route in the HTTP host's `PersonDoors`
   as a shared door.
@@ -227,7 +226,7 @@ one job each, checked by `verify`.
 **Tests that pin it.** `src/Daoris.Service/Daoris.Service.Tests/`: `Knowledge/` (`KnowledgeStoreContractTests`, `SearchTests`,
 `HybridSearchTests`, `RefreshTests`, `CheckoutFreshnessTests`, `IndexEntriesTests`, `DecisionNotesTests`, `KnowledgeStandingTests`,
 `CitationRecheckTests`, `DisclosureTests`, `NewerIndexTests`, `OneCheckoutTests` and the `Memory*Tests`); `Mcp/`
-(`McpRoleFilterTests`, `CoreSetTests`, `ToolClassesTests`, `McpToolRegistrationTests`, `CallLineageFilterTests`,
+(`McpRoleFilterTests`, `ToolClassesTests`, `McpToolRegistrationTests`, `CallLineageFilterTests`,
 `ArgumentFilterTests`, `McpMemoryToolsTests`, `McpMemoryProposalTests`); `Registry/` (`RepositoryScannerTests`,
 `RegistrationStoreTests`, `RepositoryLayoutTests`, `RepositoryDocumentsTests`); `Remote/` (`QuestSyncTests`, `SessionSyncTests`,
 `ChannelSyncTests`, `CodeMapSyncTests`, `HttpRemoteTests`, `RemoteConfigTests`). Tools: `orient-index.test.mjs`,

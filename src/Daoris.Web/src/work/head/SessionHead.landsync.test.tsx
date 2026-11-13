@@ -45,7 +45,7 @@ describe("the head's rebase words where the line conflicts", () => {
   it('offers the rebase words in the review door’s place where replaying conflicts', () => {
     head({ ...PLAN, conflict: CONFLICT });
 
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
     expect(screen.getByText(/replaying this work onto the line conflicts/)).toHaveTextContent('Merge conflict in CHANGELOG.md');
     expect(screen.getByRole('button', { name: 'Ask it to rebase' })).toBeInTheDocument();
   });
@@ -53,7 +53,7 @@ describe("the head's rebase words where the line conflicts", () => {
   it('offers the door and no rebase words where nothing conflicts', () => {
     head(PLAN);
 
-    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Ask it to rebase' })).toBeNull();
   });
 

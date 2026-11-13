@@ -463,7 +463,7 @@
   "work.facts.press.accept": "采纳…",
   "work.facts.press.rebase": "变基",
   "work.facts.press.opinion": "第二意见",
-  "work.facts.press.review": "审阅",
+  "work.facts.press.review": "打开产出",
   "work.facts.attempt": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",
   "work.facts.attempt_other": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",
   "work.facts.continues": "接续 {{agent}} 的会话",

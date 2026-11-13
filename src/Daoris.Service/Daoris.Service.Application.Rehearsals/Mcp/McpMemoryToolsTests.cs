@@ -272,24 +272,11 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 An intake and Ask Daoris work in no repository of their own, so the call table refuses them the write and the end in its words;
-    /// an unnamed caller, which the table passes, is refused both by the tools and still reads. Nothing is kept.
+    /// 🔴 An unnamed caller is refused the write and the end by the tools themselves, and still reads. Nothing is kept.
     /// </summary>
     [Fact]
-    public async Task An_intake_Ask_Daoris_and_an_unnamed_caller_are_refused_the_write_and_the_end()
+    public async Task An_unnamed_caller_is_refused_the_write_and_the_end()
     {
-        foreach (var work in new[] { ParticipantWork.Intake, ParticipantWork.AskDaoris })
-        {
-            foreach (var tool in new[] { "memory_write", "memory_end" })
-            {
-                var refusal = CallTable.Refusal(new SessionWork(work), tool);
-                Assert.Equal(CallTable.ForbiddenWork, refusal?.Code);
-                Assert.Contains("changes no repository's memory", refusal!.Text);
-            }
-
-            Assert.True(CallTable.Served(new SessionWork(work), "memory_propose"));
-        }
-
         var unnamed = await AsAsync("unnamed");
         var before = _memory.State();
         var answers = new[]
@@ -298,7 +285,6 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
             await unnamed.EndAsync("Asker:m1", 1, "The map is drawn in vectors now."),
         };
 
-        Assert.True(CallTable.Served(SessionWork.Unnamed, "memory_write"));
         Assert.All(answers, answer =>
         {
             Assert.StartsWith("Refused", answer);
@@ -309,11 +295,10 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 Through the connector's lineage guard: a build's subagent is served the memory reads, answered from the stand-in, and refused the
-    /// write, the end and the proposal before they run; the stand-in is left unchanged.
+    /// 🔴 A build's subagent is served the memory reads, and its write, end and proposal reach their tools as its session's own.
     /// </summary>
     [Fact]
-    public async Task A_child_is_served_the_memory_reads_alone()
+    public async Task A_child_is_served_every_memory_tool_as_its_sessions()
     {
         await SeedAsync();
         var build = await _sessions.CreateAsync("q1", "Owner", "codex-acp", Now, workspace: "work");
@@ -334,11 +319,8 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Contains("`Owner:m1`", answers[0].Text);
         Assert.False(answers[1].Error);
         Assert.Contains("Owner draws the map", answers[1].Text);
-        foreach (var (tool, (error, text)) in new[] { "memory_write", "memory_end", "memory_propose" }.Zip(answers.Skip(2)))
-        {
-            Assert.True(error, tool);
-            Assert.StartsWith($"Nothing was done: `{tool}` was not run. This call came from a subagent", text);
-        }
+        Assert.False(answers[2].Error);
+        Assert.All(answers.Skip(2), answer => Assert.DoesNotContain("subagent", answer.Text));
 
         Assert.Equal(before, _memory.State());
     }
@@ -394,7 +376,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
             .AddMcpServer(options => options.ServerInfo = new() { Name = "example-knowledge", Version = "0.0.1" })
             .WithStreamServerTransport(toServer.Reader.AsStream(), fromServer.Writer.AsStream())
             .WithTools(toolTypes: [typeof(MemoryTools)])
-            .RecordCallLineage(new LineageFile(Path.Combine(_root, "home"), session), joinBudget: TimeSpan.FromMilliseconds(50));
+            .RecordCallLineage(new LineageFile(Path.Combine(_root, "home"), session));
 
         var answers = new List<(bool, string)>();
         using (var host = builder.Build())

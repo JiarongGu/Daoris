@@ -410,7 +410,7 @@ describe('the session rail', () => {
       screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
       await user.keyboard('{Enter}');
       expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-        'Stop…', 'Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Copy session ID',
+        'Stop…', 'Open outputs', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Copy session ID',
       ]);
       await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
       expect(stop).toHaveBeenCalledWith('s1a2b3c4');

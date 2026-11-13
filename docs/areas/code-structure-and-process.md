@@ -25,7 +25,7 @@ finishes first and the whole set runs once.
 | The layers' census | `tools/layers-census.mjs` and `layers-census/`, `tools/layers-census.json`, the `layers` gate | the reference graph read from the project files (Ports references nothing, Testing only Ports, an application assembly or a unit-test project no adapter and no package but analyzers and test libraries beyond the list), the ambient ports' reads per subdomain (a ratchet), the process starts per file of an application or unit-test project (`Process.Start`, `GetProcess*`, `new Process`: an allowance that only falls), and the unit budget (a unit test over a second fails by name, from the duration records under `_fixtures/test-timing/`); the list only shrinks |
 | The banned effects | `src/Layers.props`, `src/BannedSymbols.Effects.txt`, the desktop's `DaorisBannedEffects` | a process start, a sleep or a `Task.Delay` with no `TimeProvider`, the wall clock, a listener, a socket, a pipe and a handler-less `HttpClient` are a compile error (RS0030) in the layered libraries; a desktop project takes the same list by setting `DaorisBannedEffects` once each of its uses is allowed by a section of the one `.editorconfig`; `tools/layers-census-plant.test.mjs` builds planted cases (an alias, a shared helper, a fake that starts a process) and holds each to an error |
 | The clock | `src/Daoris.Adapters/Daoris.Adapters.Clock`, `src/Daoris.Ports/Clocks`, `src/Daoris.Testing/Clocks`, `tools/layers-census/clock.mjs` | the port is the platform's `TimeProvider`; the adapter's `MachineClock` constructs `TimeProvider.System` and the machine's quiet clock (a `QuietClock` value of Ports, which a root sets on the session watch: the driver host and `DriverLoop`), and no new clock interface exists. `ClockContract` runs on `MovedClock` in `Daoris.Testing.Tests` and on `MachineClock` in the adapter's `Needs=Clock` tests, which its `adapters-clock` gate runs. The application and the unit-test projects cannot yet carry the compiler's ban on the wall clock and real waits, so the census counts `DateTime.Now`/`UtcNow`, `DateTimeOffset.Now`/`UtcNow`, `TimeProvider.System`, `Thread.Sleep` and a `Task.Delay` naming no clock, per file, in `tools/layers-census.json`'s `clock` list, which only falls: a file over its count or unlisted fails, and a file under it is told to write the list again |
-| The time ratchet | `tools/time-ratchet.mjs`, `tools/time-ratchet.json` | a test over its limit is listed at its time and does not get slower; an unlisted one over fails |
+| The time ratchet | `tools/time-ratchet.mjs`, `tools/time-ratchet.json` | a test over its limit is listed at its time with the reason it is slow and does not get slower; an unlisted one over, or a listed one with no reason, fails |
 | The split tools | `tools/desktop-publish/`, `orient-index/`, `usage-report/`, `desktop/`, `knowledge-bench/`, `process-reach/`, `merge-branch/`; the CLI's `doctrine/sync*.ts` | each large tool is a thin runner beside a folder of modules by responsibility; every export stays importable from the old path |
 | The mover | `tools/move-code.mjs` | the one way a large file is split: moves named top-level statements, with the comments directly above them, to other modules, writes the imports each side then reads and the re-export at the old path, and refuses a plan whose counts differ or a statement that reads one left behind |
 | The design filer | `tools/file-designs.mjs` | the one way a design leaves `docs/`'s top: `git mv` into `docs/archive/`, every citation across the tree respelled in the same commit, its router row moved to the archive's router; `--unclaimed` names the dated documents no backlog row, area or brief cites; a citation it cannot respell (the lanes file, the lock, the canon, a path reaching neither place) refuses the run, or with `--skip-refused` leaves that design; `--check`, after a merge, reports a citation reaching a filed design's old place |
@@ -165,7 +165,14 @@ finishes first and the whole set runs once.
     `daoris.gates.json`), and the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
     passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
-    after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
+    after, and the full stage (`--ci --stage`) remains the one that owes every gate. The full set (`--full`, `--full --beside`, and
+    a CI run's gates) replays what main already proved (`tools/merge/full-replay.ts`, `tools/merge-branch/full-set.mjs`): a gate whose
+    verdict key (the declared inputs it reaches, its command, the toolchain) has a standing pass is not run and says from which
+    tree and run; a Process half is run with every class a standing pass of its own key covers kept out of its run settings
+    (keyed by the files reaching the class, the command and the run settings text, the toolchain, in the store `reached` writes),
+    and each class its report shows passing is recorded; a half whose classes all stand passes unrun. A red and a flake never
+    replay, a `--rerun` and a nightly run never replay, and a half the CI narrowed by reach is left to that. The set's passing
+    halves satisfy their sweep, being as strict as a whole run. The rehearsals replay by their inputs in the reach table. A merge is fast and never blocked by a red that is
     main's: a gate declaring `reuse` (`reached`, `censuses`) replays a standing pass whose reaching inputs, command and toolchain are
     unchanged (the verdict's `key`, in the one store `local/gate-verdicts.json`, under the merge tool's one reach table, whose digest
     the key holds); a failure main already stands in, the same test under the same signature (its open findings, its failing verdicts
@@ -175,7 +182,7 @@ finishes first and the whole set runs once.
     goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
     in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and
     said in the summary) is killed and fails as over-budget. The time ratchet (`tools/time-ratchet.mjs`) is judged once inside a merge, after every gate has finished, on the
-    timing records that merge's own gates wrote (`--since` its start), as a last check that fails like a gate and is named in the
+    timing records (the censuses gate is declared `"alone": true`, so the plan holds every component's gates back while it runs and its timings are its own, not load another gate made) that merge's own gates wrote (`--since` its start), as a last check that fails like a gate and is named in the
     summary; verify's own run of it stands aside inside a merge, and outside one judges what the records hold. Each merge appends a record to `local/merge-record.jsonl` (the gating's wall time, each gate's time and slowest classes, the
     tests that passed only when run again, first pass or not, reds set down as main's, what ran over budget), read by
     `tools/dev-metrics.mjs`. A gate never inherits a test runner's own variables (`NODE_TEST_CONTEXT`, `NODE_ENV`, `VITEST*`). `TASKS.md` merges by its rows' ids
@@ -203,8 +210,10 @@ finishes first and the whole set runs once.
     `--test-timeout` in `src/Daoris.Cli/package.json`, and each merge tool project's in `tools/vitest.config.ts` (ten seconds a unit
     test, two minutes an end-to-end case). Those are the backstop for a hang; `tools/time-ratchet.mjs` holds each test to
     its own limit (30 s, 2 min for a Process half, 10 s for the page and a merge tool unit test, 2 min for a tool test) from the durations the gates record, and
-    `tools/time-ratchet.json` names the tests over their limit and the time each may take: a listed test does not get slower, an
-    unlisted one over its limit fails, and `--write` only cuts the list. A test that needs longer says so and why where it is
+    `tools/time-ratchet.json` names the tests over their limit as `{ ms, why, row? }`: the time each may take, what makes it slow and why that
+    cannot be cut (a missing, short or name-only `why` fails the check), and the backlog row that optimizes it. A listed test does not
+    get slower, an unlisted one over its limit fails, `--write` only cuts the list, every test over budget is printed with its reason or
+    "no reason", and `--classes` prints the 15 classes of each record with the most total time. A test that needs longer says so and why where it is
     declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
     `tool-tests.xml`, `tool-unit.json`, `tool-e2e.json`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
     `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and

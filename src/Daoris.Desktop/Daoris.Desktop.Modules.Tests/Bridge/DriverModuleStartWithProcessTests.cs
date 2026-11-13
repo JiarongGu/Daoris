@@ -54,7 +54,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
             Assert.Equal("c1", started.GetProperty("sessionId").GetString());
             Assert.True(started.GetProperty("sent").GetBoolean());
             Assert.Equal(JsonValueKind.Null, started.GetProperty("why").ValueKind);
-            await UntilAsync(() => File.Exists(heard) && File.ReadAllText(heard).Contains("Fix the build.", StringComparison.Ordinal));
+            await UntilAsync(() => Daoris.Desktop.Driver.Tests.StubFile.Text(heard).Contains("Fix the build.", StringComparison.Ordinal));
         }
         finally
         {

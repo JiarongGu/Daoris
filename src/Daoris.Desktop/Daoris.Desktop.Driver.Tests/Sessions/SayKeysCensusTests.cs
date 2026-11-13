@@ -7,11 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the tests passes the producer's key, or is named here as a legacy case with why it has none. A producer's retry is kept as one
 /// word only where the word carries a key, so a new keyless caller is a second word waiting to happen.
 /// </summary>
-/// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie. A call is the door's when its
-/// receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the
-/// calls seen holds against a scan that stopped reading.
-/// </remarks>
+/// <remarks>Read from the sources of the driver, its host and the modules, by name wherever they lie. A call is the door's when its receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the calls seen holds against a scan that stopped reading.</remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class SayKeysCensusTests
 {
@@ -28,25 +24,18 @@ public sealed partial class SayKeysCensusTests
         ["SessionsKeeping.cs"] = (1, "the terminal's verb where no loop drives the home: it keeps the words on the record for the next loop and holds none itself, so nothing restarts under it"),
     };
 
-    [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
-    private static partial Regex Call();
-
     [Fact]
     public void Every_say_to_the_say_door_passes_a_key_or_is_a_named_legacy_case()
     {
         var seen = 0;
         var keyless = new List<string>();
-        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
+        foreach (var source in SayDoorSources.All)
         {
-            foreach (var path in SourceFiles.All(project, "*.cs"))
+            foreach (var call in source.Says)
             {
-                var source = File.ReadAllText(path);
-                foreach (Match call in Call().Matches(source))
-                {
-                    if (!Receivers.Contains(call.Groups["receiver"].Value)) continue;
-                    seen++;
-                    if (!Arguments(source, call.Index + call.Length).Contains("key:", StringComparison.Ordinal)) keyless.Add(Path.GetFileName(path));
-                }
+                if (!Receivers.Contains(call.Receiver)) continue;
+                seen++;
+                if (!Arguments(source.Text, call.Start).Contains("key:", StringComparison.Ordinal)) keyless.Add(source.File);
             }
         }
 
