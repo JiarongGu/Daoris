@@ -77,7 +77,6 @@ describe('the merge tool\'s flow, end to end in a scratch repository', { concurr
   });
 
   test('--rerun time-ratchet judges the merge\'s timing records again, and runs no gate of the plan', async () => {
-    // A stand-in ratchet that is red while its flag stands and says what window it was asked to judge.
     const ratchet = [
       "import { existsSync, appendFileSync } from 'node:fs';",
       "appendFileSync('local/ratchet-asked.txt', `${process.argv.slice(2).join(' ')}\\n`);",

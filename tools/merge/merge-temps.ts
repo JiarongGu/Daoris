@@ -16,7 +16,7 @@ export function sweepMergeTemps(root: string): string[] {
   return names;
 }
 
-/** The sweep, with a line to `say` when anything was left. */
+/** The sweep, with a line to `say` for any it removes. */
 export function sweepAndSay(root: string, say: (line: string) => void = console.log): void {
   const names = sweepMergeTemps(root);
   if (names.length) say(`removed ${names.length} stray git merge temp file${names.length === 1 ? '' : 's'} at the root: ${names.join(', ')}`);

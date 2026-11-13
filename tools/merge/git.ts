@@ -99,7 +99,6 @@ export function requireMain(root: string): void {
 /** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it). */
 export function preconditions(root: string): void {
   const merging = mergeInProgress(root);
-  // With no merge open no git of this checkout is running a driver, so a driver's temp file at the root is a stray that would dirty it.
   if (!merging) sweepAndSay(root);
   const facts = { ...treeState(root), merging, ignored: true };
   const refusal = startRefusal(facts);
