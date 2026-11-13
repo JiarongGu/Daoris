@@ -82,6 +82,29 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         Assert.Equal(2, ledger.Count);
     }
 
+    /// <summary>🔴 A word refused while the move stands before its hold goes on with the refused turn's, in their order.</summary>
+    [Fact]
+    public async Task A_word_refused_while_the_move_stood_goes_on_with_the_refused_turn_s_words()
+    {
+        var standing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (ledger, runner, _, old) = await LimitedAsync("small", stand: name =>
+        {
+            if (name == Cuts.Decided && standing.TrySetResult()) _gate.Wait(Poll.Patience);
+        });
+        using var _ = runner;
+        await standing.Task.WaitAsync(Poll.Patience);
+        Assert.True(runner.Say(old, "Also the docs."));
+        await Poll.Until(() => Events.After(old, 0).Events.Count(e => e.Kind == SessionEventKind.Turn) == 3, () => Seen(ledger, old));
+        _gate.Set();
+
+        var next = await MovedAsync(ledger, old);
+        await Poll.Until(() => Prompts("account-2").Any(), () => Seen(ledger, next));
+        var blocks = Blocks(Prompts("account-2").First());
+        Assert.Contains("Make the port configurable.", blocks);
+        Assert.Contains("Also the docs.", blocks);
+        Assert.True(blocks.IndexOf("Make the port configurable.", StringComparison.Ordinal) < blocks.IndexOf("Also the docs.", StringComparison.Ordinal), blocks);
+    }
+
     /// <summary>🔴 Past the stand-in's bound the carried conversation goes on compacted first: its process is asked to compact, said so.</summary>
     [Fact]
     public async Task Past_the_bound_the_carried_conversation_is_compacted_first()
@@ -211,8 +234,9 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The conversation on account-1, one exchange answered and the next refused by that account's limit.</summary>
-    private async Task<(ChatLedger Ledger, ChatRunner Runner, List<AccountLine> Lines, string Old)> LimitedAsync(string mode, string? cut = null)
+    /// <summary>The conversation on account-1, one exchange answered and the next refused by that account's limit; <paramref name="stand"/> hears each cut.</summary>
+    private async Task<(ChatLedger Ledger, ChatRunner Runner, List<AccountLine> Lines, string Old)> LimitedAsync(
+        string mode, string? cut = null, Action<string>? stand = null)
     {
         var ledger = new ChatLedger { Opens = 2 }.Register("engine", _root);
         var config = DriverConfig.Empty with
@@ -231,12 +255,13 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        if (cut is not null)
+        if (cut is not null || stand is not null)
         {
             runner.Moves = new ConversationMoves(_home, client, Events, store: new MoveStore(_home, () => StoreSettled.Yes, run: "run-a", kind: StoreProcess.Shell))
             {
                 Cut = name =>
                 {
+                    stand?.Invoke(name);
                     if (name != cut) return;
                     _reached.TrySetResult();
                     _gate.Wait();
@@ -328,7 +353,7 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
                 if (account === 'account-1') {
                   send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
                     update: { sessionUpdate: 'usage_update', used: mode === 'large' ? 150000 : 1000, size: 1000000 } } });
-                  if (!blocks.join('\n').startsWith('Earlier answered exchange.')) {
+                  if (!blocks.join('\n').includes('Earlier answered exchange.')) {
                     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
                     continue;
                   }
