@@ -38,6 +38,7 @@
     <!-- The machine's host and git over it, which the test root hands as Driver.Tests' does. -->
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineProcessHost.cs" Link="Bridge\MachineProcessHost.cs" />
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineRun.cs" Link="Bridge\MachineRun.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessOwner.cs" Link="Bridge\ProcessOwner.cs" />
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Git\GitProcessRuns.cs" Link="Bridge\GitProcessRuns.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />

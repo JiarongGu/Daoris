@@ -30,6 +30,7 @@
          classes leave the unit tier for the rehearsal tier, which references the adapters whole. -->
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineProcessHost.cs" Link="Bridge\MachineProcessHost.cs" />
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineRun.cs" Link="Bridge\MachineRun.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessOwner.cs" Link="Bridge\ProcessOwner.cs" />
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Git\GitProcessRuns.cs" Link="Bridge\GitProcessRuns.cs" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
