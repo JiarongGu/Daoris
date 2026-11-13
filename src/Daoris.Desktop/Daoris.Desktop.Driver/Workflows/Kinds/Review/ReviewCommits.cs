@@ -1,10 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// One file of a branch's or a checkout's review record, drawn from the commits the record names, never from the checkout as it stands: after,
-/// the branch's tip or the newest turn's end; before, the base frozen with the tip or the first turn's start. A branch record with no base names no
-/// commit before, and nothing is read from it.
-/// </summary>
+/// <summary>One file of a branch's or a checkout's review record, from the commits it names: the tip and the frozen base, or the first and last turn.</summary>
 public static class ReviewCommits
 {
     /// <summary>The text of <paramref name="path"/> on <paramref name="side"/> of <paramref name="record"/>, read in the checkout at <paramref name="root"/>.</summary>
