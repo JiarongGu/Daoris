@@ -130,7 +130,9 @@
           "src/Daoris.Adapters/Daoris.Adapters.Clock/Daoris.Adapters.Clock.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests/Daoris.Adapters.Clock.Tests.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/Daoris.Adapters.DesktopStore.Sqlite.csproj",
-          "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/Daoris.Adapters.DesktopStore.Sqlite.Tests.csproj"
+          "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/Daoris.Adapters.DesktopStore.Sqlite.Tests.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Machine/Daoris.Adapters.Machine.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

@@ -51,10 +51,8 @@ internal sealed class StructureAnalysis
             references.Add(MetadataReference.CreateFromFile(path));
         }
 
-        // The driver's one package, the desktop store's: the SQLite library `DesktopStore` and its reader name.
         references.Add(MetadataReference.CreateFromFile(typeof(Microsoft.Data.Sqlite.SqliteConnection).Assembly.Location));
 
-        references.Add(MetadataReference.CreateFromFile(typeof(System.Security.Cryptography.ProtectedData).Assembly.Location));
         references.Add(MetadataReference.CreateFromFile(typeof(LibGit2Sharp.Repository).Assembly.Location));
 
         // The contracts the driver names, the parts' kit and the routes' records among them.

@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
-    <!-- The fakes the unit tier shares: the desktop store's engine the test root chooses. -->
+    <!-- The fakes the unit tier shares: the desktop store's engine and the machine's places and seal the test root chooses. -->
     <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
@@ -33,6 +33,8 @@
          helper, compiled in, so both projects' fixtures start git one way. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="TestGit.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestPorts.cs" Link="TestPorts.cs" />
+    <!-- The machine's liveness the test root answers real processes by, until the Process classes leave the unit tier. -->
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\RoutedHandler.cs" Link="RoutedHandler.cs" />

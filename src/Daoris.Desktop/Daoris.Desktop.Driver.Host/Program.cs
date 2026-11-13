@@ -1,5 +1,6 @@
 using System.Text;
 using Daoris.Adapters.DesktopStore.Sqlite;
+using Daoris.Adapters.Machine;
 using Daoris.Driver;
 using Daoris.Ports.Ambient;
 
@@ -33,8 +34,16 @@ using Daoris.Ports.Ambient;
 // `session supervise` reads what is taken, and nothing else does.
 HolderKey.Take();
 
-// This process is a root: it chooses the ports the library reads, once, before anything opens the store.
-AmbientPorts.Set(new PortSet { Clock = TimeProvider.System, Store = SqliteDesktopStores.Engines });
+// This process is a root: it chooses the ports the library reads, once, before anything opens the store or starts a process.
+AmbientPorts.Set(new PortSet
+{
+    Clock = TimeProvider.System,
+    Store = SqliteDesktopStores.Engines,
+    Admission = StartPlaces.Shared,
+    Liveness = MachineLiveness.Shared,
+    StartPolicy = GitStartAdmission.Admit,
+    Seal = KeySeal.Port,
+});
 
 if (OperatingSystem.IsWindows())
 {

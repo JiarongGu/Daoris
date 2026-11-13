@@ -24,6 +24,8 @@
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
     <!-- The fakes and the virtual clock the unit tiers share. -->
     <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
+    <!-- The machine's liveness the test root answers real processes by, until the Process classes leave the unit tier. -->
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="Bridge\ProcessLiveness.cs" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
     <!-- Built first and never referenced (DRV8a): its tests start `daoris-driver` itself, to hold that a
