@@ -84,7 +84,7 @@ public static class RepositoryCreatePlans
         }
 
         var remote = resume is not null ? resume.RemoteStep : world.RemoteStepOf(config, ask.Name, workspace);
-        var steps = StepsOf(ask, workspace, folder, line, author, remote);
+        var steps = StepsOf(ask, workspace, folder, line, author, remote, world.WorksApart(config, ask.Name, workspace));
         return new CreatePlanned(ask, workspace, folder, line, author, steps, refusals) { RemoteStep = remote, Resumes = resume?.Digest, Growth = growth };
     }
 
@@ -167,7 +167,7 @@ public static class RepositoryCreatePlans
         return null;
     }
 
-    private static IReadOnlyList<CreateStep> StepsOf(CreateAsk ask, string workspace, string folder, string? line, CreateAuthor? author, string? remote)
+    private static IReadOnlyList<CreateStep> StepsOf(CreateAsk ask, string workspace, string folder, string? line, CreateAuthor? author, string? remote, bool apart)
     {
         var git = ask.Kind == PlaceKind.Git;
         var steps = new List<CreateStep> { new(CreateOperations.Folder, $"make the folder {(folder.Length > 0 ? folder : "(none yet)")}") };
@@ -181,7 +181,12 @@ public static class RepositoryCreatePlans
         steps.Add(new(CreateOperations.Driving, remote is null
             ? $"drive on, hold off, inheriting `{workspace}`'s workflow and landing"
             : $"drive stays off: the workflow it inherits has a `{remote}` step and `{ask.Name}` has no remote"));
-        if (git) steps.Add(new(CreateOperations.SetUp, "ask its own session to set it up (the set-up quest)"));
+        if (git)
+        {
+            steps.Add(new(CreateOperations.SetUp, apart
+                ? "ask its own session to set it up (the set-up quest)"
+                : "ask its own session to set it up, in its checkout: nothing else reads it yet"));
+        }
         return steps;
     }
 

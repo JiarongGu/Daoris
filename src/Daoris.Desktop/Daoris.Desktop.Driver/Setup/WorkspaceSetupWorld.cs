@@ -32,6 +32,8 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
 
     public Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct) => _press.ReadLineAsync(repository, config, ct);
 
+    public Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) => _press.NothingReadsItAsync(repository, line, ct);
+
     public Task<SetupTools> ToolsAsync(CancellationToken ct) => _tools ??= _press.ToolsAsync(ct);
 
     public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct) => _press.StatusAsync(repository, ct);

@@ -49,10 +49,19 @@ public static class SetupPress
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
-        var refusals = ConfigurationRefusals(config, unadopted, row, world.IsolationOf(config, row) is not null).ToList();
-        if (row.Root is null) return plan with { Refusals = refusals };
+        // Its sessions share the checkout, yet a repository nothing else reads is set up where it is: no later session has anything to be rewritten under.
+        var apart = world.IsolationOf(config, row) is not null;
+        LineReading? read = null;
+        if (row.Root is not null)
+        {
+            read = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
+            if (!apart && read.Facts is { } seen) apart = await world.NothingReadsItAsync(row, seen.Line, ct).ConfigureAwait(false);
+        }
 
-        var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
+        var refusals = ConfigurationRefusals(config, unadopted, row, apart).ToList();
+        if (read is null) return plan with { Refusals = refusals };
+
+        var line = read;
         if (line.Facts is null)
         {
             refusals.Add(new(SetupRefusals.NoHistory,

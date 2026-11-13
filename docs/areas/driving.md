@@ -323,7 +323,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     an unusable line, no identity of either kind (naming `daoris git use`) and no `git` each refuse it with nothing written. The apply keeps a receipt
     before its first effect (`data/place-receipts/create/<digest>.json`) and goes in order: the folder; `git init` with one empty commit and
     no remote; the unadopted registration; drive on with hold off, left off with the step and the next press named where the inherited
-    workflow holds a `push` or a `pull-request` and the place has no remote; the set-up quest. A failure leaves the folder and the receipt
+    workflow holds a `push` or a `pull-request` and the place has no remote; the set-up quest, asked in the repository's checkout where its
+    workflow works in place, since a repository of the creation's one commit that no session has worked has nothing else reading it
+    (`ISetupWorld.NothingReadsItAsync`, judged in `SetupPress.PlanAsync`'s one set-up judgement; the plan's step says so, and a repository
+    with a second commit or a session keeps the `no-own-tree` refusal). A failure leaves the folder and the receipt
     and deletes nothing; a re-press whose folder holds exactly the receipt's empty commit goes on from the first operation not done.
     `--kind folder` registers a folder with no history, identity or set-up quest, so `--work` is refused with it. No `daoris.json`, brief or
     code is written and nothing is pushed. The answer carries the `PressReceipt` it made, which Ask Daoris's press record keeps

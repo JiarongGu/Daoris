@@ -5,6 +5,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
+
+> **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.
+>
+> **MERGEFILE1** (tools): Outcome: the `.merge_file_XXXXXX` files are git's own temp files for a merge driver's base, ours and theirs, made in the cwd (the checkout's root); no driver or step of this tool writes them (`git merge-file` makes none), and git leaves them only when it is stopped mid-driver or cannot unlink one at once on Windows, after which the untracked files refuse the next merge as "the tree is not clean". The tool now sweeps them (`tools/merge/merge-temps.ts`) before it checks a checkout with no merge open and after the merge it runs, and says so.
+
+---
+## CREATESETUP1 — a repository just created is set up where its workspace works in place (2026-11-14)
+
+> **CREATESETUP1** (driver): Outcome: `SetupPress.PlanAsync` asks `ISetupWorld.NothingReadsItAsync` (one commit on every ref, no session record) and treats such a repository as set up apart, so a creation in a workspace working in place asks its set-up quest in the checkout and its plan's step says so; a repository with a second commit or a session keeps the `no-own-tree` refusal.
+
 ## TOOLDEFS1 — the tool definitions every session is handed, measured and cut (2026-11-13)
 
 > **TOOLDEFS1** (service connector): Outcome: `McpListingBudgetTests` measures the connector's `tools/list` as served (characters and an estimated token count) against a listing budget and a per-tool budget; the descriptions and parameter text of the quest, opinion, brainstorm, question, channel, memory, search and other tools were cut to what an agent needs to choose and call them, every caller still listed every tool (34 tools, 52,247 to 41,776 characters, about 17,400 to 13,900 tokens). Claude Code's deferred tool loading stays off by D230's choice (its search step is a model round trip before the first move).

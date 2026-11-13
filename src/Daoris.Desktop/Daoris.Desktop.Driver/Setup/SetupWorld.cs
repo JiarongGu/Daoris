@@ -31,6 +31,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     public Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct) => service.RegistryAsync(ct);
 
+    public async Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) =>
+        await NothingReadsIt.JudgeAsync(repository, line, await service.SessionRunsAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+
     public async Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct)
     {
         var line = await CanonicalLine.ResolveAsync(repository.Root!, repository.Repository, repository.Workspace, config, ct).ConfigureAwait(false);
