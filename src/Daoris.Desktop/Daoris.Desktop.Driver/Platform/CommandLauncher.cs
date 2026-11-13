@@ -29,7 +29,13 @@ public static class CommandLauncher
     /// <summary>The start of <paramref name="target"/> with <paramref name="args"/> as given, each one argument whatever it holds.</summary>
     public static ProcessStartInfo Start(string target, IReadOnlyList<string> args)
     {
-        var info = new ProcessStartInfo(target) { UseShellExecute = false };
+        // Not the tools' environment: the command's own, which the terminal that ran it handed it and the program takes whole.
+        var info = new ProcessStartInfo(target)
+        {
+            UseShellExecute = false,
+            // inherits its console: the program reads and writes the terminal's own streams, and a console of its own would cut them.
+            CreateNoWindow = false,
+        };
         foreach (var arg in args) info.ArgumentList.Add(arg);
         return info;
     }

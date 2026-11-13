@@ -33,6 +33,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = "the gate itself: the one place the runtime's start is handed in",
         ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] = "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
             + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport",
+        ["Daoris.Desktop.Driver/Platform/CommandLauncher.cs"] = "the install's command, compiled into a program of its own that a terminal runs, "
+            + "with no window and no bridge: the desktop's program, with the arguments the command was given",
         ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] = "the agents' launcher (COAGENT1b, TERMTRUST1a), compiled "
             + "into a program of its own that the driver starts for every agent, plugin process and piece, with no window and no bridge: "
             + "the harness, once the launcher is in the jobs it was named",

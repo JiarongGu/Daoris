@@ -76,7 +76,7 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Review/HeavyAppRunProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Install/ToolsChildProcessTests.cs", "Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorStartTests.cs",
             "Daoris.Desktop.Driver.Tests/Participants/LineageHookProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/DriverProgramWordsProcessTests.cs",
-            "Daoris.Desktop.Driver.Tests/Platform/HomeLeaseProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Platform/CommandLauncherProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/HomeLeaseProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Plugins/HookMarks.cs", "Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs",
             "Daoris.Desktop.Driver.Tests/Plugins/PluginToolsProcessTests.cs", "Daoris.Desktop.Driver.Tests/Plugins/PluginTrialShutdownTests.cs",
             "Daoris.Desktop.Driver.Tests/Workflows/Kinds/AgentStep/StepAgentProcessTests.cs",
