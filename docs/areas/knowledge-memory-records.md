@@ -117,7 +117,9 @@ one job each, checked by `verify`.
 
 16. Each session spawns its own connector over stdio; all of them share one `knowledge.db` under the Daoris home. The store writes
     ahead into a `-wal` log beside the file, each commit synced in full (`StoreJournal`, set at every open), so a copy of the
-    store is the file and its log together. Serving never
+    store is the file and its log together. A host opens the file twice, one connection for the index (its re-read's write, its
+    search and counts) and one shared by the registry, sessions, quests and every other store, each with its own gate
+    (`ConnectionGate`), so a re-read's write transaction, whose search text is cut before it begins, holds no read of the ledger. Serving never
     builds. A workspace's own server is built by `node tools/knowledge-server.mjs build` into `local/`, and a running session
     moves onto a new build at its next request. (from D63, D151, D236)
 17. Every registered tool has a class, read or acts, which names the act a call that reached beyond its place is recorded as; a
