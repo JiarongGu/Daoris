@@ -566,7 +566,10 @@ integrations', clean-up's, keep-size's and help trees' scenario classes, already
 heaviest classes still in the driver tests, run four at once under `git.process.runsettings`, was 63 cases, 782 case-seconds and 259 s of
 wall: 12.4 s a case, which is a worktree opened and a few dozen git starts each. Those cases test the product over real worktrees, files and
 refs (a tree opened, a commit made, a landing judged), so a scripted answer table cannot hold their assertions; they need ring 2's typed
-repository port and its `MemoryRepository` first, which no family has yet.
+repository port and its `MemoryRepository` first, which no family has yet. After `GitStreamEndsTests` left for the adapter's suite
+(`GitProcessRunsTreeEndTests`, 18 s with its two 5 s waits) the same sample is 61 cases, 753 case-seconds and 228 s of wall. A merge's
+plan reaches no real-git suite for a driver-only change: `driver-process-git`, `driver-rehearsals` and `adapters-git` run in the CI beside
+or in the full set before staging, never at the merge itself.
 
 ## 9. Measurement (decision 8)
 
