@@ -7,7 +7,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ## DELIVERY1 row a — deployables declared, release targets named by their deployable, read-only release discovery (2026-11-13, D290)
 
-> **DELIVERY1 a** (service, driver, examples): Outcome: a repository declares its deployables in `daoris.json`; the Azure DevOps plugin's release target names its deployable and `deploysOn`, and its read-only `discover-releases` lists the definitions, stages and actions a deployable could release through and proposes `deploysOn` without choosing (4.1.0); `daoris repository deployables <repository>` shows them. The plugin tools' process test, red on main since integration B made a status read exit 0, fixed in the merge. Merged in `DELIVERY1A_SHA`; the run-time check and the registry's deployables are left on the row.
+> **DELIVERY1 a** (service, driver, examples): Outcome: a repository declares its deployables in `daoris.json`; the Azure DevOps plugin's release target names its deployable and `deploysOn`, and its read-only `discover-releases` lists the definitions, stages and actions a deployable could release through and proposes `deploysOn` without choosing (4.1.0); `daoris repository deployables <repository>` shows them. The plugin tools' process test, red on main since integration B made a status read exit 0, fixed in the merge. Merged in `eb23c11ebd`; the run-time check and the registry's deployables are left on the row.
 
 ## ACCESS1 d, g and n (part), LANDAGAIN1, and DELIVERY1's design (2026-11-13, D284, D290)
 
