@@ -2882,7 +2882,7 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false,
 } = {}) {
   const commit = headCommit(root);
-  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit: commit ?? '' }) : null;
+  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
@@ -3121,7 +3121,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   options.onResults?.(results);
   const home = verdictsHome(root);
   writeSweep(home, noteSweeps(sweepRecord(home, plan), sweptBy(results, head, nowIso(), isProcessGate)));
-  for (const line of replaySummary(results)) console.log(line);
+  replaySummary(results);
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');

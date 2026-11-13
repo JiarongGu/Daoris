@@ -65,20 +65,20 @@ export function fullReplayOf({ root, checkout, dir, commit, say = console.log, w
     settle(gate, result) {
       const held = pending.get(gate.name);
       if (!held || !result.trx || !existsSync(result.trx)) return;
-      recordPasses({ units: held.units, keys: held.keys, trx: readFileSync(result.trx, 'utf8'), verdict: result.verdict, store, at: new Date().toISOString(), run: commit.slice(0, 7) });
+      recordPasses({ units: held.units, keys: held.keys, trx: readFileSync(result.trx, 'utf8'), verdict: result.verdict, store, at: new Date().toISOString(), run: String(commit ?? '').slice(0, 7) });
       store.save();
     },
   };
 }
 
-/** What a full set replayed, as lines: the gates passed on a standing pass, and the classes left out of the halves that ran. */
-export function replaySummary(results) {
+/** Says what a full set replayed: the gates passed on a standing pass, and the classes left out of the halves that ran. */
+export function replaySummary(results, say = console.log) {
   const gates = results.filter((result) => result.replayed && !result.classReplay);
   const classes = results.filter((result) => result.classReplay);
   const left = classes.reduce((sum, result) => sum + result.classReplay.replayedCount, 0);
   const lines = [`replayed: ${gates.length} of ${results.length} gates on a standing pass of the same inputs${gates.length ? ` (${gates.map((result) => result.gate.name).join(', ')})` : ''}`];
   if (classes.length) lines.push(`replayed: ${left} classes of ${classes.length} Process halves left out of their runs (${classes.map((result) => `${result.gate.name} ${result.classReplay.replayedCount}`).join(', ')})`);
-  return lines;
+  for (const line of lines) say(line);
 }
 
 /** The sweeps a full set satisfies: each Process half that passed, run or replayed by key, as strict as a whole run. */
