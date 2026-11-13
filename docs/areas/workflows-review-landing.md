@@ -38,6 +38,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    (D157, D227, D232)
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
+3a. A repository's own values for a workflow it follows are options over it, never a copy: `driver.json`'s `workflowValues`, by
+   repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options wherever a run
+   of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the binding stay
+   the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
    every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
