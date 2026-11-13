@@ -1,18 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The knowledge server a driven session is handed over the protocol door.
+/// The knowledge server a session is handed with its own identity, over the protocol or native door.
 /// </summary>
 /// <remarks>
-/// <para><b>Why this exists.</b> The composed target tells every session to claim its quest and close
-/// it over its own connector. The PIPE door manages that only because the repository's own
-/// `.mcp.json` wires the tools — and an adopted repository may not have one, while the driver may
-/// never reach in and write it (`reaching-in`). ACP carries the wiring on `session/new`, so the
-/// protocol door hands the session its voice with <b>nothing written anywhere</b>.</para>
-///
-/// <para>Measured before it is built: without this a real driven session came up, streamed "I'll
-/// start by taking the quest", called `take`, found no such tool and ended its turn having touched
-/// nothing.</para>
+/// <para>A quest's session needs its own connector to take and close its quest. The protocol door carries it on
+/// <c>session/new</c>; the native door takes a file under Daoris's home, leaving the repository's configuration alone.</para>
 ///
 /// <para>Its names, the order of the places to look and the server's surroundings, and <c>Offer</c>,
 /// <c>Locate</c> and <c>Candidates</c>, which look at this machine, are one type.</para>
