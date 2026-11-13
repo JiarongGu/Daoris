@@ -26,7 +26,6 @@ public static class ReviewCommits
                 return reference.Tip;
             case (ReviewKinds.Branch, ReviewContent.Before) when reference.Base is { } frozen:
                 return frozen;
-            // No frozen base: a record kept before the base was, or a chain whose first branch is not known here; read against the line.
             case (ReviewKinds.Branch, ReviewContent.Before) when reference is { Tip: { } tip, Line: { } line }:
                 return await LineBaseAsync(root, line, tip, ct).ConfigureAwait(false);
             case (ReviewKinds.Checkout, ReviewContent.After):
@@ -38,10 +37,7 @@ public static class ReviewCommits
         }
     }
 
-    /// <summary>
-    /// The newest commit <paramref name="tip"/> shares with the line here or on origin (<see cref="ReviewBase.Newest"/>): a local line left
-    /// behind its remote would count the remote's merged work as this work's.
-    /// </summary>
+    /// <summary>With no frozen base, the newest commit the tip shares with the line here or on origin: a local line behind its remote would count the remote's merged work.</summary>
     private static async Task<string?> LineBaseAsync(string root, string line, string tip, CancellationToken ct)
     {
         async Task<string?> MergeBase(string of)
