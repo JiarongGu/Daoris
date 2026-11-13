@@ -13,6 +13,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## GATESACCEPT1 — a changed `daoris.gates.json` is accepted by the repository's access mode, once, said as the checks that changed (2026-11-13, D283)
 
 > **GATESACCEPT1** (driver, modules, web, terminal): Outcome: the set-up review offers one tick per repository, `Accept these checks`, with the checks changed said in words and no blob id, and `daoris place … --apply --accept <repository>` (PLACE_APPLY's `accept: [{repository}]`) takes the one `DeclarationAcceptance` in place of the per-purpose `landed|integration` choices, which are removed; `PlacePlanTests`, `PlaceApplyTests`, `PlaceApplyViewTests`, `PlaceReview.test.tsx`. The installed look at the owner's window remains the owner's.
+## RETRYTAKE1 — a retry of a quest whose taker failed takes over its take (2026-11-13)
+
+> **RETRYTAKE1** (service, driver): Outcome: `QuestRetakes` passes a failed or stopped holder's take to the session of the same quest that asks for it, so the retry no longer stands down against a dead holder; *Try again* on such a quest names the session and how it ended. Two Service cases and one Driver case; a stood-down record still blocks a carry-on at the ledger's open, left as D-ruled.
 
 ## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
 
