@@ -270,8 +270,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     counts the places to look at. The chosen place is kept across searches and pages. (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
-60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Files and Workflow
-    (the files git does not manage there, with the person's rules and permissions); a workspace's are Details, Branches and
+60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Files
+    (the files git does not manage there, with the person's rules and permissions) and Workflow; a workspace's are Details, Branches and
     Workflow. Their setup and rules are the place's, in Agents → Setup, where each place's sessions fold holds one
     row, *New repositories and rooms* (`settings/repository/Growth.tsx`, `SET_GROWTH`, `driver.json`'s `growth` and `workspaceGrowth`): whether an agent's
     press that opens a repository or a room runs as the access mode says, waits for the person's Confirm even in full access, or is refused. A

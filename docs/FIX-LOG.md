@@ -15,7 +15,9 @@ repository.
   repository-workflow door. Settings still open their place in Agents → Setup.
 - **Verification:** `ProjectsView.workflow.test.tsx` failed four cases before the fix, covering the repository read, refusal,
   settings door and workspace-to-repository navigation; `ProjectPage.test.tsx` failed on the missing tab. The page tests also
-  cover reopening the remembered tab and keeping Current unread until Workflow opens.
+  cover reopening the remembered tab and keeping Current unread until Workflow opens. A disposable published install of
+  2c58aeb470 rendered both tabs with real driver answers; `tools/desktop.mjs` captured `wftab1-workspace.png` and
+  `wftab1-repository.png` under `_fixtures/desktop/screenshots/`.
 
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
