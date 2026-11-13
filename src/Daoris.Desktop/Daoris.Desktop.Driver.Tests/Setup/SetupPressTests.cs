@@ -340,7 +340,6 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains("its `isolate` step", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
 
-    /// <summary>A repository nothing else reads yet (its creation's commit alone, no session worked) is set up where it is.</summary>
     [Fact]
     public async Task A_repository_nothing_else_reads_yet_is_asked_in_place_and_one_with_work_keeps_the_refusal()
     {
@@ -582,7 +581,6 @@ public sealed class SetupPressTests : IDisposable
         public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) =>
             Apart.Contains(repository.Repository, StringComparer.OrdinalIgnoreCase) ? IsolateStep.Trees : null;
 
-        /// <summary>The repositories whose history is the creation's one commit and which no session has worked.</summary>
         public IReadOnlyList<string> Untouched { get; init; } = [];
 
         public Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) =>

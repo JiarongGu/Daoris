@@ -153,7 +153,6 @@ public interface ICreateWorld
     /// <summary>The step of the workflow <paramref name="repository"/> would follow that needs a remote, or null.</summary>
     string? RemoteStepOf(DriverConfig config, string repository, string workspace);
 
-    /// <summary>Whether the workflow <paramref name="repository"/> would follow sets its sessions apart, each in a tree of its own.</summary>
     bool WorksApart(DriverConfig config, string repository, string workspace) => true;
 
     /// <summary>Register through the registry door with the body <c>connect</c> would send: taken, or refused in the service's words.</summary>

@@ -270,10 +270,6 @@ public sealed class RepositoryCreateTests : IDisposable
 
     // ---- the apply: a real repository with one empty commit, registered, driven, its set-up asked ----
 
-    /// <summary>
-    /// Where the workspace's workflow works in place, a repository just made (its one commit, no session) has nothing else reading it, so its
-    /// set-up is asked where it is, and the plan's step says so.
-    /// </summary>
     [Fact]
     public async Task In_a_workspace_that_works_in_place_a_new_repository_is_set_up_in_its_checkout_and_the_plan_says_so()
     {
@@ -287,7 +283,6 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.Equal(("aurora", "ledger"), (Assert.Single(stand.Setup.Published).Workspace, stand.Setup.Published[0].To));
     }
 
-    /// <summary>A repository with more history or a session keeps the refusal, in the set-up press's words, and the creation says where to ask it from.</summary>
     [Fact]
     public async Task In_a_workspace_that_works_in_place_a_repository_with_work_keeps_the_refusal()
     {
