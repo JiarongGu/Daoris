@@ -43,6 +43,12 @@ public sealed class CheckFiles(string home)
         return [.. asks.OrderBy(ask => ask.At).ThenBy(ask => ask.Id, StringComparer.Ordinal)];
     }
 
+    public void WriteObserved(string session, string tip)
+    {
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(PathOf(session, "observed"), tip);
+    }
+
     public void WriteAsk(CheckAsk ask) => JsonFile.Write(PathOf(ask.Id, "ask.json"), writer =>
     {
         writer.WriteStartObject();
