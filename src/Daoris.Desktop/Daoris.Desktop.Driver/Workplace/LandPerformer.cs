@@ -67,10 +67,7 @@ public sealed class LandPerformer(
         if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
-        // The branch unit's newest executor with a tree; else the newest session on the run's own quest.
-        var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0, Quest.Length: > 0 })
-            ?? records.Where(each => !each.Teammate && each is { Tree.Length: > 0 } && string.Equals(each.Quest, start.Run, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(each => each.Created).FirstOrDefault();
+        var record = LandSessions.Of(start, records);
         if (record is null) return null;
         var entry = EntryOf(record.Id, record.Quest!, start, record.Tree!);
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
@@ -93,8 +90,7 @@ public sealed class LandPerformer(
     {
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
-        var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0 })
-            ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
+        var record = LandSessions.OfChat(start, records) ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
         if (record is not { Tree: { Length: > 0 } tree }) return null;
         var entry = EntryOf(record.Id, "", start, tree);
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
@@ -155,14 +151,14 @@ public sealed class LandPerformer(
         if (placed.Stand == LineStand.CanBeBroughtBack) return (null, null);
         if (placed.GoneForGood) return (Closed(entry, LandingCode.Gone), null);
 
-        // A live session in the tree is using it, and a newer session on it stands for it now.
+        // A live session in the tree is using it, and a newer session on it stands for it now: said once, since nothing makes it newest again.
         var records = await looked.ReadAsync(ct).ConfigureAwait(false);
         var onTree = records.Where(record => !record.Teammate && record.Tree is { } tree && SameTree(tree, entry.Tree)).ToList();
         if (onTree.Any(record => record.Live)) return (null, null);
         var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
         if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
         {
-            return (Closed(entry, LandingCode.Superseded), null);
+            return (entry.Last?.Code == LandingCode.Superseded ? null : Closed(entry, LandingCode.Superseded), null);
         }
 
         // A stop, a decline or a stand-down takes the yes back: a carry-on is never sent to a session the person ended.
@@ -398,7 +394,7 @@ public sealed class LandPerformer(
         }
 
         Ended(LandEnds.Of(code, landed, line));
-        log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted));
+        log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted, _start?.Run));
         if (code is LandingCode.Landed or LandingCode.Advanced) Told?.Invoke(new WorkEvent(WorkEventKinds.WorkLanded, Now()) { Session = entry.Session, Quest = entry.Quest, Code = code });
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
     }

@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
+
+- **Symptom:** a run whose branch was already landed and pushed got a second Accept on a merge of its remote line, committed by the
+  session that had landed it; *The landing* stayed *working* for eleven minutes while the branch stayed at the landed commit locally and on
+  the remote, no landing line named the run's session, and `landing.auto` wrote `superseded` about three times a minute for the session it
+  had gone on from in the same tree.
+- **Root cause:** the land's performer took the branch unit's last executor as its newest (2d38098ed8), and the inventory ordered a unit's
+  executors as it found them (cb2d8cac46): the landing's session first, then each session that recorded the tree. Once a landing named the
+  later session, the earlier one came last, so every pass judged it, found a newer session in its tree and closed it `superseded`, landing
+  nothing; the land node stayed active at the new tip and was started again at the next pass.
+- **Fix:** `UnitExecutors` orders a unit's executors oldest first by their records; `LandSessions` takes the newest executor with a tree by
+  when each was made, whatever the order; a `superseded` close is said once; `landing.auto` names the run whose `land` tried it.
+- **Verification:** `GraphRunLandingTests.A_landed_branch_moves_on_to_its_lines_later_merge_after_a_second_accept_and_never_tries_the_earlier_part`
+  failed with the branch left at the landed commit and passes with it moved on to the merge (`landed` then `advanced`, both the later
+  session's); `WorkUnitsTests`, `LandSessionsTests` and `PerformedEndsTests.A_superseded_part_is_said_once_and_not_tried_again_at_every_pass`
+  failed first on the old order, the old choice and three `superseded` lines.
+
 ## 2026-11-12 - A work-workspace run's monitor and release never closed: its run had ended `branch-gone` under them
 
 - **Symptom:** a run's pull-request monitor stayed *working* an hour after its pull request completed, and a release attempt stayed `begun`
