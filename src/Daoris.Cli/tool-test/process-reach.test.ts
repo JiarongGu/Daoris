@@ -285,6 +285,22 @@ test('a leg that names its classes reads those alone, by each test of theirs, a 
   assert.deepEqual(short(census.classes.map((each) => each.full)), ['BetaTests', 'GitTests']);
 });
 
+test("a project that compiles another's trait names in by link reads its classes' traits by them", () => {
+  const rehearsals: Record<string, string> = {
+    ...DESK,
+    'src/Desk/Desk.Rehearsals/Desk.Rehearsals.csproj': [
+      '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup>',
+      '  <ProjectReference Include="..\\Desk.Core\\Desk.Core.csproj" />',
+      '  <Compile Include="..\\Desk.Tests\\Category.cs" Link="Shared\\Category.cs" />',
+      '</ItemGroup></Project>',
+    ].join('\n'),
+    'src/Desk/Desk.Rehearsals/SignInTests.cs': 'namespace Desk.Rehearsals;\nusing Desk.Tests;\n[Trait(Category.Name, Category.Process)]\npublic sealed class SignInTests { [Fact] public void Signs() { _ = new AlphaThing(); } }\n',
+  };
+  const census = reach.censusOf({ project: 'src/Desk/Desk.Rehearsals', settings: 'src/Desk/process.runsettings' }, Object.keys(rehearsals), (file) => rehearsals[file] ?? '');
+  assert.deepEqual(census.problems, []);
+  assert.deepEqual(census.classes.map((each) => [each.full, each.traits, each.reach]), [['Desk.Rehearsals.SignInTests', { Category: ['Process'] }, ['src/Desk/Desk.Core/Alpha']]]);
+});
+
 test('a changed path reaches the classes whose reach holds it; what acts unnamed or cannot be placed reaches the whole half', () => {
   const census = deskCensus();
   const at = (path: string): Placed => {

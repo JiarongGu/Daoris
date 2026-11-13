@@ -174,8 +174,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 // Sent again while it runs, by the key that sent it: the one press's answer, and its progress to this connection.
                 _state.Owners[id] = connection;
                 answer = running.Answer;
-                // A terminal waits on its line for it again. The confirmations' lock is only ever taken inside
-                // this one, never around it.
+                // A terminal waits on its line for it again. The confirmations' lock is only ever taken inside this one, never around it.
                 if (_state.WaitingFor.TryGetValue(id, out var waiting)) Confirmations.WaitedOn(waiting, true);
             }
             else if (_state.Journal!.Find(id) is { } seen)
@@ -315,8 +314,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         SupervisorWhy.NotStarted => "The role's terminal is not started since Daoris started: the owner starts it in the window. Nothing was kept.",
         SupervisorWhy.RoleChanged => "The role this answer names is not the one holding now: read the question again. Nothing was kept.",
         SupervisorWhy.Form => "The answer is not the supervisor's form: an id, the question, the generation, the proof, one choice and 1 to 5 reasons, each with its source. Nothing was kept.",
-        StandingWhy.InAgentJob => "An agent Daoris runs does not answer as the supervisor. Nothing was kept.",
-        StandingWhy.Untold => "Daoris could not tell this terminal is outside every agent it runs. Nothing was kept.",
+        StandingWhy.Untold => "Daoris could not tell which process on this machine sent this, so it cannot check the role's terminal. Nothing was kept.",
         _ => "No appointment covers this. Nothing was kept.",
     };
 

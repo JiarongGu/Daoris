@@ -503,7 +503,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// Each try to land a done session is one <c>landing.auto</c> line, codes and counts,
+    /// Each try to land a done session is one <c>landing.auto</c> line, codes and counts and the run whose <c>land</c> tried it,
     /// never a sentence; and none once the watch has let go.
     /// </summary>
     [Fact]
@@ -511,14 +511,14 @@ public sealed class SessionLogTests : IDisposable
     {
         using var w = Watch();
 
-        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", LandingCode.Refused, 2, null));
+        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", LandingCode.Refused, 2, null, "q1"));
         w.Watch.Dispose();
-        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", LandingCode.Landed, 1, null));
+        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", LandingCode.Landed, 1, null, "q2"));
 
         var line = Assert.Single(Named("landing.auto"));
         Assert.Equal("info", line.GetProperty("level").GetString());
         Assert.Equal(
-            """{"session":"s1","repository":"engine","workspace":"aurora","code":"refused","commits":2,"uncommitted":null}""",
+            """{"session":"s1","repository":"engine","workspace":"aurora","code":"refused","commits":2,"uncommitted":null,"run":"q1"}""",
             Data(line).GetRawText());
     }
 
