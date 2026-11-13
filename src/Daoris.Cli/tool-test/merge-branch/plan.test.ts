@@ -8,6 +8,17 @@ import { tool, repoRoot, repoPlan, LONG, processRun, trackedFiles, contracts, ro
 // test-map: strings name paths as data
 // reaches: * — the plan's tests hold it to every declared gate and every project the gates build
 
+/** The gates `daoris.gates.json` declares: the lists of this repository's gates below are read from it, never written out. */
+const declared = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates;
+const names = (gates: readonly { name: string }[]): string[] => gates.map((gate) => gate.name);
+/** The declared suites of the adapters, each a `dotnet test` of a project under `src/Daoris.Adapters`. */
+const adapterSuites = names(declared.filter((gate) => tool.dotnetComponent(gate.run) === 'src/Daoris.Adapters'));
+/** The declared gate that runs the test kit's own tests, at the end of a chained command. */
+const kitSuites = names(declared.filter((gate) => /\bdotnet test src\/Daoris\.Testing\.Tests\b/.test(gate.run)));
+/** The heavy light gates: every .NET suite the declaration runs outside the Process lane, the CLI's verify, and the web's runs. */
+const heavyNames = names(repoPlan.filter((gate) => !tool.isProcessLane(gate)
+  && (/^dotnet test\b/.test(gate.run) || ['cli', 'web', 'web-unit', 'web-measured'].includes(gate.name))));
+
 test('a gate is a check, a suite or a rehearsal by what it runs', () => {
   assert.equal(tool.gateKind('dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check'), 'check');
   // A tool's own --check is a check too, run with the fast ones; a tool run otherwise is not.
@@ -53,7 +64,6 @@ test('the plan is the declared gates plus the rehearsals only the workflow runs,
 });
 
 test("this repository's plan runs every declared gate once, fast first, and the rehearsals and the web gates last", () => {
-  const declared = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { run: string }[] }).gates;
   const plan = tool.readPlan(repoRoot);
 
   for (const gate of declared) {
@@ -81,10 +91,12 @@ test('the long gates are the real-process halves and the deployment rehearsal, r
 });
 
 test("this repository's Process lane is the real-process halves and the rehearsals; every other gate is light, the web gate too", () => {
-  assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['service-process', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
-  assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'reached', 'cli', 'tool-tests', 'comments', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
+  const lane = ['service-process', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse', 'rehearse-family', 'deployment'];
+  assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name), lane);
+  // Every other declared gate is light, and the workflow adds none: its own steps are rehearsals.
+  const light = repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name);
+  assert.deepEqual([...light].sort(), names(declared).filter((name) => !lane.includes(name)).sort());
+  for (const name of ['web', 'web-unit', 'web-measured']) assert.ok(light.includes(name), name);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'npm run rehearse:anything' }), true);
@@ -139,16 +151,19 @@ test("a light gate whose script builds a Process gate's component runs before it
 
 test("this repository's light lane runs the suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
-  assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['reached', 'service', 'driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'comments', 'devkit', 'web', 'web-unit', 'web-measured']);
+  // The gates that build a Process half's component first, then the rest of the light lane in the plan's order.
+  const first = ['reached', 'service', 'driver', 'modules', 'censuses'];
+  const light = schedule.light.map((gate) => gate.name);
+  assert.deepEqual(light, [...first, ...names(repoPlan.filter((gate) => !tool.isProcessLane(gate))).filter((name) => !first.includes(name))]);
   // The rehearsals right after the git half, beside it, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['service-process', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'driver-process-git-pinned', 'modules-process']);
-  for (const name of ['service-process', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process']) {
+  for (const name of names(repoPlan.filter((gate) => tool.isProcessGate(gate)))) {
     // After the heavy light gates too, so no Process half runs under their load.
-    assert.deepEqual(schedule.waits[name], { after: ['reached', 'service', 'driver', 'modules', 'censuses', 'cli', 'devkit', 'web', 'web-unit', 'web-measured'], component: name === 'service-process' ? 'src/Daoris.Service' : 'src/Daoris.Desktop' }, name);
+    assert.deepEqual(schedule.waits[name], { after: light.filter((other) => first.includes(other) || heavyNames.includes(other)), component: name === 'service-process' ? 'src/Daoris.Service' : 'src/Daoris.Desktop' }, name);
   }
-  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
+  assert.ok(adapterSuites.length > 0 && adapterSuites.every((name) => heavyNames.includes(name)), 'the adapters\' suites are heavy, as every .NET suite is');
+  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), heavyNames);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
   // A rehearsal builds what its command does not name, and the release and deployment rehearsals' packs stage the
   // CLI's dist/, which the bin the cli gate's `daoris check` runs prefers.
@@ -159,7 +174,7 @@ test("this repository's light lane runs the suites' fast halves first, and the P
 
 test('a CI run schedules by memory: a Process half waits only for the gates that build its component, and the heavy light gates run beside it (CI1)', () => {
   const schedule = tool.laneSchedule(repoPlan, { byMemory: true });
-  for (const name of ['driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process']) {
+  for (const name of names(repoPlan.filter((gate) => tool.isProcessGate(gate) && tool.dotnetComponent(gate.run) === 'src/Daoris.Desktop'))) {
     assert.deepEqual(schedule.waits[name], { after: ['reached', 'driver', 'modules', 'censuses'], component: 'src/Daoris.Desktop' }, name);
   }
   // The rehearsals still wait for the whole light lane: what they build and stage is state, not load.
@@ -188,8 +203,13 @@ test("a gate's components are what its command builds, and what the root scripts
   assert.deepEqual(tool.gateComponents({ name: 'lint', run: 'npm run lint' }, scripts), []);
   assert.deepEqual(tool.gateComponents({ name: 'index', run: 'node tools/orient-index.mjs --check' }, scripts), []);
   assert.deepEqual(tool.gateComponents({ name: 'gone', run: 'npm run gone' }, scripts), [], 'npm refuses a script the workspace does not declare');
+  // A chained command is read command by command, as a script is: a build after node steps is still a build.
+  assert.deepEqual(tool.gateComponents({ name: 'chained', run: 'node census.mjs && node --test a.test.mjs && dotnet test src/T/T.Tests' }, scripts), ['src/T']);
   assert.deepEqual(tool.gateComponents({ name: 'reached', run: 'node tools/reached-checks.mjs --check' }, scripts),
-    ['src/Daoris.Desktop', 'src/Daoris.Contracts', 'tools/contracts', 'src/Daoris.Service']);
+    ['src/Daoris.Desktop', ...tool.SHARED_PROJECTS.get('src/Daoris.Desktop')!, 'src/Daoris.Service']);
+  // A component's build holds what its projects reference in other components, the test kit's tests theirs.
+  assert.deepEqual(tool.gateComponents({ name: 'kit', run: 'node tools/layers-census.mjs && dotnet test src/Daoris.Testing.Tests' }, scripts),
+    ['src/Daoris.Testing.Tests', 'src/Daoris.Testing', 'src/Daoris.Ports']);
 });
 
 test("this repository's light gates run three at once, never two that build one component, the CLI's verify and web read behind their names", () => {
@@ -202,15 +222,23 @@ test("this repository's light gates run three at once, never two that build one 
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
   assert.deepEqual(building('src/Daoris.Devkit'), ['universal', 'code-map', 'cli', 'devkit']);
   assert.deepEqual(building('src/Daoris.Service'), ['reached', 'service', 'web']);
+  // The hosts build the ports, the adapters and the test kit too, so the adapters' suites and the kit's own never build beside a
+  // host's gate or each other.
+  const light = schedule.light.map((gate) => gate.name);
+  const hosts = ['reached', 'service', 'driver', 'modules', 'censuses', 'web'];
+  assert.ok(adapterSuites.length > 0 && kitSuites.length === 1, `${adapterSuites.join(', ')}; ${kitSuites.join(', ')}`);
+  assert.deepEqual(building('src/Daoris.Adapters'), light.filter((name) => [...hosts, ...adapterSuites].includes(name)));
+  for (const kit of ['src/Daoris.Testing', 'src/Daoris.Ports']) {
+    assert.deepEqual(building(kit), light.filter((name) => [...hosts, ...kitSuites, ...adapterSuites].includes(name)), kit);
+  }
   // The web gate's unit run builds none, so it runs beside any.
   assert.deepEqual(schedule.components['web-unit'], []);
   // Nor does the measured-box check, which serves the page's source with Vite.
   assert.deepEqual(schedule.components['web-measured'], []);
   // The light order and the waits hold: the gates that build a Process half's component run first, the service's
   // and the desktop's alike.
-  assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['reached', 'service', 'driver', 'modules', 'censuses', 'web', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'comments', 'devkit', 'web-unit', 'web-measured']);
-  assert.deepEqual(schedule.waits['driver-process']!.after, ['reached', 'service', 'driver', 'modules', 'censuses', 'web', 'cli', 'devkit', 'web-unit', 'web-measured']);
+  assert.deepEqual(light, [...hosts, ...names(repoPlan.filter((gate) => !tool.isProcessLane(gate))).filter((name) => !hosts.includes(name))]);
+  assert.deepEqual(schedule.waits['driver-process']!.after, light.filter((name) => hosts.includes(name) || heavyNames.includes(name)));
   // Each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'service-process': 'service', 'driver-process': 'driver', 'driver-process-git': 'driver', 'driver-process-git-pinned': 'driver', 'modules-process': 'modules' });
 });
@@ -300,7 +328,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });
   assert.deepEqual(schedule.components['web-unit'], []);
-  assert.deepEqual(schedule.components['web'], ['src/Daoris.Service', 'src/Daoris.Contracts']);
+  assert.deepEqual(schedule.components['web'], ['src/Daoris.Service', ...tool.SHARED_PROJECTS.get('src/Daoris.Service')!]);
   assert.equal(tool.isProcessLane(unit), false);
   assert.equal(tool.isHeavyGate(unit), true, 'vitest loads the machine, so a Process half waits for it (GATEORDER1)');
   // The web gate goes first, so the place service frees goes to the build the light lane's floor waits on.
