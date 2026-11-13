@@ -173,6 +173,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         }
 
         var order = plan.Order;
+        if (order.Count == 0) return Hold($"no agent is staffed on the {role} role");
         var adapterName = order[0].Agent;
 
         // Asked BEFORE the record, like every hold a driven spawn asks: a record for a spawn that could
