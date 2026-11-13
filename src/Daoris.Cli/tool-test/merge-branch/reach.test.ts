@@ -19,9 +19,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-rehearsals', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
     // The page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate's unit
     // run as well, and not its build.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
@@ -136,6 +136,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, 'tool-tests']],
+    ['the ports and the fakes', ['src/Daoris.Ports/Git/IGitRunner.cs', 'src/Layers.props'],
+      [...BASE, 'layers', 'adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-machine', 'adapters-memory-lyntai', 'driver-rehearsals', 'driver', 'modules', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment', 'service', 'service-process']],
+    ["the merge tool's typed module", ['tools/merge/flow.ts'], [...BASE, 'tool-tests']],
+    ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, 'tool-tests']],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'service-process', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],

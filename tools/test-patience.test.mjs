@@ -126,14 +126,16 @@ test('a wait on the PATIENCE is counted, its import and its definition are not',
   assert.deepEqual(found.files.get(TOOL_TEST), { uses: 2, marked: 0 });
 });
 
-test('the three trees are read, and a folder of fixtures, node_modules and a script that is no test are not', () => {
+test('the four trees are read, and a folder of fixtures, node_modules and a script that is no test are not', () => {
   const short = 'await until(() => done, 20_000);\n';
   const planted = {
     'src/Daoris.Cli/test/a/b.test.ts': short,
     'src/Daoris.Cli/tool-test/c.test.ts': short,
     'tools/d.test.mjs': short,
+    'tools/merge/e.test.ts': short,
+    'tools/merge/f.e2e.ts': short,
   };
-  assert.equal(checkTestPatience(tree(planted)).problems.length, 3);
+  assert.equal(checkTestPatience(tree(planted)).problems.length, 5);
   const skipped = {
     'src/Daoris.Cli/test/fixtures/e.ts': short,
     'src/Daoris.Cli/test/node_modules/f.ts': short,

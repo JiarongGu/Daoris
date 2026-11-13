@@ -18,6 +18,9 @@ const MODULES_READERS = ['modules', 'censuses', 'modules-process', 'deployment']
 // What the driver lane's sources reach, named by its narrow rule for the sources the page's twins parse as well.
 const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 
+// The adapters' lock and each adapter's dependency tests, which a port, a contract case or an adapter moves.
+const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-machine', 'adapters-memory-lyntai'];
+
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
  * A rule places paths by glob (`paths`, the lanes file's grammar) or by a lane of `daoris.lanes.json`
@@ -46,6 +49,7 @@ export const REACH = Object.freeze([
     paths: [
       'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reach-rows.mjs', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
       'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/reached-checks.mjs', 'tools/worktree-setup.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+      'tools/merge/**', 'tools/vitest.config.ts',
     ],
     gates: ['tool-tests'],
     why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
@@ -317,7 +321,7 @@ export const REACH = Object.freeze([
   { lane: 'web-settings', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {
     lane: 'driver',
-    gates: DRIVER_READERS,
+    gates: [...DRIVER_READERS, 'driver-rehearsals'],
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
   // The driver's tests project builds the launcher (it compiles driver files in by link), so a launcher change
@@ -366,6 +370,11 @@ export const REACH = Object.freeze([
     lane: 'cli',
     gates: CLI_READERS,
     why: "the release rehearsal packs it, the family rehearsal and the page's end-to-end suite run it, the install carries it, and the driver's tests read its permissions",
+  },
+  {
+    lane: 'layers',
+    gates: ['layers', ...ADAPTER_SUITES, ...DRIVER_READERS, 'driver-rehearsals', 'service', 'service-process'],
+    why: "the ports, the fakes, the adapters and the build settings the application's projects build with: the layers census and the fakes' own tests, the adapters' lock and each adapter's dependency tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
   { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },

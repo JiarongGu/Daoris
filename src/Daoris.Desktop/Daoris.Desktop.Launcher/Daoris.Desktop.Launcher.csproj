@@ -35,8 +35,9 @@
          table, which names both their places (D172, HOMELAYOUT2), with the error its refusal is. Each uses the base library
          alone; `HomeLeaseTests` and `DaorisHomeTests` hold them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeLease.cs" Link="HomeLease.cs" />
-    <!-- The lease's test of a live holder, its own file since FOUNDATION1f-i so the move record's claim reads the same test. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <!-- The lease's test of a live holder, the machine adapter's: this program is its own root and compiles it in. -->
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <Using Include="Daoris.Adapters.Machine" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs" Link="HomeIdentity.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DriverException.cs" Link="DriverException.cs" />

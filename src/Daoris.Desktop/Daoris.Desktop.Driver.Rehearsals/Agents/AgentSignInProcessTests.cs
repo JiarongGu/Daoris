@@ -1,9 +1,10 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
-namespace Daoris.Desktop.Driver.Tests;
+namespace Daoris.Desktop.Driver.Rehearsals;
 
 /// <summary>
 /// The agent family through the CLI and the host together: <c>daoris agent …</c>
@@ -31,7 +32,7 @@ public sealed class AgentSignInProcessTests : IDisposable
         Stub();
     }
 
-    public void Dispose() => GitSeed.Discard(_root);
+    public void Dispose() => ScratchRemoval.Discard(_root);
 
     private string Home => Path.Combine(_root, "home");
 
@@ -113,7 +114,7 @@ public sealed class AgentSignInProcessTests : IDisposable
     /// <summary>The driver's own program, as the install lays it: the host's apphost beside the build these tests run.</summary>
     private static string Program()
     {
-        var dll = DriverHostTests.HostDll();
+        var dll = HostBuild.Dll();
         var program = OperatingSystem.IsWindows() ? Path.ChangeExtension(dll, ".exe") : Path.ChangeExtension(dll, null);
         return File.Exists(program) ? program : throw new FileNotFoundException("the host's apphost is built before these tests", program);
     }

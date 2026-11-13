@@ -16,5 +16,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["merge"]
+  "include": ["merge", "vitest.config.ts"]
 }

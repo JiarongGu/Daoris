@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { attribute, findingReds, gateOutcome, mainRedLines, verdictReds, type Failure, type MainRed } from './main-red.ts';
 

@@ -593,19 +593,19 @@ public sealed class DeliveryStore(
 
     // ——— The rows read.
 
-    private static string? Text(SqliteDataReader row, string column)
+    private static string? Text(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetString(at);
     }
 
-    private static long? Number(SqliteDataReader row, string column)
+    private static long? Number(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetInt64(at);
     }
 
-    private static DeliveryRecord MapDelivery(SqliteDataReader row) =>
+    private static DeliveryRecord MapDelivery(DbDataReader row) =>
         new(
             Text(row, "key")!,
             (int)Number(row, "format")!.Value,
@@ -625,7 +625,7 @@ public sealed class DeliveryStore(
             Generation = Enumerable.Range(0, row.FieldCount).Any(at => row.GetName(at) == "generation") ? Number(row, "generation") ?? 1 : 1,
         };
 
-    private static DeliveryPhase MapPhase(SqliteDataReader row) =>
+    private static DeliveryPhase MapPhase(DbDataReader row) =>
         new(
             Text(row, "delivery")!, (int)Number(row, "ordinal")!.Value, Text(row, "phase")!, Text(row, "intended"),
             Moments.Read(Text(row, "began_at")) ?? throw new DesktopStoreException("a delivery phase's `began_at` does not read as a moment"))

@@ -107,12 +107,16 @@ export const LIGHT_WIDTH = 3;
 const scriptNamed = (command) => /^npm\s+run\s+(?:-\S+\s+)*([^\s-]\S*)/.exec(command.trim())?.[1] ?? null;
 
 /**
- * The project two components both reference, by the component that builds it as well: the contracts the service serves and the
- * desktop's driver consumes. A gate of either holds it, so no two gates build it at once.
+ * The components a component's build builds as well, every one its projects reach through their references: the contracts the
+ * service serves and the desktop's driver consumes, the ports the hosts and the adapters meet at, the adapters the hosts run on,
+ * and the test kit their tests share. A gate holds each, so no two gates build one at once.
  */
 export const SHARED_PROJECTS = new Map([
-  ['src/Daoris.Desktop', ['src/Daoris.Contracts', 'tools/contracts']],
-  ['src/Daoris.Service', ['src/Daoris.Contracts']],
+  ['src/Daoris.Desktop', ['src/Daoris.Contracts', 'tools/contracts', 'src/Daoris.Adapters', 'src/Daoris.Ports', 'src/Daoris.Testing']],
+  ['src/Daoris.Service', ['src/Daoris.Contracts', 'src/Daoris.Adapters', 'src/Daoris.Ports', 'src/Daoris.Testing']],
+  ['src/Daoris.Adapters', ['src/Daoris.Ports', 'src/Daoris.Testing']],
+  ['src/Daoris.Testing', ['src/Daoris.Ports']],
+  ['src/Daoris.Testing.Tests', ['src/Daoris.Testing', 'src/Daoris.Ports']],
 ]);
 
 /**
@@ -125,23 +129,25 @@ export const TOOL_COMPONENTS = new Map([
 
 /**
  * The .NET components a gate builds: its command's (`dotnetComponent`), and each one a root script it names
- * builds, read through the scripts those name in turn. The CLI's `npm run verify` ends in the devkit's universal gates
+ * builds, read through the scripts those name in turn, and each command of a chained one alike: the layers gate builds its
+ * test kit's tests after two node steps. The CLI's `npm run verify` ends in the devkit's universal gates
  * and `npm run test:web` builds the HTTP host, so each shares a component with a .NET gate, and no two gates that build
  * one component run at once. A gate that builds none (orient-index) is a component of its own.
  */
 export function gateComponents(gate, scripts = {}) {
   const found = new Set();
-  const read = (command, seen) => {
-    const own = dotnetComponent(command);
-    if (own) found.add(own);
-    for (const component of TOOL_COMPONENTS.get(/^node (tools\/\S+\.mjs)/.exec(command.trim())?.[1]) ?? []) {
-      found.add(component);
-      for (const shared of SHARED_PROJECTS.get(component) ?? []) found.add(shared);
+  const read = (chained, seen) => {
+    for (const command of chained.split(/&&|\|\||;/)) {
+      const own = dotnetComponent(command);
+      if (own) found.add(own);
+      for (const component of TOOL_COMPONENTS.get(/^node (tools\/\S+\.mjs)/.exec(command.trim())?.[1]) ?? []) {
+        found.add(component);
+        for (const shared of SHARED_PROJECTS.get(component) ?? []) found.add(shared);
+      }
+      for (const shared of SHARED_PROJECTS.get(own) ?? []) found.add(shared);
+      const script = scriptNamed(command);
+      if (script && !seen.has(script) && typeof scripts[script] === 'string') read(scripts[script], new Set([...seen, script]));
     }
-    for (const shared of SHARED_PROJECTS.get(own) ?? []) found.add(shared);
-    const script = scriptNamed(command);
-    if (!script || seen.has(script) || typeof scripts[script] !== 'string') return;
-    for (const part of scripts[script].split(/&&|\|\||;/)) read(part, new Set([...seen, script]));
   };
   read(gate.run, new Set());
   return [...found];

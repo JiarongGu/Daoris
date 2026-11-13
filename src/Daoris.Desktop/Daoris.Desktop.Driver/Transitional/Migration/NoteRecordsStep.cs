@@ -3,10 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The finished session records from before notes carried codes (ONEWAY1ac): a record that ended with a note and no parts holds English
-/// only, which the page no longer reads out of its text, so the note is cleared. A record still in use is left as it is.
-/// </summary>
+/// <summary>The finished session records from before notes carried codes: one that ended with a note and no parts holds English only, which the page no longer reads, so the note is cleared; one in use is left.</summary>
 public sealed class NoteRecordsStep : IHomeMigrationStep
 {
     private static readonly string[] Finished = ["Completed", "Declined", "StoodDown", "Failed", "Stopped"];
@@ -18,8 +15,7 @@ public sealed class NoteRecordsStep : IHomeMigrationStep
         var path = DaorisHome.Entry(run.Home, HomeEntry.Knowledge);
         if (!File.Exists(path)) return;
         run.Keep(path);
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadWrite);
         using (var columns = connection.CreateCommand())
         {
             columns.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name IN ('state', 'note', 'note_parts')";

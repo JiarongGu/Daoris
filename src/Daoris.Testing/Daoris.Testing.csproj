@@ -15,6 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.9.2" />
+    <!-- The store's fake is SQLite in memory, which is still SQLite: the application's own SQL and schema steps run on it. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,8 @@ import { ALLOWED_PACKAGE, readProjects } from './projects.mjs';
 
 const isAdapter = (name) => name.startsWith('Daoris.Adapters.');
 
+const FAKE_ENGINES = ['Microsoft.Data.Sqlite', 'SQLitePCLRaw.bundle_e_sqlite3'];
+
 /**
  * The reference graph's breaches. Ports references nothing but analyzers; Testing references Ports and the test libraries; the
  * application assemblies and every unit-test project reference no adapter and no package but analyzers and the test libraries,
@@ -19,7 +21,9 @@ export function checkReferences(tree, list) {
       for (const name of project.projects.filter((each) => each !== 'Daoris.Ports')) {
         problems.push(`${project.name} references the project ${name}: the fakes reference the ports and the test libraries alone`);
       }
-      for (const name of outside) problems.push(`${project.name} takes the package ${name}: the fakes reference the ports and the test libraries alone`);
+      for (const name of outside.filter((each) => !FAKE_ENGINES.includes(each))) {
+        problems.push(`${project.name} takes the package ${name}: the fakes reference the ports and the test libraries alone, and the store's engine`);
+      }
     } else if (project.role === 'application' || project.role === 'unit-tests') {
       for (const name of project.projects.filter(isAdapter)) {
         problems.push(`${project.name} references the adapter ${name}: only a composition root does, and a unit test runs on fakes`);

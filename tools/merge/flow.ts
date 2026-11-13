@@ -1,11 +1,12 @@
 /**
- * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, built once
- * per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
+ * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, run after
+ * the npm installs a moved lockfile owes, built once per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
  * settling: which failures are main's, what the record and the summary say. `tools/merge-branch.mjs` hands this its own seams.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
+import type { LockInstalls } from './lock-install.ts';
 import { attribute, gateOutcome, mainRedLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
@@ -17,7 +18,7 @@ export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
   failures?: Array<{ unit: string; key: string }>; replayed?: Replay; abnormal?: boolean; slowest?: Slow[];
-  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; [other: string]: unknown;
+  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
 
@@ -39,6 +40,7 @@ export type FlowDeps = {
   timeoutMs: (gate: PlanGate) => number | null;
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
+  installs: LockInstalls;
 };
 
 /** Build servers a test step leaves by design, which the next gate's build reuses: not a leftover to stop. */
@@ -66,6 +68,12 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     const log = join(logs, `${gate.name}.log`);
     writeFileSync(log, `${standing.note}\n`);
     return { gate, code: 0, log, verdict: 'PASS', note: standing.note, ms: 0, replayed: standing, key };
+  }
+  const owed = await deps.installs.ready(where);
+  if (owed !== null) {
+    const log = join(logs, `${gate.name}.log`);
+    writeFileSync(log, `${owed}\n`);
+    return { gate, code: null, log, verdict: 'FAIL', note: owed, ms: 0, abnormal: true };
   }
 
   let run = gate.run;
@@ -136,16 +144,17 @@ export function verdictExtras(result: GateResult): { key?: VerdictKey; signature
 
 const gateRecord = (result: GateResult): GateRecord => ({
   name: result.gate.name, verdict: result.verdict, ms: result.ms ?? 0, replayed: result.replayed !== undefined, mainRed: result.mainRed === true,
-  abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [],
+  abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [], flakes: result.flakes ?? [],
 });
 
 /**
  * A merge's gates settled: each failure main already has under the same signature set down as main's, the failed gates left
- * for the branch's, the record and the summary's lines built.
+ * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock.
  */
-export function settleMerge({ branch, at, ms, results, mains, previous }: {
-  branch: string; at: string; ms: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[];
+export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
+  branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[];
 }): { failed: GateResult[]; held: Held[]; lines: string[]; record: MergeRecord } {
+  const ms = results.reduce((sum, result) => sum + (result.ms ?? 0), 0);
   const held: Held[] = [];
   for (const result of results) {
     if (result.verdict !== 'FAIL' || result.abnormal) continue;
@@ -157,7 +166,7 @@ export function settleMerge({ branch, at, ms, results, mains, previous }: {
   }
   const records = results.map(gateRecord);
   const record = buildRecord({
-    branch, at, ms, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
+    branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
   });
   const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [] }));
   return {

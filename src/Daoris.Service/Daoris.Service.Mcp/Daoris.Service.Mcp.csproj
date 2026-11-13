@@ -12,6 +12,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Service.Core\Daoris.Service.Core.csproj" />
+    <!-- Lyntai's memory engines, composed here. Private, so the service's unit tests, which reference this host for its tools, reach
+         no real engine through it. -->
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Memory.Lyntai\Daoris.Adapters.Memory.Lyntai.csproj" PrivateAssets="all" />
+    <Using Include="Daoris.Ports.Memory" />
     <!-- Host-side composition both hosts share as SOURCE: it builds providers, so it cannot live in
          Core (D22, D24) — and it must not be written twice. -->
     <Compile Include="..\Daoris.Service.Shared\HostComposition.cs" Link="HostComposition.cs" />

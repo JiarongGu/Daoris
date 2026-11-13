@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The machine's adapter: the places process starts take, and the seal of a secret kept for the user this runs as. The application
+    reaches it through the processes' ports a root hands it and never names it. It sits under no tree's Directory.Build.props, so its
+    one package is versioned here, at the version the desktop tree pins (Directory.Packages.props), and adapter.json names it for the
+    fingerprint.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RootNamespace>Daoris.Adapters.Machine</RootNamespace>
+    <AssemblyName>Daoris.Adapters.Machine</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>

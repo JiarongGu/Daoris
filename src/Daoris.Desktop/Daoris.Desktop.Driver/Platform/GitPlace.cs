@@ -172,13 +172,14 @@ internal sealed class GitPlace
     /// could not start. Inside a place, the process is bound to it.
     /// </summary>
     /// <exception cref="GitStartRefusedException">A git's image with no place.</exception>
-    internal static void Admit(ProcessStartInfo info, ProcessPurpose purpose)
+    internal static void Admit(string? file, ProcessPurpose purpose)
     {
-        if (Current is not null || !IsGit(info.FileName)) return;
+        if (Current is not null || !IsGit(file)) return;
+        Type[] gates = [typeof(GitPlace), typeof(GitStartAdmission), typeof(MachinePorts), typeof(ProcessStarts), typeof(HeldChild)];
         var caller = new StackTrace(1, false).GetFrames()
             .Select(frame => frame.GetMethod()?.DeclaringType)
             .Select(type => type?.DeclaringType is { } outer && type.Name.Contains('<') ? outer : type)
-            .FirstOrDefault(type => type is not null && type != typeof(GitPlace) && type != typeof(ProcessStarts) && type != typeof(HeldChild))
+            .FirstOrDefault(type => type is not null && !gates.Contains(type) && type.Namespace != "Daoris.Ports.Processes")
             ?.Name ?? "unknown";
         if (ProgramHome.Named is { } home)
         {

@@ -78,7 +78,7 @@ const CENSUS = [
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DaorisHome.cs', text: 'new("bin"', why: 'no output' },
   { file: 'src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs', text: 'new("bin"', why: 'no output' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Browser/BuiltApplication.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.App' },
-  { file: driverTestFile('DriverHostTests.cs'), text: '', why: 'referenced', project: 'Daoris.Desktop.Driver.Host' },
+  { file: driverTestFile('HostBuild.cs'), text: '', why: 'referenced', project: 'Daoris.Desktop.Driver.Host' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.PieceStart' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/PartnerProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.PieceStart' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.OwnerStandIn' },
