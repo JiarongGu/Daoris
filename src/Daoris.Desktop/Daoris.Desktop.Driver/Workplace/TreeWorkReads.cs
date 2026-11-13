@@ -36,16 +36,20 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <param name="here">The tree's repository and branch as a landing read them a moment ago; null reads them where needed.</param>
     /// <param name="read">The room memo's status, only while its HEAD, index and file generation still stand.</param>
     internal async Task<TreeWork?> WorkAsync(
-        string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null, TreeStatus? read = null)
+        string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null, TreeStatus? read = null,
+        TreeWalkBack? back = null)
     {
         // Reads only (the remark above): each question of git is asked once, the tree's layout in one start.
         using var once = GitReadOnce.Within(ct);
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
         string? judged, own;
+        // A head and branch read from files leave the paths to the walk's one status, asked last.
+        var known = true;
         if ((read ?? await TreeStatus.ReadAsync(tree, ct).ConfigureAwait(false)) is { } status)
         {
-            uncommitted ??= status.Changed;
+            if (status.Counted) uncommitted ??= status.Changed;
+            else known = uncommitted is not null;
             judged = status.Head;
             // A tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
             own = status.OwnBranch;
@@ -61,22 +65,42 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
 
         var counted = await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false);
         var work = new TreeWork(counted, uncommitted) { Branch = own, Unlanded = counted };
+        // The one status of the walk, asked where the paths are not yet counted.
+        async Task<TreeWork> CountedAsync(TreeWork of)
+        {
+            if (!known)
+            {
+                uncommitted = await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
+                known = true;
+            }
+
+            return of with { Uncommitted = uncommitted };
+        }
+
         // A squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
         if (work.Commits is > 0 && judged is not null
             && await squashes.SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, judged, ct).ConfigureAwait(false) is not null)
         {
-            return work with { Commits = 0, Unlanded = 0 };
+            return await CountedAsync(work with { Commits = 0, Unlanded = 0 }).ConfigureAwait(false);
         }
 
         // A squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
-        if (work.Commits is not > 0 || judged is null) return work;
-        var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, ct).ConfigureAwait(false);
+        if (work.Commits is not > 0 || judged is null) return await CountedAsync(work).ConfigureAwait(false);
+        back ??= new TreeWalkBack();
+        var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, back, ct).ConfigureAwait(false);
+        // The proof's status of a tree held by content lists its paths: the count.
+        if (found is not null && !known && back.Paths is { } paths)
+        {
+            uncommitted = paths;
+            known = true;
+        }
+
         // Where the line holds some of its commits under ids of their own (a landing replayed them, and the session is told
         // to rebase and made more), only the commits it lacks are work to land, as the landing's plan counts them.
-        return found is not null ? work with { Held = found }
+        return await CountedAsync(found is not null ? work with { Held = found }
             : lacks is { Count: > 0 } && lacks.Count < work.Commits ? work with { Commits = lacks.Count }
-            : work;
+            : work).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -140,7 +164,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <param name="read">The tree's repository and branch as a landing read them; null reads them here.</param>
     /// <returns>Where the work is held; else, where the line holds some of its commits, those it lacks.</returns>
     private async Task<(HeldWork? Held, IReadOnlyList<LandingCommit>? Lacks)> HeldWorkAsync(
-        string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, CancellationToken ct)
+        string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, TreeWalkBack back, CancellationToken ct)
     {
         try
         {
@@ -161,7 +185,9 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
             if (proof.Hold is not { } held) return (null, proof.Lacks);
 
-            var stays = await StaysAsync(full, root, repository, workspace, line, ct).ConfigureAwait(false);
+            back.Declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
+            var (stays, paths) = await StaysOfAsync(full, root, back.Declared, ct).ConfigureAwait(false);
+            back.Paths = paths;
             if (stays is not null) return (new HeldWork(held, null, stays), null);
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
@@ -177,16 +203,15 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         }
     }
 
-    private async Task<string?> StaysAsync(string full, string root, string repository, string workspace, string? line, CancellationToken ct) =>
-        await StaysOfAsync(full, root, await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false), ct).ConfigureAwait(false);
-
-    private static async Task<string?> StaysOfAsync(string full, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
+    /// <summary>Why a discard would not go, and the paths no commit holds as the one status counted them (null where it could not say).</summary>
+    private static async Task<(string? Stays, int? Paths)> StaysOfAsync(
+        string full, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
         var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
-        return holds is null ? "Daoris cannot tell what it holds beyond its commits"
-            : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
-            : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
-            : null;
+        return holds is null ? ("Daoris cannot tell what it holds beyond its commits", null)
+            : holds.Uncommitted.Count > 0 ? ($"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy", holds.Uncommitted.Count)
+            : holds.OwnSaid is { } own ? ($"it holds {own}, which a discard would destroy", 0)
+            : (null, 0);
     }
 
     /// <summary>The output the tree's repository declares at its line's tip (<see cref="ContentHolds.HoldsAsync"/>'s), for a kept read to hold.</summary>
@@ -203,7 +228,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// that no commit does is asked of its working tree now. <paramref name="common"/> is the repository's git dir, as the kept read's stamp read it.
     /// </summary>
     /// <param name="declared">The repository's declared output as an earlier read of it found (it rests on the refs and the choices the stamp holds); null reads it.</param>
-    internal async Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared)> HeldAgainAsync(
+    internal async Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared, int? Paths)> HeldAgainAsync(
         string tree, string common, HeldWork kept, IReadOnlyList<System.Text.RegularExpressions.Regex>? declared, CancellationToken ct)
     {
         try
@@ -211,13 +236,13 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var full = Path.GetFullPath(tree);
             var root = Path.GetDirectoryName(common.TrimEnd('\\', '/'))!;
             declared ??= await DeclaredAsync(full, common, ct).ConfigureAwait(false);
-            var stays = await StaysOfAsync(full, root, declared, ct).ConfigureAwait(false);
+            var (stays, paths) = await StaysOfAsync(full, root, declared, ct).ConfigureAwait(false);
             // The ref a discard keeps its commits at is named when the proof is read; where none is, it is named by a walk.
-            return (stays is not null ? kept with { Keeps = null, Stays = stays } : kept.Keeps is null ? null : kept with { Stays = null }, declared);
+            return (stays is not null ? kept with { Keeps = null, Stays = stays } : kept.Keeps is null ? null : kept with { Stays = null }, declared, paths);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
-            return (null, declared);
+            return (null, declared, null);
         }
     }
 
