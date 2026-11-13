@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The train over the line's one queue, on a scratch home's store and no git: a part's request is offered to the next candidate only once
 /// every part it builds on has landed, in the plan's landing order; one the plan does not name, or whose plan is not read, waits; a request
-/// no part's is the queue's as it was. A part is landed by its member's promotion alone, never by its quest's Done.
+/// no part's stays in the queue unchanged. A part is landed by its member's promotion alone, never by its quest's Done.
 /// </summary>
 public sealed class TrainSelectionTests : IDisposable
 {
@@ -69,6 +69,20 @@ public sealed class TrainSelectionTests : IDisposable
         var ready = await ReadyAsync(Plan(Part("p1"), Part("p2", orders: ["p1"]), Part("p3", orders: ["p2"])));
 
         Assert.Equal(["r1", "r2", "r3"], ready);
+    }
+
+    [Fact]
+    public async Task A_part_waits_behind_one_that_lands_before_it_while_that_one_is_queued_and_is_never_held_for_one_that_is_not()
+    {
+        Queue("r3", "p3", 1);
+        var plan = Plan(Part("p1"), Part("p2", after: ["p1"]), Part("p3", orders: ["p2"]));
+
+        // p2 is not queued (its worker is still at it): p3 is not held for it.
+        Assert.Equal(["r3"], await ReadyAsync(plan));
+
+        Queue("r2", "p2", 2);
+        Queue("r1", "p1", 3);
+        Assert.Equal(["r1"], await ReadyAsync(plan));
     }
 
     [Fact]

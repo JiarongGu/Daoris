@@ -49,7 +49,7 @@ public sealed class TrainParts(IntegrationStore store)
             [("$ask", ask), ("$promoted", IntegrationMemberStates.Promoted), ("$settled", IntegrationMemberStates.Settled)])
         .Select(tag => tag.Part).ToHashSet(StringComparer.Ordinal);
 
-    /// <summary>Every ask a request of the train was kept for.</summary>
+    /// <summary>Every ask that has a part's request tagged.</summary>
     public IReadOnlyList<string> Asks() =>
         Read("SELECT request, ask, part FROM integration_parts", []).Select(tag => tag.Ask).Distinct(StringComparer.Ordinal).ToList();
 

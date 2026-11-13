@@ -7,8 +7,9 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Ready</b> is the plan's reading: every part it builds on (<c>after</c>) has landed. A part the plan does not name, and a part whose
 /// plan is not read, waits, never guessed.</para>
-/// <para><b>Order</b> is topological over the plan's <c>orders</c> edges among the ready parts; a tie, and a cycle the plan's judge already
-/// flagged, keep the queue's arrival order. A request that is no part's keeps its place first.</para>
+/// <para><b>Order</b> is topological over the plan's <c>orders</c> edges: a part waits behind one that must land before it while that one is
+/// queued and not ready, and is never held for one not queued. A tie, and a cycle the plan's judge already flagged, keep the queue's arrival
+/// order. A request that is no part's keeps its place first.</para>
 /// </remarks>
 public sealed class TrainSelection(TrainParts parts, ITrainPlans plans)
 {
@@ -33,6 +34,11 @@ public sealed class TrainSelection(TrainParts parts, ITrainPlans plans)
             if (part.After.Any(on => named.Contains(on) && !landed.Contains(on))) continue;
             ready.Add((request, tag, part));
         }
+
+        // A part waits behind one that must land before it while that one is queued and not ready yet; one not queued holds nothing back.
+        var waiting = queued.Where(request => tags.ContainsKey(request.Id) && !ready.Any(each => each.Request.Id == request.Id))
+            .Select(request => (tags[request.Id].Ask, tags[request.Id].Part)).ToHashSet();
+        ready.RemoveAll(each => each.Part.Orders.Any(on => waiting.Contains((each.Tag.Ask, on))));
 
         return [.. queued.Where(request => !tags.ContainsKey(request.Id)), .. Ordered(ready)];
     }
