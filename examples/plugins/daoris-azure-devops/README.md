@@ -86,74 +86,71 @@ Placed after the merge, it reads the unit's pull request (by the address Daoris 
 project's API and `api-version=7.1-preview` on release management's (`vsrm.dev.azure.com`):
 
 ```
-GET   {org}/{project}/_apis/build/builds?repositoryId=…&repositoryType=TfsGit&branchName={target}[&definitions={pipeline}]
+GET   {vsrm}/{project}/_apis/release/definitions/{releaseDefinition}             the declared definition: its artifacts, stages and triggers
+GET   {org}/{project}/_apis/build/builds?repositoryId=…&repositoryType=TfsGit&branchName={target}&definitions={pipeline}
 GET   {org}/{project}/_apis/build/definitions?repositoryId=…&repositoryType=TfsGit&includeAllProperties=true   where no build ran
 GET   {org}/{project}/_apis/git/repositories/{repo}/commits/{commit}/changes                                   where no build ran
 GET   {org}/{project}/_apis/git/repositories/{repo}/items?path={yaml}&versionDescriptor.version={commit}…      a YAML pipeline's trigger
-GET   {vsrm}/{project}/_apis/release/definitions?artifactType=Build&artifactSourceId={projectId}:{pipeline}&$expand=artifacts,triggers
-GET   {vsrm}/{project}/_apis/release/releases?[definitionId=…&]artifactTypeId=Build&sourceId=…&artifactVersionId={build}
-GET   {vsrm}/{project}/_apis/release/releases/{id}                             each stage's status and approvals, every so often
-POST  {vsrm}/{project}/_apis/release/releases                                  { definitionId, artifacts: [{ alias, instanceReference }] }, for `createRelease` alone
-PATCH {vsrm}/{project}/_apis/release/releases/{id}/environments/{stage}         { status: inProgress }, for `deploy` alone
-GET   {org}/{project}/_apis/build/builds/{build}/timeline                       a pipeline run's own stages and approvals
+GET   {vsrm}/{project}/_apis/release/definitions?artifactType=Build&artifactSourceId={projectId}:{pipeline}&$expand=…   a hold's candidates
+GET   {vsrm}/{project}/_apis/release/releases?definitionId=…&artifactTypeId=Build&sourceId=…&artifactVersionId={build}
+GET   {vsrm}/{project}/_apis/release/releases/{id}                             the declared stage's status and approvals, every so often
+POST  {vsrm}/{project}/_apis/release/releases                                  { definitionId, description, artifacts: [{ alias, instanceReference }] }, for create-and-start alone
+PATCH {vsrm}/{project}/_apis/release/releases/{id}/environments/{stage}         { status: inProgress }, for start-stage and create-and-start alone
+GET   {org}/{project}/_apis/build/builds/{build}/timeline                       a pipeline run's own stage and its approvals
 ```
 
-The build is the newest one of the merged commit on the target branch, of the pipeline named, else of the one pipeline that built it,
-else of the one pipeline a release definition takes. Where a release definition takes that build's artifact, it waits for the build to
-succeed, finds the classic release made from it, and watches that release's stages; where none does, it watches the pipeline run's own
-stages (a YAML pipeline's). Each stage awaited is watched until it ends: a pending approval is said on the plugin's console and waited
-on, never given here. The step reaches when every awaited stage succeeded, with the release's or the run's address as evidence and each
-stage's outcome in its message (*Release-12 of app-release from build 20261110.41 (1a2b3c4d): Staging succeeded; Production succeeded
-after an approval by Release Approvers.*).
+**It acts only on the target its options declare**, by stable id: the build pipeline, the release definition (`none` for a pipeline
+run's own stages), the exact stage, the action and what counts as success. Everything is resolved before any write. With no target
+declared, or one declared in part, the step fails `no-target`, and Daoris holds it for the person; where the declared definition is gone,
+takes no build of the declared pipeline, or holds no such stage, it fails `target-changed`. Either lists what it found for the pipeline,
+even one candidate, each by id with its stages and its trigger (*#42 Portal (401 Dev, 402 Prod; no CD)*), and links the project's
+releases. What it finds is only ever proposed: a definition's label, its trigger or the releases already made never choose the target.
 
-**With no options**, a repository's pipeline is usually the artifact of several release definitions (dev, QA and prod; a disabled one).
-The step then watches the releases actually made from the build, each by its own stages: it waits (within `findSeconds`) for a release of
-every definition whose CD trigger takes the build's branch, and watches those together, a release whose every stage starts by hand left
-alone and said. A definition with no trigger on the branch (QA, prod) is not watched unless a release was made from the build anyway. One
-release failing fails the step.
+The build is the newest one of the merged commit on the target branch of the declared pipeline. It waits for that build to succeed, then
+looks for the declared definition's release made from exactly that build (its artifact under the definition's alias for the pipeline is
+that build). With `observe` or `start-stage`, a release none made within `findSeconds` fails `no-release` (*No release of Portal (#42) was
+made from build 20261110.41 (1a2b3c4d) within 600 s; the step's action does not create one.*). With `create-and-start`, it waits for a
+release the definition's CD trigger makes where one takes the build's branch, and otherwise makes the release from that build, saying first
+which stages its creation starts by itself; the release's description names the attempt, and a retry after an interrupted creation finds
+the release it made rather than making a second. Several releases of the definition from one build fail `ambiguous`, listing them. Only the
+declared stage is watched, until it ends: a pending approval is said on the plugin's console and waited on, never given here, and the stage
+is started (once) only by `start-stage` and `create-and-start`. The step reaches when that stage ended as `success` asks, with the
+release's or the run's address as evidence and the stage's outcome in its message (*Release-12 of app-release from build 20261110.41
+(1a2b3c4d): Production succeeded after an approval by Release Approvers.*). A pipeline run's own stage is only observed.
 
-**A build no release comes for** is said at the first look, once the build succeeded: where no release was made from it and no
-continuous-deployment trigger of the release definitions taking it takes its branch (the trigger is off, or names other branches), the step
-fails `no-release` at once, saying so (*No release of app-release exists for build 20261110.41 (1a2b3c4d): its continuous-deployment trigger
-is off, so none is made by itself.*), and Daoris holds the step for the person, whose *Try again* finds a release they made since. With
-`createRelease`, the one release definition taking the build (or the one `releaseDefinition` names) is asked to make that release from the
-build, which the step then watches as any other; a later attempt finds it rather than making another. A definition whose triggers are not
-read is not taken for that, and the step looks for a release within `findSeconds` as before.
-
-**A merge that builds nothing** is reached at the first look, saying *Nothing to release*, where every pipeline of the repository leaves
-it out: its CI trigger is off, or its branch filters leave out the target branch, or its path filters leave out every file the merge
-commit changed (a classic pipeline's filters, a YAML pipeline's `trigger:` read from its file at the merge commit; `trigger: none`, a list of
-branches, or `branches` and `paths` with `include` and `exclude`). Anything it cannot read (a trigger in another shape, a file it cannot
-fetch, no pipeline listed, a long list of changes) is not taken for that: it waits `findSeconds` and fails `no-release` as before.
+**A merge the declared pipeline does not build** is reached at the first look, saying *Nothing to release*: its CI trigger is off, or its
+branch filters leave out the target branch, or its path filters leave out every file the merge commit changed (a classic pipeline's
+filters, a YAML pipeline's `trigger:` read from its file at the merge commit; `trigger: none`, a list of branches, or `branches` and
+`paths` with `include` and `exclude`). Anything it cannot read (a trigger in another shape, a file it cannot fetch, a long list of changes)
+is not taken for that: it waits `findSeconds` and fails `no-release`.
 
 It fails with:
 
-- `stage-failed`: a stage rejected, failed or canceled (a stage of a pipeline run skipped too, where `stages` names it), in its words;
-- `build-failed`: the build a classic release takes did not succeed;
-- `no-release`: no build of the merged commit within `findSeconds` (and the merge not shown to build nothing), no release made from it and
-  no trigger to make one (at once), no release made from it within `findSeconds` (of several definitions: every release made starting by
-  hand), a release `createRelease` asked for that Azure DevOps refused to make, a build with no
-  stages that no release definition takes, or a pipeline, release definition or stage named that is not there;
-- `ambiguous`: builds of several pipelines, and no option naming one;
-- `timeout`: the attempt's deadline (the node's `timeoutSeconds`, else the step's 3600) came first, saying where each stage stood, and of
-  a stage nothing started that `deploy` would start it;
+- `no-target`, `target-changed`: the target is not declared whole, or no longer resolves, with what was found;
+- `stage-failed`: the declared stage rejected, failed or canceled, or ended in a result `success` does not take, in its words;
+- `build-failed`: the declared pipeline's build of the merged commit did not succeed;
+- `no-release`: no build of the merged commit in the declared pipeline within `findSeconds` (and the merge not shown to build nothing),
+  or no release of the declared definition made from it within `findSeconds` where the action makes none;
+- `ambiguous`: several releases of the declared definition made from the one build;
+- `rejected`: Azure DevOps refused to make the release, or to start the stage;
+- `timeout`: the attempt's deadline (the node's `timeoutSeconds`, else the step's 3600) came first, saying where the stage stood;
 - `not-merged`, `no-unit`, `no-origin`, `no-token`, `unauthorized`; `unavailable` and `rate-limited` are transient, and while it
-  watches it asks again rather than failing.
+  watches it asks again rather than failing. A creation whose answer was lost fails `unavailable`, and the retry finds what it made.
 
-Its options, each optional:
+Its options, where a repository's values over a shared workflow set them:
 
 | Option | What it says |
 |---|---|
-| `pipeline` | the build pipeline, by name or id; else the one that built the merged commit |
-| `releaseDefinition` | the classic release definition, by name or id; else the releases made from that build by the definitions whose CD trigger takes its branch |
-| `stages` | the stage or stages to wait for, by name; else every stage |
-| `deploy` | the stage or stages of a classic release to start where nothing started them; Azure DevOps' approvals and gates still decide |
-| `createRelease` | `true` makes the release of the build where none exists and no trigger makes one: of the one definition taking it, or the one `releaseDefinition` names; off by default |
+| `pipeline` | the build pipeline's id; required |
+| `releaseDefinition` | the classic release definition's id, or `none` for the pipeline run's own stages; required |
+| `stage` | the stage: the definition's stage id, or with `none` the run's stage identifier; required |
+| `action` | `observe` (never writes), `start-stage` (starts the declared stage of the release made from the build) or `create-and-start` (makes that release where none comes, then starts the stage); with `none`, `observe` alone; required |
+| `success` | `succeeded`, or `partially-succeeded` to take a stage that partly succeeded; `succeeded` where not set |
 | `findSeconds` | how long to look for the build and the release before saying none was found; 600 |
 | `everySeconds` | how often to ask Azure DevOps while it watches; 30 |
 
-A pipeline run's stages are started by their own triggers: `deploy` starts a classic release's stage alone. An attempt a process before
-this one began is taken up from its start: it reads each stage before it starts one, so nothing is started twice.
+An attempt a process before this one began is taken up from its start: it reads the release and the stage before it makes or starts
+either, so nothing is made or started twice.
 
 ## The token
 
@@ -205,8 +202,8 @@ and merge commit as `data` (`pull-request-commands.mjs`).
 
 - **Node.js**, as `plugin.json` declares under `tools`: the process, its calls to the API, and its connection to Daoris's browser.
 - **A personal access token, kept by `login`**, or the person's sign-in to Azure DevOps in Daoris's browser (the token is the first way), with the scopes Code (read and write) for the pull request and its auto-complete,
-  Build (read) for the release step, and Release (read, write and execute) where it starts a stage by `deploy` or makes a release by
-  `createRelease` (read alone otherwise).
+  Build (read) for the release step, and Release (read, write and execute) where its action is `start-stage` or `create-and-start`
+  (read alone for `observe`).
   The token's user needs the repository's *Contribute to pull requests* permission to set auto-complete.
 - **`origin`** naming the Azure Repos repository.
 
@@ -221,11 +218,12 @@ and merge commit as `data` (`pull-request-commands.mjs`).
 `node --test` in this folder runs the kit's wire and contract tests, and the plugin's own against `stand-in.mjs`, a stand-in of Azure
 DevOps' API on the loopback: `pull-request.test.mjs` (open, reuse, state with the merge commit, a refused token, no token, and that the
 source starts no program), `auto-complete.test.mjs` (set, off by default, refused by a policy, refused for want of permission, an unknown
-merge strategy) and `release.test.mjs` (a classic release watched to success, a failed stage, a pending approval waited on, a stage
-started by `deploy`, no build and no release found, a build no trigger releases said at once or released by `createRelease` once, a
-pipeline run's own stages, and the deadline), `release-places.test.mjs` (a build taken
-by several release definitions as four repositories of one organisation shape them, and a merge no pipeline builds, by a path filter, a branch
-filter or a trigger off) and `triggers.test.mjs` (the YAML trigger's shapes) and `browser.test.mjs`, against `browser-stand-in.mjs` as well, a stand-in of Daoris's
+merge strategy) and `release.test.mjs` (the declared stage watched to success, a failed stage, a partial success, a pending approval
+waited on, the stage started by `start-stage` alone, no build found, a merge the pipeline does not build, a pipeline run's own stage, and
+the deadline), `release-target.test.mjs` (no target declared or one no longer resolving held with its candidates, even one; a line feeding
+three release definitions never started on a found one; a release made by `create-and-start` alone, from the exact build, its self-starting
+stages said first; a wrong build refused; an interrupted creation never made twice) and `triggers.test.mjs` (the YAML trigger's shapes,
+and the stages a creation starts) and `browser.test.mjs`, against `browser-stand-in.mjs` as well, a stand-in of Daoris's
 browser's DevTools endpoint whose pages run the call with a `fetch` that sends the session (the token way left alone, the browser
 way with no token or a refused one, the same outputs and evidence by either, a lapsed sign-in renewed once and then said, a tab of its own,
 and no cookie or storage asked for). None of it has been run against a

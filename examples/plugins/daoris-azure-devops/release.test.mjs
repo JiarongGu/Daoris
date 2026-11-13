@@ -1,15 +1,18 @@
-// The release step against the stand-in: the merged commit's build found, its classic release or its pipeline's stages watched to their
-// end, a failed stage, a pending approval waited on and said, a stage started by `deploy`, nothing found, and a watch that runs out of time.
+// The release step against the stand-in, its target declared: the merged commit's build of the declared pipeline found, the declared
+// stage of the declared release definition's release from that build watched to its end, a failed stage, a pending approval waited on and
+// said, the declared stage started where the action says so, nothing found, a merge the pipeline does not build, a pipeline run's own
+// stage, and a watch that runs out of time.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, tip, unitAt } from './stand-in.mjs';
 
 const MERGED = 'c'.repeat(40);
 const FAST = { everySeconds: 0.02, findSeconds: 0.4 };
-const BUILD_WEB = 'https://dev.azure.com/acme/Proj/_build/results?buildId=41';
 const RELEASE_WEB = 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90';
+/** Pipeline 7's build, release definition 3, its stage 102 (Production): what the step's options name. */
+const DECLARED = { pipeline: 7, releaseDefinition: 3, stage: 102, action: 'observe' };
 
-const stage = (id, name, status, more = {}) => ({ id, name, rank: id - 10, status, preDeployApprovals: [], postDeployApprovals: [], ...more });
+const stage = (id, name, status, more = {}) => ({ id, definitionEnvironmentId: id + 90, name, rank: id - 10, status, preDeployApprovals: [], postDeployApprovals: [], ...more });
 
 /** A merged pull request whose commit pipeline 7 built on main, and, unless `classic` is false, release definition 3 taking that build. */
 async function merged({ classic = true, environments = [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'succeeded')], built = true } = {}) {
@@ -20,10 +23,11 @@ async function merged({ classic = true, environments = [stage(11, 'Dev', 'succee
     sourceBranch: 'refs/heads/main', sourceVersion: version, status: 'completed', result: 'succeeded',
     _links: { web: { href: `https://dev.azure.com/acme/Proj/_build/results?buildId=${id}` } } });
   api.builds.push(build(40, 'd'.repeat(40)), ...(built ? [build(41, MERGED)] : []));
-  api.pipelines.push({ id: 7, name: 'app-ci' });
+  api.pipelines.push({ id: 7, name: 'app-ci', project: { id: 'project-1' }, repository: { id: 'repo-1' } });
   if (classic) {
-    api.definitions.push({ id: 3, name: 'app-release', artifacts: [{ type: 'Build', isPrimary: true,
-      definitionReference: { definition: { id: '7', name: 'app-ci' }, project: { id: 'project-1' } } }] });
+    api.definitions.push({ id: 3, name: 'app-release', triggers: [], artifacts: [{ type: 'Build', alias: '_app-ci', isPrimary: true,
+      definitionReference: { definition: { id: '7', name: 'app-ci' }, project: { id: 'project-1' } } }],
+    environments: [{ id: 101, name: 'Dev', rank: 1, conditions: [] }, { id: 102, name: 'Production', rank: 2, conditions: [] }] });
     api.releases.push({ id: 90, name: 'Release-12', releaseDefinition: { id: 3 }, environments,
       artifacts: [{ type: 'Build', sourceId: 'project-1:7', definitionReference: { version: { id: '41' } } }], _links: { web: { href: RELEASE_WEB } } });
   }
@@ -40,32 +44,45 @@ async function released(t, api, options, more = {}) {
 const moving = (api, name, after, change) => (method, path, n) => {
   if (method === 'GET' && path === '/acme/Proj/_apis/release/releases/90' && n >= after) Object.assign(api.releases[0].environments.find((each) => each.name === name), change);
 };
+const writes = (api) => api.calls.filter((call) => call.method === 'POST' || call.method === 'PATCH');
 
-test('the classic release made from the merged commit\'s build is found and watched until each stage succeeds, each stage\'s outcome its evidence', async (t) => {
+test('the declared stage of the release made from the merged commit\'s build is watched until it succeeds, its outcome the evidence', async (t) => {
   const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'inProgress')] });
   api.onRead = moving(api, 'Production', 3, { status: 'succeeded' });
 
-  const { step } = await released(t, api, {});
+  const { step } = await released(t, api, DECLARED);
 
   assert.equal(step.params.state, 'reached');
   assert.equal(step.params.evidence.ref, 'azure-devops-pull-request/release@1:i-1');
   assert.equal(step.params.evidence.url, RELEASE_WEB);
-  assert.match(step.params.evidence.message, /Release-12 of app-release from build 20261110\.41 \(cccccccc\): Dev succeeded; Production succeeded\./);
+  assert.match(step.params.evidence.message, /Release-12 of app-release from build 20261110\.41 \(cccccccc\): Production succeeded\./);
   const builds = api.calls.find((call) => call.path === '/acme/Proj/_apis/build/builds');
-  assert.match(builds.query, /repositoryId=repo-1/);
+  assert.match(builds.query, /definitions=7/);
   assert.match(builds.query, /branchName=refs%2Fheads%2Fmain/);
-  assert.ok(api.calls.some((call) => call.path === '/acme/Proj/_apis/release/releases' && /artifactVersionId=41/.test(call.query)));
+  assert.ok(api.calls.some((call) => call.path === '/acme/Proj/_apis/release/releases' && /definitionId=3/.test(call.query) && /artifactVersionId=41/.test(call.query)));
+  assert.deepEqual(writes(api), []);
 });
 
-test('a stage whose deployment fails ends the step as failed with its words', async (t) => {
+test('the declared stage whose deployment fails ends the step as failed with its words', async (t) => {
   const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'inProgress')] });
   api.onRead = moving(api, 'Production', 2, { status: 'rejected' });
 
-  const { step } = await released(t, api, {});
+  const { step } = await released(t, api, DECLARED);
 
   assert.deepEqual([step.params.state, step.params.code], ['failed', 'stage-failed']);
   assert.match(step.params.evidence.message, /Production failed its deployment/);
   assert.equal(step.params.evidence.url, RELEASE_WEB);
+});
+
+test('a stage partly succeeded is a success only where the step\'s success says so', async (t) => {
+  const strict = await merged({ environments: [stage(12, 'Production', 'partiallySucceeded')] });
+  const loose = await merged({ environments: [stage(12, 'Production', 'partiallySucceeded')] });
+
+  const failed = (await released(t, strict, DECLARED)).step;
+  const reached = (await released(t, loose, { ...DECLARED, success: 'partially-succeeded' })).step;
+
+  assert.deepEqual([failed.params.state, failed.params.code, reached.params.state], ['failed', 'stage-failed', 'reached']);
+  assert.match(failed.params.evidence.message, /Production partly succeeded, and the step's success asks succeeded/);
 });
 
 test('a stage waiting on an approval is said and waited on, never approved here, and its approval decides', async (t) => {
@@ -73,94 +90,55 @@ test('a stage waiting on an approval is said and waited on, never approved here,
     stage(12, 'Production', 'queued', { preDeployApprovals: [{ status: 'pending', approver: { displayName: 'Release Approvers' } }] })] });
   api.onRead = moving(api, 'Production', 4, { status: 'succeeded', preDeployApprovals: [{ status: 'approved', approver: { displayName: 'Release Approvers' } }] });
 
-  const { plugin, step } = await released(t, api, { stages: 'Production' });
+  const { plugin, step } = await released(t, api, DECLARED);
 
   assert.equal(step.params.state, 'reached');
   assert.match(step.params.evidence.message, /: Production succeeded after an approval by Release Approvers\. Way: the token\.$/);
   assert.match(await plugin.stop(), /Production waits on an approval by Release Approvers/);
-  assert.equal(api.calls.some((call) => call.method === 'PATCH'), false);
+  assert.deepEqual(writes(api), []);
 });
 
-test('deploy starts a named stage no trigger starts, of the release definition and pipeline named, once', async (t) => {
-  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'notStarted')] });
-  api.onRead = (method, path) => {
-    const production = api.releases[0].environments[1];
+test('start-stage starts the declared stage nothing started, once, and no other; observe starts nothing', async (t) => {
+  const started = await merged({ environments: [stage(11, 'Dev', 'notStarted'), stage(12, 'Production', 'notStarted')] });
+  started.onRead = (method, path) => {
+    const production = started.releases[0].environments[1];
     if (method === 'GET' && path === '/acme/Proj/_apis/release/releases/90' && production.status === 'inProgress') production.status = 'succeeded';
   };
+  const watched = await merged({ environments: [stage(11, 'Dev', 'notStarted'), stage(12, 'Production', 'notStarted')] });
 
-  const { step } = await released(t, api, { pipeline: 'app-ci', releaseDefinition: 'app-release', deploy: 'Production' });
+  const { step } = await released(t, started, { ...DECLARED, action: 'start-stage' });
+  const observed = (await released(t, watched, DECLARED, { deadlineAt: new Date(Date.now() + 5600).toISOString() })).step;
 
   assert.equal(step.params.state, 'reached');
-  assert.deepEqual(api.deployed.map((each) => [each.release, each.environment]), [[90, 'Production']]);
+  assert.deepEqual(started.deployed.map((each) => [each.release, each.environment]), [[90, 'Production']]);
   assert.match(step.params.evidence.message, /Production started here, succeeded/);
-  assert.match(api.calls.find((call) => call.path === '/acme/Proj/_apis/build/builds').query, /definitions=7/);
+  assert.deepEqual([observed.params.state, observed.params.code], ['failed', 'timeout']);
+  assert.match(observed.params.evidence.message, /Production not started: the step observes it, and start-stage would start it/);
+  assert.deepEqual(writes(watched), []);
 });
 
-test('no build of the merged commit is said as no release found', async (t) => {
+test('no build of the merged commit in the declared pipeline is said as no release found, after the declared period', async (t) => {
   const api = await merged({ built: false });
 
-  const { step } = await released(t, api, {});
+  const { step } = await released(t, api, DECLARED);
 
   assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
-  assert.match(step.params.evidence.message, /no build ran for cccccccc on `main`/);
+  assert.match(step.params.evidence.message, /no build of pipeline 7 ran for cccccccc on `main` within 0\.4 s/);
 });
 
-test('a build no release was made from, with no stages of its own, is said as no release found', async (t) => {
-  const none = await merged();
-  none.releases.length = 0;
-  const yaml = await merged({ classic: false });
+test('a merge the declared pipeline does not build (its trigger leaves the change out) finishes saying so, at once', async (t) => {
+  const api = await merged({ built: false });
+  Object.assign(api.pipelines[0], { process: { type: 1 },
+    triggers: [{ triggerType: 'continuousIntegration', settingsSourceType: 1, branchFilters: ['+refs/heads/main'], pathFilters: ['+/src'] }] });
+  api.changes.push('/docs/readme.md');
 
-  const fromNone = (await released(t, none, {})).step;
-  const fromYaml = (await released(t, yaml, {})).step;
+  const { step } = await released(t, api, { ...DECLARED, findSeconds: 30 });
 
-  assert.deepEqual([fromNone.params.code, fromYaml.params.code], ['no-release', 'no-release']);
-  assert.match(fromNone.params.evidence.message, /no release of app-release was made from build 20261110\.41/);
-  assert.match(fromYaml.params.evidence.message, /build 20261110\.41 has no stages, and no release definition takes its artifact/);
+  assert.equal(step.params.state, 'reached');
+  assert.match(step.params.evidence.message, /Nothing to release: pipeline 7 does not build cccccccc on `main`, which changed \/docs\/readme\.md/);
 });
 
-/** A merged build with no release of its own, taken by release definition 3 whose continuous-deployment trigger is off. */
-async function untriggered() {
-  const api = await merged();
-  api.releases.length = 0;
-  api.definitions[0].artifacts[0].alias = '_app-ci';
-  Object.assign(api.definitions[0], { triggers: [], environments:[stage(11, 'Production', 'notStarted', { conditions: [{ name: 'ReleaseStarted', conditionType: 'event' }] })] });
-  return api;
-}
-
-const releasesAsked = (api) => api.calls.filter((call) => call.method === 'GET' && call.path === '/acme/Proj/_apis/release/releases').length;
-
-test('a build whose release definition makes no release by itself is said so at the first look, and the step holds for the person', async (t) => {
-  const api = await untriggered();
-
-  const { step } = await released(t, api, { findSeconds: 60 });
-
-  assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
-  assert.match(step.params.evidence.message,
-    /^No release of app-release exists for build 20261110\.41 \(cccccccc\): its continuous-deployment trigger is off, so none is made by itself\. Make one and try the step again, or set the step's createRelease option\./);
-  assert.equal(step.params.evidence.url, BUILD_WEB);
-  assert.equal(releasesAsked(api), 1);
-  assert.equal(api.calls.some((call) => call.method === 'POST'), false);
-});
-
-test('createRelease makes the release no trigger makes, from the merged build, and watches it; a later attempt finds it rather than making another', async (t) => {
-  const api = await untriggered();
-  api.onRead = (method, path) => {
-    const made = api.releases[0];
-    if (method === 'GET' && made && path === `/acme/Proj/_apis/release/releases/${made.id}`) made.environments[0].status = 'succeeded';
-  };
-
-  const first = (await released(t, api, { createRelease: true })).step;
-  const again = (await released(t, api, { createRelease: true })).step;
-
-  assert.deepEqual([first.params.state, again.params.state], ['reached', 'reached']);
-  const posted = api.calls.filter((call) => call.method === 'POST' && call.path === '/acme/Proj/_apis/release/releases');
-  assert.equal(posted.length, 1);
-  assert.equal(posted[0].body.definitionId, 3);
-  assert.deepEqual(posted[0].body.artifacts, [{ alias: '_app-ci', instanceReference: { id: '41', name: '20261110.41' } }]);
-  assert.match(first.params.evidence.message, /^Release-1 of app-release from build 20261110\.41 \(cccccccc\), made here as no trigger makes one: Production succeeded\./);
-});
-
-test('a pipeline\'s own stages are watched where no release definition takes its build, an approval said', async (t) => {
+test('the declared stage of a pipeline run\'s own stages is watched where the target names no release definition, an approval said', async (t) => {
   const api = await merged({ classic: false });
   api.builds[1].status = 'inProgress';
   api.timelines[41] = [
@@ -176,19 +154,19 @@ test('a pipeline\'s own stages are watched where no release definition takes its
     api.builds[1].status = 'completed';
   };
 
-  const { plugin, step } = await released(t, api, {});
+  const { plugin, step } = await released(t, api, { pipeline: 7, releaseDefinition: 'none', stage: 'Deploy', action: 'observe' });
 
   assert.equal(step.params.state, 'reached');
-  assert.equal(step.params.evidence.url, BUILD_WEB);
-  assert.match(step.params.evidence.message, /app-ci run 20261110\.41 \(cccccccc\): Build succeeded; Deploy succeeded after an approval\./);
+  assert.equal(step.params.evidence.url, 'https://dev.azure.com/acme/Proj/_build/results?buildId=41');
+  assert.match(step.params.evidence.message, /app-ci run 20261110\.41 \(cccccccc\): Deploy succeeded after an approval\./);
   assert.match(await plugin.stop(), /Deploy waits on an approval/);
 });
 
-test('a watch that outlasts its deadline fails as timeout, saying where each stage stood', async (t) => {
-  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'notStarted')] });
+test('a watch that outlasts its deadline fails as timeout, saying where the declared stage stood', async (t) => {
+  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'inProgress')] });
 
-  const { step } = await released(t, api, {}, { deadlineAt: new Date(Date.now() + 5600).toISOString() });
+  const { step } = await released(t, api, DECLARED, { deadlineAt: new Date(Date.now() + 5600).toISOString() });
 
   assert.deepEqual([step.params.state, step.params.code], ['failed', 'timeout']);
-  assert.match(step.params.evidence.message, /stopped watching at the step's deadline: Dev succeeded; Production not started: nothing started it, and the step's deploy option starts it\./);
+  assert.match(step.params.evidence.message, /stopped watching at the step's deadline: Production deploying\./);
 });
