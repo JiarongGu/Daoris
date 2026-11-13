@@ -71,7 +71,6 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.Equal(quest, again.Published.Single().Quest);
         Assert.Single(await _quests.FromAsync(AskDesk.SenderOf(_ask.Id)));
         Assert.Equal(2, again.Plan!.Revision);
-        // The quest says the revision, so a worker reads the part as the plan now words it.
         var kept = (await _quests.FromAsync(AskDesk.SenderOf(_ask.Id))).Single();
         Assert.Equal("A new title", kept.Title);
         Assert.Equal("other words", kept.Body);

@@ -13,7 +13,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         string? tip = null, root = null;
         // A scout reads the repository's own checkout, its line as it stands; any other helper reads its asker's tree.
         var folder = ask.Scout is { } scouted
-            ? (await _context.Service.RegistryAsync(ct).ConfigureAwait(false)).FirstOrDefault(row => ScoutsRepository(row, scouted, asker))?.Root
+            ? (await _context.Service.RegistryAsync(ct).ConfigureAwait(false)).FirstOrDefault(row => scouted.Reads(row.Repository, row.Workspace, asker.Workspace))?.Root
             : asker.Tree is { Length: > 0 } named ? new LinePlaces(_context.Home).Of(named).Folder : null;
         if (folder is not null) (tip, root) = await owner.ReadTreeAsync(folder, ct).ConfigureAwait(false);
         if (tip is null || root is null)
@@ -79,11 +79,6 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct, run.Limit, run.Transient).ConfigureAwait(false);
     }
-
-    /// <summary>Whether <paramref name="row"/> is the repository <paramref name="part"/> changes, in the workspace its lead works in.</summary>
-    private static bool ScoutsRepository(RepoView row, HelperScoutPart part, PriorSession lead) =>
-        string.Equals(row.Repository, part.Repository, StringComparison.OrdinalIgnoreCase)
-        && (lead.Workspace is not { Length: > 0 } workspace || string.Equals(row.Workspace, workspace, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a

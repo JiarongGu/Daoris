@@ -164,7 +164,7 @@ public sealed class HelperBox(string? home)
             ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper."
         : null;
 
-    /// <summary>The part the ask the session was started for is to orient, or null where that ask is no scout's, or none is started for the session.</summary>
+    /// <summary>The part of the ask this helper answers, or null where that ask names none.</summary>
     public HelperScout? ScoutOf(Session helper)
     {
         if (Home is null || helper.Serves is null) return null;

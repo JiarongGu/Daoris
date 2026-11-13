@@ -89,7 +89,6 @@ public sealed class TeamStore
         return (await ReadRowsAsync("ask = $ask AND part = $part", ("$ask", ask), ("$part", part), ct).ConfigureAwait(false))[0];
     }, ct);
 
-    /// <summary>The part's title as the newest revision words it, so the row reads as its quest does.</summary>
     public Task RetitleAsync(string ask, string part, string title, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();

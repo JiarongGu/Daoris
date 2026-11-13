@@ -106,10 +106,6 @@ public enum QuestOperationKind
     /// </summary>
     Chosen,
 
-    /// <summary>
-    /// A plan revision reworded or rescoped the part this quest publishes (TEAMWORK1d): its title, body, weight and claimed paths are the
-    /// revision's, so the quest a worker reads is the part as the plan now says it. It applies while the quest is open or taken, and the
-    /// latest stands. It moves no status.
-    /// </summary>
+    /// <summary>A plan revision reworded or rescoped the part this quest publishes: it applies while the quest is open or taken, and moves no status.</summary>
     Revised,
 }

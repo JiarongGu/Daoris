@@ -19,7 +19,6 @@ public sealed record HelperPacket(string Asker, string Repository, string Tip, s
     /// <summary>The answer goes to the person, not the session.</summary>
     public bool ForPerson { get; init; }
 
-    /// <summary>The part the helper is to orient as a scout; null for every other helper.</summary>
     public HelperScoutPart? Scout { get; init; }
 }
 

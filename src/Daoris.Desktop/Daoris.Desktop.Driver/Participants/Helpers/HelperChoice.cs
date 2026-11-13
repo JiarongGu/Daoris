@@ -52,7 +52,6 @@ public static class HelperChoice
         var fence = Candidates(ask, rule, adapters, askerAdapter);
         var named = ask.Agent is { Length: > 0 } && fence.Count == 1;
         var persons = !rule.SetUp && rule.Agents.Count > 0;
-        // A scout's pass is orient work, the Scout role's, which falls to Exact's when removed; every other helper's is help work.
         var found = catalogue?.RoleFor(ask.Scout is null ? ParticipantWork.Help : ParticipantWork.Orient, new RolePlace(workspace));
         if (found?.Held is { } held) throw new DriverException(held);
         var role = found is null ? (ask.Scout is null ? "helper" : "scout") : found.Role?.Id;

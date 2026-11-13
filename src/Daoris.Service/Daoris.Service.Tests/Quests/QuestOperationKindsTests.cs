@@ -150,7 +150,7 @@ public sealed class QuestOperationKindsTests
         {
             Choice = new QuestWorkflowChoice("docs", "docs-to-pr") { Words = "only the documentation" },
         },
-        // A plan revision's rewording and rescoping of the part this quest publishes (TEAMWORK1d).
+        // A plan revision's rewording and rescoping of the part this quest publishes.
         [QuestOperationKind.Revised] = s => Op(QuestOperationKind.Revised, s) with
         {
             Revision = new QuestRevision("Build the bridge, twice as wide", "Widen it.", "exact", ["src/bridge/**", "docs/bridge.md"]),

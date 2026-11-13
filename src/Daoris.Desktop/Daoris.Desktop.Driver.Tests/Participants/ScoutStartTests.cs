@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A scout's start (TEAMWORK1d): the lead's ask for a part to be oriented is a helper's ask that names the part, so it is read from the file as
+/// A scout's start: the lead's ask for a part to be oriented is a helper's ask that names the part, so it is read from the file as
 /// the service writes it, judged without the lead's turn or its work, walked over the Scout role's entries, and handed an instruction that
 /// says the part; its answer is a pack kept with the plan, so no word is handed to an intake lead.
 /// </summary>
