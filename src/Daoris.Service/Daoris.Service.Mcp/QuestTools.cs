@@ -423,6 +423,16 @@ public sealed class QuestTools(
                 id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered, session: intake?.Session, handback: true)
             .ConfigureAwait(false);
 
+        // A take refused as already taken, by a session whose quest's holder here ended failed or stopped, is that holder's take
+        // passed on: a retry carries the work on rather than standing down against a holder that is gone.
+        if (outcome.Refusal == QuestRespondRefusal.AlreadyTaken
+            && string.Equals(action, "take", StringComparison.OrdinalIgnoreCase)
+            && intake?.Session is { } retrying && ledger is not null
+            && await new QuestRetakes(quests, ledger).AdoptAsync(id, retrying, ct).ConfigureAwait(false) is { } adopted)
+        {
+            return adopted;
+        }
+
         // A take by a session the driver started is written on its record: how its end is
         // told apart from a stand-down, which the quest's state alone cannot say. A chat's too:
         // how a delete knows the chat served that quest.
