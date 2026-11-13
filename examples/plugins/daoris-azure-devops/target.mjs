@@ -1,12 +1,14 @@
-// The release step's target as its options declare it, by stable id: the build pipeline, the release definition (`none` for a
-// pipeline run's own stages), the exact stage, the action and what counts as success. What the forge holds for a pipeline is only ever
-// listed for the person as candidates: a label, a trigger or the releases already made describe the forge's behaviour, not the intent.
-import { project, releases, withoutHeads } from './azure.mjs';
+// The release step's target as its options declare it, by stable id. What the forge holds is only ever listed as candidates (discover.mjs):
+// a label, a trigger or the releases already made describe the forge's behaviour, not the intent.
+import { discover, discoveryWords } from './discover.mjs';
 
 export const ACTIONS = ['observe', 'start-stage', 'create-and-start'];
 
 /** The stage results each `success` takes as reached. */
 export const SUCCESS = { succeeded: ['succeeded'], 'partially-succeeded': ['succeeded', 'partiallySucceeded'] };
+
+/** The acts that can deploy into a target, earliest first; one undeclared is read as `push`, so every exposing act waits. */
+export const DEPLOYS_ON = ['push', 'pull-request', 'merge', 'start'];
 
 const numeric = (value) => (/^\d+$/.test(String(value ?? '').trim()) ? Number(value) : null);
 const text = (value) => (typeof value === 'string' && value.trim() !== '' ? value.trim() : null);
@@ -22,15 +24,23 @@ export function declared(options) {
   // A pipeline run's own stage is started by its own trigger and made by its run: it is only observed.
   const action = ACTIONS.includes(given.action) && (definition !== 'none' || given.action === 'observe') ? given.action : null;
   const success = given.success === undefined ? 'succeeded' : SUCCESS[given.success] ? given.success : null;
-  const missing = [['pipeline', pipeline], ['releaseDefinition', definition], ['stage', stage], ['action', action], ['success', success]]
+  const deploysOn = given.deploysOn === undefined ? 'push' : DEPLOYS_ON.includes(given.deploysOn) ? given.deploysOn : null;
+  const missing = [['pipeline', pipeline], ['releaseDefinition', definition], ['stage', stage], ['action', action], ['success', success], ['deploysOn', deploysOn]]
     .filter(([, value]) => value === null).map(([name]) => name);
-  return { pipeline, definition, stage, action, success, missing, find: seconds(given.findSeconds, 600) * 1000, every: seconds(given.everySeconds, 30) * 1000 };
+  return {
+    deployable: text(given.deployable), pipeline, definition, stage, action, success, deploysOn, missing,
+    find: seconds(given.findSeconds, 600) * 1000, every: seconds(given.everySeconds, 30) * 1000,
+  };
 }
 
-/** Why the step holds for a declaration it cannot act on. */
-export const undeclared = (missing) => (missing.length >= 4
-  ? `No release target is declared: ${joined(missing.slice(0, 4))}.`
-  : `The release target is declared without ${joined(missing)}.`);
+const whose = (deployable) => (deployable ? ` for deployable \`${deployable}\`` : '');
+
+export const undeclared = (missing, deployable = null) => (missing.length >= 4
+  ? `No release target is declared${whose(deployable)}: ${joined(missing.slice(0, 4))}.`
+  : `The release target${whose(deployable).replace(' for', ' of')} is declared without ${joined(missing)}.`);
+
+export const changedWords = (why, deployable = null) =>
+  `The declared release target${whose(deployable).replace(' for', ' of')} no longer resolves: ${why}.`;
 
 /** The artifact alias under which `definition` takes `pipeline`'s builds, else null. */
 export function aliasOf(definition, pipeline) {
@@ -46,57 +56,8 @@ export function unresolved(definition, target) {
   return null;
 }
 
-/** The branches a definition's continuous-deployment trigger takes, in words. */
-function deployment(definition) {
-  const triggers = (definition.triggers ?? []).filter((each) => each.triggerType === 'artifactSource');
-  if (triggers.length === 0) return 'no CD';
-  const branches = triggers.flatMap((each) => (each.triggerConditions ?? []).map((condition) => withoutHeads(condition.sourceBranch) ?? 'its build\'s branch'));
-  return branches.length === 0 ? 'CD on every branch' : `CD on ${branches.join(', ')}`;
-}
-
-const described = (definition) => {
-  const stages = [...(definition.environments ?? [])].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).map((each) => `${each.id} ${each.name}`);
-  return `#${definition.id} ${definition.name} (${stages.length > 0 ? stages.join(', ') : 'no stages'}; ${deployment(definition)})`;
-};
-
-/** The pipelines a hold lists candidates for: the declared one, else those that built the merged commit, else the repository's. */
-async function pipelinesOf(repo, repositoryId, commit, target, declaredPipeline) {
-  const query = `repositoryId=${encodeURIComponent(repositoryId)}&repositoryType=TfsGit&branchName=${encodeURIComponent(target)}&queryOrder=queueTimeDescending&$top=50`
-    + (declaredPipeline !== null ? `&definitions=${declaredPipeline}` : '');
-  const ran = ((await project(repo, 'GET', `/build/builds?${query}`)).json?.value ?? []).filter((build) => build.sourceVersion === commit);
-  const found = new Map();
-  for (const build of ran) if (!found.has(build.definition?.id)) found.set(build.definition?.id, { id: build.definition?.id, project: build.project?.id });
-  if (found.size > 0 || declaredPipeline !== null) {
-    const declaredOne = found.get(declaredPipeline);
-    if (declaredPipeline !== null && !declaredOne) found.set(declaredPipeline, { id: declaredPipeline, project: null });
-    return [...found.values()];
-  }
-  const listed = (await project(repo, 'GET', `/build/definitions?repositoryId=${encodeURIComponent(repositoryId)}&repositoryType=TfsGit`)).json?.value ?? [];
-  return listed.map((each) => ({ id: each.id, project: each.project?.id ?? null }));
-}
-
-/** The release definitions taking `pipeline`'s builds. */
-async function takingPipeline(repo, pipeline) {
-  const source = pipeline.project ? `${pipeline.project}:${pipeline.id}` : null;
-  const query = source ? `artifactType=Build&artifactSourceId=${encodeURIComponent(source)}&` : '';
-  const all = (await releases(repo, 'GET', `/definitions?${query}$expand=artifacts,triggers,environments`)).json?.value ?? [];
-  return all.filter((each) => aliasOf(each, pipeline.id) !== null);
-}
-
-/**
- * The candidates a hold lists, each by id with its stages and trigger: `{ words, url }`, the words what it found for each pipeline, the
- * url the project's release hub.
- */
+/** The candidates a hold lists: `{ words, url }`, the words what discovery found for each pipeline, the url the project's release hub. */
 export async function candidates({ repo, repositoryId, commit, target, pipeline }) {
-  const parts = [];
-  for (const each of await pipelinesOf(repo, repositoryId, commit, target, pipeline)) {
-    const definitions = await takingPipeline(repo, each);
-    parts.push(definitions.length > 0
-      ? `for pipeline ${each.id}: ${definitions.map(described).join('; ')}`
-      : `for pipeline ${each.id}: no release definition takes its builds; its run's own stages are named by identifier, with releaseDefinition none`);
-  }
-  return {
-    words: parts.length > 0 ? `Found ${parts.join('. Found ')}.` : 'No pipeline of the repository was found to release from.',
-    url: `${repo.base}/${encodeURIComponent(repo.project)}/_release`,
-  };
+  const found = await discover({ repo, repositoryId, commit, target, pipeline });
+  return { words: discoveryWords(found), url: found.url };
 }

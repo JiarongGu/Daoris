@@ -64,6 +64,11 @@ export async function standIn() {
     if (request.method === 'GET' && path === `${PROJECT}/build/definitions`) {
       return [200, { value: api.pipelines.filter((each) => (query('name') !== null ? each.name === query('name') : each.repository?.id === query('repositoryId'))) }];
     }
+    const pipeline = /^\/acme\/Proj\/_apis\/build\/definitions\/(\d+)$/.exec(path);
+    if (pipeline && request.method === 'GET') {
+      const found = api.pipelines.find((each) => each.id === Number(pipeline[1]));
+      return found ? [200, found] : [404, { message: 'no such build definition' }];
+    }
     if (request.method === 'GET' && path === `${GIT}/items`) {
       return api.files[query('path')] === undefined ? [404, { message: 'no such item' }] : [200, { path: query('path'), content: api.files[query('path')] }];
     }

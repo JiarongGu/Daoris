@@ -78,6 +78,8 @@ public sealed record LineFiles(string? Line, string? Commit, string? Problem)
     /// <summary><c>daoris.json</c>'s text at the commit; null where the line holds none.</summary>
     public string? Manifest { get; init; }
 
+    public string? ManifestBlob { get; init; }
+
     /// <summary><c>daoris.lanes.json</c>'s text at the commit; null where the line holds none.</summary>
     public string? Lanes { get; init; }
 
