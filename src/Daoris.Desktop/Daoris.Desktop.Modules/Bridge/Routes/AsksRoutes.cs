@@ -36,13 +36,42 @@ public sealed class AsksRoutes(DriverLoop loop)
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
 
-    /// <summary>An ask's plan as the person reads it, each part with its quest; moves nothing.</summary>
+    /// <summary>
+    /// An ask's plan as the person reads it, each part with its quest; moves nothing. A release order whose evidence file holds another
+    /// blob on this machine's checkout than the lead read is named stale: the blobs are read here (<see cref="PlanBlobs"/>) and the
+    /// plan is read again with them.
+    /// </summary>
     [DriverRoute("ASK_PLAN", PipeClass.Open)]
     [ByEvent("ASK_PLAN", Untold = "the service's plan rows, which `team_plan` writes and no scope or slice tells")]
     private async Task<object?> AskPlanAsync(AskPlanRead press, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        return await service.AskPlanAsync(Asked(press.Ask), cancellationToken).ConfigureAwait(false);
+        var ask = Asked(press.Ask);
+        var plan = await service.AskPlanAsync(ask, cancellationToken).ConfigureAwait(false);
+        if (!plan.Plans.Any(each => each.Releases.Any(release => release.Evidence is not null))) return plan;
+
+        var seen = await PlanBlobs.SeenAsync(plan, await service.RegistryAsync(cancellationToken).ConfigureAwait(false), DriverConfig.Load(_loop.ConfigPath), cancellationToken)
+            .ConfigureAwait(false);
+        return seen.Count == 0 ? plan : await service.AskPlanAsync(ask, cancellationToken, seen).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The person's answer to one open question of an ask's delivery plan (<c>key</c> and <c>words</c>), or their waiver of one release order
+    /// (<c>deployable</c> after <c>on</c>, each <c>repository/id</c>, with their <c>reason</c>). Kept on the plan's next revision, which the
+    /// bell and <i>What needs you</i> read from the asks; answers the plan as it then reads, or the service's sentence where it refuses.
+    /// </summary>
+    [DriverRoute("ASK_PLAN_SETTLE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("ASK_PLAN_SETTLE", Ask = "ask")]
+    [GroundAsk("ASK_PLAN_SETTLE", "ask")]
+    [Says("ASK_PLAN_SETTLE", "ask:ask", "key:form", "words:words", "reason:words")]
+    [Publishes("ASK_PLAN_SETTLE", StateScopes.Asks)]
+    private async Task<object?> AskPlanSettleAsync(AskPlanSettlePress press, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var ask = Asked(press.Ask);
+        return press.Deployable is { Length: > 0 }
+            ? await service.WaiveReleaseAsync(ask, press.Deployable, press.On ?? "", press.Reason ?? "", cancellationToken).ConfigureAwait(false)
+            : await service.AnswerPlanQuestionAsync(ask, press.Key ?? "", press.Words ?? "", cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
