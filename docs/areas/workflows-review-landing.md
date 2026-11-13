@@ -373,3 +373,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-PIPELINE1 g, h**: this repository's pipeline on the install, a stage after the check.
 - **WORKFLOWEDIT1c**, **LANDNODE1j**, **REVIEWFLOW1c**, **LANDPRESS1**: the installed window.
 - **PROCSTEPS1** (`docs/2026-11-09-process-steps-design.md`): `resolve`'s loop resolvers, `merge`, `tidy`'s removals, the cut-over.
+- **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
+  its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
+  production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes
+  is judged and journaled; until then nothing reads a `wait.unit`'s commitment at run time and an ask's release order is kept by hand.
