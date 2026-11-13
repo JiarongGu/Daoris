@@ -173,7 +173,6 @@ public sealed partial class CheckoutWritersCensusTests
         var found = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
         foreach (var (file, source) in sources)
         {
-            // Blanking comments only takes text away, so a file the raw source does not match cannot match blanked.
             if (!StartsGit().IsMatch(source)) continue;
             var code = Code(source);
             if (!StartsGit().IsMatch(code)) continue;
@@ -206,11 +205,7 @@ public sealed partial class CheckoutWritersCensusTests
         Assert.All(Census, each => Assert.False(string.IsNullOrWhiteSpace(each.Value.How), each.Key));
     }
 
-    /// <summary>
-    /// 🔴 Each writer of a checkout holds its repository alone, taken in the file named (its effect needing the hold where another takes it), and
-    /// no other file takes that hold, so no door reaching a writer through another takes it twice (the legacy merge, through the promotion). Each
-    /// start in the checkout holds it shared, whether or not the session has a tree of its own.
-    /// </summary>
+    /// <summary>🔴 Each writer of a checkout holds its repository alone, taken in the file named (its effect needing the hold where another takes it), and no other file takes that hold, so no door reaching a writer through another takes it twice (the legacy merge, through the promotion). Each start in the checkout holds it shared, whether or not the session has a tree of its own.</summary>
     [Fact]
     public void Each_writer_of_a_checkout_holds_its_repository_alone_once_and_each_start_holds_it_shared()
     {

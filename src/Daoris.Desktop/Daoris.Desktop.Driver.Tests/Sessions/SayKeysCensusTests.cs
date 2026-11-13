@@ -7,11 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the tests passes the producer's key, or is named here as a legacy case with why it has none. A producer's retry is kept as one
 /// word only where the word carries a key, so a new keyless caller is a second word waiting to happen.
 /// </summary>
-/// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie. A call is the door's when its
-/// receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the
-/// calls seen holds against a scan that stopped reading.
-/// </remarks>
+/// <remarks>Read from the sources of the driver, its host and the modules, by name wherever they lie. A call is the door's when its receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the calls seen holds against a scan that stopped reading.</remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class SayKeysCensusTests
 {

@@ -120,10 +120,7 @@ public sealed partial class ContinuedReadersCensusTests
         ],
     };
 
-    /// <summary>
-    /// The dispatchers' keeps and the callers of a dispatcher's keep: each reads the head before it holds a word, and none falls back to holding
-    /// a word answered <c>continued</c> in this process.
-    /// </summary>
+    /// <summary>The dispatchers' keeps and the callers of a dispatcher's keep: each reads the head before it holds a word, and none falls back to holding a word answered <c>continued</c> in this process.</summary>
     private static readonly Dictionary<string, string> Dispatchers = new()
     {
         ["InboxKeeps.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",

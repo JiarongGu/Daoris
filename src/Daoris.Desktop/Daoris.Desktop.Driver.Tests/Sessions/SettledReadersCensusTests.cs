@@ -9,10 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// code before any word is read, or <i>as kept</i>, asking only whether the words are on the line and never dereferencing a word. A new reader
 /// is a failing line until it is named, and a file named here must still read it as it says.
 /// </summary>
-/// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie, as <see cref="SayKeysCensusTests"/> is.
-/// The supervisor's release says with <c>supervised</c> and no settled request: its door stays today's, which the client's tests hold.
-/// </remarks>
+/// <remarks>Read from the sources of the driver, its host and the modules, by name wherever they lie, as <see cref="SayKeysCensusTests"/> is. The supervisor's release says with <c>supervised</c> and no settled request: its door stays today's, which the client's tests hold.</remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class SettledReadersCensusTests
 {

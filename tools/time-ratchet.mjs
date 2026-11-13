@@ -9,12 +9,9 @@
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
  * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
- * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is
- * `{ ms, why, row? }`: `why` says what makes the test slow and why that cannot be cut (slowness means an issue to fix or to explain),
- * `row` the backlog row that optimizes it; an entry with no real `why` fails the check, and every test over budget is printed with its
- * reason. With no records
- * (a fresh checkout, no gate run yet) nothing is checked. The list only shrinks: a test that got faster is cut down by `--write`,
- * and a new slow test is fixed, never added.
+ * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is `{ ms, why, row? }`:
+ * `why` says what makes the test slow and why that cannot be cut, `row` the backlog row that optimizes it; an entry with no real `why`
+ * fails, and every test over budget is printed with its reason. With no records nothing is checked. The list only shrinks: `--write` cuts it.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
