@@ -10,6 +10,7 @@ import type { Answered } from '../InlineConfirm';
 import { type LandingConflict, RebaseAsk, type SayRebase } from './LandingSync';
 import { type OpinionDetail, type OpinionGate as OpinionGateState } from '../gates/opinion';
 import { OpinionGate, type OpinionGateActs } from '../gates/OpinionGate';
+import { seekReviewCard } from './card/seekCard';
 import type { FileOpen } from './preview';
 import { reviewState, type ReviewWaits } from '../gates/review';
 import { ReviewGate, type ReviewGateActs } from '../gates/ReviewGate';
@@ -102,6 +103,11 @@ export function Lands({ session, lands, landing, onReview, onReviewRun, onSayReb
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
         {door && (
           <Button variant={door === onReviewRun ? 'primary' : 'default'} className="px-2 py-0.5 text-small" onClick={door}>{t('work.head.review')}</Button>
+        )}
+        {onReviewRun && acceptable && !conflict && (
+          <Button variant="ghost" className="px-2 py-0.5 text-small" onClick={() => { if (!seekReviewCard()) onReviewRun(); }}>
+            {t('work.reviewCard.show')}
+          </Button>
         )}
         {toEvent?.work && <InConversation onPress={toEvent.work} />}
       </p>

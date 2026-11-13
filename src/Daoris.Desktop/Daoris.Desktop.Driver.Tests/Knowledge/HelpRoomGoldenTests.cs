@@ -352,6 +352,7 @@ public sealed class HelpRoomGoldenTests
         }
 
         Assert.All(varies, each => Assert.Contains(each.Section, headings));
+        Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);
     }
 
     /// <summary>The switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>

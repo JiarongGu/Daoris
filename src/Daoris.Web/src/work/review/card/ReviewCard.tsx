@@ -104,6 +104,8 @@ export function ReviewCard({ answer, viewed, onWord, onOpenOutputs, onOverrule, 
   return (
     <div
       role="group"
+      data-review-card={record.attempt}
+      tabIndex={-1}
       aria-label={t('work.reviewCard.label', { place: record.place })}
       className={cn('grid gap-2 rounded-card border border-line-strong bg-raised px-3 py-2.5', supersededBy && 'opacity-60')}
     >

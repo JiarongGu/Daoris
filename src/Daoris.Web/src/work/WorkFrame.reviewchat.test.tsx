@@ -96,8 +96,8 @@ describe('a driven session waiting for review is driven on from its page', () =>
 
   /** What the page says in each language: the box's placeholder, its Send, and the door to the run's review (chrome, not content). */
   const WORDS = {
-    en: { placeholder: 'write to it — the same session goes on with your words', send: 'Send', review: 'Review' },
-    zh: { placeholder: '写给它——同一个会话会带着你的话继续', send: '发送', review: '审阅' },
+    en: { placeholder: 'write to it — the same session goes on with your words', send: 'Send', review: 'Open outputs' },
+    zh: { placeholder: '写给它——同一个会话会带着你的话继续', send: '发送', review: '打开产出' },
   } as const;
 
   /** Each state an ended driven session waits for review in: the page draws its line and the box, and a word goes on as the record's. */

@@ -87,7 +87,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     render(<WaitStrip session={session()} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} onTop={vi.fn()} />);
 
     expect(within(strip()).queryByRole('button', { name: 'Accept…' })).toBeNull();
-    await userEvent.click(within(strip()).getByRole('button', { name: 'Review' }));
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Open outputs' }));
     expect(onReviewRun).toHaveBeenCalledOnce();
   });
 
@@ -144,7 +144,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(toEvent.question).toHaveBeenCalledTimes(1);
     await userEvent.click(within(within(strip()).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
-    await userEvent.click(within(within(strip()).getByRole('button', { name: 'Review' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(within(within(strip()).getByRole('button', { name: 'Open outputs' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.work).toHaveBeenCalledTimes(1);
   });
 

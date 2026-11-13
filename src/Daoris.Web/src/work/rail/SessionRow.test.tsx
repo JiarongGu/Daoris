@@ -716,7 +716,7 @@ describe("a row's acts", () => {
     screen.getByRole('button', { name: 'more for Cap the hydration' }).focus();
     await user.keyboard('{Enter}');
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Answer…', 'Stop…', 'Try again', 'Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive',
+      'Answer…', 'Stop…', 'Try again', 'Open outputs', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive',
       'Unarchive', 'Copy session ID',
     ]);
     // Finish and Decline… stay the session's card's: one owner each.
@@ -738,7 +738,7 @@ describe("a row's acts", () => {
       </>,
     );
     rightClick(screen.getByText('Cap the hydration'));
-    expect(await menuActs('Actions for Cap the hydration')).toEqual(['Review', 'Archive', 'Copy session ID']);
+    expect(await menuActs('Actions for Cap the hydration')).toEqual(['Open outputs', 'Archive', 'Copy session ID']);
     await userEvent.click(screen.getByRole('menuitem', { name: 'Archive' }));
     expect(act).toHaveBeenCalledWith('archive', 's1a2b3c4');
   });
