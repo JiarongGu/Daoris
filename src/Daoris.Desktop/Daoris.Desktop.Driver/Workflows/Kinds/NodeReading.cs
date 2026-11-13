@@ -18,6 +18,9 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
     /// <summary>The go-aheads the work's ask holds.</summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
+    /// <summary>What the ask's plan requires and what landed of it; null where it is not read.</summary>
+    public PartsReport? Parts { get; init; }
+
     /// <summary>The quests the work published.</summary>
     public IReadOnlyList<QuestView>? Requests { get; init; }
 
@@ -37,5 +40,6 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
         Review = run.Reviews.GetValueOrDefault(subject),
         GoAheads = run.GoAheads.GetValueOrDefault(subject),
         Requests = run.Requests.GetValueOrDefault(subject),
+        Parts = run.Parts.GetValueOrDefault(subject),
     };
 }

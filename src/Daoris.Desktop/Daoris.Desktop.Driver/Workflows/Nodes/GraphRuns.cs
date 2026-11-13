@@ -233,6 +233,9 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
 
     public string? Ask { get; init; }
 
+    /// <summary>What the run's ask requires and has landed on its branch; null where it is not read, and its <c>parts</c> waits.</summary>
+    public PartsReport? Parts { get; init; }
+
     public AskThroughView? Through { get; init; }
 
     /// <summary>The quests a session serving one of the run's work quests published (<see cref="WorkRequestsReading.Published"/>): what its

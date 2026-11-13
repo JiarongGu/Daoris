@@ -166,6 +166,9 @@ public sealed record IntegrationAsk(string Repository, string? Workspace, string
 
     /// <summary>The <c>conflicts</c> the node's unit takes, the node's option; null reads the rule's.</summary>
     public string? Conflicts { get; init; }
+
+    /// <summary>The ask and part this landing is a part's of, which land on the ask's branch (<see cref="TrainBranch"/>); null for every other landing.</summary>
+    public TrainRef? Train { get; init; }
 }
 
 /// <summary>What the door answered: admitted with its request, or refused in a sentence with its code (<see cref="IntegrationRefusals"/>).</summary>

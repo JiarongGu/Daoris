@@ -89,8 +89,14 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
     public Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct) =>
         Task.FromResult(new IntegrationStore(home).FindByKey(unit, tip));
 
-    public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct) =>
-        new IntegrationRequests(new HomeIntegrationRecords(home), new IntegrationStore(home), () => config, home).AdmitAsync(ask, ct);
+    public async Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct)
+    {
+        var store = new IntegrationStore(home);
+        var admitted = await new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, home).AdmitAsync(ask, ct).ConfigureAwait(false);
+        // A part's landing is tagged with its ask and part, so the queue's train reads it; the request is the one queue's, as any other.
+        if (admitted is { Admitted: true, Request: { } request } && ask.Train is { } train) new TrainParts(store).Tag(request.Id, train.Ask, train.Part);
+        return admitted;
+    }
 
     public Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct) =>
         Task.FromResult(new IntegrationStore(home).MemberOf(request.Id) is { State: IntegrationMemberStates.Promoted or IntegrationMemberStates.Settled });

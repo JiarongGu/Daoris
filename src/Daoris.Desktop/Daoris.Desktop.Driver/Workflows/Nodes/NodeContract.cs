@@ -33,6 +33,9 @@ public static class NodeKinds
     /// <summary>Waiting on other work, through a commitment.</summary>
     public const string WaitUnit = "wait.unit";
 
+    /// <summary>The ask's parts landed on its branch: reached once every required part of the standing plan has, read from the integration's record.</summary>
+    public const string Parts = "parts";
+
     /// <summary>Daoris closing the quest at the work's end.</summary>
     public const string QuestClose = "quest.close";
 

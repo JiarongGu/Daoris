@@ -154,7 +154,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         }
 
         var resolved = (rule ?? new LandingIntegrate()).Resolved();
-        return (resolved with { Request = ask.Request ?? request, Conflicts = ask.Conflicts ?? resolved.Conflicts }, null);
+        return (resolved with { Request = ask.Request ?? request, Conflicts = ask.Conflicts ?? resolved.Conflicts, Line = ask.Train is { } part ? TrainBranch.Of(part.Ask) : resolved.Line }, null);
     }
 
     /// <summary>

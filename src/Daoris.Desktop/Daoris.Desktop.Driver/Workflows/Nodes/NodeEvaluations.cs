@@ -132,6 +132,9 @@ internal static class NodeEvaluations
                 ? new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal) { [self.Id] = asked }
                 : new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal),
             Requests = new Dictionary<string, IReadOnlyList<QuestView>>(StringComparer.Ordinal) { [self.Id] = scope.Requests },
+            Parts = scope.Parts is { } parts
+                ? new Dictionary<string, PartsReport>(StringComparer.Ordinal) { [self.Id] = parts }
+                : new Dictionary<string, PartsReport>(StringComparer.Ordinal),
             Opinions = gates.Opinion is { } opinion && scope.Branch is { } judged
                 ? new Dictionary<string, OpinionGateState>(StringComparer.Ordinal) { [judged.Id] = opinion }
                 : new Dictionary<string, OpinionGateState>(StringComparer.Ordinal),

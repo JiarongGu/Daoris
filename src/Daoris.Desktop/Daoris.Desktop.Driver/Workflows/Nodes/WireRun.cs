@@ -107,6 +107,9 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// </summary>
     public IReadOnlyDictionary<string, ReviewGateState> Reviews { get; init; } = ImmutableDictionary<string, ReviewGateState>.Empty;
 
+    /// <summary>The parts each unit's ask requires and has landed, by <see cref="WorkUnit.Id"/>: what a started <c>parts</c> node observes (<see cref="PartsNode"/>).</summary>
+    public IReadOnlyDictionary<string, PartsReport> Parts { get; init; } = ImmutableDictionary<string, PartsReport>.Empty;
+
     /// <summary>
     /// The go-aheads each unit's work holds on its ask, by <see cref="WorkUnit.Id"/>, as the service answers them: the caller's read,
     /// which a started <c>go-ahead</c> node observes (<see cref="GoAheadNode"/>). A unit it leaves out has none read, so its
