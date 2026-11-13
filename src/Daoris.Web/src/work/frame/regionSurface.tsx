@@ -49,7 +49,6 @@ export function useRegionSurfaces({
   reviewAttempt = null,
 }: {
   reviewRun?: string | null;
-  /** The attempt an Accept card opened the Outputs view at; null for the newest. */
   reviewAttempt?: number | null;
   t: TFunction;
   notify: Notify;

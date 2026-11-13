@@ -53,7 +53,7 @@ function Commits({ answer, only, onOnly }: { answer: RunReviewAnswer; only: stri
 /**
  * **The change set**: the commits, then every file's hunks in one scroll (`ReviewFiles`, unified or side by side), each marked *Viewed*
  * by its patch's content; a viewed file and one past the bound stay folded until opened, and what the work left uncommitted is named apart.
- * Where no patch was read (a folder's work, or a checkout not on this machine) the record's rows stand, each opened on `fileBody`.
+ * Where the answer holds no patch (a folder's work, or a checkout not on this machine) the record's rows stand, each opened on `fileBody`.
  *
  * A molecule: the answer, the marks and the row body arrive as props.
  */

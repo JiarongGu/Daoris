@@ -30,7 +30,6 @@ export function AttendedConversation({
   channel, onOpenOutputs,
 }: {
   t: TFunction;
-  /** Open the Outputs view on a run at an attempt, or its newest with null: the Accept card's door. */
   onOpenOutputs?: (run: string, attempt: number | null) => void;
   /** The home of the channel messages its turns took: who posted each, and the door that opens its channel's panel. */
   channel?: ComponentProps<typeof SessionConversation>['channel'];
@@ -136,7 +135,6 @@ export function AttendedConversation({
               agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
             }}
           />
-          {/* The Accept of the run its quest serves, where its work waits: after the turns that did it. */}
           <ReviewCards session={attended.id} onOpenOutputs={onOpenOutputs} />
         </div>
       </FileOpener.Provider>

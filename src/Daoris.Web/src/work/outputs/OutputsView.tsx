@@ -7,7 +7,7 @@ import { Markdown } from '../conversation/Markdown';
 import { PlanOperations, type ViewedMarks } from '../review/run/ReviewChanges';
 import { ChangeSetDisplay } from './ChangeSetDisplay';
 
-/** The order outputs are read in: what changed first, then a plan, then what was said of it, then what has no display here. */
+/** The order outputs are read in: the changes first, then a plan, then the handbacks, then what has no display here. */
 const DISPLAY_ORDER = ['change-set', 'resource-plan', 'document'];
 
 const rank = (output: ReviewOutput) => {
@@ -62,7 +62,7 @@ function HandbackDisplay({ answer, part }: { answer: RunReviewAnswer; part: stri
   );
 }
 
-/** What an output of a display this window does not know holds, as it was given. */
+/** What an output of a display this window does not know holds, as given. */
 function RawDisplay({ output }: { output: ReviewOutput }) {
   const { t } = useTranslation();
   return (
@@ -116,7 +116,7 @@ export function OutputsView({ answer, viewed, onRead, fileBody }: {
   viewed: ViewedMarks;
   /** Read the record at an attempt: the newer one announced, or one picked. */
   onRead?: (attempt: number) => void;
-  /** What a record's row draws once opened, where no patch was read. */
+  /** What a record's row draws once opened, where the answer holds no patch. */
   fileBody?: (row: ReviewRow) => ReactNode;
 }) {
   const { t } = useTranslation();
