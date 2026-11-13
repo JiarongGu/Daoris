@@ -3,7 +3,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { builtInto, STAMPED } from '../service-publish.mjs';
 import { INSTALL_RID } from './names.mjs';
 import { refusal } from './staging.mjs';
-import { CLI_BIN, DRIVER_PROJECT } from './launchers.mjs';
+import { CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT } from './launchers.mjs';
 
 /**
  * The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. Its
@@ -100,6 +100,29 @@ export function pieceStartPublishCommand(folder, artifacts = null) {
 /** Lay the launcher's publish in `published` out in `<install>/app/bin/`, after {@link layCli}. Throws naming what the publish did not make. */
 export function layPieceStart(published, install) {
   if (!existsSync(join(published, PIECE_START))) throw new Error(`desktop-publish: the publish of the partner's launcher made no ${PIECE_START}.`);
+  const bin = join(install, ...CLI_BIN);
+  mkdirSync(bin, { recursive: true });
+  for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
+}
+
+/**
+ * The install's command (SAYLINES1): one program, published framework-dependent and laid out in `app/bin/` whole beside the git doors, the
+ * partner's launcher and `daoris-driver`'s folder. It starts the desktop's program with its arguments whole, which the batch file it
+ * replaces could not: a batch file's arguments end at the first line break. A twin of `CommandLauncher.Program`, which
+ * `CommandLauncherProcessTests` holds to this name.
+ */
+export const COMMAND_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Command';
+export const COMMAND = CLI_LAUNCHERS[0];
+
+/** The command's publish into `folder`, in the git doors' shape; its builds into `artifacts` when given. */
+export function commandPublishCommand(folder, artifacts = null) {
+  return builtInto(`dotnet publish "${COMMAND_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
+}
+
+/** Lay the command's publish in `published` out in `<install>/app/bin/`, after {@link layCli}. Throws naming what the publish did not make. */
+export function layCommand(published, install) {
+  if (!existsSync(join(published, COMMAND))) throw new Error(`desktop-publish: the publish of the command made no ${COMMAND}.`);
   const bin = join(install, ...CLI_BIN);
   mkdirSync(bin, { recursive: true });
   for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
