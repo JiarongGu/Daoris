@@ -48,6 +48,28 @@ public sealed class LookStagesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pass_that_times_nothing_is_said_by_its_part_and_one_that_times_itself_once()
+    {
+        var stages = Stages();
+        await stages.PassAsync("run-outcomes", () =>
+        {
+            Pass(900);
+            return Task.CompletedTask;
+        });
+        await stages.PassAsync("channel", async () =>
+        {
+            await stages.TimeAsync("channel", () =>
+            {
+                Pass(300);
+                return Task.CompletedTask;
+            });
+            Pass(5);
+        });
+
+        Assert.Equal("run-outcomes=900 channel=300", stages.Take());
+    }
+
+    [Fact]
     public void Stages_are_said_in_the_order_they_began_and_one_under_the_floor_is_left_out()
     {
         var stages = Stages();

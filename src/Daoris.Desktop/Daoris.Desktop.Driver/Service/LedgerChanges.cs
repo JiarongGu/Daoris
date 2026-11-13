@@ -28,6 +28,12 @@ internal static class LedgerChanges
     /// <summary>The topic each answer that names a family wakes (<see cref="ChangeTopics.Ledger"/> is this name): the change stream's own, so the service owns its spelling.</summary>
     public const string Topic = "ledger";
 
+    public const string Quests = "quests";
+
+    /// <summary>Whether a wake's <paramref name="subject"/>, the families an answer named, names <paramref name="family"/>.</summary>
+    public static bool Names(string subject, string family) =>
+        subject.Split(',', StringSplitOptions.TrimEntries).Contains(family, StringComparer.Ordinal);
+
     /// <summary>How long each wait asks to be held: under the client's own timeout (<see cref="DriverHttp.Timeout"/>).</summary>
     public const int WaitSeconds = 20;
 

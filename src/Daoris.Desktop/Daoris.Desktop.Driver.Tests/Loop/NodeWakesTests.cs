@@ -86,6 +86,86 @@ public sealed class NodeWakesTests : IDisposable
         Assert.Equal(looks, Looked().Length);
     }
 
+    [Fact]
+    public async Task A_quest_that_moved_wakes_the_runtimes_pass_at_once_beside_a_look_still_running()
+    {
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 600 }""");
+        RunHome.Bind(_home, "q7", RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"land",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
+             "wires":[{"id":"a","kind":"after","from":"claimed","to":"land"}]}
+            """), DateTimeOffset.UtcNow);
+        await using var hooks = new HookSet(_home, say: (_, _) => { });
+        var desk = new HeldDesk();
+        using var log = new MachineLog(_home, "driver");
+        var watch = new DriverWatch(_ledger.Client(), config, _home, new SessionProcesses(), sync: null, hooks: hooks,
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            Log = log,
+            Passed = _ => Interlocked.Increment(ref _passes),
+            Supervising = () => desk,
+        };
+        var reports = new List<TickReport>();
+        var watching = watch.RunAsync((report, _) =>
+        {
+            lock (reports) reports.Add(report);
+            return Task.CompletedTask;
+        }, onError: null, _closing.Token);
+
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && Volatile.Read(ref _passes) >= 1, () => "no look, or no pass", Poll.Patience);
+            await Poll.Until(() => !watch.Running.Passing, () => "the start's pass never ended", Poll.Patience);
+
+            // A look held in its supervision, as a look slow in any of its passes is.
+            desk.Hold();
+            watch.Nudge(ChangeTopics.Ledger, "words");
+            await desk.Entered.Task.WaitAsync(Poll.Patience);
+            var (looks, passes) = (Count(reports), Volatile.Read(ref _passes));
+
+            // A quest closed by a person or an agent: its run's node is read by a pass now, not after the look that is running.
+            watch.Nudge(ChangeTopics.Ledger, "sessions,quests");
+            await Poll.Until(() => Volatile.Read(ref _passes) > passes, () => "the quest's move waited for the look", TimeSpan.FromSeconds(10));
+            Assert.Equal(looks, Count(reports));
+        }
+        finally
+        {
+            desk.Release();
+            await _closing.CancelAsync();
+            try { await watching.WaitAsync(Poll.Patience); }
+            catch (OperationCanceledException) { }
+        }
+    }
+
+    /// <summary>A supervisor's desk that holds a look's supervision once asked to, until released.</summary>
+    private sealed class HeldDesk : ISupervisorDesk
+    {
+        private volatile TaskCompletionSource? _held;
+
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void Hold() => _held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void Release() => _held?.TrySetResult();
+
+        public async Task<IReadOnlyList<SupervisorWaiting>> WaitingAsync(CancellationToken ct)
+        {
+            if (_held is { } held)
+            {
+                Entered.TrySetResult();
+                await held.Task.WaitAsync(ct);
+            }
+
+            return [];
+        }
+
+        public Task<string?> FactsAsync(SupervisorWaiting waiting, string fence, CancellationToken ct) => Task.FromResult<string?>(null);
+
+        public Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct) =>
+            throw new NotSupportedException("nothing is supervised here");
+    }
+
     private static int Count(List<TickReport> reports)
     {
         lock (reports) return reports.Count;

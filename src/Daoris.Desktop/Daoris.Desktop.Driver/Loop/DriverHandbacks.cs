@@ -33,6 +33,6 @@ internal sealed class DriverHandbacks(LoopContext context)
         }
 
         context.Events.Keep(record.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = seen.Words() }, say: null);
-        File.WriteAllText(files.PathOf(record.Session, "observed"), seen.Tip);
+        files.WriteObserved(record.Session, seen.Tip);
     }
 }

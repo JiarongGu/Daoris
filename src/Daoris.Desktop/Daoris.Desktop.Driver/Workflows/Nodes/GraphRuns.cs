@@ -51,6 +51,23 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
     private sealed record Version(DateTime? Written, long Length, DecodedVersion Decoded);
 
+    /// <summary>A workflow file as one read stated it, and its content, loaded the first time a run of that read needs it.</summary>
+    private sealed class WorkflowStamp(DateTime? written, long length)
+    {
+        private bool _loaded;
+        private WorkflowFileFound? _found;
+
+        public DateTime? Written => written;
+
+        public long Length => length;
+
+        public WorkflowFileFound? Load(Func<WorkflowFileFound?> load)
+        {
+            if (!_loaded) (_found, _loaded) = (load(), true);
+            return _found;
+        }
+    }
+
     private readonly object _lock = new();
 
     private readonly Dictionary<string, Kept> _bindings = new(StringComparer.Ordinal);
@@ -67,7 +84,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
     {
         lock (_lock)
         {
-            var stamps = new Dictionary<string, (DateTime? Written, long Length)>(StringComparer.Ordinal);
+            var stamps = new Dictionary<string, WorkflowStamp>(StringComparer.Ordinal);
             // The verification runs, bound in a folder of their own, beside the chains'.
             var lines = VerifyRuns.All(records.Home).Select(line =>
             {
@@ -140,21 +157,21 @@ public sealed class GraphRuns(NodeRecordFiles records)
     /// decodes): read again only where that file changed, so a version that stops reading (its file removed or damaged, its version gone or not
     /// the one the run started on) holds the run whole until it reads again.
     /// </summary>
-    private DecodedVersion VersionOf(WorkflowRunBinding binding, Dictionary<string, (DateTime? Written, long Length)> stamps)
+    private DecodedVersion VersionOf(WorkflowRunBinding binding, Dictionary<string, WorkflowStamp> stamps)
     {
         var number = binding.Version ?? 0;
         DecodedVersion Unread(string why) => new(number, null, null, null, why);
         if (!WorkflowNamed.IsId(binding.Workflow)) return Unread($"`{binding.Workflow}` is not a workflow's id.");
-        // A workflow file is stated once for the runs of one read, which mostly share it.
+        // A workflow file is stated, and decoded where a run needs it, once for the runs of one read, which mostly share it.
         if (!stamps.TryGetValue(binding.Workflow, out var stamp))
         {
             var file = new FileInfo(WorkflowStore.PathOf(records.Home, binding.Workflow));
-            stamps[binding.Workflow] = stamp = (file.Exists ? file.LastWriteTimeUtc : null, file.Exists ? file.Length : -1);
+            stamps[binding.Workflow] = stamp = new WorkflowStamp(file.Exists ? file.LastWriteTimeUtc : null, file.Exists ? file.Length : -1);
         }
 
-        var (written, length) = stamp;
+        var (written, length) = (stamp.Written, stamp.Length);
         if (_versions.TryGetValue(binding.Run, out var kept) && kept.Written == written && kept.Length == length) return kept.Decoded;
-        var read = new WorkflowFiles(records.Home).Load(binding.Workflow)?.Read;
+        var read = stamp.Load(() => new WorkflowFiles(records.Home).Load(binding.Workflow))?.Read;
         var stored = read?.Versions.FirstOrDefault(each => each.Version == number);
         var version = read is null ? Unread($"no workflow `{binding.Workflow}` is saved here any more.")
             : read.Problem is { } problem ? Unread(problem)

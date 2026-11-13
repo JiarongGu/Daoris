@@ -407,7 +407,7 @@ public sealed class Driver(
         var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
         {
-            foreach (var pass in LookPasses.In(phase)) await pass.RunAsync(round, ct).ConfigureAwait(false);
+            foreach (var (name, pass) in LookPasses.NamedIn(phase)) await Stages.PassAsync(name, () => pass.RunAsync(round, ct)).ConfigureAwait(false);
         }
 
         var state = round.State;
