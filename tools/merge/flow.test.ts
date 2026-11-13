@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import { fixtureFolder } from './fixture-home.ts';
@@ -267,6 +267,26 @@ test('a full set never replays a red or a flake of the same key', async () => {
       assert.equal(again.asked.length, 1, verdict);
       again.done();
     }
+  } finally {
+    h.done();
+  }
+});
+
+test('a reached run that ends with a class flaked reads FLAKE, and its class counts reach the gate record', async () => {
+  const outcome = { ran: 3, replayed: 9, flaked: ['driver|A.OneTests'], mainRed: [], red: [] };
+  const h = harness({
+    runGate: async (_where, each, logs) => {
+      const log = join(logs, `${each.name}.log`);
+      writeFileSync(log, `reached: ran\nreached-classes: ${JSON.stringify(outcome)}\n`);
+      return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 1, log };
+    },
+  });
+  try {
+    const result = await call(h);
+    assert.equal(result.verdict, 'FLAKE');
+    assert.deepEqual(result.flakes, ['driver|A.OneTests']);
+    const { record } = settleMerge({ branch: 'b', at: '2026-11-14T00:00:00Z', wallMs: 1, results: [result], mains: [], previous: [] });
+    assert.deepEqual(record.gates[0]!.classes, { ran: 3, replayed: 9, flaked: 1, mainRed: 0, red: 0 });
   } finally {
     h.done();
   }

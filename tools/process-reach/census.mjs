@@ -2,6 +2,7 @@ import { join, posix } from 'node:path';
 import { filterHolds, settingsFilter } from './settings.mjs';
 import { constantsIn, reachesIn, stringsOf, traitsIn, typesIn } from './types.mjs';
 import { namesIn } from './source.mjs';
+import { reachedByFile } from '../merge/class-reach.ts';
 
 const posixPath = (path) => path.split('\\').join('/');
 const folderOf = (path) => posix.dirname(path);
@@ -137,9 +138,24 @@ export function censusOf(half, files, read) {
     for (let at = entry; at && !out.includes(at); at = baseOf(at)) out.push(at);
     return out;
   };
+  // The source projects' top-level types and extension methods by file, and those declaring tests (a shared contract's).
+  const defined = new Map();
+  const testedOutside = new Set();
+  for (const source of sources) {
+    for (const file of files) {
+      if (!inFolder(file, source) || !file.endsWith('.cs')) continue;
+      const { types, extensions } = typesIn(read(file));
+      for (const type of types) if (type.tests) testedOutside.add(type.name);
+      for (const name of [...types.filter((type) => type.topLevel).map((type) => type.name), ...extensions]) {
+        if (!defined.has(name)) defined.set(name, new Set());
+        defined.get(name).add(file);
+      }
+    }
+  }
   const modified = (entry, word) => entry.decls.some((d) => d.modifiers.includes(word));
+  const tested = (each) => each.decls.some((d) => d.tests || d.bases.some((base) => testedOutside.has(base)));
   const testClasses = [...byFull.values()].filter((entry) => entry.decls.some((d) => d.kind === 'class') && !modified(entry, 'abstract')
-    && !modified(entry, 'static') && chainOf(entry).some((each) => each.decls.some((d) => d.tests)));
+    && !modified(entry, 'static') && chainOf(entry).some(tested));
 
   // What each test-project file gives the files that name it: its top-level types and its extension methods.
   const givenBy = new Map();
@@ -150,18 +166,6 @@ export function censusOf(half, files, read) {
   for (const entry of byFull.values()) if (entry.topLevel) for (const file of entry.files) give(entry.name, file);
   for (const [file, { extensions }] of parsed) for (const name of extensions) give(name, file);
 
-  // The source projects' top-level types and extension methods, each by the files that declare it.
-  const defined = new Map();
-  for (const source of sources) {
-    for (const file of files) {
-      if (!inFolder(file, source) || !file.endsWith('.cs')) continue;
-      const { types, extensions } = typesIn(read(file));
-      for (const name of [...types.filter((type) => type.topLevel).map((type) => type.name), ...extensions]) {
-        if (!defined.has(name)) defined.set(name, new Set());
-        defined.get(name).add(file);
-      }
-    }
-  }
   // The programs the test project builds only to start: each an area of its own, with what it compiles in.
   const programs = (project?.references ?? []).filter((reference) => !reference.compiles).map(({ folder }) => {
     const program = projectOf(folder, files, read);
@@ -188,7 +192,8 @@ export function censusOf(half, files, read) {
     const traits = traitMap(classPairs);
     // In the half when, for one test by its name, the class's traits hold its filter, or that test's own with them do (git cases alone).
     const tests = chain.flatMap((each) => each.decls.flatMap((d) => d.methods));
-    const inHalf = filter === null || tests.some((attributes) => {
+    const contract = chain.some((each) => each.decls.some((d) => d.bases.some((base) => testedOutside.has(base))));
+    const inHalf = filter === null || (contract && filterHolds(filter, traits, entry.full)) || tests.some((attributes) => {
       const name = `${entry.full}.${/(\w+)\s*$/.exec(attributes)?.[1] ?? ''}`;
       return filterHolds(filter, traits, name) || filterHolds(filter, traitMap([...classPairs, ...traitsIn(attributes, constants)]), name);
     });
@@ -212,19 +217,29 @@ export function censusOf(half, files, read) {
       }
     }
     const reach = new Set();
+    // The source files that declare what the class names (the finer grain of its reach), and the areas it reaches only as a whole.
+    const sourceFiles = new Set();
+    const areaOnly = new Set();
     const strings = [...reading].map((file) => parsed.get(file)?.strings ?? '').join(' ');
     for (const file of reading) {
       for (const name of parsed.get(file)?.names ?? []) {
         for (const source of defined.get(name) ?? []) {
           const area = areaOf(source, sources);
-          if (area) reach.add(area);
+          if (area) {
+            reach.add(area);
+            sourceFiles.add(source);
+          }
         }
       }
     }
     for (const program of programs) {
       if (!program.names.some((name) => names(strings, name))) continue;
       reach.add(program.folder);
-      for (const area of program.linked) reach.add(area);
+      areaOnly.add(program.folder);
+      for (const area of program.linked) {
+        reach.add(area);
+        areaOnly.add(area);
+      }
       if (program.everything) reach.add('*');
     }
     const reaches = chain.flatMap((each) => each.decls.flatMap((d) => reachesIn(d.attributes)));
@@ -237,19 +252,23 @@ export function censusOf(half, files, read) {
             if (area === base) return programs.some((program) => program.folder === folder) ? folder : null;
             return area.startsWith(`${base}/`) ? `${folderOf(folder)}/${area}` : null;
           }).find(Boolean);
-        if (full) reach.add(full);
-        else problems.push(`${entry.full}: [Reaches("${area}")] names no folder this half compiles against or starts`);
+        if (full) {
+          reach.add(full);
+          areaOnly.add(full);
+        } else problems.push(`${entry.full}: [Reaches("${area}")] names no folder this half compiles against or starts`);
       }
     }
     classes.push({
       name: entry.full.split('.').at(-1), full: entry.full, files: [...reading].sort(),
       traits: Object.fromEntries([...traits].map(([name, values]) => [name, [...values].sort()])),
-      reach: [...reach].sort(), reaches, strings,
+      reach: [...reach].sort(), sourceFiles: [...sourceFiles].sort(), areaOnly: [...areaOnly].sort(), reaches, strings,
     });
   }
   classes.sort((a, b) => a.full.localeCompare(b.full));
   return {
     half, filter, sources, programs, classes, problems,
+    // The source files that declare a type or an extension: only a change to one of these is read at the file's grain.
+    declared: [...new Set([...defined.values()].flatMap((set) => [...set]))].sort(),
     // Each test-project file: whether it acts unnamed, and whether it declares test classes alone (a class's own file).
     files: Object.fromEntries([...parsed].map(([file, { unnamed }]) => {
       const tops = [...byFull.values()].filter((entry) => entry.topLevel && entry.files.has(file));
@@ -281,7 +300,7 @@ export function pathReach(path, census) {
     return classes.length ? { classes } : { none: `no class of the half names ${path}` };
   }
   const area = areaOf(path, sources);
-  if (area) return { areas: [area] };
+  if (area) return { areas: [area], file: path };
   const source = sources.find((folder) => path.startsWith(`${folder}/`));
   if (source) return { whole: `${path} is at ${source}'s root (its project file)` };
   const program = programs.find((each) => path.startsWith(`${each.folder}/`));
@@ -295,6 +314,16 @@ export function pathReach(path, census) {
     return classes.length ? { classes } : { none: `no class of the half compiles against, starts or names ${rest[0]}` };
   }
   return { whole: `no class's reach places ${path}` };
+}
+
+const declaredSets = new WeakMap();
+
+/** Whether a class is reached by a placed source path: by the file that declares what it names (`merge/class-reach.ts`), by the area for a program's or a path no census declaration covers. */
+export function classHitByAreas(each, placed, census) {
+  let declared = declaredSets.get(census);
+  if (!declared) declaredSets.set(census, (declared = new Set(census.declared ?? [])));
+  if (!each.reach.length || each.reach.includes('*')) return true;
+  return placed.areas.some((area) => (placed.file ? reachedByFile(each, placed.file, area, declared) : each.reach.includes(area)));
 }
 
 /**
@@ -318,7 +347,7 @@ export function classesReached(paths, census) {
       if (by.has(each.full)) continue;
       const hit = placed.classes
         ? placed.classes.includes(each.full)
-        : !each.reach.length || each.reach.includes('*') || placed.areas.some((area) => each.reach.includes(area));
+        : classHitByAreas(each, placed, census);
       if (hit) by.set(each.full, path);
     }
   }

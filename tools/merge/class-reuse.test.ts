@@ -50,6 +50,24 @@ test('only the classes whose key has no standing pass are run, and a pass is kep
   }
 });
 
+test('two runs saving beside each other keep each other\'s passes: a builder\'s checks and a merge\'s', () => {
+  const { dir: folder, remove } = fixtureFolder('class-reuse');
+  try {
+    const file = join(folder, 'store.json');
+    const builder = new PassedClasses(file);
+    const merge = new PassedClasses(file);
+    builder.add(unitId(a), 'k-a', '2026-11-13T00:00:00Z');
+    merge.add(unitId(b), 'k-b', '2026-11-13T00:01:00Z');
+    builder.save();
+    merge.save();
+    const read = new PassedClasses(file);
+    assert.equal(read.has(unitId(a), 'k-a'), true);
+    assert.equal(read.has(unitId(b), 'k-b'), true);
+  } finally {
+    remove();
+  }
+});
+
 test('a store that does not read is empty, never a failure', () => {
   const { dir: folder, remove } = fixtureFolder('class-reuse');
   try {
