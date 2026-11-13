@@ -25,9 +25,8 @@ const PROJECT = '/acme/Proj/_apis';
 
 /**
  * Azure DevOps' calls as its REST API answers them, admitting one token as Basic's password; else `status`, while set. A test writes
- * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`, `files`, `changes`), `patch` to answer a
- * pull request's update with a refusal, `onRead(method, path, n)` to move it on as it is read, and `lose(method, path)` to carry a call out
- * and drop its answer.
+ * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`, `files`, `changes`), `patch` to refuse a
+ * pull request's update, `onRead(method, path, n)` to move it on as it is read, and `lose(method, path)` to drop a carried-out call's answer.
  */
 export async function standIn() {
   const api = {
@@ -142,7 +141,6 @@ export async function standIn() {
       reads.set(key, (reads.get(key) ?? 0) + 1);
       api.onRead?.(request.method, url.pathname, reads.get(key));
       const answered = answer(request, url, text);
-      // A call carried out whose answer never arrives, as an interrupted connection leaves it.
       if (api.lose?.(request.method, url.pathname)) return request.socket.destroy();
       return say(...answered);
     });

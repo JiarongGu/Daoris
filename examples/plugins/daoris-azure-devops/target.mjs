@@ -1,4 +1,4 @@
-// The release step's target as its options declare it, by stable id (D288): the build pipeline, the release definition (`none` for a
+// The release step's target as its options declare it, by stable id: the build pipeline, the release definition (`none` for a
 // pipeline run's own stages), the exact stage, the action and what counts as success. What the forge holds for a pipeline is only ever
 // listed for the person as candidates: a label, a trigger or the releases already made describe the forge's behaviour, not the intent.
 import { project, releases, withoutHeads } from './azure.mjs';
@@ -84,7 +84,7 @@ async function takingPipeline(repo, pipeline) {
 }
 
 /**
- * The candidates a hold lists, each by id with its stages and trigger: `{ words, url }`, the words what was found for each pipeline, the
+ * The candidates a hold lists, each by id with its stages and trigger: `{ words, url }`, the words what it found for each pipeline, the
  * url the project's release hub.
  */
 export async function candidates({ repo, repositoryId, commit, target, pipeline }) {

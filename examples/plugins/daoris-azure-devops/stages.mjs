@@ -1,6 +1,5 @@
-// Watching the declared stage to its end: a classic release's stage (its environment, by the definition's stage id) or a pipeline run's own
-// stage (by its identifier), asked every so often until it ends or the watch's time runs out. Azure DevOps' approvals and checks decide: a
-// pending one is said and waited on, and only the declared stage is ever started, only where the step's action says so.
+// Watching the declared stage of a classic release or a pipeline run to its end. Azure DevOps' approvals and checks decide: a pending one
+// is said and waited on.
 import { Refusal, TRANSIENT, project, releases } from './azure.mjs';
 import { SUCCESS } from './target.mjs';
 
@@ -100,10 +99,7 @@ function stageWords(stage, records, waited) {
   return `${stage.name} ${stage.state === 'inProgress' ? 'running' : 'not started'}`;
 }
 
-/**
- * The declared stage of pipeline run `build` (its identifier, or its name) watched until it ends, or `ends` passes: as `watchRelease`
- * answers, `{ verdict: 'missing' }` where the run ended with no such stage.
- */
+/** The declared stage of pipeline run `build` (its identifier, or its name) watched as `watchRelease` watches a release's. */
 export async function watchRun(repo, build, target, ends, say) {
   let waited = false;
   let found = null;

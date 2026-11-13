@@ -105,10 +105,7 @@ async function changesOf(repo, commit) {
   return listed.length === 0 || counted > listed.length ? null : listed;
 }
 
-/**
- * Words saying why pipeline `pipeline` does not build `commit` merged into `target`, or null where it may, or where that is not known: its
- * CI trigger is off, or leaves out the branch, or leaves out every path the commit changed.
- */
+/** Why `pipeline` does not build `commit` merged into `target` (its CI trigger off, or leaving out the branch or every path), else null. */
 export async function builtNothing(repo, repositoryId, commit, target, pipeline) {
   const definitions = (await project(repo, 'GET', `/build/definitions?repositoryId=${encodeURIComponent(repositoryId)}&repositoryType=TfsGit&includeAllProperties=true`)).json?.value;
   const definition = Array.isArray(definitions) ? definitions.find((each) => each.id === pipeline) : undefined;
@@ -138,10 +135,7 @@ export function triggeredBy(definitions, build) {
   });
 }
 
-/**
- * The names of the stages a release's creation starts by itself: each on an event (the release's start), or chained after one that is. A
- * stage whose conditions are not read is counted as starting, so a doubt is said rather than hidden.
- */
+/** The stages a release's creation starts by itself, on its start event or chained after one; one not read counts, so a doubt is said. */
 export function selfStarting(stages) {
   const byName = new Map(stages.map((stage) => [stage.name, stage]));
   const itself = (stage, seen = new Set()) => !Array.isArray(stage.conditions) || (!seen.has(stage.name) && stage.conditions.some((each) =>

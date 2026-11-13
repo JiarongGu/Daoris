@@ -1,4 +1,4 @@
-// The release step's target, declared or held for (D288): with no target declared, or one that no longer resolves, the step holds listing
+// The release step's target, declared or held for: with no target declared, or one that no longer resolves, the step holds listing
 // what it found, even one, and writes nothing; a line feeding three release definitions (one labelled disabled that still makes a release on
 // every merge, one for a retired environment, the real one started by hand) never has a stage started on a found definition; a release is
 // made only where the action says so, from the exact merged build, its self-starting stages said first, and never made twice.

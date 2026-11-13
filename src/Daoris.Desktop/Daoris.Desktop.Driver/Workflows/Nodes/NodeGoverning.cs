@@ -113,8 +113,7 @@ internal static class NodeGoverning
 
     /// <summary>
     /// A graph's nodes as the runtime evaluates and starts them: a plugin's performed or observed node under its plugin's step, where that step is
-    /// declared at the node's version and reach, else as the graph declares it and never sent or begun. A run's nodes carry its
-    /// repository's values over their options (<paramref name="valued"/>); the graph and its digest stay the version's.
+    /// declared at the node's version and reach, else as the graph declares it and never sent or begun; a run's with its repository's values.
     /// </summary>
     private static (Dictionary<string, NodeDeclaration> Declared, HashSet<string> Dispatchable, HashSet<string> Observable) Declare(
         NodeGraph graph, IReadOnlyList<NodeDeclaration> steps, Func<NodeDeclaration, NodeDeclaration>? valued = null)

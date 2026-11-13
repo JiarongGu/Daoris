@@ -1,8 +1,5 @@
-// The `release` step, placed after the merge, acting only on the target its options declare (target.mjs, D288): the merged commit from
-// the pull request the work merged by; the declared pipeline's build of it on the target branch; then the declared release definition's
-// release made from that exact build, or the run's own stages where the target names none; its declared stage watched to its end. Anything
-// unresolved holds for the person before any write, listing what was found; a release is made only where the action says so, and never
-// twice: a retry finds the one an interrupted attempt made.
+// The `release` step after the merge, acting only on the declared target (target.mjs): anything unresolved holds before any write, and a
+// release is made only where the action says so, never twice, since a retry reads before it makes one.
 import { Refusal, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
 import { until, watchRelease, watchRun } from './stages.mjs';
 import { aliasOf, candidates, declared, undeclared, unresolved } from './target.mjs';
@@ -42,11 +39,7 @@ async function releasesOf(repo, definition, build, alias) {
       && artifact.sourceId === sourceOf(build) && String(artifact.definitionReference?.version?.id) === String(build.id)));
 }
 
-/**
- * The step for `unit`: reached once the declared stage succeeded as its success says, else failed with the words of the stage, of what is
- * not found (`no-release`), of a target not declared (`no-target`) or no longer resolving (`target-changed`) with what was found, of
- * several releases of one build (`ambiguous`), or of where the stage stood at the deadline (`timeout`).
- */
+/** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way. */
 export async function release(attempt, unit, say) {
   const failed = (code, message, url) => ({ state: 'failed', code, evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
   if (!unit) return failed('no-unit', `no unit awaits this step at ${attempt.subjectRevision}`);

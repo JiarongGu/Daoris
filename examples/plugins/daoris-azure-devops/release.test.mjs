@@ -1,7 +1,4 @@
-// The release step against the stand-in, its target declared: the merged commit's build of the declared pipeline found, the declared
-// stage of the declared release definition's release from that build watched to its end, a failed stage, a pending approval waited on and
-// said, the declared stage started where the action says so, nothing found, a merge the pipeline does not build, a pipeline run's own
-// stage, and a watch that runs out of time.
+// The release step against the stand-in, its target declared: the declared stage watched to its end, started only where the action says.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, tip, unitAt } from './stand-in.mjs';
