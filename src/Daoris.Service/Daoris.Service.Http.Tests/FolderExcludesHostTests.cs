@@ -58,7 +58,6 @@ public sealed class FolderExcludesHostTests(KeyedHost host) : IClassFixture<Keye
         Assert.Equal(404, missing.Status);
     }
 
-    /// <summary>D284 point 2: an agent's keyless call rewrites a folder's excludes as the person's does.</summary>
     [Fact]
     public async Task A_call_without_the_key_rewrites_them_too()
     {

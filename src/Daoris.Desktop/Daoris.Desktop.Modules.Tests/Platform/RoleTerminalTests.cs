@@ -161,10 +161,6 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(StandingWhy.Untold, JudgeRole(standing, Answer(key!, nonce, GenerationOf(standing)), nonce).Why);
     }
 
-    /// <summary>
-    /// D284 point 2: a holder in an agents' job acts as any caller, judged by its proof alone: the proved answer is covered, and a proof
-    /// that is not the holder's is still refused.
-    /// </summary>
     [Fact]
     public void A_holder_in_an_agents_job_is_judged_by_its_proof_as_any_caller()
     {

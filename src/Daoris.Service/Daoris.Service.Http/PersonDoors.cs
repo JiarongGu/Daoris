@@ -328,7 +328,7 @@ public static class PersonDoors
         new("DELETE", "/api/asks/{id}", DoorClass.Agent, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Agent, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/sessions/{id}", DoorClass.Agent,"a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
-        // No workflow step waits on a place, on history or on a brainstorm, so any caller moves them (D284).
+        // No workflow step waits on a place, on history or on a brainstorm, so any caller moves them.
         new("POST", "/api/sessions/{id}/release-place", DoorClass.Agent, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
         new("POST", "/api/history/clear", DoorClass.Agent, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
         new("POST", "/api/brainstorms", DoorClass.Agent, "a brainstorm's question") { Marks = OwnerMark.None("a brainstorm, no quest") },
@@ -338,7 +338,7 @@ public static class PersonDoors
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Agent,"a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
         // Only the person, on the machine whose take lost, brings it forward; a local host's alone.
         new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Agent,"a lost take brought forward") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:dismissed") },
-        // A machine's retirement and the registry's verbs: any caller's, as no workflow step waits on them (D284).
+        // A machine's retirement and the registry's verbs: any caller's, as no workflow step waits on them.
         new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Agent, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
         new("DELETE", "/api/registry/{repository}", DoorClass.Agent, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Agent, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },

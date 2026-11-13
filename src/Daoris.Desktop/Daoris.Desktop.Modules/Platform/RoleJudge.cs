@@ -114,7 +114,6 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         return judged;
     }
 
-    // Under the lock, in the judge's order.
     private RoleJudgement Judged(
         string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce, IReadOnlyList<RoleRecord> staffed,
         out StandingState.Holding? misconfigured)
@@ -129,8 +128,8 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         var role = roleAct ? RoleActForm.RoleOf(payload) : AppointedRoles.Supervisor;
         if (role is null || !AppointedRoles.Kinds.Contains(role, StringComparer.Ordinal)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
-        // A caller in an agents' job acts as any caller, judged by its proof alone (D284); one the system cannot place is refused.
-        if (owner.Caller.Place(client) == StandingPlace.Untold) return RoleJudgement.Refused(StandingWhy.Untold);
+        var place = owner.Caller.Place(client);
+        if (place == StandingPlace.Untold) return RoleJudgement.Refused(StandingWhy.Untold);
 
         // The supervisor's decide or leave, each proved over its own route's canonical bytes, its subject whole; or ROLE_ACT's form.
         RoleActForm? act = null;

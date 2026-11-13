@@ -159,7 +159,6 @@ public sealed class PersonDoorTableTests
         ("DELETE", "/api/sessions/{id}", Agent),
         ("POST", "/api/sessions/{id}/release-place", Agent),
         ("POST", "/api/history/clear", Agent),
-        // Any caller asks, sends, stops and clears a brainstorm (D284).
         ("POST", "/api/brainstorms", Agent),
         ("POST", "/api/brainstorms/{id}/send", Agent),
         ("POST", "/api/brainstorms/{id}/stop", Agent),
@@ -197,8 +196,7 @@ public sealed class PersonDoorTableTests
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
         Assert.Equal(40, Routes.Count(route => route.Class == Open));
-        // An outside agent's read, post and leave, the person's admission of it, and every door no workflow step waits on: a
-        // brainstorm's, history's, a place's and the registry's among them (D284).
+        // An outside agent's read, post and leave, the person's admission of it, and every door no workflow step waits on.
         Assert.Equal(25, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(34, Routes.Count(route => route.Class == Driver));

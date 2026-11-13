@@ -174,8 +174,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 // Sent again while it runs, by the key that sent it: the one press's answer, and its progress to this connection.
                 _state.Owners[id] = connection;
                 answer = running.Answer;
-                // A terminal waits on its line for it again. The confirmations' lock is only ever taken inside
-                // this one, never around it.
+                // A terminal waits on its line for it again. The confirmations' lock is only ever taken inside this one, never around it.
                 if (_state.WaitingFor.TryGetValue(id, out var waiting)) Confirmations.WaitedOn(waiting, true);
             }
             else if (_state.Journal!.Find(id) is { } seen)

@@ -3,7 +3,7 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// D284 point 2: no person door. On a host holding the person key, the doors no workflow step waits on answer a keyless call (a
+/// No person door: on a host holding the person key, the doors no workflow step waits on answer a keyless call (a
 /// session's or Ask Daoris's terminal) as they answer the person's: a brainstorm asked, sent, stopped and cleared, finished history
 /// cleared, a parked line's place let go, the registry's verbs and a machine's retirement. A refusal here is the door's own (no
 /// such brainstorm, a body it does not read), never <c>person-only</c>.

@@ -282,12 +282,8 @@ public sealed class PipeStandingTests : Bridge
     }
 
     /// <summary>A caller in an agent's job is refused before its proof is read, and a role act no terminal holds is refused.</summary>
-    /// <summary>
-    /// D284 point 2: a proved holder in an agents' job acts as any caller, with no card; a dark build's judge, whose catalogue staffs no
-    /// one, still covers nothing.
-    /// </summary>
     [Fact]
-    public async Task A_contained_holder_acts_by_its_proof_and_a_dark_build_covers_nothing()
+    public async Task A_contained_holder_acts_and_a_dark_build_covers_nothing()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -300,9 +296,8 @@ public sealed class PipeStandingTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
         var nonce = NonceOf(await client.HelloAsync(HomeId))!;
         var ran = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, nonce, generation)));
-        Assert.True(ran.GetProperty("success").GetBoolean(), ran.GetRawText());
+        Assert.True(ran.GetProperty("success").GetBoolean());
         Assert.Single(driver.Seen);
-        driver.Seen.Clear();
 
         // A home's own judge over the seed's catalogue: your rules alone hold the supervisor, so nothing is covered whatever is sent.
         using var darkLog = new MachineLog(Home, "dark");
@@ -318,7 +313,7 @@ public sealed class PipeStandingTests : Bridge
             var darkNonce = NonceOf(await darkClient.HelloAsync(HomeIdentity.Read(Path.Combine(Home, "dark-home"))!))!;
             var answer = await darkClient.AnswerAsync(await darkClient.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, darkNonce, generation)));
             Assert.Equal(SupervisorWhy.NotStaffed, CodeOf(answer));
-            Assert.Empty(driver.Seen);
+            Assert.Single(driver.Seen);
         }
     }
 

@@ -914,16 +914,14 @@ public sealed class ConfirmationProcessTests : IDisposable
             input => input.WriteLine(KeyedHost.Key));
         using var client = new HttpClient { Timeout = Poll.Patience };
 
-        // A yes whose quest's id holds a space, sent escaped: the address the client asked for is the one made, and its door reads the
-        // id unescaped. No quest by that id is here, so the door's refusal names it, and that is the reason its asker reads.
+        // A yes whose quest's id holds a space, sent escaped: the door reads it unescaped, and its refusal names that quest.
         const string Accept = "/api/quests/my%20quest/accept";
         Assert.Equal(403, (await SendAsync(client, host.Url, "POST", Accept, null)).Status);
         var (retire, retireToken) = await AskedAsync(client, host.Url, "POST", Accept, null);
         var retired = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{retire}/confirm", null, person: KeyedHost.Key);
         Assert.Contains("my quest", retired.Body);
 
-        // An ask with a body: made at the Confirm, the door binds it whole. This machine holds no workspace, so the door's own
-        // refusal names the one the body named, and that is the reason its asker reads.
+        // An ask with a body, bound whole at the Confirm; no workspace is held here, so its door's refusal names the body's.
         const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
         var (second, secondToken) = await AskedAsync(client, host.Url, "POST", "/api/asks", Body);
         var answered = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{second}/confirm", null, person: KeyedHost.Key);
