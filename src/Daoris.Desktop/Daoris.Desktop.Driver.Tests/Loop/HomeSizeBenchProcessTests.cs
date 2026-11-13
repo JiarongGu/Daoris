@@ -120,7 +120,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         SessionReadsWithin("tidy", 0);
         StartsWithin("nodes' read", 2);
         SessionReadsWithin("nodes' read", 2);
-        StartsWithin("the large tree's walk", 6);
+        StartsWithin("the large tree's walk", 5);
         StartsWithin("its kept read", 1);
     }
 

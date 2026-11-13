@@ -148,7 +148,6 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
 
 internal readonly record struct TreeReadStamp(string Tree, CountedRefs Refs, string GitDir, string Head)
 {
-    /// <summary>The branch <c>HEAD</c> names; null where it is detached.</summary>
     internal string? Branch { get; init; }
 }
 
@@ -196,8 +195,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
             }
 
             // No file generation to trust, or files moved: ask git as before.
-            // One status: a tree held by content keeps its proof (its refs are the same, exactly) and asks what it holds beyond its
-            // commits, whose answer lists the paths too; any other asks the paths alone.
+            // One status: a held tree's own answer lists its paths.
             TreeWork? work = kept.Work;
             var declared = kept.Declared;
             int? uncommitted = null;
@@ -233,7 +231,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
         }
 
         watch.Restart();
-        // The head and branch come from the tree's files, so the walk asks its one status where it learns which paths it needs.
+        // Head and branch from the tree's files: the walk asks its one status last.
         var status = memo.TryLast(full, out kept) && kept.Tree == stamp.Tree && files is not null && kept.Files == files
             && kept.Work.Uncommitted is { } changed
                 ? new TreeStatus(changed, WorkingTree.IsCommitId(stamp.Head) ? stamp.Head : null, kept.Work.Branch)

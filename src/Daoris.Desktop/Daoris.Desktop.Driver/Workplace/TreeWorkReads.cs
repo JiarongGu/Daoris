@@ -44,7 +44,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
         string? judged, own;
-        // Whether the paths are counted: a head and a branch read from files leave them to the one status the walk asks last.
+        // A head and branch read from files leave the paths to the walk's one status, asked last.
         var known = true;
         if ((read ?? await TreeStatus.ReadAsync(tree, ct).ConfigureAwait(false)) is { } status)
         {
@@ -89,7 +89,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         if (work.Commits is not > 0 || judged is null) return await CountedAsync(work).ConfigureAwait(false);
         back ??= new TreeWalkBack();
         var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, back, ct).ConfigureAwait(false);
-        // A tree the line holds by content was read whole by the proof's one status, whose paths are the count.
+        // The proof's status of a tree held by content lists its paths: the count.
         if (found is not null && !known && back.Paths is { } paths)
         {
             uncommitted = paths;
