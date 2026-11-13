@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The install's command: `daoris.exe`, laid out in `app/bin/` beside the git doors, which starts the desktop's program with the
+       arguments it was given, whole. It takes the place of the batch file: a batch file's arguments end at the first line break, so a
+       verb's words of several lines (`session say`, `ask`, `quest …`) reached the program as their first line. A console program, since the
+       program it starts reads and writes the terminal's own streams. Framework-dependent and referencing nothing, as the git doors and the
+       partner's launcher are: the driver library's one file is compiled in, using the base library alone. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Desktop.Command</RootNamespace>
+    <AssemblyName>daoris</AssemblyName>
+    <Product>Daoris</Product>
+    <Description>Daoris's command: starts the desktop's program with the arguments it was given, whole</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The command's start and its words: `CommandLauncherProcessTests` holds them. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\CommandLauncher.cs" Link="CommandLauncher.cs" />
+  </ItemGroup>
+
+</Project>

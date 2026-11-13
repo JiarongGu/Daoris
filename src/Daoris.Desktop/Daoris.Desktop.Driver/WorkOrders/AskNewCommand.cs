@@ -21,12 +21,19 @@ public static class AskNewCommand
 {
     public static Task<int> PressAsync(
         AskNew ask, AskReviewWorld reviews, AskWorkflowWorld workflows, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
-        InstanceDoor.ThroughAsync(instance, PersonPresses.AskNew, InstanceDoor.Said(
-                ("workspace", ask.Workspace), ("sentence", ask.Sentence), ("to", ask.To), ("links", Some(ask.Links)), ("files", Some(ask.Files)),
-                ("review", ask.Review), ("reviewWords", ask.ReviewWords), ("kind", ask.Kind), ("workflow", ask.Workflow),
-                ("workflowWords", ask.WorkflowWords), ("short", ask.Short),
-                ("requirements", ask.Requirements is { Count: > 0 } required ? required : null), ("through", ask.Carried.Through)),
+        InstanceDoor.ThroughAsync(instance, PersonPresses.AskNew, Payload(ask),
             () => RunAsync(ask, reviews, workflows, output, ct), output, ct);
+
+    /// <summary>The press's payload in the route's field names: a requirement is <c>{ quote, check }</c>, which the pipe binds by name.</summary>
+    public static Dictionary<string, object?> Payload(AskNew ask) =>
+        InstanceDoor.Said(
+            ("workspace", ask.Workspace), ("sentence", ask.Sentence), ("to", ask.To), ("links", Some(ask.Links)), ("files", Some(ask.Files)),
+            ("review", ask.Review), ("reviewWords", ask.ReviewWords), ("kind", ask.Kind), ("workflow", ask.Workflow),
+            ("workflowWords", ask.WorkflowWords), ("short", ask.Short),
+            ("requirements", ask.Requirements is { Count: > 0 } required
+                ? required.Select(each => new Dictionary<string, string?> { ["quote"] = each.Quote, ["check"] = each.Check }).ToList()
+                : null),
+            ("through", ask.Carried.Through));
 
     /// <summary>Make the ask and print the service's sentence, with the ask and the quest it names.</summary>
     public static async Task<int> RunAsync(AskNew ask, AskReviewWorld reviews, AskWorkflowWorld workflows, TextWriter output, CancellationToken ct = default)

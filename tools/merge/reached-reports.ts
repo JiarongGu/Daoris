@@ -5,14 +5,15 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
-import { junitPasses, vitestPasses } from '../merge/file-passes.ts';
-import { passedClasses } from '../merge/trx-passes.ts';
+import { junitPasses, vitestPasses } from './file-passes.ts';
+import { passedClasses } from './trx-passes.ts';
+import type { Command, ReachedGroup } from './reached.ts';
 
 const FOLDER = '_fixtures/test-timing';
-const same = (a, b) => resolve(a).replaceAll('\\', '/').toLowerCase() === resolve(b).replaceAll('\\', '/').toLowerCase();
+const same = (a: string, b: string): boolean => resolve(a).replaceAll('\\', '/').toLowerCase() === resolve(b).replaceAll('\\', '/').toLowerCase();
 
 /** The command's arguments with the report its runner writes under `name`, and where the report lands from the repository root. */
-export function withReport(each, name) {
+export function withReport(each: Pick<Command, 'command' | 'args' | 'cwd'>, name: string): { args: string[]; report: string } {
   if (each.command === 'dotnet') return { args: [...each.args, '--results-directory', FOLDER, '--logger', `trx;LogFileName=${name}.trx`], report: `${FOLDER}/${name}.trx` };
   if (each.args[0]?.endsWith('vitest/vitest.mjs')) {
     const report = `${FOLDER}/${name}.json`;
@@ -25,7 +26,12 @@ export function withReport(each, name) {
 }
 
 /** The units of `group` its command's report says passed, or all of them where there is no report and the command exited clean. */
-export function passesOf(group, exitCode, report, root) {
+export function passesOf<T extends { file: string; unit: string }>(
+  group: Pick<ReachedGroup, 'runner'> & { units: T[] },
+  exitCode: number | null,
+  report: string | null,
+  root: string,
+): T[] {
   if (!report || !existsSync(report)) return exitCode === 0 ? group.units : [];
   const text = readFileSync(report, 'utf8');
   if (group.runner === 'dotnet') {

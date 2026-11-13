@@ -54,6 +54,7 @@ public sealed class CommandTreeTests
     [InlineData("press withdraw r-1", "withdraw r-1")]
     [InlineData("repository register", "register")]
     [InlineData("repository connect --workspace work", "repository connect --workspace work")]
+    [InlineData("repository deployables engine", "repository deployables engine")]
     [InlineData("remote sync status", "sync status")]
     [InlineData("remote list", "remote list")]
     [InlineData("ask-daoris mode full", "help mode full")]

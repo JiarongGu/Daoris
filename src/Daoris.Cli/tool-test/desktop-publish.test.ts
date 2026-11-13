@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, posix, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { driverFile } from '../test/_csharp.ts';
@@ -12,7 +12,7 @@ import { driverFile } from '../test/_csharp.ts';
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
-  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
+  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, insideFixtures,
   DRIVER_EXE, DRIVER_HOME, DRIVER_PROJECT, driverPublishCommand,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
@@ -1164,39 +1164,7 @@ test('the launchers are where the tools’ environment puts them first on every 
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'DaorisHome.InstallBinLayout');
 });
 
-test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s program with no Node, and names no machine path', () => {
-  const launchers: Record<string, string> = cliLaunchers();
-  assert.deepEqual(Object.keys(launchers).sort(), [...CLI_LAUNCHERS].sort());
-  assert.deepEqual([...CLI_LAUNCHERS].sort(), ['daoris', 'daoris.cmd']);
-  const program = [...DRIVER_HOME, DRIVER_EXE].join('/');
-
-  // Git Bash: a shell script, LF, finding its own folder from how it is called.
-  const sh = launchers['daoris'] ?? '';
-  assert.ok(sh.startsWith('#!/bin/sh\n'), 'Git Bash runs a file by its shebang');
-  assert.ok(!sh.includes('\r'), 'a carriage return ends the shebang line in the wrong place');
-  const shPath = /\nexec "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), program, `the script runs ${shPath}`);
-
-  // Command Prompt, and PowerShell by PATHEXT: a batch file, CRLF as cmd.exe reads one, every argument passed on.
-  const cmd = launchers['daoris.cmd'] ?? '';
-  assert.ok(cmd.split('\r\n').slice(0, -1).every((line) => !line.includes('\n')), 'every line ends CRLF');
-  assert.ok(cmd.endsWith('\r\n'));
-  const cmdPath = /\r\n"%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), program, `the batch file runs ${cmdPath}`);
-
-  for (const [name, text] of Object.entries(launchers)) {
-    // cmd.exe reads a batch file in the console's code page, so a non-ASCII byte prints as something else.
-    assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
-    assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
-    // A desktop group needs no Node: the program hands the doctrine commands to the CLI the install carries itself.
-    assert.doesNotMatch(text, /\bnode\b/, `${name} runs the program alone`);
-  }
-});
-
-/**
- * The desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
- * for good; `daoris`'s launchers run it.
- */
+/** The desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name for good. */
 test('ONEWAY1ai-iv the program is its own folder under app/', () => {
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
   assert.equal(DRIVER_EXE, 'daoris-driver.exe');
@@ -1221,7 +1189,7 @@ test('ONEWAY1ai-iv the install note says daoris runs the desktop’s program', (
   assert.doesNotMatch(note, /daoris driver |`daoris-driver [a-z]/, 'the note teaches no old form');
 });
 
-test('laying the doctrine tool out retries a held rename at each package and launcher step', async () => {
+test('laying the doctrine tool out retries a held rename at each package and command-folder step', async () => {
   const fx = makeFixture('publish-cli-held');
   const tarball = packed(fx.root, 'daoris-0.4.2', releasePackage());
   const install = join(fx.root, 'install');
@@ -1240,16 +1208,13 @@ test('laying the doctrine tool out retries a held rename at each package and lau
     },
   });
 
-  assert.equal(attempts.size, 3, 'unpacked package, installed package and launchers each use the held-file retry');
+  assert.equal(attempts.size, 3, 'unpacked package, installed package and command folder each use the held-file retry');
   assert.ok([...attempts.values()].every((attempt) => attempt === 2));
   assert.deepEqual(laid, { version: '0.4.2' });
   assert.equal(readFileSync(join(install, ...CLI_PACKAGE, ...CLI_ENTRY), 'utf8'), ECHO_BIN);
-  for (const [name, text] of Object.entries(cliLaunchers())) {
-    assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), text);
-  }
 });
 
-test('laying the doctrine tool out unpacks the package under app/cli, writes both launchers, and nothing into the home', async () => {
+test('laying the doctrine tool out unpacks the package under app/cli, makes app/bin ready for the command, and writes nothing into the home', async () => {
   const fx = makeFixture('publish-cli-lay');
   const tarball = packed(fx.root, 'daoris-0.4.2', releasePackage());
   const install = join(fx.root, 'install');
@@ -1265,11 +1230,7 @@ test('laying the doctrine tool out unpacks the package under app/cli, writes bot
   assert.deepEqual(readdirSync(join(install, ...CLI_HOME)), [CLI_PACKAGE[2]], 'app/cli holds node_modules and nothing else');
   assert.deepEqual(readdirSync(join(install, ...CLI_PACKAGE.slice(0, -1))), [CLI_PACKAGE.at(-1)], 'the package, as daoris');
 
-  const launchers: Record<string, string> = cliLaunchers();
-  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
-  for (const name of CLI_LAUNCHERS) {
-    assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), launchers[name], name);
-  }
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)), [], 'app/bin is empty: the programs in it are laid out after, by the publish');
   assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])).sort(), [CLI_BIN.at(-1), CLI_HOME.at(-1)].sort(), 'nothing left staged beside them');
   assert.deepEqual(readdirSync(join(install, 'data')), [], 'nothing under the home');
   fx.cleanup();
@@ -1281,12 +1242,12 @@ test('a republish replaces the doctrine tool whole: a stale file in either folde
   mkdirSync(join(install, ...CLI_PACKAGE), { recursive: true });
   writeFileSync(join(install, ...CLI_PACKAGE, 'stale.js'), '// from the publish before\n');
   mkdirSync(join(install, ...CLI_BIN), { recursive: true });
-  writeFileSync(join(install, ...CLI_BIN, 'daoris.ps1'), '# a launcher the publish before wrote\n');
+  writeFileSync(join(install, ...CLI_BIN, 'daoris.cmd'), '@echo off\n');
 
   await layCli(packed(fx.root, 'daoris-0.4.3', releasePackage('0.4.3')), install);
 
   assert.equal(existsSync(join(install, ...CLI_PACKAGE, 'stale.js')), false);
-  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)), [], 'the batch file an earlier publish wrote goes');
   assert.equal(JSON.parse(readFileSync(join(install, ...CLI_PACKAGE, 'package.json'), 'utf8')).version, '0.4.3');
   fx.cleanup();
 });
@@ -1314,7 +1275,7 @@ test('a package that is not the release’s daoris stops the publish, naming why
     await assert.rejects(layCli(tarball, install), (error: Error) => says.test(error.message), name);
     assert.equal(JSON.parse(readFileSync(join(install, ...CLI_PACKAGE, 'package.json'), 'utf8')).version, '0.4.2',
       `${name}: the last publish’s tool stands`);
-    assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort(), `${name}: its launchers stand`);
+    assert.deepEqual(readdirSync(join(install, ...CLI_BIN)), [], `${name}: its command folder stands`);
     assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])).sort(), [CLI_BIN.at(-1), CLI_HOME.at(-1)].sort(),
       `${name}: nothing left staged`);
   }

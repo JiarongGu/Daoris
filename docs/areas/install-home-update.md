@@ -37,8 +37,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
    home and every program. (from D60, D93)
 3. `app/` holds everything a build ships: `Daoris.Desktop.exe` beside its Chromium, both service hosts, the driver's program
    (`daoris-driver/`), the CLI (`cli/`, its package stamped with the build's id and commit in `build.json`, which `daoris --version`
-   says beside the package's version), the launchers and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
-   An update replaces it whole. (from D93, D99, D103, D121, D124, D172)
+   says beside the package's version), the command and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
+   An update replaces it whole. The command is `daoris.exe`, a program and never a batch file: it starts the driver's program with
+   each argument whole, so words of several lines reach every verb as typed, and Command Prompt, PowerShell and Git Bash all find it.
+   (from D93, D99, D103, D121, D124, D172, D291)
 4. The launcher starts `app/Daoris.Desktop.exe` with its own arguments and environment, through the shell, standing in the
    install's root, then exits. It drops the role key and the inbox's two messaging variables from its environment, then names Daoris's taskbar id. (from D93, D108, D139)
 5. The application finds its install above its own `app/`. It moves its working folder to the install's root at once, so no

@@ -1,7 +1,12 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { namedReads, treeReads, sourceRootReads, srcReads, localReads } from '../support/reads.ts';
-import { tool, type Rule, repoPlan, repoLanes, runs } from '../support/merge-branch.ts';
+import { namedReads, treeReads, sourceRootReads, srcReads, localReads } from './source-reads.ts';
+import { selectGates } from './reach.ts';
+import { REACH } from './reach-table.ts';
+import type { Rule } from './reach-table.ts';
+import { declared, repoPlan, repoLanes, runs } from './repo-gates.ts';
+
+const [service, driverGate, modules] = declared('service', 'driver', 'modules');
 
 // The census of test units reads this file's strings as the scan's data, not as reads.
 // test-map: strings name paths as data
@@ -54,11 +59,11 @@ test('the scan sees a read under any top-level folder, and never a name, a sente
   ]);
 
   // What the scan above then asks of the lane table: without the digest's row, the twin's read reaches no service suite.
-  const without = tool.REACH.filter((rule) => !rule.paths?.includes('tools/orient-index-fixtures/**'));
-  const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, ['tools/orient-index-fixtures/decision-notes.json'], { lanes: repoLanes, reach, gated: true })
+  const without = REACH.filter((rule) => !rule.paths?.includes('tools/orient-index-fixtures/**'));
+  const reached = (reach: readonly Rule[]) => selectGates(repoPlan, ['tools/orient-index-fixtures/decision-notes.json'], { lanes: repoLanes, reach, gated: true })
     .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
-  assert.equal(reached(without).includes('service'), false);
-  assert.equal(reached(tool.REACH).includes('service'), true);
+  assert.equal(reached(without).includes(service), false);
+  assert.equal(reached(REACH).includes(service), true);
 });
 
 test('the scan resolves a source root as its walk does, and reads under it what the file names there (MOD9c)', () => {
@@ -121,12 +126,12 @@ test('the scan resolves a source root as its walk does, and reads under it what 
   assert.deepEqual(sourceRootReads(scanner, repository, files), []);
 
   // What the scan above then asks of the lane table: without the modules' row, the modules' and the app's sources reach no driver suite.
-  const without = tool.REACH.filter((rule) => !rule.paths?.includes('src/Daoris.Desktop/Daoris.Desktop.Modules/**/*.cs'));
-  const reached = (path: string, reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true })
+  const without = REACH.filter((rule) => !rule.paths?.includes('src/Daoris.Desktop/Daoris.Desktop.Modules/**/*.cs'));
+  const reached = (path: string, reach: readonly Rule[]) => selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true })
     .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
   for (const read of ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs', 'src/Daoris.Desktop/Daoris.Desktop.App/probe.cs']) {
-    assert.equal(reached(read, without).includes('driver'), false, read);
-    assert.equal(reached(read, tool.REACH).includes('driver'), true, read);
+    assert.equal(reached(read, without).includes(driverGate), false, read);
+    assert.equal(reached(read, REACH).includes(driverGate), true, read);
   }
 });
 
@@ -196,11 +201,11 @@ test('the scan reads through a local holding a repository folder, and never thro
     ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']);
 
   // What the scan then asks of the lane table: the desktop tree no rule places, and what is read through it is placed.
-  const unplaced = (path: string) => tool.selectGates(repoPlan, [path], { lanes: repoLanes }).unplaced;
+  const unplaced = (path: string) => selectGates(repoPlan, [path], { lanes: repoLanes }).unplaced;
   assert.deepEqual(unplaced(desktopTree), [desktopTree]);
   for (const read of [...localReads(projects, files), ...localReads(named, files)]) {
     assert.deepEqual(unplaced(read), [], read);
-    assert.ok(runs([read]).includes('modules'), read);
+    assert.ok(runs([read]).includes(modules), read);
   }
 });
 
@@ -212,5 +217,5 @@ test('a folder searched for one name at any depth reads that file wherever it li
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"gone.ts"'), files), ['src/Daoris.Cli/src/gone.ts']);
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"*.ts"'), files), ['src/Daoris.Cli/src/probe.txt']);
   // What the scan then asks of the lane table: a change to the roles' file runs the service's suite (ORIENT2e2).
-  assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes('service'));
+  assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes(service));
 });

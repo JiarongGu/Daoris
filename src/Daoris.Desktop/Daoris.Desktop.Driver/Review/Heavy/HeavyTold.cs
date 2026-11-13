@@ -19,8 +19,8 @@ public static class HeavyTold
     /// <summary>The verb a session runs, by its bare name on its PATH.</summary>
     public const string Verb = "daoris";
 
-    /// <summary>The launchers an install's <c>app/bin/</c> carries for <see cref="Verb"/>, either of which its PATH finds.</summary>
-    private static readonly string[] Launchers = [Verb + ".cmd", Verb];
+    /// <summary>The command an install's <c>app/bin/</c> carries for <see cref="Verb"/>, which its PATH finds.</summary>
+    private static readonly string[] Launchers = [Verb + ".exe"];
 
     /// <summary>
     /// What a session in <paramref name="root"/> is told, or null: where its PATH finds no <see cref="Verb"/> beside

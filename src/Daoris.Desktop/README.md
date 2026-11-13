@@ -1124,8 +1124,9 @@ which the driver hands every protocol-door session ahead of the home's `bin/` co
 install that carried none handed its sessions a `bin/` copy no republish refreshed, eight days old on
 the install that found it, and it rebuilt the shared store at its own older schema); **the doctrine tool** (WSSETUP2,
 D124 §1.2), the CLI package the release packs laid out as npm lays one out in
-`app/cli/node_modules/daoris/`, with a launcher for each shell in `app/bin/` (`daoris` for Git Bash,
-`daoris.cmd` for Command Prompt and PowerShell), which runs the desktop's own program in `app/daoris-driver/` and hands the doctrine commands
+`app/cli/node_modules/daoris/`, with the command in `app/bin/` (`daoris.exe`, one program for Command Prompt, PowerShell and
+Git Bash, which starts the desktop's own program in `app/daoris-driver/` with its arguments whole, words of several lines included:
+a batch file's arguments end at the first line break, D291), which hands the doctrine commands
 to that package, on the `node` a child's `PATH` finds; Daoris's example plugins in `app/plugin-offers/` and the list of where each tool's versions download from, `app/resources.json`; the
 install's own `data/` once it has run, and an `INSTALLED.md` saying so. A republish into an install that carries either host, without `--service`, is refused.
 `--stage` publishes beside a running install, into `update/staged/`, for the application to install when its work allows (`--from-gated <commit>` builds the commit the full set gated). **Every process the driver and

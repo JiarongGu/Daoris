@@ -57,6 +57,11 @@
       "summary": "the desktop window: carries the platform, runs the driver loop, hosts the machine's service"
     },
     {
+      "id": "Daoris.Desktop.Command",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Command",
+      "summary": "Daoris's command: starts the desktop's program with the arguments it was given, whole"
+    },
+    {
       "id": "Daoris.Desktop.Driver",
       "path": "src/Daoris.Desktop/Daoris.Desktop.Driver",
       "summary": "the driver: plans quests into sessions, runs the harnesses, syncs each circle with its remote"
@@ -341,6 +346,11 @@
     {
       "from": "Daoris.Desktop.Driver.Rehearsals",
       "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.Command",
       "kind": "project"
     },
     {

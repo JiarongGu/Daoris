@@ -44,7 +44,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_marks_heavy_gates_is_told_them_in_declared_order_with_the_verb()
     {
-        Launcher("daoris.cmd");
+        Launcher("daoris.exe");
         Marked();
 
         Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
@@ -59,7 +59,7 @@ public sealed class HeavyToldTests : IDisposable
     public void A_long_test_command_is_told_to_go_through_the_verb_wherever_it_is_reached()
     {
         Assert.Null(HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true).Words);
-        Launcher("daoris.cmd");
+        Launcher("daoris.exe");
 
         var none = HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true);
 
@@ -77,7 +77,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_declares_no_gates_or_marks_none_heavy_is_told_nothing()
     {
-        Launcher("daoris.cmd");
+        Launcher("daoris.exe");
 
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
 
@@ -98,7 +98,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_marks_none_is_told_this_machine_s_mapping_for_it()
     {
-        Launcher("daoris.cmd");
+        Launcher("daoris.exe");
         File.WriteAllText(
             DaorisHome.Entry(Home, HomeEntry.DriverConfig),
             """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}],"shop":[{"name":"web","run":"npm test"}]}}""");
@@ -119,7 +119,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_driver_file_that_does_not_read_tells_nothing_of_a_mapping()
     {
-        Launcher("daoris.cmd");
+        Launcher("daoris.exe");
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{ not json");
 
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
@@ -137,8 +137,8 @@ public sealed class HeavyToldTests : IDisposable
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
         Assert.Null(HeavyTold.For(_fixture.Checkout, null));
 
-        // ONEWAY1ai-ii: `daoris` is the desktop program's launcher now, so the shell's own is enough to reach `gate run`.
-        Launcher("daoris");
+        // ONEWAY1ai-ii: `daoris` is the desktop program's command, so it alone is enough to reach `gate run`.
+        Launcher("daoris.exe");
         Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
     }
 

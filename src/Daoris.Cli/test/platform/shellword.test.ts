@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error — untyped workspace tooling; see desktop-tool.test.ts for why
-import { CLI_BIN, DRIVER_EXE, DRIVER_HOME, cliLaunchers } from '../../../../tools/desktop-publish.mjs';
+import { CLI_BIN, DRIVER_EXE, DRIVER_HOME, commandPublishCommand, layCommand } from '../../../../tools/desktop-publish.mjs';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -14,8 +14,8 @@ import { makeFixture } from '../_fixture.ts';
  * no spelling does. The driver's `ShellWord` and the page's `shellWord.ts` read one table, the driver's
  * `fixtures/shell-words.json`, row for row.
  *
- * The table is a claim about shells, so it is held against them here, where the install's launchers are: every spelled row is handed through the install's own
- * launchers by the shells this platform has, and must arrive as one argument, itself.
+ * The table is a claim about shells, so it is held against them here, where the install's command is: every spelled row is handed through the install's own
+ * `daoris.exe`, published as the install lays it, by the shells here (Windows has the install), and must arrive as one argument, itself.
  */
 
 const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -28,24 +28,42 @@ const ROWS = JSON.parse(readFileSync(
 const SPELLED = ROWS.filter(([, , word]) => word !== '<name>');
 const UNSPELLED = ROWS.filter(([, , word]) => word === '<name>');
 
+/** Words of several lines arrive whole: PowerShell is the one shell here whose line carries a break. */
+test('words of several lines typed in PowerShell reach the installed daoris whole, line breaks and all', { skip: process.platform !== 'win32' }, () => {
+  const fx = makeFixture('shell-words-lines');
+  const env = install(fx.root);
+
+  const line = 'daoris first session say s-1 "first line`nsecond line`r`nthird line" --level urgent';
+  const ran = spawnSync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', Buffer.from(line, 'utf16le').toString('base64'),
+  ], { cwd: fx.root, env, encoding: 'utf8', windowsHide: true });
+
+  const out = `${ran.stdout}${ran.stderr}${ran.error?.message ?? ''}`;
+  assert.equal(ran.status, 0, out);
+  const said = JSON.parse(out.trim().split(/\r?\n/).at(-1)!);
+  assert.deepEqual(said, ['session', 'say', 's-1', 'first line\nsecond line\r\nthird line', '--level', 'urgent'], out);
+  fx.cleanup();
+});
+
 test('the table holds a spelled row and a placeholder row', () => {
   assert.ok(SPELLED.length > 0 && UNSPELLED.length > 0, 'the table holds both kinds');
 });
 
 /**
- * The install's launchers (`daoris` and `daoris.cmd`, as the publish lays them) in front of a desktop program that prints the
+ * The install's command (`daoris.exe`, as the publish lays it) in front of a desktop program that prints the
  * arguments it receives as JSON, each character past ASCII escaped, so a shell's code page cannot change it on the way back. The
  * program is this test's node under the program's name, which a preload makes print and end before it reads its first word as a
- * script (the launchers run the program, not node). The folder is put first on PATH, as the install's own is found.
+ * script (the command runs the program, not node). The folder is put first on PATH, as the install's own is found.
  */
 function install(root: string): NodeJS.ProcessEnv {
   const bin = join(root, ...CLI_BIN);
   const program = join(root, ...DRIVER_HOME, DRIVER_EXE);
   mkdirSync(bin, { recursive: true });
   mkdirSync(dirname(program), { recursive: true });
-  for (const [name, text] of Object.entries(cliLaunchers() as Record<string, string>)) {
-    writeFileSync(join(bin, name), text, { mode: 0o755 });
-  }
+  // Built into the fixture's own folder, never the project's beside another run's.
+  const published = join(root, 'command-publish');
+  execSync(commandPublishCommand(published, join(root, 'artifacts')), { cwd: repository, stdio: 'pipe', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
+  layCommand(published, root);
   copyFileSync(process.execPath, program);
   const echo = join(root, 'echo.cjs');
   writeFileSync(echo, [
@@ -64,9 +82,8 @@ function install(root: string): NodeJS.ProcessEnv {
 function shells(line: string, cwd: string, env: NodeJS.ProcessEnv): { shell: string; out: string; code: number | null }[] {
   const ran = (shell: string, result: ReturnType<typeof spawnSync>) =>
     ({ shell, out: `${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`, code: result.status });
-  if (process.platform !== 'win32') return [ran('sh', spawnSync('sh', ['-c', line], { cwd, env, encoding: 'utf8', windowsHide: true }))];
   return [
-    // Command Prompt finds `daoris.cmd` by PATHEXT; PowerShell 5.1 finds it too, and hands it its arguments itself.
+    // Command Prompt finds `daoris.exe` by PATHEXT; PowerShell 5.1 finds it too, and hands it its arguments itself.
     ran('cmd', spawnSync(env.ComSpec ?? 'cmd.exe', [`/d /s /c "${line}"`], {
       cwd, env, encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true,
     })),
@@ -76,7 +93,7 @@ function shells(line: string, cwd: string, env: NodeJS.ProcessEnv): { shell: str
   ];
 }
 
-test('every spelled value reaches the installed daoris as one argument, itself, through each shell here', () => {
+test('every spelled value reaches the installed daoris as one argument, itself, through each shell here', { skip: process.platform !== 'win32' }, () => {
   const fx = makeFixture('shell-words-spelled');
   const env = install(fx.root);
 
@@ -88,7 +105,7 @@ test('every spelled value reaches the installed daoris as one argument, itself, 
   fx.cleanup();
 });
 
-test('a line ending in a placeholder, pasted as it is, reaches nothing: each shell here refuses it', () => {
+test('a line ending in a placeholder, pasted as it is, reaches nothing: each shell here refuses it', { skip: process.platform !== 'win32' }, () => {
   const fx = makeFixture('shell-words-placeholder');
   const env = install(fx.root);
 
