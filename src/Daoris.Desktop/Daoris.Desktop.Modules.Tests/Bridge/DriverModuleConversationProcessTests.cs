@@ -147,7 +147,7 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
                 CancellationToken.None);
 
             Assert.Equal((true, (string?)null, (string?)null), (held.Sent, held.Reaches, held.Why));
-            await UntilAsync(() => File.Exists(heard) && File.ReadAllText(heard).Contains("and the readme", StringComparison.Ordinal));
+            await UntilAsync(() => Daoris.Desktop.Driver.Tests.StubFile.Text(heard).Contains("and the readme", StringComparison.Ordinal));
             lock (posts) Assert.DoesNotContain(posts, path => path.EndsWith("/say", StringComparison.Ordinal));
         }
         finally

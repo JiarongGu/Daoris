@@ -403,6 +403,12 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     /// <summary>How many times the stub heard <paramref name="text"/>.</summary>
     public int Heard(string text) => Prompts.Sum(prompt => Count(prompt, text));
 
+    /// <summary>
+    /// How many times the stub was handed <paramref name="text"/> as a word to act on: a continuation's brief quotes the line's earlier parts'
+    /// words as past exchanges (<c>&gt; text</c>), a sibling part's included, and those are the record of a delivery, never one.
+    /// </summary>
+    public int HeardAsWord(string text) => Prompts.Sum(prompt => Count(prompt, text) - Count(prompt, "> " + text));
+
     /// <summary>How many prompts the killed shell's new part's door wrote that carried <paramref name="text"/>.</summary>
     public static int Wrote(ShellRun shell, string text) => shell.Runner.Opened?.Prompts.Count(prompt => prompt.Contains(text, StringComparison.Ordinal)) ?? 0;
 

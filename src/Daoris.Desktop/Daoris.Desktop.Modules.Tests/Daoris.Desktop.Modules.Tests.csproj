@@ -39,6 +39,8 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\RoutedHandler.cs" Link="RoutedHandler.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Poll.cs" Link="Poll.cs" />
+    <!-- A stand-in's log read while it may still be writing it. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\StubFile.cs" Link="StubFile.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Roles\StaffedRoles.cs" Link="StaffedRoles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestDoors.cs" Link="TestDoors.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestAgent.cs" Link="TestAgent.cs" />

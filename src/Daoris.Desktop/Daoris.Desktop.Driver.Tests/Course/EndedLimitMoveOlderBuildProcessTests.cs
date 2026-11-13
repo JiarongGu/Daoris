@@ -89,7 +89,7 @@ public sealed class EndedLimitMoveOlderBuildProcessTests : IAsyncLifetime
         await runner.TakeUpAsync();
         await Task.Delay(1500);
 
-        Assert.Equal((1, 1), (LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word), _h.Heard(LiveLimitHarness.Word)));
+        Assert.True((1, 1) == (LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word), _h.HeardAsWord(LiveLimitHarness.Word)), _h.Seen());
         Assert.Equal("delivered", _h.MoveFrom("c1")!.PhaseWord);
         Assert.Empty(_h.Waiting());
     }

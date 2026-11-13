@@ -60,7 +60,7 @@ public sealed class GitStreamEndsTests : IDisposable
         await InitAsync();
         using var cancel = new CancellationTokenSource();
 
-        var read = WorkingTree.GitBytesAsync(_root, Blob, 1024, "HEAD:hang.txt\n", cancel.Token);
+        var read = WorkingTree.GitBytesAsync(_root, Blob, 1024, "HEAD:hang.txt hang.txt\n", cancel.Token);
         await EndedAsync(read, cancel);
     }
 

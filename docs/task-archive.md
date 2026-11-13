@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITSTREAM1 — the cancelled-read tests' hang is a textconv helper (2026-11-13)
+
+> **GITSTREAM1** (driver; `GitStreamEndsTests`): Outcome: both cases stand the hang in a `diff.hang.textconv` helper (set by the fixture's attributes) over `diff HEAD~1 HEAD -- hang.txt` and `cat-file --batch --textconv` (its input line names the path after the object), commands the scheduler lets run; the same pass made green the other known reds (limit-move older-build copy, stash drop's session, the driven-move fixture's leak guard, the modules' heard-file read, the connector tool's answer write).
+
+---
+
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.
