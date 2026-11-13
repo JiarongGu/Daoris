@@ -1,20 +1,8 @@
 namespace Daoris.Driver;
 
-/// <summary>What a git's run waits on: this machine's files alone, or what is outside Daoris.</summary>
-public enum GitWait
-{
-    /// <summary>A git that runs on the repository's files alone.</summary>
-    Read,
-
-    /// <summary>A git that waits outside Daoris: a remote act (a fetch waiting on a grant, a push), or an act that runs a hook.</summary>
-    Outside,
-}
-
 /// <summary>
-/// One git asked of <see cref="GitScheduler"/>, as it is placed: its folder, its repository (the common directory, which a
-/// repository's queue is keyed by), what its run waits on, and its whole start, built before it queues.
+/// One git asked of <see cref="GitScheduler"/>: its folder, its repository (a queue's key), its wait, and its whole start, built before it queues.
 /// </summary>
-/// <param name="Folder">The folder git runs in, as one full spelling.</param>
 /// <param name="Repository">The repository's common directory, or the folder where it has none.</param>
 /// <param name="Wait">What its run waits on.</param>
 internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)

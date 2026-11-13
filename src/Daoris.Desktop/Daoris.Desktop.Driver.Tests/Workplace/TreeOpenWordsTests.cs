@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// An opening git refuses with nothing on its error stream says more than "nothing" (or an empty pair of brackets): the
 /// failed run's evidence (git's exit code, how long it ran, the folder it ran in and the arguments it had) goes with it. No git
-/// runs here: git's answer is stood in (<see cref="WorkingTree.Answered"/>), which is the one way to make "exits non-zero, says
+/// runs here: git's answer is stood in (<see cref="GitFlow.Answered"/>), which is the one way to make "exits non-zero, says
 /// nothing" happen on demand.
 /// </summary>
 public sealed class TreeOpenWordsTests : IDisposable
@@ -17,7 +17,7 @@ public sealed class TreeOpenWordsTests : IDisposable
 
     public void Dispose()
     {
-        WorkingTree.Answered.Value = null;
+        GitFlow.Answered.Value = null;
         GitSeed.Discard(_scratch);
     }
 
@@ -26,7 +26,7 @@ public sealed class TreeOpenWordsTests : IDisposable
     {
         var root = Path.Combine(_scratch, "engine");
         Directory.CreateDirectory(root);
-        WorkingTree.Answered.Value = arguments => arguments.Contains("--show-toplevel") ? (1, "", "") : null;
+        GitFlow.Answered.Value = arguments => arguments.Contains("--show-toplevel") ? (1, "", "") : null;
 
         var error = await Assert.ThrowsAsync<DriverException>(
             () => new SessionTrees(Path.Combine(_scratch, "home")).OpenAsync(root, "engine", "aurora"));
@@ -44,7 +44,7 @@ public sealed class TreeOpenWordsTests : IDisposable
     public async Task A_folder_that_is_gone_when_git_says_nothing_is_said_to_be_gone()
     {
         var root = Path.Combine(_scratch, "vanished");
-        WorkingTree.Answered.Value = arguments => arguments.Contains("--show-toplevel") ? (128, "", "  \n") : null;
+        GitFlow.Answered.Value = arguments => arguments.Contains("--show-toplevel") ? (128, "", "  \n") : null;
 
         var error = await Assert.ThrowsAsync<DriverException>(
             () => new SessionTrees(Path.Combine(_scratch, "home")).OpenAsync(root, "engine", "aurora"));
@@ -58,7 +58,7 @@ public sealed class TreeOpenWordsTests : IDisposable
     {
         var root = Path.Combine(_scratch, "engine");
         Directory.CreateDirectory(root);
-        WorkingTree.Answered.Value = arguments => arguments.Contains("--show-toplevel")
+        GitFlow.Answered.Value = arguments => arguments.Contains("--show-toplevel")
             ? (128, "", "fatal: not a git repository (or any of the parent directories): .git\nhint: more\n")
             : null;
 

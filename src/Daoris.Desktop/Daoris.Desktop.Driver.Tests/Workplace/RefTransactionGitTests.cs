@@ -85,7 +85,7 @@ public sealed class RefTransactionGitTests : IDisposable
     // Git that never answers (-1), having moved the ref first or not.
     private static async Task<T> UnansweredAsync<T>(string root, bool moveFirst, Func<Task<T>> act)
     {
-        WorkingTree.Answered.Value = args =>
+        GitFlow.Answered.Value = args =>
         {
             if (!args.Contains("update-ref")) return null;
             if (moveFirst)
@@ -102,7 +102,7 @@ public sealed class RefTransactionGitTests : IDisposable
             return (-1, "", "the bound was reached");
         };
         try { return await act(); }
-        finally { WorkingTree.Answered.Value = null; }
+        finally { GitFlow.Answered.Value = null; }
     }
 
     [Fact]

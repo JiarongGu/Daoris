@@ -483,12 +483,6 @@ public static class WorkingTree
 
     internal static string? GitInUse(string? home) => GitRuns.GitInUse(home);
 
-    internal static AsyncLocal<Action<IReadOnlyList<string>>?> Started => GitRuns.Started;
-
-    internal static AsyncLocal<Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?>?> Answered => GitRuns.Answered;
-
-    internal static AsyncLocal<Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>>?> Runs => GitRuns.Runs;
-
     internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(string root, IReadOnlyList<string> arguments, CancellationToken ct) =>
         GitRuns.GitAsync(root, arguments, ct);
 
@@ -506,7 +500,6 @@ public static class WorkingTree
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
         GitRuns.GitBytesAsync(root, arguments, limit, ct);
 
-    /// <summary>The same, git reading <paramref name="input"/> first: <c>cat-file --batch</c> asked its one question.</summary>
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, string input, CancellationToken ct) =>
         GitRuns.GitBytesAsync(root, arguments, limit, input, ct);
 
@@ -519,9 +512,8 @@ public static class WorkingTree
         GitRuns.ReadGitAsync(root, arguments, environment, take, ct);
 
     /// <summary>
-    /// How a review reads git: <c>take</c> is handed git's answer as it comes and answers false once it has what
-    /// it needs, and git is stopped there. The answer is git's exit code, 0 where the reader stopped it, -1 where git did
-    /// not start or could not be read.
+    /// How a review reads git: <c>take</c> is handed git's answer as it comes and stops git once it answers false. The answer is
+    /// git's exit code, 0 where the reader stopped it, -1 where git did not start or could not be read.
     /// </summary>
     /// <remarks>The seam a review's tests count its git processes through; production passes <see cref="ReadGitAsync"/>.</remarks>
     internal delegate Task<int> GitRead(

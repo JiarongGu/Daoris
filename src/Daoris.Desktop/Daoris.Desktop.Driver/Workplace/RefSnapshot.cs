@@ -1,14 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One checkout's branches and origin's copies of them (where each points, what it points at, its upstream), its working trees, and
-/// what git answered of commits by their ids (<see cref="Asked"/>), each read with one start and handed to the reads of a judgement
-/// that ask (null asking git), so a judgement reads a repository's refs once.
+/// One checkout's branches and origin's copies, its working trees, and what git answered of commits by their ids (<see cref="Asked"/>),
+/// each read once and handed to a judgement's reads (null asking git), so a judgement reads a repository's refs once.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken; every git this flow starts that may
-/// write (<see cref="GitCommands.Writes"/>) drops each snapshot the flow holds, so the next question reads again. A write in a flow
-/// beside it drops nothing: the judgement again right before an act, and the delete only at the commit judged, guard against it.</para>
+/// <para>🔴 <b>Never stale across a write.</b> Read at its first question; a git of this flow that may write drops it. A write beside
+/// it drops nothing: the judgement again right before an act, and the delete only at the commit judged, guard against it.</para>
 /// <para><b>It answers only what git would</b>: a name outside its two prefixes or only case tells apart, a commit of a ref that is none,
 /// an upstream it does not hold and a failed read are asked of git. Take it at the start of an <c>async</c> judgement.</para>
 /// </remarks>
@@ -141,17 +139,9 @@ internal sealed class RefSnapshot
         }
     }
 
-    /// <summary>The one read of every branch and origin copy: the library's where admitted (<see cref="GitLibraryRefs"/>), else one start.</summary>
     internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
     {
-        if (GitRuns.Runs.Value is null && GitRuns.Answered.Value is null
-            && await GitLibraryRefs.ListingAsync(root, ct).ConfigureAwait(false) is { } listed)
-        {
-            return listed;
-        }
-
-        var (code, output, _) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", $"--format={Format}", "refs/heads", "refs/remotes/origin"], ct).ConfigureAwait(false);
+        var (code, output, _) = await WorkingTree.GitAsync(root, ["for-each-ref", .. GitLibraryRefs.Listed], ct).ConfigureAwait(false);
         return code == 0 ? output : null;
     }
 

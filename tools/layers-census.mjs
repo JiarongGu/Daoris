@@ -6,7 +6,7 @@
  *   node tools/layers-census.mjs --write    write tools/layers-census.json from the tree, the first list or after a shrink
  *
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
- * 2. The ambient ports' reads per subdomain, a ratchet that only tightens; beside it the process starts' per-file allowance, which only falls.
+ * 2. The ambient ports' reads per subdomain, a ratchet that only tightens; beside it the process and git sites' allowances, which only fall.
  * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
  *    (`--records <dir>` reads another folder; no records, nothing read). Beside it the wall clock's per-file allowance, which only falls.
  *
@@ -19,15 +19,17 @@ import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
 import { checkClock, scanClock } from './layers-census/clock.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
+import { checkGit, scanGit } from './layers-census/git.mjs';
 import { checkMemory } from './layers-census/memory.mjs';
 import { checkProcesses, scanProcesses } from './layers-census/processes.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 
 export {
-  checkAmbient, checkBudget, checkClock, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanProcesses, BUDGET_MS,
+  checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanGit,
+  scanProcesses, BUDGET_MS,
 };
 
-const EMPTY = { packages: {}, ambient: {}, clock: {}, processes: {}, slowTests: {} };
+const EMPTY = { packages: {}, ambient: {}, clock: {}, processes: {}, git: {}, slowTests: {} };
 
 function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -39,7 +41,8 @@ function main() {
     const records = readRecords(recordsAt);
     if (argv.includes('--write')) {
       const list = {
-        packages: packagesOutside(tree), ambient: scanAmbient(tree), clock: scanClock(tree), processes: scanProcesses(tree), slowTests: slowTestsOf(records),
+        packages: packagesOutside(tree), ambient: scanAmbient(tree), clock: scanClock(tree), processes: scanProcesses(tree), git: scanGit(tree),
+        slowTests: slowTestsOf(records),
       };
       writeAtomic(listFile, `${JSON.stringify(list, null, 2)}\n`);
       console.log(`layers-census: wrote ${listFile.slice(root.length + 1).replace(/\\/g, '/')}`);
@@ -48,11 +51,11 @@ function main() {
     const list = { ...EMPTY, ...JSON.parse(readFileSync(listFile, 'utf8')) };
     const problems = [
       ...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkClock(scanClock(tree), list.clock),
-      ...checkProcesses(scanProcesses(tree), list.processes), ...checkBudget(records, list), ...checkMemory(tree),
+      ...checkProcesses(scanProcesses(tree), list.processes), ...checkGit(scanGit(tree), list.git), ...checkBudget(records, list), ...checkMemory(tree),
     ];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
-    if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet, the process starts\' allowance and the unit budget hold');
+    if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet, the process starts\' and git\'s allowances and the unit budget hold');
     return problems.length === 0 ? 0 : 1;
   } catch (error) {
     console.error(`layers-census: ${error.message}`);

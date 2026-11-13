@@ -82,7 +82,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge the detached work", judged);
         var trees = new SessionTrees(Home);
         // The line rewound as the tree goes, after its proof: the commit is then the tree's alone.
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             if (arguments is ["worktree", "remove", ..]) GitNow(root, "reset", "--hard", "--quiet", "HEAD~1");
         };
@@ -93,7 +93,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.True(removal.Removed, removal.Message);
@@ -150,7 +150,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var (branch, _, tip) = await MergedAsync(root, treeless: true);
         var late = Path.Combine(Path.GetDirectoryName(root)!, $"late-{Guid.NewGuid():N}"[..13]);
         var trees = new SessionTrees(Home) { BeforeRefDeleted = async _ => await GitAsync(root, "worktree", "add", "--quiet", late, branch) };
-        WorkingTree.Answered.Value = arguments => arguments is ["update-ref", var reference, var at, ""] && reference == $"refs/heads/{branch}" && at == tip
+        GitFlow.Answered.Value = arguments => arguments is ["update-ref", var reference, var at, ""] && reference == $"refs/heads/{branch}" && at == tip
             ? (1, "", $"fatal: cannot lock ref 'refs/heads/{branch}': Unable to create '{branch}.lock': File exists.")
             : null;
         try
@@ -163,7 +163,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -189,7 +189,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var (branch, tree, tip) = await WorkedAsync(root, treeless: false);
         await GitAsync(root, "branch", "feature/keep", branch);
         // The person deletes their branch as the tree goes: after the judgement, before the branch's delete.
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             if (arguments is ["worktree", "remove", ..]) GitNow(root, "update-ref", "-d", "refs/heads/feature/keep");
         };
@@ -202,7 +202,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
     }
 
@@ -286,7 +286,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         await SquashAsync(root, b.Branch!);
         var bTip = await TipAsync(root, b.Branch!);
         var rewound = false;
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             if (!rewound && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"{ContentHolds.DiscardedPrefix}{b.Branch}")
             {
@@ -304,7 +304,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
     }
 
@@ -328,7 +328,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
                 refused = true;
             },
         };
-        WorkingTree.Answered.Value = arguments =>
+        GitFlow.Answered.Value = arguments =>
             refused && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"refs/heads/{branch}"
                 ? (128, "", "fatal: simulated read failure")
                 : null;
@@ -342,7 +342,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 

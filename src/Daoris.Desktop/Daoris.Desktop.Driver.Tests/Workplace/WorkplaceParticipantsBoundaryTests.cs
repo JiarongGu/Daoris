@@ -241,7 +241,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         string copy, string index, Func<IReadOnlyList<string>, (int, string, string)> answer, string id = "p1")
     {
         var asked = new List<string>();
-        WorkingTree.Answered.Value = args =>
+        GitFlow.Answered.Value = args =>
         {
             asked.Add(string.Join(' ', args));
             return answer(args);
@@ -251,7 +251,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
             var ask = Ask(id);
             return (await PieceKeeper.KeepAsync("root", copy, ask.Id, ask.Base, index, At, "piece " + id, CancellationToken.None), asked);
         }
-        finally { WorkingTree.Answered.Value = null; }
+        finally { GitFlow.Answered.Value = null; }
     }
 
     [Fact]
@@ -362,12 +362,12 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
     [Fact]
     public async Task The_freeze_reads_the_ref_first_so_a_ref_at_the_commit_is_imported_without_a_write()
     {
-        WorkingTree.Answered.Value = args => args[0] == "rev-parse" ? (0, "abc\n", "") : (1, "", "");
+        GitFlow.Answered.Value = args => args[0] == "rev-parse" ? (0, "abc\n", "") : (1, "", "");
         try
         {
             Assert.Equal(PartnerStates.Imported, await PieceKeeper.FreezeAsync("root", "p1", "abc", default));
             Assert.Equal(PartnerStates.Uncertain, await PieceKeeper.FreezeAsync("root", "p1", "def", default));
         }
-        finally { WorkingTree.Answered.Value = null; }
+        finally { GitFlow.Answered.Value = null; }
     }
 }

@@ -82,7 +82,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     /// </summary>
     private void Git((int, string, string)? ignore = null)
     {
-        WorkingTree.Answered.Value = arguments =>
+        GitFlow.Answered.Value = arguments =>
         {
             lock (_asked) _asked.Add([.. arguments]);
             if (arguments.Contains("check-ignore")) return ignore ?? (0, "local/\0", "");

@@ -83,7 +83,7 @@ public sealed class GitLazyFetchTests : IDisposable
     {
         var folder = Repository(Partial);
         var starts = 0;
-        GitRuns.Runs.Value = (_, _, _) =>
+        GitFlow.Runs.Value = (_, _, _) =>
         {
             starts++;
             return Task.FromResult(new ChildRun(false, null, "", "", false));
@@ -98,7 +98,7 @@ public sealed class GitLazyFetchTests : IDisposable
         }
         finally
         {
-            GitRuns.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
     }
 

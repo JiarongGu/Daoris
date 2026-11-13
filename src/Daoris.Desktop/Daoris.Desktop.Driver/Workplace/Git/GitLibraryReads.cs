@@ -17,21 +17,10 @@ internal static class GitLibraryReads
 {
     private static readonly string[] NamesOptions = ["--name-only", "-z", "--no-renames", "--no-ext-diff", "--ignore-submodules=none"];
 
-    /// <summary><paramref name="run"/>, the library asked first where the arguments are one of its reads and no test stands in for git.</summary>
-    internal static Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> Before(
-        string folder, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run)
-    {
-        if (GitRuns.Runs.Value is not null || Asked(arguments) is not { } asked) return run;
-        return async token => await GitLibrary.AskAsync(folder, asked.Question, asked.Answer, token).ConfigureAwait(false) is { } answer
-            ? (answer.Code, answer.Stdout, "")
-            : await run(token).ConfigureAwait(false);
-    }
-
     /// <summary>The library's answer to the read <paramref name="arguments"/> in <paramref name="folder"/>; null where git answers it.</summary>
     internal static Task<GitLibraryAnswer?> AnswerAsync(string folder, IReadOnlyList<string> arguments, CancellationToken ct) =>
         Asked(arguments) is { } asked ? GitLibrary.AskAsync(folder, asked.Question, asked.Answer, ct) : Task.FromResult<GitLibraryAnswer?>(null);
 
-    /// <summary>The question <paramref name="arguments"/> ask and the call that answers it; null where they are not one of the reads.</summary>
     internal static (GitLibraryQuestion Question, Func<GitLibraryCall, GitLibraryAnswer?> Answer)? Asked(IReadOnlyList<string> arguments)
     {
         var at = 0;
@@ -49,6 +38,8 @@ internal static class GitLibraryReads
             "merge-base" => MergeBase(rest),
             "rev-list" => Counted(rest),
             "diff" => Changed(rest),
+            "for-each-ref" when rest.SequenceEqual(GitLibraryRefs.Listed) =>
+                (GitLibraryQuestion.Refs, call => GitLibraryRefs.Listing(call) is { } listed ? new GitLibraryAnswer(0, listed) : null),
             _ => null,
         };
     }

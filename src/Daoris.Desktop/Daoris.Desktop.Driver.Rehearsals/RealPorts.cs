@@ -21,5 +21,6 @@ internal static class RealPorts
         Liveness = MachineLiveness.Shared,
         StartPolicy = GitStartAdmission.Admit,
         Seal = KeySeal.Port,
+        Git = GitProcessRuns.Shared,
     });
 }

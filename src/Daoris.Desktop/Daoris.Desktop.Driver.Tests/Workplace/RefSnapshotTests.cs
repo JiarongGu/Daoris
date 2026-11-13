@@ -267,7 +267,7 @@ public sealed class RefSnapshotTests
     {
         var refs = Take();
         var started = new List<string>();
-        WorkingTree.Started.Value = arguments => { lock (started) started.Add(string.Join(' ', arguments)); };
+        GitFlow.Started.Value = arguments => { lock (started) started.Add(string.Join(' ', arguments)); };
         try
         {
             Assert.Equal(Main, await TreeRefs.CommitOfAsync("unused", "refs/heads/main", None, refs));
@@ -284,7 +284,7 @@ public sealed class RefSnapshotTests
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Empty(started);

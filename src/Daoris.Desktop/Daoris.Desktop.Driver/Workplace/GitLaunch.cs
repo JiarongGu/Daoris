@@ -134,10 +134,9 @@ internal sealed record GitLibraryRead(string Question, long Ticks)
 }
 
 /// <summary>
-/// The one counting seam beneath every git the driver starts: <c>RunGitAsync</c>,
-/// <c>ReadGitAsync</c> and <c>GitBytesAsync</c> each start through <see cref="LaunchAsync"/>, which raises
-/// <see cref="WorkingTree.Started"/> for all three, classifies the start by kind and node, counts it in the budget its flow is in, and
-/// times the gate's wait, the creation and the run apart.
+/// The one counting seam beneath every git the driver starts: <see cref="GitProcessRuns"/>' three runs and the held children each
+/// start through <see cref="LaunchAsync"/>, which keeps the start in every count its flow holds (<see cref="Count"/>), classifies it by
+/// kind and node, counts it in the budget its flow is in, and times the gate's wait, the creation and the run apart.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>It adds no flag and changes no answer</b>. The arguments go on to <c>WorkingTree.GitStart</c> and the gate
@@ -169,11 +168,12 @@ internal static class GitLaunch
 
     /// <summary>
     /// Keep every start this flow makes from here until disposed (the terminal door's <c>--time</c>, the route's <c>review.read</c>,
-    /// a test's count). A count begun inside another's keeps its starts too, so an outer count still sees them all.
+    /// a test's count), telling <paramref name="told"/> of each as it is kept, before git starts. A count begun inside another's keeps
+    /// its starts too, so an outer count still sees them all.
     /// </summary>
-    internal static GitCount Count()
+    internal static GitCount Count(Action<GitLaunched>? told = null)
     {
-        var count = new GitCount(s_count.Value);
+        var count = new GitCount(s_count.Value, told);
         s_count.Value = count;
         return count;
     }
@@ -189,15 +189,14 @@ internal static class GitLaunch
 
     /// <summary>
     /// The seam (P1.5): one start of git by <paramref name="runner"/>, of <paramref name="kind"/>, in <paramref name="budget"/>,
-    /// <paramref name="work"/> being the runner's own start and run. Raises <see cref="WorkingTree.Started"/> with the arguments, as
-    /// <c>RunGitAsync</c> alone once did, then runs the work with the gate's timing kept on this start.
+    /// <paramref name="work"/> being the runner's own start and run, kept in every count the flow holds, then run with the gate's
+    /// timing kept on this start.
     /// </summary>
     internal static async Task<T> LaunchAsync<T>(
         GitKind kind, IReadOnlyList<string> arguments, GitBudget budget, GitRunner runner, Func<Task<T>> work)
     {
         var launched = new GitLaunched(runner, kind, NodeOf(arguments, budget), budget, arguments);
         s_count.Value?.Add(launched);
-        WorkingTree.Started.Value?.Invoke(arguments);
         var began = Stopwatch.GetTimestamp();
         // The gate writes its wait and its creation here (ProcessStarts.Timed), in this start's own flow alone.
         using (ProcessStarts.Timing((waited, created) => launched.Gate(waited, created)))
@@ -305,11 +304,16 @@ internal static class GitLaunch
 internal sealed class GitCount : IDisposable
 {
     private readonly GitCount? _outer;
+    private readonly Action<GitLaunched>? _told;
     private readonly ConcurrentQueue<GitLaunched> _starts = new();
     private readonly ConcurrentQueue<GitLibraryRead> _reads = new();
     private readonly long _began = Stopwatch.GetTimestamp();
 
-    internal GitCount(GitCount? outer) => _outer = outer;
+    internal GitCount(GitCount? outer, Action<GitLaunched>? told = null)
+    {
+        _outer = outer;
+        _told = told;
+    }
 
     /// <summary>Every start so far, in the order the seam saw them.</summary>
     public IReadOnlyList<GitLaunched> Starts => [.. _starts];
@@ -323,6 +327,7 @@ internal sealed class GitCount : IDisposable
     internal void Add(GitLaunched launched)
     {
         _starts.Enqueue(launched);
+        _told?.Invoke(launched);
         _outer?.Add(launched);
     }
 

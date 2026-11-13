@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  checkAmbient, checkBudget, checkClock, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanProcesses,
+  checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanGit,
+  scanProcesses,
 } from './layers-census.mjs';
 import { clockSites } from './layers-census/clock.mjs';
 
@@ -136,6 +137,29 @@ test('LAYERS1: a process start in the application or a unit test is held to its 
   assert.deepEqual(checkProcesses(found, found), []);
   assert.match(checkProcesses(found, {})[0], /Probe\.cs starts or finds a process 1 times, over its allowance of 0/);
   assert.match(checkProcesses({}, { [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2 })[0], /fell to 0 from its allowance of 2/);
+});
+
+test('LAYERS1: a git start or read outside the git port in the application or a unit test is held to its file\'s allowance, which only falls', () => {
+  const sources = {
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+    [at('src/Daoris.Adapters', 'Daoris.Adapters.Git')]: project(),
+    [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Held.cs`]: 'var (info, _) = WorkingTree.GitStart(root, args, home);\n// GitStart(root) in a comment',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Refs.cs`]: 'using LibGit2Sharp;\nvar dir = RefFiles.GitDirOf(root);\nvar marker = Path.Combine(root, ".git");',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Asked.cs`]: 'var answer = await WorkingTree.GitAsync(root, ["status"], ct);',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Workplace/Probe.cs`]: 'var start = GitRuns.GitStart(root, ["status"], null);',
+    ['src/Daoris.Adapters/Daoris.Adapters.Git/Run.cs']: 'var start = GitStart(root, args, home); using LibGit2Sharp;',
+  };
+  const found = scanGit(tree(sources));
+
+  assert.deepEqual(found, {
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Workplace/Probe.cs`]: 1,
+    [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Held.cs`]: 1,
+    [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Refs.cs`]: 3,
+  });
+  assert.deepEqual(checkGit(found, found), []);
+  assert.match(checkGit(found, {})[0], /Probe\.cs starts git or reads its files 1 times, over its allowance of 0/);
+  assert.match(checkGit({}, { [`${DESKTOP}/Daoris.Desktop.Driver/Workplace/Held.cs`]: 1 })[0], /fell to 0 from its allowance of 1/);
 });
 
 test('LAYERS1: a unit test over a second fails by name, a listed one may not slow, and a record of another tier is not read', () => {
