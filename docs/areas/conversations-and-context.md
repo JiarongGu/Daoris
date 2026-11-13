@@ -93,7 +93,13 @@ of everything it handed, section by section.
 5. A session's events (`<id>.events.jsonl`) and verbatim transcript stay on the machine. No HTTP surface reads them.
    The next event's number, when its record was last written and whether its turn ended are read from the record's end; what
    a part spent is read on from where its last read stopped (`SessionSpentKept`), the whole record again only where it no
-   longer stands as it was read. (from D76)
+   longer stands as it was read. A record over 512 KB has a head in the desktop store (`session_event_heads`, and every 256th
+   event's byte offset in `session_event_offsets`: `SessionEventHeads`): the last number, the turns ended, the opening's and the
+   last plan's place, the first failed call and the answer each word is pressed as. Its newest page or the page before a number,
+   the events after one, its plan, its choices and its turns ended read from the head and a part of the file, never the whole;
+   the first reader builds the head, the next to find the file longer reads on from where it stopped, and one whose last line no
+   longer stands is built again. The file stays the record; without the store, or under 512 KB, a read is the whole file.
+   (from D76, D275)
 
 **Two contexts**
 
