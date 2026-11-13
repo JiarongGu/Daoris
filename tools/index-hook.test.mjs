@@ -41,9 +41,18 @@ function repository(hook = true) {
   writeFileSync(join(dir, '.gitignore'), 'docs/index/\n');
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\n');
   git(dir, 'init', '-q');
-  if (hook) assert.equal(install({ out() {}, err() {}, cwd: dir, env: clean(), script }), 0);
+  if (hook) assert.equal(install({ out() {}, err() {}, cwd: dir, env: { ...clean(), ...(git.env ?? {}) }, script }), 0);
   return dir;
 }
+
+const notesOnly = (body) => () => {
+  git.env = { DAORIS_INDEX_HOOK: '0' };
+  try {
+    body();
+  } finally {
+    git.env = undefined;
+  }
+};
 const committed = () => {
   const dir = repository();
   git(dir, 'add', '-A');
@@ -137,8 +146,9 @@ const addNote = (dir, branch, label) => {
 };
 const glued = /[^\n]\n\*\*Note, /;
 
-test('a clean union merge commits the blank line before each note', () => {
+test('a clean union merge commits the blank line before each note', notesOnly(() => {
   const dir = noteRepository();
+  assert.ok(!existsSync(indexOf(dir)), 'an install under the opt-out writes no index');
   addNote(dir, 'a', 'a');
   addNote(dir, 'b', 'b');
   git(dir, 'checkout', '-q', 'a');
@@ -150,9 +160,9 @@ test('a clean union merge commits the blank line before each note', () => {
   assert.match(text, /\*\*Note, b\*\*/);
   assert.doesNotMatch(text, glued);
   assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
-});
+}));
 
-test('a conflicted merge finished by git commit keeps the blank line the driver set', () => {
+test('a conflicted merge finished by git commit keeps the blank line the driver set', notesOnly(() => {
   const dir = noteRepository();
   addNote(dir, 'a', 'a');
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() { return 1; }\n');
@@ -167,9 +177,9 @@ test('a conflicted merge finished by git commit keeps the blank line the driver 
   const made = git(dir, 'commit', '-q', '--no-edit');
   assert.equal(made.status, 0, made.stderr);
   assert.doesNotMatch(show(dir, 'HEAD:docs/decisions/D1.md'), glued);
-});
+}));
 
-test('install configures the notes driver, and the merge commit is the one git made', () => {
+test('install configures the notes driver, and the merge commit is the one git made', notesOnly(() => {
   const dir = noteRepository();
   assert.match(git(dir, 'config', '--local', 'merge.notes.driver').stdout, /index-hook\.mjs" --merge-notes %O %A %B/);
   addNote(dir, 'a', 'a');
@@ -178,9 +188,9 @@ test('install configures the notes driver, and the merge commit is the one git m
   assert.equal(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
   assert.deepEqual(git(dir, 'reflog', 'HEAD', '--format=%gs').stdout.trim().split('\n').filter((line) => /index-hook|update-ref/.test(line)), []);
   assert.match(git(dir, 'log', '-1', '--format=%s').stdout, /^Merge branch 'b'/);
-});
+}));
 
-test('a clone without the driver merges the decisions as plain text and conflicts rather than gluing', () => {
+test('a clone without the driver merges the decisions as plain text and conflicts rather than gluing', notesOnly(() => {
   const dir = noteRepository();
   git(dir, 'config', '--local', '--unset', 'merge.notes.driver');
   addNote(dir, 'a', 'a');
@@ -188,7 +198,7 @@ test('a clone without the driver merges the decisions as plain text and conflict
   git(dir, 'checkout', '-q', 'a');
   assert.notEqual(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
   assert.doesNotMatch(readFileSync(join(dir, 'docs', 'decisions', 'D1.md'), 'utf8'), glued);
-});
+}));
 
 test('the driver sets apart every label the check refuses glued, and nothing inside a fence', () => {
   assert.equal(separateNotes('A.\n**Built a, built 2026-10-02**\nT.\n'), 'A.\n\n**Built a, built 2026-10-02**\nT.\n');
