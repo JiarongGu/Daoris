@@ -30,10 +30,8 @@ public sealed class TreeReleases(string home)
     }
 
     /// <summary>
-    /// The standing branches of <paramref name="repository"/> a run owns whose run is over for its tree, each ended behind the proof: the run's
-    /// <c>tidy</c> ended the branch's part once its pull request merged (<see cref="TidiedParts"/>), whether or not its graph carries a
-    /// <c>release</c>; or the run's record ended with no attempt unsettled, or none is kept here at all (<see cref="IWorkplaceRunTrees"/>). A record
-    /// that does not read is unknown.
+    /// The branches of <paramref name="repository"/> a run owns that are over for their tree, each ended behind the proof: its <c>tidy</c> ended the part
+    /// (<see cref="TidiedParts"/>), or its run's record ended settled or is gone (<see cref="IWorkplaceRunTrees"/>); an unread record is unknown.
     /// </summary>
     /// <param name="inUse">The trees sessions still run or wait in, which stay; null where none is known. Where it cannot be read nothing is ended.</param>
     public async Task<IReadOnlyList<TreeReleased>> SweepAsync(

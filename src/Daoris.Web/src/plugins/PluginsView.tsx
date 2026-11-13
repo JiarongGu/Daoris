@@ -136,7 +136,6 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
 }): ViewLayout {
   const { t, i18n } = useTranslation();
   const catalog = usePlugins({ enabled: active });
-  // Ask Daoris's mode: in full access it is handed every server whole, so the page says none waits for an approval.
   const driver = useDriver();
   const act = usePluginAction();
   const trying = usePluginTry();

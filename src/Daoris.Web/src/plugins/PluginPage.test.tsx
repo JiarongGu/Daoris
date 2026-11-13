@@ -336,10 +336,7 @@ describe("a plugin's page", () => {
     expect(screen.queryByText(/is handed nothing of/)).toBeNull();
   });
 
-  /**
-   * In full access Ask Daoris is handed every server whole and asks nothing, so the page follows the mode: nothing is said to
-   * wait at its head, and a server never approved reads as handed, in English and in 中文.
-   */
+  /** In full access Ask Daoris is handed every server whole and asks nothing, so nothing on the page waits for an approval. */
   it('in full access says no server waits and a server never approved is handed whole, in English and in 中文', async () => {
     const waiting: PluginShown = {
       ...PLUGIN,

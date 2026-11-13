@@ -162,8 +162,7 @@ public static class PluginsCommand
         return 0;
     }
 
-    /// <summary>A plugin's page, as a terminal says it: the page's sections, one field a line.</summary>
-    /// <param name="full">Ask Daoris runs with full access, where it is handed every server whole and asks nothing, so none waits for an approval.</param>
+    /// <summary>A plugin's page, as a terminal says it, one field a line; <paramref name="full"/> is Ask Daoris in full access, where nothing waits.</summary>
     public static string Show(PluginPageRead page, bool full = false)
     {
         var text = new StringBuilder();

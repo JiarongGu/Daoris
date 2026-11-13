@@ -22,7 +22,6 @@ test('login asks for the token hidden, keeps it in its own storage, and status s
 
   const asked = await run(plugin, 'login');
   assert.deepEqual(asked.ask, { name: 'token', prompt: 'Personal access token', masked: true });
-  // A read that answers is no failure, whatever it answers: Daoris records any other exit as a failed command.
   const none = await run(plugin, 'status');
   assert.equal(none.exit, 0);
   assert.match(none.said[0], /^No token is kept: run `daoris daoris-azure-devops login`\.$/);

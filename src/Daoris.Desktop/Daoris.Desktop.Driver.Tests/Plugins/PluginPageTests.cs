@@ -143,10 +143,7 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("docs  `docs`; offered to Ask Daoris, waiting for your approval", shown);
     }
 
-    /// <summary>
-    /// In full access Ask Daoris is handed every server whole and asks nothing (<c>ChatServers.HandAsync</c>), so the page follows the mode:
-    /// a server offered to it waits for no approval, and one the person never approved is said handed all the same.
-    /// </summary>
+    /// <summary>In full access Ask Daoris is handed every server whole (<c>ChatServers.HandAsync</c>), so none waits for an approval.</summary>
     [Fact]
     public async Task In_full_access_a_server_offered_to_ask_daoris_is_said_handed_whole_and_waits_for_no_approval()
     {

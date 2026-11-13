@@ -81,7 +81,6 @@ test('login keeps the token in the plugin\'s own storage and never says it back;
   assert.equal(JSON.parse(readFileSync(join(storage.DAORIS_PLUGIN_PRIVATE, 'credential.json'), 'utf8')).token, TOKEN);
   assert.match((await run('status')).said[0], /^A token is kept, since /);
   assert.equal((await run('logout')).exit, 0);
-  // A read that answers is no failure, whatever it answers: Daoris records any other exit as a failed command.
   const none = await run('status');
   assert.equal(none.exit, 0);
   assert.match(none.said[0], /^No token is kept: run `daoris daoris-github login`\.$/);

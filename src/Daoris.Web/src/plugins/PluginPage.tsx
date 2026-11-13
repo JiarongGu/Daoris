@@ -72,7 +72,6 @@ export function HelpServers({ plugin, servers, onHelp, full = false }: {
   servers?: HelpServerShown[];
   /** The press, with the writes the person ticked for an approval (each on its own); none for a withdrawal. */
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
-  /** Ask Daoris runs with full access: each server it is offered is handed whole, approved or not. */
   full?: boolean;
 }) {
   const { t } = useTranslation();
