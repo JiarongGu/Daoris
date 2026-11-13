@@ -168,6 +168,9 @@ public sealed record ComposedService(
     /// <summary>Asks made at a workspace, and the judgement over them.</summary>
     public AskDesk Asks { get; init; } = null!;
 
+    /// <summary>The plans of asks: each ask's parts, edges and packs, and the quests the parts are.</summary>
+    public TeamDesk Teams { get; init; } = null!;
+
     /// <summary>This machine's remotes, by workspace — what a sync pass runs against. Null on a remote.</summary>
     public IRemotes? Remotes { get; init; }
 
@@ -419,6 +422,9 @@ public static class ServiceFactory
         // The home a park's question is filed under (the proposals' box names it on a local host; a shared host has none).
         var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home, opinions);
         var askDesk = new AskDesk(service, asks, exchange, files, sessions);
+        var teamDesk = new TeamDesk(
+            await TeamStore.OpenAsync(store.Connection, ct).ConfigureAwait(false), askDesk,
+            (repository, token) => TeamPathPolicies.OfAsync(service, repository, token));
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
@@ -432,6 +438,7 @@ public static class ServiceFactory
             Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses.
             Asks = askDesk,
+            Teams = teamDesk,
             Messages = channel,
             Journal = (since, limit, token) => JournalRows.ReadAsync(store.Connection, since, limit, token),
             Channel = new ChannelDesk(channel,askDesk, asks, ledger, quests, new StoreEntryFacts(quests, sessions)),
