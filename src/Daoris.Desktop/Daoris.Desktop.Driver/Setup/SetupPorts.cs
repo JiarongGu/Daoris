@@ -13,6 +13,12 @@ public interface ISetupWorld
     /// <summary>The isolate step of the workflow <paramref name="repository"/>'s work follows under <paramref name="config"/>, or null where it works in place.</summary>
     IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => null;
 
+    /// <summary>
+    /// Whether nothing else reads the repository yet: its line is one commit, the creation's, and no session has worked in it. A set-up
+    /// where its sessions share the checkout rewrites what no later session reads, so it is asked there.
+    /// </summary>
+    Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) => Task.FromResult(false);
+
     /// <summary>The repository's line (as the driver's choices name it), read as git objects.</summary>
     Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct);
 
