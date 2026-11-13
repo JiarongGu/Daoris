@@ -67,6 +67,11 @@
       "summary": "`daoris-driver`, the driver's headless door: the tick, chat, ask, trees and sync"
     },
     {
+      "id": "Daoris.Desktop.Driver.Rehearsals",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals",
+      "summary": ""
+    },
+    {
       "id": "Daoris.Desktop.Driver.Tests",
       "path": "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests",
       "summary": "the driver's tests"
@@ -306,6 +311,31 @@
     {
       "from": "Daoris.Desktop.Driver.Host",
       "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Adapters.Clock",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Adapters.DesktopStore.Sqlite",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Adapters.Machine",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Desktop.Driver.Host",
       "kind": "project"
     },
     {

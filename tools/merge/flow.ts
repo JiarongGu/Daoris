@@ -40,7 +40,6 @@ export type FlowDeps = {
   timeoutMs: (gate: PlanGate) => number | null;
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
-  /** The npm installs the tree owes before its first gate runs. */
   installs: LockInstalls;
 };
 

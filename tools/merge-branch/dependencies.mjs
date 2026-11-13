@@ -58,7 +58,6 @@ export function dependencyState(tree, folder) {
   }
   if (entry.isSymbolicLink()) return 'linked';
   if (isStamped(tree, folder)) return 'current';
-  // An install made another way has no stamp, and is judged by npm's own record.
   const installed = readJson(join(modules, '.package-lock.json'))?.packages;
   const wanted = readJson(lockfile)?.packages;
   if (!installed || !wanted) return 'stale';

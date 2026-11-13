@@ -70,7 +70,6 @@ export const toolchainOf = (): Toolchain => (toolchain ??= { node: process.versi
 /** The paths the tree at `where` holds changed against its HEAD: in a merge not yet committed, what the merge changed. */
 const diffOf = (where: string): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean);
 
-/** `npm ci` in a folder of the tree, its output the run's own; an install that passed is stamped as the gate tree's are. */
 const npmCi = (where: string, folder: string): Promise<{ ok: boolean; note: string }> => new Promise((done) => {
   const child = spawn(NPM_CI, { cwd: join(where, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
   child.on('error', (error) => done({ ok: false, note: error.message }));
