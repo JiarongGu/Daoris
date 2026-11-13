@@ -411,6 +411,46 @@ public sealed class WorkPausingTests : IDisposable
         Assert.False(File.Exists(ConfigPath));
     }
 
+    /// <summary>
+    /// A quest held by another quest's pause (q6, published by a session of q2's work) is one state to both verbs: *Try again*
+    /// names the pause that holds it, never its own, and its resume names that pause and its door, changing nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_held_by_another_quests_pause_is_said_alike_by_try_again_and_resume()
+    {
+        DriverConfig.Empty.WithPausedQuest("q2", new WorkPause(Now, NoStops)).Save(ConfigPath);
+        using var service = Family().Client();
+        var output = new StringWriter();
+        var q6 = new QuestView("q6", "engine", "backend", "The work of #q6", "A body.", "Open");
+
+        var refused = Assert.Throws<ChoiceRefusal>(() => QuestRetry.Decide(
+            "q6", [new Consideration(q6, StartVerdict.Paused, "paused") { PausedBy = new PausedBy(WorkScope.Quest, "q2") }]));
+        var exit = await WorkCommand.RunAsync(new WorkAsk(WorkScope.Quest, "resume", "q6"), World(service), output);
+
+        Assert.Equal("#q6 is paused with quest #q2, whose work published it; resuming #q2 carries it on.", refused.Message);
+        Assert.Contains(("context", "published"), refused.Facts);
+        Assert.Equal(0, exit);
+        Assert.Contains("#q6 is not paused on its own: quest #q2's pause holds it — `daoris quest resume q2` carries it on.", output.ToString());
+        Assert.NotNull(DriverConfig.Load(ConfigPath).PausedQuest("q2"));
+    }
+
+    /// <summary>A quest paused on its own is said so by *Try again*, and its own resume carries it on.</summary>
+    [Fact]
+    public async Task A_quest_paused_on_its_own_is_carried_on_by_its_own_resume()
+    {
+        DriverConfig.Empty.WithPausedQuest("q2", new WorkPause(Now, NoStops)).Save(ConfigPath);
+        using var service = Family().Client();
+        var q2 = new QuestView("q2", "ask #a1", "engine", "The work of #q2", "A body.", "Taken");
+
+        var refused = Assert.Throws<ChoiceRefusal>(() => QuestRetry.Decide(
+            "q2", [new Consideration(q2, StartVerdict.Paused, "paused") { PausedBy = new PausedBy(WorkScope.Quest, "q2") }]));
+        var outcome = await WorkPausing.ResumeAsync(World(service), WorkScope.Quest, "q2", PluginEvents.Terminal);
+
+        Assert.Equal("#q2 is paused on its own; Resume carries it on.", refused.Message);
+        Assert.Equal(ResumeVerdict.Resumed, outcome.Verdict);
+        Assert.Null(DriverConfig.Load(ConfigPath).PausedQuest("q2"));
+    }
+
     /// <summary>A pause of an ask since deleted still resumes: the entry is this machine's, and only Resume takes it away.</summary>
     [Fact]
     public async Task A_pause_of_an_ask_since_deleted_still_resumes()

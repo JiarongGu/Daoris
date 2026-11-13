@@ -163,4 +163,7 @@ public sealed record ResumeOutcome(WorkScope Scope, string Id, ResumeVerdict Ver
 
     /// <summary>What still holds each quest of the work, named and never released; null where the plan could not be read.</summary>
     public IReadOnlyList<WorkHold>? Holds { get; init; }
+
+    /// <summary>For a quest not paused on its own (<see cref="ResumeVerdict.NotPaused"/>): the pause over a work it is part of, which its resume carries it on.</summary>
+    public PausedBy? PausedBy { get; init; }
 }
