@@ -68,9 +68,8 @@ internal static class HelpTreeFacts
     /// <paramref name="times"/> takes the walk's time and how many trees it asked, where a caller says them.
     /// </summary>
     /// <remarks>
-    /// A tree is walked again only where something its walk rests on moved since the home's last read of it, and asked one
-    /// <c>git status</c> otherwise (<see cref="TreeReadMemo"/>); <see cref="AtOnce"/> trees at once. 145 kept trees took 45-110 s
-    /// one after another, past the part's bound. Only a tree whose folder is still here, and not one moved aside under
+    /// A tree's status and proof are kept while their inputs stand (<see cref="TreeReadMemo"/>);
+    /// <see cref="AtOnce"/> changed trees at once. Only a tree whose folder is still here, and not one moved aside under
     /// the trees home's <c>.tidied</c>, is walked or counted (<see cref="TreeFolders.Walkable"/>); the rest are asked, holding nothing.
     /// </remarks>
     public static async Task<HelpTrees> ReadAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times = null)

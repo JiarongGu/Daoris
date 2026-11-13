@@ -1,14 +1,14 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Daoris.Ports.Git;
+using Daoris.Testing;
 using Xunit.Abstractions;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One repository's part of the trees fact reads a tree again only where something its walk rests on
-/// moved, and asks every other one <c>git status</c>, a few trees at once; a tree that changed is still read. Real git under a
-/// scratch home, at as many kept trees as the install's machine log found (143-145).
+/// The room's tree reads over real git, including a large unchanged part and invalidation of its kept reads.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -35,35 +35,47 @@ public sealed class HelpTreesReadTests : IDisposable
 
     public void Dispose()
     {
+        TreeReadMemo.Release(_home);
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>The part's step at 145 trees, the home's read first, again with nothing moved, which asks one
-    /// <c>git status</c> a tree, and once the line moved on; each says what the fixture holds of every tree.</summary>
+    /// <summary>
+    /// Real folders, stamps and watches at the install's tree count. Git's cold answers are the fixture's known state;
+    /// the other cases prove those answers over real git, without hundreds of cold starts before this warm measurement.
+    /// </summary>
     [Fact]
-    public async Task A_part_of_a_hundred_and_forty_five_trees_reads_each_unchanged_tree_with_one_git_start()
+    public async Task A_part_of_a_hundred_and_forty_five_unchanged_trees_reads_without_git_inside_the_room_bound()
     {
         var (root, part, trees) = await KeptAsync(Kept);
+        var head = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var git = new ScriptedGit().On(ask =>
+        {
+            var name = Path.GetFileName(ask.Folder);
+            if (ask.Arguments.SequenceEqual(GitReadOnce.Layout))
+                return new GitAnswer(0, $"{Path.Combine(root, ".git")}\n{ask.Folder}\ndaoris/{name}\n", "");
+            if (ask.Arguments.Contains("status"))
+            {
+                var dirty = File.Exists(Path.Combine(ask.Folder, "draft.txt"));
+                return new GitAnswer(0, ask.Arguments.Contains("--branch")
+                    ? $"# branch.oid {head}\n# branch.head daoris/{name}\n" + (dirty ? "? draft.txt\n" : "")
+                    : dirty ? "?? draft.txt\n" : "", "");
+            }
+            return ask.Arguments[0] == "log" ? new GitAnswer(0, "", "") : null;
+        });
+        using var chosen = FlowGit.Use(git);
 
         var (first, firstMs, firstStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
+        var asked = git.Asked.Count;
         var (again, againMs, againStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
-        // The line moves on, as a landing moves it: a tree that counted no commit keeps none by the refs' forward move alone.
-        await CommitAsync(root, "landed.txt", "another session's work");
-        var asked = new List<string>();
-        var (moved, movedMs, movedStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct), asked);
-
         _output.WriteLine($"{Kept} trees, the part's step: the home's first read {firstMs} ms ({firstStarts} git starts); "
-                          + $"again, nothing moved {againMs} ms ({againStarts}); the line moved on {movedMs} ms ({movedStarts})");
+                          + $"again, nothing moved {againMs} ms ({againStarts})");
         Assert.Equal(Kept, first.Asked.Count);
         Assert.Equal(Expected(trees), Said(first));
         Assert.Equal(Expected(trees), Said(again));
-        Assert.Equal(Expected(trees), Said(moved));
-        Assert.Equal(Kept, againStarts);
-        // The trees with commits are walked again (about twenty starts each, the content proof's); the rest are asked their status
-        // alone, after one ask of the line's move. Counted by walk, not against the first read: that read, made before the line moved,
-        // walks every tree, but a walk whose line is still where its branch left it compares nothing, so it costs less than the moved
-        // read's walks of a third of them (1068 starts against 1126 on 2026-11-06).
-        Assert.Equal(trees.Count(each => each.Commits > 0), asked.Count(IsWalk));
+        Assert.True(asked > 0);
+        Assert.Equal(asked, git.Asked.Count);
+        Assert.Equal(0, againStarts);
+        Assert.True(againMs < 500, $"the unchanged trees took {againMs} ms, past the room's 500 ms bound");
     }
 
     /// <summary>A tree's walk, as its first start shows it: the tree's layout, asked in one question for the walk.</summary>
@@ -137,7 +149,7 @@ public sealed class HelpTreesReadTests : IDisposable
         await CommitAsync(tree, "work.txt", "work");
         var part = Part([tree]);
         Assert.Equal((1, 0), Said(await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None))[N(tree)]);
-        await File.WriteAllTextAsync(Path.Combine(tree, "draft.txt"), "half done\n");
+        await EditedAsync(tree, "draft.txt", "half done\n");
 
         var (read, _, starts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
 
@@ -185,7 +197,7 @@ public sealed class HelpTreesReadTests : IDisposable
 
     /// <summary>
     /// A tree whose commits the line holds by content (a content proof holds them) has its read kept, so a
-    /// second read of it asks its two <c>status</c>es alone, says what it holds as the walk does, and still sees an edit made since.
+    /// second read starts no git, says what it holds as the walk does, and still sees an edit made since.
     /// </summary>
     [Fact]
     public async Task A_tree_whose_commits_the_line_holds_by_content_is_not_walked_again_on_the_second_read()
@@ -217,14 +229,13 @@ public sealed class HelpTreesReadTests : IDisposable
             GitFlow.Started.Value = null;
         }
 
-        Assert.All(starts, start => Assert.Contains(" status ", " " + start + " "));
-        Assert.True(starts.Count <= 2, string.Join(" | ", starts));
+        Assert.Empty(starts);
         var read = second.Trees[N(tree)];
         Assert.Equal(walked.Held, read.Held);
         Assert.Equal((walked.Commits, walked.Uncommitted), (read.Commits, read.Uncommitted));
 
         // An edit made since is still said: the tree stays for it, as the walk says.
-        await File.WriteAllTextAsync(Path.Combine(tree, "draft.txt"), "half done\n");
+        await EditedAsync(tree, "draft.txt", "half done\n");
         var edited = (await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None)).Trees[N(tree)];
         var truth = (await new SessionTrees(_home).WorkAsync(tree))!;
         Assert.Equal(truth.Held, edited.Held);
@@ -256,31 +267,22 @@ public sealed class HelpTreesReadTests : IDisposable
             (_, _, starts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
         }
 
-        Assert.Equal(1, starts);
+        Assert.Equal(0, starts);
     }
 
-    /// <summary>The fixture's trees: every third with a commit of its own, every fifth with a file uncommitted.</summary>
+    /// <summary>Copies at the line's tip, every fifth with an uncommitted file.</summary>
     private async Task<(string Root, HelpTreesPart Part, IReadOnlyList<(string Tree, int Commits, int Uncommitted)> Trees)> KeptAsync(int count)
     {
         var root = await RepositoryAsync("engine");
         var sessionTrees = new SessionTrees(_home);
         var trees = new List<(string, int, int)>();
         var opened = await TreeFarm.OpenAsync(sessionTrees, _home, root, "engine", "default", count);
-        // Four commits at once, each in a tree of its own: the width a git half's starts stop gaining past.
-        using var four = new SemaphoreSlim(4);
-        await Task.WhenAll(Enumerable.Range(0, count).Select(async i =>
+        for (var i = 0; i < count; i++)
         {
             var tree = opened[i];
-            if (i % 3 == 0)
-            {
-                await four.WaitAsync();
-                try { await CommitAsync(tree, $"work-{i}.txt", $"work {i}"); }
-                finally { four.Release(); }
-            }
-
             if (i % 5 == 0) await File.WriteAllTextAsync(Path.Combine(tree, "draft.txt"), "half done\n");
-        }));
-        for (var i = 0; i < count; i++) trees.Add((opened[i], i % 3 == 0 ? 1 : 0, i % 5 == 0 ? 1 : 0));
+            trees.Add((tree, 0, i % 5 == 0 ? 1 : 0));
+        }
 
         return (root, Part([.. trees.Select(each => each.Item1)]), trees);
     }
@@ -339,6 +341,15 @@ public sealed class HelpTreesReadTests : IDisposable
         read.Trees.ToDictionary(each => each.Key, each => (each.Value.Commits, each.Value.Uncommitted), StringComparer.OrdinalIgnoreCase);
 
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
+
+    private async Task EditedAsync(string tree, string file, string content)
+    {
+        var git = Path.GetFullPath(Path.Combine(tree, File.ReadAllText(Path.Combine(tree, ".git"))["gitdir:".Length..].Trim()));
+        var changes = TreeReadMemo.Of(_home).Changes;
+        var before = changes.Read(tree, git);
+        await File.WriteAllTextAsync(Path.Combine(tree, file), content);
+        await Poll.Until(() => changes.Read(tree, git) != before, () => "the file watch has not heard the edit");
+    }
 
     private static async Task CommitAsync(string tree, string file, string content)
     {

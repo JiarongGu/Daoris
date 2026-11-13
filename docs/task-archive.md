@@ -26,6 +26,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 - **PERFMATRIX1 (2026-11-13):** the performance specification, scoped lifecycle/workflow/communication/queue receipts, declared budgets and daily JSON snapshots are in `tools/dev-metrics.mjs`; fixture-home tests and `npm run quick` pass. The first installed receipt is `docs/metrics/2026-11-13.json`; RCASE1 keeps the installed catalogue open. → `docs/areas/code-structure-and-process.md`
+## ROOMLOOK1 — room tree reads (2026-11-13)
+
+> **ROOMLOOK1** (driver): Outcome: unchanged tree status and content-held work stay kept until their inputs move, with watch-loss invalidation and a 145-tree warm look under 500 ms with no git calls; see `docs/areas/conversations-and-context.md`.
 
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
