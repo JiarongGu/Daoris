@@ -30,8 +30,10 @@ internal sealed class ObservedPort : IWorkRuntimePort
         return Task.FromResult(generation);
     }
 
+    public Func<WorkReconcileCall, WorkReconcileAnswer>? Reconciles { get; set; }
+
     public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct) =>
-        Task.FromResult((new WorkReconcileAnswer(ReconcileStates.Running), Generation ?? throw new DriverException("not running")));
+        Task.FromResult((Reconciles?.Invoke(call) ?? new WorkReconcileAnswer(ReconcileStates.Running), Generation ?? throw new DriverException("not running")));
 
     public int? GenerationOf(string plugin) => Generation;
 

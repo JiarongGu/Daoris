@@ -158,7 +158,9 @@ public sealed class LandPerformer(
         var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
         if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
         {
-            return (entry.Last?.Code == LandingCode.Superseded ? null : Closed(entry, LandingCode.Superseded), null);
+            if (entry.Last?.Code == LandingCode.Superseded) return (null, null);
+            var standsFor = new TreeLanding(false, $"a newer session, `{newest.Id}`, went on in its tree, which stands for it now.") { Refusal = LandingCode.Superseded };
+            return (Tried(entry, LandingCode.Superseded, tip: null, status: null, standsFor), null);
         }
 
         // A stop, a decline or a stand-down takes the yes back: a carry-on is never sent to a session the person ended.
@@ -450,7 +452,6 @@ public sealed class LandPerformer(
     private static string Words(string code, TreeLanding? landed) => code switch
     {
         LandingCode.Already => "its work is already on a branch of yours, so nothing more lands.",
-        LandingCode.Superseded => "a newer session went on in its tree, which stands for it now.",
         LandingCode.Gone => "its tree was discarded before it landed, so nothing lands.",
         LandingCode.Undone => "its quest is no longer done, so nothing lands.",
         _ => landed?.Message ?? code,
