@@ -39,6 +39,9 @@ public sealed record IntegrationTransportWorld
     /// <summary>A run closed a request: the runtime's pass is asked, so each <c>integrate</c> node reads its request's outcome.</summary>
     public Action? Answered { get; init; }
 
+    /// <summary>Where an ask's plan is read, so its parts' landings go in the plan's order; null reads none, and a part's landing waits.</summary>
+    public ITrainPlans? Plans { get; init; }
+
     /// <summary>Whether a line may run now (the home's lease held here, no update draining); one that may not keeps its place and is tried again later.</summary>
     public Func<bool> Runs { get; init; } = () => true;
 
@@ -190,7 +193,11 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         Tell(store, send);
         var config = _world.Config();
         var asks = new IntegrationSweepAsks(
-            new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line) { Say = _world.Say, Config = config },
+            new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line)
+            {
+                Say = _world.Say, Config = config,
+                Train = new TrainSelection(new TrainParts(store), _world.Plans ?? NoPlans.Read),
+            },
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
         VerifySlot? verifying = null;

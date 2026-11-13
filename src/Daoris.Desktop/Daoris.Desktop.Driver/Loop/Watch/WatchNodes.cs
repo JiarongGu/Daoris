@@ -104,6 +104,7 @@ internal sealed class WatchNodes
         _transport = new IntegrationTransport(home, new IntegrationTransportWorld
         {
             Config = () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
+            Plans = new ServiceTrainPlans(service),
             Root = async (repository, workspace, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                         && string.Equals(each.Workspace, workspace, StringComparison.OrdinalIgnoreCase))?.Root,
@@ -300,7 +301,11 @@ internal sealed class WatchNodes
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
         // Why the work's attribution is not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
-        return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked };
+        return new NodeUnitsRead(units, roots)
+        {
+            Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked,
+            Parts = await PartsReports.ReadAsync(new IntegrationStore(home), new ServiceTrainPlans(service), token).ConfigureAwait(false),
+        };
     }
 
     /// <summary>What a person reads of a pass: each attempt sent, answered, retried, unknown or held, and what the pass said.</summary>

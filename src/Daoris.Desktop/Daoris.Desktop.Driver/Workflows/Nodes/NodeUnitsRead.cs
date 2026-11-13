@@ -15,4 +15,7 @@ public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDicti
     /// of the links sessions make. Empty where it is read. A missing link is never read as unbound work.
     /// </summary>
     public IReadOnlyList<string> Unread { get; init; } = [];
+
+    /// <summary>What each ask the integration holds a part's request for requires and has landed (<see cref="PartsReports"/>), by ask; null where none is read.</summary>
+    public IReadOnlyDictionary<string, PartsReport>? Parts { get; init; }
 }
