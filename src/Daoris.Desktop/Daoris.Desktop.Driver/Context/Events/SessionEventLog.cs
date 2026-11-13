@@ -107,6 +107,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     /// </summary>
     public EventPage Page(string sessionId, long? before = null, int limit = SessionEventText.PageLimit)
     {
+        if (Headed(sessionId) is { } head) return SessionEventHeadedReads.Page(PathOf(sessionId), head, before, Math.Clamp(limit, 1, SessionEventText.MaxPage));
         var all = Read(PathOf(sessionId));
         var latest = all.Count == 0 ? 0 : all[^1].Seq;
         var older = before is { } b ? all.Where(e => e.Seq < b).ToList() : all;
@@ -124,6 +125,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     /// <summary>Everything newer than <paramref name="after"/> — how a page that missed a batch closes the gap.</summary>
     public EventPage After(string sessionId, long after)
     {
+        if (after > 0 && Headed(sessionId) is { } head) return SessionEventHeadedReads.After(PathOf(sessionId), head, after);
         var all = Read(PathOf(sessionId));
         return new EventPage([.. all.Where(e => e.Seq > after)], Earlier: false, all.Count == 0 ? 0 : all[^1].Seq);
     }
@@ -436,6 +438,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         {
             var path = PathOf(sessionId);
             if (!File.Exists(path)) return choices;
+            if (Headed(sessionId) is { } head) return new Dictionary<string, string>(head.Choices, StringComparer.Ordinal);
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var reader = new StreamReader(stream, Utf8);
             while (reader.ReadLine() is { } line)
@@ -513,6 +516,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         if (!SessionEventText.IsId(sessionId)) return [];
         try
         {
+            if (Headed(sessionId) is { } head) return SessionEventHeadedReads.Plan(PathOf(sessionId), head);
             IReadOnlyList<PlanEntry> plan = [];
             foreach (var e in Lines(PathOf(sessionId)))
             {
@@ -552,6 +556,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     {
         try
         {
+            if (SessionEventText.IsId(sessionId) && Headed(sessionId) is { } head) return head.Turns;
             return After(sessionId, 0).Events.LongCount(e => e.Kind == SessionEventKind.Turn);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
@@ -616,6 +621,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
             var path = PathOf(sessionId);
             _latest.Remove(path);
             SessionSpentKept.Shared.Forget(path);
+            SessionEventHeads.In(directory)?.Forget(sessionId, path);
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;
@@ -632,6 +638,9 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 
         return Path.Combine(directory, $"{sessionId}.events.jsonl");
     }
+
+    /// <summary>The head standing for a long record's file (<see cref="SessionEventHeads"/>), or null where the file is read whole.</summary>
+    private SessionEventHead? Headed(string sessionId) => SessionEventHeads.In(directory)?.Of(sessionId, PathOf(sessionId));
 
     private static bool EndsInNewline(string path)
     {
@@ -665,7 +674,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>One line of a record read as its event, or null for a blank, torn or foreign line.</summary>
-    private static SessionEvent? Event(string line)
+    internal static SessionEvent? Event(string line)
     {
         if (string.IsNullOrWhiteSpace(line)) return null;
         try

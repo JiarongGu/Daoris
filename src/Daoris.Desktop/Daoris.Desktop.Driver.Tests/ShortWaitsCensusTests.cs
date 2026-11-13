@@ -87,6 +87,8 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan BesideBudget", "an elapsed-time bound that states the claim: the work beside a look ends before the next"),
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan LookBudget", "an elapsed-time bound that states the claim: a look past the service's reads"),
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan ReviewBudget", "an elapsed-time bound that states the claim: what a tree's ignored build adds to a read"),
+        ($"{Driver}/Loop/SessionEventReadsBenchProcessTests.cs: TimeSpan OpenBudget", "an elapsed-time bound that states the claim: a long record's page, its end and its plan read from its index within a tenth of a second"),
+        ($"{Driver}/Loop/SessionEventReadsBenchProcessTests.cs: TimeSpan SweepBudget", "an elapsed-time bound that states the claim: a page of one event of every one of 300 records reads within two seconds"),
         ($"{Driver}/Loop/LookWorkBenchProcessTests.cs: TimeSpan StageBudget", "an elapsed-time bound that states the claim: a look's overlaps, and a whole pass, where nothing moved take a second at most"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", "an input: a meeting's minute shrunk, which the product spends"),

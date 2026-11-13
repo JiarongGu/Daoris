@@ -765,5 +765,32 @@ internal static class DesktopStoreSteps
               places       TEXT
             );
             """)),
+
+        // An index over each session's events file, which stays the record: what a read of its end or its newest page needs, and every
+        // 256th event's byte offset. New tables an older build never opens; a row that no longer stands for its file is built again.
+        new(DesktopStore.SessionEventHeadsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE session_event_heads (
+              session       TEXT PRIMARY KEY,
+              length        INTEGER NOT NULL,
+              line_start    INTEGER NOT NULL,
+              tail          TEXT NOT NULL,
+              first_seq     INTEGER NOT NULL,
+              last_seq      INTEGER NOT NULL,
+              turns         INTEGER NOT NULL,
+              opening_at    INTEGER NOT NULL,
+              opening_seq   INTEGER NOT NULL,
+              plan_at       INTEGER NOT NULL,
+              failed_id     TEXT,
+              first_failure INTEGER NOT NULL,
+              choices       TEXT NOT NULL
+            );
+            CREATE TABLE session_event_offsets (
+              session TEXT NOT NULL,
+              seq     INTEGER NOT NULL,
+              at      INTEGER NOT NULL,
+              PRIMARY KEY (session, seq)
+            );
+            """)),
     ];
 }
