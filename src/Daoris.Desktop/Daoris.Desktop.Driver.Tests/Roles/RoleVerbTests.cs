@@ -59,19 +59,21 @@ public sealed class RoleVerbTests : IDisposable
         InAgentJob = () => inAgentJob,
     }, CancellationToken.None);
 
+    /// <summary>
+    /// D284 point 2: no person door. A process in an agents' job (Ask Daoris, a session's shell) writes the roles as the person's terminal
+    /// does, a set, a place's rules and the suggested choices alike.
+    /// </summary>
     [Fact]
-    public async Task Every_write_is_refused_from_a_process_in_an_agents_job_and_acts_from_the_person_s_terminal()
+    public async Task A_process_in_an_agents_job_writes_the_roles_as_any_caller()
     {
-        Assert.Equal(1, await RunIn(true, "set", "gatekeeper", "--name", "Gatekeeper", "--decides", "question", "--holder", "agent", "claude opus high"));
-        Assert.Equal(1, await RunIn(true, "rules", "--place", "machine", "--set", "answers-alone=5:hold"));
-        Assert.Equal(1, await RunIn(true, "suggested", "--use"));
-        Assert.Contains("one of an agent Daoris runs", _error.ToString());
-        Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "gatekeeper");
-
-        Assert.Equal(0, await Run("set", "gatekeeper", "--name", "Gatekeeper", "--decides", "question", "--holder", "agent", "claude opus high"));
+        Assert.Equal(0, await RunIn(true, "set", "gatekeeper", "--name", "Gatekeeper", "--decides", "question", "--holder", "agent", "claude opus high"));
         Assert.Equal(RoleHolders.Agent, Catalogue().Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Holder);
         Assert.Equal([new ActorChoice("claude", "opus", "high")], DriverConfig.Load(File_).Actors["gatekeeper"]);
         Assert.Contains("held by an agent", _out.ToString());
+
+        Assert.Equal(0, await RunIn(true, "rules", "--place", "repository:daoris", "--set", "answers-alone=3:hold@build"));
+        Assert.Equal(0, await RunIn(true, "suggested", "--use"));
+        Assert.DoesNotContain("one of an agent Daoris runs", _error.ToString());
     }
 
     [Fact]

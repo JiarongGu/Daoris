@@ -75,7 +75,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
 
     /// <summary>
     /// The judge's role method, for every route of the census's <c>Role</c>
-    /// class: the caller look, the first denial, so a contained agent is refused before its proof is read; the form; the hold its
+    /// class: the caller look, refusing only a caller the system cannot place, whatever job it runs in; the form; the hold its
     /// generation names, live, its role still held by the terminal as the catalogue says now; the holder's proof over this connection's
     /// unused <paramref name="nonce"/> and the form, against the holder's hash in memory; then <b>the configuration walk</b>, one guard for
     /// the whole class, which ends a holder it finds started on another configuration; and for <c>ROLE_ACT</c>, the act in
@@ -129,9 +129,8 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         var role = roleAct ? RoleActForm.RoleOf(payload) : AppointedRoles.Supervisor;
         if (role is null || !AppointedRoles.Kinds.Contains(role, StringComparer.Ordinal)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
-        var place = owner.Caller.Place(client);
-        if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
-        if (place != StandingPlace.Outside) return RoleJudgement.Refused(StandingWhy.Untold);
+        // A caller in an agents' job acts as any caller, judged by its proof alone (D284); one the system cannot place is refused.
+        if (owner.Caller.Place(client) == StandingPlace.Untold) return RoleJudgement.Refused(StandingWhy.Untold);
 
         // The supervisor's decide or leave, each proved over its own route's canonical bytes, its subject whole; or ROLE_ACT's form.
         RoleActForm? act = null;
