@@ -55,12 +55,7 @@ public static class WorkingTree
     /// detached, which is no branch at all; a branch with no commit yet answers its name. A git that fails is thrown, because a
     /// tree git cannot read has no head to name, and "detached" would be a claim about it.
     /// </summary>
-    public static async Task<string?> BranchAsync(string root, CancellationToken ct = default)
-    {
-        // `-q` makes a detached HEAD exit 1 with nothing said, which is told apart from a real failure by its silence.
-        var (code, stdout, stderr) = await GitAsync(root, BranchAsk, ct).ConfigureAwait(false);
-        return ReviewChoices.Branch(code, stdout, stderr);
-    }
+    public static Task<string?> BranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.BranchAsync(root, ct);
 
     /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph.</summary>
     internal static readonly string[] BranchAsk = ["symbolic-ref", "--short", "-q", "HEAD"];
@@ -226,23 +221,13 @@ public static class WorkingTree
     }
 
     /// <summary>Where HEAD is now — the "before" a session's evidence is measured from.</summary>
-    public static async Task<string?> HeadAsync(string root, CancellationToken ct = default)
-    {
-        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        return code == 0 ? stdout.Trim() : null;
-    }
+    public static Task<string?> HeadAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.HeadAsync(root, ct);
 
     /// <summary>
     /// The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names no commit there
     /// (a press's <c>branch</c> ground, read at its ask and again at its Confirm).
     /// </summary>
-    public static async Task<string?> TipAsync(string root, string name, CancellationToken ct = default)
-    {
-        // A name git would read as an option names no commit here.
-        if (name.Length == 0 || name.StartsWith('-')) return null;
-        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null;
-    }
+    public static Task<string?> TipAsync(string root, string name, CancellationToken ct = default) => MachinePorts.Repository.CommitOfAsync(root, name, ct);
 
     /// <summary>
     /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (a plan's branches bound by their full

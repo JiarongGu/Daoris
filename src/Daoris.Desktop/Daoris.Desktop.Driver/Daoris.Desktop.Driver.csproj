@@ -26,6 +26,7 @@
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
+    <Using Include="Daoris.Ports.Repositories" />
     <Using Include="Daoris.Ports.Store" />
     <Using Include="System.Data.Common" />
   </ItemGroup>

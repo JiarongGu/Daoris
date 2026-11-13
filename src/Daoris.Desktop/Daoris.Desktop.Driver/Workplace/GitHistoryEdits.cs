@@ -391,8 +391,7 @@ public static class GitHistoryEdits
     /// </summary>
     private static async Task<(string? Tree, bool Unread)> OccupantAsync(string root, string branch, CancellationToken ct)
     {
-        if (await TreeWorktrees.PorcelainAsync(root, ct).ConfigureAwait(false) is not { } porcelain) return (null, true);
-        var entries = TreeWorktrees.Parse(porcelain);
+        if (await TreeWorktrees.EntriesAsync(root, ct).ConfigureAwait(false) is not { } entries) return (null, true);
         if (entries.FirstOrDefault(each => each.Branch == branch) is { } entry) return (entry.Path, false);
 
         var common = TreeLock.CommonDirOf(root);

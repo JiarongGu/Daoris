@@ -129,7 +129,7 @@ internal static class SessionLocks
     }
 
     /// <summary>This home's trees of the repository a session lock holds, as git lists them; null where git could not.</summary>
-    private static async Task<List<WorktreeEntry>?> LockedAsync(TreeContext context, string root, string workspace, string repository, CancellationToken ct)
+    private static async Task<List<GitWorktree>?> LockedAsync(TreeContext context, string root, string workspace, string repository, CancellationToken ct)
     {
         if (await TreeWorktrees.EntriesAsync(root, ct).ConfigureAwait(false) is not { } entries) return null;
         return [.. entries.Where(entry => entry.Locked && SessionOf(entry.LockReason) is not null
@@ -140,7 +140,7 @@ internal static class SessionLocks
     }
 
     /// <summary>The tree's own entry in git's list, asked in the tree; null where git lists none there.</summary>
-    private static async Task<WorktreeEntry?> EntryAsync(string tree, CancellationToken ct) =>
+    private static async Task<GitWorktree?> EntryAsync(string tree, CancellationToken ct) =>
         await TreeWorktrees.EntriesAsync(tree, ct).ConfigureAwait(false) is { } entries
             ? entries.FirstOrDefault(entry => SamePath(entry.Path, tree))
             : null;

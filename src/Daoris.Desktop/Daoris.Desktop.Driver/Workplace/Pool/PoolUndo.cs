@@ -61,11 +61,9 @@ internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
         if (await StandsAsync(slot, onto, claim.Expect, ct).ConfigureAwait(false)) return (put, "");
 
         if (onto.Length > 0 && await CheckedOutAtAsync(site, slot, onto, ct).ConfigureAwait(false) is { } there) return (Put.Waits, $"{onto} is checked out at {there}");
-        var hooks = TreeOpenings.HooksHeld(site.Home);
-        var (code, _, err) = onto.Length > 0
-            ? await git.GitAsync(slot.Path, [.. hooks, "switch", "--no-overwrite-ignore", onto], ct).ConfigureAwait(false)
-            : await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", "--no-overwrite-ignore", claim.Expect], ct).ConfigureAwait(false);
-        if (code != 0) return (Put.Refused, $"git would not put the slot back: {TreeGit.FirstLine(err)}");
+        var back = await git.Repository.SwitchAsync(
+            slot.Path, new GitSwitch(onto.Length > 0 ? onto : null, onto.Length > 0 ? null : claim.Expect, KeepIgnored: true, HooksPath: TreeOpenings.HooksPath(site.Home)), ct).ConfigureAwait(false);
+        if (!back.Ok) return (Put.Refused, $"git would not put the slot back: {TreeGit.FirstLine(back.Error)}");
         return await StandsAsync(slot, onto, claim.Expect, ct).ConfigureAwait(false) ? (put, "") : (Put.Refused, "the slot did not read back where the claim found it");
     }
 
@@ -104,11 +102,7 @@ internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
     private static async Task<bool> StandsAsync(KeptTree slot, string branch, string at, CancellationToken ct) =>
         (await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) ?? "") == branch && await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) == at;
 
-    private static async Task<string?> TipAsync(string folder, string branch, CancellationToken ct)
-    {
-        var (code, tip, _) = await WorkingTree.GitAsync(folder, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
-        return code == 0 ? tip.Trim() : null;
-    }
+    private static Task<string?> TipAsync(string folder, string branch, CancellationToken ct) => WorkingTree.TipAsync(folder, $"refs/heads/{branch}", ct);
 
     private static async Task<string?> CheckedOutAtAsync(PoolSite site, KeptTree slot, string branch, CancellationToken ct) =>
         await TreeWorktrees.EntriesAsync(site.Root, ct).ConfigureAwait(false) is { } trees

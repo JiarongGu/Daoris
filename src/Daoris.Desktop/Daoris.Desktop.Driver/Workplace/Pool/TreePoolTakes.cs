@@ -63,11 +63,10 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
                 PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
                 if (TreeShares.Unlink(site.Home, slot.Path) is { } linked) return await UndoneAsync(git, fence, take, $"busy: {linked}", ct).ConfigureAwait(false);
 
-                var hooks = TreeOpenings.HooksHeld(site.Home);
-                var (switched, _, said) = await git.GitAsync(
-                    slot.Path, take.Returns ? [.. hooks, "switch", "--no-overwrite-ignore", take.Branch] : [.. hooks, "switch", "--no-overwrite-ignore", "-c", take.Branch, take.Start], ct)
+                var switched = await git.Repository.SwitchAsync(
+                    slot.Path, new GitSwitch(take.Branch, take.Returns ? null : take.Start, Creates: !take.Returns, KeepIgnored: true, HooksPath: TreeOpenings.HooksPath(site.Home)), ct)
                     .ConfigureAwait(false);
-                if (switched != 0) return await UndoneAsync(git, fence, take, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
+                if (!switched.Ok) return await UndoneAsync(git, fence, take, TreeGit.FirstLine(switched.Error), ct).ConfigureAwait(false);
                 if (!take.Returns) RecordGrown(take);
 
                 pool.Advance(fence, TreeClaimPhases.Switched);
@@ -134,7 +133,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
     internal async Task<string?> CheckAsync(PoolSite site, KeptTree slot, string branch, string? at, bool strict, CancellationToken ct)
     {
         if (await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) != branch) return $"the slot is not on {branch}";
-        if (at is not null && await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) != await FileGit.CommitAsync(slot.Path, at, ct).ConfigureAwait(false))
+        if (at is not null && await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) != await WorkingTree.TipAsync(slot.Path, at, ct).ConfigureAwait(false))
         {
             return $"the slot's HEAD is not at {at}";
         }

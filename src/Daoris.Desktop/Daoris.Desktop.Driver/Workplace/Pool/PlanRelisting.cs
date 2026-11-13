@@ -11,15 +11,11 @@ internal static class PlanRelisting
     internal static async Task<IReadOnlyList<string>> MovingAsync(string home, string slot, TakePlan plan, bool toolchainMoved, CancellationToken ct)
     {
         if (plan.Relisted.Count == 0 || plan.Rules is not { } rules) return [];
-        var (code, said, error) = await WorkingTree.GitAsync(
-            slot, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--", .. plan.Relisted], ct).ConfigureAwait(false);
-        if (code != 0) throw new DriverException($"git could not list the slot's ignored entries again: {TreeGit.FirstLine(error)}");
-
+        var ignored = await MachinePorts.Repository.IgnoredAsync(slot, plan.Relisted, ct).ConfigureAwait(false);
         var record = TreeFilesRecord.Read(home, slot);
         var moving = new List<string>();
-        foreach (var entry in said.Split('\0', StringSplitOptions.RemoveEmptyEntries).Where(entry => entry.StartsWith("!! ", StringComparison.Ordinal)))
+        foreach (var path in ignored)
         {
-            var path = entry[3..];
             switch (SlotIgnored.SortOf(rules, record, slot, path))
             {
                 case SlotIgnored.Sort.Kept:

@@ -29,11 +29,10 @@ internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
             return new PoolDone(slot, null, null, null);
         }
 
-        var hooks = TreeOpenings.HooksHeld(site.Home);
         if (await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) == claim.Branch)
         {
-            var (code, _, err) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", claim.Start], ct).ConfigureAwait(false);
-            if (code != 0) return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(err)}; the claim is held");
+            var detached = await git.Repository.SwitchAsync(slot.Path, new GitSwitch(null, claim.Start, HooksPath: TreeOpenings.HooksPath(site.Home)), ct).ConfigureAwait(false);
+            if (!detached.Ok) return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(detached.Error)}; the claim is held");
         }
 
         await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
@@ -42,7 +41,7 @@ internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
 
         var (keep, _) = await RecoveryKeeps.NameAsync(site.Root, claim.Branch, claim.Start, ct).ConfigureAwait(false);
         if (keep is null) return PoolDone.Not("every name for its recovery ref is taken, so the branch is kept");
-        var stands = (await WorkingTree.GitAsync(site.Root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{claim.Branch}"], ct).ConfigureAwait(false)).Code == 0;
+        var stands = await WorkingTree.TipAsync(site.Root, $"refs/heads/{claim.Branch}", ct).ConfigureAwait(false) is not null;
         if (!stands)
         {
             SetAsideMarks.Mark(manifest, SlimStates.Deleted, DateTimeOffset.UtcNow);

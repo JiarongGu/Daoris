@@ -130,7 +130,7 @@ public sealed class SessionLocksTests : IDisposable
     /// <summary>The reason git lists the tree locked for; null where it is not locked, or listed bare.</summary>
     internal static async Task<string?> LockOfAsync(string root, string tree)
     {
-        var entries = TreeWorktrees.Parse(await GitAsync(root, "worktree", "list", "--porcelain"));
+        var entries = GitRepository.Worktrees(await GitAsync(root, "worktree", "list", "--porcelain"));
         var entry = Assert.Single(entries, each => TreeGit.SamePath(each.Path, tree));
         return entry.Locked ? entry.LockReason ?? "" : null;
     }

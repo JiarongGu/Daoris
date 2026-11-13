@@ -1,0 +1,239 @@
+using Daoris.Ports.Git;
+using Daoris.Ports.Repositories;
+
+namespace Daoris.Testing;
+
+/// <summary>
+/// A repository kept in memory behind <see cref="IGitRepository"/>: commits, refs, and checkouts whose files a test writes with
+/// <see cref="Write"/>. It answers as git does for what the contract holds it to (<see cref="RepositoryContract"/>), so a family's
+/// unit test runs on it without a process. Every act changes only memory; no folder is read or written.
+/// </summary>
+public sealed class MemoryRepository : IGitRepository
+{
+    private readonly MemoryHistory _history = new();
+    private readonly List<MemoryTree> _trees = [];
+
+    /// <summary>A repository whose first checkout is <paramref name="root"/>, on an unborn <paramref name="branch"/>.</summary>
+    public MemoryRepository(string root, string branch = "main") => _trees.Add(new MemoryTree(Full(root), branch, null));
+
+    public string Root => _trees[0].Path;
+
+    // ——— What a test sets up.
+
+    /// <summary>Writes a file in the checkout at <paramref name="folder"/>.</summary>
+    public void Write(string folder, string path, string content) => Tree(folder).Files[path] = content;
+
+    /// <summary>Deletes a file from the checkout.</summary>
+    public void Remove(string folder, string path) => Tree(folder).Files.Remove(path);
+
+    /// <summary>Marks a path assume-unchanged, as <c>update-index --assume-unchanged</c> does.</summary>
+    public void Hide(string folder, string path) => Tree(folder).Hidden.Add(path);
+
+    /// <summary>Makes a path a submodule in the checkout, which the next commit tracks.</summary>
+    public void Submodule(string folder, string path) => Tree(folder).Submodules.Add(path);
+
+    /// <summary>Makes the folder of a checkout gone, which a prune then forgets.</summary>
+    public void Vanish(string folder) => Tree(folder).Gone = true;
+
+    /// <summary>The file at <paramref name="path"/> in the checkout, or null where it has none.</summary>
+    public string? Read(string folder, string path) => Tree(folder).Files.GetValueOrDefault(path);
+
+    /// <summary>The ref's commit, or null where it names none.</summary>
+    public string? Ref(string name) => _history.Refs.GetValueOrDefault(name);
+
+    // ——— The port.
+
+    public Task<string?> HeadAsync(string folder, CancellationToken ct) => Task.FromResult(Find(folder) is { } tree ? HeadOf(tree)?.Id : null);
+
+    public Task<string?> BranchAsync(string folder, CancellationToken ct) =>
+        Find(folder) is { } tree ? Task.FromResult(tree.Branch) : Task.FromException<string?>(new InvalidOperationException($"{folder} is not a git repository"));
+
+    public Task<string?> CommitOfAsync(string folder, string revision, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree && revision.Length > 0 && revision[0] != '-' ? _history.Resolve(revision, HeadOf(tree)?.Id)?.Id : null);
+
+    public Task<string?> MergeBaseAsync(string folder, string first, string second, CancellationToken ct) =>
+        Task.FromResult(Pair(folder, first, second) is var (one, two) ? _history.Base(one, two)?.Id : null);
+
+    public Task<bool?> IsAncestorAsync(string folder, string ancestor, string descendant, CancellationToken ct) =>
+        Task.FromResult(Pair(folder, ancestor, descendant) is var (one, two) ? (bool?)_history.Reach(two).Contains(one.Id) : null);
+
+    public Task<int?> CountAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree || _history.Resolve(tip, HeadOf(tree)?.Id) is not { } top) return Task.FromResult<int?>(null);
+        var reach = _history.Reach(top);
+        foreach (var each in exclude)
+        {
+            if (_history.Resolve(each, HeadOf(tree)?.Id) is not { } excluded) return Task.FromResult<int?>(null);
+            reach.ExceptWith(_history.Reach(excluded));
+        }
+
+        return Task.FromResult<int?>(reach.Count);
+    }
+
+    public Task<IReadOnlyList<GitRef>?> RefsAsync(string folder, IReadOnlyList<string> prefixes, string? contains, int? limit, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult<IReadOnlyList<GitRef>?>(null);
+        var held = contains is null ? null : _history.Resolve(contains, HeadOf(tree)?.Id);
+        if (contains is not null && held is null) return Task.FromResult<IReadOnlyList<GitRef>?>(null);
+        var found = _history.Refs.Where(each => prefixes.Any(prefix => each.Key == prefix.TrimEnd('/') || each.Key.StartsWith(prefix.TrimEnd('/') + "/", StringComparison.Ordinal)))
+            .Where(each => held is null || _history.Reach(_history.Commit(each.Value)!).Contains(held.Id))
+            .OrderBy(each => each.Key, StringComparer.Ordinal).Select(each => new GitRef(each.Key, each.Value)).Take(limit ?? int.MaxValue).ToList();
+        return Task.FromResult<IReadOnlyList<GitRef>?>(found);
+    }
+
+    public Task<IReadOnlyList<GitTreeEntry>?> EntriesAsync(string folder, string commit, IReadOnlyList<string> within, bool recursive, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree || _history.Resolve(commit, HeadOf(tree)?.Id) is not { } found) return Task.FromResult<IReadOnlyList<GitTreeEntry>?>(null);
+        var under = within.Count == 0 ? [""] : within;
+        var entries = new SortedDictionary<string, GitTreeEntry>(StringComparer.Ordinal);
+        foreach (var top in under)
+        {
+            var folderOf = top.EndsWith('/') || top.Length == 0 ? top : null;
+            foreach (var (path, blob) in found.Tree)
+            {
+                if (folderOf is null && path != top && !path.StartsWith(top + "/", StringComparison.Ordinal)) continue;
+                if (folderOf is not null && !path.StartsWith(folderOf, StringComparison.Ordinal)) continue;
+                if (recursive || folderOf is null) entries[path] = new GitTreeEntry(blob.Mode, path);
+                else
+                {
+                    var rest = path[folderOf.Length..];
+                    var cut = rest.IndexOf('/', StringComparison.Ordinal);
+                    if (cut < 0) entries[path] = new GitTreeEntry(blob.Mode, path);
+                    else entries[folderOf + rest[..cut]] = new GitTreeEntry("040000", folderOf + rest[..cut]);
+                }
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<GitTreeEntry>?>([.. entries.Values]);
+    }
+
+    public Task<string?> TextAtAsync(string folder, string commit, string path, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree && _history.Resolve(commit, HeadOf(tree)?.Id) is { } found && found.Tree.TryGetValue(path, out var blob) && blob.Mode == MemoryBlob.File ? blob.Content : null);
+
+    public async Task<IReadOnlyList<string>> IgnoredAsync(string folder, IReadOnlyList<string> within, CancellationToken ct) =>
+        [.. (await StatusAsync(folder, ignored: true, ct).ConfigureAwait(false)).Where(each => each.Value == "!!" && Under(each.Key, within)).Select(each => each.Key).Order(StringComparer.Ordinal)];
+
+    private static bool Under(string top, IReadOnlyList<string> within) =>
+        within.Count == 0 || within.Any(path => top.TrimEnd('/') == path.TrimEnd('/') || top.StartsWith(path.TrimEnd('/') + "/", StringComparison.Ordinal));
+
+    public Task<IReadOnlyList<GitWorktree>?> WorktreesAsync(string folder, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<GitWorktree>?>(Find(folder) is null ? null : [.. _trees.Select(each => new GitWorktree(each.Path, each.Branch, each.Locked, each.Reason))]);
+
+    public Task<IReadOnlyDictionary<string, string>> StatusAsync(string folder, bool ignored, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromException<IReadOnlyDictionary<string, string>>(new InvalidOperationException($"{folder} is not a git repository"));
+        var head = HeadOf(tree)?.Tree ?? new Dictionary<string, MemoryBlob>();
+        var status = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (path, content) in tree.Files)
+        {
+            if (head.TryGetValue(path, out var held)) { if (held.Content != content) status[path] = " M"; continue; }
+            if (MemoryIgnores.Top(tree.Files, path) is { } top) { if (ignored) status[top] = "!!"; }
+            else status[path] = "??";
+        }
+
+        foreach (var path in head.Keys.Where(path => !tree.Files.ContainsKey(path) && !tree.Submodules.Contains(path))) status[path] = " D";
+        return Task.FromResult<IReadOnlyDictionary<string, string>>(status);
+    }
+
+    public Task<IReadOnlyList<string>?> HiddenAsync(string folder, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<string>?>(Find(folder) is { } tree ? [.. tree.Hidden.Order(StringComparer.Ordinal)] : null);
+
+    public Task<GitDone> UpdateRefAsync(string folder, string name, string to, string? from, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (_history.Resolve(to, HeadOf(tree)?.Id) is not { } target) return Task.FromResult(GitDone.Not($"{to} is not a valid object"));
+        if (from is not null && _history.Resolve(from, HeadOf(tree)?.Id)?.Id != _history.Refs.GetValueOrDefault(name)) return Task.FromResult(GitDone.Not($"cannot lock ref '{name}': is at a different commit than expected"));
+        _history.Refs[name] = target.Id;
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> SwitchAsync(string folder, GitSwitch to, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree ? new MemorySwitch(_history, _trees).Make(tree, to) : GitDone.Not($"{folder} is not a git repository"));
+
+    public Task<GitDone> CommitAllAsync(string folder, string message, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        var head = HeadOf(tree);
+        var kept = head?.Tree ?? new Dictionary<string, MemoryBlob>();
+        var next = new Dictionary<string, MemoryBlob>(StringComparer.Ordinal);
+        foreach (var (path, content) in tree.Files) if (kept.ContainsKey(path) || MemoryIgnores.Top(tree.Files, path) is null) next[path] = new MemoryBlob(MemoryBlob.File, content);
+        foreach (var path in tree.Submodules) next[path] = new MemoryBlob(MemoryBlob.Submodule, "");
+        foreach (var path in kept.Where(each => tree.Submodules.Contains(each.Key)).Select(each => each.Key)) next[path] = kept[path];
+        if (head is null ? next.Count == 0 : next.Count == kept.Count && next.All(each => kept.TryGetValue(each.Key, out var was) && was == each.Value))
+        {
+            return Task.FromResult(GitDone.Not("nothing to commit"));
+        }
+
+        var made = _history.Add(head is null ? [] : [head.Id], next, message);
+        if (tree.Branch is { } branch) _history.Refs[$"refs/heads/{branch}"] = made.Id;
+        else tree.Detached = made.Id;
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> LockAsync(string folder, string path, string reason, CancellationToken ct)
+    {
+        if (Linked(folder, path, out var why) is not { } tree) return Task.FromResult(GitDone.Not(why));
+        if (tree.Locked) return Task.FromResult(GitDone.Not($"'{path}' is already locked" + (tree.Reason is { } said ? $", reason: {said}" : "")));
+        (tree.Locked, tree.Reason) = (true, reason);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> UnlockAsync(string folder, string path, CancellationToken ct)
+    {
+        if (Linked(folder, path, out var why) is not { } tree) return Task.FromResult(GitDone.Not(why));
+        if (!tree.Locked) return Task.FromResult(GitDone.Not($"'{path}' is not locked"));
+        (tree.Locked, tree.Reason) = (false, null);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> PruneAsync(string folder, CancellationToken ct)
+    {
+        if (Find(folder) is null) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        _trees.RemoveAll(each => each.Gone && !each.Locked && each != _trees[0]);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> AddWorktreeAsync(string folder, string path, string commit, string? lockReason, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (_history.Resolve(commit, HeadOf(tree)?.Id) is not { } at) return Task.FromResult(GitDone.Not($"invalid reference: {commit}"));
+        if (Find(path) is not null) return Task.FromResult(GitDone.Not($"'{path}' already exists"));
+        var added = new MemoryTree(Full(path), null, at.Id) { Locked = lockReason is not null, Reason = lockReason };
+        foreach (var (file, blob) in at.Tree) if (blob.Mode == MemoryBlob.File) added.Files[file] = blob.Content; else added.Submodules.Add(file);
+        _trees.Add(added);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> RemoveWorktreeAsync(string folder, string path, CancellationToken ct)
+    {
+        if (Linked(folder, path, out var why) is not { } tree) return Task.FromResult(GitDone.Not(why));
+        _trees.Remove(tree);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public IGitRepository Held(GitRun run) => this;
+
+    // ——— The model.
+
+    private static string Full(string folder) => Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+    private MemoryTree? Find(string folder) => _trees.FirstOrDefault(each => string.Equals(each.Path, Full(folder), StringComparison.OrdinalIgnoreCase));
+
+    private MemoryTree Tree(string folder) => Find(folder) ?? throw new InvalidOperationException($"{folder} is no checkout of this repository");
+
+    private MemoryCommit? HeadOf(MemoryTree tree) => tree.Branch is { } branch ? _history.Commit(_history.Refs.GetValueOrDefault($"refs/heads/{branch}")) : _history.Commit(tree.Detached);
+
+    private (MemoryCommit, MemoryCommit)? Pair(string folder, string first, string second) =>
+        Find(folder) is { } tree && _history.Resolve(first, HeadOf(tree)?.Id) is { } one && _history.Resolve(second, HeadOf(tree)?.Id) is { } two ? (one, two) : null;
+
+    private MemoryTree? Linked(string folder, string path, out string why)
+    {
+        why = $"{folder} is not a git repository";
+        if (Find(folder) is null) return null;
+        var found = Find(path);
+        why = $"'{path}' is not a working tree";
+        if (found is null) return null;
+        why = "the main working tree cannot be locked, unlocked or removed";
+        return found == _trees[0] ? null : found;
+    }
+}

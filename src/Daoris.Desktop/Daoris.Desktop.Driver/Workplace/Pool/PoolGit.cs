@@ -16,6 +16,16 @@ internal sealed class PoolGit : IDisposable
     {
         _home = home;
         _job = job;
+        Repository = MachinePorts.Repository.Held(HeldAsync);
+    }
+
+    /// <summary>The repository's operations with every git of them started in the claim's job.</summary>
+    internal IGitRepository Repository { get; }
+
+    private async Task<Daoris.Ports.Git.GitAnswer> HeldAsync(string folder, IReadOnlyList<string> arguments, CancellationToken ct)
+    {
+        var (code, stdout, stderr) = await GitAsync(folder, arguments, ct).ConfigureAwait(false);
+        return new(code, stdout, stderr);
     }
 
     /// <summary>The job's name for a new claim: unique, so no other process holds it.</summary>

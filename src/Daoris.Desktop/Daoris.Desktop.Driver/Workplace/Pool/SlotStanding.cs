@@ -41,9 +41,8 @@ internal sealed record SlotStanding(KeptTree Slot, TreeClaim Claim)
             }
             else
             {
-                var hooks = TreeOpenings.HooksHeld(site.Home);
-                var (code, _, err) = await git.GitAsync(Slot.Path, [.. hooks, "switch", "--detach"], ct).ConfigureAwait(false);
-                if (code != 0) said = $"{why}; git would not detach it, so it holds {branch} checked out: {TreeGit.FirstLine(err)}";
+                var detached = await git.Repository.SwitchAsync(Slot.Path, new GitSwitch(null, HooksPath: TreeOpenings.HooksPath(site.Home)), ct).ConfigureAwait(false);
+                if (!detached.Ok) said = $"{why}; git would not detach it, so it holds {branch} checked out: {TreeGit.FirstLine(detached.Error)}";
             }
         }
 

@@ -20,9 +20,8 @@ internal static class PooledBranchReviews
 
         using (GitLaunch.Within(GitBudget.Landed))
         {
-            var (code, tip, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
-            if (code != 0) return null;
-            var diff = await WorkingTree.DiffBetweenAsync(checkout, baseCommit, tip.Trim(), ct).ConfigureAwait(false);
+            if (await WorkingTree.TipAsync(checkout, $"refs/heads/{branch}", ct).ConfigureAwait(false) is not { } tip) return null;
+            var diff = await WorkingTree.DiffBetweenAsync(checkout, baseCommit, tip, ct).ConfigureAwait(false);
             return diff is null ? null : new SessionReview(diff, FromBranch: true, Landed: null, TreeGone: true, TreeBranch: branch);
         }
     }

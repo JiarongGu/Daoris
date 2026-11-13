@@ -16,14 +16,13 @@ internal static class PoolLocks
     internal static bool IsOwn(string? reason) => reason is { } said && (said == Free || (said.StartsWith(ClaimedPrefix, StringComparison.Ordinal) && said.EndsWith(')')));
 
     /// <summary>How a slot's lock reads to the judgement: only the pool's reasons, a session's whose record no longer holds it, or none, pass.</summary>
-    internal static SlotLocks Read(WorktreeEntry entry) =>
+    internal static SlotLocks Read(GitWorktree entry) =>
         !entry.Locked ? SlotLocks.None
         : IsOwn(entry.LockReason) ? SlotLocks.Free
         : SessionLocks.SessionOf(entry.LockReason) is not null ? SlotLocks.SessionNoRecord
         : SlotLocks.Other;
 
-    internal static Task<(int Code, string Stdout, string Stderr)> UnlockAsync(PoolGit git, string slot, CancellationToken ct) =>
-        git.GitAsync(slot, ["worktree", "unlock", slot], ct);
+    internal static Task<GitDone> UnlockAsync(PoolGit git, string slot, CancellationToken ct) => git.Repository.UnlockAsync(slot, slot, ct);
 
     /// <summary>
     /// <paramref name="slot"/> locked with <paramref name="reason"/>, a lock of the pool's or a session's put in the new one's place; null
@@ -41,11 +40,9 @@ internal static class PoolLocks
         {
             if (entry.LockReason == reason) return null;
             if (Read(entry) == SlotLocks.Other) return $"the slot is locked for another reason ({entry.LockReason})";
-            var (unlocked, _, unlockErr) = await git.GitAsync(slot, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
-            if (unlocked != 0) return TreeGit.FirstLine(unlockErr);
+            if (await git.Repository.UnlockAsync(slot, entry.Path, ct).ConfigureAwait(false) is { Ok: false } unlocked) return TreeGit.FirstLine(unlocked.Error);
         }
 
-        var (code, _, err) = await git.GitAsync(slot, ["worktree", "lock", "--reason", reason, entry.Path], ct).ConfigureAwait(false);
-        return code == 0 ? null : TreeGit.FirstLine(err);
+        return await git.Repository.LockAsync(slot, entry.Path, reason, ct).ConfigureAwait(false) is { Ok: false } locked ? TreeGit.FirstLine(locked.Error) : null;
     }
 }

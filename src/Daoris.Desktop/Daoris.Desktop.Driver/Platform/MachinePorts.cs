@@ -1,6 +1,7 @@
 using Daoris.Ports.Ambient;
 using Daoris.Ports.Git;
 using Daoris.Ports.Processes;
+using Daoris.Ports.Repositories;
 
 namespace Daoris.Driver;
 
@@ -32,5 +33,8 @@ internal static class MachinePorts
     internal static SecretSeal Seal => Chosen.Seal ?? throw new InvalidOperationException("the root handed no seal, so this process keeps no key.");
 
     /// <summary>Git, which the static git funnel (<see cref="GitRuns"/>) runs every git through.</summary>
+    /// <summary>The repository's operations the families ask: the root's choice, else the funnel over git.</summary>
+    internal static IGitRepository Repository => Chosen.Repository ?? GitRepository.Shared;
+
     internal static IGit Git => Chosen.Git ?? throw new InvalidOperationException("the root handed no git, so this process runs no git.");
 }

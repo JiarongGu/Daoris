@@ -22,10 +22,8 @@ internal static class BaseProducers
     internal static async Task<BaseProducer> ReadAsync(PoolGit git, string slot, string commit, string top, CancellationToken ct)
     {
         var folder = FolderOf(top);
-        var (code, listed, _) = await git.GitAsync(slot, folder.Length == 0 ? ["ls-tree", "--name-only", "-z", commit] : ["ls-tree", "--name-only", "-z", commit, "--", folder], ct)
-            .ConfigureAwait(false);
-        if (code != 0) return new(null, [], $"git could not list {Shown(folder)} at the start");
-        var projects = listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)
+        if (await git.Repository.EntriesAsync(slot, commit, folder.Length == 0 ? [] : [folder], false, ct).ConfigureAwait(false) is not { } listed) return new(null, [], $"git could not list {Shown(folder)} at the start");
+        var projects = listed.Select(entry => entry.Path)
             .Where(path => ProjectExtensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))).ToList();
         if (projects.Count != 1)
         {
@@ -67,11 +65,7 @@ internal static class BaseProducers
         }
     }
 
-    private static async Task<string?> ShowAsync(string slot, string commit, string path, CancellationToken ct)
-    {
-        var name = GitObjectName.At(commit, path);
-        return await GitObjectReads.TextAsync(slot, name, ct).ConfigureAwait(false);
-    }
+    private static Task<string?> ShowAsync(string slot, string commit, string path, CancellationToken ct) => MachinePorts.Repository.TextAtAsync(slot, commit, path, ct);
 
     /// <summary>The folder holding <paramref name="path"/>, repository-relative and ending <c>/</c>; empty for the top.</summary>
     private static string FolderOf(string path)

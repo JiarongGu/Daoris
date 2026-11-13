@@ -16,27 +16,7 @@ internal sealed record FillChanges(IReadOnlyList<string> Tracked, IReadOnlyList<
 internal static class FillJudgement
 {
     /// <summary>Every path git's status names in the tree, ignored ones at their tops, with its two-letter state.</summary>
-    internal static async Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct)
-    {
-        string[] ask = ignored
-            ? ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching"]
-            : ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
-        var (code, said, error) = await WorkingTree.GitAsync(tree, ask, ct).ConfigureAwait(false);
-        if (code != 0) throw new DriverException($"git could not read the tree's status: {error.Trim()}");
-        var paths = new Dictionary<string, string>(StringComparer.Ordinal);
-        var entries = said.Split('\0', StringSplitOptions.RemoveEmptyEntries);
-        for (var at = 0; at < entries.Length; at++)
-        {
-            var entry = entries[at];
-            if (entry.Length < 4) continue;
-            var state = entry[..2];
-            paths[entry[3..]] = state;
-            // A rename or a copy names its source in the entry after it.
-            if (state[0] is 'R' or 'C') at++;
-        }
-
-        return paths;
-    }
+    internal static Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct) => MachinePorts.Repository.StatusAsync(tree, ignored, ct);
 
     internal static FillChanges Changes(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after, StoreDependency dependency)
     {
