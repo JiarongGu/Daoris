@@ -46,7 +46,7 @@ public sealed class ToolClassesTests
             {
                 "quest_publish", "helper_ask", "channel_post", "quest_respond", "go_ahead_ask", "opinion_give", "permission_propose", "channel_read",
                 "helper_answer", "opinion_answer", "review_serve", "review_ready", "knowledge_refresh", "checkout_read",
-                "memory_write", "memory_end", "memory_propose", "system_plan",
+                "memory_write", "memory_end", "memory_propose", "system_plan", "team_plan",
             }.Concat(Advertised().Where(name => name.EndsWith("_propose", StringComparison.Ordinal))),
             name => Assert.Equal(ToolClass.Acts, ToolClasses.Of(name)));
     }

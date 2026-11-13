@@ -151,6 +151,25 @@ public sealed class TeamDeskTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_connector_tool_writes_a_plan_and_reads_it_back_with_the_pointer_that_moved()
+    {
+        var tool = new Daoris.Knowledge.Mcp.TeamTools(_desk);
+        var pack = new PartPack { Pointers = [new("change", "src/a.cs", "1-9", "bbb"), new("area", "docs/areas/x.md", "", "ccc")] };
+
+        var wrote = await tool.PlanAsync(_ask.Id, [Part("keel") with { Pack = pack }], why: "one part is a plan");
+        var read = await tool.PlanAsync(_ask.Id, seen: new Dictionary<string, string> { ["src/a.cs"] = "new", ["docs/areas/x.md"] = "ccc" });
+
+        Assert.Contains("is quest `#", wrote);
+        Assert.Contains("`keel` in `media-api`, quest `#", read);
+        Assert.Contains("stale: `src/a.cs`", read);
+        Assert.DoesNotContain("stale: `docs/areas/x.md`", read);
+        var whole = System.Text.Json.JsonDocument.Parse(await tool.PlanAsync(_ask.Id, json: true)).RootElement;
+        Assert.Equal("keel", whole.GetProperty("plans")[0].GetProperty("parts")[0].GetProperty("id").GetString());
+        Assert.True(whole.GetProperty("quests").TryGetProperty("keel", out _));
+        Assert.Contains("write one", await new Daoris.Knowledge.Mcp.TeamTools(_desk).PlanAsync("nope"));
+    }
+
+    [Fact]
     public void A_moved_pointer_marks_its_pack_stale_alone()
     {
         var pack = new PartPack

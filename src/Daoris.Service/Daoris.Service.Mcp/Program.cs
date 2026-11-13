@@ -120,6 +120,7 @@ builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
 builder.Services.AddSingleton(composed.Asks);
+builder.Services.AddSingleton(composed.Teams);
 // The ledger, for the one write a session's connector makes on its own record: that it took its quest.
 builder.Services.AddSingleton(composed.Ledger);
 // Each repository's memory: the connector reads Lyntai's engines and stages its session's changes; the service applies them.
