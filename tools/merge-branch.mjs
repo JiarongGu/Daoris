@@ -59,7 +59,7 @@
  * has no verdict yet (the ones a failure stopped, or one a fix's paths now reach), and any whose verdict a
  * path changed since reaches (below); it keeps every other verdict. The summary names each kept
  * verdict and when it is given, and each run again with the path that made it stale. `--continue` runs
- * every selected gate again, as it always did. With no merge open it acts on the checkout (below).
+ * every selected gate again. `--rerun time-ratchet` runs the time check alone. With no merge open it acts on the checkout (below).
  *
  * ## The full set before the install
  *
@@ -273,8 +273,7 @@
  * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
  * and the light lane runs those first: the desktop's fast halves build what its Process halves then run. A Process-lane
  * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), because
- * timing tests fail beside them. The cost is the light lane's tail, about 7 to 8 minutes of a full set of an hour or more,
- * since the Process lane is the long pole either way. The Process lane is one gate at a time, though each gate's classes
+ * timing tests fail beside them. The Process lane is one gate at a time, though each gate's classes
  * run at once, but for the release, family and deployment rehearsals beside the git half (below). `--stale` and `--rerun`
  * run through the same `runGates`, so they follow the same order. A Process-lane gate whose command names no project, a
  * rehearsal, starts once the light lane has ended: it builds the hosts behind its script's name. A Process gate's
@@ -284,8 +283,8 @@
  * Each gate's log, verdict and line are its own, the line printed as the gate ends; once both lanes have ended, every
  * gate's line is printed again in the plan's order, a gate not started as NOT RUN. The first failure, unless
  * `--keep-going`, starts nothing more in either lane, and the gate running in the other lane runs to its end and keeps
- * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order, as before,
- * for a loaded machine; a batch keeps it once given. The web gate keeps its own cap on its workers.
+ * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order,
+ * for a loaded machine; a batch keeps it once given.
  *
  * ## A Process half on its fast half's build
  *
@@ -294,8 +293,7 @@
  * in this run, on the tree the half starts on, runs with `--no-build`, and its line says whose build it ran
  * (`no build: driver built this tree in this run`). The tree is the one each verdict is recorded with (`contentTree`), so
  * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
- * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
- * is `--no-build` already. One at a time reuses too.
+ * half has no fast half in its run, and builds; one that names both reuses as a full set does. One at a time reuses too.
  *
  * ## A batch
  *
@@ -387,7 +385,8 @@ import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
 import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
 import { saidDrained } from './merge/said-drained.ts';
-import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
+import { sweepAndSay } from './merge/merge-temps.ts';
+import { gatesToRerun, ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 import {
@@ -2944,6 +2943,7 @@ async function gateMerge(root, state, plan) {
   clearLogs(dir);
   // `--continue` gates the merge again whole: the verdicts of an earlier run are dropped.
   state.results = { [branch]: {} };
+  state.ratchetSince = started;
   writeState(root, state);
 
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
@@ -2957,7 +2957,7 @@ async function gateMerge(root, state, plan) {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  }), ratchetIn(root, gateEnvironment()));
+  }), ratchetIn(root, gateEnvironment()), Date.now, started);
   const home = verdictsHome(root);
   const settled = settleMerge({
     branch, at: nowIso(), wallMs: Date.now() - started, results,
@@ -3015,7 +3015,8 @@ async function rerunGates(root, options) {
   setApartJoins(root);
   writeGenerated(root);
   const plan = readPlan(root);
-  const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
+  const named = gatesToRerun(options.rerun);
+  const unknown = named.filter((name) => !plan.some((gate) => gate.name === name));
   if (unknown.length) {
     throw new Refusal(`--rerun: no gate ${unknown.map((name) => `'${name}'`).join(', ')} in the plan: ${plan.map((gate) => gate.name).join(', ')}`);
   }
@@ -3029,7 +3030,7 @@ async function rerunGates(root, options) {
   const standings = Object.fromEntries(chosen.filter((gate) => results[gate.name] && tree)
     .map((gate) => [gate.name, verdictStanding({ ...judging, from: results[gate.name].tree, gate: gate.name })]));
   const stale = Object.fromEntries(Object.entries(standings).filter(([, how]) => how.standing === 'stale').map(([name, how]) => [name, how.paths]));
-  const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, options.rerun, stale);
+  const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, named, stale);
   const gates = plan.filter((gate) => planned.run.includes(gate.name));
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
   mkdirSync(dir, { recursive: true });
@@ -3061,7 +3062,7 @@ async function rerunGates(root, options) {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  }), ratchetIn(root, gateEnvironment()));
+  }), ratchetIn(root, gateEnvironment()), Date.now, state.ratchetSince ?? null);
 
   const failedRan = ran.filter((result) => result.verdict === 'FAIL');
   const failed = [...failedRan.map(gateNamed), ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
@@ -3392,6 +3393,7 @@ async function mergeNext(root, state) {
   state.tips[branch] = tip;
   writeState(root, state);
   const merged = git(root, ['merge', '--no-ff', '--no-commit', branch], { allowFail: true });
+  sweepAndSay(root);
   if (merged.status !== 0) {
     const resolved = mergeInProgress(root) && resolveBacklog(root);
     const { blocking, generated } = mergeInProgress(root) ? conflicts(root) : { blocking: [], generated: [] };
