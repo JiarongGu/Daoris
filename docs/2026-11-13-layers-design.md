@@ -557,6 +557,17 @@ layer-run; l after b to k; z last.
 | **l** the rest, and the driver deleted (driver, modules, tools; b to k) | what remains to `src/Daoris.Application/`; `Daoris.Desktop.Driver` deleted; the broad Process gates' hand reach removed | no forwarding type, no duplicate implementation, no `Needs` trait in a unit project | the whole build and the unit tier green; `daoris.gates.json` lists no `driver-process*` row | `Daoris.Desktop.Driver`; `CategoryTests`, `Alone.cs` and the run-settings files; `reached`'s .NET half once the unit tier runs whole under a minute |
 | **z** measured (the steward; all) | — | — | §9's figures before a and after l, and its three exercises | — |
 
+**Row f, measured before it moved anything (2026-11-14, this machine; the count is from the classes' own `Needs` traits, the time from a
+sample run).** The driver's unit half (`Category!=Process`) already starts no real git: no class there carries `Needs=Git`, and 20 classes
+script the git they ask (`GitFlow`, `ScriptedGit`), so the "mixed" classes are unit tests whose only real git is a scratch cleanup, or fault
+injection over a real repository. The real git is in the Process classes: `Daoris.Desktop.Driver.Tests` holds 261 `Needs=Git` classes with
+1,199 cases (127 classes and 678 cases in the `Parallel=Git` half), and the rehearsal project 72 classes with 661 cases (the landings', pool's,
+integrations', clean-up's, keep-size's and help trees' scenario classes, already moved there from the driver tests). A sample of 12 of the
+heaviest classes still in the driver tests, run four at once under `git.process.runsettings`, was 63 cases, 782 case-seconds and 259 s of
+wall: 12.4 s a case, which is a worktree opened and a few dozen git starts each. Those cases test the product over real worktrees, files and
+refs (a tree opened, a commit made, a landing judged), so a scripted answer table cannot hold their assertions; they need ring 2's typed
+repository port and its `MemoryRepository` first, which no family has yet.
+
 ## 9. Measurement (decision 8)
 
 | Measure | 2026-11-12 | Target |
