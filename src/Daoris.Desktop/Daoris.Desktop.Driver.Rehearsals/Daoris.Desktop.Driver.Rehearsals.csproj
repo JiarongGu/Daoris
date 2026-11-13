@@ -60,7 +60,8 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\Kinds\Land\GraphRunFixture.cs" Link="Shared\GraphRunFixture.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\StandInLedger.cs" Link="Shared\StandInLedger.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\StubFile.cs" Link="Shared\StubFile.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\StoredSteps.cs" Link="Shared\StoredSteps.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\HistoryStandIn.cs" Link="Shared\HistoryStandIn.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\ProcessParents.cs" Link="Shared\ProcessParents.cs" />    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\StoredSteps.cs" Link="Shared\StoredSteps.cs" />
   </ItemGroup>
 
 </Project>

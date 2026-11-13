@@ -170,7 +170,7 @@
         "src/Daoris.Desktop/process.runsettings",
         "src/Daoris.Desktop/git.process.runsettings",
         "src/Daoris.Desktop/git.pinned.process.runsettings",
-        "src/Daoris.Desktop/rehearsals.runsettings"
+        "src/Daoris.Desktop/rehearsals.process.runsettings"
       ],
       "builds": {
         "units": [

@@ -301,8 +301,8 @@ commit and head again because another process can move either. The measurements 
 Tests are each unit's `<Unit>Tests` and `*ProcessTests`, and the censuses (`ProcessStartsCensusTests`,
 `CheckoutWritersCensusTests`); the doors' process classes also run on the pinned MinGit. Their remotes are stand-ins on loopback
 ports with nothing installed (D241 point 8): `GitSshHost` (RSA and ECDSA, never ed25519), `GitTlsHost`, `PullRequestApiHost`.
-The slowest scenario classes over real repositories (landings, the pool, integrations, clean-up, keep-size, the help trees' read)
-run in the driver's rehearsal project. Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
+The scenario classes over real repositories (landings, the pool, integrations, clean-up, keep-size, the help trees' read, tree
+syncs, the ref, stash and switch acts, fetches, tidying, the scheduler on real git) run in the driver's rehearsal project. Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 
 ## Contradictions
