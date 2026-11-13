@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## RELAUNCHPORT1 — update relaunch keeps its debug port (2026-11-14)
+
+> **RELAUNCHPORT1**: Outcome: self-update carries the shell's start arguments through the launcher; `UpdateRelaunchGateTests` covers configured debug ports and a start without one (install-home-update.md, rule 42).
+
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
 > **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.

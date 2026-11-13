@@ -209,7 +209,7 @@ internal static class Program
             Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath()),
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
-            relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
+            relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, args, ct),
             // For good: a close from code reads as the person's, which only puts the first away while another
             // main window is open, and an update has to end the application whatever is open.
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),

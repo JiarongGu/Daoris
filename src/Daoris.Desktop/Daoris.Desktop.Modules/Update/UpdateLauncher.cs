@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The launcher an update closes the application for: started at the install's root with
-/// <c>--update --after &lt;this process&gt;</c>, it waits for this application to close, then swaps <c>app/</c>.
+/// <c>--update --after &lt;this process&gt;</c> and the shell's start arguments, it waits for this application to close, then swaps <c>app/</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Through the start gate</b> (<see cref="ProcessStarts"/>): *Update now*'s <c>SET</c> applies before
@@ -19,7 +19,7 @@ public static class UpdateLauncher
     /// Start the launcher at <paramref name="install"/> for <paramref name="pid"/>, once the start gate has a place. False when
     /// it is not there or would not start, and the application stays.
     /// </summary>
-    public static async Task<bool> StartAsync(string install, int pid, CancellationToken ct)
+    public static async Task<bool> StartAsync(string install, int pid, IReadOnlyList<string> arguments, CancellationToken ct)
     {
         var launcher = Path.Combine(install, StagedBuild.Launcher);
         if (!File.Exists(launcher)) return false;
@@ -40,6 +40,7 @@ public static class UpdateLauncher
         start.ArgumentList.Add("--update");
         start.ArgumentList.Add("--after");
         start.ArgumentList.Add(pid.ToString(CultureInfo.InvariantCulture));
+        foreach (var argument in arguments) start.ArgumentList.Add(argument);
         try
         {
             using var started = await ProcessStarts.Shared.StartAsync(start, ProcessPurpose.Outlives, ct).ConfigureAwait(false);

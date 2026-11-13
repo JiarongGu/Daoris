@@ -5,6 +5,12 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-14 - An update dropped the shell's start arguments and debug port
+
+- **Root cause:** ca177119be started the update launcher with only `--update --after <pid>`, discarding the shell's own start arguments before the launcher and swap could forward them.
+- **Fix:** the shell hands its `Main` arguments to `UpdateLauncher`, which appends each whole argument after the update controls.
+- **Verification:** `UpdateRelaunchGateTests` failed for two debug ports before forwarding was added; it also covers spaces, quotes, an empty argument and a start with no arguments.
+
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
 - **Symptom:** `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest (a go for a production
