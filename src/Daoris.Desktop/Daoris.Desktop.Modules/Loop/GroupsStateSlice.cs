@@ -58,7 +58,7 @@ public static class GroupsStateSlice
     {
         ["row"] =
         [
-            "session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
+            "session", "group", "state", "reason", "shown", "archived", "name", "pinned", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
             "deletable", "lands", "discards", "waits", "line", "repository", "created", "updated",
         ],
         ["line"] = ["state", "group", "reason", "by", "role"],
