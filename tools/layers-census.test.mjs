@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
+import {
+  checkAmbient, checkBudget, checkClock, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanProcesses,
+} from './layers-census.mjs';
+import { clockSites } from './layers-census/clock.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -15,7 +18,41 @@ const tree = (projects) => ({
   read: (path) => projects[path],
 });
 
-const clean = { packages: {}, ambient: {}, slowTests: {} };
+const clean = { packages: {}, ambient: {}, clock: {}, slowTests: {} };
+
+test('LAYERS1: the wall clock and a real wait are counted, a clock handed or an infinite wait is not, and a comment is not', () => {
+  const text = [
+    'var a = DateTime.UtcNow; var b = DateTimeOffset.Now;',
+    'Thread.Sleep(300);',
+    'await Task.Delay(50);',
+    'await Task.Delay(TimeSpan.FromSeconds(1), ct);',
+    'await Task.Delay(span, clock, ct);',
+    'await Task.Delay(Timeout.Infinite, ct);',
+    'var c = clock ?? TimeProvider.System;',
+    '// DateTime.UtcNow in a comment',
+    '/// Thread.Sleep(1) in a doc line',
+  ].join('\n');
+  assert.equal(clockSites(text), 6);
+});
+
+test('LAYERS1: an application or unit-test file over its clock allowance, or named by none, is a breach; one that fell is told to write the list', () => {
+  const found = tree({
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Modules')]: project(),
+    [`${DESKTOP}/Daoris.Desktop.Driver/Loop/A.cs`]: 'var a = DateTime.UtcNow;',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Loop/B.cs`]: 'var a = 1;',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`]: 'Thread.Sleep(5); Thread.Sleep(5);',
+    [`${DESKTOP}/Daoris.Desktop.Modules/Loop/D.cs`]: 'var a = DateTime.UtcNow;',
+  });
+  const files = scanClock(found);
+  assert.deepEqual(Object.keys(files), [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`, `${DESKTOP}/Daoris.Desktop.Driver/Loop/A.cs`]);
+  const problems = checkClock(files, { [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`]: 1, [`${DESKTOP}/Daoris.Desktop.Driver/Loop/B.cs`]: 1 });
+  assert.equal(problems.length, 3, problems.join('\n'));
+  assert.match(problems[0], /CTests\.cs reads the wall clock or waits for real 2 times, over its allowance of 1/);
+  assert.match(problems[1], /A\.cs reads the wall clock or waits for real 1 times, over its allowance of 0/);
+  assert.match(problems[2], /B\.cs fell to 0 from its allowance of 1/);
+});
 
 test('LAYERS1: an application or unit-test project that references an adapter is named, and a root may', () => {
   const found = tree({
@@ -41,6 +78,15 @@ test('LAYERS1: Ports references nothing, and Testing only Ports', () => {
   assert.match(problems[0], /references the project Daoris\.Contracts/);
   assert.match(problems[1], /takes the package Newtonsoft\.Json/);
   assert.match(problems[2], /references the project Daoris\.Desktop\.Driver/);
+});
+
+test('LAYERS1: the store\'s fake runs on SQLite and takes its package and bundle, and no other', () => {
+  const found = tree({
+    'src/Daoris.Testing/Daoris.Testing.csproj': project(['Daoris.Ports'], ['xunit', 'Microsoft.Data.Sqlite', 'SQLitePCLRaw.bundle_e_sqlite3', 'Newtonsoft.Json']),
+  });
+  const problems = checkReferences(found, clean);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /Daoris\.Testing takes the package Newtonsoft\.Json/);
 });
 
 test('LAYERS1: an application takes no package but analyzers and test libraries, but those on the list that only shrinks', () => {
@@ -71,6 +117,27 @@ test('LAYERS1: the ambient reads are counted per subdomain and only tighten, at 
   assert.match(checkAmbient({}, { 'Daoris.Desktop.Driver/Loop': 1 })[0], /fell to 0/);
 });
 
+test('LAYERS1: a process start in the application or a unit test is held to its file\'s allowance, which only falls', () => {
+  const sources = {
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+    [at('src/Daoris.Adapters', 'Daoris.Adapters.Machine')]: project(),
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 'var p = Process.Start(info);\n// Process.Start(said) in a comment\nvar q = new Process { StartInfo = info };',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Data.cs`]: 'var info = new ProcessStartInfo("git");',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Platform/Probe.cs`]: 'foreach (var each in Process.GetProcessesByName("node")) { }',
+    ['src/Daoris.Adapters/Daoris.Adapters.Machine/Host.cs']: 'Process.Start(info);',
+  };
+  const found = scanProcesses(tree(sources));
+
+  assert.deepEqual(found, {
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Platform/Probe.cs`]: 1,
+    [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2,
+  });
+  assert.deepEqual(checkProcesses(found, found), []);
+  assert.match(checkProcesses(found, {})[0], /Probe\.cs starts or finds a process 1 times, over its allowance of 0/);
+  assert.match(checkProcesses({}, { [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2 })[0], /fell to 0 from its allowance of 2/);
+});
+
 test('LAYERS1: a unit test over a second fails by name, a listed one may not slow, and a record of another tier is not read', () => {
   const records = [
     { gate: 'driver', tier: 'unit', tests: [{ class: 'Fast', test: 'a', ms: 12 }, { class: 'Slow', test: 'b', ms: 2100 }, { class: 'Listed', test: 'c', ms: 1500 }] },
@@ -97,4 +164,22 @@ test('LAYERS1: a gate\'s trx is read as its tests with their milliseconds, and a
 
 test('LAYERS1: no duration records is a clean run that says so', () => {
   assert.deepEqual(checkBudget([], clean), []);
+});
+
+test('LAYERS1: the service\'s application naming Lyntai\'s memory or storage types is named, and its adapter and its vectors may', () => {
+  const SERVICE = 'src/Daoris.Service';
+  const found = {
+    files: [
+      at(SERVICE, 'Daoris.Service.Core'), `${SERVICE}/Daoris.Service.Core/Knowledge/Planted.cs`, `${SERVICE}/Daoris.Service.Core/Knowledge/Search.cs`,
+      'src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj',
+      'src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/LyntaiMemory.cs',
+    ],
+    read: (path) => (path.endsWith('.csproj') ? project()
+      : path.endsWith('Planted.cs') ? 'using Lyntai.Storage.Sqlite;\n// GraphMemoryEngine in a comment is no use\nvar engine = new GraphMemoryEngine(name, store);\n'
+      : path.endsWith('Search.cs') ? 'using Lyntai.Inference;\nIVectorStore vectors = new InMemoryVectorStore();\n'
+      : 'using Lyntai.Storage;\nnew SqliteMemoryGraphStore(new SqliteConnectionFactory(path));\n'),
+  };
+  const problems = checkMemory(found);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /Knowledge\/Planted\.cs names Lyntai's memory or storage types 2 times/);
 });

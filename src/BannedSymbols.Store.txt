@@ -1,0 +1,3 @@
+T:Microsoft.Data.Sqlite.SqliteConnection;the application opens the store through the engines a root hands it, and writes its SQL against DbConnection
+T:Microsoft.Data.Sqlite.SqliteCommand;the application writes its SQL against DbCommand
+T:Microsoft.Data.Sqlite.SqliteDataReader;the application reads rows through DbDataReader

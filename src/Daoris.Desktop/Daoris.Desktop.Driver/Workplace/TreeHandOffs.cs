@@ -127,7 +127,7 @@ public sealed class TreeHandOffs(string home, Func<StoreSettled>? settled = null
             $"UPDATE tree_hand_offs SET {set} WHERE id = $id AND closed IS NULL", [("$id", row.Id), .. values]) == 1);
     }
 
-    private static TreeHandOff Row(SqliteDataReader row) =>
+    private static TreeHandOff Row(DbDataReader row) =>
         new(row.GetString(1), row.GetString(2), row.GetString(3), row.GetString(4), row.GetString(5), row.GetString(6), row.GetInt32(7),
             row.GetString(8), row.GetString(9), row.GetString(10), row.GetString(12), Moment(row, 14), Moment(row, 13))
         {
@@ -136,7 +136,7 @@ public sealed class TreeHandOffs(string home, Func<StoreSettled>? settled = null
             Closed = row.IsDBNull(15) ? null : Moment(row, 15),
         };
 
-    private static DateTimeOffset Moment(SqliteDataReader row, int at) =>
+    private static DateTimeOffset Moment(DbDataReader row, int at) =>
         Moments.Read(row.GetString(at)) ?? throw new DesktopStoreException("a hand-off's moment does not read as one");
 
     private DesktopStore Open(string home) => DesktopStore.Open(DesktopStore.LocationIn(home), StoreProcess.Options(settled ?? StartConfirmation.Read));

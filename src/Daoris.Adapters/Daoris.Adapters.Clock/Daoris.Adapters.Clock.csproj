@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Layers.props" />
+
+  <!--
+    The machine's clock behind the platform's TimeProvider, and the machine's reading of the time quiet is counted on. The system
+    provider is constructed here and nowhere else, so the application takes a TimeProvider from its root. An adapter is where an
+    effect lives, so it takes the layers' settings and leaves the banned list to the application and the libraries.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Adapters.Clock</RootNamespace>
+    <AssemblyName>Daoris.Adapters.Clock</AssemblyName>
+    <Description>the machine's clock: TimeProvider.System and the quiet clock's reading</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="$(MSBuildThisFileDirectory)..\..\BannedSymbols.Effects.txt" />
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>

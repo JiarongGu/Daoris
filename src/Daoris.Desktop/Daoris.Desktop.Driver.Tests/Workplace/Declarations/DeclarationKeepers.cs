@@ -52,7 +52,7 @@ internal static class DeclarationKeepers
 
         internal void Read(SyntaxTree tree)
         {
-            var model = compilation.GetSemanticModel(tree);
+            var model = SharedModels.Of(compilation, tree);
             foreach (var body in tree.GetRoot().DescendantNodes().Where(node => node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax
                          or ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax or IndexerDeclarationSyntax }
                          or EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax } or PropertyDeclarationSyntax }))

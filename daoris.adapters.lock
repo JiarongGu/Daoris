@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "adapters": {
+    "Daoris.Adapters.Clock": {
+      "fingerprint": "62261f6c518a1470054bfcf749b239e247cd875f41d5ad083cac1c9052067b6d",
+      "tree": "d884a557b217e901e853242255ea39329952aa4d",
+      "ports": {
+        "Clocks": "c4cfb07d2c72265f2be3f83e4cd8a719c0c62d82"
+      },
+      "outside": {},
+      "suite": "adapters-clock",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-13T01:00:29.193Z"
+    },
+    "Daoris.Adapters.DesktopStore.Sqlite": {
+      "fingerprint": "1f1a4ad3cfe3c1a0936e250983663075c42e37e526349b7a3892851872636fd9",
+      "tree": "79a123a20ce206f2c4b8f64be58943efc874f87c",
+      "ports": {
+        "Store": "1f6fe3edfd68b5832e70a2102c2835e0adbf8f36"
+      },
+      "outside": {
+        "nuget:Microsoft.Data.Sqlite": "10.0.14",
+        "nuget:SQLitePCLRaw.bundle_e_sqlite3": "3.0.5"
+      },
+      "suite": "adapters-desktopstore-sqlite",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-13T01:00:38.275Z"
+    },
+    "Daoris.Adapters.Machine": {
+      "fingerprint": "1f47465720b2ccff4a181f680cbf679ff61898bb124111e9d753b8c8bfe8b4b2",
+      "tree": "24cc6743edba72edefbe024a85d64cc62d11df0b",
+      "ports": {
+        "Processes": "bd3407d65737537ba83942d9d73ab17ff18a6e8d"
+      },
+      "outside": {
+        "nuget:System.Security.Cryptography.ProtectedData": "10.0.14"
+      },
+      "suite": "adapters-machine",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-13T01:00:46.936Z"
+    },
+    "Daoris.Adapters.Memory.Lyntai": {
+      "fingerprint": "4a0460811ad2062b13c8cc1811634c41f6d971ad3ae1f58bf974011158c98a07",
+      "tree": "3e0b08ec6f4ddfb4c8287357c4cbd7b605748b67",
+      "ports": {
+        "Memory": "1e77cb9362572125f99c496eb38e9cf90fa71246"
+      },
+      "outside": {
+        "nuget:Lyntai.Core": "3.5.3",
+        "nuget:Lyntai.Storage.Sqlite": "3.5.3"
+      },
+      "suite": "adapters-memory-lyntai",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-13T01:01:03.665Z"
+    }
+  }
+}

@@ -202,17 +202,7 @@ public sealed class DriverHostTests : IDisposable
         return (process.ExitCode, await output + await error);
     }
 
-    /// <summary>The host's build beside this test's own; <c>DriverStartFailureTests</c> starts it too.</summary>
-    internal static string HostDll()
-    {
-        // This test's build is <tests>/bin/<configuration>/<framework>/; the host's sits the same way.
-        var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        var framework = build.Name;
-        var configuration = build.Parent!.Name;
-        var desktop = build.Parent.Parent!.Parent!.Parent!.FullName;
-        var dll = Path.Combine(desktop, "Daoris.Desktop.Driver.Host", "bin", configuration, framework, "daoris-driver.dll");
-        return File.Exists(dll) ? dll : throw new FileNotFoundException("the host is built before these tests; it was not found", dll);
-    }
+    internal static string HostDll() => HostBuild.Dll();
 
     /// <summary>A service on a loopback port that counts every request and answers the tick's reads empty.</summary>
     private sealed class CountingService : IAsyncDisposable

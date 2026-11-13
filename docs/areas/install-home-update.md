@@ -23,7 +23,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
 | `Drv/Workplace/` | Going back refused while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port |
-| `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore`, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
+| `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
 
@@ -191,7 +191,12 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 **The store and the migration**
 
 49. `data/desktop.db` is the desktop's SQLite store, opened by the driver library alone and never synced: one connection per
-    process, write-ahead logging, `synchronous = FULL`, every write one immediate transaction. (from D212)
+    process, write-ahead logging, `synchronous = FULL`, every write one immediate transaction. The engine that does this is
+    `Daoris.Adapters.DesktopStore.Sqlite`'s `SqliteDesktopStoreEngine`, behind `IDesktopStoreEngine` (an `IDesktopUnitOfWork`) in
+    `Daoris.Ports`, which the root hands the library in the ambient `PortSet`; the library's `DesktopStore` is the policy over it
+    (the steps, the stamp-raising wait, the run, the imports), its record stores write against `DbConnection`, `DbTransaction`
+    and `DbDataReader`, and its legacy-file steps connect through the same engines (`StoreEngineSource`). A unit test's root
+    hands `MemoryUnitOfWork` instead. (from D212, D286)
 50. Store changes are numbered steps, forward only, one exclusive transaction each. The writer stamp (3) is never lowered. A
     build whose stamp is below the store's reads it and writes nothing. A stamp-raising step, and every import, waits until
     the start is settled. (from D139, D212, D226)

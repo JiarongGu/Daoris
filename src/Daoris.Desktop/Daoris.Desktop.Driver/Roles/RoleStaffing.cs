@@ -635,7 +635,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         store.Version >= Step
         && store.Query("SELECT 1 FROM imports WHERE family = $family LIMIT 1", row => row.GetInt32(0), ("$family", Family)).Count > 0;
 
-    private static string? Text(SqliteDataReader row, int column) => row.IsDBNull(column) ? null : row.GetString(column);
+    private static string? Text(DbDataReader row, int column) => row.IsDBNull(column) ? null : row.GetString(column);
 
     private static string Now() => DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
 

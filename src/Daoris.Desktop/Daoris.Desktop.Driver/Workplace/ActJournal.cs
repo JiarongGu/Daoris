@@ -467,19 +467,19 @@ public sealed class ActJournal(
 
     // ——— The rows read.
 
-    private static string? Text(SqliteDataReader row, string column)
+    private static string? Text(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetString(at);
     }
 
-    private static long? Number(SqliteDataReader row, string column)
+    private static long? Number(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetInt64(at);
     }
 
-    private static ActRecord MapAct(SqliteDataReader row) =>
+    private static ActRecord MapAct(DbDataReader row) =>
         new(Text(row, "id")!, (int)Number(row, "format")!.Value, Text(row, "kind")!, Text(row, "press")!, Text(row, "repository")!, Text(row, "checkout")!,
             Text(row, "common_dir")!, Text(row, "plan")!, Text(row, "job")!, Text(row, "claim_run")!, Number(row, "claim_generation")!.Value, Text(row, "phase")!,
             Moments.Read(Text(row, "at")) ?? throw new DesktopStoreException("an act's `at` does not read as a moment"))
@@ -494,7 +494,7 @@ public sealed class ActJournal(
             ExpiredAt = Moments.Read(Text(row, "expired_at")),
         };
 
-    private static ActStep MapStep(SqliteDataReader row) =>
+    private static ActStep MapStep(DbDataReader row) =>
         new(Text(row, "act")!, (int)Number(row, "ordinal")!.Value, Text(row, "kind")!, Text(row, "arguments")!, Text(row, "postconditions")!, Text(row, "rollback"))
         {
             BeganAt = Moments.Read(Text(row, "began_at")),

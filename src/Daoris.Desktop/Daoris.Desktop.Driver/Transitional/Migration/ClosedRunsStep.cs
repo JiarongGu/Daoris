@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
@@ -24,7 +23,6 @@ public sealed class ClosedRunsStep : IHomeMigrationStep
             .Select(each => each.Unit!).ToHashSet(StringComparer.Ordinal);
         var context = new SessionTrees(run.Home).Context;
 
-        // The migration holds the home's lease while its steps run.
         var records = new NodeRecordFiles(run.Home, () => true);
         foreach (var bound in new GraphRuns(records).Read().Where(each => each.Ended is null && each.Line is null && !ChatRuns.IsChatRun(each.Run)))
         {
@@ -59,8 +57,7 @@ public sealed class ClosedRunsStep : IHomeMigrationStep
     private static (IReadOnlyList<QuestView> Quests, ILookup<string, string> Trees)? Read(string path)
     {
         if (!File.Exists(path)) return null;
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadOnly);
         using (var probe = connection.CreateCommand())
         {
             probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('quests', 'sessions')";

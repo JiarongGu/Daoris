@@ -1,0 +1,8 @@
+{
+  "suite": "adapters-memory-lyntai",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests",
+  "contract": ["src/Daoris.Testing/Memory"],
+  "ports": ["Memory"],
+  "outside": ["nuget:Lyntai.Core", "nuget:Lyntai.Storage.Sqlite"],
+  "pins": "src/Daoris.Service/Directory.Packages.props"
+}

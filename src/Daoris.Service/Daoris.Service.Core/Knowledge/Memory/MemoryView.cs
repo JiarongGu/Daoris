@@ -1,36 +1,5 @@
 namespace Daoris.Knowledge;
 
-/// <summary>The reads a memory answers: what every memory tool reads, and nothing that writes.</summary>
-public interface IMemoryReads
-{
-    /// <summary>The current entries <paramref name="query"/> matches, best first.</summary>
-    Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default);
-
-    /// <summary>The entry, ended or not; null where the memory keeps none by that id.</summary>
-    Task<MemoryEntry?> GetAsync(string id, CancellationToken ct = default);
-
-    /// <summary>The entries <paramref name="id"/> relates to.</summary>
-    Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default);
-}
-
-/// <summary>
-/// Another repository's memory as a reader meets it: its type has no write,
-/// a read through it moves nothing of the owner's, and every entry is the owner's by reference. Its check is asked about an entry before
-/// <see cref="IMemoryReads.GetAsync"/> or <see cref="IMemoryReads.ExpandAsync"/> reads it, and one it refuses reads as missing; a search is
-/// not checked per entry, being of a repository the caller's workspace already shares.
-/// </summary>
-public interface IMemoryView : IMemoryReads
-{
-    /// <summary>The entry's revision, read by its id alone; null where it is missing.</summary>
-    Task<long?> RevisionOfAsync(string id, CancellationToken ct = default);
-}
-
-/// <summary>What a view asks before it reads an entry (Lyntai's <c>IMemoryViewCheck</c>): a call, not a grant; the scope stays the caller's.</summary>
-public interface IMemoryViewCheck
-{
-    Task<bool> PermitsAsync(MemoryReference reference, CancellationToken ct = default);
-}
-
 /// <summary>
 /// A view's check from a workspace (the memory coordinator design §2): an entry is read only where the registry places its repository in
 /// <paramref name="workspace"/>, read again at each ask, so a repository moved out since the call began is refused before anything of it is

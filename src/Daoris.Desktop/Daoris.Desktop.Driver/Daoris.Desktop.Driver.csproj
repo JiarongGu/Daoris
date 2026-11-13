@@ -5,11 +5,14 @@
        action. -->
   <PropertyGroup>
     <RootNamespace>Daoris.Driver</RootNamespace>
+    <!-- The store's engine types are the SQLite adapter's: this project names none of them (src/BannedSymbols.Store.txt). -->
+    <DaorisBannedStore>true</DaorisBannedStore>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
     <InternalsVisibleTo Include="Daoris.Desktop.Modules.Tests" />
+    <InternalsVisibleTo Include="Daoris.Desktop.Driver.Rehearsals" />
   </ItemGroup>
 
   <!-- The service's routes as their declarations, the one project this references: never the service's own, whose store it
@@ -18,10 +21,13 @@
     <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
   </ItemGroup>
 
-  <!-- The effect contracts the driver depends on and the adapters implement: the browser's two so far. -->
+  <!-- The effect contracts the driver depends on and the adapters implement: the browser's and the machine's so far. -->
   <ItemGroup>
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />
+    <Using Include="Daoris.Ports.Clocks" />
+    <Using Include="Daoris.Ports.Store" />
+    <Using Include="System.Data.Common" />
   </ItemGroup>
 
   <!-- The desktop store's package and its native bundle (FOUNDATION1 z-i, D212 §13.2), pinned at the service's versions in
@@ -29,7 +35,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
   <!-- The git library (GITLIB1d): a repository's refs as they are stored, one `Repository` a call, named under `Workplace/Git/` alone;

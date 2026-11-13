@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The service's application over its real adapters (the ports-and-adapters design, §5.2): the memory's classes that prove the
+    coordinator, the views and the connector's tools over Lyntai's engines on a real file. They have no twin on the stand-in yet, so the
+    service gate runs them where the unit classes run, until the stand-in holds supersession, receipts and the sweep's due entries.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <Description>the service's application over its real adapters: the memory's classes over Lyntai's engines</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Service.Core\Daoris.Service.Core.csproj" />
+    <ProjectReference Include="..\Daoris.Service.Mcp\Daoris.Service.Mcp.csproj" />
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Memory.Lyntai\Daoris.Adapters.Memory.Lyntai.csproj" />
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The unit tests' fixtures these classes share with them, compiled here rather than written twice. -->
+    <Compile Include="..\Daoris.Service.Tests\SourceFiles.cs" Link="SourceFiles.cs" />
+    <Compile Include="..\Daoris.Service.Tests\ScratchTemp.cs" Link="ScratchTemp.cs" />
+    <Compile Include="..\Daoris.Service.Tests\Platform\SqlitePools.cs" Link="Platform\SqlitePools.cs" />
+    <Compile Include="..\Daoris.Service.Tests\Knowledge\StoreSeeding.cs" Link="Knowledge\StoreSeeding.cs" />
+    <Compile Include="..\Daoris.Service.Tests\Knowledge\MemoryMachine.cs" Link="Knowledge\MemoryMachine.cs" />
+    <Compile Include="..\Daoris.Service.Tests\Mcp\McpToolsFixture.cs" Link="Mcp\McpToolsFixture.cs" />
+    <Compile Include="..\..\Daoris.Desktop\Daoris.Desktop.Driver.Tests\Poll.cs" Link="Poll.cs" />
+  </ItemGroup>
+
+</Project>

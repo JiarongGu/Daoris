@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A key is kept encrypted for the Windows user who typed it: <c>keys.json</c> holds no key a reader of the file could use,
-/// and no other file of the home does either.
+/// A key is kept sealed by the machine's seal: <c>keys.json</c> holds no key a reader of the file could use, and no other file of the
+/// home does either. The seal here is the scripted one; the user's real seal passes the same contract in the machine adapter's tests.
 /// </summary>
 public sealed class KeySealTests : IDisposable
 {
@@ -29,7 +29,7 @@ public sealed class KeySealTests : IDisposable
         var text = File.ReadAllText(KeysFile);
         Assert.DoesNotContain(Key, text);
         Assert.DoesNotContain("wxyz", text);
-        Assert.Contains(KeySeal.Prefix, text);
+        Assert.Contains(ScriptedSeal.Prefix, text);
         Assert.Equal(Key, HarnessKeys.Of(_home, "fake", account));
     }
 
@@ -54,7 +54,7 @@ public sealed class KeySealTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         Directory.CreateDirectory(_home);
-        File.WriteAllText(KeysFile, "{\"fake\":{\"theirs\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+        File.WriteAllText(KeysFile, "{\"fake\":{\"theirs\":\"" + ScriptedSeal.Prefix + "AAAAAAAA\"}}");
 
         Assert.Null(HarnessKeys.Of(_home, "fake", "theirs"));
     }

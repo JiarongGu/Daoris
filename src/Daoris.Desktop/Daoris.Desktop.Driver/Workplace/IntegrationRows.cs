@@ -7,22 +7,22 @@ namespace Daoris.Driver;
 /// <summary>The integration family's rows read into its records, and the text a record's proof and files are kept as.</summary>
 internal static class IntegrationRows
 {
-    internal static string? Text(SqliteDataReader row, string column)
+    internal static string? Text(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetString(at);
     }
 
-    internal static long? Number(SqliteDataReader row, string column)
+    internal static long? Number(DbDataReader row, string column)
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetInt64(at);
     }
 
-    internal static DateTimeOffset Moment(SqliteDataReader row, string column) =>
+    internal static DateTimeOffset Moment(DbDataReader row, string column) =>
         Moments.Read(Text(row, column)) ?? throw new DesktopStoreException($"the integration's `{column}` does not read as a moment");
 
-    internal static IntegrationRequest MapRequest(SqliteDataReader row)
+    internal static IntegrationRequest MapRequest(DbDataReader row)
     {
         var generation = Number(row, "generation");
         var requester = new IntegrationRequester(Text(row, "requester")!, Text(row, "door")!) { Act = Text(row, "act"), Generation = generation };
@@ -46,7 +46,7 @@ internal static class IntegrationRows
         };
     }
 
-    internal static IntegrationCandidate MapCandidate(SqliteDataReader row) =>
+    internal static IntegrationCandidate MapCandidate(DbDataReader row) =>
         new(Text(row, "id")!, Text(row, "repository")!, Text(row, "workspace")!, Text(row, "line")!, Text(row, "base")!, Text(row, "job")!,
             Text(row, "claim_run")!, Number(row, "claim_generation")!.Value, Moment(row, "formed_at"))
         {
@@ -56,7 +56,7 @@ internal static class IntegrationRows
             EndedWhy = Text(row, "ended_why"),
         };
 
-    internal static IntegrationMember MapMember(SqliteDataReader row) =>
+    internal static IntegrationMember MapMember(DbDataReader row) =>
         new(Text(row, "candidate")!, Text(row, "request")!, (int)Number(row, "position")!.Value, Text(row, "state")!, Moment(row, "joined_at"))
         {
             Replayed = Text(row, "replayed"),
@@ -65,7 +65,7 @@ internal static class IntegrationRows
             EndedAt = Moments.Read(Text(row, "ended_at")),
         };
 
-    internal static IntegrationStep MapStep(SqliteDataReader row) =>
+    internal static IntegrationStep MapStep(DbDataReader row) =>
         new(Number(row, "id")!.Value, Text(row, "candidate")!, Text(row, "step")!, (int)Number(row, "attempt")!.Value, Text(row, "claim_run")!,
             Number(row, "claim_generation")!.Value, Moment(row, "began_at"))
         {
@@ -119,7 +119,7 @@ internal static class IntegrationRows
         }
     }
 
-    internal static IntegrationDisposition MapDisposition(SqliteDataReader row) =>
+    internal static IntegrationDisposition MapDisposition(DbDataReader row) =>
         new(Text(row, "request")!, Text(row, "commit_id")!, Text(row, "reference")!, Text(row, "by_commit")!, FilesOf(Text(row, "files")), Text(row, "subject")!)
         {
             Candidate = Text(row, "candidate")!,
@@ -129,7 +129,7 @@ internal static class IntegrationRows
         };
 
     /// <summary>Whether the row's query named <paramref name="column"/>: a later step's column is named only of a store that holds it.</summary>
-    internal static bool Has(SqliteDataReader row, string column)
+    internal static bool Has(DbDataReader row, string column)
     {
         for (var at = 0; at < row.FieldCount; at++)
         {

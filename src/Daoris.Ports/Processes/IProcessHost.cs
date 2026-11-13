@@ -13,6 +13,11 @@ public interface IProcessHost
 /// <summary>One started process, seen from the application.</summary>
 public interface IChildRun : IAsyncDisposable
 {
+    /// <summary>Its id and <see cref="Created"/>, its creation time, which together name it to <see cref="IProcessLiveness"/>.</summary>
+    int Id { get; }
+
+    DateTimeOffset Created { get; }
+
     /// <summary>What it writes, as it is written, to its standard output and its standard error.</summary>
     IAsyncEnumerable<ProcessOutput> Output(CancellationToken ct);
 

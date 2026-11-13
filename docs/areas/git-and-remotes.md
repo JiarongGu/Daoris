@@ -206,8 +206,9 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 
 ## Git's starts, counted
 
-Every git the desktop starts runs in a place of `GitScheduler`'s; the start gate and `HeldChild` refuse a git's image holding no
-place (`git.start.outside`).
+Every git the desktop starts runs in a place of `GitScheduler`'s; the start gate and `HeldChild` ask the start policy a root hands
+the machine (`GitStartAdmission`), which refuses a git's image holding no place (`git.start.outside`) and binds any start made in a
+place to it.
 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.

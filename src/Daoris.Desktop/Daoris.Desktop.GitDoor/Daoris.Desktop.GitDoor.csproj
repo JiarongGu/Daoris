@@ -32,7 +32,8 @@
     <!-- A go-ahead is held only while an instance of Daoris holds the home, read from the home's lease (GITAUTH1f). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitDoorAsks.cs" Link="GitDoorAsks.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeLease.cs" Link="HomeLease.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <Using Include="Daoris.Adapters.Machine" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs" Link="HomeIdentity.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitRouting.cs" Link="GitRouting.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFailures.cs" Link="GitFailures.cs" />

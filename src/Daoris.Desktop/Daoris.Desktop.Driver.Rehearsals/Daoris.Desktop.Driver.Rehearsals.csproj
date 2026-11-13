@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The driver's rehearsal tier (the layers design §6, point 4): the application over the real adapters, for a class that proves the
+    real process and so has no place on the unit tier's fakes. Its root hands the machine's, the store's and the clock's adapters,
+    as the shell and daoris-driver hand them; the gate driver-rehearsals runs it with the Process half's settings.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Daoris.Desktop.Driver.Rehearsals</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+    <!-- A root: the adapters it composes are chosen here and nowhere in the library. -->
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Clock\Daoris.Adapters.Clock.csproj" />
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.DesktopStore.Sqlite\Daoris.Adapters.DesktopStore.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\Daoris.Adapters.Machine.csproj" />
+    <!-- The driver's program these classes start, built beside this project's own build. -->
+    <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The driver tests' helpers these classes read, compiled in, so both projects find the workspace, the host and the scratch one way. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\WorkspaceRoot.cs" Link="Shared\WorkspaceRoot.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Category.cs" Link="Shared\Category.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Needed.cs" Link="Shared\Needed.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\HostBuild.cs" Link="Shared\HostBuild.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\ScratchRemoval.cs" Link="Shared\ScratchRemoval.cs" />
+  </ItemGroup>
+
+</Project>

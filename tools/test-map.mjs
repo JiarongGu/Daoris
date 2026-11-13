@@ -43,6 +43,7 @@ import { join, posix } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { globToRegExp } from './merge-branch/lanes-file.mjs';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
+import { TOOL_PROJECTS } from './vitest.config.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // The tree
@@ -103,6 +104,9 @@ const GLOBS = new Map();
 export const TS_SUITES = Object.freeze([
   { suite: 'cli', runner: 'node', glob: 'src/Daoris.Cli/test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
   { suite: 'tool-tests', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
+  // The merge tool's Vitest projects: the unit one runs in the CLI's verify, the end-to-end one in the tool-tests.
+  { suite: 'cli', runner: 'vitest', glob: TOOL_PROJECTS.unit.include[0], whole: ['tools/vitest.config.ts'] },
+  { suite: 'tool-tests', runner: 'vitest', glob: TOOL_PROJECTS.e2e.include[0], whole: ['tools/vitest.config.ts', 'src/Daoris.Cli/package.json'] },
   {
     suite: 'web-unit', runner: 'vitest', glob: 'src/Daoris.Web/src/**/*.test.{ts,tsx}',
     whole: ['src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/src/test/setup.tsx', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/package.json'],
@@ -317,6 +321,9 @@ export function tsSubject(file) {
   if (cli) return `src/Daoris.Cli/src/${cli[1]}`;
   if (file.startsWith('src/Daoris.Cli/test/')) return 'src/Daoris.Cli';
   if (/^src\/Daoris\.Cli\/tool-test\/merge-branch-[^/]+\.test\.ts$/.test(file)) return 'tools/merge-branch.mjs';
+  const merge = /^(tools\/merge\/.+)\.test\.ts$/.exec(file);
+  if (merge) return `${merge[1]}.ts`;
+  if (/^tools\/merge\/.+\.e2e\.ts$/.test(file)) return 'tools/merge-branch.mjs';
   const tool = /^src\/Daoris\.Cli\/tool-test\/(.+)\.test\.ts$/.exec(file);
   if (tool) return `tools/${tool[1]}.mjs`;
   const web = /^src\/Daoris\.Web\/src\/([^/]+)\//.exec(file);

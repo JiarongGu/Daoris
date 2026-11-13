@@ -291,6 +291,23 @@ jobs:
       - name: Layers gate
         run: node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests --nologo
 
+      # The adapters' lock: each package's fingerprint against its row, and the dependency suite of a package whose fingerprint
+      # moved, run here at the release as the CI beside a merge, which a merge that changed no package never runs.
+      - name: Adapters lock gate
+        run: node tools/merge/adapters.ts check
+
+      - name: Clock adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests --nologo
+
+      - name: Desktop store adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests --nologo
+
+      - name: Machine adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Machine.Tests --nologo
+
+      - name: Memory adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests --nologo
+
       - name: Service process gate
         run: dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings --nologo
 
@@ -309,6 +326,9 @@ jobs:
 
       - name: Driver process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
+
+      - name: Driver rehearsals gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/process.runsettings --nologo
 
       - name: Driver git process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings --nologo

@@ -71,16 +71,16 @@ public sealed class AgentKeyVerbTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + ScriptedSeal.Prefix + "AAAAAAAA\"}}");
 
         var replaced = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work"], World("sk-ant-api03-fixed-abcd\n"), CancellationToken.None);
         Assert.True(replaced == 0, _error.ToString());
         Assert.Equal("sk-ant-api03-fixed-abcd", HarnessKeys.Of(Home, "claude-code", "work"));
 
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + ScriptedSeal.Prefix + "AAAAAAAA\"}}");
         var removed = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work", "--remove"], World(), CancellationToken.None);
         Assert.True(removed == 0, _error.ToString());
-        Assert.DoesNotContain(KeySeal.Prefix, File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Keys)));
+        Assert.DoesNotContain(ScriptedSeal.Prefix, File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Keys)));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class AgentKeyVerbTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
         var keys = DaorisHome.Entry(Home, HomeEntry.Keys);
-        File.WriteAllText(keys, "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+        File.WriteAllText(keys, "{\"claude-code\":{\"work\":\"" + ScriptedSeal.Prefix + "AAAAAAAA\"}}");
 
         using var another = KeepLock.Take(keys);
         var exit = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work", "--remove"], World(), CancellationToken.None);
