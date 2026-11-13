@@ -35,6 +35,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["PLACE_PLAN"] = new { repositories = new[] { "engine" }, preset = "merge-after-accept" },
         ["REGISTRY_CREATE_PLAN"] = new { name = "ledger", purpose = "keeps the books", workspace = "aurora" },
         ["RECONCILE_PLAN"] = new { repository = "engine" },
+        ["ASK_PLAN"] = new { ask = "a1" },
         ["CONVERT_PLAN"] = new { },
         ["KEPT_READS"] = new { },
         ["HELP_BEYOND"] = new { session = "a1b2c3d4" },

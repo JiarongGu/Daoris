@@ -37,6 +37,7 @@ internal static class GitLibraryReads
         {
             "merge-base" => MergeBase(rest),
             "rev-list" => Counted(rest),
+            "rev-parse" => GitLibraryVerify.Asked(rest),
             "diff" => Changed(rest),
             "for-each-ref" when rest.SequenceEqual(GitLibraryRefs.Listed) =>
                 (GitLibraryQuestion.Refs, call => GitLibraryRefs.Listing(call) is { } listed ? new GitLibraryAnswer(0, listed) : null),

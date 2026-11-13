@@ -69,7 +69,7 @@ public static class AttentionStateSlice
     {
         ["row"] =
         [
-            "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
+            "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "question", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
