@@ -76,11 +76,15 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
         state.MovedTo = null;
         try
         {
-            if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
+            // A failed record's carry-on its role no longer staffs with that agent (FailedCarryOn) asks the role's entry for its new one.
+            if ((handedQuest is not null || cutLine is null) && start.Resumes?.Asked is { } wasAsked
                 && !string.Equals(wasAsked.Agent, state.Agent, StringComparison.OrdinalIgnoreCase))
             {
-                chosen = state.MovedTo = ApprovedChoice.Of(handedQuest, wiring.QuestOrder(start, role: stepRole))
-                                         ?? wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
+                chosen = state.MovedTo = handedQuest is not null
+                    ? ApprovedChoice.Of(handedQuest, wiring.QuestOrder(start, role: stepRole))
+                      ?? wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0]
+                    : wiring.QuestOrder(start, role: stepRole).FirstOrDefault(entry => string.Equals(entry.Agent, state.Agent, StringComparison.OrdinalIgnoreCase))
+                      ?? wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
             }
 
             if (policyMove is null && wiring.GoOns.ResumesOwn(start, state.Agent) is { } words)

@@ -150,7 +150,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold. Otherwise a
     new part opens and is handed Daoris's brief, composed without a model. (D137, D189)
 26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a shutdown, was a
-    person's stop they released, or parked and was answered. (D80, D83, D104)
+    person's stop they released, or parked and was answered. It goes on with the agent its record ran on, except a failed record
+    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`).
+    (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
 
@@ -242,7 +244,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
     never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
-45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards only what
+45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)
+    is named with that pause by *Try again* and by its own resume, which changes nothing and names the resume that carries it on
+    (`PauseHolder`). Work is abandoned by a listed second press that discards only what
     nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
     person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left

@@ -374,6 +374,25 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
+    /// A failed record's carry-on is staffed by its role as it stands: the agent it failed on goes on only while the role still
+    /// lists it, else the role's first entry, so a part that failed for want of its agent's tools is not carried on there again.
+    /// A record that did not fail goes on where it ran.
+    /// </summary>
+    [Fact]
+    public void A_failed_records_carry_on_takes_its_roles_choice_as_it_stands()
+    {
+        var config = ActorChoices.With(StaffedRoles.Config("cool"), "build", [new ActorChoice("fine", "sonnet")]);
+        var failed = new PriorSession("s1", null, "failed")
+        {
+            Actor = "build", Choice = "1", Asked = new ActorEffective("cool", "opus", null, "1").Asked, Adapter = "cool",
+        };
+
+        Assert.Equal("fine", StartPlan.ContinuedOn(failed, config));
+        Assert.Equal("fine", StartPlan.ContinuedOn(failed with { Asked = null }, config));
+        Assert.Equal("cool", StartPlan.ContinuedOn(failed with { State = "completed" }, config));
+    }
+
+    /// <summary>
     /// The agent a start is named for before its walk runs, which the look's
     /// report of a wait names, is a hand-over's, else a continuation's record's, else its role's first entry, the machine's <c>adapter</c> key
     /// only where that entry does not read.
