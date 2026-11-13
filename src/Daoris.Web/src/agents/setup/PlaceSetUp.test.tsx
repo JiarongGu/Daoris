@@ -309,11 +309,11 @@ describe('Set up…, a place\'s quick set-up', () => {
   });
 
   it('hands the review\'s ticks, Apply and hold to the application, a tick clearing the reasons said before it', async () => {
-    const draft = draftOf({ preset: 'integrated', review: true, drive: true, cleared: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: 'x' }] });
+    const draft = draftOf({ preset: 'integrated', review: true, drive: true, cleared: [{ repository: 'engine', line: 'main', blob: 'x' }] });
     const on = show({ draft, plan: planOf(askOf(draft)) });
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept these checks' }));
     expect(on.onChange).toHaveBeenLastCalledWith({
-      accept: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }], cleared: [],
+      accept: [{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }], cleared: [],
     });
     await userEvent.click(screen.getByRole('button', { name: 'Hold it after driving' }));
     expect(on.onHold).toHaveBeenCalledWith(['engine']);

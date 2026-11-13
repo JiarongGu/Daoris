@@ -2,16 +2,15 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] (--plan | --apply
-/// [--accept &lt;repository&gt;:landed|integration,…])</c>, or <c>daoris place &lt;repository&gt; --room &lt;path&gt; --purpose "…" (--plan | --apply)</c>: <c>PLACE_PLAN</c>'s and
+/// [--accept &lt;repository&gt;,…])</c>, or <c>daoris place &lt;repository&gt; --room &lt;path&gt; --purpose "…" (--plan | --apply)</c>: <c>PLACE_PLAN</c>'s and
 /// <c>PLACE_APPLY</c>'s terminal twin, the same plan and the same apply from the same code in English. Through the running Daoris where one answers,
 /// alone otherwise. <c>--plan</c> reads and writes nothing. <c>--apply</c> is the person's press: through a running Daoris it waits for their Confirm on
 /// the window's card, once, and runs only then; alone it is the person's own terminal acting as the window's press would.
 /// </summary>
 /// <remarks>
 /// <para>Exit codes keep the family contract: 0 a plan nothing refuses, or an apply that is done · 1 refused, or an apply not done · 2 the usage.</para>
-/// <para><b>Acceptances are chosen word by word.</b> <c>--accept engine:landed</c> and <c>--accept engine:integration</c> are two choices, each for its own
-/// purpose, and neither implies the other; an apply names none unless the person does. The digest is not a word: an apply plans again now, prints the
-/// plan it applies, and the window's card pins that plan between its ask and its Confirm (<c>PipeGrounds</c>), refusing a plan that moved.</para>
+/// <para><b>An acceptance is chosen by repository</b> (<c>--accept engine</c>), none unless named. The digest is not a word: an apply plans again now,
+/// prints the plan it applies, and the window's card pins that plan between its ask and its Confirm (<c>PipeGrounds</c>), refusing a plan that moved.</para>
 /// </remarks>
 [CommandGroup("place", "list", "drive", "undrive", "hold", "resume", "line", "across", "standing", "language",
     "review", "opinion", "helpers", "commits", "access", "heavy", "checks", Takes = "<repository>…")]
@@ -19,7 +18,7 @@ public static class PlaceCommand
 {
     public const string Usage =
         "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] "
-        + "(--plan | --apply [--accept <repository>:landed|integration,…])\n"
+        + "(--plan | --apply [--accept <repository>,…])\n"
         + "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)\n"
         + "       " + WorkspaceSetupCommand.Forms;
 
@@ -66,13 +65,8 @@ public static class PlaceCommand
                     if (Value() is not { } chosen) return (null, AcceptProblem);
                     foreach (var part in chosen.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
                     {
-                        var colon = part.LastIndexOf(':');
-                        if (colon <= 0 || part[(colon + 1)..] is not (PlacePlans.Landed or PlacePlans.Integration))
-                        {
-                            return (null, $"`{part}` is not an acceptance. {AcceptProblem}");
-                        }
-
-                        accept.Add(new PlaceAccept(part[..colon], part[(colon + 1)..]));
+                        if (part.Contains(':')) return (null, $"`{part}` is not a repository. {AcceptProblem}");
+                        accept.Add(new PlaceAccept(part));
                     }
 
                     break;
@@ -144,14 +138,14 @@ public static class PlaceCommand
     }
 
     private static string AcceptProblem =>
-        $"`{AcceptFlag}` names the acceptances an apply makes, each for its own purpose: `<repository>:{PlacePlans.Landed}` or `<repository>:{PlacePlans.Integration}`, joined by commas.";
+        $"`{AcceptFlag}` names the repositories whose declaration an apply accepts, for every purpose it serves: `<repository>`, joined by commas.";
 
     /// <summary>The words that ask <paramref name="ask"/>, the repositories first, as a route hands them back to the verb.</summary>
     public static IReadOnlyList<string> ArgsOf(PlaceAsk ask) => [.. AskWords(ask), PlanFlag];
 
     /// <summary>The words that apply <paramref name="ask"/> with <paramref name="accept"/> chosen, as a route hands them back to the verb.</summary>
     public static IReadOnlyList<string> ApplyArgsOf(PlaceAsk ask, IReadOnlyList<PlaceAccept> accept) =>
-        [.. AskWords(ask), ApplyFlag, .. accept.Count == 0 ? Array.Empty<string>() : [AcceptFlag, string.Join(',', accept.Select(each => $"{each.Repository}:{each.Purpose}"))]];
+        [.. AskWords(ask), ApplyFlag, .. accept.Count == 0 ? Array.Empty<string>() : [AcceptFlag, string.Join(',', accept.Select(each => each.Repository))]];
 
     private static List<string> AskWords(PlaceAsk ask)
     {
@@ -193,7 +187,7 @@ public static class PlaceCommand
                     InstanceDoor.Said(
                         ("repositories", ask.Repositories), ("preset", ask.Preset), ("opinion", ask.Opinion), ("look", ask.Look), ("adoption", ask.Adoption),
                         ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot), ("room", ask.Room), ("purpose", ask.Purpose),
-                        ("accept", words.Accept.Select(each => new { repository = each.Repository, purpose = each.Purpose }).ToArray())),
+                        ("accept", words.Accept.Select(each => new { repository = each.Repository }).ToArray())),
                     () => ApplyAloneAsync(words, output, apply, instance, ct), output, ct)
                 .ConfigureAwait(false);
         }
@@ -274,10 +268,10 @@ public static class PlaceCommand
                 continue;
             }
 
-            if (declaration.Blob == WorkflowSelection.NoGates && declaration.Acceptances.Count == 0) continue;
-            declarations.Add($"`{row.Repository}`: `{DeclarationNames.Gates}` at `{declaration.Line}` `{TextBounds.ShortCommit(declaration.Commit, 12)}`, "
-                + (declaration.Blob == WorkflowSelection.NoGates ? "none held there" : $"blob `{TextBounds.ShortCommit(declaration.Blob, 12)}`"));
-            declarations.AddRange(declaration.Acceptances.Select(acceptance => $"  {acceptance.Said} It is {acceptance.Standing} now."));
+            if (declaration.Blob == WorkflowSelection.NoGates && declaration.Acceptance is null) continue;
+            declarations.Add($"`{row.Repository}`: `{DeclarationNames.Gates}` at `{declaration.Line}` `{TextBounds.ShortCommit(declaration.Commit, 12)}`"
+                + (declaration.Blob == WorkflowSelection.NoGates ? ", none held there" : ""));
+            if (declaration.Acceptance is { } acceptance) declarations.Add($"  {acceptance.Said} It is {acceptance.Standing} now.");
             if (declaration.Text is { } text) declarations.AddRange(text.TrimEnd().ReplaceLineEndings("\n").Split('\n').Select(line => $"    {line}"));
         }
 

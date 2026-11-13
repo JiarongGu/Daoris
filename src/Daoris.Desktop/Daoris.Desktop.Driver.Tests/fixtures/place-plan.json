@@ -44,8 +44,8 @@
         "  `engine`: how its line integrates, no policy → the default policy",
         "  `engine`: a set-up asked of its own session, not asked → asked, for a library or package",
         "declarations:",
-        "  `engine`: `daoris.gates.json` at `main` `0123456789ab`, blob `fedcba987654`",
-        "    Accept for integration: the line integrates by this declaration's `integration`, and a changed declaration waits for you while integration goes on under the one last accepted. It is unaccepted now.",
+        "  `engine`: `daoris.gates.json` at `main` `0123456789ab`",
+        "    checks changed on main: added `verify`; changed its `integration` part; they run from now on. It is unaccepted now.",
         "      { \"gates\": [ { \"name\": \"verify\", \"run\": \"npm run verify\" } ], \"integration\": {} }",
         "--plan: nothing was written, and nothing was asked."
       ]
@@ -88,7 +88,7 @@
       "exit": 2,
       "lines": [
         "place: name `--plan` to read the plan, or `--apply` to apply it.",
-        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>,…])",
         "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)",
         "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
         "       daoris place --workspace <name> --pause | --resume | --stop"
@@ -112,7 +112,7 @@
       "exit": 2,
       "lines": [
         "place: `opinions` is not something `--with` takes — `opinion` or `look`; adoption is `--adoption`.",
-        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>,…])",
         "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)",
         "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
         "       daoris place --workspace <name> --pause | --resume | --stop"

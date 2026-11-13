@@ -44,13 +44,13 @@ public sealed class PlaceApplyView : IPressView
         if (refusals.Count > 0) return PressViewed.Refused(string.Join(' ', refusals));
 
         IReadOnlyList<PlaceAccept> accepted = [.. PressPayload.Rows(payload ?? default, "accept")
-            .Select(row => new PlaceAccept(PressPayload.Field(row, "repository"), PressPayload.Field(row, "purpose")))];
+            .Select(row => new PlaceAccept(PressPayload.Field(row, "repository")))];
         foreach (var accept in accepted)
         {
             var row = PressPayload.Rows(plan, "repositories").FirstOrDefault(each => string.Equals(PressPayload.Field(each, "repository"), accept.Repository, StringComparison.OrdinalIgnoreCase));
             var offered = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("declaration", out var declaration)
-                && PressPayload.Rows(declaration, "acceptances").Any(each => PressPayload.Field(each, "purpose") == accept.Purpose);
-            if (!offered) return PressViewed.Refused($"the plan offers no `{accept.Purpose}` acceptance for `{accept.Repository}`, so nothing was written.");
+                && declaration.ValueKind == JsonValueKind.Object && declaration.TryGetProperty("acceptance", out var acceptance) && acceptance.ValueKind == JsonValueKind.Object;
+            if (!offered) return PressViewed.Refused($"the plan offers no acceptance for `{accept.Repository}`'s declaration, so nothing was written.");
         }
 
         var workspaces = PressPayload.Rows(plan, "repositories").Select(row => PressPayload.Field(row, "workspace"))
@@ -87,7 +87,7 @@ public sealed class PlaceApplyView : IPressView
         if (ask.Drive) yield return new PressSaid("place-apply-drive");
     }
 
-    private static PressSaid Accepted(PlaceAccept accept) => new("place-accept", ("repository", accept.Repository), ("purpose", accept.Purpose));
+    private static PressSaid Accepted(PlaceAccept accept) => new("place-accept", ("repository", accept.Repository));
 
     private static bool Flag(JsonElement? payload, string name) => payload is { } body && PressPayload.Flag(body, name);
 

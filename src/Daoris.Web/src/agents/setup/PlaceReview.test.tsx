@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// *Set up…*'s review, a molecule: what changes, what
-// stops it, what it starts and lowers, the work it releases, the acceptances, the terminal line, and one *Apply* that waits while a plan is read.
+// *Set up…*'s review, a molecule: what changes, what stops it, what it starts and lowers, the work it releases, the acceptance, the terminal line, and one *Apply*.
 
 import i18n from '../../locales/i18n';
 import { APPLIED, MOVED, planOf } from './placeFixtures';
@@ -131,44 +130,38 @@ describe('Set up…, the review', () => {
     const draft = draftOf({ preset: 'integrated' });
     const on = show({ draft });
     const region = screen.getByRole('region', { name: 'Acceptances' });
-    expect(region).toHaveTextContent('engine: the declaration at main aa11bb2, blob 3b18e51');
+    expect(region).toHaveTextContent('engine: the declaration at main aa11bb2');
+    expect(region).not.toHaveTextContent('blob');
     const fold = within(region).getByText('Read the declaration').closest('details')!;
     expect(fold).toHaveTextContent('gates: [lint, tests]');
     expect(within(region).getAllByText(/gates: \[lint, tests\]/)).toHaveLength(1);
-    const tick = within(region).getByRole('checkbox', { name: 'Accept for integration' });
+    expect(within(region).getAllByRole('checkbox')).toHaveLength(1);
+    const tick = within(region).getByRole('checkbox', { name: 'Accept these checks' });
     expect(tick).not.toBeChecked();
+    expect(region).toHaveTextContent('checks changed on main: added lint, tests; they run from now on.');
     expect(region).toHaveTextContent('Not accepted yet.');
-    expect(region).toHaveTextContent('Until accepted, none of it is used.');
+    expect(region).toHaveTextContent('Until accepted, none of its checks are used.');
     await userEvent.click(tick);
-    expect(on.onAccept).toHaveBeenCalledWith([{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }]);
+    expect(on.onAccept).toHaveBeenCalledWith([{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }]);
   });
 
-  it('says what a changed landed declaration stops, and that integration goes on under its last accepted blob', () => {
-    const changed = (purposes: ('landed' | 'integration')[]) => ({
-      engine: {
-        declaration: {
-          line: 'main',
-          commit: 'aa11bb2c3d4e',
-          blob: 'ab12cd34ef56',
-          text: 'gates: []\n',
-          acceptances: purposes.map((purpose) => ({ purpose, standing: 'changed', said: 'The driver says so.' })),
-        },
-      },
+  it('says that a changed declaration leaves landing and integration under the checks last accepted', () => {
+    show({
+      draft: draftOf({ preset: 'integrated' }),
+      mix: { engine: { declaration: { line: 'main', commit: 'aa11bb2c3d4e', blob: 'ab12cd34ef56', text: 'gates: []\n', acceptance: { standing: 'changed', said: 'The driver says so.' } } } },
     });
-    show({ draft: draftOf({ preset: 'integrated' }), mix: changed(['landed', 'integration']) });
-    const region = screen.getByRole('region', { name: 'Acceptances' });
-    expect(region).toHaveTextContent('Changed since you accepted it. Changed landed gates stop verification until you accept them.');
-    expect(region).toHaveTextContent('Changed since you accepted it. Integration goes on under its last accepted blob until you accept this one.');
+    expect(screen.getByRole('region', { name: 'Acceptances' }))
+      .toHaveTextContent('Changed since you accepted it. Landing and integration go on under the checks you last accepted until you accept these.');
   });
 
   it('says a tick the page cleared because the declaration changed, with its reason', () => {
     show({
       draft: draftOf({
         preset: 'integrated',
-        cleared: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
+        cleared: [{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
       }),
     });
-    expect(screen.getByRole('status')).toHaveTextContent('engine: the declaration changed to blob 3b18e51 at main since you chose Accept for integration, so the choice was cleared.');
+    expect(screen.getByRole('status')).toHaveTextContent('engine: the declaration changed at main since you chose to accept it, so the choice was cleared.');
   });
 
   it('keeps the last plan marked updating while a plan is read, and offers no Apply until it has been', () => {
@@ -199,7 +192,7 @@ describe('Set up…, the review', () => {
     screen.getByRole('button', { name: '← Back to the choices' }).focus();
     await userEvent.keyboard('{Enter}');
     expect(on.onBack).toHaveBeenCalledTimes(1);
-    screen.getByRole('checkbox', { name: 'Accept for integration' }).focus();
+    screen.getByRole('checkbox', { name: 'Accept these checks' }).focus();
     await userEvent.keyboard(' ');
     expect(on.onAccept).toHaveBeenCalledTimes(1);
     screen.getByRole('button', { name: 'Apply to 1 repository' }).focus();

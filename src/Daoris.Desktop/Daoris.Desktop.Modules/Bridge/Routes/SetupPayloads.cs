@@ -12,7 +12,7 @@ public sealed record PlacePlanRead(
     string? Builds = null, bool Drive = false, long? AtOnce = null, long? Pilot = null, bool Said = false, string? Room = null, string? Purpose = null);
 
 /// <summary>One acceptance a place's apply makes.</summary>
-public sealed record PlaceAcceptSent(string? Repository, string? Purpose);
+public sealed record PlaceAcceptSent(string? Repository);
 
 /// <summary>
 /// A place's apply: the plan's own asks, its <c>Digest</c> and the acceptances chosen. <c>Repository</c> is read only to be refused:

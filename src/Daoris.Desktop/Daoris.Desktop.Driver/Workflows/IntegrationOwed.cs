@@ -58,7 +58,7 @@ public sealed class IntegrationOwed
         var byMode = new List<DeclarationOwed>();
         foreach (var read in _held)
         {
-            var state = StateOf(config, read);
+            var state = StandingOf(config, read.Repository, read.Workspace, read.Line, read.Blob, read.Declares);
             if (state is not (IntegrationAcceptance.Unaccepted or IntegrationAcceptance.Changed)) continue;
             var row = new DeclarationOwed(read.Repository, read.Workspace, read.Line, read.Blob, state, read.Since) { Root = read.Root };
             (AccessRules.Resolve(config, read.Repository, read.Workspace).Full ? byMode : owed).Add(row);
@@ -69,18 +69,18 @@ public sealed class IntegrationOwed
         return (Ordered(owed), Ordered(byMode));
     }
 
-    /// <summary>The state of the one acceptance against a read: the integration's where the line declares one, else the landed route's where it verifies.</summary>
-    private static string StateOf(DriverConfig config, Read read)
+    /// <summary>The state of the one acceptance of <paramref name="blob"/>: the integration's where the line declares one, else the landed route's where it verifies.</summary>
+    internal static string StandingOf(DriverConfig config, string repository, string workspace, string line, string blob, bool declares)
     {
-        if (read.Declares
-            && IntegrationAcceptance.StateOf(IntegrationAcceptance.Of(config, read.Repository), read.Blob) is var held
+        if (declares
+            && IntegrationAcceptance.StateOf(IntegrationAcceptance.Of(config, repository), blob) is var held
             and (IntegrationAcceptance.Unaccepted or IntegrationAcceptance.Changed))
         {
             return held;
         }
 
-        var route = WorkflowSelection.ResolveLanded(config, read.Repository, read.Workspace);
-        return LandedGates.StateOf(route, new LandedTip(read.Line, "", read.Blob)) is var landed and (LandedGates.Unaccepted or LandedGates.Changed)
+        var route = WorkflowSelection.ResolveLanded(config, repository, workspace);
+        return LandedGates.StateOf(route, new LandedTip(line, "", blob)) is var landed and (LandedGates.Unaccepted or LandedGates.Changed)
             ? landed
             : IntegrationAcceptance.Accepted;
     }

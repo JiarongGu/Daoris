@@ -41,7 +41,7 @@ public sealed class SetupRoutes(DriverContext context)
     }
 
     // A place's apply, the plan's press: the plan's payload and its `digest`, and `accept`, the
-    // acceptances chosen, each `{repository, purpose}`. It plans again and refuses `moved` where the digest differs, reads the tips against the
+    // acceptances chosen, each `{repository}`. It plans again and refuses `moved` where the digest differs, reads the tips against the
     // chosen blobs, writes every change and acceptance in one edit of driver.json, and asks each adoption quest last, keyed by the digest, its
     // receipt written before the first effect (`PlaceApplies`). A press of a digest that holds a receipt goes on from it. Answers `{ done, refused,
     // message, digest, operations }`, each operation `{ id, kind, repository, said, outcome, note, quest }`; a refusal is an answer, nothing written.
@@ -61,7 +61,7 @@ public sealed class SetupRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var digest = press.Digest ?? "";
         var ask = PlaceAskOf(press.Repositories, null, press.Preset, press.Opinion, press.Look, press.Adoption, press.Builds, press.Drive, press.AtOnce, press.Pilot, press.Room, press.Purpose);
-        IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
+        IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
         PlaceResult? made = null;
         var doors = new PlaceApplyDoors(

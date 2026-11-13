@@ -42,9 +42,9 @@ describe("a place's plan and apply", () => {
     const digest = 'b'.repeat(64);
     invoke.mockResolvedValueOnce({ done: false, refused: 'moved', message: 'the plan you read no longer holds', digest, operations: [] });
     const { result } = renderHook(() => usePlaceApply(), { wrapper });
-    const applied = await result.current.mutateAsync({ ...ASK, digest, accept: [{ repository: 'engine', purpose: 'integration' }] });
+    const applied = await result.current.mutateAsync({ ...ASK, digest, accept: [{ repository: 'engine' }] });
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'PLACE_APPLY', expect.objectContaining({
-      payload: { ...ASK, digest, accept: [{ repository: 'engine', purpose: 'integration' }] },
+      payload: { ...ASK, digest, accept: [{ repository: 'engine' }] },
     }));
     expect([applied.done, applied.refused]).toEqual([false, 'moved']);
   });

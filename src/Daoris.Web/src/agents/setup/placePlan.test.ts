@@ -89,8 +89,8 @@ const moved = (read: PlacePlanned, blob: string): PlacePlanned => ({
 });
 
 describe('the acceptances a plan offers, bound to what was read', () => {
-  it('carry the repository, purpose, line and blob of the declaration', () => {
-    expect(offered(integrated())).toEqual([{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }]);
+  it('carry the repository, line and blob of the declaration, one for every purpose it serves', () => {
+    expect(offered(integrated())).toEqual([{ repository: 'engine', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }]);
     expect(offered(plan(['engine']))).toEqual([]);
   });
 
@@ -103,16 +103,16 @@ describe('the acceptances a plan offers, bound to what was read', () => {
 
   it('clear a tick whose blob changed, saying which and what it is now; the others stand', () => {
     const read = integrated();
-    const ticks = [...offered(read), { repository: 'site', purpose: 'landed', line: 'main', blob: 'f00' }];
+    const ticks = [...offered(read), { repository: 'site', line: 'main', blob: 'f00' }];
     const after = reconcileTicks(ticks, moved(read, 'ffffffffffffffffffffffffffffffffffffffff'));
-    expect(after.accept).toEqual([{ repository: 'site', purpose: 'landed', line: 'main', blob: 'f00' }]);
-    expect(after.cleared).toEqual([{ repository: 'engine', purpose: 'integration', line: 'main', blob: 'ffffffffffffffffffffffffffffffffffffffff' }]);
+    expect(after.accept).toEqual([{ repository: 'site', line: 'main', blob: 'f00' }]);
+    expect(after.cleared).toEqual([{ repository: 'engine', line: 'main', blob: 'ffffffffffffffffffffffffffffffffffffffff' }]);
   });
 
   it('are sent only for the ones still offered at the blob ticked, without the identity the page keeps', () => {
     const read = integrated();
-    const ticks = [...offered(read), { repository: 'engine', purpose: 'landed', line: 'main', blob: 'x' }];
-    expect(acceptOf(ticks, read)).toEqual([{ repository: 'engine', purpose: 'integration' }]);
+    const ticks = [...offered(read), { repository: 'engine', line: 'main', blob: 'x' }];
+    expect(acceptOf(ticks, read)).toEqual([{ repository: 'engine' }]);
     expect(acceptOf(offered(read), moved(read, 'ffffffffffffffffffffffffffffffffffffffff'))).toEqual([]);
   });
 });

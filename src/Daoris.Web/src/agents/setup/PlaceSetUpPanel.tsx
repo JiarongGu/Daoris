@@ -59,7 +59,7 @@ export function PlaceSetUpPanel({ place, page, doorFor, onOpenQuest }: {
     if (!fresh || !plan || !ticked || ticked.length === 0) return;
     const held = reconcileTicks(ticked, plan);
     if (held.cleared.length === 0) return;
-    const again = (cleared ?? []).filter((was) => !held.cleared.some((one) => one.repository === was.repository && one.purpose === was.purpose));
+    const again = (cleared ?? []).filter((was) => !held.cleared.some((one) => one.repository === was.repository));
     change(id, { accept: held.accept, cleared: [...again, ...held.cleared] });
   }, [fresh, plan, ticked, cleared, id, change]);
   useEffect(() => setHolds({}), [id]);
