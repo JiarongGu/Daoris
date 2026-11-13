@@ -55,12 +55,20 @@ public sealed class TreeWalkStartsTests(ITestOutputHelper output) : LandedFixtur
     public async Task A_kept_read_of_a_tree_the_line_holds_by_content_asks_one_status_after_an_edit()
     {
         var (tree, trees) = await SquashedTreeAsync();
-        await WalkAsync(trees, tree);
+        var before = (await WalkAsync(trees, tree)).Work;
+        Assert.Equal(0, before?.Uncommitted);
         await File.WriteAllTextAsync(Path.Combine(tree, "edit.txt"), "edit\n");
 
-        var (work, starts) = await WalkAsync(trees, tree);
+        // The kept read trusts the tree's watcher, which delivers the edit a moment after it is written, so the reads before it are
+        // the kept one and ask nothing; the first to see the edit asks its one status.
+        (TreeWork? Work, string[][] Starts) seen = (before, []);
+        for (var attempt = 0; attempt < 100 && seen.Work?.Uncommitted is not > 0; attempt++)
+        {
+            await Task.Delay(100);
+            seen = await WalkAsync(trees, tree);
+        }
 
-        Assert.NotNull(work);
-        Assert.Equal(1, Asked(starts, "status"));
+        Assert.True(seen.Work?.Uncommitted > 0, "the kept read never saw the edit");
+        Assert.Equal(1, Asked(seen.Starts, "status"));
     }
 }
