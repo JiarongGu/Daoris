@@ -11,4 +11,6 @@ internal enum GitLibraryQuestion
 
     /// <summary>Two commits' changed names (<see cref="GitLibraryNames"/>).</summary>
     Names,
+
+    Revisions,
 }

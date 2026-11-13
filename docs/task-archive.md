@@ -10,6 +10,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **TOOLDEFS1** (service connector): Outcome: `McpListingBudgetTests` measures the connector's `tools/list` as served (characters and an estimated token count) against a listing budget and a per-tool budget; the descriptions and parameter text of the quest, opinion, brainstorm, question, channel, memory, search and other tools were cut to what an agent needs to choose and call them, every caller still listed every tool (34 tools, 52,247 to 41,776 characters, about 17,400 to 13,900 tokens). Claude Code's deferred tool loading stays off by D230's choice (its search step is a model round trip before the first move).
 
 ---
+## GITTICK1 — the look's repeated git reads (2026-11-14)
+
+> **GITTICK1** (driver): Outcome: `rev-parse --verify --quiet` of `HEAD` or a full ref name (with or without `^{commit}`) and a plain `rev-parse HEAD` are answered in process by the git library (`GitLibraryVerify`, parity on real git in the checkout and a linked tree), and the look holds one `GitFacts` table; a resume tick of `StartInSyncTickTests` fell from 71 git starts (23 and 48) to 48 (18 and 30), the 29 repeated `rev-parse` reads gone, and `TickGitBudget` holds a tick to its count. A tick-scoped cache of `HEAD` or a ref was rejected: a session's own commit moves them inside a tick, so the library's exact read replaced it. What is left is GITTICK2.
 
 ## CENSUSCOMPILE1 and CENSUSALONE1 — the census classes' time (2026-11-13)
 

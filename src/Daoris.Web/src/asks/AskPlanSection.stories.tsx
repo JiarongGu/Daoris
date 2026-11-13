@@ -23,11 +23,12 @@ const PLAN: AskPlan = {
       edges: [{ part: 'page', on: 'keel', kind: 'after', why: 'The page reads the contract the keel lands.' }],
       flags: [{ kind: 'claim-record', part: 'docs', text: '`docs` claims `TASKS.md`, a record: the integrator writes it from the part’s intents, so the claim is dropped.' }],
       releases: [
-        { deployable: 'media-web/settings-page', on: 'media-api/config-api', why: '`settings-page` calls what `config-api` owns.', source: 'code-read', evidence: 'media-web: src/settings/client.ts:10-24' },
-        { deployable: 'media-api/config-api', on: 'media-api/config-migration', why: '`config-api` reads `config-schema`, which `config-migration` migrates.', source: 'declaration', evidence: 'media-api: daoris.json' },
-        { deployable: 'media-web/docs-site', on: 'media-web/settings-page', why: 'The owner releases the page first.', source: 'policy', evidence: null },
+        { deployable: 'media-web/settings-page', on: 'media-api/config-api', why: '`settings-page` calls what `config-api` owns.', source: 'code-read', evidence: { repository: 'media-web', file: 'src/settings/client.ts', range: '10-24', blob: 'b7e1' }, waived: null, stale: true },
+        { deployable: 'media-api/config-api', on: 'media-api/config-migration', why: '`config-api` reads `config-schema`, which `config-migration` migrates.', source: 'declaration', evidence: { repository: 'media-api', file: 'daoris.json', range: '', blob: 'c93a' }, waived: null, stale: false },
+        { deployable: 'media-web/docs-site', on: 'media-web/settings-page', why: 'The owner releases the page first.', source: 'policy', evidence: null, waived: 'The docs site ships on its own schedule.', stale: false },
       ],
       questions: [{ key: 'contract:viewers', kind: 'open', text: 'Do viewers or only admins see candidate versions?', yes: 'Viewers see them.', blocks: 'The contract.', default: 'Admins only.' }],
+      answers: [{ key: 'target:release-definition', words: 'The backend line’s second definition.', at: '2026-11-14T09:00:00Z' }],
     },
     {
       scope: 'page', revision: 1, depth: 2, why: 'The page is two splits of my own.',
@@ -35,7 +36,7 @@ const PLAN: AskPlan = {
         { id: 'page.form', repository: 'media-web', quest: 'c41e77', outcome: 'The field is editable.', lanes: ['web'], claims: [] },
         { id: 'page.read', repository: 'media-web', quest: 'd9a0b2', outcome: 'The field is listed read-only.', lanes: ['web'], claims: [] },
       ],
-      edges: [], flags: [], releases: [], questions: [],
+      edges: [], flags: [], releases: [], questions: [], answers: [],
     },
   ],
   team: [
@@ -60,6 +61,8 @@ type Story = StoryObj<typeof meta>;
 
 /** An ask's own plan with an order and a flag, and a worker's split of one part below it. */
 export const Plan: Story = {};
+
+export const PlanSettling: Story = { args: { onSettle: (_settle, answered) => answered.done() } };
 
 /** The same in 中文. */
 export const PlanChinese: Story = { decorators: [chinese] };

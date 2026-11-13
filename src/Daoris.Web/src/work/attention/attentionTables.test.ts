@@ -9,7 +9,7 @@ describe('the kinds of What needs you', () => {
       parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', unclosed: 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
       permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', left: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding', 'second-check': 'word',
+      'hand-over': 'word', unanswerable: 'word', left: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding', 'second-check': 'word', 'plan-question': 'word',
     });
   });
 
@@ -23,7 +23,7 @@ describe('the kinds of What needs you', () => {
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', unclosed: 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions', 'second-check': null,
+      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions', 'second-check': null, 'plan-question': 'quests',
     });
   });
 });

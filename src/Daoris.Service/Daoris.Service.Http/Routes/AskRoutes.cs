@@ -23,8 +23,14 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
         if (host.Mode != ServiceMode.Local) return;
 
         routes.Map<ListAsks, AskResponse[]>(async (request, http, ct) =>
-            (await Service.Asks.ListAsync(request.Workspace, request.IncludeClosed ?? false, ct))
-            .Select(a => AskAnswers.ToAsk(a, Service.Files, host.MachineLocal(http))).ToArray());
+        {
+            var listed = await Service.Asks.ListAsync(request.Workspace, request.IncludeClosed ?? false, ct);
+            var open = await Service.Teams.Settling.OpenQuestionsAsync(listed.Where(a => a.State != AskState.Closed).Select(a => a.Id), ct);
+            return listed.Select(a => AskAnswers.ToAsk(a, Service.Files, host.MachineLocal(http)) with
+            {
+                PlanQuestions = open.TryGetValue(a.Id, out var questions) ? TeamAnswers.Questions(questions) : null,
+            }).ToArray();
+        });
         routes.Map<PostAsk, AskActionResponse>(AskAsync);
         routes.Map<ChooseAskReview, AskActionResponse>(async (request, http, ct) =>
             _answers.Moved(http, await Service.Asks.ChooseReviewAsync(request.Id, request.Choice, request.Words, DateTimeOffset.UtcNow, ct)));
@@ -34,14 +40,12 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
             _answers.Moved(http, await Service.Asks.ChooseWorkflowAsync(request.Id, request.Kind, request.Workflow, request.Words, DateTimeOffset.UtcNow, ct)));
         routes.Map<ReadAsk, AskResponse>(async (request, http, ct) =>
             await Service.Asks.FindAsync(request.Id, ct) is { } ask
-                ? AskAnswers.ToAsk(ask, Service.Files, host.MachineLocal(http))
+                ? AskAnswers.ToAsk(ask, Service.Files, host.MachineLocal(http)) with
+                {
+                    PlanQuestions = ask.State == AskState.Closed ? null
+                        : (await Service.Teams.Settling.OpenQuestionsAsync([ask.Id], ct)).TryGetValue(ask.Id, out var open) ? TeamAnswers.Questions(open) : null,
+                }
                 : Refusal.NotFound($"No ask `#{request.Id.TrimStart('#')}`."));
-        routes.Map<ReadAskPlan, AskPlanResponse>(async (request, _, ct) =>
-        {
-            var (plans, rows) = await Service.Teams.ReadAsync(request.Id, ct);
-            var (members, decisions) = await Service.Teams.TeamAsync(request.Id, ct);
-            return TeamAnswers.Plan(request.Id, plans, rows, members, decisions);
-        });
         routes.Map<ReadAskChannel, ChannelResponse>(ReadChannelAsync);
         routes.Map<ListElsewhereAsks, ElsewhereAsksResponse>(async (_, _, ct) =>
             new ElsewhereAsksResponse([.. (await Service.Channel.ElsewhereAsync(ct)).Select(a =>

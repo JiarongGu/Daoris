@@ -17,10 +17,12 @@ const RAW = {
       edges: [{ part: 'page', on: 'api', kind: 'after', why: 'it reads the field' }],
       flags: [{ kind: 'claim-record', part: 'api', text: 'api claims TASKS.md, a record' }],
       releases: [
-        { deployable: 'backend/mirror-api', on: 'schema/config-migration', why: 'it mirrors the schema', source: 'declaration', evidence: 'backend: daoris.json' },
+        { deployable: 'backend/mirror-api', on: 'schema/config-migration', why: 'it mirrors the schema', source: 'declaration', evidence: { repository: 'backend', file: 'daoris.json', range: '', blob: 'b2' }, stale: true },
         { deployable: 'frontend/web-app', on: 'backend/mirror-api', why: 'the owner releases the API first', source: 'policy', evidence: null },
+        { deployable: 'frontend/docs', on: 'frontend/web-app', why: 'docs follow the app', source: 'person', evidence: null, waived: 'docs ship alone' },
       ],
       questions: [{ key: 'contract:viewers', kind: 'open', text: 'Viewers or admins?', yes: 'viewers see candidates', blocks: 'the contract', default: 'admins only' }],
+      answers: [{ key: 'target:definition', words: 'the second one', at: '2026-11-14T09:00:00Z' }],
     },
     { scope: 'api', revision: 1, depth: 2, why: 'three splits of my own', parts: [{ id: 'api.db', repository: 'media', quest: 'q3', outcome: 'the column exists' }], edges: [], flags: [] },
   ],
@@ -51,8 +53,8 @@ describe('an ask’s plan', () => {
   });
 
   it.each([
-    ['en', 'backend/mirror-api is released after schema/config-migration', 'declaration', 'read in backend: daoris.json', 'an order, no evidence', 'Questions for you', 'Viewers or admins?', 'If not answered: admins only'],
-    ['zh', 'backend/mirror-api 在 schema/config-migration 之后发布', '声明', '读自 backend: daoris.json', '仅为指定顺序，无证据', '需要你回答', 'Viewers or admins?', '不回答则：admins only'],
+    ['en', 'backend/mirror-api is released after schema/config-migration', 'declaration', 'read in backend daoris.json', 'an order, no evidence', 'Questions for you', 'Viewers or admins?', 'If not answered: admins only'],
+    ['zh', 'backend/mirror-api 在 schema/config-migration 之后发布', '声明', '读自 backend daoris.json', '仅为指定顺序，无证据', '需要你回答', 'Viewers or admins?', '不回答则：admins only'],
   ])('shows each release order with its source and evidence and the one queue of questions, in %s', async (language, order, source, evidence, policy, queue, question, fallback) => {
     await i18n.changeLanguage(language);
     render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
@@ -64,6 +66,53 @@ describe('an ask’s plan', () => {
     expect(screen.getByText(queue)).toBeTruthy();
     expect(screen.getAllByText(question)).toHaveLength(1);
     expect(screen.getByText(fallback)).toBeTruthy();
+  });
+
+  it.each([
+    ['en', 'evidence changed', 'waived', 'Waived by you: docs ship alone', 'You answered target:definition', 'the second one'],
+    ['zh', '依据已变更', '已豁免', '你已豁免：docs ship alone', '你已回答 target:definition', 'the second one'],
+  ])('marks a stale order, a waived one with its reason and what the person answered, in %s', async (language, stale, waived, reason, answered, words) => {
+    await i18n.changeLanguage(language);
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+
+    expect(screen.getByText(stale)).toBeTruthy();
+    expect(screen.getByText(waived)).toBeTruthy();
+    expect(screen.getByText(reason)).toBeTruthy();
+    expect(screen.getByText(new RegExp(answered))).toBeTruthy();
+    expect(screen.getByText(words)).toBeTruthy();
+  });
+
+  it('offers no answer and no waiver without a door', () => {
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Waive this order' })).toBeNull();
+  });
+
+  it('gives the person’s words for a question by its key, and keeps them with the service’s sentence where it refuses', async () => {
+    const onSettle = vi.fn((_settle, answered) => answered.refused('No open question `contract:viewers`.'));
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} onSettle={onSettle} />);
+    const press = screen.getByRole('button', { name: 'Answer' });
+    expect((press as HTMLButtonElement).disabled).toBe(true);
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Your answer' }), 'Admins only.');
+    await userEvent.click(press);
+
+    expect(onSettle).toHaveBeenCalledWith({ key: 'contract:viewers', words: 'Admins only.' }, expect.anything());
+    expect(screen.getByRole('alert').textContent).toContain('No open question');
+    expect((screen.getByRole('textbox', { name: 'Your answer' }) as HTMLInputElement).value).toBe('Admins only.');
+  });
+
+  it('waives an order with the person’s reason', async () => {
+    const onSettle = vi.fn((_settle, answered) => answered.done());
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} onSettle={onSettle} />);
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Waive this order' })[0]!);
+    await userEvent.type(screen.getByRole('textbox', { name: 'Why this order is waived' }), 'additive change');
+    await userEvent.click(screen.getByRole('button', { name: 'Waive' }));
+
+    expect(onSettle).toHaveBeenCalledWith(
+      { deployable: 'backend/mirror-api', on: 'schema/config-migration', reason: 'additive change' }, expect.anything());
   });
 
   it.each([

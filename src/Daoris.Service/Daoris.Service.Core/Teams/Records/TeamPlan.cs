@@ -29,6 +29,12 @@ public sealed record TeamPlan(string Ask, string? Scope, int Revision, string? B
     /// <summary>What only a person can settle, asked once each.</summary>
     public IReadOnlyList<DeliveryQuestion> Questions { get; init; } = [];
 
+    /// <summary>What the person answered, each settling the question under its key; carried to every later revision, never written by a plan's writer.</summary>
+    public IReadOnlyList<DeliveryAnswer> Answers { get; init; } = [];
+
+    /// <summary>The release orders the person waived, with their reasons; carried to every later revision.</summary>
+    public IReadOnlyList<DeliveryWaiver> Waivers { get; init; } = [];
+
     /// <summary>What the judge found.</summary>
     public IReadOnlyList<TeamFlag> Flags { get; init; } = [];
 

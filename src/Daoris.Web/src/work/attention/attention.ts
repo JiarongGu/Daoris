@@ -17,6 +17,7 @@ import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
 import { acceptRunOf } from './attentionRun';
 import { workCutFor } from './attentionCounts';
+import { planQuestionDetail } from './planQuestionDetail';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
 /**
@@ -105,6 +106,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
   unanswerable: 'word',
+  // A question the ask's delivery plan asks that only the person can settle: nothing running is held by it, but a release waits.
+  'plan-question': 'word',
   left: 'word',
   review: 'ready',
 };
@@ -220,7 +223,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question',
   'left', 'review',
 ];
 
@@ -406,6 +409,14 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       return row.task ? { ...base, ...taskRead(row.task, questOf(row.task.work)?.title) } : { ...base, title: `#${row.id}` };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
+    case 'plan-question':
+      return {
+        ...base,
+        title: row.question?.text ?? row.id,
+        where: askWhere(row.ask ?? ''),
+        detail: row.question ? planQuestionDetail(row.question) : null,
+        ask: row.ask,
+      };
     case 'trust':
       return {
         ...base,
