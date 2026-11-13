@@ -45,7 +45,7 @@ function cliProblem(unpacked) {
 /**
  * Lay the doctrine tool out in an install: the tarball `npm pack` made of
  * `src/Daoris.Cli`, unpacked by the CLI's own tar reader into `<install>/app/cli/node_modules/daoris/`, and
- * `<install>/app/bin/` made empty for the programs laid out in it after. Both folders are staged beside and swapped in whole, so a
+ * `<install>/app/bin/` made empty for the programs laid out in it after (the command, the git doors, the partner's launcher: `layBinPrograms`). Both folders are staged beside and swapped in whole, so a
  * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one standing. Nothing is written under the home.
  * Fresh package and launcher folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries.
  *

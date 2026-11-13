@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-14 - A published install had no `daoris.exe`, so a repository's set-up could not run
+
+- **Symptom:** on the installed app a repository's set-up was not asked: "the doctrine tool cannot run here: no `daoris` on the PATH
+  Daoris's children start with". `app/bin/` held the git doors and the partner's launcher and no `daoris.exe`, though the publish
+  said it was publishing the command there.
+- **Root cause:** 3343729e0e laid the command into `app/bin/` before `layCli`, which makes that folder empty for the programs laid after
+  it (it swaps a staging folder in whole), so the command was wiped; the doors and the partner's launcher were laid after it and survived.
+- **Fix:** all three programs are published before the install is touched and laid by one function, `layBinPrograms`, after `layCli`.
+- **Verification:** `desktop-publish-bin-order.test.ts` lays the doctrine tool and then the programs over a fixture install and finds
+  the command, the three doors and the launcher; it failed (no `layBinPrograms`, the order living only in `main()`) and passes.
+  The rehearsal's `cliProblems` already holds a publish's `app/bin/` to the command.
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
 - **Symptom:** `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest (a go for a production
