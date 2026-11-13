@@ -22,6 +22,16 @@
       "summary": ""
     },
     {
+      "id": "Daoris.Adapters.Git",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Git",
+      "summary": ""
+    },
+    {
+      "id": "Daoris.Adapters.Git.Tests",
+      "path": "src/Daoris.Adapters/Daoris.Adapters.Git.Tests",
+      "summary": ""
+    },
+    {
       "id": "Daoris.Adapters.Machine",
       "path": "src/Daoris.Adapters/Daoris.Adapters.Machine",
       "summary": ""
@@ -234,6 +244,26 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Adapters.Git",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Git.Tests",
+      "to": "Daoris.Adapters.Git",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Git.Tests",
+      "to": "Daoris.Adapters.Machine",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Adapters.Git.Tests",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Adapters.Machine",
       "to": "Daoris.Ports",
       "kind": "project"
@@ -266,6 +296,11 @@
     {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Adapters.DesktopStore.Sqlite",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.App",
+      "to": "Daoris.Adapters.Git",
       "kind": "project"
     },
     {
@@ -310,6 +345,11 @@
     },
     {
       "from": "Daoris.Desktop.Driver.Host",
+      "to": "Daoris.Adapters.Git",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Host",
       "to": "Daoris.Adapters.Machine",
       "kind": "project"
     },
@@ -326,6 +366,11 @@
     {
       "from": "Daoris.Desktop.Driver.Rehearsals",
       "to": "Daoris.Adapters.DesktopStore.Sqlite",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Rehearsals",
+      "to": "Daoris.Adapters.Git",
       "kind": "project"
     },
     {
