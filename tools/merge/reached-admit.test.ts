@@ -2,12 +2,20 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { admissionFile, createAdmission, readState } from '../machine-admission.mjs';
 import { fixtureFolder } from './fixture-home.ts';
-import { groupIsHeavy, inPlace, WHOLE_SUITE_CLASSES } from './reached-admit.ts';
+import { groupIsHeavy, inPlace, WHOLE_SUITE_CLASSES, type Admission } from './reached-admit.ts';
 import { PassedClasses, unitId } from './class-reuse.ts';
 import { runPlan } from './reached-run.ts';
 import type { ReachedGroup, ReachedPlan, ReachedUnit } from './reached.ts';
+
+const machine = await import(
+  // @ts-expect-error — untyped workspace tooling
+  '../machine-admission.mjs') as {
+  createAdmission: (options: Record<string, unknown>) => Admission;
+  admissionFile: (home: string) => string;
+  readState: (file: string) => { holds: unknown[]; waits: unknown[] };
+};
+const { admissionFile, createAdmission, readState } = machine;
 
 const unit = (suite: string, name: string): ReachedUnit => ({ suite, kind: 'dotnet', unit: name, name, file: `${name}.cs` });
 const group = (suite: string, count: number, settings: string | null = null): ReachedGroup => ({ runner: 'dotnet', suite, settings, units: Array.from({ length: count }, (_, i) => unit(suite, `Class${i}`)) });
