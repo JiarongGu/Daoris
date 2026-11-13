@@ -165,7 +165,14 @@ finishes first and the whole set runs once.
     `daoris.gates.json`), and the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
     passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
-    after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
+    after, and the full stage (`--ci --stage`) remains the one that owes every gate. The full set (`--full`, `--full --beside`, and
+    a CI run's gates) replays what main already proved (`tools/merge/full-replay.ts`, `tools/merge-branch/full-set.mjs`): a gate whose
+    verdict key (the declared inputs it reaches, its command, the toolchain) has a standing pass is not run and says from which
+    tree and run; a Process half is run with every class a standing pass of its own key covers kept out of its run settings
+    (keyed by the files reaching the class, the command and the run settings text, the toolchain, in the store `reached` writes),
+    and each class its report shows passing is recorded; a half whose classes all stand passes unrun. A red and a flake never
+    replay, a `--rerun` and a nightly run never replay, and a half the CI narrowed by reach is left to that. The set's passing
+    halves satisfy their sweep, being as strict as a whole run. The rehearsals replay by their inputs in the reach table. A merge is fast and never blocked by a red that is
     main's: a gate declaring `reuse` (`reached`, `censuses`) replays a standing pass whose reaching inputs, command and toolchain are
     unchanged (the verdict's `key`, in the one store `local/gate-verdicts.json`, under the merge tool's one reach table, whose digest
     the key holds); a failure main already stands in, the same test under the same signature (its open findings, its failing verdicts

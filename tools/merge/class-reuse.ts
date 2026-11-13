@@ -50,7 +50,6 @@ export class PassedClasses {
     return (this.passes[id] ?? []).some((each) => each.key === key);
   }
 
-  /** The pass of this key, with the run (a commit) that gave it where one was said. */
   standing(id: string, key: string): Pass | undefined {
     return (this.passes[id] ?? []).find((each) => each.key === key);
   }

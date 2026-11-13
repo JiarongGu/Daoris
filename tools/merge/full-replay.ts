@@ -24,8 +24,8 @@ export function planClasses<U extends Unit>(units: U[], context: KeyContext, sto
 export const classPass = (trx: string): Set<string> => passedClasses(trx);
 
 /**
- * Records a pass for each unit the trx shows passing, under the key it was planned with. A flake records none (it is run again,
- * never replayed), a failure only its classes that passed. Returns how many were recorded.
+ * Records a pass for each unit the trx shows passing, under its planned key. A flake records none, a failure only
+ * its classes that passed. Returns how many were recorded.
  */
 export function recordPasses({ units, keys, trx, verdict, store, at, run }: {
   units: readonly Unit[]; keys: ReadonlyMap<string, string>; trx: string; verdict: string; store: PassedClasses; at: string; run: string;

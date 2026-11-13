@@ -18,8 +18,7 @@
  *   node tools/reached-checks.mjs [--plan] [--unbounded] [--paths <path>[,<path>…]]
  *
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
- * would run and runs nothing. With nothing changed there is nothing reached, and it says so. The passes are kept in
- * `local/reached-classes.json` of the main checkout, or the file `DAORIS_REACHED_STORE` names.
+ * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
  *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
@@ -41,7 +40,6 @@ export function changedPaths(root) {
   return diff.stdout.split('\0').filter(Boolean);
 }
 
-/** The file the class passes are kept in. */
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */

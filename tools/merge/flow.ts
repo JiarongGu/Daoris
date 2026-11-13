@@ -42,11 +42,10 @@ export type FlowDeps = {
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
-  /** A full set replays every gate whose key has a standing pass, not only the gates that declare `reuse`. */
   replayAll?: boolean;
 };
 
-/** A gate's run cut down to the classes no pass covers (`run` null: every class has a pass, so nothing runs), with what was replayed. */
+/** A gate's run cut down to the classes no pass covers (`run` null: every class has one, so nothing runs), with the replay. */
 export type Narrowed = { run: string | null; replay: ClassReplay };
 
 /** Build servers a test step leaves by design, which the next gate's build reuses: not a leftover to stop. */
@@ -67,7 +66,6 @@ const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string): Ve
 
 export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, trees, step, noBuild, narrow }: {
   where: string; gate: PlanGate; logs: string; beside: Record<string, unknown>; tree: string | null; trees: StepTrees | null; step: unknown; noBuild: boolean;
-  /** Asked once the gate is to run; the key and the verdict stay the declared gate's. */
   narrow?: (gate: PlanGate) => Narrowed | null;
 }): Promise<GateResult> {
   const key = tree ? keyFor(deps, where, gate, tree) : null;
