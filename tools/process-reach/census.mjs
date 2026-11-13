@@ -94,9 +94,14 @@ export function censusOf(half, files, read) {
   const project = projectOf(half.project, files, read);
   const projectFiles = files.filter((file) => inFolder(file, half.project) && file.endsWith('.cs'));
 
-  // The test project: each file's types, names, strings and extension methods, read once.
+  // The test project: each file's types, names, strings and extension methods, read once. A file it compiles in by link from
+  // another project gives its constants first, so the trait names a shared `Category.cs` declares read as they do there.
   const parsed = new Map();
   const constants = new Map();
+  for (const file of (project?.links ?? []).filter((path) => path.endsWith('.cs') && files.includes(path) && !inFolder(path, half.project))) {
+    const text = read(file);
+    for (const [key, value] of constantsIn(text, typesIn(text).types)) constants.set(key, value);
+  }
   for (const file of projectFiles) {
     const text = read(file);
     const { namespace, types, code, literal, extensions } = typesIn(text);
