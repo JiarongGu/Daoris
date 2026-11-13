@@ -246,7 +246,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
     that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
     creates nothing; a verdict past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a receiver holding an open, taken
-    or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
+    or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing; a part of the ask's
+    plan (`Service/Teams/`, `team_plan`) is the one exception, published under its own key `<ask>/<part>/1`, so two parts to one
+    repository and lane are two quests and a retried plan returns the quests it made (TEAMWORK1d). Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
     never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)

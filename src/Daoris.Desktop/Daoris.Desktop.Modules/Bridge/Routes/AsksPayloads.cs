@@ -3,6 +3,9 @@ namespace Daoris.Desktop;
 /// <summary>An ask's channel as the person reads it; <c>Entry</c> reads as that entry would, <c>Since</c> only the items after a moment.</summary>
 public sealed record ChannelReadRequest(string? Ask, string? Entry, string? Since);
 
+/// <summary>An ask's plan as the page reads it: its parts, each with the quest it became.</summary>
+public sealed record AskPlanRead(string? Ask);
+
 /// <summary>A post to an ask's channel; <c>Said</c> asks for the verb's words, <c>Ordinary</c> its level.</summary>
 public sealed record ChannelPostPress(string? Ask, string? Text, string? To, string? Re, bool Said = false, bool Ordinary = false);
 

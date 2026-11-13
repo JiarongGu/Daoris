@@ -22,12 +22,13 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 |---|---|
 | `Service/Asks/` | The channel: its store (messages, read marks, acknowledgments, cursors), `ChannelDesk` (post, read, receipts, Daoris's lines, the judge), `ChannelParts` (a line's own channel and posts to one part, never synced), `LineChannel`, `TeammateAskChannel`, the members (`ChannelMembers`, `ChannelMemberRoll`), the bounds and refusals (`ChannelTerms.cs`), `HistoryDesk` |
 | `Service/Sessions/`, `Service/Quests/` | The sender rule (`Senders`, twinned in the driver and the web, held to `fixtures/senders.json`), the one door for solicited answers (`SolicitedAnswers`), the helper's, partner's, brainstorm's and meeting's desks; the quest exchange and its addresses |
-| `Mcp/` | `channel_post` and `channel_read`; every tool's class (`ToolClasses`, held by a census) |
+| `Service/Teams/` | An ask's plan: its parts (each a quest under `(ask, part)`), edges and packs, written whole through one door and judged, never refused; a worker's split of its own part is a plan one level down (depth 2) |
+| `Mcp/` | `channel_post` and `channel_read`; `team_plan`, the plan door; every tool's class (`ToolClasses`, held by a census) |
 | `Driver/WorkOrders/` | `Exchanges.Of`, delivery to running parts (`ChannelReach`), the terminal's channel verb and its member forms, *At work*'s reading, the members' look |
 | `Driver/Participants/`, `Driver/Loop/` | Helpers, partners and opinions: their admission, waits, person acts and runs; brainstorms and meetings at the look; the routing line (`RoutingStanding`) |
 | `Driver/Course/` | The answers-alone count and its hold |
 | `Modules/` | *What needs you*'s judge (`AttentionStateSlice`, `NeedsAPerson`), the steward desk, the join's and the members' routes |
-| `Web/work/` (`conversation/`, `pieces/`, `team/`, `atWork/`), `Web/asks/`, `Web/notifications/StewardLine.tsx` | The composer's levels, the sender chip and exchange cards; the Pieces section; *Co-workers*; *At work* and *Waiting on*; an ask's channel and a teammate's; the steward's line |
+| `Web/work/` (`conversation/`, `pieces/`, `team/`, `atWork/`), `Web/asks/`, `Web/notifications/StewardLine.tsx` | The composer's levels, the sender chip and exchange cards; the Pieces section; *Co-workers*; *At work* and *Waiting on*; an ask's channel and a teammate's, and its plan section (`AskPlanSection`: parts with their quests, edges, flags, a worker's split below); the steward's line |
 
 The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SKILL.md`; it also says what the person sees of an
 agent's part (the sender marks, the wait counted once, a line's channel, the steward desk's history).

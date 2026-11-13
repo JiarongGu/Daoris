@@ -37,6 +37,17 @@ public sealed class AsksRoutes(DriverLoop loop)
     }
 
     /// <summary>
+    /// An ask's plan as the person reads it: the lead's, Ask Daoris's or a hand's parts with the quest each is, the edges between them,
+    /// what the judge found, and each split a worker made of its own part. Moves nothing; none where no plan was written.
+    /// </summary>
+    [DriverRoute("ASK_PLAN", PipeClass.Open)]
+    private async Task<object?> AskPlanAsync(AskPlanRead press, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        return await service.AskPlanAsync(Asked(press.Ask), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// The person's post: their words, to everyone or one of the ask's repositories (<c>to</c>), answering a message (<c>re</c>)
     /// or not. Their words, so every session on the ask reads them. Answers <c>posted</c> with the message kept, or
     /// the service's code where it refused. The channel sits under the asks' key, which it declares.

@@ -1,0 +1,15 @@
+{
+  "asks.plan.title": "Plan",
+  "asks.plan.own": "Plan, revision {{revision}}",
+  "asks.plan.split": "Split of {{part}}, revision {{revision}}",
+  "asks.plan.depth": "level {{count}}",
+  "asks.plan.quest": "Quest #{{id}}",
+  "asks.plan.noQuest": "No quest yet",
+  "asks.plan.after": "{{part}} builds on {{on}}",
+  "asks.plan.orders": "{{part}} lands after {{on}}",
+  "asks.plan.flag.cycle": "Circle",
+  "asks.plan.flag.missing-reference": "Missing part",
+  "asks.plan.flag.claim-record": "Record claimed",
+  "asks.plan.flag.claim-generated": "Generated file claimed",
+  "asks.plan.flag.claim-overlap": "Shared path"
+}
