@@ -233,7 +233,7 @@ test('a gate whose failure was read whole fails the merge under a finding of mai
   assert.match(settled.lines.join('\n'), /web-rules: a finding of main's names no test, so it excuses none of its failures/);
 });
 
-const plain = { name: 'deployment', run: 'npm run rehearse:deploy' };
+const plain = { name: 'deployment', run: 'npm run rehearse:deploy', reuse: '' };
 const askNarrowed = (h: ReturnType<typeof harness>, narrow: NonNullable<Parameters<typeof runOne>[1]['narrow']>) => runOne(h.deps, {
   where: h.dir, gate: plain, logs: join(h.dir, 'logs'), beside: {}, tree: 'T2', trees: null, step: undefined, noBuild: false, narrow,
 });

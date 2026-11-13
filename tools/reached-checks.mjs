@@ -28,17 +28,11 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { verdictsHome } from './merge-branch.mjs';
-import { TS_SUITES, census, treeOf, tsReaches, unitReaches } from './test-map.mjs';
-import { pathReach } from './process-reach.mjs';
+import { keyContextOf, storeFile as storeIn } from './merge-branch/full-set.mjs';
 import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
-import { reuseContext } from './merge/reached-reuse.ts';
 import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
-import { toolchainOf } from './merge/flow-deps.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
 import { passesOf, withReport } from './merge/reached-reports.ts';
-
-/** The census's readers the key of a reached class asks (`merge/reached-reuse.ts` takes them, being typed). */
-const READERS = { tsSuites: TS_SUITES, tsReaches, unitReaches, pathReach };
 
 /** The paths the checkout changes against HEAD: staged, unstaged, a merge's. */
 export function changedPaths(root) {
@@ -48,18 +42,13 @@ export function changedPaths(root) {
 }
 
 /** The file the class passes are kept in. */
-export const storeFile = (root) => process.env.DAORIS_REACHED_STORE || join(verdictsHome(root), 'local', 'reached-classes.json');
+export const storeFile = (root) => storeIn(verdictsHome(root));
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
 export function planFor(root, paths, store, { bounds = {} } = {}) {
   if (paths.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map() };
-  const { files, read } = treeOf(root);
-  const map = census(files, read);
-  const gatesText = read('daoris.gates.json');
-  const toolchain = toolchainOf();
-  const gates = JSON.parse(gatesText).gates ?? [];
+  const { map, gates, gatesText, context } = keyContextOf(root);
   const processSuites = processSuitesOf(gates);
-  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS });
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
   const reached = map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
   const { units, night } = unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });

@@ -73,9 +73,10 @@ const npmCi = (where: string, folder: string): Promise<{ ok: boolean; note: stri
 });
 
 /** The deps of one run in the checkout `root`, whose verdict store is `home`'s, with a build ledger of its own. */
-export function flowDepsOf(seams: Seams, root: string, home: string, kind: string | null): FlowDeps {
+export function flowDepsOf(seams: Seams, root: string, home: string, kind: string | null, replayAll = false): FlowDeps {
   const lanes = seams.lanesOf(root);
   return {
+    replayAll,
     timeoutMs: (gate) => budgetMs(gate, kind),
     lastSlowest: (name) => readRecords(join(home, MERGE_RECORD)).reverse().flatMap((record) => record.gates.filter((each) => each.name === name && each.slowest.length)).at(0)?.slowest ?? [],
     runGate: seams.runGate,
