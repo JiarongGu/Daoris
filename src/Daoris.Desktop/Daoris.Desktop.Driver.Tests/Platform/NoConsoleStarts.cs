@@ -25,6 +25,8 @@ internal static class NoConsoleStarts
     {
         ["Daoris.Desktop/Daoris.Desktop.Driver/Workplace/GitDoors.cs"] =
             "the door is git's console child, and its ssh speaks git's protocol over the stdio git handed it",
+        ["Daoris.Desktop/Daoris.Desktop.Driver/Platform/CommandLauncher.cs"] =
+            "the install's command runs the program in the terminal it was run in, which writes to that terminal's own console",
         ["Daoris.Desktop/Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] =
             "the harness speaks its protocol over the stdio the launcher was handed, on the console the launcher made with no window",
         ["Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessActions.cs"] =

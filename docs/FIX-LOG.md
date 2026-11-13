@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
+
+- **Symptom:** `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest (a go for a production
+  release reached Ask Daoris without its steps and the limit "do not release it to everyone"); and `daoris ask --to <repo> --require
+  "<words>" "<check>"` answered `MISSING_PAYLOAD_VALUE` ("Missing required payload value 'quote'") for every pair of words.
+- **Root cause:** the install's `daoris` was `daoris.cmd`, a batch file, whose `%*` ends at the first line break, so the program was
+  started with the first line of the words and nothing said so (ONEWAY1ai, D124 §1.2). Separately, the terminal sent each requirement
+  to the `ASK_NEW` route serialized as the wire record (`Quote`, `Check`) while the pipe binds `AskRequirementPress` by its camelCase
+  names (`quote`, `check`) (dd823a6d19 sent them, 5a496e28e5 made the route bind them).
+- **Fix:** `daoris.exe` (`Daoris.Desktop.Command`) starts the desktop's program with each argument whole, in place of both launcher
+  files (D291); `AskNewCommand.Payload` sends `{ quote, check }`.
+- **Verification:** `CommandLauncherProcessTests` runs the built command in front of a fixture program with line breaks, quotes, an
+  empty argument and non-ASCII words and reads every argument back whole; `shellword.test.ts` types the same through cmd and PowerShell
+  against the published command; `FreeWordsLineBreakTests` holds say, reword, helper, ask (words, requirements, through) and quest
+  verbs to keeping their line breaks; `PersonVerbRoutesTests.A_new_ask_with_a_requirement_reaches_the_route_with_its_words_whole`
+  failed with `Missing required payload value 'quote'` and passes.
+
 ## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
 
 - **Symptom:** a run whose branch was already landed and pushed got a second Accept on a merge of its remote line, committed by the

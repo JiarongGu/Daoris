@@ -4,7 +4,7 @@
   "tiers": {
     "needs": {
       "git": ["src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Ports/Git/", "src/Daoris.Testing/Git/"],
-      "process": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Ports/Processes/"],
+      "process": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/", "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Ports/Processes/"],
       "harness": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/", "src/Daoris.Ports/Agents/"],
       "browser": ["src/Daoris.Ports/Browser/", "src/Daoris.Desktop/Daoris.Desktop.Modules/Windows/"],
       "network": ["src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/"],
@@ -129,7 +129,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Service/Daoris.Service.slnx",
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Service/Daoris.Service.slnx",
         "src/Daoris.Service/Directory.Build.props", "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md",
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
         "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Service/Daoris.Service.Tests/fixtures/", "src/Daoris.Web/.gitignore",
@@ -147,7 +147,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules/", "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/",
-        "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/",
+        "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/", "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/",
         "src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs", "src/Daoris.Service/Daoris.Service.Tests/fixtures/",
         "src/Daoris.Web/.gitignore", "src/Daoris.Web/README.md", "src/Daoris.Web/index.html", "src/Daoris.Web/package-lock.json",
         "src/Daoris.Web/package.json", "src/Daoris.Web/playwright.config.ts", "src/Daoris.Web/tsconfig.json",
@@ -169,7 +169,7 @@
         "src/Daoris.Desktop/process.runsettings", "src/Daoris.Desktop/Daoris.Desktop.Driver/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs", "tools/machine-admission.mjs",
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs", "tools/machine-admission.mjs",
         "tools/machine-admission.test.mjs"
       ] },
     { "name": "driver-rehearsals", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/process.runsettings",
@@ -192,7 +192,7 @@
         "src/Daoris.Desktop/git.process.runsettings", "src/Daoris.Desktop/Daoris.Desktop.Driver/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
       ] },
     { "name": "driver-process-git-pinned", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.pinned.process.runsettings",
       "paths": [
@@ -201,7 +201,7 @@
         "src/Daoris.Desktop/git.pinned.process.runsettings", "src/Daoris.Desktop/Daoris.Desktop.Driver/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
       ] },
     { "name": "modules-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --settings src/Daoris.Desktop/process.runsettings",
       "paths": [
@@ -212,7 +212,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/", "src/Daoris.Desktop/Daoris.Desktop.GitDoor/",
         "src/Daoris.Desktop/Daoris.Desktop.Launcher/", "src/Daoris.Desktop/Daoris.Desktop.Modules/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
       ] },
     { "name": "web", "run": "npm run test:web:e2e", "clock": true,
       "paths": [
@@ -258,7 +258,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Desktop/Daoris.Desktop.Launcher/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
-        "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Service/Daoris.Service.slnx",
+        "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "src/Daoris.Service/Daoris.Service.slnx",
         "src/Daoris.Service/Directory.Build.props", "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md",
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
         "src/Daoris.Service/Daoris.Service.Shared/", "tools/cdp.mjs", "tools/ci-background.mjs", "tools/deployment-rehearsal.mjs",

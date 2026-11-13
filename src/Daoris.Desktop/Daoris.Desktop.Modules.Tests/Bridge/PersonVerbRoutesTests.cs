@@ -83,6 +83,26 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         Assert.All(standIn.Heard, heard => Assert.Equal(Key, heard.Key));
     }
 
+    /// <summary>🔴 <c>ask --to &lt;repo&gt; --require</c> reaches the route as the terminal sends it, its words' line breaks kept.</summary>
+    [Fact]
+    public async Task A_new_ask_with_a_requirement_reaches_the_route_with_its_words_whole()
+    {
+        var standIn = new KeyRecording(request => request.RequestUri!.AbsolutePath == "/api/registry"
+            ? "[]"
+            : """{"message":"Asked.","askId":"a1","questId":"q1"}""");
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(standIn), personKey: Key));
+        var ask = new AskNew("default", "fix the stall\nand say so", To: "engine",
+            Requirements: [new Daoris.Contracts.Quests.QuestRequirementWire("merge it\nonce green", "it reaches its pull request")]);
+
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "ASK_NEW", AskNewCommand.Payload(ask));
+
+        Assert.Equal(0, answer.GetProperty("said").GetProperty("code").GetInt32());
+        var body = Assert.Single(standIn.Bodies, each => each.Contains("merge it", StringComparison.Ordinal));
+        Assert.Contains("merge it\\nonce green", body);
+        Assert.Contains("fix the stall\\nand say so", body);
+    }
+
     /// <summary>Not asked for its words, a press answers whether the verb succeeded and every line it said, never the terminal's shape.</summary>
     [Fact]
     public async Task A_press_not_asked_for_words_answers_done_and_the_message()
@@ -167,8 +187,11 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
     private sealed class KeyRecording(Func<HttpRequestMessage, string> answer) : HttpMessageHandler
     {
         private readonly List<(string Path, string? Key)> _heard = [];
+        private readonly List<string> _bodies = [];
 
         public IReadOnlyList<(string Path, string? Key)> Heard { get { lock (_heard) return [.. _heard]; } }
+
+        public IReadOnlyList<string> Bodies { get { lock (_heard) return [.. _bodies]; } }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
@@ -176,7 +199,8 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
             if (request.RequestUri!.AbsolutePath != "/api/registry")
             {
                 var key = request.Headers.TryGetValues(PersonHeader.Name, out var values) ? values.Single() : null;
-                lock (_heard) _heard.Add((request.RequestUri.AbsolutePath, key));
+                var body = request.Content is { } content ? content.ReadAsStringAsync(ct).GetAwaiter().GetResult() : "";
+                lock (_heard) { _heard.Add((request.RequestUri.AbsolutePath, key)); _bodies.Add(body); }
             }
 
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(answer(request), Encoding.UTF8, "application/json") });
