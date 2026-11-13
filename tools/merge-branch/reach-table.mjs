@@ -18,6 +18,9 @@ const MODULES_READERS = ['modules', 'censuses', 'modules-process', 'deployment']
 // What the driver lane's sources reach, named by its narrow rule for the sources the page's twins parse as well.
 const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 
+// The adapters' lock and each adapter's dependency tests, which a port, a contract case or an adapter moves.
+const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-machine', 'adapters-memory-lyntai'];
+
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
  * A rule places paths by glob (`paths`, the lanes file's grammar) or by a lane of `daoris.lanes.json`
@@ -370,8 +373,8 @@ export const REACH = Object.freeze([
   },
   {
     lane: 'layers',
-    gates: ['layers', ...DRIVER_READERS, 'service', 'service-process'],
-    why: "the ports, the fakes and the build settings the application's projects build with: the layers census and the fakes' own tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
+    gates: ['layers', ...ADAPTER_SUITES, ...DRIVER_READERS, 'service', 'service-process'],
+    why: "the ports, the fakes, the adapters and the build settings the application's projects build with: the layers census and the fakes' own tests, the adapters' lock and each adapter's dependency tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
   { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },
