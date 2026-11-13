@@ -13,7 +13,7 @@ public sealed partial class HolderKeyStripTests
 {
     private const string Sentinel = "5e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a1";
 
-    /// <summary>The executables' entries: each <c>Program.cs</c> of the desktop's and the service's projects, tests aside.</summary>
+    /// <summary>The executables' entries: each <c>Program.cs</c> of the desktop's and the service's projects, tests aside; the command's is no entry, handing the program its environment whole, the key among it.</summary>
     private static IReadOnlyList<string> Entries()
     {
         var src = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
@@ -21,7 +21,7 @@ public sealed partial class HolderKeyStripTests
         [
             .. new[] { "Daoris.Desktop", "Daoris.Service" }
                 .SelectMany(product => Directory.EnumerateDirectories(Path.Combine(src, product)))
-                .Where(project => !Path.GetFileName(project).EndsWith(".Tests", StringComparison.Ordinal))
+                .Where(project => !Path.GetFileName(project).EndsWith(".Tests", StringComparison.Ordinal) && Path.GetFileName(project) != "Daoris.Desktop.Command")
                 .Select(project => Path.Combine(project, "Program.cs"))
                 .Where(File.Exists),
         ];
