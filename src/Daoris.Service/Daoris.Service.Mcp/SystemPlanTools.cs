@@ -4,9 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A system department's plan (the place-work design §5.1): one typed tool a session working there submits its intended changes
-/// through, which the driver hands to the system's adapter and keeps as the session's next plan (<see cref="SystemPlanBox"/>). The
-/// session holds no write path to the system: the plan is reviewed by the person and applied after.
+/// A system department's plan (the place-work design §5.1): one typed tool a session there submits its intended changes through, which
+/// the driver hands to the system's adapter and keeps as its next plan (<see cref="SystemPlanBox"/>); no write path, the person reviews.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>
