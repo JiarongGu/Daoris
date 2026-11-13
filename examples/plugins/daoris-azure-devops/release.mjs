@@ -2,7 +2,7 @@
 // release is made only where the action says so, never twice, since a retry reads before it makes one.
 import { Refusal, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
 import { until, watchRelease, watchRun } from './stages.mjs';
-import { aliasOf, candidates, declared, undeclared, unresolved } from './target.mjs';
+import { aliasOf, candidates, changedWords, declared, undeclared, unresolved } from './target.mjs';
 import { builtNothing, selfStarting, triggeredBy } from './triggers.mjs';
 
 const EVIDENCE = 'azure-devops-pull-request/release@1';
@@ -41,9 +41,12 @@ async function releasesOf(repo, definition, build, alias) {
 
 /** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way. */
 export async function release(attempt, unit, say) {
-  const failed = (code, message, url) => ({ state: 'failed', code, evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
-  if (!unit) return failed('no-unit', `no unit awaits this step at ${attempt.subjectRevision}`);
   const asked = declared(attempt.options);
+  // Every outcome after the target's holds names the deployable the node releases, where its options name one.
+  const lead = asked.deployable ? `Deployable \`${asked.deployable}\`: ` : '';
+  const answered = (code, message, url) => ({ state: 'failed', code, evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
+  const failed = (code, message, url) => answered(code, `${lead}${message}`, url);
+  if (!unit) return failed('no-unit', `no unit awaits this step at ${attempt.subjectRevision}`);
   const deadline = Date.parse(attempt.deadlineAt);
   const ends = Number.isFinite(deadline) ? deadline - MARGIN : Date.now() + 3600 * 1000;
   const finding = () => Math.min(ends, Date.now() + asked.find);
@@ -56,14 +59,16 @@ export async function release(attempt, unit, say) {
     const holding = async (code, why) => {
       const found = await candidates({ repo, repositoryId, commit, target, pipeline: asked.pipeline });
       say(`${why} ${found.words}`);
-      return failed(code, `${why} ${found.words}`, found.url);
+      return answered(code, `${why} ${found.words}`, found.url);
     };
-    if (asked.missing.length > 0) return await holding('no-target', undeclared(asked.missing));
+    if (asked.missing.length > 0) return await holding('no-target', undeclared(asked.missing, asked.deployable));
 
+    const pipeline = await project(repo, 'GET', `/build/definitions/${asked.pipeline}`);
+    if (pipeline.status === 404) return await holding('target-changed', changedWords(`pipeline ${asked.pipeline} is not found`, asked.deployable));
     const definition = asked.definition === 'none' ? null
       : await releases(repo, 'GET', `/definitions/${asked.definition}`).then((answer) => (answer.status === 200 ? answer.json : null));
     const changed = asked.definition === 'none' ? null : unresolved(definition, asked);
-    if (changed) return await holding('target-changed', `The declared release target no longer resolves: ${changed}.`);
+    if (changed) return await holding('target-changed', changedWords(changed, asked.deployable));
 
     // A merge the declared pipeline's CI trigger leaves out builds nothing: said once, at the first look.
     let looked = false;
@@ -77,14 +82,14 @@ export async function release(attempt, unit, say) {
     if (!ran) return failed('no-release', `no build of pipeline ${asked.pipeline} ran for ${short} on \`${withoutHeads(target)}\` within ${asked.find / 1000} s.`);
     if (ran.nothing) {
       return { state: 'reached', evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, url: web(null, `_git/${encodeURIComponent(repo.repository)}/commit/${commit}`),
-        message: fit(`Nothing to release: ${ran.nothing}.`) } };
+        message: fit(`${lead}Nothing to release: ${ran.nothing}.`) } };
     }
     const [build] = ran;
     const buildUrl = web(build, `_build/results?buildId=${build.id}`);
 
     const outcome = (header, watched, url) => {
       if (watched.verdict === 'missing') return failed('target-changed', `${header}it holds no declared stage ${asked.stage}.`, url);
-      if (watched.verdict === 'done') return { state: 'reached', evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, url, message: fit(`${header}${watched.words}.`) } };
+      if (watched.verdict === 'done') return { state: 'reached', evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, url, message: fit(`${lead}${header}${watched.words}.`) } };
       if (watched.verdict === 'failed') return failed('stage-failed', `${header}${watched.words}.`, url);
       return failed('timeout', `${header}stopped watching at the step's deadline: ${watched.words}.`, url);
     };
