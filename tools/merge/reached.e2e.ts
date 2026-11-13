@@ -11,14 +11,12 @@ import { repoRoot } from './repo-gates.ts';
 test('the tool reads the census of this repository: a changed module reaches the tool-tests, --plan runs nothing, and a clean checkout reaches nothing', () => {
   const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], {
     cwd: repoRoot, encoding: 'utf8', windowsHide: true,
-    // A store that holds no pass, which a plan only reads: the plan is the census's alone.
     env: { ...process.env, DAORIS_REACHED_STORE: join(repoRoot, '_fixtures', 'reached-test-none', 'passes.json') },
   });
   const planned = run('--plan', '--paths', 'tools/merge/reached.ts');
   assert.equal(planned.status, 0, planned.stderr);
   assert.match(planned.stdout, /reached: tool-tests: (\d+ of )?\d+ reached units? run/);
   assert.match(planned.stdout, /tool-tests: node .*vitest\.mjs run .*tools\/merge\/reached\.e2e\.ts/);
-  // No path changed, none reached.
   const none = run('--plan', '--paths', '');
   assert.equal(none.status, 0, none.stderr);
   assert.match(none.stdout, /no reached unit/);

@@ -29,7 +29,6 @@ public static class SessionBranchDoors
             ? $"if its work is wanted: its run's Accept lands it, `{OpenRun(session.Id)}` opens the run (session {session.Id}, {session.State}, its tree here)"
             : null;
 
-    /// <summary>The verb that opens the run a session follows, where its Accept is given; the landing hint says it too.</summary>
     public static string OpenRun(string session) => $"daoris workflow run --session {session}";
 
     /// <summary>

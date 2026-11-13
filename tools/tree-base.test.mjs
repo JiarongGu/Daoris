@@ -86,6 +86,7 @@ const CENSUS = [
   ...[
     'src/Daoris.Cli/test/deployment-rehearsal.test.ts', 'src/Daoris.Cli/test/desktop-tool.test.ts', 'src/Daoris.Cli/test/platform/home-census.test.ts',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/CommandLauncherProcessTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/Heavy/UnreleasedBasesTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/ServiceHostLocatorTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/ContentProofLossTests.cs',

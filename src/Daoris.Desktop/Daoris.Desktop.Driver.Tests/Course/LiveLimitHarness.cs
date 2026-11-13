@@ -404,7 +404,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     public int Heard(string text) => Prompts.Sum(prompt => Count(prompt, text));
 
     /// <summary>
-    /// How many times the stub was handed <paramref name="text"/> as a word to act on: a continuation's brief quotes the line's earlier parts'
+    /// How many times the stub got <paramref name="text"/> as a word to act on: a continuation's brief quotes the line's earlier parts'
     /// words as past exchanges (<c>&gt; text</c>), a sibling part's included, and those are the record of a delivery, never one.
     /// </summary>
     public int HeardAsWord(string text) => Prompts.Sum(prompt => Count(prompt, text) - Count(prompt, "> " + text));

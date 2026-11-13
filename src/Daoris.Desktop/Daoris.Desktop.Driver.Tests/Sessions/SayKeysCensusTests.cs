@@ -58,7 +58,6 @@ public sealed partial class SayKeysCensusTests
 
         // The pump's say, asking `ending` where the host's marks keep the moving open and the head.
         Assert.Single(Regex.Matches(source, Regex.Escape("service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question)")));
-        // The record path's say, which a word said while Ask Daoris starts also takes (running), spelled at its level.
         Assert.Single(Regex.Matches(source, @"service\.SayAsync\(\s*id, word\.Text, word\.Files, ct, key: word\.Key, level: running \? MessageLevels\.Spelled\(word\.Level\) : null, running: running,\s*ending: keeps, question: word\.Question\)"));
         // With the walk to the line's head it is on, which a forward after `continued` carries; and the press's question.
         Assert.Contains(
