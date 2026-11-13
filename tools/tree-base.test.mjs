@@ -103,7 +103,7 @@ const CENSUS = [
     'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Windows/TaskbarIdentityTests.cs',
     'tools/tree-base.test.mjs',
   ].map((file) => ({ file, text: '', why: 'fixture' })),
-  { file: 'tools/merge-branch/plan.mjs', text: 'export const noBuildCommand', why: 'merge tool' },
+  { file: 'tools/merge/plan.ts', text: 'export const noBuildCommand', why: 'merge tool' },
   { file: 'tools/merge/build-once.ts', text: 'const RUN_ONLY', why: 'merge tool' },
   { file: 'tools/merge/build-once.ts', text: "else if (!word.includes('=')", why: 'merge tool' },
   { file: 'tools/merge/build-once.ts', text: 'export const withoutBuild', why: 'merge tool' },
