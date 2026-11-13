@@ -3,12 +3,16 @@
  *
  *   node tools/time-ratchet.mjs           check the gates' duration records against tools/time-ratchet.json (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/time-ratchet.mjs --since <ms>  judge only the records written at or after that epoch time (a merge's own gates')
+ *   node tools/time-ratchet.mjs --classes  the 15 classes of each record with the most total time, each with its reason
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
  * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
- * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. With no records
+ * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is
+ * `{ ms, why, row? }`: `why` says what makes the test slow and why that cannot be cut (slowness means an issue to fix or to explain),
+ * `row` the backlog row that optimizes it; an entry with no real `why` fails the check, and every test over budget is printed with its
+ * reason. With no records
  * (a fresh checkout, no gate run yet) nothing is checked. The list only shrinks: a test that got faster is cut down by `--write`,
  * and a new slow test is fixed, never added.
  */
@@ -86,15 +90,21 @@ export function readJunit(text, root) {
   return tests;
 }
 
+/** Each record file of `dir` (written at or after `since`, when given) with its tests as { key, ms }. */
+export function readRecords(dir, root, { since = null } = {}) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).sort().filter((file) => since === null || statSync(join(dir, file)).mtimeMs >= since).map((file) => {
+    const text = () => readFileSync(join(dir, file), 'utf8');
+    const tests = file.endsWith('.trx') ? readTrx(text()) : VITEST_REPORTS.includes(file) ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
+    return { file, tests };
+  });
+}
+
 /** Every test over its limit in the records of `dir`, as key -> { ms, limit } (the slowest run of a key wins), and every key the records hold. */
 export function scanRecords(dir, root, { since = null } = {}) {
   const over = {};
   const seen = new Set();
-  if (!existsSync(dir)) return { over, seen };
-  for (const file of readdirSync(dir).sort()) {
-    if (since !== null && statSync(join(dir, file)).mtimeMs < since) continue;
-    const text = () => readFileSync(join(dir, file), 'utf8');
-    const tests = file.endsWith('.trx') ? readTrx(text()) : VITEST_REPORTS.includes(file) ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
+  for (const { file, tests } of readRecords(dir, root, { since })) {
     const limit = limitFor(file);
     for (const { key, ms } of tests) {
       seen.add(key);
@@ -110,18 +120,62 @@ export function entryFor(list, key) {
   return Object.keys(list).filter((entry) => key.startsWith(entry)).sort((a, b) => b.length - a.length)[0];
 }
 
-/** The breaches of `list` (key -> ms) against `found` (key -> { ms, limit }). */
+const MIN_WHY = 25;
+
+/** The reasons a list's entries lack: each entry says what makes its test slow and why that cannot be cut (a short or name-only sentence is none). */
+export function reasonProblems(list) {
+  const problems = [];
+  for (const [key, entry] of Object.entries(list)) {
+    const why = typeof entry?.why === 'string' ? entry.why.trim() : '';
+    const name = (key.split('::').pop() ?? key).split('.').pop() ?? key;
+    const squash = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (typeof entry?.ms !== 'number') problems.push(`${key} is listed with no { ms, why }: give its limit in milliseconds and why it is slow`);
+    else if (why.length < MIN_WHY) problems.push(`${key} is listed with no why: say what makes it slow and why that cannot be cut, or optimize it`);
+    else if (squash(why).includes(squash(name)) && squash(why).length < squash(name).length + MIN_WHY) {
+      problems.push(`${key}'s why only restates the test's name: say what makes it slow`);
+    }
+  }
+  return problems;
+}
+
+/** The breaches of `list` (key -> { ms, why, row }) against `found` (key -> { ms, limit }). */
 export function checkTimes(found, list) {
   const problems = [];
   for (const [key, { ms, limit }] of Object.entries(found)) {
     const entry = entryFor(list, key);
     if (entry === undefined) {
       problems.push(`${key} took ${ms} ms, over its ${limit} ms limit: make it faster or smaller; the list takes no new test`);
-    } else if (ms > list[entry]) {
-      problems.push(`${key} took ${ms} ms, longer than its listed ${list[entry]} ms: a listed test does not get slower`);
+    } else if (ms > list[entry].ms) {
+      problems.push(`${key} took ${ms} ms, longer than its listed ${list[entry].ms} ms: a listed test does not get slower`);
     }
   }
   return problems;
+}
+
+/** One line for each test over its limit: its reason (and the row that optimizes it), or that it has none. */
+export function reasonLines(found, list) {
+  return Object.entries(found).map(([key, { ms }]) => {
+    const entry = entryFor(list, key);
+    const { why, row } = entry === undefined ? {} : list[entry];
+    return `${key} took ${ms} ms: ${why ? `${why}${row ? ` (${row})` : ''}` : 'no reason: optimize it or say why'}`;
+  });
+}
+
+/** A test's class: its key without the case's arguments and its last name part, or the file of a `file::name` key. */
+const classOf = (key) => (key.includes('::') ? key.split('::')[0] : key.split('(')[0].replace(/\.[^.]*$/, ''));
+
+/** The `count` classes of a record's tests with the most total time, as { name, ms, count, reason, row }. */
+export function slowestClasses(tests, count, list = {}) {
+  const classes = new Map();
+  for (const { key, ms } of tests) {
+    const name = classOf(key);
+    const at = classes.get(name) ?? { name, ms: 0, count: 0 };
+    classes.set(name, { ...at, ms: at.ms + ms, count: at.count + 1 });
+  }
+  return [...classes.values()].sort((a, b) => b.ms - a.ms).slice(0, count).map((each) => {
+    const entry = entryFor(list, each.name) ?? Object.keys(list).find((key) => key.startsWith(`${each.name}.`) || key.startsWith(`${each.name}::`));
+    return { ...each, reason: entry === undefined ? '' : list[entry].why, row: entry === undefined ? '' : (list[entry].row ?? '') };
+  });
 }
 
 /** The list cut down to the records: an entry is lowered to the slowest test it covers, and leaves when the records hold a test it covers and none is over a limit. */
@@ -134,7 +188,7 @@ export function tighten(found, list, seen = new Set()) {
   const next = {};
   for (const entry of Object.keys(list).sort()) {
     if (slowest[entry] === undefined && [...seen].some((key) => entryFor(list, key) === entry)) continue;
-    next[entry] = Math.min(list[entry], slowest[entry] ?? list[entry]);
+    next[entry] = { ...list[entry], ms: Math.min(list[entry].ms, slowest[entry] ?? list[entry].ms) };
   }
   return next;
 }
@@ -158,7 +212,15 @@ function main() {
       console.log(`time-ratchet: wrote ${Object.keys(next).length} listed tests to tools/time-ratchet.json`);
       return 0;
     }
-    const problems = checkTimes(found, list);
+    if (process.argv.includes('--classes')) {
+      for (const { file, tests } of readRecords(dir, root, { since })) {
+        console.log(`${file}:`);
+        for (const c of slowestClasses(tests, 15, list)) console.log(`  ${(c.ms / 1000).toFixed(0)} s  ${c.count}  ${c.name}  ${c.reason || 'no reason: optimize it or say why'}${c.row ? ` (${c.row})` : ''}`);
+      }
+      return 0;
+    }
+    const problems = [...reasonProblems(list).map((line) => `${line}`), ...checkTimes(found, list)];
+    for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
     for (const p of problems) console.error(`time-ratchet: ${p}`);
     if (problems.length) return 1;
     console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower)`);

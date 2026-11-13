@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CENSUSCOMPILE1 and CENSUSALONE1 — the census classes' time (2026-11-13)
+
+> **CENSUSCOMPILE1** (driver tests): Outcome: the three say-door censuses and `CheckoutWritersCensusTests` read the desktop sources through one shared reading (`SourceTexts`, `SayDoorSources`) that the desktop compilations use too, finding each file's say calls once; alone `ContinuedReaders`, `SayKeys` and `SettledReaders` fell from 6.4, 7.8 and 10.6 s to under 0.8 s each, their entries left the time ratchet's list, and `CheckoutWriters` lost its per-file comment blanking on files with no git call. The structure case and `ReviewGraphCensusTests` are bound by their own analysis and cases, not by reading, and are listed with their reason.
+>
+> **CENSUSALONE1** (tools): Outcome: a gate declared `"alone": true` holds every component another gate builds (`laneSchedule`), so the censuses gate runs with no building gate beside it and the time check judges its timings clean; the gate's own minute is what a merge gains.
+
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.

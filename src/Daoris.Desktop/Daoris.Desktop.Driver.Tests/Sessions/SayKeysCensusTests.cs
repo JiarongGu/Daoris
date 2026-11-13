@@ -28,25 +28,18 @@ public sealed partial class SayKeysCensusTests
         ["SessionsKeeping.cs"] = (1, "the terminal's verb where no loop drives the home: it keeps the words on the record for the next loop and holds none itself, so nothing restarts under it"),
     };
 
-    [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
-    private static partial Regex Call();
-
     [Fact]
     public void Every_say_to_the_say_door_passes_a_key_or_is_a_named_legacy_case()
     {
         var seen = 0;
         var keyless = new List<string>();
-        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
+        foreach (var source in SayDoorSources.All)
         {
-            foreach (var path in SourceFiles.All(project, "*.cs"))
+            foreach (var call in source.Says)
             {
-                var source = File.ReadAllText(path);
-                foreach (Match call in Call().Matches(source))
-                {
-                    if (!Receivers.Contains(call.Groups["receiver"].Value)) continue;
-                    seen++;
-                    if (!Arguments(source, call.Index + call.Length).Contains("key:", StringComparison.Ordinal)) keyless.Add(Path.GetFileName(path));
-                }
+                if (!Receivers.Contains(call.Receiver)) continue;
+                seen++;
+                if (!Arguments(source.Text, call.Start).Contains("key:", StringComparison.Ordinal)) keyless.Add(source.File);
             }
         }
 

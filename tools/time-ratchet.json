@@ -1,10 +1,43 @@
 {
-  "Daoris.Desktop.Driver.Tests.ContinuedReadersCensusTests.Every_say_to_the_say_door_is_named_with_how_it_meets_continued_and_is_made_as_it_says": 45000,
-  "Daoris.Desktop.Driver.Tests.DeclarationLiteralsCensusTests.Each_row_left_out_turns_the_census_red_naming_it": 78820,
-  "Daoris.Desktop.Driver.Tests.SayKeysCensusTests.Every_say_to_the_say_door_passes_a_key_or_is_a_named_legacy_case": 50000,
-  "Daoris.Desktop.Driver.Tests.SettledReadersCensusTests.Every_reader_of_a_keyed_answer_is_named_with_how_it_reads_a_settled_one": 45000,
-  "Daoris.Desktop.Driver.Tests.ShellStructureTests.Platform_names_no_spawn_of_Agents_and_no_tools_of_Install_or_git_of_Workplace": 65000,
-  "Daoris.Desktop.Driver.Tests.StructureTests.Workflows_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it": 65000,
-  "src/Daoris.Cli/tool-test/merge-queue.test.ts::": 1106000,
-  "src/Daoris.Web/src/work/WorkFrame.test.tsx::a park's question sends the free answer through the box as before, naming no question": 47000
+  "Daoris.Desktop.Driver.Tests.CheckoutWritersCensusTests.Every_git_write_is_named_with_what_it_writes_and_where": {
+    "ms": 32000,
+    "why": "3 s alone; inside the census gate it waits for the shared source reading while the gate's other cases bind the driver's trees on every core, so its wall time is the gate's load",
+    "row": "TESTSLOW1"
+  },
+  "Daoris.Desktop.Driver.Tests.DeclarationKeepersCensusTests.Each_holder_left_out_turns_the_census_red_naming_it": {
+    "ms": 45000,
+    "why": "binds every shipping desktop project through the shared compilation once and walks each file's fields; the first to ask pays the binding, the rest of the gate's cases wait on the same cores",
+    "row": "TESTSLOW1"
+  },
+  "Daoris.Desktop.Driver.Tests.DeclarationLiteralsCensusTests.Each_row_left_out_turns_the_census_red_naming_it": {
+    "ms": 78820,
+    "why": "the first case of its class to ask pays the one binding of every shipping desktop project's semantic model, which the other cases of the run then share; alone the compile is the cost"
+  },
+  "Daoris.Desktop.Driver.Tests.ProviderCensusTests.A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census": {
+    "ms": 36000,
+    "why": "binds the provider seams of every shipping desktop project through the shared compilation; the case waits on the binding the gate's other cases share",
+    "row": "TESTSLOW1"
+  },
+  "Daoris.Desktop.Driver.Tests.ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node": {
+    "ms": 52000,
+    "why": "207 combinations each run a real git graph through the review node; 7 s for the class alone, the rest is the census gate's load on the same cores",
+    "row": "TESTSLOW1"
+  },
+  "Daoris.Desktop.Driver.Tests.ShellStructureTests.Platform_names_no_spawn_of_Agents_and_no_tools_of_Install_or_git_of_Workplace": {
+    "ms": 97000,
+    "why": "the first structure case to ask pays the shared Roslyn analysis of the driver's whole tree (every file bound once); the other structure cases read it free"
+  },
+  "Daoris.Desktop.Driver.Tests.StructureTests.Workflows_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it": {
+    "ms": 89000,
+    "why": "the first structure case to ask pays the shared Roslyn analysis of the driver's whole tree: 31 s alone, 88 s inside the census gate; the binding of every file cannot be cut"
+  },
+  "src/Daoris.Cli/tool-test/merge-queue.test.ts::": {
+    "ms": 1106000,
+    "why": "its cases run the merge queue end to end against real git repositories and real child processes, one after another, so the file's total is the sum of whole flows",
+    "row": "MERGETS1"
+  },
+  "src/Daoris.Web/src/work/WorkFrame.test.tsx::a park's question sends the free answer through the box as before, naming no question": {
+    "ms": 47000,
+    "why": "types a 40-character answer one key at a time with userEvent into the work frame's box, each key re-rendering the whole frame in jsdom; the typing is what the case exercises"
+  }
 }

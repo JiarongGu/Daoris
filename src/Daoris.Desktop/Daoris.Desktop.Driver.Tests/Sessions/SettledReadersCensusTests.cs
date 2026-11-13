@@ -61,22 +61,13 @@ public sealed partial class SettledReadersCensusTests
         ["SupervisorLook.cs"] = "the supervisor's release says with `supervised` and asks no settled answer (O7-F12): its door answers its key only while its word waits, and it reads that word's id as it always did",
     };
 
-    [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
-    private static partial Regex Say();
-
     [GeneratedRegex(@"\.(Helpers|Partners)\s*\.HandAsync\(|\.Opinions\s*\.Hand(Word)?Async\(|\bdoor\.KeepAsync\(|\bKeepRetry\.KeepAsync\(|\.KeepOrHoldAsync\(")]
     private static partial Regex Other();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>
     private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service", "wiring.Service"];
 
-    private static IEnumerable<(string File, string Source)> Sources()
-    {
-        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
-        {
-            foreach (var path in SourceFiles.All(project, "*.cs")) yield return (Path.GetFileName(path), File.ReadAllText(path));
-        }
-    }
+    private static IEnumerable<(string File, string Source)> Sources() => SayDoorSources.All.Select(each => (each.File, each.Text));
 
     /// <summary>The call's argument text, to its closing parenthesis, a string literal's own parentheses passed over.</summary>
     private static string Arguments(string source, int from)
@@ -108,10 +99,9 @@ public sealed partial class SettledReadersCensusTests
     public void Every_reader_of_a_keyed_answer_is_named_with_how_it_reads_a_settled_one()
     {
         var found = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (var (file, source) in Sources())
+        foreach (var (file, source, says) in SayDoorSources.All)
         {
-            var keyed = Say().Matches(source).Any(call =>
-                Receivers.Contains(call.Groups["receiver"].Value) && Arguments(source, call.Index + call.Length).Contains("key:", StringComparison.Ordinal));
+            var keyed = says.Any(call => Receivers.Contains(call.Receiver) && Arguments(source, call.Start).Contains("key:", StringComparison.Ordinal));
             if (keyed || Other().IsMatch(source)) found.Add(file);
         }
 

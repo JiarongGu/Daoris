@@ -162,13 +162,7 @@ public sealed partial class CheckoutWritersCensusTests
         ("branch", "\"--list\""), ("worktree", "\"list\""), ("symbolic-ref", "\"--short\""), ("symbolic-ref", "\"-q\""),
     ];
 
-    private static IEnumerable<(string File, string Source)> Sources()
-    {
-        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
-        {
-            foreach (var path in SourceFiles.All(project, "*.cs")) yield return (Path.GetFileName(path), File.ReadAllText(path));
-        }
-    }
+    private static IEnumerable<(string File, string Source)> Sources() => SayDoorSources.All.Select(each => (each.File, each.Text));
 
     /// <summary>The source with its comments blanked, so a list in a comment or a doc comment is not read as a call.</summary>
     private static string Code(string source) => Regex.Replace(source, @"//[^\n]*", match => new string(' ', match.Length));
@@ -179,6 +173,8 @@ public sealed partial class CheckoutWritersCensusTests
         var found = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
         foreach (var (file, source) in sources)
         {
+            // Blanking comments only takes text away, so a file the raw source does not match cannot match blanked.
+            if (!StartsGit().IsMatch(source)) continue;
             var code = Code(source);
             if (!StartsGit().IsMatch(code)) continue;
             foreach (Match call in Write().Matches(code))

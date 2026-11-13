@@ -148,9 +148,6 @@ public sealed partial class ContinuedReadersCensusTests
         ["ConversationRoutes.cs"] = ("_loop.Words", "the conversation's box: its words go to the shell's SessionWords.SayAsync, whose record path, inbox and turns follow the head"),
     };
 
-    [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
-    private static partial Regex Say();
-
     [GeneratedRegex(@"\bWordsHead\.FollowAsync\(")]
     private static partial Regex Follow();
 
@@ -160,13 +157,6 @@ public sealed partial class ContinuedReadersCensusTests
     /// <summary>The names the code gives a service client the say door is called on.</summary>
     private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "Context.Service", "world.Service", "wiring.Service"];
 
-    private static IEnumerable<(string File, string Source)> Sources()
-    {
-        foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
-        {
-            foreach (var path in SourceFiles.All(project, "*.cs")) yield return (Path.GetFileName(path), File.ReadAllText(path));
-        }
-    }
 
     /// <summary>The call's argument text's end, to its closing parenthesis, a string literal's own parentheses passed over.</summary>
     private static int End(string source, int from)
@@ -199,12 +189,12 @@ public sealed partial class ContinuedReadersCensusTests
     {
         var seen = 0;
         var found = new Dictionary<string, List<bool>>(StringComparer.Ordinal);
-        foreach (var (file, source) in Sources())
+        foreach (var (file, source, says) in SayDoorSources.All)
         {
             var follows = Follow().Matches(source).Select(call => (From: call.Index, To: End(source, call.Index + call.Length))).ToList();
-            foreach (Match call in Say().Matches(source))
+            foreach (var call in says)
             {
-                if (!Receivers.Contains(call.Groups["receiver"].Value)) continue;
+                if (!Receivers.Contains(call.Receiver)) continue;
                 seen++;
                 if (!found.TryGetValue(file, out var calls)) found[file] = calls = [];
                 calls.Add(follows.Any(span => call.Index > span.From && call.Index < span.To));
@@ -230,7 +220,7 @@ public sealed partial class ContinuedReadersCensusTests
     [Fact]
     public void Each_caller_that_reads_the_head_itself_names_it_in_its_own_code()
     {
-        var sources = Sources().GroupBy(each => each.File).ToDictionary(group => group.Key, group => string.Join("\n", group.Select(each => each.Source)));
+        var sources = SayDoorSources.All.GroupBy(each => each.File).ToDictionary(group => group.Key, group => string.Join("\n", group.Select(each => each.Text)));
         foreach (var (file, named) in Sites.Where(pair => pair.Value.Any(site => site.How == How.Own)))
         {
             Assert.Matches(@"\bHead\b", sources[file]);
