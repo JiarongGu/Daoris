@@ -65,7 +65,7 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         text.Append("  row that moves. Daoris never pushes.\n");
         // A quest's yes and a landed branch's hand-off stay in their own place, which a link reaches.
         text.Append("- Never pressed for the person: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
-        text.Append("  person's own presses, on the quest's page and in the review, where a link takes them.\n");
+        text.Append("  person's own presses, on the quest's page and in Outputs, where a link takes them.\n");
         // Adding or importing needs a folder, which stays the person's pick, so a link opens the drawer with the workspace filled.
         text.Append("- A repository registered here is moved to a workspace by pressing:\n");
         text.Append("  `daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name, which the\n");

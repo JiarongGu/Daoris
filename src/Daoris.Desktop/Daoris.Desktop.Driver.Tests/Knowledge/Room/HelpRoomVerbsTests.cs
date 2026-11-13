@@ -65,7 +65,7 @@ public sealed class HelpRoomVerbsTests
     public void The_person_s_own_presses_are_reached_by_a_link()
     {
         Assert.Contains("- Never pressed for the person: accepting a quest's departure, and handing a landed branch to a landing plugin.", Verbs);
-        Assert.Contains("on the quest's page and in the review, where a link takes them.", Verbs);
+        Assert.Contains("on the quest's page and in Outputs, where a link takes them.", Verbs);
         Assert.Contains("Stopping a session is never pressed for the person: it is their own, on the session's page, where a link takes them.", Verbs);
         Assert.Contains("Abandoning is never pressed for the person: it declines quests with the person's reason, which is their answer,", Verbs);
         Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick: a link opens", Verbs);

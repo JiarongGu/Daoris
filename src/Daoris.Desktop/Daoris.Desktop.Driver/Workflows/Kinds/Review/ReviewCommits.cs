@@ -2,7 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One file of a branch's or a checkout's review record, drawn from the commits the record names, never from the checkout as it stands: after,
-/// the branch's tip or the newest turn's end; before, the line's merge base with the tip or the first turn's start.
+/// the branch's tip or the newest turn's end; before, the base frozen with the tip or the first turn's start. A branch record with no base names no
+/// commit before, and nothing is read from it.
 /// </summary>
 public static class ReviewCommits
 {
@@ -26,8 +27,6 @@ public static class ReviewCommits
                 return reference.Tip;
             case (ReviewKinds.Branch, ReviewContent.Before) when reference.Base is { } frozen:
                 return frozen;
-            case (ReviewKinds.Branch, ReviewContent.Before) when reference is { Tip: { } tip, Line: { } line }:
-                return await LineBaseAsync(root, line, tip, ct).ConfigureAwait(false);
             case (ReviewKinds.Checkout, ReviewContent.After):
                 return reference.Turns.LastOrDefault()?.To;
             case (ReviewKinds.Checkout, ReviewContent.Before):
@@ -35,20 +34,5 @@ public static class ReviewCommits
             default:
                 return null;
         }
-    }
-
-    /// <summary>With no frozen base, the newest commit the tip shares with the line here or on origin: a local line behind its remote would count the remote's merged work.</summary>
-    private static async Task<string?> LineBaseAsync(string root, string line, string tip, CancellationToken ct)
-    {
-        async Task<string?> MergeBase(string of)
-        {
-            var (code, based, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "merge-base", of, tip], ct).ConfigureAwait(false);
-            return code == 0 ? based.Trim() : null;
-        }
-
-        var candidates = ReviewBase.Candidates(await MergeBase(line).ConfigureAwait(false), await MergeBase($"refs/remotes/origin/{line}").ConfigureAwait(false), null);
-        if (candidates.Count < 2) return candidates.FirstOrDefault();
-        var (named, maximal, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "merge-base", "--independent", .. candidates], ct).ConfigureAwait(false);
-        return named == 0 ? ReviewBase.Newest(candidates, maximal.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) : candidates[0];
     }
 }

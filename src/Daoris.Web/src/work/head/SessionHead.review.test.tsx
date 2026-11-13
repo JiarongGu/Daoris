@@ -23,22 +23,22 @@ describe("the head's review gate", () => {
   it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold and offers no door to the review', (state) => {
     render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state, holds: true, says: 'Holds: keep this workflow in the terminal.' } }} />);
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('keep this workflow');
   });
 
   it('withdraws the door to the run’s review when a workflow hold arrives', () => {
     const { rerender } = render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()} landing={PLAN} />);
-    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
     rerender(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state: 'unread', holds: true, says: 'Binding unread.' } }} />);
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
   });
 
   it.each(['follows', 'kept'])('offers the door when the workflow %s lets go', (state) => {
     render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state, holds: false, says: 'Follows the bound workflow.' } }} />);
-    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Workflow before it lands' })).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe("the head's review gate", () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
     expect(gate()).toHaveTextContent('Review in local');
     expect(gate()).toHaveTextContent('Set-up step #q2 showed it at a1b2c3d4.');
     await user.click(within(gate()).getByRole('button', { name: 'Reviewed' }));
@@ -110,13 +110,13 @@ describe("the head's review gate", () => {
 
     expect(gate()).toHaveTextContent('Review before it lands');
     expect(gate()).toHaveTextContent('The driver says: Whether this work waits');
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
   });
 
   it('offers the door to the run’s review where nothing waits for a review', () => {
     render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()} landing={PLAN} />);
 
-    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: /Review in/ })).toBeNull();
   });
 

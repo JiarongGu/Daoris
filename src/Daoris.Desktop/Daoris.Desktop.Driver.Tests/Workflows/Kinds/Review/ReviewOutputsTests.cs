@@ -44,6 +44,16 @@ public sealed class ReviewOutputsTests : IDisposable
     }
 
     [Fact]
+    public void A_branch_that_is_its_own_line_or_grew_from_itself_never_loops_and_keeps_the_base_it_started_at()
+    {
+        var onTheLine = Grown("main", "base0");
+        var circular = Grown("session/loop", "tip3", grewFrom: "session/loop");
+
+        Assert.Equal("base0", RunWorkBase.Of(onTheLine, [onTheLine]));
+        Assert.Null(RunWorkBase.Of(circular, [circular]));
+    }
+
+    [Fact]
     public async Task A_landed_branch_keeps_its_files_and_commits_between_the_frozen_base_and_its_tip()
     {
         Directory.CreateDirectory(_root);
@@ -70,10 +80,8 @@ public sealed class ReviewOutputsTests : IDisposable
         Assert.Empty(commits.Uncommitted);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task A_local_line_behind_its_remote_never_adds_the_remotes_merged_work_to_the_runs_changes(bool frozen)
+    [Fact]
+    public async Task A_local_line_behind_its_remote_never_adds_the_remotes_merged_work_to_the_runs_changes()
     {
         Directory.CreateDirectory(_root);
         await Git("init", "--quiet", "-b", "main");
@@ -86,7 +94,7 @@ public sealed class ReviewOutputsTests : IDisposable
         var tip = await Commit("added.md", "new\n");
         var record = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T)
         {
-            Reference = new() { Branch = "work", Line = "main", Tip = tip, Base = frozen ? remote : null },
+            Reference = new() { Branch = "work", Line = "main", Tip = tip, Base = remote },
         };
 
         var files = await ReviewCommitFiles.ListAsync(_root, record);

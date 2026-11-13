@@ -463,7 +463,7 @@
   "work.facts.press.accept": "Accept…",
   "work.facts.press.rebase": "Rebase",
   "work.facts.press.opinion": "Second opinion",
-  "work.facts.press.review": "Review",
+  "work.facts.press.review": "Open outputs",
   "work.facts.attempt": "attempt {{attempt}}: the one before it failed",
   "work.facts.attempt_other": "attempt {{attempt}}: the {{count}} before it failed",
   "work.facts.continues": "continues from {{agent}}",

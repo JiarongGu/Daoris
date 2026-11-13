@@ -20,7 +20,7 @@ public sealed class DriverModuleRunReviewTests : DriverModuleBridge
          "wires":[{"id":"a","kind":"after","from":"work","to":"review"}]}
         """;
 
-    private void Recorded()
+    private void Recorded(params ReviewPart[] parts)
     {
         StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse(Graph)), kept: []);
         Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T)));
@@ -29,7 +29,7 @@ public sealed class DriverModuleRunReviewTests : DriverModuleBridge
         {
             Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal) { ["review"] = new(unit, "review", NodeStates.Active) { Attempt = 1, Since = T } },
         });
-        ReviewRecords.Keep(Home, new ReviewRecord("q1", "review", 1, ReviewKinds.Answer, "aaaaaaa1", T) { Place = "engine" });
+        ReviewRecords.Keep(Home, new ReviewRecord("q1", "review", 1, ReviewKinds.Answer, "aaaaaaa1", T) { Place = "engine", Parts = parts });
     }
 
     private async Task<DriverModule> UpAsync()
@@ -51,6 +51,20 @@ public sealed class DriverModuleRunReviewTests : DriverModuleBridge
         Assert.Equal(("q1", "review", "aaaaaaa1"), (review.GetProperty("run").GetString(), review.GetProperty("node").GetString(),
             review.GetProperty("record").GetProperty("revision").GetString()));
         Assert.Equal(["accept", "changes", "stop"], review.GetProperty("presses").EnumerateArray().Select(press => press.GetString()));
+    }
+
+    [Fact]
+    public async Task A_runs_outputs_are_answered_typed_with_their_display_and_a_digest_beside_the_record()
+    {
+        Recorded(new ReviewPart("q1", "Part one") { Machine = "m1", Sequence = 1, Note = "Read the cache." });
+        var module = await UpAsync();
+
+        var review = await AnswerAsync(module, "RUN_REVIEW", new { run = "q1", attempt = 0 });
+
+        var output = Assert.Single(review.GetProperty("outputs").EnumerateArray());
+        Assert.Equal(("handback:q1", "handback", "document", "q1"),
+            (output.GetProperty("id").GetString(), output.GetProperty("type").GetString(), output.GetProperty("display").GetString(), output.GetProperty("part").GetString()));
+        Assert.Equal(16, output.GetProperty("digest").GetString()!.Length);
     }
 
     [Theory]

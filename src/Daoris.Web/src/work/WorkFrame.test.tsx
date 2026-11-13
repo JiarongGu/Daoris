@@ -808,7 +808,7 @@ describe('the Work frame', () => {
     const user = userEvent.setup();
     focus(screen.getByRole('button', { name: 'more for Cap the hydration per frame' }));
     await user.keyboard('{Enter}');
-    await user.click(screen.getByRole('menuitem', { name: 'Review' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Open outputs' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
     expect(screen.getByRole('tab', { name: 'Outputs' })).toHaveAttribute('aria-selected', 'true');
   });

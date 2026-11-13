@@ -151,19 +151,19 @@ internal static class HelpDoorRowsActs
             + "ends the run once nothing else of it can move (kept on the run's record, and Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
             "`daoris workflow skip <run> <node> \"…\"`, `daoris workflow stop <run> <node> [\"…\"]`"),
-        new("accept a run's review, with a note if you like: what it holds lands (kept on the run's record, and Daoris's next look applies it)",
-            "Sessions → the session's *Workflow* view, *Accept* under the review",
+        new("accept what a run made, with a note if you like: what its outputs hold lands (kept on the run's record, and Daoris's next look applies it)",
+            "Sessions → *Accept* on the card in the session's conversation, which draws the run's outputs, or in its *Outputs* view",
             "`daoris workflow accept <run> <node> [\"…\"]`"),
         ("put your words asking for an ask's work to be delivered with no press of yours on it, or take them back: each run of it is "
             + "accepted on them where nothing else waits on you, and a departure from a requirement still waits",
             "(no screen yet)",
             "`daoris ask --to <repo> … --require \"<your words>\" \"<the check>\" --through \"<your words>\"`, "
             + "`daoris ask through <id> \"<your words>\"|--clear`"),
-        // The person's changes on a run's review, its rejection with their words. Never proposed, as skip and stop never are.
-        new("ask for changes on a run's review in place of your Accept, with your words: the work's session is told them as its next "
+        // The person's changes on a run's outputs, its rejection with their words. Never proposed, as skip and stop never are.
+        new("send back what a run made in place of your Accept, with your words: the work's session is told them as its next "
             + "turn, and what it commits is reviewed again before anything lands (kept on the run's record, and Daoris's next look "
             + "applies it)",
-            "Sessions → the session's *Workflow* view, *Ask for changes…* under the review",
+            "Sessions → *Send back…* on the card in the session's conversation, or in its *Outputs* view",
             "`daoris workflow changes <run> <node> \"…\"`"),
         // The person's press of a task a run waits on, or their answer to its approval.
         new("press your task a run waits on, or approve or reject it where it is an approval, with a note if you like: the run takes "
