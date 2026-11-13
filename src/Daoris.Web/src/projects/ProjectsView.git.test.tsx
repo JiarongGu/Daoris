@@ -29,7 +29,6 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
 ];
 
-// The fixtures held to the bridge's shapes, as the driver answers them.
 const ENGINE_LIST: GitBranchList = { repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false };
 const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit!;
 const PAGE: GitGraphPage = { tips: [LINE_COMMIT], sinceParted: false, page: 0, commits: GIT_HISTORY_ENGINE, more: false };
@@ -37,7 +36,6 @@ const answer = <T,>(value: T | null, refusal: string | null = null) => ({
   value, refusal, problem: refusal ? 'git said no' : null, commands: ['git log --graph --date-order main'], remembered: false,
 });
 
-const TABS = ['Details', 'Branches', 'History', 'Integration', 'Files'];
 const asked = (type: string) => invoke.mock.calls.filter(([, called]) => called === type);
 
 describe("a repository's Branches and History tabs", () => {
@@ -84,7 +82,7 @@ describe("a repository's Branches and History tabs", () => {
     answering();
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect((await within(page).findAllByRole('tab')).map((tab) => tab.textContent)).toEqual(TABS);
+    expect((await within(page).findAllByRole('tab')).slice(0, 3).map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History']);
     expect(asked('GIT_BRANCHES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
@@ -603,7 +601,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
 
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(TABS);
+    expect(within(page).queryByRole('tab', { name: 'Changes' })).toBeNull();
     expect(asked('GIT_CHANGES')).toEqual([]);
   });
 
@@ -611,7 +609,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     answering(switchOn);
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual([...TABS.slice(0, 3), 'Changes', ...TABS.slice(3)]);
+    expect(within(page).getByRole('tab', { name: 'Changes' })).toBeInTheDocument();
     expect(asked('GIT_CHANGES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));

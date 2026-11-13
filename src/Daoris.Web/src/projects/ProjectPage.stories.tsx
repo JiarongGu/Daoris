@@ -10,6 +10,8 @@ import {
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
 import type { ProjectTab } from './tabs';
+import { WorkflowTab } from '../workflow/WorkflowTab';
+import { FULL } from '../workflow/fixtures';
 
 // A repository's page in Repositories' main area: its Details tab (adopted, driven here, held, with its
 // line, with unlanded branches, a teammate's with no checkout here, one that declared nothing, one not adopted with a root
@@ -126,6 +128,14 @@ type Story = StoryObj<typeof Tabbed>;
  * the commit it is fed from, its workspace, its line read-only with its door to Setup, and its declaration as chips.
  */
 export const Adopted: Story = {};
+
+export const Workflow: Story = {
+  args: { start: 'workflow', workflow: <WorkflowTab page="repository" name="engine" current={FULL} /> },
+};
+
+export const WorkflowNarrow: Story = { ...Workflow, decorators: [storyWidths.narrow] };
+
+export const WorkflowChinese: Story = { ...Workflow, decorators: [chinese] };
 
 /** Held by the person: *held* outranks *drives here*, which it suspends; the hold is lifted on Setup. */
 export const Held: Story = { args: { held: true } };

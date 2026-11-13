@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-14 - The repository Workflow tab disappeared when Setup moved to Agents
+
+- **Root cause:** 6c58e81176 gated the repository's Workflow body and read on `setupLives`, coupling the workflow view to the
+  setting editor's move into Agents. 8e64299229 made that removal unconditional and replaced its page regression tests with an
+  assertion that no tab existed; 55993f37fe removed the page props, and 452795fc70 removed the tab from remembered choices.
+  The workspace tab remained wired, but its own-rules door went to Agents instead of the repository's Workflow tab.
+- **Fix:** restore the repository tab with the shared `WorkflowTab` and `useWorkflowTab`, its remembered choice, and the workspace's
+  repository-workflow door. Settings still open their place in Agents → Setup.
+- **Verification:** `ProjectsView.workflow.test.tsx` failed four cases before the fix, covering the repository read, refusal,
+  settings door and workspace-to-repository navigation; `ProjectPage.test.tsx` failed on the missing tab. The page tests also
+  cover reopening the remembered tab and keeping Current unread until Workflow opens.
+
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
 - **Symptom:** `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest (a go for a production

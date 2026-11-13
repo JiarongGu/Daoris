@@ -61,6 +61,20 @@ describe("a repository's page on a right-click", () => {
 // A repository's page is Details, and the tabs its holder hands bodies for. A browser gets Details alone, with no tab row;
 // its line is read-only, with a door to the Agents place's page where it is set.
 describe("a repository's tabs", () => {
+  it('draws Workflow only when chosen and falls back to Details when its body is absent', async () => {
+    const onTab = vi.fn();
+    const workflow = <p>The workflow body</p>;
+    const { rerender } = render(<ProjectPage registration={ENGINE} workflow={workflow} onTab={onTab} />);
+    expect(screen.queryByText('The workflow body')).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: 'Workflow' }));
+    expect(onTab).toHaveBeenCalledWith('workflow');
+    rerender(<Tooltip.Provider><ProjectPage registration={ENGINE} workflow={workflow} tab="workflow" onTab={onTab} /></Tooltip.Provider>);
+    expect(screen.getByRole('tabpanel', { name: 'Workflow' })).toHaveTextContent('The workflow body');
+    rerender(<Tooltip.Provider><ProjectPage registration={ENGINE} tab="workflow" onTab={onTab} /></Tooltip.Provider>);
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getByText('Owns')).toBeInTheDocument();
+  });
+
   it("shows its line read-only on Details, with a door that opens the place's page", async () => {
     const onOpenSetup = vi.fn();
     render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} line={LINE} onOpenSetup={onOpenSetup} />);

@@ -87,7 +87,7 @@
   "src/Daoris.Web/src/design/tokens.test.ts": 50228,
   "src/Daoris.Web/src/design/ui.test.tsx": 66558,
   "src/Daoris.Web/src/help/AskDaoris.test.tsx": 93431,
-  "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81534,
+  "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81365,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 78607,
   "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47280,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76003,

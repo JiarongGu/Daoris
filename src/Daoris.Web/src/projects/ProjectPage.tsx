@@ -29,12 +29,11 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * unlanded branches), its declaration and for one not adopted the steps to adopt; **Branches** and **History**, its branches
  * and its line's graph as Git reads them here (Git inside Repositories); **Changes**, where the
  * person let Daoris change the checkout's files, what is staged, not staged, untracked and in conflict; **Workflow**, how its
- * work moves, drawn read-only from its rules as they stand, each step's door opening
- * the Setup row that sets it; and **Setup**, every setting it holds on this machine (`RepositorySetup`).
+ * work moves, each step's door opening its settings in Agents → Setup; **Integration**, its queue; and **Files**, the files git does not manage.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, and every press goes out. The tab shown is its holder's,
- * remembered per view, so a door can open the page at Setup. Branches' and History's bodies are their holder's too, each
+ * remembered per view, so a door can open the page at Workflow. The tab bodies are their holder's too, each
  * drawn only while its tab shows, so neither asks Git anything until it is open.
  *
  * - **A setting has one home, its Setup** (§1 rule 1): Details shows its line read-only, with a door to Setup at *Line
@@ -49,7 +48,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A page never prints a machine path it is answered**: a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, files, tab = 'details', onTab,
+  registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, files, workflow, tab = 'details', onTab,
   onManage, onOpenCode, onOpenSetup, onOpenFolder, heavy, excludes,
 }: {
   excludes?: ReactNode;
@@ -91,6 +90,8 @@ export function ProjectPage({
   integration?: ReactNode;
   /** Its Files tab's body, the files git does not manage: a shell's, read only while it shows. Absent, there is no Files tab. */
   files?: ReactNode;
+  /** Its Workflow tab's body: a shell's, read only while it shows. Absent, there is no Workflow tab. */
+  workflow?: ReactNode;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
@@ -258,12 +259,12 @@ export function ProjectPage({
   // with no panel.
   const bodiless = (tab === 'branches' && !branches) || (tab === 'history' && !history)
     || (tab === 'changes' && !changes) || (tab === 'integration' && !integration)
-    || (tab === 'files' && !files);
+    || (tab === 'files' && !files) || (tab === 'workflow' && !workflow);
   const shown: ProjectTab = bodiless ? 'details' : tab;
 
   return (
     <ViewMain header={head} menu={menu}>
-      {onTab && (branches || history || changes || integration || files)
+      {onTab && (branches || history || changes || integration || files || workflow)
         ? (
           <PageTabs<ProjectTab>
             label={t('projects.tab.list', { repository })}
@@ -274,6 +275,7 @@ export function ProjectPage({
               ...(changes ? [{ id: 'changes' as const, label: t('projects.tab.changes') }] : []),
               ...(integration ? [{ id: 'integration' as const, label: t('projects.tab.integration') }] : []),
               ...(files ? [{ id: 'files' as const, label: t('projects.tab.files') }] : []),
+              ...(workflow ? [{ id: 'workflow' as const, label: t('projects.tab.workflow') }] : []),
             ]}
             chosen={shown}
             onChoose={onTab}
@@ -288,7 +290,9 @@ export function ProjectPage({
                     ? integration
                     : shown === 'files'
                       ? files
-                      : details}
+                      : shown === 'workflow'
+                        ? workflow
+                        : details}
           </PageTabs>
         )
         : details}
