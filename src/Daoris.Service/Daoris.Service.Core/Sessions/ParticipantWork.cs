@@ -15,7 +15,7 @@ namespace Daoris.Knowledge;
 /// <see cref="Intake"/>; the Ask Daoris repository is <see cref="AskDaoris"/>; a chat is <see cref="Chat"/>; otherwise <see cref="Build"/>. A
 /// co-worker is a relation, <c>serves</c>, never a work of its own: a partner's marks are a helper's with a piece. An
 /// empty mark is none, as an absent one is.</para>
-/// <para><see cref="Design"/>, <see cref="Exact"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design,
+/// <para><see cref="Design"/>,<see cref="Exact"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design,
 /// decision or exact work is built, admitted and read as <see cref="Build"/>, and a brainstorm's pass has no record.</para>
 /// </remarks>
 public static class ParticipantWork
@@ -50,14 +50,20 @@ public static class ParticipantWork
     /// <summary>A brainstorm's pass, which keeps no record.</summary>
     public const string Brainstorm = "brainstorm";
 
-    /// <summary>Every work, the closed set.</summary>
+    /// <summary>A lead's session, which plans an ask: an intake started as the lead of the team, read as <see cref="Intake"/> from its marks.</summary>
+    public const string Plan = "plan";
+
+    /// <summary>A scout's one turn, which reads one part of a plan and answers a pack: a helper's session, read as <see cref="Help"/> from its marks.</summary>
+    public const string Orient = "orient";
+
     /// <summary>A supervisor's one read-only turn, told by the attempt it decides for, before every other mark.</summary>
     public const string Supervise = "supervise";
 
     /// <summary>The session that performs a plugin's step, told by the attempt it performs; a part of the run, no place under the cap.</summary>
     public const string Step = "step";
 
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise, Step];
+    /// <summary>Every work, the closed set.</summary>
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Plan, Orient, Supervise, Step];
 
     /// <summary>
     /// The work <paramref name="session"/> is opened for, from its marks; null where it has none here, another machine's record.

@@ -155,8 +155,8 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     [Fact]
     public void Removing_or_scoping_away_the_role_of_a_work_that_may_not_be_off_is_refused()
     {
-        // Design and exact are no works that keep a role: removed, their work falls to Build's.
-        foreach (var id in ActorChoices.Ids.Where(id => id is not ("design" or "exact") && !ActorChoices.MayBeOff(id)))
+        // Design, exact, a lead's plan and a scout's orientation keep no role of their own: removed, their work falls to another's (`RoleCatalog.Fallback`).
+        foreach (var id in ActorChoices.Ids.Where(id => id is not ("design" or "exact" or "lead" or "scout") && !ActorChoices.MayBeOff(id)))
         {
             var seed = RoleCatalog.Seed.Single(role => role.Id == id);
             Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Remove(id))));
@@ -164,7 +164,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
             Assert.Null(Seeded.Judge(RoleChange.Set(seed with { Name = AuthoredText.Of("Renamed") })));
         }
 
-        foreach (var id in ActorChoices.Ids.Where(id => id is "design" or "exact" || ActorChoices.MayBeOff(id)))
+        foreach (var id in ActorChoices.Ids.Where(id => id is "design" or "exact" or "lead" or "scout" || ActorChoices.MayBeOff(id)))
         {
             var seed = RoleCatalog.Seed.Single(role => role.Id == id);
             Assert.Null(Seeded.Judge(RoleChange.Remove(id)));

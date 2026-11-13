@@ -19,8 +19,14 @@ export type AskPlanRevision = {
   releases: AskPlanRelease[]; questions: AskPlanQuestion[];
 };
 
-/** The plans an ask holds, the ask's own first. */
-export type AskPlan = { plans: AskPlanRevision[] };
+/** A session on the ask's team: its `role` (`lead`), the part it serves (null for the ask's own plan) and the newest revision it wrote. */
+export type AskPlanMember = { part: string | null; role: string; session: string; revision: number };
+
+/** A choice taken about the plan at a revision, by whom, and what followed. */
+export type AskPlanDecision = { scope: string | null; revision: number; decision: string; reason: string; author: string; act: string };
+
+/** The plans an ask holds, the ask's own first, who serves it and the choices taken, oldest first. */
+export type AskPlan = { plans: AskPlanRevision[]; team: AskPlanMember[]; decisions: AskPlanDecision[] };
 
 const text = (value: unknown, fallback = '') => (typeof value === 'string' ? value : fallback);
 const words = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
@@ -33,8 +39,17 @@ const rows = (value: unknown): Record<string, unknown>[] =>
  */
 export function askPlanOf(raw: unknown): AskPlan | null {
   if (typeof raw !== 'object' || raw === null || !Array.isArray((raw as { plans?: unknown }).plans)) return null;
+  const answer = raw as { plans: unknown; team?: unknown; decisions?: unknown };
   return {
-    plans: rows((raw as { plans: unknown }).plans).map((plan) => ({
+    team: rows(answer.team).filter((member) => typeof member.session === 'string').map((member) => ({
+      part: typeof member.part === 'string' ? member.part : null, role: text(member.role), session: text(member.session),
+      revision: typeof member.revision === 'number' ? member.revision : 1,
+    })),
+    decisions: rows(answer.decisions).map((decided) => ({
+      scope: typeof decided.scope === 'string' ? decided.scope : null, revision: typeof decided.revision === 'number' ? decided.revision : 1,
+      decision: text(decided.decision), reason: text(decided.reason), author: text(decided.author), act: text(decided.act),
+    })),
+    plans: rows(answer.plans).map((plan) => ({
       scope: typeof plan.scope === 'string' ? plan.scope : null,
       revision: typeof plan.revision === 'number' ? plan.revision : 1,
       depth: typeof plan.depth === 'number' ? plan.depth : 1,

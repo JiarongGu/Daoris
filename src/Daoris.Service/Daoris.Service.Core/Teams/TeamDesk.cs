@@ -6,9 +6,10 @@ namespace Daoris.Knowledge;
 /// write returns the quests it made and two parts to one repository and lane are two quests.
 /// </summary>
 /// <param name="store">The revisions and the part-to-quest memory.</param>
+/// <param name="ledger">Who is on the team and the choices taken.</param>
 /// <param name="asks">What publishes a part as the ask's quest.</param>
 /// <param name="policy">The paths no worker changes, by repository.</param>
-public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, CancellationToken, Task<TeamPathPolicy>> policy)
+public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, Func<string, CancellationToken, Task<TeamPathPolicy>> policy)
 {
     /// <summary>Judge, keep and publish a plan revision; see the class.</summary>
     public async Task<TeamOutcome> SaveAsync(TeamSave save, DateTimeOffset now, CancellationToken ct = default)
@@ -64,7 +65,8 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
         }
 
         var published = new List<TeamPublished>();
-        foreach (var part in plan.Parts) published.Add(await PublishAsync(ask, part, now, ct).ConfigureAwait(false));
+        foreach (var part in plan.Parts) published.Add(await PublishAsync(ask, part, save.By, now, ct).ConfigureAwait(false));
+        await KeepTeamAsync(plan, published, ct).ConfigureAwait(false);
 
         return new(TeamRefusal.None, Said(plan, published), plan) { Published = published };
     }
@@ -73,6 +75,21 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
     public async Task<(IReadOnlyList<TeamPlan> Plans, IReadOnlyList<TeamPartRow> Parts)> ReadAsync(string ask, CancellationToken ct = default) =>
         (await store.LatestAsync(ask.TrimStart('#'), ct).ConfigureAwait(false), await store.PartsAsync(ask.TrimStart('#'), ct).ConfigureAwait(false));
 
+    /// <summary>Who is on the ask's team and the choices taken about it, each oldest first.</summary>
+    public async Task<(IReadOnlyList<TeamMember> Members, IReadOnlyList<TeamDecision> Decisions)> TeamAsync(string ask, CancellationToken ct = default) =>
+        (await ledger.MembersAsync(ask.TrimStart('#'), ct).ConfigureAwait(false), await ledger.DecisionsAsync(ask.TrimStart('#'), ct).ConfigureAwait(false));
+
+    /// <summary>The session that wrote a revision is the lead of what it planned, and the revision is its decision, with what it published.</summary>
+    private async Task KeepTeamAsync(TeamPlan plan, IReadOnlyList<TeamPublished> published, CancellationToken ct)
+    {
+        if (plan.By is { } session) await ledger.KeepAsync(new TeamMember(plan.Ask, plan.Scope, TeamMember.Lead, session, plan.Revision, plan.At), ct).ConfigureAwait(false);
+        await ledger.KeepAsync(
+            new TeamDecision(
+                plan.Ask, plan.Scope, plan.Revision, TeamDecision.Plan, plan.Revision == 1 ? "planned" : "revised", plan.Why, plan.By ?? "person",
+                string.Join(", ", published.Select(each => each.Quest is { } quest ? $"{each.Part} #{quest}" : $"{each.Part} unpublished")), plan.At),
+            ct).ConfigureAwait(false);
+    }
+
     /// <summary>The ask a session plans for and the part it splits: a worker serving a part splits that part, and a session answering an ask plans the ask.</summary>
     public async Task<(string Ask, string? Scope)?> ScopeOfAsync(Session? caller, CancellationToken ct = default)
     {
@@ -80,7 +97,8 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
         return caller?.Ask is { } ask ? (ask, null) : null;
     }
 
-    private async Task<TeamPublished> PublishAsync(Ask ask, TeamPart part, DateTimeOffset now, CancellationToken ct)
+    // The writing session publishes, so the ask's own intake, which is the lead, moves the ask's tier as its own quest_publish does.
+    private async Task<TeamPublished> PublishAsync(Ask ask, TeamPart part, string? session, DateTimeOffset now, CancellationToken ct)
     {
         // The title is kept with the part before its quest is made, so a retry after a crash, or a revision that rewords the part, asks the same.
         var row = await store.ReserveAsync(ask.Id, part.Id, part.Title, ct).ConfigureAwait(false);
@@ -93,7 +111,7 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
             Weight = part.Weight,
             Paths = part.Claims,
         };
-        var outcome = await asks.PublishAsync(ask.Id, QuestAddress.Spell(part.Repository, part.Lanes), now, ct, draft, session: null, byAgent: true)
+        var outcome = await asks.PublishAsync(ask.Id, QuestAddress.Spell(part.Repository, part.Lanes), now, ct, draft, session, byAgent: true)
             .ConfigureAwait(false);
         if (outcome.Quest is not { } quest) return new(part.Id, null, outcome.Message);
 

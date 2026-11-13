@@ -53,6 +53,7 @@ public static class IntakeRoom
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_repositories",
         $"mcp__{KnowledgeConnector.ServerName}__quest_list",
         $"mcp__{KnowledgeConnector.ServerName}__quest_publish",
+        $"mcp__{KnowledgeConnector.ServerName}__team_plan",
         "WebFetch",
     ];
 

@@ -423,7 +423,7 @@ public static class ServiceFactory
         var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home, opinions);
         var askDesk = new AskDesk(service, asks, exchange, files, sessions);
         var teamDesk = new TeamDesk(
-            await TeamStore.OpenAsync(store.Connection, ct).ConfigureAwait(false), askDesk,
+            await TeamStore.OpenAsync(store.Connection, ct).ConfigureAwait(false), await TeamLedger.OpenAsync(store.Connection, ct).ConfigureAwait(false), askDesk,
             (repository, token) => TeamPathPolicies.OfAsync(service, repository, token));
         return new ComposedService(
             service, quests, exchange,

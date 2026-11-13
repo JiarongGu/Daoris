@@ -197,8 +197,17 @@ public sealed class RoleCatalog
                 : new RoleFound(null, $"Two roles take `{work}` in one scope ({string.Join(", ", best.Select(role => $"`{role.Id}`"))}), so its starts hold until one is removed.");
         }
 
-        return work is RoleWork.Design or RoleWork.Exact ? RoleFor(RoleWork.Build, place) : new RoleFound(null, NoRole(work));
+        return Fallback(work) is { } fallback ? RoleFor(fallback, place) : new RoleFound(null, NoRole(work));
     }
+
+    /// <summary>The work whose role takes <paramref name="work"/> where none does: design and exact to build, plan to design, orient to exact.</summary>
+    public static string? Fallback(string work) => work switch
+    {
+        RoleWork.Design or RoleWork.Exact => RoleWork.Build,
+        RoleWork.Plan => RoleWork.Design,
+        RoleWork.Orient => RoleWork.Exact,
+        _ => null,
+    };
 
     /// <summary>
     /// The role <paramref name="role"/> names, for a start of <paramref name="work"/> at <paramref name="place"/>: found by its id, never by
@@ -226,6 +235,7 @@ public sealed class RoleCatalog
         }
 
         var takes = found.Takes.Contains(work, StringComparer.Ordinal) || (work is RoleWork.Design or RoleWork.Exact && found.Takes.Contains(RoleWork.Build, StringComparer.Ordinal));
+        takes |= work is RoleWork.Plan or RoleWork.Orient && Fallback(work) is { } held && found.Takes.Contains(held, StringComparer.Ordinal);
         return takes ? new RoleFound(found, null) : new RoleFound(null, $"The role `{role}` does not take `{work}`, {Hold} until it does: {Configured}.");
     }
 
@@ -339,7 +349,7 @@ public sealed class RoleCatalog
         }
 
         // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.
-        foreach (var work in RoleWork.Codes.Where(work => work is not (RoleWork.Design or RoleWork.Exact) && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
+        foreach (var work in RoleWork.Codes.Where(work => Fallback(work) is null && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
         {
             if (after.Any(slot => slot.State == RoleState.Unreadable && slot.Id == StartPlan.RoleOf(work))) continue;
             if (!after.Any(slot => slot.Role is { } role && role.Scope.Rank == 0 && role.Takes.Contains(work, StringComparer.Ordinal)))

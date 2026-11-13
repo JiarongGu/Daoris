@@ -33,14 +33,19 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 1. A role is a record of the role catalogue in the desktop store, in one of two shapes. A working role: a name (authored text),
    the works it takes, a scope and a staffing. An appointed role: a name, its kind (supervisor or steward), the acts it holds of
    that kind's vocabulary, a scope, its holder and the supervisor's window. A role carries no doors of its own. (D212, D222, D233)
-2. The works are build, design, exact, chat, ask-daoris, intake, help, partner, review and brainstorm, read from a record's marks
-   by one rule, never stored. Design and exact fall to the role taking build when none takes them. (D212)
-3. Ten roles are seeded machine-wide: build, design, exact, intake, opinion, helper, partner, brainstorm, ask-daoris and chat. An
-   id reads as its seed until the store holds a record of it, so an upgrade writes nothing. Design takes design work on Claude
+2. The works are build, design, exact, chat, ask-daoris, intake, help, partner, review, brainstorm, plan and orient, read from a
+   record's marks by one rule, never stored; plan and orient read from no marks: a lead is an intake, and a scout a helper, by theirs,
+   the census admitting a role taking plan on an intake's record and one taking orient on a helper's. Design and exact fall to the
+   role taking build when none takes them, plan to the role taking design, orient to the role taking exact (`RoleCatalog.Fallback`).
+   (D212, D285)
+3. Twelve roles are seeded machine-wide: build, design, exact, intake, opinion, helper, partner, brainstorm, ask-daoris, chat, lead
+   and scout. An id reads as its seed until the store holds a record of it, so an upgrade writes nothing, and a home with no
+   staffing row for design, exact, lead or scout reads its seed (`StaffingProjection`). Design takes design work on Claude
    Code · `opus` · high; Exact build takes exact work (`weight: exact`) on Claude Code · `sonnet` at the account's default effort,
-   a longer window the person's to choose. Each may be named by a workflow step and falls to Build's when removed, and a start says
+   a longer window the person's to choose; the lead takes plan work on Design's tier and the scout orient work on Exact's. Each may
+   be named by a workflow step and falls to Build's (the lead's to Design's, the scout's to Exact's) when removed, and a start says
    whose order it ran on; a quest marked neither keeps Build's. A seeded role is edited, restored and removed by the one door; no
-   suggestion adds it. (D205, D212)
+   suggestion adds it. (D205, D212, D285)
 4. The most specific scope's role takes a work: repository, then workspace, then machine. At most one role takes a work in one
    scope (`two-roles-one-work`). (D212)
 5. Only Intake and Ask Daoris may be off. A work that may not be off keeps a role on the machine (`may-not-be-off`). A removed

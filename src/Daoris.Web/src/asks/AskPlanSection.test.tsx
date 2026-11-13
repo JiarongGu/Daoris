@@ -24,6 +24,8 @@ const RAW = {
     },
     { scope: 'api', revision: 1, depth: 2, why: 'three splits of my own', parts: [{ id: 'api.db', repository: 'media', quest: 'q3', outcome: 'the column exists' }], edges: [], flags: [] },
   ],
+  team: [{ part: null, role: 'lead', session: 's1', revision: 2 }, { part: 'api', role: 'lead', session: 's2', revision: 1 }],
+  decisions: [{ scope: null, revision: 2, decision: 'revised', reason: 'the page needs the field first', author: 's1', act: 'api #q1' }],
 };
 
 describe('an ask’s plan', () => {
@@ -64,9 +66,21 @@ describe('an ask’s plan', () => {
     expect(screen.getByText(fallback)).toBeTruthy();
   });
 
+  it.each([
+    ['en', 'Lead s1: the whole plan', 'Lead s2: api', 'Revision 2, revised by s1: the page needs the field first'],
+    ['zh', '负责人 s1：整个计划', '负责人 s2：api', '第 2 版，由 s1 修订: the page needs the field first'],
+  ])('says who is on the team and what was decided, in %s', async (language, lead, split, decided) => {
+    await i18n.changeLanguage(language);
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+
+    expect(screen.getByText(lead)).toBeTruthy();
+    expect(screen.getByText(split)).toBeTruthy();
+    expect(screen.getByText(decided)).toBeTruthy();
+  });
+
   it('reads no plan from an answer that is not one, and an ask with none is an answer with no revisions', () => {
     expect(askPlanOf({ asks: [] })).toBeNull();
-    expect(askPlanOf({ ask: 'a1', plans: [] })).toEqual({ plans: [] });
+    expect(askPlanOf({ ask: 'a1', plans: [] })).toEqual({ plans: [], team: [], decisions: [] });
     expect(askPlanOf({ plans: [{ parts: [{ outcome: 'no id' }] }] })!.plans[0]!.parts).toEqual([]);
   });
 });

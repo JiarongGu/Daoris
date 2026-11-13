@@ -38,6 +38,14 @@ const PLAN: AskPlan = {
       edges: [], flags: [], releases: [], questions: [],
     },
   ],
+  team: [
+    { part: null, role: 'lead', session: 'a1b2c3', revision: 2 },
+    { part: 'page', role: 'lead', session: 'd4e5f6', revision: 1 },
+  ],
+  decisions: [
+    { scope: null, revision: 1, decision: 'planned', reason: 'Two repositories, so one part each.', author: 'a1b2c3', act: 'keel #3f9a1c, page #8b20d4' },
+    { scope: null, revision: 2, decision: 'revised', reason: 'The docs part is its own, since the guide is read apart.', author: 'a1b2c3', act: 'docs unpublished' },
+  ],
 };
 
 const meta = {

@@ -46,7 +46,7 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.All(RoleCatalog.Seed, role => Assert.Equal(RoleScope.Everywhere, role.Scope));
         Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Where(role => role.Filled == RoleRecord.Always).Select(role => role.Id));
         Assert.Equal(
-            [("build", "build"), ("design", "design"), ("exact", "exact"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm")],
+            [("build", "build"), ("design", "design"), ("exact", "exact"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"), ("plan", "lead"), ("orient", "scout")],
             RoleWork.Codes.Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
         Assert.Equal(["design"], RoleCatalog.Seed.Where(role => role.Takes.Contains(ParticipantWork.Design)).Select(role => role.Id));
     }
@@ -58,7 +58,7 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal(
             [("build", "Build", "开发"), ("design", "Design", "设计"), ("exact", "Exact build", "精确开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
                 ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天"),
-                ("supervisor", "Supervisor", "主管"), ("second-check", "Second check", "复核"), ("steward", "Steward", "管家")],
+                ("lead", "Lead", "负责人"), ("scout", "Scout", "侦察"), ("supervisor", "Supervisor", "主管"), ("second-check", "Second check", "复核"), ("steward", "Steward", "管家")],
             RoleCatalog.Seed.Select(role => (role.Id, role.Name.In("en"), role.Name.In("zh"))));
         Assert.All(RoleCatalog.Seed.Where(role => role.Hold is null), role => Assert.Equal(ActorWords.Name(role.Id), role.Name.In("en")));
     }
@@ -251,7 +251,7 @@ public sealed class RoleCatalogTests : IDisposable
         }
 
         var read = RoleCatalog.Read(db);
-        Assert.Equal(["build", "design", "exact", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "supervisor", "second-check", "steward", "designer"], read.Slots.Select(slot => slot.Id));
+        Assert.Equal(["build", "design", "exact", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "lead", "scout", "supervisor", "second-check", "steward", "designer"], read.Slots.Select(slot => slot.Id));
         Assert.Equal((RoleState.Set, 7L, added.Json()), (read.Slots[^1].State, read.Slots[^1].Revision, read.Slots[^1].Role!.Json()));
     }
 

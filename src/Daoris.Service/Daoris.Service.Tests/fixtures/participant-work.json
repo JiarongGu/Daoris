@@ -12,6 +12,8 @@
     "partner": { "holdsSlot": true },
     "review": { "holdsSlot": true },
     "brainstorm": { "holdsSlot": false },
+    "plan": { "holdsSlot": true },
+    "orient": { "holdsSlot": true },
     "supervise": { "holdsSlot": false },
     "step": { "holdsSlot": false }
   },

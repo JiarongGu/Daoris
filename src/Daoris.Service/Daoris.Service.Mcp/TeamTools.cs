@@ -53,7 +53,9 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         if (parts is null or { Length: 0 })
         {
             var (plans, rows) = await teams.ReadAsync(target, ct).ConfigureAwait(false);
-            return json == true ? TeamPlanReading.Json(target, plans, rows) : TeamPlanReading.Of(target, plans, rows, seen ?? []);
+            if (json == true) return TeamPlanReading.Json(target, plans, rows);
+            var (members, decisions) = await teams.TeamAsync(target, ct).ConfigureAwait(false);
+            return TeamPlanReading.Of(target, plans, rows, seen ?? [], members, decisions);
         }
 
         var save = new TeamSave(target, parts, edges ?? [], why ?? "")

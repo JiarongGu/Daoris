@@ -668,6 +668,10 @@
       "reads": "tells",
       "note": "refuses a channel part that serves a quest or holds an opinion, by its marks; no row of this design moves it"
     },
+    "Core/Teams/TeamDesk.cs": {
+      "reads": "tells",
+      "note": "tells the session that plans an ask (an intake, by the ask it answers) from the one that splits a part (a quest's session, by the quest it took); the team's one door (TEAMWORK1d)"
+    },
     "Http/Routes/SessionWordRoutes.cs": {
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"

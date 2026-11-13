@@ -15,6 +15,8 @@ public static class ActorWords
         "brainstorm" => "Brainstorm",
         "ask-daoris" => "Ask Daoris",
         "chat" => "Chat",
+        "lead" => "Lead",
+        "scout" => "Scout",
         _ => actor,
     };
 }

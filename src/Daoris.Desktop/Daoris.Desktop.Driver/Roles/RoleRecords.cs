@@ -20,9 +20,11 @@ public static class RoleWork
     public const string Partner = "partner";
     public const string Review = "review";
     public const string Brainstorm = "brainstorm";
+    public const string Plan = "plan";
+    public const string Orient = "orient";
 
     /// <summary>Every work, the closed set, in the participant's order.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Plan, Orient];
 
     public static IReadOnlyList<string> Driven { get; } = [Build, Design, Exact];
 }
