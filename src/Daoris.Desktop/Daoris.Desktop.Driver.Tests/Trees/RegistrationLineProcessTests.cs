@@ -74,6 +74,10 @@ public sealed class RegistrationLineProcessTests : IDisposable
         Assert.Equal(1, registry.Refreshes);
         Assert.Empty(RegistryFollowing.Due(Home));
         Assert.Equal(RegistryOutcome.Registered, RegistryFollowing.Read(Home)["engine"].Outcome);
+
+        // What a plan's deployables are read at: the line's manifest blob, never the checkout's edited file.
+        var files = await LineDeclarationReader.ReadAsync(root, "main");
+        Assert.Equal((await GitAsync(root, "rev-parse", "main:daoris.json")).Trim(), files.ManifestBlob);
     }
 
     /// <summary>The registry door, standing in: one unadopted row at the checkout's root, and what it is sent.</summary>

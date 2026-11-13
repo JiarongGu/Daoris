@@ -14,7 +14,7 @@ public sealed record Deployable(string Id, IReadOnlyList<string> Paths, IReadOnl
 /// <param name="Problems">One sentence per entry left out, or for a manifest or a list that does not read.</param>
 public sealed record DeclaredDeployables(IReadOnlyList<Deployable> Items, IReadOnlyList<string> Problems)
 {
-    /// <summary>The manifest's blob id where it was read from a line; what a plan's deployables are read at.</summary>
+    /// <summary>The manifest's blob id on its line: what a plan's deployables are read at.</summary>
     public string? Blob { get; init; }
 }
 

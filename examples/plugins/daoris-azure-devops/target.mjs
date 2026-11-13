@@ -1,7 +1,5 @@
-// The release step's target as its options declare it, by stable id: the deployable it releases, the build pipeline, the release definition
-// (`none` for a pipeline run's own stages), the exact stage, the action, what counts as success and the earliest act that deploys into it.
-// What the forge holds for a pipeline is only ever listed for the person as candidates (discover.mjs): a label, a trigger or the releases
-// already made describe the forge's behaviour, not the intent.
+// The release step's target as its options declare it, by stable id. What the forge holds is only ever listed as candidates (discover.mjs):
+// a label, a trigger or the releases already made describe the forge's behaviour, not the intent.
 import { discover, discoveryWords } from './discover.mjs';
 
 export const ACTIONS = ['observe', 'start-stage', 'create-and-start'];
@@ -35,15 +33,12 @@ export function declared(options) {
   };
 }
 
-/** Whose target a sentence speaks of: the deployable the options name, else the step's. */
 const whose = (deployable) => (deployable ? ` for deployable \`${deployable}\`` : '');
 
-/** Why the step holds for a declaration it cannot act on. */
 export const undeclared = (missing, deployable = null) => (missing.length >= 4
   ? `No release target is declared${whose(deployable)}: ${joined(missing.slice(0, 4))}.`
   : `The release target${whose(deployable).replace(' for', ' of')} is declared without ${joined(missing)}.`);
 
-/** Why the step holds for a declared target that no longer resolves. */
 export const changedWords = (why, deployable = null) =>
   `The declared release target${whose(deployable).replace(' for', ' of')} no longer resolves: ${why}.`;
 

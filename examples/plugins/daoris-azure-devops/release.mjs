@@ -42,7 +42,6 @@ async function releasesOf(repo, definition, build, alias) {
 /** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way. */
 export async function release(attempt, unit, say) {
   const asked = declared(attempt.options);
-  // Every outcome after the target's holds names the deployable the node releases, where its options name one.
   const lead = asked.deployable ? `Deployable \`${asked.deployable}\`: ` : '';
   const answered = (code, message, url) => ({ state: 'failed', code, evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
   const failed = (code, message, url) => answered(code, `${lead}${message}`, url);

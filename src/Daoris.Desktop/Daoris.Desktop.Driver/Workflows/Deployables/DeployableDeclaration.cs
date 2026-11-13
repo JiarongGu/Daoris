@@ -28,7 +28,7 @@ public static partial class DeployableDeclaration
     private static partial Regex IdShape();
 
     /// <summary>The deployables <paramref name="manifest"/> declares; none, unsaid, where it names no <c>deployables</c>.</summary>
-    /// <param name="blob">The manifest's blob id where it was read from a line, kept on the answer.</param>
+    /// <param name="blob">The manifest's blob id on its line, kept on the answer.</param>
     public static DeclaredDeployables Read(string? manifest, string? blob = null)
     {
         if (manifest is null) return new([], []) { Blob = blob };
