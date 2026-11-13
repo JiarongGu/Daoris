@@ -6,72 +6,87 @@ const attached = (targetId, type, sessionId = `s-${targetId}`) => JSON.stringify
   method: 'Target.attachedToTarget',
   params: { sessionId, waitingForDebugger: true, targetInfo: { targetId, type, url: 'about:blank', attached: true } },
 });
-const changed = (targetId, type) => JSON.stringify({ method: 'Target.targetInfoChanged', params: { targetInfo: { targetId, type, url: 'about:blank' } } });
 const detached = (targetId, sessionId = `s-${targetId}`) => JSON.stringify({ method: 'Target.detachedFromTarget', params: { sessionId, targetId } });
 
-/** The filter with timers the test fires by hand. */
-function filter(patience = 500) {
+/** The filter with timers the test fires by hand, and the browser's answers to what it asks, given by the test. */
+function filter({ patience = 100, interval = 25 } = {}) {
   const sent = [];
+  const asked = [];
   const timers = [];
   const onHost = holdOthers(text => sent.push(JSON.parse(text)), {
+    toHost: text => asked.push(JSON.parse(text)),
     patience,
+    interval,
     setTimer: (run, ms) => { const timer = { run, ms, cleared: false }; timers.push(timer); return timer; },
     clearTimer: timer => { timer.cleared = true; },
   });
-  return { onHost, sent, timers };
+  const answer = (question, type) => onHost(JSON.stringify({ id: question.id, result: { targetInfo: { targetId: question.params.targetId, type, url: 'https://x.test/', attached: true } } }));
+  const tick = () => timers.filter(timer => !timer.cleared).at(-1).run();
+  return { onHost, sent, asked, timers, answer, tick };
 }
 
 test('a target announced as a page, and every other message, passes as it is', () => {
-  const { onHost, sent } = filter();
+  const { onHost, sent, asked } = filter();
   onHost(attached('t1', 'page'));
   onHost(JSON.stringify({ id: 3, result: {} }));
   assert.deepEqual(sent.map(message => message.params?.targetInfo?.type ?? 'reply'), ['page', 'reply']);
+  assert.equal(asked.length, 0);
 });
 
-test('a target announced as other waits, and is announced as a page once the host says it is one', () => {
-  const { onHost, sent } = filter();
+test('a target announced as other waits, is asked about, and is announced as a page once the browser says it is one', () => {
+  const { onHost, sent, asked, answer, tick } = filter();
   onHost(attached('t2', 'other'));
   assert.equal(sent.length, 0, 'nothing is announced while it may still become a page');
+  assert.equal(asked[0].method, 'Target.getTargetInfo');
+  assert.equal(asked[0].params.targetId, 't2');
 
-  onHost(changed('t2', 'page'));
+  answer(asked[0], 'other');
+  assert.equal(sent.length, 0, 'the answer is not Playwright\'s to read');
+  tick();
+  assert.equal(asked.length, 2, 'it asks again');
+  answer(asked[1], 'page');
 
-  assert.deepEqual(sent.map(message => [message.method, message.params.targetInfo.type]), [
-    ['Target.attachedToTarget', 'page'],
-    ['Target.targetInfoChanged', 'page'],
+  assert.deepEqual(sent.map(message => [message.method, message.params.targetInfo.type, message.params.targetInfo.url]), [
+    ['Target.attachedToTarget', 'page', 'https://x.test/'],
   ]);
   assert.equal(sent[0].params.sessionId, 's-t2');
   assert.equal(sent[0].params.waitingForDebugger, true);
 });
 
-test('a target that stays other is announced as it was once the patience is out', () => {
-  const { onHost, sent, timers } = filter(500);
+test('a target that stays other is announced unchanged once the patience is out', () => {
+  const { onHost, sent, asked, answer, tick } = filter({ patience: 60, interval: 25 });
   onHost(attached('t3', 'other'));
-  assert.equal(timers[0].ms, 500);
-  timers[0].run();
+  for (let i = 0; i < 6 && sent.length === 0; i++) {
+    answer(asked.at(-1), 'other');
+    tick();
+  }
   assert.deepEqual(sent.map(message => message.params.targetInfo.type), ['other']);
-  onHost(changed('t3', 'page'));
-  assert.equal(sent.length, 2, 'a later change passes on as the host said it');
+  assert.ok(asked.length <= 5, 'it stops asking');
 });
 
-test('a held target that goes before it is a page is never announced', () => {
-  const { onHost, sent, timers } = filter();
-  onHost(attached('t4', 'other'));
-  onHost(detached('t4'));
-  assert.equal(sent.length, 0);
-  assert.equal(timers[0].cleared, true);
+test('a held target that goes before it is a page is never announced, and a refused question ends the wait', () => {
+  const first = filter();
+  first.onHost(attached('t4', 'other'));
+  first.onHost(detached('t4'));
+  assert.equal(first.sent.length, 0);
+
+  const second = filter();
+  second.onHost(attached('t5', 'other'));
+  second.onHost(JSON.stringify({ id: second.asked[0].id, error: { message: 'No target with given id' } }));
+  assert.equal(second.sent.length, 1, 'announced as it was; Playwright drops it as it always did');
 });
 
-test('a popup that is announced as other and becomes a page is released the same way', () => {
-  const { onHost, sent } = filter();
+test('a popup announced as other and turning into a page is released the same way', () => {
+  const { onHost, sent, asked, answer } = filter();
   onHost(attached('page-1', 'page'));
   onHost(attached('popup-1', 'other'));
-  onHost(changed('popup-1', 'page'));
+  answer(asked[0], 'page');
   assert.deepEqual(sent.filter(m => m.method === 'Target.attachedToTarget').map(m => m.params.targetInfo.targetId), ['page-1', 'popup-1']);
 });
 
 test('ending the filter clears what it holds', () => {
   const { onHost, timers } = filter();
-  onHost(attached('t5', 'other'));
+  onHost(attached('t6', 'other'));
   onHost.end();
-  assert.equal(timers[0].cleared, true);
+  assert.ok(timers.every(timer => timer.cleared));
 });

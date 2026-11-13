@@ -34,8 +34,8 @@ read, means everyone shares the one profile. An isolated agent's context starts 
 storage of each origin the person has a page open on, and nothing goes back; its session storage and IndexedDB start empty.
 Its context closes when the session ends. A named profile that keeps an agent's sign-ins is not built.
 
-Playwright reaches the browser through a loopback relay (`relay.mjs`) that holds a target the browser announces as `other` until
-it says it became a page (`hold-others.mjs`): Daoris's browser announces a new tab that way, and Playwright drops such a target.
+Playwright reaches the browser through a loopback relay (`relay.mjs`) that holds a target the browser announces as `other` and asks
+the browser about it until it is a page (`hold-others.mjs`): Daoris's browser announces a new tab that way, and Playwright drops such a target.
 
 The first start installs the pinned Playwright MCP under the plugin's data folder (`runtime/`) with `npm`, once.
 

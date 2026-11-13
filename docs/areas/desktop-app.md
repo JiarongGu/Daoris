@@ -242,7 +242,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     every session, Ask Daoris included, shares its cookies, local storage and IndexedDB both ways, through a scoped view that
     lists only the tabs the session opened (and their popups), so it never takes, navigates or closes the person's tabs or another
     session's, and closing it closes only those. The browser announces a new default-context tab as an `other` target and a page a
-    moment later, which Playwright drops, so the server reaches it through a relay that holds an `other` until it is a page. Where the plugin's `isolation.json` names an agent (by MCP client name,
+    moment later, which Playwright drops, so the server reaches it through a relay that holds an `other` and asks the browser about it until it is a page. Where the plugin's `isolation.json` names an agent (by MCP client name,
     `role:<role>`, or `*`), that agent gets a context of its own instead, started with the person's cookies and the local storage
     of the origins the person has open and giving nothing back; nothing set means shared. Measured: on shared tabs without the view,
     a second session's snapshot broke the first one's clicks (5 s each); apart, about 0.6 s. The person's Edge on a Daoris profile

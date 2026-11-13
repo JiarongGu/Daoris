@@ -68,7 +68,7 @@ async function main() {
   let server;
   const contextOfSession = async () => {
     if (!browser) {
-      relay = await startRelay({ upstream: await socketOf(endpoint), ws, filter: send => holdOthers(send) });
+      relay = await startRelay({ upstream: await socketOf(endpoint), ws, filter: (send, toHost) => holdOthers(send, { toHost }) });
       browser = await chromium.connectOverCDP(relay.url);
     }
     const client = server?.getClientVersion?.();

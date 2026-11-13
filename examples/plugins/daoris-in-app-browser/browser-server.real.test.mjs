@@ -91,18 +91,29 @@ function session(endpoint, data, client) {
   };
 }
 
-/** A host that announces each target of the default context as `other` first and as a page 60 ms later, as the installed Daoris browser does. */
+/**
+ * A host that announces each target of the default context as `other`, as the installed Daoris browser does: it sends no event when
+ * the target becomes a page (a client that enabled no discovery hears none), and says so only to `Target.getTargetInfo`, 60 ms on.
+ */
 const announcesAsOther = send => {
   const made = new Set();
+  const pretending = new Map();
   return text => {
-  if (text.includes('"result"') && text.includes('"browserContextId"')) made.add(JSON.parse(text).result?.browserContextId);
-  if (!text.includes('"Target.attachedToTarget"')) return send(text);
-  const message = JSON.parse(text);
-  const info = message.params.targetInfo;
-  if (info.type !== 'page' || made.has(info.browserContextId)) return send(text);
-  message.params.targetInfo = { ...info, type: 'other' };
-  send(JSON.stringify(message));
-  setTimeout(() => send(JSON.stringify({ method: 'Target.targetInfoChanged', params: { targetInfo: info } })), 60);
+    if (text.includes('"browserContextId"') && text.includes('"result"')) {
+      const reply = JSON.parse(text);
+      if (reply.result?.browserContextId) made.add(reply.result.browserContextId);
+      if (reply.result?.targetInfo && pretending.get(reply.result.targetInfo.targetId) > Date.now()) {
+        reply.result.targetInfo.type = 'other';
+        return send(JSON.stringify(reply));
+      }
+    }
+    if (!text.includes('"Target.attachedToTarget"')) return send(text);
+    const message = JSON.parse(text);
+    const info = message.params.targetInfo;
+    if (info.type !== 'page' || made.has(info.browserContextId)) return send(text);
+    pretending.set(info.targetId, Date.now() + 60);
+    message.params.targetInfo = { ...info, type: 'other' };
+    return send(JSON.stringify(message));
   };
 };
 
