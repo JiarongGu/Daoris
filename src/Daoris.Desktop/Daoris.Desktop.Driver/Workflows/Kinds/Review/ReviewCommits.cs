@@ -24,9 +24,10 @@ public static class ReviewCommits
         {
             case (ReviewKinds.Branch, ReviewContent.After):
                 return reference.Tip;
+            case (ReviewKinds.Branch, ReviewContent.Before) when reference.Base is { } frozen:
+                return frozen;
             case (ReviewKinds.Branch, ReviewContent.Before) when reference is { Tip: { } tip, Line: { } line }:
-                var (code, based, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "merge-base", line, tip], ct).ConfigureAwait(false);
-                return code == 0 ? based.Trim() : null;
+                return await LineBaseAsync(root, line, tip, ct).ConfigureAwait(false);
             case (ReviewKinds.Checkout, ReviewContent.After):
                 return reference.Turns.LastOrDefault()?.To;
             case (ReviewKinds.Checkout, ReviewContent.Before):
@@ -34,5 +35,20 @@ public static class ReviewCommits
             default:
                 return null;
         }
+    }
+
+    /// <summary>With no frozen base, the newest commit the tip shares with the line here or on origin: a local line behind its remote would count the remote's merged work.</summary>
+    private static async Task<string?> LineBaseAsync(string root, string line, string tip, CancellationToken ct)
+    {
+        async Task<string?> MergeBase(string of)
+        {
+            var (code, based, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "merge-base", of, tip], ct).ConfigureAwait(false);
+            return code == 0 ? based.Trim() : null;
+        }
+
+        var candidates = ReviewBase.Candidates(await MergeBase(line).ConfigureAwait(false), await MergeBase($"refs/remotes/origin/{line}").ConfigureAwait(false), null);
+        if (candidates.Count < 2) return candidates.FirstOrDefault();
+        var (named, maximal, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "merge-base", "--independent", .. candidates], ct).ConfigureAwait(false);
+        return named == 0 ? ReviewBase.Newest(candidates, maximal.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) : candidates[0];
     }
 }

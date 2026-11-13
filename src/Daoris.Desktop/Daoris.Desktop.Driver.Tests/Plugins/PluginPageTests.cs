@@ -143,6 +143,26 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("docs  `docs`; offered to Ask Daoris, waiting for your approval", shown);
     }
 
+    /// <summary>In full access Ask Daoris is handed every server whole (<c>ChatServers.HandAsync</c>), so none waits for an approval.</summary>
+    [Fact]
+    public async Task In_full_access_a_server_offered_to_ask_daoris_is_said_handed_whole_and_waits_for_no_approval()
+    {
+        Install("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "docs", "command": ["docs"], "to": ["help"], "allow": ["read"], "writes": ["edit"] } ] }
+            """);
+        var config = DriverConfig.ResolvePath(Home);
+        DriverConfig.Load(config).WithHelpMode(HelpModes.Full).Save(config);
+        var output = new StringWriter();
+
+        var exit = await PluginsCommand.RunAsync(["show", "acme.tools"], output, Home);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("docs  `docs`; offered to Ask Daoris, handed whole in full access, where it asks nothing: reads with read; writes outside Daoris with edit",
+            output.ToString());
+        Assert.DoesNotContain("waiting for your approval", output.ToString());
+    }
+
     [Fact]
     public void The_manifest_is_read_as_written_with_each_agent_and_the_hook()
     {

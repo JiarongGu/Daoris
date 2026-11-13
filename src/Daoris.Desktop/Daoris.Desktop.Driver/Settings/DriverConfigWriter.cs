@@ -77,6 +77,7 @@ internal static class DriverConfigWriter
             // Written only when set, as the CLI writes them: absent is Current, today's behaviour.
             WorkflowKey.WriteMap(writer, "workflows", config.Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", config.WorkspaceWorkflows, workspace: true);
+            WorkflowValuesKey.WriteMap(writer, config.WorkflowValues);
             // Written only when set: absent is no home default (a place follows Current) and no line policy.
             if (config.DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
             LinePolicyKey.WritePolicies(writer, "linePolicies", config.LinePolicies);

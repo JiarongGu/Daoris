@@ -3,7 +3,7 @@
   "formerly": ["github-pull-request"],
   "apiVersion": 1,
   "name": "GitHub",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "changes": "Its pull-request step declares a goal, so a Daoris that starts a step's agent has an agent open the pull request with the plugin's own tools; elsewhere the step is performed on work/perform as before, and an attempt begun there is settled by its own check.",
   "description": "Daoris's work on GitHub through its REST API, with the token its own login keeps: pull-request opens a GitHub pull request from the branch Daoris pushed and reads its state.",
   "hooks": {

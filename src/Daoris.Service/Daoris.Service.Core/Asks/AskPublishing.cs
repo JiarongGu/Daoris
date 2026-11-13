@@ -3,7 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>Recording an ask, becoming quests, and closing it.</summary>
 internal sealed class AskPublishing(
     KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? askFiles, AskStandings standings, AskQuests askQuests,
-    AskPublishGuard guard)
+    AskPublishGuard guard, AskIntakeClose? intakeClose = null)
 {
     /// <summary>
     /// Record an ask, and answer it: a named receiver is published to at once; otherwise the
@@ -244,7 +244,9 @@ internal sealed class AskPublishing(
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is already closed ({ask.Note}) — its reason stands.", ask);
         }
 
-        await asks.RecordClosedAsync(ask.Id, reason.Trim(), now, ct).ConfigureAwait(false);
+        await (intakeClose is null
+            ? asks.RecordClosedAsync(ask.Id, reason.Trim(), now, ct)
+            : intakeClose.CloseAsync(ask.Id, reason.Trim(), now, ct)).ConfigureAwait(false);
         var closed = await standings.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, $"Ask `#{ask.Id}` is closed: {closed.Note}", closed);
     }

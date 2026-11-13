@@ -6,7 +6,7 @@ import { store, stored } from '../../lib/stored';
  * bottom panel hold, as VS Code's views move between its secondary side bar and its panel. The terminal
  * is the person's own shell, beside the console as VS Code's terminal is beside its output.
  */
-export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atWork' | 'ask' | 'console' | 'terminal';
+export type ViewId = 'notifications' | 'timeline' | 'outputs' | 'workflow' | 'atWork' | 'ask' | 'console' | 'terminal';
 
 /**
  * Every view, in the frame's order: a region's tabs read in it, whichever were moved there.
@@ -19,17 +19,17 @@ export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atW
  * goldens are written again by their test's write switch. A view on the right by default also
  * joins the frame tests that move every side bar view to the panel.
  */
-// The workflow: where the attended session's work stands, beside its timeline and review.
+// The workflow: where the attended session's work stands, beside its timeline and its outputs.
 // *Notifications* first: everything that comes to the person, the same on every view.
 // *At work* after it: who is at work on the attended session, from Daoris's records.
-export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'review', 'workflow', 'atWork', 'ask', 'console', 'terminal'];
+export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'outputs', 'workflow', 'atWork', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
 export type Place = 'right' | 'panel';
 
 /** Where each view stands until the viewer moves it: where the frame always drew it. */
 export const DEFAULT_PLACES: Readonly<Record<ViewId, Place>> = {
-  notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', atWork: 'right', ask: 'right', console: 'panel', terminal: 'panel',
+  notifications: 'right', timeline: 'right', outputs: 'right', workflow: 'right', atWork: 'right', ask: 'right', console: 'panel', terminal: 'panel',
 };
 
 const ORDER = VIEW_IDS;

@@ -3,21 +3,21 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../../locales/i18n';
 import { RecordFileView } from './RecordFileView';
 
-// A file of a folder's or a copy's review, once its row is opened: a Markdown file is read rendered as handed back, with its changes
-// one press away; any other file is its changes, line by line.
+// A file of a folder's or a copy's review, once its row is opened: its changes, line by line; a Markdown file that still stands is
+// read rendered one press away.
 
 describe('a record file once its row is opened', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('renders a Markdown file at its after version, and shows its changes on the press', () => {
+  it('opens a Markdown file on its changes, and renders its after version on the press', () => {
     render(<RecordFileView path="notes/summary.md" before={'# Old\n'} after={'# Summary\n\n- one\n- two\n'} />);
 
-    expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Changes' }));
     expect(screen.queryByRole('heading', { name: 'Summary' })).toBeNull();
     expect(screen.getByText('# Old')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Rendered' }));
+    expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
   it('draws a Markdown file that was removed as its changes, since it has no rendered version', () => {
@@ -40,6 +40,7 @@ describe('a record file once its row is opened', () => {
     render(<RecordFileView path="notes/summary.md" before={null} after={'# 摘要\n'} />);
 
     expect(screen.getByRole('radio', { name: '改动' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: '渲染' }));
     expect(screen.getByRole('heading', { name: '摘要' })).toBeInTheDocument();
   });
 });

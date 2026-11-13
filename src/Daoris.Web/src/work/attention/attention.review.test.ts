@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import '../../locales/i18n';
 import { attentionActs, attentionWorded, type PushedAttention } from './attention';
-import { reviewIntent } from './attentionRun';
+import { outputsIntent } from './attentionRun';
 import { SET_UP, STEP_SHOWN } from '../gates/reviewFixtures';
 
 /**
@@ -35,7 +35,7 @@ describe('a set-up in what needs you', () => {
   });
 });
 
-/** The review row carries the run whose Accept waits, so its door opens `review/<run>` and not the session's own view. */
+/** The review row carries the run whose Accept waits, so its door opens `outputs/<run>` and not the session's own view. */
 describe('a review in what needs you', () => {
   type Wait = { run: string; node: string; why: string };
   const row = (waits: Wait[]) => attentionWorded({
@@ -43,17 +43,17 @@ describe('a review in what needs you', () => {
     placed: { session: 's9', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, waits },
   });
 
-  it('carries the run of its accept wait and opens that run’s review', () => {
+  it('carries the run of its accept wait and opens that run’s outputs', () => {
     const worded = row([{ run: 'q4', node: 'check', why: 'task' }, { run: 'q5', node: 'review', why: 'accept' }]);
 
     expect(worded.run).toBe('q5');
-    expect(reviewIntent(worded)).toBe('review/q5');
+    expect(outputsIntent(worded)).toBe('outputs/q5');
   });
 
-  it('opens the session’s own review where no run is named', () => {
+  it('opens the session’s own outputs where no run is named', () => {
     const worded = row([]);
 
     expect(worded.run).toBeNull();
-    expect(reviewIntent(worded)).toBe('review');
+    expect(outputsIntent(worded)).toBe('review');
   });
 });

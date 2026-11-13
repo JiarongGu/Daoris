@@ -127,16 +127,16 @@ public sealed class PluginOfferTests : IDisposable
     }
 
     /// <summary>
-    /// The install's own offers, as the tracked examples stand: the two that land work and the one that
-    /// hands a session Daoris's own browser, each sound here and saying what it needs. The rehearsal fixture
-    /// (<c>hold-by-title</c>) and the browser a machine without the shell uses are not offered.
+    /// The install's own offers, as the tracked examples stand: the two that land work, the one that
+    /// hands a session Daoris's own browser and the one a session files a report with, each sound here and saying what it needs. The
+    /// rehearsal fixture (<c>hold-by-title</c>) and the browser a machine without the shell uses are not offered.
     /// </summary>
     [Fact]
     public void The_tracked_examples_that_are_offered_are_sound_and_say_what_they_need()
     {
         var examples = Path.Combine(Repository(), "examples", "plugins");
 
-        foreach (var id in new[] { "daoris-github", "daoris-azure-devops", "daoris-in-app-browser" })
+        foreach (var id in new[] { "daoris-github", "daoris-azure-devops", "daoris-in-app-browser", "daoris-dev-report" })
         {
             var (manifest, problem) = PluginCatalog.ReadAsWritten(id, Path.Combine(examples, id, PluginCatalog.ManifestName));
             Assert.Null(problem);

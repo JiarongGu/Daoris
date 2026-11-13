@@ -596,8 +596,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
     /// <summary>
     /// The words a resume is handed from the session that asked: the person's, and Daoris's own, said as Daoris's, since the
-    /// resume starts anyway and Daoris's never starts one by itself. Another agent's findings and a helper's answer go to the
-    /// person instead, as any new session's do.
+    /// resume starts anyway and Daoris's never starts one by itself. Another agent's findings go to the person instead, as any new
+    /// session's do; a helper's answer goes on as the helper's (<see cref="HelperAnswersCarried"/>).
     /// </summary>
     internal static bool HandedToResume(SaidWordView word) => word.Persons || word.Daoris;
 

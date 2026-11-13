@@ -738,3 +738,13 @@ the graph through the node runtime, never a door alone.
    it, since its pass carries words and these are the person's acknowledgement of the handbacks it names.
 5. **Widening *plan*** to a system's changes collides with Setup's nowhere the person reads both: each is what would change, read before
    anything is written, and each says what it is a plan of.
+
+## 16. Outputs and the Accept card (D289)
+
+The one review surface of §5 is read as a run's **Outputs**: a side-bar view of what the review record presents, each output typed by
+what made it and drawn by a small display vocabulary (change set, document, resource plan, then evidence and structured record, with a
+raw fallback), pinned to the attempt read. The presses of §6 move to one **Accept card** in the session's conversation, bound to the
+run, node, attempt and revision it draws; a newer revision supersedes the card and appends another, and the view has no Accept. A
+branch's comparison base is frozen with its tip on the record. `RUN_REVIEW` answers the outputs, the commits with uncommitted paths
+apart, and the patch per file between the record's commits; a newer revision names the outputs that moved. What is left is listed in
+D289's later parts.

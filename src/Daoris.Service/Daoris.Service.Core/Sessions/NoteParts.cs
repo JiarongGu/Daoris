@@ -39,6 +39,7 @@ public static class LedgerNoteCodes
     public static readonly LedgerNoteCode WentOnSupervisor = new("ledger.went-on-supervisor", ["at"]);
     // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
     public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
+    public static readonly LedgerNoteCode IntakeClosed = new("ledger.intake-closed", ["ask"]);
 
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<LedgerNoteCode> All { get; } =

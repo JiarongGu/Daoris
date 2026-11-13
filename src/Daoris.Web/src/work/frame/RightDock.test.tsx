@@ -18,7 +18,7 @@ const render = (node: ReactElement) => {
   };
 };
 
-const THREE: ViewId[] = ['timeline', 'review', 'ask'];
+const THREE: ViewId[] = ['timeline', 'outputs', 'ask'];
 const PREVIEW: DockPreview = { name: 'chunk.rs', path: 'src/world/streaming/chunk.rs', onClose: () => {} };
 
 const dock = (props: Partial<Parameters<typeof RightDock>[0]> = {}) => (
@@ -82,16 +82,16 @@ describe('the side bar\'s tabs', () => {
     room = layTabs(900);
     render(dock());
 
-    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Review', 'Review'], ['Ask Daoris', 'Ask Daoris']]);
+    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Outputs', 'Outputs'], ['Ask Daoris', 'Ask Daoris']]);
     expect(row()?.getAttribute('data-fit')).toBe('names');
   });
 
   it('draws the unselected tabs as their icons when the row cannot hold every name whole, each still named', async () => {
     room = layTabs(430);
-    render(dock({ tab: 'review' }));
+    render(dock({ tab: 'outputs' }));
 
     // The selected keeps its whole name, as a browser's active tab keeps its width; the rest are icons.
-    expect(shown()).toEqual([['Timeline', ''], ['Review', 'Review'], ['Ask Daoris', '']]);
+    expect(shown()).toEqual([['Timeline', ''], ['Outputs', 'Outputs'], ['Ask Daoris', '']]);
     expect(row()?.getAttribute('data-fit')).toBe('icons');
 
     // Named still: by its label to a screen reader, and by its tip to the eye.
@@ -102,7 +102,7 @@ describe('the side bar\'s tabs', () => {
 
   it('never cuts a view\'s name: no tab shrinks, and no name carries an ellipsis', () => {
     room = layTabs(430);
-    render(dock({ tab: 'review' }));
+    render(dock({ tab: 'outputs' }));
 
     for (const tab of screen.getAllByRole('tab')) {
       expect(tab).toHaveClass('shrink-0');
@@ -116,7 +116,7 @@ describe('the side bar\'s tabs', () => {
     render(dock({ tab: 'preview', preview: PREVIEW }));
 
     // 时间线, 审阅 and 问道衍 with a preview: 368px of names in 350px of room.
-    expect(shown()).toEqual([['时间线', ''], ['审阅', ''], ['问道衍', ''], ['预览：chunk.rs', 'chunk.rs']]);
+    expect(shown()).toEqual([['时间线', ''], ['产出', ''], ['问道衍', ''], ['预览：chunk.rs', 'chunk.rs']]);
   });
 
   it('shows every name again once the side bar is widened to hold them', () => {
@@ -126,7 +126,7 @@ describe('the side bar\'s tabs', () => {
 
     room.resize(900);
 
-    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Review', 'Review'], ['Ask Daoris', 'Ask Daoris']]);
+    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Outputs', 'Outputs'], ['Ask Daoris', 'Ask Daoris']]);
   });
 
   it('gives way to its icons as the side bar is dragged narrower, and settles there', () => {
@@ -140,10 +140,10 @@ describe('the side bar\'s tabs', () => {
     // A resize that changes nothing changes nothing: the row does not flip back and forth.
     room.resize(430);
     expect(row()?.getAttribute('data-fit')).toBe('icons');
-    // Not until the row holds what the names needed (140 + 116 + 164 = 420px, after 80 of buttons).
-    room.resize(499);
+    // Not until the row holds what the names needed (140 + 128 + 164 = 432px, after 80 of buttons).
+    room.resize(511);
     expect(row()?.getAttribute('data-fit')).toBe('icons');
-    room.resize(500);
+    room.resize(512);
     expect(row()?.getAttribute('data-fit')).toBe('names');
   });
 
@@ -155,20 +155,20 @@ describe('the side bar\'s tabs', () => {
 
     await act(async () => { await i18n.changeLanguage('zh'); });
 
-    expect(shown()).toEqual([['时间线', '时间线'], ['审阅', '审阅'], ['问道衍', '问道衍']]);
+    expect(shown()).toEqual([['时间线', '时间线'], ['产出', '产出'], ['问道衍', '问道衍']]);
   });
 
   it('measures again when a preview opens, and when it closes', () => {
     room = layTabs(430);
-    const { rerender } = render(dock({ views: ['timeline', 'review'] }));
+    const { rerender } = render(dock({ views: ['timeline', 'outputs'] }));
     expect(row()?.getAttribute('data-fit')).toBe('names');
 
     const long = { ...PREVIEW, name: 'streaming-budget-report.md' };
-    rerender(dock({ views: ['timeline', 'review'], preview: long }));
+    rerender(dock({ views: ['timeline', 'outputs'], preview: long }));
     expect(row()?.getAttribute('data-fit')).toBe('icons');
 
-    rerender(dock({ views: ['timeline', 'review'] }));
-    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Review', 'Review']]);
+    rerender(dock({ views: ['timeline', 'outputs'] }));
+    expect(shown()).toEqual([['Timeline', 'Timeline'], ['Outputs', 'Outputs']]);
   });
 
   describe('a file\'s preview', () => {

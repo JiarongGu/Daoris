@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../locales/i18n';
-import { reviewOfIntent } from '../menus/commands';
+import { outputsOfIntent } from '../menus/commands';
 import { DoneAndFailed, noticeWords } from './DoneAndFailed';
 
 describe('Done and failed: a run step outcome', () => {
@@ -24,7 +24,7 @@ describe('Done and failed: a run step outcome', () => {
     render(<DoneAndFailed notices={[notice]} onRead={vi.fn()} onOpen={onOpen} onDismiss={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /Open/ }));
     expect(onOpen).toHaveBeenCalledWith(notice);
-    expect(reviewOfIntent(`review/${notice.quest}`)).toBe('q1');
-    expect(reviewOfIntent('review')).toBeNull();
+    expect(outputsOfIntent(`outputs/${notice.quest}`)).toBe('q1');
+    expect(outputsOfIntent('review')).toBeNull();
   });
 });

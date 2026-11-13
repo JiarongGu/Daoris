@@ -2,6 +2,8 @@
 // before and after it, as `RUN_REVIEW` and `RUN_REVIEW_FILE` answer them. The page draws it and derives nothing; its words are the
 // page's, worded from `says`.
 
+import type { DiffFile } from '../diff';
+
 /** One file the record's work added, changed or removed, with its hashes and marks. */
 export type ReviewRow = { path: string; change: 'added' | 'modified' | 'deleted' | string; before?: string | null; after?: string | null; marks: string[] };
 
@@ -41,13 +43,24 @@ export type RunReviewSupervisor = {
 /** One operation of a plan the record names: its resource, `create`, `update` or `delete`, and its value before and after. */
 export type ReviewOperation = { resource: string; op: string; before?: string | null; after?: string | null };
 
+/** One output under review: its type is declared by what made it, its display drawn raw where this window has none. */
+export type ReviewOutput = { id: string; type: string; display: string; title?: string | null; part?: string | null; digest: string };
+
+/** One commit of the record's work, newest first, with the paths it touched. */
+export type ReviewCommit = { sha: string; author: string; at?: string | null; subject: string; files: string[] };
+
+export type ReviewDiff = { files: DiffFile[]; truncated?: string | null; base: string };
+
 /** What `RUN_REVIEW` answers: the run's review, or `refused` (`not-run`) where none is bound here with a review. */
 export type RunReviewAnswer = {
   run: string | null; refused?: string; node?: string; record?: ReviewRecord | null; state?: string; standing?: number; since?: string | null;
   by?: string | null; words?: string | null; says?: RunReviewSays; before?: RunReviewStep[]; presses?: string[];
-  newer?: { attempt: number; revision: string; changed: string[] } | null; supervisor?: RunReviewSupervisor | null; follows?: RunReviewStep[];
+  newer?: { attempt: number; revision: string; changed: string[]; outputs?: string[] } | null; supervisor?: RunReviewSupervisor | null; follows?: RunReviewStep[];
   ended?: string | null; operations?: ReviewOperation[] | null;
   files?: ReviewRow[] | null;
+  outputs?: ReviewOutput[];
+  commits?: { commits: ReviewCommit[]; uncommitted: string[] } | null;
+  diff?: ReviewDiff | null;
 };
 
 /** What `RUN_REVIEW_FILE` answers: the file's text at the record's revision, or why it is not drawn (`moved`, `not-row`, `not-kept`, `not-run`). */

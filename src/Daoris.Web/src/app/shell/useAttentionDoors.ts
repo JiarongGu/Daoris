@@ -4,7 +4,7 @@ import { type AttentionDoors } from '../../work/attention/AttentionBand';
 import { type OpenPart } from '../opener';
 import { type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
 import { type Attention } from '../../work/attention/AttentionRow';
-import { reviewIntent } from '../../work/attention/attentionRun';
+import { outputsIntent } from '../../work/attention/attentionRun';
 import { type FrameIntent, type View } from '../../menus/commands';
 
 export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings, openHelp }: {
@@ -68,7 +68,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     // what the agent may do, on its page. Only a shell reads the rules.
     ...(attached ? { rule: () => open('agents', null, { agentPart: 'rules' }) } : {}),
     // Work to review opens in Sessions on its run's review where the row carries the run: accepting needs looking. A shell's alone.
-    ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent(reviewIntent(item)); } } : {}),
+    ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent(outputsIntent(item)); } } : {}),
     // A second opinion waiting on the person opens the session whose work it read, where its gate and every press are
     // A shell's alone: the opinion is this machine's.
     ...(attached ? { left: (item: Attention) => open('sessions', item.id) } : {}),

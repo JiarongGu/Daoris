@@ -23,12 +23,12 @@ export const HOME = 'data';
 export const PLUGIN_OFFERS = Object.freeze(['app', 'plugin-offers']);
 
 /**
- * The tracked examples an install offers: the two that land work, and the one that hands a
- * session the install's own browser. Not `hold-by-title`, which the rehearsals install as their
- * fixture, and not `browser`, which launches a browser of its own for a machine without the shell and
- * claims the same server name as `daoris-in-app-browser`, so the second installed would contribute nothing.
+ * The tracked examples an install offers: the two that land work, the install's own browser and the
+ * report a session files. Not `hold-by-title`, which the rehearsals install as their fixture, and not
+ * `browser`, which launches a browser of its own for a machine without the shell and claims the same
+ * server name as `daoris-in-app-browser`, so the second installed would contribute nothing.
  */
-export const OFFERED_PLUGINS = Object.freeze(['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser']);
+export const OFFERED_PLUGINS = Object.freeze(['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser', 'daoris-dev-report']);
 
 /**
  * Lay the offers out in an install: each of {@link OFFERED_PLUGINS} copied whole from `examples` into

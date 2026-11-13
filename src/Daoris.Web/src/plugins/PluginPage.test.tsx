@@ -336,6 +336,30 @@ describe("a plugin's page", () => {
     expect(screen.queryByText(/is handed nothing of/)).toBeNull();
   });
 
+  /** In full access Ask Daoris is handed every server whole and asks nothing, so nothing on the page waits for an approval. */
+  it('in full access says no server waits and a server never approved is handed whole, in English and in 中文', async () => {
+    const waiting: PluginShown = {
+      ...PLUGIN,
+      helpServers: [{ name: 'browser', allow: ['browser_navigate'], writes: ['browser_click'], state: 'waits' }],
+    };
+    const { unmount } = page({ plugin: waiting, onHelp: vi.fn(), helpFull: true });
+    expect(screen.queryByText(/is handed nothing of/)).toBeNull();
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+    expect(within(section).getByText('Full access: Ask Daoris is handed it whole, and nothing is asked')).toBeInTheDocument();
+    expect(within(section).queryByText('Not approved: Ask Daoris is handed nothing of it')).toBeNull();
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      page({ plugin: waiting, onHelp: vi.fn(), helpFull: true });
+      expect(screen.queryByText(/问道衍拿不到/)).toBeNull();
+      expect(screen.getByText('完全访问：问道衍拿到它的全部，什么都不问')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /**
    * The page lists the skills a plugin hands, who each is handed to, and the driver's sentence for one
    * it does not hand; one with no skills says nothing of them.

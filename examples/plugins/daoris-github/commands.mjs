@@ -19,8 +19,8 @@ export async function run({ command, args = {}, answers = {} }) {
   if (command === 'logout') return { said: [forget() ? 'The kept token is forgotten.' : 'No token was kept.'], exit: 0 };
   if (command === 'status') {
     const held = kept();
-    if (!held) return { said: [`No token is kept: run \`daoris ${ID} login\`.`], exit: 1 };
-    if (held.refused) return { said: [`GitHub refused the kept token at ${held.refused}: run \`daoris ${ID} login\` with a new one.`], exit: 1 };
+    if (!held) return { said: [`No token is kept: run \`daoris ${ID} login\`.`], exit: 0 };
+    if (held.refused) return { said: [`GitHub refused the kept token at ${held.refused}: run \`daoris ${ID} login\` with a new one.`], exit: 0 };
     return { said: [`A token is kept, since ${held.kept}.`], exit: 0 };
   }
   return { said: [`This plugin has no command \`${command}\`.`], exit: 2 };

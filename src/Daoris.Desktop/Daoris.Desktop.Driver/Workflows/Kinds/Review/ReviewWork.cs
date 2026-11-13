@@ -26,7 +26,12 @@ public sealed record ReviewWork(string Kind, string Place, ReviewReference Refer
     public static ReviewWork Read(string home, RunScope scope, string? tip)
     {
         var (run, place, parts) = (scope.Run.Binding.Run, scope.Run.Binding.Repository, Handbacks(scope.Quests));
-        if (scope.Branch?.Records.Branch is { } grown) return new(ReviewKinds.Branch, place, new() { Branch = grown.Branch, Line = grown.Line, Tip = tip }, parts);
+        if (scope.Branch?.Records.Branch is { } grown)
+        {
+            var based = RunWorkBase.Of(grown, [.. scope.Branches.Select(each => each.Records.Branch).OfType<GrownBranch>()]);
+            return new(ReviewKinds.Branch, place, new() { Branch = grown.Branch, Line = grown.Line, Tip = tip, Base = based }, parts);
+        }
+
         if (PlanReview.Reference(home, scope.Sessions) is { } plan) return new(ReviewKinds.Plan, place, plan, parts);
         var turns = RunTurns.Of(home, RemoteTarget.Workspace(scope.Run.Binding.Workspace), place, run);
         if (turns.LastOrDefault() is not { } newest) return new(ReviewKinds.Answer, place, new(), parts);

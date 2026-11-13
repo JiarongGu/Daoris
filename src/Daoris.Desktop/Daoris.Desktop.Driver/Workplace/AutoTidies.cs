@@ -40,7 +40,7 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
     /// <summary>The recovery refs the look removed past their retention, each with the branch or tag that holds its commit.</summary>
     public IReadOnlyList<RecoveryGone> Recovered { get; init; } = [];
 
-    /// <summary>The trees of runs that ended or whose record is gone, which the look tried to end (<see cref="TreeReleases.SweepAsync"/>).</summary>
+    /// <summary>The trees of runs whose tidy ended their part, that ended or whose record is gone, which the look tried to end (<see cref="TreeReleases.SweepAsync"/>).</summary>
     public IReadOnlyList<TreeReleased> Released { get; init; } = [];
 }
 
@@ -221,7 +221,7 @@ internal sealed class AutoTidies(
                 Retention(repository);
             }
 
-            // The trees of runs that ended or whose record is gone, for those no release reached.
+            // The trees of runs whose tidy ended their part, that ended or whose record is gone, for those no release reached.
             released = await new TreeReleases(context.Home).SweepAsync(root, repository, inUse, ct).ConfigureAwait(false);
         }
 

@@ -19,7 +19,7 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "Notifications, the timeline, the review, the workflow, At work and the console", "Every view sits in one frame",
+            "the right side bar", "the panel", "Notifications, the timeline, Outputs, the workflow, At work and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
             // The person's own terminal, and that it is theirs rather than a session's.
@@ -54,7 +54,7 @@ public sealed class HelpRoomWindowTests
 
     /// <summary>
     /// The session's *Workflow* view is among the views that stand in the
-    /// two regions and move between them, beside the timeline and the review; asked where
+    /// two regions and move between them, beside the timeline and Outputs; asked where
     /// a piece of work stands, the helper names the view the window has, and the room's doors say what it draws.
     /// </summary>
     [Fact]
@@ -63,7 +63,7 @@ public sealed class HelpRoomWindowTests
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("Eight views stand in the two regions and move between them:", window);
-        Assert.Contains("the timeline, the review, the workflow, At work and the console of the session attended on Sessions", window);
+        Assert.Contains("the timeline, Outputs, the workflow, At work and the console of the session attended on Sessions", window);
         Assert.DoesNotContain("Five views", window);
         Assert.DoesNotContain("Seven views", window);
     }
@@ -92,7 +92,7 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Notifications, the timeline, the review, the workflow, At work and the console", window);
+        Assert.Contains("Notifications, the timeline, Outputs, the workflow, At work and the console", window);
         Assert.Contains("The bell on the title bar shows it", window);
         Assert.Contains("What needs you", window);
         Assert.Contains("Overview leads with a summary", window);
@@ -135,7 +135,7 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("A file path in a session's tool card, or a file's button in the review's list, opens a preview", window);
+        Assert.Contains("A file path in a session's tool card, or a file's button in Outputs' list, opens a preview", window);
         Assert.Contains("a tab of the right side bar", window);
         Assert.Contains("as it is on disk now, read-only", window);
         Assert.Contains("In this conversation a path is plain text.", window);

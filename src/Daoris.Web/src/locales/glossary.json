@@ -53,7 +53,7 @@
         "notifications.title",
         "work.panel.title",
         "work.preview.tab",
-        "work.review.tab",
+        "work.outputs.title",
         "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal", "work.views.workflow"
       ]
     },
@@ -461,7 +461,6 @@
     { "door": "command.usage", "opens": "usage.title" },
     { "door": "work.sync.remotes", "opens": "projects.setup.section.remote" },
     { "door": "plugin.list.ask", "opens": "help.title" },
-    { "door": "work.head.review", "opens": "work.review.tab" },
     { "door": "work.act.terminal", "opens": "work.views.terminal" },
     { "door": "work.menu.monitor", "opens": "work.monitor.title" },
     { "door": "setup.door.agents", "opens": "nav.agents" },
@@ -482,7 +481,6 @@
     { "door": "map.detail.openConvergence", "opens": "nav.convergence" },
     { "door": "search.toConvergence", "opens": "nav.convergence" },
     { "door": "overview.repositories.button", "opens": "nav.projects" },
-    { "door": "work.head.review", "opens": "work.review.tab" },
     { "door": "workflow.door.setup", "opens": "projects.tab.setup" },
     { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" },
     { "door": "workflow.run.door.view", "opens": "work.views.workflow" }

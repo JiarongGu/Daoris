@@ -270,6 +270,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ledger.went-on-supervisor': { values: ['at'] },
   // A quest's note: the person marked it done, their words a part beneath it.
   'quest.person-done': { values: [] },
+  'ledger.intake-closed': { values: ['ask'] },
   // A conversation's first line: the account it opened on and the step that chose it, then what each account said.
   'opening.opened': { values: ['account', 'why'], why: 'opening' },
   'opening.carried-on': { values: ['session', 'account', 'why'], why: 'opening' },

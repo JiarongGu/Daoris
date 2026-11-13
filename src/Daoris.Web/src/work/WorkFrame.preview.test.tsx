@@ -138,7 +138,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
   it('opens a side bar that holds nothing else, and closes it again with the preview', async () => {
     SESSIONS = [CHAT];
     // Every view the side bar holds by default is in the panel, the workflow among them.
-    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel', atWork: 'panel' }));
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     frame('c0ffee11');
     const door = await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' });
     expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
@@ -157,7 +157,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
     frame('s1a2b3c4');
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
-    await userEvent.click(await within(side).findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await within(side).findByRole('tab', { name: 'Outputs' }));
 
     // A deleted file is not in the tree, so it offers no preview.
     await within(side).findByText('src/legacy.ts');
@@ -174,7 +174,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
 
     // And back to the review it covered.
     await userEvent.click(within(side).getByRole('button', { name: 'Close the preview' }));
-    expect(within(side).getByRole('tab', { name: 'Review', selected: true })).toBeInTheDocument();
+    expect(within(side).getByRole('tab', { name: 'Outputs', selected: true })).toBeInTheDocument();
   });
 
   /** The host's refusal is its sentence, in the preview that asked, with the path as the page asked for it. */
