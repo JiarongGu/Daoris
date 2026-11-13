@@ -223,50 +223,25 @@ export const reuseBuild = (built: { tree?: string | null } | null | undefined, t
  * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
  * serial halves among them, and the rehearsal still waits for the whole light lane.
  *
- * A rehearsal runs beside a Process half only where they share no build output. The git half builds the desktop's
- * projects into their own `bin/` and `obj/` and runs from them, and only the desktop's (a test holds that). So the family
- * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
- * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
- * build, in folders no git half builds; and it shuts no build server down. A test reads its tool for both.
+ * A rehearsal runs beside a Process half only where they share no build output: the family builds into an output of its
+ * own (`ownBuild` in `tools/rehearsal-kit.mjs`) and shuts no build server down.
  *
- * A git half that re-runs its failures alone waits for the rehearsal beside it to end, and no Process-lane gate
- * starts meanwhile, the next rehearsal beside it neither. A rehearsal that died and is run again whole does not
- * wait: that re-run is about a process that ended, and two gates each waiting for the other to end would never start.
+ * A git half that re-runs its failures alone waits for the rehearsal beside it to end. A rehearsal that died and is run
+ * again whole does not wait: two gates each waiting for the other would never start.
  *
- * ## The release rehearsal beside the git half too
+ * ## The release and deployment rehearsals beside the git half
  *
- * The release rehearsal packs the CLI in its own folder: `prepack` stages the canon, the README, the LICENSE and a built
- * `dist/` there, which the CLI's bin prefers over its sources, and `postpack` removes them. It builds no .NET project,
- * starts no host, takes no port and runs no git of its own. No desktop test reads the CLI's folder outside `src/` and
- * `test/`, which no pack writes, nor runs its bin (a test reads every desktop source for both), so no Process half sees the
- * staging. So it is of `BESIDE_GIT_HALF`, before the family in the plan's order, and runs beside the git half, whose
- * classes no neighbour's load can fail; the family, which runs the CLI's bin, starts once it has ended, and two
- * Process-lane gates at once stays the ceiling. The driver's other Process half and the modules' run beside nothing: they
- * hold the clock-bound classes. It waits for the whole light lane, whose cli gate runs the bin, and the deployment
- * rehearsal, which packs the same folder, waits for it.
- *
- * ## The deployment rehearsal beside the git half last
- *
- * The deployment rehearsal (12 to 14 minutes) publishes every desktop project and both service hosts, packs the CLI in its
- * folder as the release rehearsal does, builds the driver's host, runs the CLI's bin and opens the installed window. Its
- * publishes are told an output of its own (`desktop-publish --artifacts-path`, `_fixtures/rehearsal-builds/deployment`),
- * where their `obj/`, `bin/` and stages go, and its host's build goes there by `ownBuild`; and every build it makes keeps
- * build servers of its own (`OWN_BUILD_SERVERS` in the kit, a run beside's `BESIDE_ENVIRONMENT`), so it no longer starts
- * after a shutdown of every server on the machine, which beside the git half would stop the builds of all beside it. So it
- * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
- * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it.
- * It stays apart from the family: each of its three publishes packs the CLI in place, and a
- * `dist/` half written or removed under one of the family's many runs of the bin is state, not load.
+ * The release rehearsal packs the CLI in its own folder, staging a `dist/` the CLI's bin prefers; it builds no .NET
+ * project and no Process half reads that folder. The deployment rehearsal publishes into an output of its own and keeps
+ * build servers of its own, so it shuts none down. Both are of `BESIDE_GIT_HALF`, in order: release, family (which runs
+ * the bin the release's `dist/` would shadow), deployment (whose publishes pack the CLI in place). Never beside each
+ * other, so two Process-lane gates at once stays the ceiling. The other Process halves run beside nothing: they hold the
+ * clock-bound classes.
  *
  * ## The web gate's unit run beside service
  *
- * In a full set the light lane's floor is the service suite then the web gate, about 10 minutes under load, because the
- * web gate builds the HTTP host the service suite builds. Its first step, the page's vitests, builds nothing. So it is a
- * light gate of its own, `web-unit` (`npm run test:web:unit`), of no component, and runs beside service; `web` runs the
- * page's build, the HTTP host's and Playwright (`npm run test:web:e2e`), after service as before. `npm run test:web` runs
- * both, for a person. Both are heavy, and `web` is declared first (`LIGHT_WIDTH` says why). The cap on
- * vitest's workers is the page's own config, so it holds wherever the unit run runs. A vitest's read outside the page
- * reaches `web-unit`, and the browser suite's reads reach `web`.
+ * The web gate builds the HTTP host the service suite builds, but its page vitests build nothing, so they are a light
+ * gate of their own, `web-unit`, of no component, running beside service; `web` is declared first.
  */
 
 export type Schedule<G extends Named> = {
