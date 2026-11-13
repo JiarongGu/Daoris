@@ -18,6 +18,9 @@ const SUITES = Object.freeze({
   'driver-process': 'dotnet', 'driver-process-git': 'dotnet', 'driver-process-git-pinned': 'dotnet', 'modules-process': 'dotnet', 'service-process': 'dotnet',
 });
 
+/** The runner of a unit: its suite's, but a Vitest file of a suite that also holds `node --test` files is Vitest's. */
+const runnerOf = (unit) => (unit.kind === 'vitest' ? 'vitest' : SUITES[unit.suite]);
+
 /** A Process half's class is a unit of a merge only where `unitsOfMerge` kept it for a dependency whose code changed. */
 const isDependencyUnit = (unit) => Array.isArray(unit.needs) && unit.needs.length > 0;
 
@@ -31,6 +34,7 @@ export const REACHED_BOUNDS = Object.freeze({ dotnet: 40, vitest: 80, node: 12 }
 const RUNNER_ORDER = ['dotnet', 'vitest', 'node'];
 const WEB = 'src/Daoris.Web';
 const CLI = 'src/Daoris.Cli';
+const VITEST = 'node_modules/vitest/vitest.mjs';
 
 /** A command names at most this many units, so a bound lifted never meets the command line's length limit. */
 const COMMAND_UNITS = 120;
@@ -85,18 +89,19 @@ export function reachedPlan(units, changed, { bounds = {}, replayed = {} } = {})
   const bySuite = new Map();
   for (const unit of units) {
     if (!SUITES[unit.suite] || (unit.suite.includes('-process') && !isDependencyUnit(unit))) continue;
-    bySuite.set(unit.suite, [...(bySuite.get(unit.suite) ?? []), unit]);
+    const key = `${unit.suite}|${runnerOf(unit)}`;
+    bySuite.set(key, [...(bySuite.get(key) ?? []), unit]);
   }
   const groups = [];
   const left = {};
   let reached = Object.values(replayed).reduce((sum, count) => sum + count, 0);
-  for (const [suite, all] of bySuite) {
+  for (const [key, all] of bySuite) {
     reached += all.length;
-    const runner = SUITES[suite];
+    const [suite, runner] = key.split('|');
     const ordered = all.map((unit, index) => ({ unit, index, near: nearness(unit, changed) }))
       .sort((a, b) => b.near - a.near || a.index - b.index).map((entry) => entry.unit);
     const kept = ordered.slice(0, limit[runner]);
-    if (kept.length < all.length) left[suite] = all.length - kept.length;
+    if (kept.length < all.length) left[suite] = (left[suite] ?? 0) + all.length - kept.length;
     if (runner === 'dotnet') {
       for (const project of [...new Set(kept.map((unit) => unit.project))]) {
         const among = kept.filter((unit) => unit.project === project);
@@ -121,8 +126,12 @@ export function reachedCommands(plan) {
       }
       return { label: group.suite, cwd: '.', command: 'dotnet', args: ['test', group.project, '--filter', `(Category!=Process)&(${names})`] };
     }
+    // Vitest's own entry under node: npm's script is a shell script on Windows. The page's install is its own; the tools' is the root's.
+    if (group.runner === 'vitest' && group.suite === 'web-unit') {
+      return { label: group.suite, cwd: WEB, command: 'node', args: [VITEST, 'run', ...group.units.map((unit) => posix.relative(WEB, unit.file))] };
+    }
     if (group.runner === 'vitest') {
-      return { label: group.suite, cwd: '.', command: 'npm', args: ['--prefix', WEB, 'run', 'test', '--', ...group.units.map((unit) => posix.relative(WEB, unit.file))] };
+      return { label: group.suite, cwd: '.', command: 'node', args: [VITEST, 'run', '--config', 'tools/vitest.config.ts', ...group.units.map((unit) => unit.file)] };
     }
     return {
       label: group.suite, cwd: CLI, command: 'node',

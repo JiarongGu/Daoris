@@ -3,7 +3,8 @@
  *
  *   node tools/tool-test-census.mjs     check every tool test file (exit 0 clean, 1 an orphan or a double, 2 tool error)
  *
- * The files held are `tools/*.test.mjs` and every `*.test.ts` under `src/Daoris.Cli/tool-test/`. A gate in
+ * The files held are `tools/*.test.mjs`, every `*.test.ts` under `src/Daoris.Cli/tool-test/`, and the merge tool's Vitest files
+ * under `tools/merge/` (`*.test.ts`, `*.e2e.ts`), owned by a gate whose Vitest run names their project. A gate in
  * `daoris.gates.json` owns a file when its command, with each `npm run` and `npm test` followed into the package script it
  * names, lists the file's path or globs it (`node --test "tool-test/**\/*.ts"`). The verify script names its files one by
  * one, so a new test file that nobody adds stays unrun and nothing says so. This census names each file no gate runs, each run by two gates, and each listed file that is gone.
@@ -12,9 +13,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
+import { TOOL_PROJECTS } from './vitest.config.ts';
 
 const CLI = 'src/Daoris.Cli';
 const TOOL_TESTS = `${CLI}/tool-test`;
+const MERGE_TESTS = 'tools/merge';
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
@@ -46,11 +49,22 @@ const globPattern = (glob) => new RegExp(`^${glob
   .replace(/\*/g, '[^/]*')
   .replace(/\u0000/g, '(?:.*/)?')}$`);
 
+function vitestProjects(text) {
+  const projects = [];
+  for (const run of text.split(/&&|\|\|/)) {
+    if (!/\bvitest\b/.test(run) || !/--config[ =]\S*tools\/vitest\.config\.ts\b/.test(run)) continue;
+    const named = [...run.matchAll(/--project[ =]([\w-]+)/g)].map((m) => m[1]);
+    projects.push(...(named.length ? named : Object.keys(TOOL_PROJECTS)));
+  }
+  return projects;
+}
+
 /** The repository-relative paths a command's pieces list (`tools/x.test.mjs`) or glob (`"tool-test/**\/*.ts"`). */
 export function coverage(pieces) {
   const listed = new Set();
   const globs = [];
   for (const { base, text } of pieces) {
+    for (const name of vitestProjects(text)) globs.push(...(TOOL_PROJECTS[name]?.include ?? []).map(globPattern));
     // A script run in the CLI package may name a root file through `..` (`../../tools/x.test.mjs`): read it as the root's.
     const at = (path) => posix.normalize(base ? `${base}/${path}` : path);
     for (const m of text.matchAll(/(?<![\w./-])((?:[\w.*-]+\/)+[\w.*-]+\.(?:mjs|ts))\b/g)) {
@@ -64,13 +78,14 @@ export function coverage(pieces) {
 /** Every tool test file, repository-relative. */
 export function toolTestFiles(root) {
   const files = readdirSync(join(root, 'tools')).filter((n) => n.endsWith('.test.mjs')).map((n) => `tools/${n}`);
-  const walk = (dir) => {
+  const walk = (dir, isTest) => {
     for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
-      if (entry.isDirectory()) walk(`${dir}/${entry.name}`);
-      else if (entry.name.endsWith('.test.ts')) files.push(`${dir}/${entry.name}`);
+      if (entry.isDirectory()) walk(`${dir}/${entry.name}`, isTest);
+      else if (isTest(entry.name)) files.push(`${dir}/${entry.name}`);
     }
   };
-  if (existsSync(join(root, TOOL_TESTS))) walk(TOOL_TESTS);
+  if (existsSync(join(root, TOOL_TESTS))) walk(TOOL_TESTS, (name) => name.endsWith('.test.ts'));
+  if (existsSync(join(root, MERGE_TESTS))) walk(MERGE_TESTS, (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts'));
   return files.sort();
 }
 

@@ -130,8 +130,11 @@ finishes first and the whole set runs once.
     process is gone is never left stuck: `--queue` names a candidate that says it runs while neither its run nor the runner is
     alive, and `--queue --recheck` starts the runner, which resumes it, and clears a request or candidate whose tips main already
     holds into the landed record. New merge behaviour is typed
-    TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`, tested beside it by `node --test`),
-    which `merge-branch.mjs` calls. (from D180, MERGEFLOW1)
+    TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`), which `merge-branch.mjs` calls,
+    tested beside it on Vitest (`tools/vitest.config.ts`, a process per file): the `unit` project (`*.test.ts`) runs whole in `npm run
+    verify`, the `e2e` project (`*.e2e.ts`, a seeded scratch repository per case) in `npm run tooltests`, and their folders are made
+    under `_fixtures/tool-tests/`. A typed module reaches an untyped script through a `.d.mts` beside the script, which
+    `declarations.test.ts` holds to the script's exports (D287). (from D180, MERGEFLOW1, D287)
 20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
     `ScratchFolders.New` under `TestHomes.Root` and goes with `ScratchFolders.Remove`; the service stood in over HTTP is a
     `RoutedHandler`; a clock a test moves is `Daoris.Testing`'s `MovedClock`, the one copy; a wait on a signal is `Poll`; the web's window over a mocked shell is `test/doubles/appShell.ts` and its service
@@ -166,8 +169,9 @@ finishes first and the whole set runs once.
     in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and
     said in the summary) is killed and fails as over-budget. The time ratchet (`tools/time-ratchet.mjs`) is judged once inside a merge, after every gate has finished, on the
     timing records that merge's own gates wrote (`--since` its start), as a last check that fails like a gate and is named in the
-    summary; verify's own run of it stands aside inside a merge, and outside one judges what the records hold. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
-    set down as main's, what ran over budget), read by `tools/dev-metrics.mjs`. `TASKS.md` merges by its rows' ids
+    summary; verify's own run of it stands aside inside a merge, and outside one judges what the records hold. Each merge appends a record to `local/merge-record.jsonl` (the gating's wall time, each gate's time and slowest classes, the
+    tests that passed only when run again, first pass or not, reds set down as main's, what ran over budget), read by
+    `tools/dev-metrics.mjs`. A gate never inherits a test runner's own variables (`NODE_TEST_CONTEXT`, `NODE_ENV`, `VITEST*`). `TASKS.md` merges by its rows' ids
     (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
     a gate a merge now runs, the last green on 2026-11-02.
 23. The application depends on ports and is tested on fakes (D286). An effect the application performs is a port of
@@ -184,13 +188,14 @@ finishes first and the whole set runs once.
 22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
     whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
     root `Directory.Build.props` (the kill bound: 60 seconds for a half with no run-settings file, two minutes for a Process half, which ends the
-    run and names the test; the 30-second unit budget is held by the time ratchet, not by this bound), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (ten seconds), and the tool tests'
-    `--test-timeout` in `src/Daoris.Cli/package.json`. Those are the backstop for a hang; `tools/time-ratchet.mjs` holds each test to
-    its own limit (30 s, 2 min for a Process half, 10 s for the page, 2 min for a tool test) from the durations the gates record, and
+    run and names the test; the 30-second unit budget is held by the time ratchet, not by this bound), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (ten seconds), the tool tests'
+    `--test-timeout` in `src/Daoris.Cli/package.json`, and each merge tool project's in `tools/vitest.config.ts` (ten seconds a unit
+    test, two minutes an end-to-end case). Those are the backstop for a hang; `tools/time-ratchet.mjs` holds each test to
+    its own limit (30 s, 2 min for a Process half, 10 s for the page and a merge tool unit test, 2 min for a tool test) from the durations the gates record, and
     `tools/time-ratchet.json` names the tests over their limit and the time each may take: a listed test does not get slower, an
     unlisted one over its limit fails, and `--write` only cuts the list. A test that needs longer says so and why where it is
     declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
-    `tool-tests.xml`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
+    `tool-tests.xml`, `tool-unit.json`, `tool-e2e.json`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
     `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and
     `NeedsTraitTests` holds it; a test with no such trait is a unit test, with no process, git, clock wait or network. (from TESTTIME1)
 

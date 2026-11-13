@@ -11,9 +11,7 @@ import { fileURLToPath } from 'node:url';
 const cliRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(cliRoot));
 
-const { repositoryFiles } = await import(
-  // @ts-expect-error — untyped workspace tooling, as in packed-readme.test.ts
-  '../../../tools/fsx.mjs') as { repositoryFiles: (root: string) => string[] };
+const { repositoryFiles } = await import('../../../tools/fsx.mjs');
 const files = repositoryFiles(repoRoot);
 
 /** Source files whose string literals a person or an agent reads: never tests, never build output. */

@@ -3393,6 +3393,7 @@ const owedLine = (skipped) => (skipped
   : null);
 
 async function gateMerge(root, state, plan) {
+  const started = Date.now();
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
   // Before the gates choose, so the merge's changed paths include what the writing changed. The notes
@@ -3420,7 +3421,7 @@ async function gateMerge(root, state, plan) {
   }), ratchetIn(root, gateEnvironment()));
   const home = verdictsHome(root);
   const settled = settleMerge({
-    branch, at: nowIso(), ms: results.reduce((sum, result) => sum + (result.ms ?? 0), 0), results,
+    branch, at: nowIso(), wallMs: Date.now() - started, results,
     mains: mainRedsOf(flowSeams(), root, home), previous: readRecords(join(home, MERGE_RECORD)),
   });
   appendRecord(join(home, MERGE_RECORD), settled.record);
@@ -5940,16 +5941,16 @@ function runnerLost(home) {
 const START_ENVIRONMENT = Object.freeze({ ...process.env });
 
 /**
- * The variables the tool tests' stand-in gates read. The tests write their paths into their gates now, so a name here
- * in a runner's environment is inherited from a test's process.
+ * The tool tests' names, as patterns: what their stand-in gates read and their runners set. A runner meets one only
+ * inherited from a test's process.
  */
-export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD']);
+export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD', 'NODE_TEST_CONTEXT', 'NODE_ENV', 'VITEST\\w*']);
 
 /**
  * The names a gate never inherits, in one list a test, a census and the driver's twin read. Every Daoris name
  * (the home, the roles, the keys, the admission's hold marker: the hold's own plumbing to a gate is still owed); git's repository-locating
  * variables (inherited, they redirect a gate's git to another repository, `docs/development.md`); the tool's own switches
- * (`MERGE_BRANCH_*`, the runner's inputs and no gate's); and the tool tests' stand-in gates' variables.
+ * (`MERGE_BRANCH_*`, the runner's inputs and no gate's); and the tool tests' own.
  */
 export const GATE_REMOVED = Object.freeze([
   /^DAORIS_/i,

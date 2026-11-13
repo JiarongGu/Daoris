@@ -28,6 +28,7 @@
     "src/Daoris.Cli/tsconfig.json": "the CLI's compiler settings, which its tests and the tool-tests run under",
     "src/Daoris.Cli/package.json": "the CLI's scripts, which choose its tests' and the tool-tests' files",
     "src/Daoris.Web/vite.config.ts": "the vitests' configuration: their environment, pool, include and timeout",
+    "tools/vitest.config.ts": "the merge tool's Vitest configuration: its projects, their include, pool and timeouts",
     "src/Daoris.Web/src/test/setup.tsx": "vitest's setupFiles: run before every page test",
     "src/Daoris.Web/tsconfig.json": "the page's compiler settings",
     "src/Daoris.Web/package.json": "the page's scripts and dependencies",

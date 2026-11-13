@@ -22,9 +22,7 @@ const tool = await import(
   linkFindings: (files: string[], read: (file: string) => string) => { findings: string[]; counts: { absolute: number } };
   REPOSITORY: string;
 };
-const fsx = await import(
-  // @ts-expect-error — untyped workspace tooling
-  '../../../tools/fsx.mjs') as { copyTree: (from: string, to: string) => void; repositoryFiles: (root: string) => string[] };
+const fsx = await import('../../../tools/fsx.mjs');
 
 const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 const scratch = join(repoRoot, '_fixtures', 'packed-readme');

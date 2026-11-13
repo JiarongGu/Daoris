@@ -1,16 +1,16 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
+import { fixtureFolder } from './fixture-home.ts';
 import { runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
 import type { StoredVerdict } from './verdict-store.ts';
 
 const gate = { name: 'censuses', run: 'dotnet test src/A --filter Category=Census', reuse: 'inputs' };
 
 function harness(over: Partial<FlowDeps> = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'flow-'));
+  const { dir, remove } = fixtureFolder('flow');
   mkdirSync(join(dir, 'logs'));
   const asked: Array<{ run: string; noBuild: unknown }> = [];
   const deps: FlowDeps = {
@@ -34,7 +34,7 @@ function harness(over: Partial<FlowDeps> = {}) {
     lastSlowest: () => [],
     ...over,
   };
-  return { dir, deps, asked, done: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, deps, asked, done: remove };
 }
 const call = (h: ReturnType<typeof harness>, over: { tree?: string; gate?: typeof gate } = {}) => runOne(h.deps, {
   where: h.dir, gate: over.gate ?? gate, logs: join(h.dir, 'logs'), beside: {}, tree: over.tree ?? 'T2', trees: null, step: undefined, noBuild: false,
@@ -144,7 +144,7 @@ test('a gate past its budget has what it started killed, and fails as over-budge
     runGate: async (_w, each, _l, options) => {
       const trees = options.trees as { hold(pid: number): void; ended: string | null };
       trees.hold(77);
-      for (let waited = 0; waited < 2000 && !trees.ended; waited += 5) await new Promise((done) => setTimeout(done, 5));
+      while (!trees.ended) await new Promise((done) => setTimeout(done, 5));
       return { gate: each, code: null, verdict: trees.ended ? 'ENDED' : 'PASS', note: 'ended', ms: 20, log: 'l' };
     },
   });
@@ -161,16 +161,17 @@ test('a gate past its budget has what it started killed, and fails as over-budge
 });
 
 test('settling a merge sets down main\'s reds, fails the merge on the branch\'s, and builds the record and the budget lines', () => {
-  const make = (name: string, verdict: string, failures: Array<{ unit: string; key: string }>, ms = 1000): GateResult => ({
-    gate: { name, run: 'x' }, verdict, note: '', ms, failures, log: 'l',
+  const make = (name: string, verdict: string, failures: Array<{ unit: string; key: string }>, ms?: number): GateResult => ({
+    gate: { name, run: 'x' }, verdict, note: '', ms: ms ?? 1000, failures, log: 'l',
   });
   const mains = [{ gate: 'reached', key: 'k1', from: 'finding' as const, at: '2026-11-12T08:00:00Z', commit: 'abc' }];
-  const onlyMain = settleMerge({ branch: 'b', at: 'now', ms: 20, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }]), make('cli', 'PASS', [])], mains, previous: [] });
+  const onlyMain = settleMerge({ branch: 'b', at: 'now', wallMs: 1500, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }]), { ...make('cli', 'FLAKE', []), flakes: ['A.Tests'] }], mains, previous: [] });
   assert.deepEqual(onlyMain.failed, []);
   assert.equal(onlyMain.record.passed, true);
+  assert.deepEqual([onlyMain.record.ms, onlyMain.record.wallMs, onlyMain.record.flakes], [2000, 1500, 1], 'gate time summed, wall time as measured, the flaky tests counted');
   assert.equal(onlyMain.record.mainReds.length, 1);
   assert.match(onlyMain.lines.join('\n'), /main's red/);
-  const both = settleMerge({ branch: 'b', at: 'now', ms: 11 * 60_000, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }, { unit: 'Y', key: 'k2' }]), make('cli', 'PASS', [], 6 * 60_000)], mains, previous: [] });
+  const both = settleMerge({ branch: 'b', at: 'now', wallMs: 11 * 60_000, results: [make('reached', 'FAIL', [{ unit: 'X', key: 'k1' }, { unit: 'Y', key: 'k2' }]), make('cli', 'PASS', [], 6 * 60_000)], mains, previous: [] });
   assert.deepEqual(both.failed.map((each) => each.gate.name), ['reached']);
   assert.match(both.lines.join('\n'), /cli took 6 min, over its 5 min budget/);
   assert.equal(both.record.firstPass, false);

@@ -442,6 +442,7 @@ export const GIT_ENV = {
 // A builder's worktree sets the variables that locate a repository; inherited, they send a fixture's git to the real one's .git
 export const LOCATING = /^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)$/i;
 
+export const RUNNER_OWN = /^(NODE_TEST_CONTEXT|NODE_ENV|VITEST\w*)$/i;
 export const fixtureEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !LOCATING.test(key)));
 
 
@@ -650,7 +651,7 @@ export function scratch(name: string, gates: { name: string; run: string }[], fi
     run(args, extra = {}, cwd = root) {
       const env: Record<string, string | undefined> = {};
       for (const [key, value] of Object.entries(process.env)) {
-        if (key.toUpperCase() !== 'PATH' && key !== 'NODE_TEST_CONTEXT' && !LOCATING.test(key)) env[key] = value;
+        if (key.toUpperCase() !== 'PATH' && !RUNNER_OWN.test(key) && !LOCATING.test(key)) env[key] = value;
       }
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
       // A merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;

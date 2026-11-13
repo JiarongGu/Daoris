@@ -41,7 +41,12 @@ describe('INTEGRATE1f: the gate environment and the composition digest, row for 
     assert.deepEqual(tool.BESIDE_ENVIRONMENT, TABLE.beside);
     const rules = tool.GATE_REMOVED.map((pattern) => `/${pattern.source}/${pattern.flags}`);
     assert.deepEqual(rules.slice(0, TABLE.removed.length), TABLE.removed);
-    assert.equal(rules.length, TABLE.removed.length + 1, 'the tool adds its tool tests\' two stand-in variables, and nothing else');
+    assert.equal(rules.length, TABLE.removed.length + 1, 'the tool adds its tool tests\' own names, and nothing else');
+  });
+
+  test('a test runner\'s own variables never reach a gate the tool starts under a test', () => {
+    const start = { Path: 'X:/bin', NODE_TEST_CONTEXT: 'child-v8', NODE_ENV: 'test', VITEST: 'true', VITEST_POOL_ID: '1', vitest_worker_id: '2', QUEUE_DRAIN_DIR: 'X:/d', NODE_OPTIONS: 'kept' };
+    assert.deepEqual(tool.gateEnvironment(start), { Path: 'X:/bin', NODE_OPTIONS: 'kept', ...TABLE.beside });
   });
 
   for (const row of TABLE.environments) {
