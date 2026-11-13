@@ -86,6 +86,29 @@ public sealed class PerformedEndsTests : GraphRunFixture
         Assert.Contains("no longer done", end!.Message);
     }
 
+    /// <summary>
+    /// A session of another quest went on in the run's tree, so the run's own part is superseded: that end is kept for the press and said
+    /// once, and the passes after it neither try it nor write it again.
+    /// </summary>
+    [Fact]
+    public async Task A_superseded_part_is_said_once_and_not_tried_again_at_every_pass()
+    {
+        var (root, tree, branch) = await BoundRunAsync(Merge);
+        var start = await HeadAsync(tree);
+        _world.Records.Add(new SessionRecord("s9", "engine", "completed") { Quest = "q9", Tree = tree, Created = DateTimeOffset.UtcNow.AddMinutes(1) });
+        var door = Door();
+
+        for (var pass = 0; pass < 3; pass++)
+        {
+            await PassAsync(root, branch, tree, door: door);
+            await door.IdleAsync();
+        }
+
+        Assert.Equal([LandingCode.Superseded], Codes());
+        var end = EndOf(start);
+        Assert.Equal((false, LandingCode.Superseded), (end?.Landed, end?.Refusal));
+    }
+
     /// <summary>The person's Accept on a dirty tree carries the session on, and that end is kept as a carry-on for the press to say so.</summary>
     [Fact]
     public async Task A_dirty_tree_s_carry_on_is_answered_as_one()

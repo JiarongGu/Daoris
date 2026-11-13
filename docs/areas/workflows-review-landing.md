@@ -172,7 +172,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     hold and the delivery key, so a press and a pass land one delivery; with no review before it, it goes active with no press.
     One whose subject moved runs again at the new tip once every delivery at the old reads certain. Branch-side steps bind the tip
     of the branch the work stands on, read in the tree of its newest executor; a hold keeps its reason on the node, said by the
-    plan and the run view. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
+    plan and the run view. A unit's executors are oldest first by when their records were made, and the `land` judges the newest
+    with a tree by that time (`LandSessions`), so a session that went on in a tree stands for the one it went on from and a branch
+    already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, and
+    each `landing.auto` line names the run whose `land` tried it. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
     without replay, saying the proof (`LineHolds`). Where the tip no longer reads, an unbound step takes the commit its session
     branch records the line holding, so work merged outside the run ends it. `claimed` reaches at the first whole look reading its
     quest done, by any session. A merge whose tree is gone plans to the settings' line, else the one its branch grew from. (D227)

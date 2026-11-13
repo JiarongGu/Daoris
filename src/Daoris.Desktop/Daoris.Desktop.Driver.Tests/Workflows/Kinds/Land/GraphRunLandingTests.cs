@@ -423,6 +423,47 @@ public sealed class GraphRunLandingTests : GraphRunFixture
     }
 
     /// <summary>
+    /// A branch already landed takes its line's later commit after a second Accept: the session that went on in the tree landed it, then
+    /// merged the moved line onto the landed commit, and once the person accepts that merge the next pass moves the branch on to it as a
+    /// fast-forward. The earlier part the later one went on from is never judged in its place, so no try closes as superseded.
+    /// </summary>
+    [Fact]
+    public async Task A_landed_branch_moves_on_to_its_lines_later_merge_after_a_second_accept_and_never_tries_the_earlier_part()
+    {
+        var root = await RepositoryAsync("engine");
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        await CommitAsync(tree, "s2.txt", "the work of s2", "the work of s2");
+        _world.Records.Add(new SessionRecord("s2", "engine", "completed") { Quest = "q1", Tree = tree, Created = DateTimeOffset.UtcNow.AddSeconds(1) });
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ReviewedLand(BranchLand)), DateTimeOffset.UtcNow);
+        var files = new NodeRecordFiles(_home, () => true);
+        var door = Door();
+        IEnumerable<(string?, string?)> Tries() => _lines.Where(line => line.Event == "landing.auto").Select(line => (Value(line, "session") as string, CodeOf(line)));
+
+        await InventoryPassAsync(root, door);
+        Assert.True(RunNodeWords.Word(files, "q1", "review", NodeWordActs.Accept, null).Done);
+        await InventoryPassAsync(root, door);
+        await door.IdleAsync();
+        Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+
+        // The line moves, and the later part merges it onto the landed commit, as a pull request's conflict asks.
+        await CommitAsync(root, "line.txt", "the line moved", "the line moved");
+        await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "merge", "--no-ff", "--no-edit", "main");
+        var merged = await HeadAsync(tree);
+        await InventoryPassAsync(root, door);
+        await door.IdleAsync();
+        Assert.True(RunNodeWords.Word(files, "q1", "review", NodeWordActs.Accept, null).Done);
+        for (var pass = 0; pass < 3; pass++)
+        {
+            await InventoryPassAsync(root, door);
+            await door.IdleAsync();
+        }
+
+        Assert.Equal(merged, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Equal([("s2", LandingCode.Landed), ("s2", LandingCode.Advanced)], Tries());
+        Assert.All(_lines.Where(line => line.Event == "landing.auto"), line => Assert.Equal("q1", Value(line, "run")));
+    }
+
+    /// <summary>
     /// One whole pass of the runtime over the units the home's records and the stand-in service name, linked as the loop's pass reads them
     /// (<see cref="WorkUnits.Linked"/>), and what the line holds read in a unit's newest session's tree, as the loop's gates read it.
     /// </summary>
