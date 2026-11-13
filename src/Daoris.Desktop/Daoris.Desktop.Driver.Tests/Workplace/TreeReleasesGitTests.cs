@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeReleasesGitTests : LandedFixture
 {
+    private static readonly DateTimeOffset LandedAt = new(2026, 11, 13, 0, 0, 0, TimeSpan.Zero);
+
     private SessionBranches Grown => new(Home);
 
     private GrownBranch Entry(string branch) => Grown.Entries().Last(each => each.Branch == branch);
@@ -133,9 +135,9 @@ public sealed class TreeReleasesGitTests : LandedFixture
         var landing = $"feature/{run}";
         await GitAsync(root, "branch", landing, tip);
         var landings = new LandedBranches(Home);
-        landings.Record(new LandedBranch("engine", "aurora", landing, "main", tip, $"s-{run}", run, "Fix", DateTimeOffset.UtcNow));
+        landings.Record(new LandedBranch("engine", "aurora", landing, "main", tip, $"s-{run}", run, "Fix", LandedAt));
         if (!tidy) return;
-        landings.Tidied("engine", landing, new ChainTidied(tip, DateTimeOffset.UtcNow)
+        landings.Tidied("engine", landing, new ChainTidied(tip, LandedAt)
         {
             Parts = [new TidiedPart(part, tip) { KeptOn = $"refs/daoris/discarded/{run}", Kept = "it is checked out at its tree" }],
         });

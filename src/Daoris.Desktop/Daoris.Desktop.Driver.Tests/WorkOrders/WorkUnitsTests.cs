@@ -250,6 +250,18 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.All(older, unit => Assert.Empty(unit.Links));
     }
 
+    /// <summary>A unit's executors are oldest first by their records, though its landing names the session that went on in its tree.</summary>
+    [Fact]
+    public void A_landed_units_executors_are_oldest_first_with_the_session_that_went_on_last()
+    {
+        var facts = Facts(branches: [Grown()], landings: [Landed(["unit-a"], session: "s2")], trees: [Tree()]) with
+        {
+            Recorded = [new RecordedTree("s1", Tree().Path), new RecordedTree("s2", Tree().Path)],
+        };
+
+        Assert.Equal(["s1", "s2"], Assert.Single(WorkInventory.Units(facts)).Executors);
+    }
+
     /// <summary>Every kind's milestone is read the same way: a done quest has nothing of its own to clean; an open one waits for its end.</summary>
     [Fact]
     public void A_quests_milestone_is_read_as_a_branch_units_is()

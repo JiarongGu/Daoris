@@ -3,9 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris role</c>: the terminal's door into the role catalogue, the window
-/// twin of Agents → <i>Roles</i> over <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one;
-/// <c>role set</c> adds or changes a working role (its names, work, scope and choices), <c>role remove</c> takes one out and
+/// <c>daoris role</c>: the terminal's door into the role catalogue, any caller's, the window twin of Agents → <i>Roles</i> over
+/// <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one; <c>role set</c> adds or changes a working role (its names, work, scope and choices), <c>role remove</c> takes one out and
 /// <c>role default</c> gives a seeded one back its seed. Each change is judged by the role door's judge before anything is sent or
 /// written, so a refusal is said in the judge's sentence.
 /// </summary>
@@ -25,9 +24,6 @@ public sealed class RoleVerb : ChoiceVerb
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
         args.Count > 1 && args[1] == "suggested" ? Task.FromResult(Suggested(args, world)) : null;
 
-    internal const string InAgentJob =
-        "`driver role` writes the person's roles, and this process is one of an agent Daoris runs: make the change in Daoris's window or from your own terminal; nothing was written.";
-
     private static int Suggested(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
         var said = world.Instance.Out;
@@ -35,12 +31,6 @@ public sealed class RoleVerb : ChoiceVerb
         {
             world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: `driver role suggested` takes `--use` alone.");
             return 2;
-        }
-
-        if (args.Contains("--use") && world.InAgentJob() == true)
-        {
-            world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: {InAgentJob}");
-            return 1;
         }
 
         var use = args.Contains("--use");
@@ -257,7 +247,6 @@ public sealed class RoleVerb : ChoiceVerb
 
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
-        if (world.InAgentJob() == true) throw new ChoiceWords(InAgentJob, 1);
         if (args.Count > 1 && args[1] == "policy") return PolicyPlan(args, before, world);
         if (args.Count > 1 && args[1] == "rules") return RulesPlan(args, world);
         if (args.Count < 3 || !Changes.Contains(args[1]) || args[1] == "policy") throw new ChoiceWords($"{Grammar}.");

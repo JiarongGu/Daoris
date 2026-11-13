@@ -152,15 +152,25 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(["SUPERVISOR_DECIDE", "SUPERVISOR_LEAVE"], SupervisorRoutes.Acts);
     }
 
-    [Theory]
-    [InlineData(StandingPlace.InAgentJob, StandingWhy.InAgentJob)]
-    [InlineData(StandingPlace.Untold, StandingWhy.Untold)]
-    public void A_contained_or_unplaced_caller_is_refused_before_its_proof_is_read(StandingPlace place, string why)
+    [Fact]
+    public void An_unplaced_caller_is_refused_before_its_proof_is_read()
     {
-        var standing = Staffed(place);
+        var standing = Staffed(StandingPlace.Untold);
         var (_, key) = Start(standing);
         var nonce = SupervisorProof.Nonce();
-        Assert.Equal(why, JudgeRole(standing, Answer(key!, nonce, GenerationOf(standing)), nonce).Why);
+        Assert.Equal(StandingWhy.Untold, JudgeRole(standing, Answer(key!, nonce, GenerationOf(standing)), nonce).Why);
+    }
+
+    [Fact]
+    public void A_holder_in_an_agents_job_is_judged_by_its_proof_as_any_caller()
+    {
+        var standing = Staffed(StandingPlace.InAgentJob);
+        var (_, key) = Start(standing);
+        var nonce = SupervisorProof.Nonce();
+        Assert.True(JudgeRole(standing, Answer(key!, nonce, GenerationOf(standing)), nonce).Covered);
+
+        var other = SupervisorProof.Nonce();
+        Assert.Equal(SupervisorWhy.NotHolder, JudgeRole(standing, Answer(HolderKey.Draw(), other, GenerationOf(standing)), other).Why);
     }
 
     /// <summary>

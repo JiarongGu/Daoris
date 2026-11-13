@@ -88,7 +88,7 @@ public sealed class GraphRunLandStartTests : GraphRunFixture
         await Performer().PerformAsync(stale);
 
         Assert.False(await BranchAsync(root, PushBranch), "nothing is made from a head the node was not started at");
-        Assert.Contains(_lines, line => line.Event == "landing.auto" && CodeOf(line) == LandingCode.Refused);
+        Assert.Contains(_lines, line => line.Event == "landing.auto" && CodeOf(line) == LandingCode.Moved);
 
         await Performer().PerformAsync(current);
         Assert.Equal(current.Tip, (await GitAsync(root, "rev-parse", PushBranch)).Trim());

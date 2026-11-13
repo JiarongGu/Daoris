@@ -179,7 +179,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 43. A hold lives in memory with a generation every act carries, never the key or its hash; a restart starts nothing. A role's
     press through the door ends the holds it no longer staffs and sweeps their decisions. An agent's hold lives nowhere: its
     generation is its role's id and revision, read at every admission, so any write of the role makes a decision kept under the old
-    one `role-changed`. `driver role` refuses every write from a process an agents' job holds. (D208, D209, D233)
+    one `role-changed`. Any caller writes the roles: `driver role` from a process an agents' job holds acts as from the person's
+    terminal, and a holder's act from inside such a job is judged by its proof alone; only a caller the system cannot place is
+    refused (`untold`). (D208, D209, D233, D284)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris writes,
     running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The verb sends

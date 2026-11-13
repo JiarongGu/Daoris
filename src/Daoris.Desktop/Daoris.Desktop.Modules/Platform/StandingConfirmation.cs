@@ -9,9 +9,6 @@ public static class StandingWhy
     /// <summary>The act is not one the roles' methods name.</summary>
     public const string NotNamed = "not-named";
 
-    /// <summary>The terminal's process is in a job a Daoris on this Windows session made for its agents.</summary>
-    public const string InAgentJob = "in-agent-job";
-
     /// <summary>The judge cannot tell where the terminal's process stands, or an agent of some Daoris here runs uncontained.</summary>
     public const string Untold = "untold";
 }
