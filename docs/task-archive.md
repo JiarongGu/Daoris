@@ -13,6 +13,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.
 
+## LANDAGAIN1b — a re-landing's push and pull request proved, a superseded close names its session (2026-11-13)
+
+> **LANDAGAIN1b** (driver): Outcome: `ReLandingPullRequestTests` runs a graph of land, push and a plugin's `pull-request` step over a real bare origin with a push stand-in and a plugin port stand-in (`ObservedPort` answering reconcile): after a second Accept the branch is pushed at the moved tip and the step is bound and delivered at the new head; a superseded part's close is said once and its end names the newer session that stands for it (`PerformedEndsTests`).
+
 ## DELIVERY1 row a — deployables declared, release targets named by their deployable, read-only release discovery (2026-11-13, D290)
 
 > **DELIVERY1 a** (service, driver, examples): Outcome: a repository declares its deployables in `daoris.json`; the Azure DevOps plugin's release target names its deployable and `deploysOn`, and its read-only `discover-releases` lists the definitions, stages and actions a deployable could release through and proposes `deploysOn` without choosing (4.1.0); `daoris repository deployables <repository>` shows them. The plugin tools' process test, red on main since integration B made a status read exit 0, fixed in the merge. Merged in `eb23c11ebd`; the run-time check and the registry's deployables are left on the row.

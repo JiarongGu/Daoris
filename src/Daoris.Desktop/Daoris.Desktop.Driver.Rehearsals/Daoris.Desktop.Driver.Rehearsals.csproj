@@ -58,6 +58,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\KeepSizeFixture.cs" Link="Shared\KeepSizeFixture.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\BranchTidyingFixture.cs" Link="Shared\BranchTidyingFixture.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\Kinds\Land\GraphRunFixture.cs" Link="Shared\GraphRunFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\ObservedPort.cs" Link="Shared\ObservedPort.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\StandInLedger.cs" Link="Shared\StandInLedger.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\StubFile.cs" Link="Shared\StubFile.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\HistoryStandIn.cs" Link="Shared\HistoryStandIn.cs" />

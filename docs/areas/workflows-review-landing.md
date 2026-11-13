@@ -188,7 +188,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     of the branch the work stands on, read in the tree of its newest executor; a hold keeps its reason on the node, said by the
     plan and the run view. A unit's executors are oldest first by when their records were made, and the `land` judges the newest
     with a tree by that time (`LandSessions`), so a session that went on in a tree stands for the one it went on from and a branch
-    already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, and
+    already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, its end naming the session that stands for it; a push and a plugin's `pull-request` step after it are bound at the moved tip and performed again (`ReLandingPullRequestTests`); and
     each `landing.auto` line names the run whose `land` tried it. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
     without replay, saying the proof (`LineHolds`). Where the tip no longer reads, an unbound step takes the commit its session
     branch records the line holding, so work merged outside the run ends it. `claimed` reaches at the first whole look reading its

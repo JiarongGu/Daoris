@@ -105,6 +105,8 @@ public sealed class PerformedEndsTests : GraphRunFixture
         Assert.Equal([LandingCode.Superseded], Codes());
         var end = EndOf(start);
         Assert.Equal((false, LandingCode.Superseded), (end?.Landed, end?.Refusal));
+        Assert.Contains("`s9`", end!.Message);
+        Assert.Single(_lines, line => line.Event == "landing.auto");
     }
 
     /// <summary>The person's Accept on a dirty tree carries the session on, and that end is kept as a carry-on for the press to say so.</summary>
