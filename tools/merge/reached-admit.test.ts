@@ -32,7 +32,7 @@ function fixture() {
   const admission = createAdmission({
     daorisHome: dir, kind: 'session', capacity: 1, say: (line: string) => said.push(line), pollMs: 5, beatMs: 1_000_000, env: {}, alive: () => true,
   });
-  const file = admissionFile(dir);
+  const file = admissionFile(dir) as string;
   const now = new Date().toISOString();
   const fakeHolder = { id: 'other-1', kind: 'session', pid: process.pid, what: 'another builder run', since: now, beat: now };
   const setHolds = (holds: unknown[]) => {
@@ -53,8 +53,8 @@ test('a heavy group waits while the capacity is full and runs when it is freed; 
     assert.equal(light, 'at once', 'the light group ran beside the full capacity');
     await wait(80);
     assert.equal(ran, false, 'the heavy group waits behind the holder');
-    assert.match(f.said[0], /waiting for the machine's heavy-run admission before reached checks, driver-process/);
-    assert.match(f.said[0], /another builder run/);
+    assert.match(f.said[0] ?? '', /waiting for the machine's heavy-run admission before reached checks, driver-process/);
+    assert.match(f.said[0] ?? '', /another builder run/);
     f.setHolds([]);
     await heavy;
     assert.equal(ran, true);
