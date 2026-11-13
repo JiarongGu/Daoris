@@ -151,8 +151,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     new part opens and is handed Daoris's brief, composed without a model. (D137, D189)
 26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a shutdown, was a
     person's stop they released, or parked and was answered. It goes on with the agent its record ran on, except a failed record
-    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`).
-    (D80, D83, D104)
+    whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`). A session
+    of the quest that asks for the take while the session here that took it ended failed or stopped is answered as the taker: the
+    take passes to it (`QuestRetakes`), so a retry never stands down against a holder that is gone; a running holder or another
+    machine's take is still refused. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
+    carries it on. (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
 

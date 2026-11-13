@@ -49,6 +49,13 @@ public static class QuestRetry
                         : new ChoiceRefusal(ChoiceRefusal.Paused,
                             $"#{quest} is paused with quest #{pause.Id}, whose work published it; resuming #{pause.Id} carries it on.",
                             ("id", quest), ("pause", pause.Id), ("context", "published"));
+            case { Quest.Status: "Taken", Resumes: { } ended }:
+                // A take its session's end left: the loop carries it on, so nothing is held for a press to release. Said as whose
+                // take it is and how that session ended, never as a quest nobody holds.
+                throw new ChoiceRefusal(ChoiceRefusal.NotHeld,
+                    $"#{quest} is taken by session {ended.Session}, which {ended.State}: {ended.Note ?? "it ended before closing the quest."} "
+                    + "Daoris carries it on from that session's tree at its next look; nothing is held, so there is nothing to try again.",
+                    ("id", quest), ("session", ended.Session));
             default:
                 throw new ChoiceRefusal(ChoiceRefusal.NotHeld,
                     $"#{quest} is neither parked nor held by your stop on this machine, so there is nothing to try again.", ("id", quest));

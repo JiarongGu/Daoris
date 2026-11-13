@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## RETRYTAKE1 — a retry of a quest whose taker failed takes over its take (2026-11-13)
+
+> **RETRYTAKE1** (service, driver): Outcome: `QuestRetakes` passes a failed or stopped holder's take to the session of the same quest that asks for it, so the retry no longer stands down against a dead holder; *Try again* on such a quest names the session and how it ended. Two Service cases and one Driver case; a stood-down record still blocks a carry-on at the ledger's open, left as D-ruled.
+
 ## SAYLINES1 — words of several lines reach a session whole from the `daoris` command (2026-11-13, D291)
 
 > **SAYLINES1** (install, driver host): Outcome: the install's `daoris` is `daoris.exe` (`Daoris.Desktop.Command`), a program that starts the desktop's program with each argument whole, in place of the `daoris` script and `daoris.cmd` (a batch file's arguments end at the first line break); `CommandLauncherProcessTests`, `FreeWordsLineBreakTests` (say, reword, helper, ask, quest) and the shell-word test through cmd and PowerShell prove a line break reaches each verb; and `daoris ask --to <repo> --require` is no longer refused `MISSING_PAYLOAD_VALUE` (the requirement is sent as `{ quote, check }`).
