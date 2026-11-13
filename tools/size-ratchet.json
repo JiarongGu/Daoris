@@ -109,7 +109,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 60974,
   "tools/deployment-rehearsal.mjs": 107320,
   "tools/family-rehearsal.mjs": 368029,
-  "tools/merge-branch.mjs": 411581,
+  "tools/merge-branch.mjs": 400502,
   "tools/merge-queue.mjs": 65580,
   "tools/rehearsal-kit.mjs": 56329,
   "tools/rehearsal-kit.test.mjs": 45819

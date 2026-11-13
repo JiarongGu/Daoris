@@ -2,7 +2,9 @@
  * The lane table, as data: which gates can see a changed path. The merge tool's tests hold it to what each suite
  * reads and each rehearsal runs, so a gate a merge skips is one that could not see the change.
  */
-import { reachRows } from '../reach-rows.mjs';
+import { reachRows } from './reach-rows.ts';
+
+export type Rule = { paths?: readonly string[]; lane?: string; gates: '*' | readonly string[]; why: string };
 
 // The .NET suites with a test that reads the page's catalogues or sources.
 const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];
@@ -34,7 +36,7 @@ const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstor
  */
 // test-map: strings name paths as data — this table and the gates' commands name the paths they place, which the tool does not
 // read, so the census of test units follows this file's imports and not its strings.
-export const REACH = Object.freeze([
+export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   {
     paths: [
       'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs',
@@ -47,7 +49,7 @@ export const REACH = Object.freeze([
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reach-rows.mjs', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
+      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
       'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/reached-checks.mjs', 'tools/worktree-setup.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
       'tools/merge/**', 'tools/vitest.config.ts',
     ],
