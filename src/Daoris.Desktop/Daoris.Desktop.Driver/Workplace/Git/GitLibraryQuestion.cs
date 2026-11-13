@@ -14,6 +14,5 @@ internal enum GitLibraryQuestion
 
     Revisions,
 
-    /// <summary>Where a folder's trees are, and its settings (<see cref="GitLibraryLayout"/>).</summary>
     Layout,
 }

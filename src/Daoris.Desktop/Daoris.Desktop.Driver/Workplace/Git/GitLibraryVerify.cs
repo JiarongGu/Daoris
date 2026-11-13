@@ -16,7 +16,6 @@ internal static class GitLibraryVerify
     /// <summary>The library's question for <paramref name="rest"/>, the arguments after <c>rev-parse</c>; null where it is git's.</summary>
     internal static (GitLibraryQuestion, Func<GitLibraryCall, GitLibraryAnswer?>)? Asked(List<string> rest)
     {
-        // Not quiet, a failure speaks on the error stream: only the id is the library's.
         if (rest is ["HEAD"] or ["--verify", "HEAD"])
         {
             return (GitLibraryQuestion.Revisions, call => Verified(call, "HEAD", peel: false) is { Code: 0 } found ? found : null);
