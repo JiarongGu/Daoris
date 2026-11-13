@@ -118,6 +118,24 @@ export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: b
   return query.data ?? null;
 };
 
+/** The person's act on an ask's delivery plan: an answer to one open question, or a waiver of one release order with their reason. */
+export type PlanSettle = { key: string; words: string } | { deployable: string; on: string; reason: string };
+
+/**
+ * The person's answer to a question of an ask's delivery plan, or their waiver of a release order (`ASK_PLAN_SETTLE`). It rejects with
+ * the service's own sentence where it refuses, which the item says beside its press. The answer is the plan as it then reads, so the
+ * question is gone at once; its route publishes the asks, so the bell, *What needs you* and every other window drop it too.
+ */
+export const useSettleAskPlan = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ask, settle }: { ask: string; settle: PlanSettle }): Promise<AskPlan | null> => askPlanOf(await call('ASK_PLAN_SETTLE', { ask, ...settle })),
+    onSuccess: (plan, { ask }) => {
+      if (plan) client.setQueryData([...keys.allAsks, 'plan', ask], plan);
+    },
+  });
+};
+
 /**
  * The channel of the line `session` is a part of, where that line is on no ask held here (`CHANNEL_LINE`): a chat's, a quest
  * session's, a teammate's ask's. Told by event, and under the asks' key, so a tick asks it again with each channel. Null while it is
