@@ -51,13 +51,14 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
             return new(TeamRefusal.Unfit, "A split of a part holds no deployables: what is released is the ask's own plan's to say.");
         }
 
-        var delivery = DeliveryGraph.Judge(save.Deployables, save.Releases, save.Questions);
+        var delivery = DeliveryGraph.Judge(save.Deployables, save.Releases, save.Questions, current?.Waivers);
         if (delivery.Refusal is { } unordered) return new(TeamRefusal.Unfit, unordered);
 
         var plan = new TeamPlan(ask.Id, save.Scope, (current?.Revision ?? 0) + 1, save.By, save.Why, now)
         {
             Base = save.Base, Parts = judged.Parts, Edges = judged.Edges, Flags = [.. judged.Flags, .. delivery.Flags], Depth = depth,
             Deployables = save.Deployables, Releases = delivery.Edges, Questions = delivery.Questions,
+            Answers = current?.Answers ?? [], Waivers = current?.Waivers ?? [],
         };
         if (!await store.AppendAsync(plan, ct).ConfigureAwait(false))
         {
@@ -69,6 +70,22 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
         await KeepTeamAsync(plan, published, ct).ConfigureAwait(false);
 
         return new(TeamRefusal.None, Said(plan, published), plan) { Published = published };
+    }
+
+    /// <summary>The person's answers and waivers on the ask's plan; see <see cref="DeliverySettling"/>.</summary>
+    public DeliverySettling Settling { get; } = new(store, ledger, asks);
+
+    /// <summary>The questions each ask's own plan still asks the person, for the asks that have any, keyed by ask; see <see cref="DeliveryGraph.Open"/>.</summary>
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<DeliveryQuestion>>> OpenQuestionsAsync(IEnumerable<string> asked, CancellationToken ct = default)
+    {
+        var open = new Dictionary<string, IReadOnlyList<DeliveryQuestion>>(StringComparer.Ordinal);
+        foreach (var id in asked.Distinct(StringComparer.Ordinal))
+        {
+            var own = (await store.LatestAsync(id, ct).ConfigureAwait(false)).FirstOrDefault(plan => plan.Scope is null);
+            if (own is not null && DeliveryGraph.Open(own, new Dictionary<string, string>()) is { Count: > 0 } questions) open[id] = questions;
+        }
+
+        return open;
     }
 
     /// <summary>The newest revision of each plan the ask holds, with each part's quest.</summary>

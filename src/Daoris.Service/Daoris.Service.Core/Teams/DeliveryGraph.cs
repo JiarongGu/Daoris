@@ -9,8 +9,10 @@ namespace Daoris.Knowledge;
 public static class DeliveryGraph
 {
     /// <summary>Judges the deployables as the lead read them, the edges it wrote and the questions it already asks.</summary>
+    /// <param name="waivers">The orders the person waived: kept and marked, they no longer break a circle open or go stale.</param>
     public static DeliveryJudged Judge(
-        IReadOnlyList<DeliveryDeployable> deployables, IReadOnlyList<DeliveryEdge> written, IReadOnlyList<DeliveryQuestion> asked)
+        IReadOnlyList<DeliveryDeployable> deployables, IReadOnlyList<DeliveryEdge> written, IReadOnlyList<DeliveryQuestion> asked,
+        IReadOnlyList<DeliveryWaiver>? waivers = null)
     {
         if (Refuse(deployables, written) is { } refusal) return new(refusal, [], [], []);
 
@@ -22,6 +24,11 @@ public static class DeliveryGraph
 
         foreach (var edge in Declared(deployables)) Add(edge);
         foreach (var edge in written) Add(Settled(edge));
+        for (var at = 0; at < edges.Count; at++)
+        {
+            var waiver = waivers?.LastOrDefault(each => each.Deployable == edges[at].Deployable && each.On == edges[at].On);
+            edges[at] = edges[at] with { Waived = waiver?.Reason };
+        }
 
         var flags = new List<TeamFlag>();
         var questions = new List<DeliveryQuestion>(asked);
@@ -29,14 +36,14 @@ public static class DeliveryGraph
         foreach (var edge in edges.Where(edge => !known.Contains(edge.Deployable) || !known.Contains(edge.On)))
         {
             var missing = known.Contains(edge.On) ? edge.Deployable : edge.On;
-            flags.Add(new(TeamFlags.MissingReference, null, $"Release order `{edge.Deployable}` after `{edge.On}` names `{missing}`, which no deployable of this plan declares."));
+            flags.Add(new(TeamFlags.MissingReference, null, $"{MissingPrefix} `{edge.Deployable}` after `{edge.On}` names `{missing}`, which no deployable of this plan declares."));
         }
 
-        if (Cycle([.. edges.Where(edge => known.Contains(edge.Deployable) && known.Contains(edge.On))]) is { } cycle)
+        if (Cycle([.. edges.Where(edge => edge.Waived is null && known.Contains(edge.Deployable) && known.Contains(edge.On))]) is { } cycle)
         {
             var spelt = string.Join(" -> ", cycle.Select(each => each.ToString()));
-            flags.Add(new(TeamFlags.Cycle, null, $"The release orders run in a circle: {spelt}. Nothing can be released first."));
-            questions.Add(new(CycleKey(cycle), DeliveryQuestion.Cycle, $"The release orders run in a circle: {spelt}. Break it with a compatibility change or a staged rollout.")
+            flags.Add(new(TeamFlags.Cycle, null, $"{CirclePrefix}: {spelt}. Nothing can be released first."));
+            questions.Add(new(CycleKey(cycle), DeliveryQuestion.Cycle, $"{CirclePrefix}: {spelt}. Break it with a compatibility change or a staged rollout.")
             {
                 Yes = "The plan is revised with the order you choose.",
                 Blocks = "Every release in the circle.",
@@ -47,6 +54,12 @@ public static class DeliveryGraph
         return new(null, edges, Distinct(questions), flags);
     }
 
+    private const string CirclePrefix = "The release orders run in a circle", MissingPrefix = "Release order";
+
+    /// <summary>Whether a flag is one this judge raised, so a re-judge replaces it and leaves the part judge's alone.</summary>
+    public static bool Raised(TeamFlag flag) =>
+        flag.Part is null && (flag.Text.StartsWith(CirclePrefix, StringComparison.Ordinal) || flag.Text.StartsWith(MissingPrefix, StringComparison.Ordinal));
+
     /// <summary>The key a circle is asked under: the same however it is walked and from wherever it starts.</summary>
     public static string CycleKey(IEnumerable<DeliveryRef> circle) =>
         "cycle:" + string.Join('|', circle.Select(each => each.ToString()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
@@ -54,16 +67,23 @@ public static class DeliveryGraph
     /// <summary>The edges whose evidence now reads as another blob. Evidence <paramref name="seen"/> does not hold is not judged.</summary>
     /// <param name="seen">The blob each <see cref="DeliveryEvidence.Key"/> holds now, for what the reader looked at.</param>
     public static IReadOnlyList<DeliveryEdge> Stale(IReadOnlyList<DeliveryEdge> edges, IReadOnlyDictionary<string, string> seen) =>
-        [.. edges.Where(edge => edge.Evidence is { } evidence && seen.TryGetValue(evidence.Key, out var now)
+        [.. edges.Where(edge => edge.Waived is null && edge.Evidence is { } evidence && seen.TryGetValue(evidence.Key, out var now)
             && !string.Equals(now, evidence.Blob, StringComparison.OrdinalIgnoreCase))];
 
-    /// <summary>The person's queue: what the plan asks, then one question for each stale edge, each key once.</summary>
+    /// <summary>The person's queue: what the plan asks, then one question for each stale edge, each key once, none the person answered.</summary>
     public static IReadOnlyList<DeliveryQuestion> Queue(
-        IReadOnlyList<DeliveryQuestion> asked, IReadOnlyList<DeliveryEdge> edges, IReadOnlyDictionary<string, string> seen) =>
-        Distinct([.. asked, .. Stale(edges, seen).Select(StaleQuestion)]);
+        IReadOnlyList<DeliveryQuestion> asked, IReadOnlyList<DeliveryEdge> edges, IReadOnlyDictionary<string, string> seen,
+        IReadOnlyList<DeliveryAnswer>? answers = null) =>
+        [.. Distinct([.. asked, .. Stale(edges, seen).Select(edge => StaleQuestion(edge, seen[edge.Evidence!.Key]))])
+            .Where(question => answers?.Any(answer => answer.Key == question.Key) != true)];
 
-    private static DeliveryQuestion StaleQuestion(DeliveryEdge edge) => new(
-        $"stale:{edge.Deployable}>{edge.On}:{edge.Source}", DeliveryQuestion.Stale,
+    /// <summary>What a plan still asks the person: <see cref="Queue"/> over the plan's own questions, orders and answers.</summary>
+    public static IReadOnlyList<DeliveryQuestion> Open(TeamPlan plan, IReadOnlyDictionary<string, string> seen) =>
+        Queue(plan.Questions, plan.Releases, seen, plan.Answers);
+
+    // The key holds the blob the evidence moved to, so a second move asks again where the first was answered.
+    private static DeliveryQuestion StaleQuestion(DeliveryEdge edge, string now) => new(
+        $"stale:{edge.Deployable}>{edge.On}:{edge.Source}@{now}", DeliveryQuestion.Stale,
         $"`{edge.Deployable}` is released after `{edge.On}` because {edge.Why} What that read ({edge.Evidence!.File}) has changed since.")
     {
         Yes = "The order stands, and the lead reads it again.",
