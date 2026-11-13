@@ -38,7 +38,6 @@ public sealed class DesktopStore : IDisposable
 
     public const int ConversationFactsVersion = HandOffsVersion + 1;
 
-    /// <summary>The version whose step makes the session events' heads and offsets (<see cref="SessionEventHeads"/>).</summary>
     public const int SessionEventHeadsVersion = ConversationFactsVersion + 1;
 
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>

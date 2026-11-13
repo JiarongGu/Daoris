@@ -12,7 +12,7 @@ public sealed class SessionEventHeadsTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-heads-" + Guid.NewGuid().ToString("N")[..8]);
 
-    // The same bytes in a folder that is no home's: read whole, the way every record once was.
+    // The same bytes in a folder that is no home's: read whole, the answer to compare with.
     private readonly string _whole;
 
     private readonly SessionEvents _headed;

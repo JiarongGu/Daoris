@@ -4,10 +4,10 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an events file's whole read would answer for its long-lived questions, kept with how far into the file it was read: the last
+/// What an events file's whole read answers for its long-lived questions, kept with how far into the file it reached: the last
 /// number, the turns ended, where the opening and the last plan are, the first call that failed and the answer each word is pressed as,
 /// and the byte offset of every 256th event. It is built by reading the file from <see cref="Length"/> on, so a head that stands for
-/// the file's start reads only what was written since.
+/// the file's start reads only the lines written after it.
 /// </summary>
 /// <param name="Length">How far into the file the head reached: just past the last whole line's newline.</param>
 /// <param name="LineStart">Where the last whole line begins.</param>
@@ -37,7 +37,7 @@ internal sealed record SessionEventHead(
 
     public static SessionEventHead Empty { get; } = new(0, 0, "", 0, 0, 0, -1, 0, -1, null, 0, new Dictionary<string, string>(), []);
 
-    /// <summary>Whether the file's bytes before <see cref="Length"/> are the ones this head was read from.</summary>
+    /// <summary>Whether the file's bytes before <see cref="Length"/> are the ones this head read.</summary>
     public bool Stands(FileStream stream)
     {
         if (Length == 0) return true;
