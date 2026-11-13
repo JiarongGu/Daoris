@@ -62,7 +62,8 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
         Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
-        Action<IReadOnlyList<ChatMessage>> handedBack, Func<string, bool>? limitSaid = null)
+        Action<IReadOnlyList<ChatMessage>> handedBack, Func<string, bool>? limitSaid = null,
+        Func<CancellationToken, Task<string>>? compactWords = null)
     {
         var context = wiring.Context;
 
@@ -156,6 +157,13 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 using var quietWord = QuietWord.Tell(
                     wiring.Watch, sessionId, inbox, inbox is null ? null : new SaidDoor(context.Service, sessionId), RunningCalls.Of(context.Events),
                     failed: error => run.Say($"— Daoris's word to this quiet session was not kept: {error}"));
+
+                // A harness that compacts the session's context is told what Daoris holds of the quest: its requirements and its brief.
+                using var compactWord = inbox is null || compactWords is null
+                    ? null
+                    : CompactWord.Tell(
+                        session, sessionId, inbox, new SaidDoor(context.Service, sessionId), compactWords,
+                        failed: error => run.Say($"— Daoris's word after this session's compaction was not kept: {error}"));
 
                 // The person's words in the record the moment they are said, with when they reach the session: the page shows them
                 // waiting in the turn they were said in, rather than nothing until they are handed over.
