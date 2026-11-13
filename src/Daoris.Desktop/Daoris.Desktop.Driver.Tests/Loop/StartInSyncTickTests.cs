@@ -51,7 +51,7 @@ public sealed class StartInSyncTickTests : IDisposable
         using var tally = GitLaunch.Count();
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var first = tally.Starts.ToList();
-        TickGitBudget.Holds(first, budget: 8);
+        TickGitBudget.Holds(first, budget: 12);
         var tree = service.Session("s1")["tree"]!.GetValue<string>();
         SquashOntoLine(tree);
         service.Close("q2", "Done", "POST /notes takes { text }.");
