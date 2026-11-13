@@ -50,8 +50,8 @@ public static class DaorisWords
     /// <summary>
     /// Whether a new part an ended record's account cooling opens carries this word: the person's,
     /// and Daoris's own that state a fact (a rebase, a reopen, a step's go-on), said as Daoris's. Never Daoris's resume words (a limit's,
-    /// a restart's, a retry's), which ask for the record's own conversation, nor another agent's findings or a helper's answer, which
-    /// go to the person.
+    /// a restart's, a retry's), which ask for the record's own conversation, nor another agent's findings, which go to the
+    /// person; a helper's answer goes on as the helper's (<see cref="HelperAnswersCarried"/>).
     /// </summary>
     public static bool NewPartCarries(SaidWordView word) => word.Persons || (word.Daoris && !DaorisKeys.IsResume(word.Key));
 
