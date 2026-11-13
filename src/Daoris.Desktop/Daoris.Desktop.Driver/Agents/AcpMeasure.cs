@@ -21,6 +21,9 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
     private readonly object _gate = new();
     private AcpUsage? _usage;
     private readonly ContextDrop _drop = new();
+    private readonly AcpCompaction _events = new();
+
+    public bool CompactionNamed { get; set; }
 
     // The models the turn's own updates named, and the response's split as this process last said it.
     private readonly List<string?> _named = [];
@@ -36,6 +39,7 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
     {
         var update = frame.Update;
         Measure(update);
+        if (CompactionNamed && _events.Completed(update)) Compacted?.Invoke();
 
         // A model it fell back to, a switch it made: what it says now replaces what is kept, as an answer to a change does.
         if (AcpRender.Kind(update) == "config_option_update" && update.TryGetProperty("configOptions", out var changed)
@@ -77,7 +81,7 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
         lock (_gate)
         {
             if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
-            compacted = _drop.Dropped(used);
+            compacted = _drop.Dropped(used) && !CompactionNamed;
         }
 
         if (compacted) Compacted?.Invoke();

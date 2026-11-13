@@ -33,6 +33,9 @@ public interface ISpawn
     /// </summary>
     bool ClaudeSeam => false;
 
+    /// <summary>Whether its protocol door reports a compaction as an event (<see cref="AcpCompaction"/>), read in place of the context counter's fall.</summary>
+    bool NamesCompaction => false;
+
     /// <summary>
     /// Points this spawn at the managed <c>claude</c> a start on a door that takes the seam is handed (<see cref="ClaudeSeam"/>), for the
     /// shell to apply with the rest of the account's half; nothing by default.

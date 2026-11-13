@@ -31,7 +31,7 @@ public sealed class CompactWord : IDisposable
         _failed = failed;
         if (subscribe is not null && unsubscribe is not null)
         {
-            Action handler = OnCompacted;
+            Action handler = Compacted;
             subscribe(handler);
             _unsubscribe = () => unsubscribe(handler);
         }
@@ -45,7 +45,7 @@ public sealed class CompactWord : IDisposable
     /// <summary>The compactions told so far, with the record's id of each word kept there (none where it is held in this process alone).</summary>
     public IReadOnlyDictionary<int, string?> Told => _told;
 
-    private void OnCompacted()
+    internal void Compacted()
     {
         if (Volatile.Read(ref _disposed) == 0) _ = Guard(TellAsync());
     }

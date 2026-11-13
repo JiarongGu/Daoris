@@ -33,6 +33,13 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
             Configure = session =>
             {
                 chat.Configure(session);
+
+                // A harness that compacts the conversation's context is told the requests it left open.
+                session.CompactionNamed = agent.NamesCompaction;
+                var compacted = new ChatCompactTold(
+                    sessionId, wiring.Context.Service, wiring.Context.Home, word => chat.Turns.Take(word) is not null,
+                    error => run.Say($"— Daoris's word after this conversation's compaction was not kept: {error}"));
+                session.Compacted += compacted.Compacted;
                 // The person's words said during a turn, as the record keeps them where the session took them.
                 session.OnTaken(delivered =>
                 {

@@ -268,6 +268,21 @@ internal sealed class SessionHold(IRunWiring wiring)
             : null;
         var protocol = abilities.HeldOnWire;
 
+        // A one-turn session and Ask Daoris hold no quest's requirements to put back.
+        Func<CancellationToken, Task<string>>? compactWords = target.Ask is null && !target.OneTurn
+            ? async compactCt => CompactedWords.Of(
+                target,
+                (await ContextBriefs.ComposeAsync(
+                    service, context.Events, home, sessionId, CompactedWords.Why, conversation: false, ct: compactCt).ConfigureAwait(false)).Text)
+            : null;
+
+        // The native door's word waits for the turn's end, as a quiet session's does.
+        using var nativeCompactWord = held is not null && !protocol && compactWords is not null
+            ? new CompactWord(
+                sessionId, held, new SaidDoor(service, sessionId), compactWords,
+                failed: error => output?.Append(sessionId, $"— Daoris's word after this session's compaction was not kept: {error}"))
+            : null;
+
         // What the native door's harness says in its own words, apart from its agent's, for its ending.
         var own = new HarnessWords();
 
@@ -305,12 +320,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                     read => log?.Write("info", "agent.error", [
                         ("session", sessionId), ("door", adapter.Id.Value), ("account", prior?.Profile), ("kind", read.Spelled), ("by", read.By),
                     ])),
-                compactWords: target.Ask is null && !target.OneTurn
-                    ? async compactCt => CompactedWords.Of(
-                        target,
-                        (await ContextBriefs.ComposeAsync(
-                            service, context.Events, home, sessionId, CompactedWords.Why, conversation: false, ct: compactCt).ConfigureAwait(false)).Text)
-                    : null),
+                compactWords: compactWords, namesCompaction: adapter.Spawned().NamesCompaction),
         });
 
         // What is asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first
@@ -336,6 +346,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
             new LineageReadings(home, sessionId),
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
+            nativeCompactWord is null ? null : ReadingSinks.On<WireReading.Compacted>(_ => nativeCompactWord.Compacted()),
             limits,
             offers is null ? null
                 : new OfferRefusals(home, adapter.Id.Value, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
