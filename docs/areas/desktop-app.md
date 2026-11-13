@@ -246,7 +246,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     of the origins the person has open and giving nothing back; nothing set means shared. Measured: on shared tabs without the view,
     a second session's snapshot broke the first one's clicks (5 s each); apart, about 0.6 s. The person's Edge on a Daoris profile
     stays an option. Daoris keeps sign-ins across a restart itself. A plugin whose manifest says `hooks.browser` is handed the
-    endpoint as `DAORIS_BROWSER` and works in a tab of its own in the signed-in profile. (from D78, D84, D277, D281, D291)
+    endpoint as `DAORIS_BROWSER` and works in a tab of its own in the signed-in profile. (from D78, D84, D277, D281, D292)
 
 **The setup guide and the views**
 
