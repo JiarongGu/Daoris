@@ -9,7 +9,6 @@ namespace Daoris.Knowledge;
 public static class DeliveryGraph
 {
     /// <summary>Judges the deployables as the lead read them, the edges it wrote and the questions it already asks.</summary>
-    /// <param name="waivers">The orders the person waived: kept and marked, they no longer break a circle open or go stale.</param>
     public static DeliveryJudged Judge(
         IReadOnlyList<DeliveryDeployable> deployables, IReadOnlyList<DeliveryEdge> written, IReadOnlyList<DeliveryQuestion> asked,
         IReadOnlyList<DeliveryWaiver>? waivers = null)
@@ -65,7 +64,6 @@ public static class DeliveryGraph
         "cycle:" + string.Join('|', circle.Select(each => each.ToString()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
 
     /// <summary>The edges whose evidence now reads as another blob. Evidence <paramref name="seen"/> does not hold is not judged.</summary>
-    /// <param name="seen">The blob each <see cref="DeliveryEvidence.Key"/> holds now, for what the reader looked at.</param>
     public static IReadOnlyList<DeliveryEdge> Stale(IReadOnlyList<DeliveryEdge> edges, IReadOnlyDictionary<string, string> seen) =>
         [.. edges.Where(edge => edge.Waived is null && edge.Evidence is { } evidence && seen.TryGetValue(evidence.Key, out var now)
             && !string.Equals(now, evidence.Blob, StringComparison.OrdinalIgnoreCase))];
@@ -81,7 +79,6 @@ public static class DeliveryGraph
     public static IReadOnlyList<DeliveryQuestion> Open(TeamPlan plan, IReadOnlyDictionary<string, string> seen) =>
         Queue(plan.Questions, plan.Releases, seen, plan.Answers);
 
-    // The key holds the blob the evidence moved to, so a second move asks again.
     private static DeliveryQuestion StaleQuestion(DeliveryEdge edge, string now) => new(
         $"stale:{edge.Deployable}>{edge.On}:{edge.Source}@{now}", DeliveryQuestion.Stale,
         $"`{edge.Deployable}` is released after `{edge.On}` because {edge.Why} What that read ({edge.Evidence!.File}) has changed since.")

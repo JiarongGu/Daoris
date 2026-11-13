@@ -14,7 +14,6 @@ internal static class TeamAnswers
             [.. members.Select(member => new AskPlanMemberResponse(member.Part, member.Role, member.Session, member.Revision))],
             [.. decisions.Select(decision => new AskPlanDecisionResponse(decision.Scope, decision.Revision, decision.Decision, decision.Reason, decision.Author, decision.Act))]);
 
-    /// <summary>The questions an ask's plan asks the person, as the ask carries them.</summary>
     public static IReadOnlyList<AskPlanQuestionResponse> Questions(IEnumerable<DeliveryQuestion> questions) =>
         [.. questions.Select(question => new AskPlanQuestionResponse(question.Key, question.Kind, question.Text, question.Yes, question.Blocks, question.Default))];
 

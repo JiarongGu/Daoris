@@ -11,10 +11,6 @@ const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent u
  * **An ask's plan**: the parts the lead, Ask Daoris or a person's hand wrote, each in its repository with what a person sees working
  * when it is done and the quest it became, then the order between them and what the judge found. A worker's split of its own part is a
  * plan of its own below the ask's, said by the part it splits.
- *
- * @remarks
- * A molecule: the plan arrives read (`askPlanOf`). The plan is written through the connector's `team_plan` door, and a part's work is
- * its quest, which `onOpenQuest` opens; the person's own two acts on its delivery, an answer and a waiver, are `onSettle`.
  */
 export function AskPlanSection({ plan, onOpenQuest, onSettle }: { plan: AskPlan; onOpenQuest: (quest: string) => void; onSettle?: PlanSettling }) {
   return (

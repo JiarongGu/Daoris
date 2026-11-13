@@ -10,10 +10,7 @@ export type AskPlanFlag = { kind: string; part: string | null; text: string };
 /** The place a release order's reason stands on: a file, the range and the blob the lead read. */
 export type AskPlanEvidence = { repository: string; file: string; range: string; blob: string };
 
-/**
- * A release order: `deployable` after `on` (each `repository/id`), the `source` it stands on and the evidence's place, null for an order
- * with none. `waived` is the person's reason where they waived it; `stale` says the evidence's file holds another blob on this machine.
- */
+/** A release order: `deployable` after `on` (each `repository/id`), its `source` and the evidence's place; `waived` is the person's reason, `stale` says the file moved. */
 export type AskPlanRelease = {
   deployable: string; on: string; why: string; source: string; evidence: AskPlanEvidence | null; waived: string | null; stale: boolean;
 };

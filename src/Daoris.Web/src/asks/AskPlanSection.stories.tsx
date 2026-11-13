@@ -62,7 +62,6 @@ type Story = StoryObj<typeof meta>;
 /** An ask's own plan with an order and a flag, and a worker's split of one part below it. */
 export const Plan: Story = {};
 
-/** With the person's door: a question answered in place, and an order waived with its reason. */
 export const PlanSettling: Story = { args: { onSettle: (_settle, answered) => answered.done() } };
 
 /** The same in 中文. */
