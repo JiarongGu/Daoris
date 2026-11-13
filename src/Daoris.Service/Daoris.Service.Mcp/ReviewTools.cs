@@ -3,8 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// A set-up step's session asks Daoris to serve its build and says what it showed (the review environment design
+/// <summary>A set-up step's session asks Daoris to serve its build and says what it showed (the review environment design
 /// §2.6). Allowed only to a set-up step's own session, which its connector names; the verdict has no tool, since it is the
 /// person's alone.
 /// </summary>

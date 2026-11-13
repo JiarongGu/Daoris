@@ -3,8 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// A second opinion's two tools (the second agent design §5.4, §6.1, §6.4): the reviewer says its opinion, and the
+/// <summary>A second opinion's two tools (the second agent design §5.4, §6.1, §6.4): the reviewer says its opinion, and the
 /// working session answers the findings it is handed. Each answers only the session its connector names, as an agent: no
 /// tool here asks for an opinion, hands one on, or answers a dispute for the person.
 /// </summary>

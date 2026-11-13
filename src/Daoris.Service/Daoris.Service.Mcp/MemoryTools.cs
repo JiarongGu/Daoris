@@ -13,8 +13,7 @@ namespace Daoris.Knowledge.Mcp;
 /// which asks the workspace again before it reads an entry. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
-/// each told once.
-/// </summary>
+/// each told once.</summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
 /// <param name="intake">The session this connector names, and the role it started in; none names none, a person's own agent's.</param>

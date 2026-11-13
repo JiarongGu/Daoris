@@ -3,8 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// A session's line, read back a page at a time (the session-context design §3.5): a session that continues another (a
+/// <summary>A session's line, read back a page at a time (the session-context design §3.5): a session that continues another (a
 /// hand-over, an account move, a carry-on, a fallback) is handed Daoris's brief of its line, bounded, and what the bound left out is
 /// read here from this machine's event files. Only for the session its connector names, and only the parts of that session's line.
 /// </summary>

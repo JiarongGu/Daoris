@@ -3,8 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// A driven session records what only the person can decide before it ends its turn on it (the park's ask design §2):
+/// <summary>A driven session records what only the person can decide before it ends its turn on it (the park's ask design §2):
 /// the question, the answers it offers with what it does on each, the one it recommends and by when, which the page draws at the
 /// conversation's end with each answer a press. Not a go-ahead, which <see cref="GoAheadTools"/> holds on the ask.
 /// </summary>
