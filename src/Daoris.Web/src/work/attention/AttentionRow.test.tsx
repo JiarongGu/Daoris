@@ -248,7 +248,7 @@ describe('opening one', () => {
     };
     expect(doorOf(PARKED)).toEqual(['Answer…']);
     expect(doorOf({ ...PROPOSAL, kind: 'intake' })).toEqual(['Answer ask #7c1e9a04b2d5']);
-    expect(doorOf(REVIEW)).toEqual(['Review']);
+    expect(doorOf(REVIEW)).toEqual(['Open outputs']);
     expect(doorOf({ ...PARKED, kind: 'unanswerable' })).toEqual(['Open']);
     // A terminal's press is answered on its card, where its values are read: its door is its one control.
     expect(doorOf({ ...PARKED, kind: 'confirmation' })).toEqual(['Confirm or refuse…']);

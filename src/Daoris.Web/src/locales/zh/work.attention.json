@@ -26,7 +26,7 @@
   "work.attention.setUpShown": "已在 `{{environment}}` 中展示；它没有说展示了什么。",
   "work.attention.door.answer": "答复…",
   "work.attention.door.intake": "答复需求 #{{id}}",
-  "work.attention.door.review": "审阅",
+  "work.attention.door.review": "打开产出",
   "work.attention.door.left": "查看未完成部分",
   "work.attention.door.open": "打开",
   "work.attention.door.confirmation": "确认或拒绝…",

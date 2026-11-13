@@ -89,7 +89,7 @@ describe('a session’s page header', () => {
     within(header).getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
-      .toEqual(['Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive', 'Copy session ID']);
+      .toEqual(['Open outputs', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive', 'Copy session ID']);
     await user.click(screen.getByRole('menuitem', { name: 'Open a terminal here' }));
     expect(act).toHaveBeenCalledWith('terminal');
   });

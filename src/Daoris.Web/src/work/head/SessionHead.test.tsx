@@ -580,7 +580,7 @@ describe('the attended session\'s head', () => {
       />,
     );
     expect(screen.getByText('daoris/s-43c14a70')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
     expect(onReview).toHaveBeenCalledOnce();
     unmount();
 
@@ -591,7 +591,7 @@ describe('the attended session\'s head', () => {
         onReview={onReview}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
   });
 
   /**
@@ -608,7 +608,7 @@ describe('the attended session\'s head', () => {
       const onReviewRun = vi.fn();
       render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} onReview={onReview} behind={behind} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
       expect(onReview).toHaveBeenCalledOnce();
       expect(onReviewRun).not.toHaveBeenCalled();
     });
@@ -618,13 +618,13 @@ describe('the attended session\'s head', () => {
       const { rerender } = render(
         <SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} behind={{ line: 'master', commits: 0, ahead: 1 }} />,
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
       expect(onReviewRun).toHaveBeenCalledOnce();
 
       rerender(
         <SessionHead session={session({ state: 'failed' })} lands={{ ...LANDS, uncommitted: 2 }} landing={PLAN} onReviewRun={onReviewRun} behind={{ line: 'master', commits: 0, ahead: 0 }} />,
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
       expect(onReviewRun).toHaveBeenCalledTimes(2);
     });
 
@@ -637,7 +637,7 @@ describe('the attended session\'s head', () => {
       expect(screen.getByText('daoris/s-4e6837ed')).toBeInTheDocument();
       expect(screen.getByText('in its tree s-4e6837ed')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
       expect(onReviewRun).toHaveBeenCalledOnce();
     });
 
@@ -649,13 +649,13 @@ describe('the attended session\'s head', () => {
           onReviewRun={vi.fn()}
         />,
       );
-      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
       expect(screen.getByText('nothing beyond main')).toBeInTheDocument();
 
       // Nothing here can press it (a browser, a story): the work is said, with no press.
       rerender(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
     });
 
     // Where the person's Accept is kept on the session it carried on, the head says so and never shows finished work.
@@ -686,7 +686,7 @@ describe('the attended session\'s head', () => {
         expect(screen.getByText('它的工作')).toBeInTheDocument();
         expect(screen.getByText('1 个提交不在你的任何分支上')).toBeInTheDocument();
         expect(screen.getByText('在它的工作树 s-4e6837ed 中')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '审阅' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '打开产出' })).toBeInTheDocument();
       } finally {
         await i18n.changeLanguage('en');
       }
@@ -710,7 +710,7 @@ describe('the attended session\'s head', () => {
 
       const gate = screen.getByRole('region', { name: 'Second opinion' });
       expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
-      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open outputs' }));
       expect(onReviewRun).toHaveBeenCalledOnce();
     });
 
@@ -720,17 +720,17 @@ describe('the attended session\'s head', () => {
         <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.reading }} onReviewRun={onReviewRun} />,
       );
       expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('being read');
-      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
 
       rerender(
         <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailableRequired }} onReviewRun={onReviewRun} />,
       );
-      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
 
       // Not required: said beside the door, which stands.
       rerender(<SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailable }} onReviewRun={onReviewRun} />);
       expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('The rule does not require one, so nothing waits for it.');
-      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
     });
   });
 
@@ -755,7 +755,7 @@ describe('the attended session\'s head', () => {
       expect(screen.getByText('daoris/s-4e6837ed')).toBeInTheDocument();
       expect(screen.getByText('in its tree s-4e6837ed')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
-      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
 
       fireEvent.click(screen.getByRole('button', { name: 'Discard branch…' }));
       expect(onDiscardTree).not.toHaveBeenCalled();
@@ -1182,7 +1182,7 @@ describe('the way from the head\'s waits to the conversation', () => {
     await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
 
-    await userEvent.click(within(screen.getByRole('button', { name: 'Review' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(within(screen.getByRole('button', { name: 'Open outputs' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.work).toHaveBeenCalledTimes(1);
   });
 
@@ -1202,7 +1202,7 @@ describe('the way from the head\'s waits to the conversation', () => {
     expect(sections).toHaveLength(3);
     expect(sections[0]).toHaveTextContent('This one is waiting on you');
     expect(sections[1]).toBe(screen.getByRole('region', { name: 'Go-aheads it asked' }));
-    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Review' }));
+    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Open outputs' }));
 
     rerender(<SessionHead {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
     const second = within(sections[1] as HTMLElement).getAllByRole('listitem')[1]!;

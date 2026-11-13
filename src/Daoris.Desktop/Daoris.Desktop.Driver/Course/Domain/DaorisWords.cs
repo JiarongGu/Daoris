@@ -193,6 +193,12 @@ public static class DaorisKeys
 
     public static bool IsWatch(string? key) => WatchKeys.Is(key);
 
+    public const string CompactKind = "compact";
+
+    /// <summary>The compaction word's key: the session and the compaction's number in the run; no quest's fact.</summary>
+    public static string Compact(string session, int episode) =>
+        $"{CompactKind}/{session}/{episode.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
     public const string RestartKind = "restart";
     public static string Restart(string session, string build) => $"{RestartKind}/{session}/{build}";
     public static bool IsRestart(string? key) => key?.StartsWith(RestartKind + "/", StringComparison.Ordinal) == true;

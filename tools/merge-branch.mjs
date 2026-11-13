@@ -340,7 +340,7 @@ import {
 } from './ci-background.mjs';
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
-import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
+import { copyPrivateFiles, privateDigest, privateGateFiles } from './private-gate-files.mjs';
 import { DEPENDENCY_FOLDERS, NPM_CI, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
 export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
@@ -378,6 +378,8 @@ import { diffPaths, isInside, zPaths, SCRATCH } from './merge/paths.ts';
 import { stepTrees } from './merge/step-trees.ts';
 import { abnormalEnd } from './merge/processes.ts';
 import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
+import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mjs';
+import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
@@ -2867,7 +2869,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 /** What `merge/flow-deps.ts` runs on: this tool's gate runner, reach table, failure reader and stores. */
 const flowSeams = () => ({
   runGate, pathsReaching, table: REACH, lanesOf: (root) => readLanes(root)?.lanes ?? [], slowestClasses, failuresOf, signatureKey, isProcessGate,
-  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired,
+  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired, privateOf: privateDigest,
 });
 
 /**
@@ -2877,14 +2879,15 @@ const flowSeams = () => ({
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false,
 } = {}) {
   const commit = headCommit(root);
+  const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
-  const flow = flowDepsOf(flowSeams(), root, verdictsHome(root), kind);
+  const flow = flowDepsOf(flowSeams(), root, verdictsHome(root), kind, replay);
   return runGates(root, gates, dir, {
     waitFor,
     keepGoing,
@@ -2901,15 +2904,16 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // A Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree) });
+      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree), narrow: replaying?.narrow });
       Object.assign(result, { tree, at: started });
+      replaying?.settle(gate, result);
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
         // A Process half's classes, each with its verdict, and the half's: how many ran, how many it kept by reach,
         // and the oldest verdict it kept (its own start when it ran whole), which the stage holds to the sweep's bound.
         const found = isProcessGate(gate) && result.trx && existsSync(result.trx) ? classVerdictsOf(readFileSync(result.trx, 'utf8'), result) : [];
         const classes = isProcessGate(gate)
-          ? { classes: { ran: result.trx ? found.length : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
+          ? { classes: { ran: result.trx ? found.length + (result.classReplay?.replayedCount ?? 0) : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
           : {};
         // Every verdict carries the kind of run that gave it (`ci-background.mjs`'s `RUN_KINDS`, or `merge`, `checkout`).
         // A scoped run writes a gate verdict only for a gate it ran whole, never for a git half with deferred classes.
@@ -3109,12 +3113,15 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     // whose budget deferred classes (`gateVerdict`).
     results = await runRecorded(root, plan, dir, {
       keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.verdictKind ?? options.runKind ?? 'checkout',
-      onStart: options.onGateStart, onResult: options.onGateResult, gateVerdict: options.gateVerdict,
+      onStart: options.onGateStart, onResult: options.onGateResult, gateVerdict: options.gateVerdict, replay: options.replay !== false,
     });
   } finally {
     unwatch();
   }
   options.onResults?.(results);
+  const home = verdictsHome(root);
+  writeSweep(home, noteSweeps(sweepRecord(home, plan), sweptBy(results, head, nowIso(), isProcessGate)));
+  replaySummary(results);
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
@@ -4431,7 +4438,7 @@ async function gateVerify(root, options) {
     let results = [];
     // The commit is the caller's: no newer tip of main supersedes it (no `watch`).
     const code = runPlan.length === 0 ? 0 : await gateCheckout(tree, {
-      ...options, runKind: 'full', givenPlan: runPlan,
+      ...options, runKind: 'full', givenPlan: runPlan, replay: false,
       ...(mode === 'run' ? { verdictKind: named ? 'full' : 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length } : {}),
       onResults: (found) => { results = found; },
       onGateStart: (gate) => { started.set(gate.name, Date.now()); },
@@ -4708,34 +4715,6 @@ function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir
     return { ...gate, run: withSettings(gate.run, file), reach: plan };
   });
   return { gates: out, plans };
-}
-
-/**
- * A Process half's plan in its CI run's status: how many classes its census read, the whole half and why or null, the
- * oldest verdict it keeps, each class it runs with why, and each it keeps with the verdict's time and commit and how it stands.
- */
-function reachStatus(plan) {
-  return {
-    census: plan.census ?? null,
-    whole: plan.whole,
-    composed: plan.composed ?? null,
-    sweep: plan.sweep,
-    run: plan.run,
-    kept: plan.kept.map((each) => ({ name: each.name, at: each.verdict.at ?? null, commit: each.verdict.commit ?? null, standing: each.standing })),
-  };
-}
-
-/** A Process half's plan as its CI run says it, a line and the classes it runs or keeps. */
-function reachLines(name, plan) {
-  const names = (list) => list.map((each) => each.name.split('.').at(-1));
-  if (plan.whole) return [`  ${name}: the whole half runs${plan.census ? ` (${classCount(plan.census)})` : ''}: ${plan.whole}`];
-  const shownNames = (list) => `${names(list).slice(0, 8).join(', ')}${list.length > 8 ? `, and ${list.length - 8} more` : ''}`;
-  if (plan.composed) {
-    return [`  ${name}: passes without running (CISCOPE1b): all ${classCount(plan.kept.length)} kept, each with a pass that stands on this tree, the oldest from ${when(plan.sweep)}; ${plan.composed}`];
-  }
-  return [
-    `  ${name}: ${plan.run.length} of ${classCount(plan.census)} run by reach (${shownNames(plan.run)}); ${plan.kept.length} kept (${shownNames(plan.kept)}), each with a pass that stands on this tree, the oldest from ${when(plan.sweep)}`,
-  ];
 }
 
 /** The share of the processors' time that is busy between two `os.cpus()` readings, across all of them; null when not measured. */

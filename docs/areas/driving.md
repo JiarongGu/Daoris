@@ -56,7 +56,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
     line and how far the line moved past it, the paths touched, the gates those paths reach (the landing's own selection, never a
     list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
-    this tip is run by Daoris through the broker, never refused for; a red comes back to the session as a word. The reading is
+    this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
+    selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is
     a note on the session's record. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
    session that wrote it, and read whole. (D219)
 

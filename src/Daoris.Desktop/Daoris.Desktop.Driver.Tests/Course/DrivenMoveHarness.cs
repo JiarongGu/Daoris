@@ -233,6 +233,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         }
         catch (Exception error)
         {
+            if (error is TimeoutException) _unended = true;
             return error.GetType().Name + ": " + error.Message;
         }
     }
@@ -393,8 +394,12 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         {
             if (_watching is not null) await _watching.WaitAsync(Poll.Patience);
         }
-        catch (Exception error) when (error is OperationCanceledException or TimeoutException)
+        catch (OperationCanceledException)
         {
+        }
+        catch (TimeoutException)
+        {
+            _unended = true;
         }
 
         _closing.Dispose();
@@ -462,8 +467,15 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         await Service.DisposeAsync();
         _gate.Dispose();
         SqliteConnection.ClearAllPools();
+        // A loop still running would act on a repository that is gone, and its git would climb to the checkout's: the fixture stays,
+        // and the case fails, until the loop has ended.
+        if (_unended) throw new InvalidOperationException($"a loop of {Home} did not end in {Poll.Patience}; its fixture is left in place");
         GitSeed.Discard(Home);
+        await CheckoutWorktrees.AssertNoneLeakedAsync();
     }
+
+    /// <summary>Whether a loop the case started did not end when asked.</summary>
+    private bool _unended;
 
     // ——— The stub agents.
 

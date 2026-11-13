@@ -189,6 +189,11 @@
       "row": "1j",
       "note": "tells Ask Daoris's place for its start (one line); the other reads a go-on's ask, not a record's mark; the start plan's (§2.4)"
     },
+    "Loop/Chat/ChatOpenTold.cs": {
+      "reads": "tells",
+      "row": "1j",
+      "note": "tells the person's own chat among a workspace's records (no helper's, reviewer's, piece's or opinion's), whose open requests a new conversation is told"
+    },
     "Loop/Chat/ChatWalk.cs": {
       "reads": "other",
       "note": "Ask Daoris's access mode, not a record's mark"

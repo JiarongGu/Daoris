@@ -208,6 +208,12 @@ of everything it handed, section by section.
     is `ContextBrief.CharWeight`'s twin). A working session may call it; a reviewer and a
     helper may not. It carries no counts. A tool's output the driver cut is shown with the length its own mark gives, and no cut
     on either side splits a surrogate pair. (from D189, D229)
+34a. A driven session whose harness compacts its context is handed the brief again, once per compaction: the protocol door
+    reads a compaction off the context counter falling to under half of a reading of 10,000 tokens or more (`ContextDrop`;
+    neither door names a compaction itself), and `CompactWord` keeps one urgent word of Daoris's through the session's inbox, the
+    quest's requirements as the start quoted them (`RequirementsPrompt`) then the line's brief (`ContextBriefs`, with the plan, the
+    open requests and the settled work), so it re-checks nothing settled and files no request twice. A word still waiting when
+    the run ends is taken off. The native and text-only doors have no counter and are told nothing.
 
 **What a session is told at its start**
 
@@ -218,7 +224,8 @@ of everything it handed, section by section.
     `DAORIS_TARGET` carries it as an environment variable). Over 30,000, the block goes to
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
 37. A conversation's first message carries the browser line, the process in a tree of its
-    own, where the person is (bounded), an open workflow draft, the person's words, then the block. A hand-over's first
+    own, where the person is (bounded; a new conversation that continues none also names the requests the workspace's last
+    conversation left open, `ChatOpenTold`), an open workflow draft, the person's words, then the block. A hand-over's first
     message is the brief, Daoris's briefing and the browser line. The brief, the browser line and the draft are consumed
     only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
     person waits on no answer to it. (from D162, D163, D164, D230)

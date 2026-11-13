@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { makeFixture } from '../test/_fixture.ts';
 
 const tool = await import(
-  // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
   '../../../tools/private-gate-files.mjs') as {
   privateGateFiles: (home: string) => string[];
   copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];

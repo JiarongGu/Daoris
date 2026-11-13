@@ -304,7 +304,13 @@ internal sealed class SessionHold(IRunWiring wiring)
                     context.Adapters, adapter, context.Harnesses.Clock, context.Harnesses.Zone,
                     read => log?.Write("info", "agent.error", [
                         ("session", sessionId), ("door", adapter.Id.Value), ("account", prior?.Profile), ("kind", read.Spelled), ("by", read.By),
-                    ]))),
+                    ])),
+                compactWords: target.Ask is null && !target.OneTurn
+                    ? async compactCt => CompactedWords.Of(
+                        target,
+                        (await ContextBriefs.ComposeAsync(
+                            service, context.Events, home, sessionId, CompactedWords.Why, conversation: false, ct: compactCt).ConfigureAwait(false)).Text)
+                    : null),
         });
 
         // What is asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first

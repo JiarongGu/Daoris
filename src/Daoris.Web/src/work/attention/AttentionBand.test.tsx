@@ -562,7 +562,7 @@ describe('What needs you on a machine', () => {
     const rows = await within(ready).findAllByRole('listitem', { name: sessionTitle(ENDED[0] as Session) });
     expect(within(ready).getAllByRole('listitem')).toHaveLength(5);
     expect(within(rows[0]!).getByText('2 commits to review')).toBeInTheDocument();
-    await userEvent.click(within(rows[0]!).getByRole('button', { name: 'Review' }));
+    await userEvent.click(within(rows[0]!).getByRole('button', { name: 'Open outputs' }));
     expect(reviewDoor).toHaveBeenCalledWith(expect.objectContaining({ id: 'r3v13w00', kind: 'review' }));
     await userEvent.click(within(ready).getByRole('button', { name: '2 more in Sessions' }));
     expect(onSessions).toHaveBeenCalled();

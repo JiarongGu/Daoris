@@ -395,21 +395,23 @@ public static class ContextBrief
     private static string List(IReadOnlyList<string> entries, int shown) =>
         string.Concat(entries.Take(shown).Select(entry => $"\n    - {entry}")) + (entries.Count > shown ? $"\n    - … and {entries.Count - shown} more" : "");
 
+    internal static string Delivered(BriefWait wait) => wait.Outcome == "answered"
+        ? "answered, and the answer is kept, not yet handed"
+        : wait.Delivery switch
+        {
+            "kept" => "kept by Daoris, not yet taken up",
+            "attempted" => "tried, not yet confirmed",
+            "sent" => "sent, not yet taken up",
+            "taken" => "taken up, not yet answered",
+            "uncertain" => "sent once and not known to have arrived, so it waits for the person",
+            "not-reached" => "did not reach its receiver",
+            "elsewhere" => "waiting on another repository",
+            _ => wait.Delivery,
+        };
+
     private static string WaitText(BriefWait wait)
     {
-        var delivery = wait.Outcome == "answered"
-            ? "answered, and the answer is kept, not yet handed"
-            : wait.Delivery switch
-            {
-                "kept" => "kept by Daoris, not yet taken up",
-                "attempted" => "tried, not yet confirmed",
-                "sent" => "sent, not yet taken up",
-                "taken" => "taken up, not yet answered",
-                "uncertain" => "sent once and not known to have arrived, so it waits for the person",
-                "not-reached" => "did not reach its receiver",
-                "elsewhere" => "waiting on another repository",
-                _ => wait.Delivery,
-            };
+        var delivery = Delivered(wait);
         var detail = wait.Detail is { Length: > 0 } text ? $": {TextBounds.Clip(TextBounds.OneLine(text), StepLimit)}" : "";
         return $"\n- What this line waits on: `{wait.Id}`, asked by session `{wait.Owner}` of {TextBounds.OneLine(wait.To)}; {delivery}. "
                + $"Its answer comes to this line{detail}";

@@ -231,3 +231,30 @@ TESTDIET1's list; the proofs of a live rule were left whole.
 
 **Still to be collected by the gates** (§0): per-test durations of every fast .NET half, Vitest per file for passing files, node per
 file. The next census reads `_fixtures/test-timing/` and ranks those; the items above marked "read" wait on it.
+
+## 7. The slowest classes by suite, and the reason each has
+
+The owner's rule (2026-11-13): a test that takes a long time has a reason, or is made faster, because slowness means an issue. The time
+check (`tools/time-ratchet.mjs`) holds each listed test to `{ ms, why, row }` and prints a reason for every test over budget;
+`node tools/time-ratchet.mjs --classes` prints the 15 classes of each record with the most total time and the reason or "no reason" for
+each. It reads `_fixtures/test-timing/`, so the other suites' tables come from the next merge's records (TESTSLOW1); the census gate,
+run alone on a branch with the shared source reading, gave (driver, 1,788 cases, 2 m 42 s of run; seconds of case time inside the gate,
+which runs its cases in parallel, so a class that waits on a shared binding shows that wait):
+
+| s | n | class | reason |
+|---|---|---|---|
+| 148 | 207 | ReviewGraphCensusTests | 207 combinations of a real git graph; 7 s alone, the rest is the gate's load (TESTSLOW1) |
+| 134 | 52 | StructureTests | the first case pays the shared analysis of the driver's tree; listed with its reason |
+| 109 | 17 | DeclarationBoundaryTests | no reason: TESTSLOW1 |
+| 102 | 15 | DeclarationLiteralsCensusTests | the first case pays the shared binding of every shipping project; listed |
+| 97 | 3 | ShellStructureTests | the shared analysis of the driver's tree; listed |
+| 47 | 18 | ProviderCensusTests | waits on the shared binding (TESTSLOW1) |
+| 47 | 3 | DeclarationKeepersCensusTests | waits on the shared binding (TESTSLOW1) |
+| 43 | 517 | ProviderConformanceTests | no reason: TESTSLOW1 |
+| 32 | 9 | CheckoutWritersCensusTests | 3 s alone; the gate's load (TESTSLOW1) |
+| 24 | 27 | DriverModuleLinesTests (modules) | no reason: TESTSLOW1 |
+
+The three say-door censuses and `CheckoutWritersCensusTests` read sources through `SourceTexts` and `SayDoorSources`, once a run; alone
+`ContinuedReadersCensusTests` fell from 6.4 s to 0.7 s, `SayKeysCensusTests` from 7.8 s to 0.6 s and `SettledReadersCensusTests` from
+10.6 s to 0.4 s. The time ratchet's list went from 8 entries with no reason to 9 entries each with one; 7 classes of this table are
+over budget with no reason (TESTSLOW1).
