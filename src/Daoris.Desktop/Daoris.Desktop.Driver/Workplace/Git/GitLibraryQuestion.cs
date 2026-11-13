@@ -12,5 +12,9 @@ internal enum GitLibraryQuestion
     /// <summary>Two commits' changed names (<see cref="GitLibraryNames"/>).</summary>
     Names,
 
+    /// <summary>A revision verified (<see cref="GitLibraryVerify"/>).</summary>
     Revisions,
+
+    /// <summary>Where a folder's trees and repository are, and its own settings (<see cref="GitLibraryLayout"/>, <see cref="GitLibraryWorktrees"/>).</summary>
+    Layout,
 }
