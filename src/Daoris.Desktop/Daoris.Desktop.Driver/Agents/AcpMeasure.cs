@@ -20,6 +20,7 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
     // The usage is read off the reader's thread, by the session's own readers and its outcome; one lock guards it and the models.
     private readonly object _gate = new();
     private AcpUsage? _usage;
+    private readonly ContextDrop _drop = new();
 
     // The models the turn's own updates named, and the response's split as this process last said it.
     private readonly List<string?> _named = [];
@@ -72,11 +73,18 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
 
         if (Json.Long(update, "used") is not { } used || Json.Long(update, "size") is not { } size) return;
 
+        bool compacted;
         lock (_gate)
         {
             if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
+            compacted = _drop.Dropped(used);
         }
+
+        if (compacted) Compacted?.Invoke();
     }
+
+    /// <summary>Told when the context counter fell far enough to say the harness compacted. Raised on the reader's thread.</summary>
+    public event Action? Compacted;
 
     /// <summary>
     /// Which models a turn's tokens were spent on, for the usage history alone: the models the turn's updates named, and the response's
