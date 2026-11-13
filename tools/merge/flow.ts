@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import type { LockInstalls } from './lock-install.ts';
-import { attribute, gateOutcome, mainRedLines, type Held, type MainRed } from './main-red.ts';
+import { attribute, gateOutcome, mainRedLines, unspecificLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
 import { overBudgetNote } from './timeout.ts';
@@ -17,7 +17,7 @@ import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict
 export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
-  failures?: Array<{ unit: string; key: string }>; replayed?: Replay; abnormal?: boolean; slowest?: Slow[];
+  failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; abnormal?: boolean; slowest?: Slow[];
   left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
@@ -31,7 +31,7 @@ export type FlowDeps = {
   diffOf: (where: string) => string[];
   toolchain: Toolchain;
   slowestOf: (trx: string) => Slow[];
-  failuresOf: (where: string, result: GateResult, trx: string | null) => Array<{ unit: string; key: string }>;
+  failuresOf: (where: string, result: GateResult, trx: string | null) => Array<{ unit: string; key: string; test: string | null }>;
   isProcessGate: (gate: PlanGate) => boolean;
   ledger: BuildLedger;
   listProcesses: () => Proc[];
@@ -148,7 +148,7 @@ const gateRecord = (result: GateResult): GateRecord => ({
 });
 
 /**
- * A merge's gates settled: each failure main already has under the same signature set down as main's, the failed gates left
+ * A merge's gates settled: each failure main already has (its test, its signature) set down as main's, the failed gates left
  * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock.
  */
 export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
@@ -158,7 +158,7 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
   const held: Held[] = [];
   for (const result of results) {
     if (result.verdict !== 'FAIL' || result.abnormal) continue;
-    const failures = (result.failures ?? []).map((each) => ({ gate: result.gate.name, unit: each.unit, key: each.key }));
+    const failures = (result.failures ?? []).map((each) => ({ gate: result.gate.name, unit: each.unit, key: each.key, test: each.test ?? null }));
     if (gateOutcome(failures, mains) === 'main') {
       result.mainRed = true;
       held.push(...attribute(failures, mains).main);
@@ -169,8 +169,9 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
   });
   const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [] }));
+  const failed = results.filter((result) => result.verdict === 'FAIL' && !result.mainRed);
   return {
-    failed: results.filter((result) => result.verdict === 'FAIL' && !result.mainRed),
-    held, record, lines: [...mainRedLines(held), ...budgetLines(timed, ms)],
+    failed, held, record,
+    lines: [...mainRedLines(held), ...unspecificLines(mains, failed.map((result) => result.gate.name)), ...budgetLines(timed, ms)],
   };
 }

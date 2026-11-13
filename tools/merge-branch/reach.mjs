@@ -1,10 +1,10 @@
 /**
  * Which gates a change's paths can reach, by the lane table, and why each gate runs or is skipped.
  */
-import { laneMatcher } from './lanes-file.mjs';
+import { laneMatcher } from '../merge/lanes-file.ts';
 import { REACH } from './reach-table.mjs';
 import { isLongGate } from './plan.mjs';
-import { pad } from './format.mjs';
+import { pad } from '../merge/format.ts';
 
 // test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
