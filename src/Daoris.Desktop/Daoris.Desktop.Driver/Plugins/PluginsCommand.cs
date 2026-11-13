@@ -137,7 +137,7 @@ public static class PluginsCommand
     {
         var (id, json, _) = Parse(args, "show", takesSince: false);
         var page = PluginPage.Read(Home(home), id);
-        var full = DriverConfig.Load(DriverConfig.ResolvePath(Home(home))).HelpMode == HelpModes.Full;
+        var full = DriverConfig.Load(DriverConfig.ResolvePath(Home(home))).HelpMode == HelpModeNames.Full;
         output.Write(json ? JsonSerializer.Serialize(page, Json) + "\n" : Show(page, full));
         return 0;
     }
