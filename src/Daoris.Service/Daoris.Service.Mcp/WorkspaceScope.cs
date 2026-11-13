@@ -12,8 +12,7 @@ public sealed class WorkspaceScope(KnowledgeService service, AmbientWorkspace am
 {
     /// <summary>The workspace argument's description, the same on every tool that takes one.</summary>
     public const string WorkspaceArgument =
-        "Which workspace to answer from. Omit for the one this session belongs to (its repository's, or its "
-        + "conversation's), which is almost always right; name another workspace to read it, or `all` to span every workspace on this machine.";
+        "Workspace to answer from; omit for this session's own. Name another, or `all` for every workspace on this machine.";
 
     /// <summary>The default workspace this session's record gives it, or null for one that takes its repository's.</summary>
     public string? Bound => ambient.Bound;

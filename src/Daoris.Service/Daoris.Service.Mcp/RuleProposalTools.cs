@@ -14,27 +14,23 @@ public sealed class RuleProposalTools(RuleProposalBox? proposals = null, IntakeS
 {
     [McpServerTool(Name = "permission_propose")]
     [Description(
-        "Propose a change to what the agents Daoris starts may do on this machine — its permission rules. "
-        + "Use it when you were refused something you needed, or when a rule "
-        + "lets agents do more than they should. A change that NARROWS (a new deny or ask, an allow "
-        + "removed, an allowing default switched off) is applied at the driver's next tick; one that "
-        + "WIDENS waits for the person's yes. Either way it records which session proposed it, and why. "
-        + "Not for reaching into another repository — to read its code or change it, ask it with "
-        + "quest_publish and wait on the answer.")]
+        "Propose a change to the permission rules of the agents Daoris starts, when you were refused something you needed or a "
+        + "rule lets agents do more than they should. A change that NARROWS applies at the driver's next tick; one that WIDENS "
+        + "waits for the person's yes. Not for reaching into another repository: ask it with quest_publish and wait on the answer.")]
     public string ProposePermission(
-        [Description("add (a rule to a list), remove (a rule from a scope), or default (switch one of Daoris's defaults).")]
+        [Description("add (a rule), remove (a rule), or default (switch one of Daoris's defaults).")]
         string action,
-        [Description("Where it reaches: machine (every session here), workspace (every session in one workspace), or repository (one repository).")]
+        [Description("machine, workspace, or repository.")]
         string scope,
-        [Description("Why: what you were doing, and what the change would allow or stop. The person decides on this.")]
+        [Description("What you were doing, and what the change would allow or stop; the person decides on this.")]
         string why,
         [Description("For add: allow, ask or deny. An ask is refused for anything Daoris starts.")]
         string? list = null,
-        [Description("For add and remove: the rule, like `Bash(npm run test:*)`, `Edit(/docs/**)` or `mcp__daoris-knowledge__quest_list`.")]
+        [Description("For add and remove: the rule, like `Bash(npm run test:*)` or `Edit(/docs/**)`.")]
         string? rule = null,
         [Description("For workspace and repository: which one.")]
         string? name = null,
-        [Description("For default: the id it ships under — connector, commit, no-push, no-publish or tree-guard (the last three are off until the person switches them on).")]
+        [Description("For default: connector, commit, no-push, no-publish or tree-guard (the last three are off until the person switches them on).")]
         string? id = null,
         [Description("For default: true to switch it on, false to switch it off.")]
         bool? on = null)

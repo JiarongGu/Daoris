@@ -16,12 +16,10 @@ public sealed class HandOverTools(IntakeScope? intake = null, SessionLedger? led
 {
     [McpServerTool(Name = "handover_propose")]
     [Description(
-        "Ask to hand this session over to another agent, when you should not or cannot go on with it yourself: your account is near "
-        + "its limit, or another agent suits what is left. Write a note for the next agent: where the work stands, what is left, "
-        + "what it should read first and what you are unsure of. Your note is kept as your own claim, beside Daoris's own record of "
-        + "the session (its plan, last words and what is uncommitted), never in place of it. The person's rule for hand-overs settles "
-        + "the ask: it waits for their yes, goes on with the next agent in their order once your turn ends, or is refused. It never "
-        + "stops your turn: finish it as you would, commit what you have, and end your turn. One ask at a time.")]
+        "Ask to hand this session over to another agent, when you cannot go on yourself (your account is near its limit, or "
+        + "another agent suits what is left). Write a note: where the work stands, what is left, what to read first, what you are "
+        + "unsure of. It is kept as your own claim beside Daoris's record of the session, never in place of it. The person's rule "
+        + "for hand-overs settles the ask. It never stops your turn: commit what you have and end your turn. One ask at a time.")]
     public async Task<string> ProposeAsync(
         [Description("Your note for the next agent, in at most 4000 characters.")] string? note,
         CancellationToken ct = default)

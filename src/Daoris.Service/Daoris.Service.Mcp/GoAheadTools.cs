@@ -12,22 +12,19 @@ public sealed class GoAheadTools(IntakeScope? intake = null, SessionLedger? ledg
     [McpServerTool(Name = "go_ahead_ask")]
     [Description(
         "Ask the person for a go-ahead on an act outside this repository that is theirs to allow: a write to a system "
-        + "(production above all), a release, a push, a sign-in, or a run against a system's data. It is held on the ask "
-        + "your quest was asked by, once per act: an act already asked joins the first, and you are told its answer, "
-        + "approved, refused or still waiting, so the person is never asked the same thing twice. Name an act already "
-        + "asked in the words it was asked in, and it joins. Then say in your last message that the work waits on it, by "
-        + "its number, commit what you have, and end your turn with the quest still taken.")]
+        + "(production above all), a release, a push, a sign-in, or a run against a system's data. It is held once per act: "
+        + "an act already asked in the same words joins the first, and you are told its answer. Then say in your last message "
+        + "that the work waits on it, by its number, commit what you have, and end your turn with the quest still taken.")]
     public async Task<string> AskGoAheadAsync(
         [Description(
-            "The kind of act: write (a change to a system outside this repository, its configuration, data or entries), "
-            + "release (deploying or publishing), push (sending commits, or opening a pull request), sign-in (credentials to "
-            + "a system), or run (running something against a system's data).")]
+            "write (a change to an outside system), release (deploying or publishing), push (sending commits, or opening a "
+            + "pull request), sign-in (credentials to a system), or run (something against a system's data).")]
         string kind,
-        [Description("Where it lands: the environment or the system, such as production, development, or the service's name.")]
+        [Description("Where it lands: the environment or system, such as production.")]
         string on,
-        [Description("What it touches, in a few words: the configuration, the menu entries, the report. The same words join an act already asked.")]
+        [Description("What it touches, in a few words; the same words join an act already asked.")]
         string act,
-        [Description("Why the work needs it, and exactly what you would do. The person decides on this.")]
+        [Description("Why the work needs it, and exactly what you would do.")]
         string why,
         CancellationToken ct = default)
     {

@@ -17,11 +17,9 @@ public sealed class HandbackTools(QuestStore quests, WorkspaceScope circle, Sess
 {
     [McpServerTool(Name = "handback_read")]
     [Description(
-        "Read one quest's handback whole: the note its session closed it with (done, ready or declined), how it answered each of the "
-        + "person's requirements, when, and which session wrote it. Give a quest's id, or a session's id for the quest that session "
-        + "served. It answers in any state, open or closed, for any quest of this workspace, as quest_list does: read it to check or "
-        + "archive finished work, rather than the whole list. Read-only. A handback is its session's claim: check what it names before "
-        + "you rely on it.")]
+        "Read one quest's handback whole: its closing note, how it answered each requirement, when, and which session wrote it. "
+        + "Give a quest's id, or a session's id. It answers for any quest of this workspace, open or closed, as quest_list does. "
+        + "Read-only. A handback is its session's claim: check what it names before you rely on it.")]
     public async Task<string> ReadAsync(
         [Description("A quest's id, from quest_list, or the id of a session, for the quest it served.")] string id,
         [Description(WorkspaceArgument)] string? workspace = null,
