@@ -95,7 +95,7 @@ public sealed class DeliverySettlingTests : IAsyncLifetime
     public async Task An_answer_is_kept_on_the_next_revision_settles_the_question_and_outlives_the_leads_rewrite()
     {
         await Plan([], [Viewers()]);
-        Assert.Equal(["contract:viewers"], (await _desk.OpenQuestionsAsync([_ask.Id]))[_ask.Id].Select(question => question.Key));
+        Assert.Equal(["contract:viewers"], (await _desk.Settling.OpenQuestionsAsync([_ask.Id]))[_ask.Id].Select(question => question.Key));
 
         var answered = await _desk.Settling.AnswerAsync(_ask.Id, "contract:viewers", "  Admins only.  ", Now.AddMinutes(1));
 
@@ -104,11 +104,11 @@ public sealed class DeliverySettlingTests : IAsyncLifetime
         Assert.Equal(2, plan.Revision);
         Assert.Null(plan.By);
         Assert.Equal("Admins only.", plan.Answers.Single().Words);
-        Assert.Empty(await _desk.OpenQuestionsAsync([_ask.Id]));
+        Assert.Empty(await _desk.Settling.OpenQuestionsAsync([_ask.Id]));
 
         var rewritten = await Plan([], [Viewers()], expect: 2);
         Assert.Equal(TeamRefusal.None, rewritten.Refusal);
-        Assert.Empty(await _desk.OpenQuestionsAsync([_ask.Id]));
+        Assert.Empty(await _desk.Settling.OpenQuestionsAsync([_ask.Id]));
         Assert.Equal("Admins only.", (await _desk.ReadAsync(_ask.Id)).Plans.Single().Answers.Single().Words);
         Assert.Contains((await _desk.TeamAsync(_ask.Id)).Decisions, decision => decision.Author == "person" && decision.Revision == 2);
     }
@@ -146,7 +146,7 @@ public sealed class DeliverySettlingTests : IAsyncLifetime
         var back = Order(Schema, Mirror, "schema-owner", "s1");
         await Plan([there, back], []);
         var circle = (await _desk.ReadAsync(_ask.Id)).Plans.Single().Questions.Single(question => question.Kind == DeliveryQuestion.Cycle);
-        Assert.Equal(circle.Key, (await _desk.OpenQuestionsAsync([_ask.Id]))[_ask.Id].Single().Key);
+        Assert.Equal(circle.Key, (await _desk.Settling.OpenQuestionsAsync([_ask.Id]))[_ask.Id].Single().Key);
 
         var waived = await _desk.Settling.WaiveAsync(_ask.Id, Schema, Mirror, "The schema change is additive.", Now);
 
@@ -154,12 +154,12 @@ public sealed class DeliverySettlingTests : IAsyncLifetime
         var plan = (await _desk.ReadAsync(_ask.Id)).Plans.Single();
         Assert.Equal("The schema change is additive.", plan.Releases.Single(edge => edge.Deployable == Schema).Waived);
         Assert.DoesNotContain(plan.Flags, flag => flag.Kind == TeamFlags.Cycle);
-        Assert.Empty(await _desk.OpenQuestionsAsync([_ask.Id]));
+        Assert.Empty(await _desk.Settling.OpenQuestionsAsync([_ask.Id]));
 
         await Plan([there, back], [], expect: plan.Revision);
         var again = (await _desk.ReadAsync(_ask.Id)).Plans.Single();
         Assert.NotNull(again.Releases.Single(edge => edge.Deployable == Schema).Waived);
-        Assert.Empty(await _desk.OpenQuestionsAsync([_ask.Id]));
+        Assert.Empty(await _desk.Settling.OpenQuestionsAsync([_ask.Id]));
     }
 
     [Fact]

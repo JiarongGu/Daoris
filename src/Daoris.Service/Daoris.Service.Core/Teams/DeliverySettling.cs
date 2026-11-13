@@ -53,6 +53,19 @@ public sealed class DeliverySettling(TeamStore store, TeamLedger ledger, AskDesk
         return await KeepAsync(next, $"waived `{deployable}` after `{on}`: {reason.Trim()}", now, ct).ConfigureAwait(false);
     }
 
+    /// <summary>The questions each of <paramref name="asked"/>'s own plan still asks the person, for the asks that have any, by ask.</summary>
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<DeliveryQuestion>>> OpenQuestionsAsync(IEnumerable<string> asked, CancellationToken ct = default)
+    {
+        var open = new Dictionary<string, IReadOnlyList<DeliveryQuestion>>(StringComparer.Ordinal);
+        foreach (var id in asked.Distinct(StringComparer.Ordinal))
+        {
+            var own = (await store.LatestAsync(id, ct).ConfigureAwait(false)).FirstOrDefault(plan => plan.Scope is null);
+            if (own is not null && DeliveryGraph.Open(own, NothingSeen) is { Count: > 0 } questions) open[id] = questions;
+        }
+
+        return open;
+    }
+
     // A stale question is computed on a read with the reader's blobs, so it is not on the plan: its key names the order it is about.
     private static bool IsOpen(TeamPlan plan, string key) =>
         DeliveryGraph.Open(plan, NothingSeen).Any(question => question.Key == key)

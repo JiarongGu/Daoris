@@ -24,7 +24,7 @@ public sealed class AskPlanHostTests(LocalHost host) : IClassFixture<LocalHost>
                 Releases = [edge],
                 Questions = [new("contract:viewers", DeliveryQuestion.Open, "Do admins or viewers see candidates?") { Yes = "Both see them.", Blocks = "The web app.", Default = "Admins only." }],
             },
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.Parse("2026-11-14T08:00:00Z"));
         Assert.Equal(TeamRefusal.None, saved.Refusal);
         return ask;
     }

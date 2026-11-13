@@ -118,14 +118,10 @@ export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: b
   return query.data ?? null;
 };
 
-/** The person's act on an ask's delivery plan: an answer to one open question, or a waiver of one release order with their reason. */
+/** The person's answer to an open question of an ask's delivery plan, or their waiver of a release order with a reason. */
 export type PlanSettle = { key: string; words: string } | { deployable: string; on: string; reason: string };
 
-/**
- * The person's answer to a question of an ask's delivery plan, or their waiver of a release order (`ASK_PLAN_SETTLE`). It rejects with
- * the service's own sentence where it refuses, which the item says beside its press. The answer is the plan as it then reads, so the
- * question is gone at once; its route publishes the asks, so the bell, *What needs you* and every other window drop it too.
- */
+/** `ASK_PLAN_SETTLE`: rejects with the service's sentence where it refuses; the plan it answers replaces the cached one at once. */
 export const useSettleAskPlan = () => {
   const client = useQueryClient();
   return useMutation({

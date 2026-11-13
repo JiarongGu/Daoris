@@ -78,7 +78,6 @@ public sealed class DeployableTargetsTests
 
         var lines = DeployablesWords.Lines("schema-owner", "main", "0123456789abcdef0123456789abcdef01234567", declared, read);
 
-        // The whole blob, which a plan's `declared` evidence names so its staleness can be told.
         Assert.Equal("deployables  schema-owner: 2 on `main` at `0123456`, daoris.json blob `a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2`", lines[0]);
         Assert.Contains("  config-migration  paths migrations/**  provides config-schema (migrates)", lines);
         Assert.Contains("    released by deliver/release-migration, deploying on start", lines);

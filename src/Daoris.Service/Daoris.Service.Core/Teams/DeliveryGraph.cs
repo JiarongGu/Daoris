@@ -81,7 +81,7 @@ public static class DeliveryGraph
     public static IReadOnlyList<DeliveryQuestion> Open(TeamPlan plan, IReadOnlyDictionary<string, string> seen) =>
         Queue(plan.Questions, plan.Releases, seen, plan.Answers);
 
-    // The key holds the blob the evidence moved to, so a second move asks again where the first was answered.
+    // The key holds the blob the evidence moved to, so a second move asks again.
     private static DeliveryQuestion StaleQuestion(DeliveryEdge edge, string now) => new(
         $"stale:{edge.Deployable}>{edge.On}:{edge.Source}@{now}", DeliveryQuestion.Stale,
         $"`{edge.Deployable}` is released after `{edge.On}` because {edge.Why} What that read ({edge.Evidence!.File}) has changed since.")

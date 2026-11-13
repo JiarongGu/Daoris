@@ -112,7 +112,6 @@ export function AskPage({
 }: {
   /** Its plan as the shell reads it (`useAskPlan`): the parts and the quest each became. Absent in a browser or before anyone wrote one, and then no section is drawn. */
   plan?: AskPlan | null;
-  /** The person's answer to a question of its delivery plan, or their waiver of a release order; absent where there is no door to give it. */
   onSettlePlan?: PlanSettling;
   /**
    * Who is at work on the ask: its read as the query holds it, and the doors the section

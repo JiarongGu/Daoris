@@ -52,7 +52,6 @@ export type PushedAttention = {
   publishTo?: string[];
   choices?: string[];
   ask?: string;
-  /** A `plan-question`'s question: what it is, what yes does, what waits on it and the default; the ask's page answers it. */
   question?: { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
   number?: number;
   /** A go-ahead's act, which its title says. */

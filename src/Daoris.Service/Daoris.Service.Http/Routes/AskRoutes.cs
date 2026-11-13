@@ -25,7 +25,7 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
         routes.Map<ListAsks, AskResponse[]>(async (request, http, ct) =>
         {
             var listed = await Service.Asks.ListAsync(request.Workspace, request.IncludeClosed ?? false, ct);
-            var open = await Service.Teams.OpenQuestionsAsync(listed.Where(a => a.State != AskState.Closed).Select(a => a.Id), ct);
+            var open = await Service.Teams.Settling.OpenQuestionsAsync(listed.Where(a => a.State != AskState.Closed).Select(a => a.Id), ct);
             return listed.Select(a => AskAnswers.ToAsk(a, Service.Files, host.MachineLocal(http)) with
             {
                 PlanQuestions = open.TryGetValue(a.Id, out var questions) ? TeamAnswers.Questions(questions) : null,
@@ -43,7 +43,7 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
                 ? AskAnswers.ToAsk(ask, Service.Files, host.MachineLocal(http)) with
                 {
                     PlanQuestions = ask.State == AskState.Closed ? null
-                        : (await Service.Teams.OpenQuestionsAsync([ask.Id], ct)).TryGetValue(ask.Id, out var open) ? TeamAnswers.Questions(open) : null,
+                        : (await Service.Teams.Settling.OpenQuestionsAsync([ask.Id], ct)).TryGetValue(ask.Id, out var open) ? TeamAnswers.Questions(open) : null,
                 }
                 : Refusal.NotFound($"No ask `#{request.Id.TrimStart('#')}`."));
         routes.Map<ReadAskChannel, ChannelResponse>(ReadChannelAsync);

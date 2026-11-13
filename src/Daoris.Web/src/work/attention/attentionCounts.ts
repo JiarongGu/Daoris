@@ -61,7 +61,6 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   proposal: 'quests',
   intake: 'quests',
   unanswerable: 'quests',
-  // A delivery plan's question is answered on its ask's page.
   'plan-question': 'quests',
   'parked-quest': 'quests',
   'steward-stopped': 'quests',

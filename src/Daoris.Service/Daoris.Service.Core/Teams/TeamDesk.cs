@@ -72,21 +72,7 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
         return new(TeamRefusal.None, Said(plan, published), plan) { Published = published };
     }
 
-    /// <summary>The person's answers and waivers on the ask's plan; see <see cref="DeliverySettling"/>.</summary>
     public DeliverySettling Settling { get; } = new(store, ledger, asks);
-
-    /// <summary>The questions each ask's own plan still asks the person, for the asks that have any, keyed by ask; see <see cref="DeliveryGraph.Open"/>.</summary>
-    public async Task<IReadOnlyDictionary<string, IReadOnlyList<DeliveryQuestion>>> OpenQuestionsAsync(IEnumerable<string> asked, CancellationToken ct = default)
-    {
-        var open = new Dictionary<string, IReadOnlyList<DeliveryQuestion>>(StringComparer.Ordinal);
-        foreach (var id in asked.Distinct(StringComparer.Ordinal))
-        {
-            var own = (await store.LatestAsync(id, ct).ConfigureAwait(false)).FirstOrDefault(plan => plan.Scope is null);
-            if (own is not null && DeliveryGraph.Open(own, new Dictionary<string, string>()) is { Count: > 0 } questions) open[id] = questions;
-        }
-
-        return open;
-    }
 
     /// <summary>The newest revision of each plan the ask holds, with each part's quest.</summary>
     public async Task<(IReadOnlyList<TeamPlan> Plans, IReadOnlyList<TeamPartRow> Parts)> ReadAsync(string ask, CancellationToken ct = default) =>

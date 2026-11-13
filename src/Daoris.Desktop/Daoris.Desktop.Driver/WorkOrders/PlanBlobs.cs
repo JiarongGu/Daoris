@@ -3,9 +3,8 @@ using Daoris.Contracts.Asks;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a shown plan's release orders cite, read here: the blob each evidence file holds on the repository's line in its checkout on this
-/// machine, keyed <c>repository:file</c>, which the service compares with the blob the lead read to name an order stale. A repository with no
-/// checkout here, no line or no such file is left out, and the service judges nothing it was not shown.
+/// The blob each file a shown plan's release orders cite holds on the repository's line in its checkout here, keyed <c>repository:file</c>,
+/// which the service compares with the lead's to name an order stale. What cannot be read here is left out, and so is not judged.
 /// </summary>
 public static class PlanBlobs
 {

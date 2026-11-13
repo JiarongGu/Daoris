@@ -7,7 +7,7 @@ export type AskPlanEdge = { part: string; on: string; kind: string; why: string 
 /** What the plan's judge found; `kind` names it and `text` is the sentence the supervisor reads. */
 export type AskPlanFlag = { kind: string; part: string | null; text: string };
 
-/** The place a release order's reason stands on: the file in its repository, the range read and the blob it was read at. */
+/** The place a release order's reason stands on: a file, the range and the blob the lead read. */
 export type AskPlanEvidence = { repository: string; file: string; range: string; blob: string };
 
 /**

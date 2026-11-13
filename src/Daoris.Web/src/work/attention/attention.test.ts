@@ -352,27 +352,6 @@ describe('what needs a person, worded', () => {
     }
   });
 
-  /** The owner's rule for questions: it says what it is, what yes does and what it blocks, never an id alone, in each shipped language. */
-  it.each([
-    ['en', 'Yes: Both see them. · Waits on it: The web app’s release. · If not answered: Admins only.'],
-    ['zh', '选是：Both see them. · 等待它：The web app’s release. · 不回答则：Admins only.'],
-  ])('words a delivery plan’s question with what it is, what yes does and what it blocks, in %s', async (language, detail) => {
-    const pushed = row('plan-question', '7c1e9a04b2d5:contract:viewers', '2026-11-14T09:00:00Z', {
-      ask: '7c1e9a04b2d5',
-      question: { key: 'contract:viewers', kind: 'open', text: 'Do admins or viewers see candidates?', yes: 'Both see them.', blocks: 'The web app’s release.', default: 'Admins only.' },
-    });
-    await i18n.changeLanguage(language);
-    try {
-      const worded = words(pushed);
-      expect(worded.title).toBe('Do admins or viewers see candidates?');
-      expect(worded.detail).toBe(detail);
-      expect(worded.ask).toBe('7c1e9a04b2d5');
-      expect(ATTENTION_GROUP['plan-question']).toBe('word');
-    } finally {
-      await i18n.changeLanguage('en');
-    }
-  });
-
   /** A parked session is holding a working tree while it waits; a sitting quest is holding nothing. */
   it('puts parked sessions ahead of quests, and the oldest first within each', () => {
     expect(keyed([

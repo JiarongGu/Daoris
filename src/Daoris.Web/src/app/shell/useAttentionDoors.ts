@@ -24,7 +24,6 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
     unanswerable: (item) => openQuest(item.id),
-    // A delivery plan's question opens its ask, where the plan's section takes the answer.
     'plan-question': (item) => { if (item.ask) openAsk(item.ask); },
     // A quest parked on its failed sessions opens its page, and its session from there.
     'parked-quest': (item) => openQuest(item.id),
