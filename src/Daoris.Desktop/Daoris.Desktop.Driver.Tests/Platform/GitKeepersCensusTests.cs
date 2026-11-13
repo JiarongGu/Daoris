@@ -14,14 +14,12 @@ public sealed class GitKeepersCensusTests
 
     private static readonly Regex Answer = new(@"\bStdout\b|\bGitObjectAnswer\b|byte\[\]\s+Bytes\b|\bGitFacts\b|\bRefSnapshot\b|\bGitReadOnce\b|\bGitReadCache\b|\bGitStamp\b");
 
-    /// <summary>Each holder, with what keeps its answer true.</summary>
     private static readonly Dictionary<string, string> Holders = new(StringComparer.Ordinal)
     {
         ["BranchesByDate.cs Kept"] = "its stamp: the refs' version (CountedRefs) read before and after the listing, keyed by the common directory",
         ["GitReads.cs _cache"] = "its stamp: each answer keyed by the asker's GitStamp and kept only where the stamp's fence held across the read, "
             + "and only an answer git read from objects alone (a graph page, a commit's fields, a compare's commits)",
         ["GitReadOnce.cs Current"] = "the read-only flow's listings, one pass's; dropped by any git that may move a ref",
-        ["GitRuns.cs Answered"] = "the tests' stand-in answer, an async local null in production",
         ["GitFacts.cs Current"] = "the flow's facts, one judgement's; dropped by any git that may move a ref (GitFacts.Ran)",
         ["GitFacts.cs _asked"] = "a join of a running read within one flow, asked under the flow's token and keyed by the asker's context",
         ["GitReadOnce.cs _asked"] = "a join of a running read within one read-only flow, keyed by the asker's context",

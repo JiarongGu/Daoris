@@ -46,7 +46,7 @@ public sealed class StartTreeCloseGitTests : LandedFixture
         var asked = new List<string>();
         var others = new List<string>();
         var opened = false;
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (asked) asked.Add(string.Join(' ', arguments));
             if (arguments is ["-c", _, "worktree", "add", ..]) opened = true;
@@ -69,7 +69,7 @@ public sealed class StartTreeCloseGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         var said = $"git asked:\n{string.Join('\n', asked)}\nother starts: {string.Join(", ", others)}";

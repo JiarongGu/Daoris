@@ -215,7 +215,7 @@ public sealed class RepositoryCreateTests : IDisposable
     public async Task Git_absent_is_refused_for_a_repository_and_a_folder_needs_none()
     {
         var stand = await MakeAsync();
-        WorkingTree.Answered.Value = args => args is ["--version"] ? (-1, "", "git did not start") : null;
+        GitFlow.Answered.Value = args => args is ["--version"] ? (-1, "", "git did not start") : null;
         try
         {
             var git = await Plan(stand, Ask());
@@ -226,7 +226,7 @@ public sealed class RepositoryCreateTests : IDisposable
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -567,7 +567,7 @@ public sealed class RepositoryCreateTests : IDisposable
         var stand = await MakeAsync();
         var ask = Ask();
         var plan = await Plan(stand, ask);
-        WorkingTree.Answered.Value = args => args.Contains("commit") ? (1, "", "fatal: refused by a hook") : null;
+        GitFlow.Answered.Value = args => args.Contains("commit") ? (1, "", "fatal: refused by a hook") : null;
         CreateResult result;
         try
         {
@@ -575,7 +575,7 @@ public sealed class RepositoryCreateTests : IDisposable
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
 
         Assert.False(result.Done);

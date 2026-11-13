@@ -125,14 +125,14 @@ public sealed class GitLibraryWalksTests : LandedFixture
     public async Task A_read_under_a_test_s_stand_in_runner_is_the_stand_in_s()
     {
         var root = await BuildRepositoryAsync("stood");
-        GitRuns.Runs.Value = (arguments, _, _) => Task.FromResult(new ChildRun(true, 0, "stood in\n", "", false));
+        GitFlow.Runs.Value = (arguments, _, _) => Task.FromResult(new ChildRun(true, 0, "stood in\n", "", false));
         try
         {
             Assert.Equal("stood in\n", (await WorkingTree.GitAsync(root, ["merge-base", "HEAD", "main"], CancellationToken.None)).Stdout);
         }
         finally
         {
-            GitRuns.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
     }
 

@@ -983,7 +983,7 @@ public sealed class IntegrationStoreTests : IDisposable
         store.End(claim, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done));
         var begun = store.Begin(claim, IntegrationStepNames.Replay, "r1");
         var asked = new List<string>();
-        WorkingTree.Answered.Value = args =>
+        GitFlow.Answered.Value = args =>
         {
             lock (asked) asked.Add(string.Join(' ', args));
             return (129, "", "no git here");
@@ -996,7 +996,7 @@ public sealed class IntegrationStoreTests : IDisposable
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
 
         Assert.Empty(asked);

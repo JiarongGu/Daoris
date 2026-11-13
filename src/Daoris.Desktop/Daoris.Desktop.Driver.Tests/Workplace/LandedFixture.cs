@@ -308,7 +308,7 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// git run at once, for a person acting between two of Daoris's own git starts (<see cref="WorkingTree.Started"/>), which is
+    /// git run at once, for a person acting between two of Daoris's own git starts (<see cref="GitFlow.Started"/>), which is
     /// synchronous; both pipes read before the wait, as <see cref="GitAsync"/>'s are.
     /// </summary>
     protected static void GitNow(string cwd, params string[] arguments)

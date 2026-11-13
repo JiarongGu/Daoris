@@ -242,7 +242,7 @@ public sealed class SessionTreesTests : IDisposable
     {
         var root = await MakeRepositoryAsync("engine");
         var trees = new SessionTrees(_home);
-        WorkingTree.Answered.Value = arguments => arguments is ["worktree", "unlock", ..] ? (1, "", "") : null;
+        GitFlow.Answered.Value = arguments => arguments is ["worktree", "unlock", ..] ? (1, "", "") : null;
 
         DriverException error;
         try
@@ -251,7 +251,7 @@ public sealed class SessionTreesTests : IDisposable
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
 
         Assert.DoesNotContain("nothing", error.Message.Replace("git said nothing on its error stream", ""));
@@ -344,7 +344,7 @@ public sealed class SessionTreesTests : IDisposable
         using var closing = new CancellationTokenSource();
         string? lockSaid = null;
         // The git right after `worktree add`, which reads the branch it made: the open is cut there.
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             if (closing.IsCancellationRequested || arguments is not ["rev-parse", "--verify", "--quiet", var reference]
                 || !reference.StartsWith("refs/heads/daoris/s-", StringComparison.Ordinal))
@@ -362,7 +362,7 @@ public sealed class SessionTreesTests : IDisposable
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Equal($"Daoris is opening this tree (process {Environment.ProcessId})", lockSaid);

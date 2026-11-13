@@ -210,6 +210,13 @@ Every git the desktop starts runs in a place of `GitScheduler`'s; the start gate
 the machine (`GitStartAdmission`), which refuses a git's image holding no place (`git.start.outside`) and binds any start made in a
 place to it.
 
+The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
+memos first and asks the port for the rest, and the roots hand `GitProcessRuns`, which answers a read the library can give in process
+and launches every other git, counted, placed and bounded, as the machine's process. A unit test chooses its flow's git through the
+test root's `FlowGit`: `ScriptedGit` answers or watches it, and nothing in the driver stands in for git. Starts and reads around the
+port (a git start composed by hand, git's own files, the library) are counted per file by the layers census (`git`), an allowance
+that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the rehearsal tier.
+
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
 - Asks queue per repository, a person's oldest that may go first. A write passes nothing queued ahead of it, nothing passes it,
@@ -294,8 +301,9 @@ commit and head again because another process can move either. The measurements 
 Tests are each unit's `<Unit>Tests` and `*ProcessTests`, and the censuses (`ProcessStartsCensusTests`,
 `CheckoutWritersCensusTests`); the doors' process classes also run on the pinned MinGit. Their remotes are stand-ins on loopback
 ports with nothing installed (D241 point 8): `GitSshHost` (RSA and ECDSA, never ed25519), `GitTlsHost`, `PullRequestApiHost`.
-Gates: `driver`, `driver-process-git`, `driver-process`, `censuses`, `modules`, `service`, `web-unit`, `web-types`,
-`deployment`; visible words need both catalogues.
+The scenario classes over real repositories (landings, the pool, integrations, clean-up, keep-size, the help trees' read, tree
+syncs, the ref, stash and switch acts, fetches, tidying, the scheduler on real git) run in the driver's rehearsal project. Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
+`modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 
 ## Contradictions
 

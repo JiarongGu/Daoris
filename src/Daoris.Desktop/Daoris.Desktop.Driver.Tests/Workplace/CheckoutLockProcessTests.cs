@@ -79,7 +79,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
     {
         var probed = new ConcurrentQueue<string>();
         var path = TreeLock.PathOf(Home, root);
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             if (arguments is not ["merge", "--ff-only", ..]) return;
             var script = $$"""

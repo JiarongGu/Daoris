@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The census, in the fast half: Review's graph run over every combination of a review's
-/// conditions, git stood in for under the seam (<see cref="WorkingTree.Runs"/>) by a scripted world whose every answer is held until
+/// conditions, git stood in for under the seam (<see cref="GitFlow.Runs"/>) by a scripted world whose every answer is held until
 /// the test releases it. Released a round at a time, each of the review's nodes must start in the round its generated depth names
 /// (none before its needs answered, none later than they answered), no two Π reads may run together, the answer must be today's chain's on
 /// the same world, and the commands the chain's but for the graph's wasted speculative starts and the shared <c>--show-toplevel</c>.
@@ -159,7 +159,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
         string chain;
         string[] chainCommands;
-        WorkingTree.Runs.Value = Stand(world, null);
+        GitFlow.Runs.Value = Stand(world, null);
         try
         {
             using var count = GitLaunch.Count();
@@ -168,13 +168,13 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
         finally
         {
-            WorkingTree.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
 
         // The settled replay supplies completeness, not the answer/depth oracle: those assertions remain below.
         var reference = new ReviewGraph();
         string[] referenceCommands;
-        WorkingTree.Runs.Value = Stand(world, null);
+        GitFlow.Runs.Value = Stand(world, null);
         try
         {
             using var count = GitLaunch.Count();
@@ -189,7 +189,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
         finally
         {
-            WorkingTree.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
 
         trees = Trees(world);
@@ -200,7 +200,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         Task<string>? read = null;
         Exception? failed = null;
         GitCount graphCount;
-        WorkingTree.Runs.Value = Stand(world, held, graph);
+        GitFlow.Runs.Value = Stand(world, held, graph);
         try
         {
             using (graphCount = GitLaunch.Count())
@@ -245,7 +245,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
             }
             finally
             {
-                WorkingTree.Runs.Value = null;
+                GitFlow.Runs.Value = null;
             }
         }
 
@@ -895,8 +895,8 @@ public sealed class ReviewGraphCensusTests : IDisposable
         using var owned = new CancellationTokenSource();
         var arrived = held.Changed;
         Task<string>? read = null;
-        var before = WorkingTree.Runs.Value;
-        WorkingTree.Runs.Value = Stand(world, held, graph);
+        var before = GitFlow.Runs.Value;
+        GitFlow.Runs.Value = Stand(world, held, graph);
         async Task FailAsync()
         {
             try
@@ -933,7 +933,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         finally
         {
             try { await SettleOwnedAsync(held, graph, read, owned); }
-            finally { WorkingTree.Runs.Value = before; }
+            finally { GitFlow.Runs.Value = before; }
         }
     }
 

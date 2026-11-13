@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// most of the git starts of the slowest Process tests, and the list guessed the line three times a repository.
 /// </summary>
 /// <remarks>
-/// The counter is <see cref="WorkingTree.Started"/>, an async local that is null in production, so classes running in
+/// The counter is <see cref="GitFlow.Started"/>, an async local that is null in production, so classes running in
 /// parallel never see each other's starts.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -40,14 +40,14 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         Interlocked.Exchange(ref guessed, 0);
 
         var starts = new List<string>();
-        WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+        GitFlow.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
         try
         {
             await trees.SyncPlanAsync(Repositories(root), Nobody);
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         var report = $"{starts.Count} git starts: {string.Join(" | ", starts)}";
@@ -123,14 +123,14 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
             judged.Add(await AskAllAsync(other));
         }
 
-        WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+        GitFlow.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
         try
         {
             await JudgeAsync();
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Equal(plain, judged[0]);
@@ -190,7 +190,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
             var (_, top, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--show-toplevel"], CancellationToken.None);
             var (_, branch, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--abbrev-ref", "HEAD"], CancellationToken.None);
             var starts = new List<string>();
-            WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+            GitFlow.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
             TreeGit.CommonDirAndBranch here;
             try
             {
@@ -198,7 +198,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
             }
             finally
             {
-                WorkingTree.Started.Value = null;
+                GitFlow.Started.Value = null;
             }
 
             Assert.Equal((0, commonDir.Trim(), top.Trim(), branch.Trim(), true), (here.Code, here.CommonDir.Trim(), here.TopLevel, here.Branch.Trim(), here.Once));
@@ -253,7 +253,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
 
         var asked = await ReadAsync(null);
         var starts = new List<string>();
-        WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+        GitFlow.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
         List<string> snapshot;
         try
         {
@@ -261,7 +261,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Equal(asked, snapshot);
@@ -329,7 +329,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
 
-        Assert.Null(WorkingTree.Started.Value);
+        Assert.Null(GitFlow.Started.Value);
         Assert.Equal("main", await WorkingTree.DefaultBranchAsync(root, CancellationToken.None));
     }
 }

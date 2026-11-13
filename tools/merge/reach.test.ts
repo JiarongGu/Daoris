@@ -48,7 +48,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
       [...BASE, ...DESK, ...DRIVER_PROCESS, modulesProcess, family, webUnit, deployment]]),
     // The driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once.
-    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, driver, censuses, ...DRIVER_PROCESS]],
+    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, driver, censuses, ...DRIVER_PROCESS, driverRehearsals]],
     // A browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, web]],
     // What the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
@@ -122,7 +122,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
-    ], [...BASE, driver, ...DRIVER_PROCESS]],
+    ], [...BASE, driver, ...DRIVER_PROCESS, driverRehearsals]],
     // The bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
     // HomeFilesKeepTests reads them too, as the service's RemoteConfigKeepTests its remotes.json rows' reads and
     // the modules' BrowserSettingsTests browser/settings.json's.

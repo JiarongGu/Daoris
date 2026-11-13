@@ -176,7 +176,7 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
     public async Task A_folder_git_would_not_let_go_of_is_put_back_with_no_manifest()
     {
         var (_, tree, _, _) = await PackagedTreeAsync();
-        WorkingTree.Answered.Value = arguments =>
+        GitFlow.Answered.Value = arguments =>
             arguments is ["worktree", "remove", ..] ? (128, "", "fatal: refused by the fixture\n") : ((int, string, string)?)null;
         IReadOnlyList<string> said;
         try
@@ -185,7 +185,7 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
 
         Assert.Contains(said, line => line.Contains("its folder was put back", StringComparison.Ordinal));

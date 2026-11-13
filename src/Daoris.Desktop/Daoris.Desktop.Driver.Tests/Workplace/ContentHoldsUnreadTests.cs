@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A content proof whose git read failed says it is
-/// unread, never "not held" and never held. Git's answers are scripted through <see cref="WorkingTree.Answered"/>, so no process
+/// unread, never "not held" and never held. Git's answers are scripted through <see cref="GitFlow.Answered"/>, so no process
 /// starts and each failed read (git missing, a ref that cannot be read, a timeout) is one fast case.
 /// </summary>
 public sealed class ContentHoldsUnreadTests
@@ -35,14 +35,14 @@ public sealed class ContentHoldsUnreadTests
 
     private static async Task<ContentProof> AskAsync(Func<IReadOnlyList<string>, (int, string, string)?> fail)
     {
-        WorkingTree.Answered.Value = args => Git(args, fail);
+        GitFlow.Answered.Value = args => Git(args, fail);
         try
         {
             return await ContentHolds.HeldByContentAsync("repo", "tip", "main", NoHolders, CancellationToken.None);
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -105,7 +105,7 @@ public sealed class ContentHoldsUnreadTests
     [InlineData("diff")]
     public async Task A_landed_proof_whose_read_failed_is_unknown(string failing)
     {
-        WorkingTree.Answered.Value = args => Verb(args) == failing ? (-1, "", "git did not answer within 30 seconds, and was stopped.")
+        GitFlow.Answered.Value = args => Verb(args) == failing ? (-1, "", "git did not answer within 30 seconds, and was stopped.")
             : Verb(args) == "rev-list" ? (0, "1\n", "") : (1, "", "");
         try
         {
@@ -115,7 +115,7 @@ public sealed class ContentHoldsUnreadTests
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 }

@@ -24,6 +24,8 @@
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Clock\Daoris.Adapters.Clock.csproj" />
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.DesktopStore.Sqlite\Daoris.Adapters.DesktopStore.Sqlite.csproj" />
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\Daoris.Adapters.Machine.csproj" />
+    <!-- The contract cases a fake and its real side share: the real side's run here. -->
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <!-- The driver's program these classes start, built beside this project's own build. -->
     <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -35,6 +37,31 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Needed.cs" Link="Shared\Needed.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\HostBuild.cs" Link="Shared\HostBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\ScratchRemoval.cs" Link="Shared\ScratchRemoval.cs" />
+    <!-- The git fixtures the classes that prove the driver over real git share with the unit tier's. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\GitFlow.cs" Link="Shared\GitFlow.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\GitFixture.cs" Link="Shared\GitFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="Shared\TestGit.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\FixtureSpawns.cs" Link="Shared\FixtureSpawns.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\GitSeed.cs" Link="Shared\GitSeed.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\TreeFarm.cs" Link="Shared\TreeFarm.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\LandedFixture.cs" Link="Shared\LandedFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\FarmedTrees.cs" Link="Shared\FarmedTrees.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\Pool\PoolGitFixture.cs" Link="Shared\PoolGitFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\Pool\PooledLines.cs" Link="Shared\PooledLines.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\GraphLand.cs" Link="Shared\GraphLand.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\IntegratingWorkflow.cs" Link="Shared\IntegratingWorkflow.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\MoveHold.cs" Link="Shared\MoveHold.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Poll.cs" Link="Shared\Poll.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\RunHome.cs" Link="Shared\RunHome.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\TreeSyncFixture.cs" Link="Shared\TreeSyncFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\ReviewLandingFixture.cs" Link="Shared\ReviewLandingFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\KeepSizeFixture.cs" Link="Shared\KeepSizeFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\BranchTidyingFixture.cs" Link="Shared\BranchTidyingFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\Kinds\Land\GraphRunFixture.cs" Link="Shared\GraphRunFixture.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\StandInLedger.cs" Link="Shared\StandInLedger.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\StubFile.cs" Link="Shared\StubFile.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workplace\HistoryStandIn.cs" Link="Shared\HistoryStandIn.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\ProcessParents.cs" Link="Shared\ProcessParents.cs" />    <Compile Include="..\Daoris.Desktop.Driver.Tests\Workflows\StoredSteps.cs" Link="Shared\StoredSteps.cs" />
   </ItemGroup>
 
 </Project>

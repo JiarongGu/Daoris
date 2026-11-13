@@ -78,7 +78,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = root }, whole);
 
         var started = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (started) started.Add(string.Join(' ', arguments));
         };
@@ -104,7 +104,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Equal(NodeStates.Reached, records.Read(RunUnits.IdOf("r0"))!.Statuses["deployed"].State);
@@ -132,7 +132,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = engine, ["other"] = other }, whole);
 
         var started = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (started) started.Add(string.Join(' ', arguments));
         };
@@ -163,7 +163,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.All(["ea", "eb", "oa"], run => Assert.Equal(NodeStates.Reached, records.Read(RunUnits.IdOf(run))!.Statuses["deployed"].State));
@@ -186,7 +186,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = root }, whole);
 
         var started = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (started) started.Add(string.Join(' ', arguments));
         };
@@ -209,7 +209,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         var deployed = records.Read(RunUnits.IdOf("ea"))!.Statuses["deployed"];

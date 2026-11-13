@@ -74,6 +74,7 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
             Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
             StartPolicy = GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
+            Git = GitProcessRuns.Shared,
         });
         var (verb, home, record) = (args[0], args[1], args[2]);
         StoreProcess.Kind = verb == "drive" ? StoreProcess.Host : StoreProcess.Shell;

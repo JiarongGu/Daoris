@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The one door, <see cref="IntegrationRequests"/>, its recorded-landing
 /// path and its records-branch path, over a stand-in of the records and the desktop store's request family
 /// (<see cref="IntegrationStore"/>, on a scratch home of each case's own), with git's answers scripted through
-/// <see cref="WorkingTree.Answered"/> so no process starts. A recorded landing is admitted only on its record, its exact tip, its gate
+/// <see cref="GitFlow.Answered"/> so no process starts. A recorded landing is admitted only on its record, its exact tip, its gate
 /// proof as the record keeps it and no double, each refused in its own sentence; a session's branch and a landing's are refused at the
 /// records-branch door; the come-up sweep requests each standing landing once, under <c>request: done</c> alone. The same over real git is
 /// <see cref="IntegrationRequestsGitTests"/>.
@@ -90,14 +90,14 @@ public sealed class IntegrationRequestsTests : IDisposable
     private async Task<IntegrationAdmission> AdmitAsync(
         DriverConfig config, IIntegrationRecords records, IntegrationAsk ask, IntegrationStore? store = null)
     {
-        WorkingTree.Answered.Value = Git;
+        GitFlow.Answered.Value = Git;
         try
         {
             return await new IntegrationRequests(records, store ?? Fresh(), () => config, Workflows).AdmitAsync(ask);
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -374,14 +374,14 @@ public sealed class IntegrationRequestsTests : IDisposable
 
         async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(DriverConfig config)
         {
-            WorkingTree.Answered.Value = Git;
+            GitFlow.Answered.Value = Git;
             try
             {
                 return await new IntegrationRequests(records, store, () => config, Workflows).SweepAsync("engine", "aurora", Root);
             }
             finally
             {
-                WorkingTree.Answered.Value = null;
+                GitFlow.Answered.Value = null;
             }
         }
 

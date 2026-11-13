@@ -43,14 +43,14 @@ public sealed class GitHistoryEditScopesTests : TreeSyncFixture
         try
         {
             foreach (var (name, value) in named) Environment.SetEnvironmentVariable(name, value);
-            WorkingTree.Started.Value = arguments => { if (arguments.Contains("merge-tree")) Interlocked.Increment(ref merges); };
+            GitFlow.Started.Value = arguments => { if (arguments.Contains("merge-tree")) Interlocked.Increment(ref merges); };
             var runs = new ActRuns(new ActJournal(Home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell)) { ExitBound = TimeSpan.FromSeconds(2) };
             run = await GitHistoryEdits.EditAsync(
                 runs, new HistoryEditAsk(Home, "engine", root, "rebase", "topic", "main") { Line = "main" }, "window", "window", CancellationToken.None);
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
             foreach (var (name, value) in was) Environment.SetEnvironmentVariable(name, value);
         }
 

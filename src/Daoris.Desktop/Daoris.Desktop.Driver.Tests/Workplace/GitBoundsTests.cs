@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// call is long (a fetch, a replay) passes its own.
 /// </summary>
 /// <remarks>
-/// The fast half: the bounds read from the arguments, and git's run stood in for through <see cref="WorkingTree.Runs"/>, so no
+/// The fast half: the bounds read from the arguments, and git's run stood in for through <see cref="GitFlow.Runs"/>, so no
 /// process starts. That a run past its patience, or whose token is cancelled, has its tree ended is the runner's, held by
 /// <c>ChildProcessTests</c>.
 /// </remarks>
@@ -192,14 +192,14 @@ public sealed class GitBoundsTests
     /// <summary>Runs <paramref name="body"/> with git's run stood in for by <paramref name="run"/>, the seam closed after.</summary>
     private static async Task RunsAsync(Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>> run, Func<Task> body)
     {
-        WorkingTree.Runs.Value = run;
+        GitFlow.Runs.Value = run;
         try
         {
             await body();
         }
         finally
         {
-            WorkingTree.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
     }
 }

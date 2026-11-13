@@ -89,7 +89,7 @@ public sealed class GitDoorsFloorTests : IDisposable
 
         using (GitVersions.Pretending(Older))
         {
-            WorkingTree.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
+            GitFlow.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
             try
             {
                 var (failed, _) = await TreeRefs.FetchAsync(Home, Repo, "main", CancellationToken.None, "engine", "work");
@@ -103,7 +103,7 @@ public sealed class GitDoorsFloorTests : IDisposable
             }
             finally
             {
-                WorkingTree.Started.Value = null;
+                GitFlow.Started.Value = null;
             }
         }
 

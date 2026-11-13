@@ -128,7 +128,7 @@ public sealed class HelpStartReadTests : IDisposable
 
         using (ProcessStarts.Within(_ => null))
         {
-            WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
+            GitFlow.Started.Value = _ => Interlocked.Increment(ref gits);
             try
             {
                 await runner.RunHelpAsync(
@@ -137,7 +137,7 @@ public sealed class HelpStartReadTests : IDisposable
             }
             finally
             {
-                WorkingTree.Started.Value = null;
+                GitFlow.Started.Value = null;
             }
         }
 
@@ -192,7 +192,7 @@ public sealed class HelpStartReadTests : IDisposable
                    return null;
                }))
         {
-            WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
+            GitFlow.Started.Value = _ => Interlocked.Increment(ref gits);
             try
             {
                 await runner.RunHelpAsync(
@@ -202,7 +202,7 @@ public sealed class HelpStartReadTests : IDisposable
             }
             finally
             {
-                WorkingTree.Started.Value = null;
+                GitFlow.Started.Value = null;
             }
         }
 

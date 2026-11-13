@@ -57,7 +57,7 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         };
 
         var started = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (started) started.Add(string.Join(' ', arguments));
         };
@@ -67,7 +67,7 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         var record = records.Read(RunUnits.IdOf(Run))!;

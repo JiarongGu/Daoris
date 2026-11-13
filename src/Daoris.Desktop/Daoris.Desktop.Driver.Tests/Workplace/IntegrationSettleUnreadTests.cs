@@ -16,7 +16,7 @@ public sealed class IntegrationSettleUnreadTests
 
     private static async Task<(IntegrationSettles.Read? Read, string? Unread)> ReadAsync(string failing, int code)
     {
-        WorkingTree.Answered.Value = args => args[0] == failing ? (code, "", "git did not answer within 30 seconds, and was stopped.") : args[0] switch
+        GitFlow.Answered.Value = args => args[0] == failing ? (code, "", "git did not answer within 30 seconds, and was stopped.") : args[0] switch
         {
             "rev-parse" => (0, "branchtip\n", ""),
             "merge-base" => (0, "fork\n", ""),
@@ -29,7 +29,7 @@ public sealed class IntegrationSettleUnreadTests
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 

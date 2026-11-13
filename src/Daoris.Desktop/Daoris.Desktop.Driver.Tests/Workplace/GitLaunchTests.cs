@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// One counting seam beneath the three runners. Each start raises
-/// <see cref="WorkingTree.Started"/>, is classified by kind and node, counted in its flow's budget and timed at the gate; and it
+/// <see cref="GitFlow.Started"/>, is classified by kind and node, counted in its flow's budget and timed at the gate; and it
 /// reaches git with the arguments its call site passed, nothing added. No git runs here: the gate's stand-in sees each
 /// start's <see cref="ProcessStartInfo"/> and answers it with none.
 /// </summary>
@@ -90,44 +90,35 @@ public sealed class GitLaunchTests
     };
 
     /// <summary>
-    /// Every runner raises <see cref="WorkingTree.Started"/> once (once <c>RunGitAsync</c>'s alone), counts its start in its flow's
-    /// budget with its kind and node, passes the gate, and hands git its call site's arguments after the one option every git has
-    /// always been given (<c>core.longpaths</c>, <c>GitStart</c>'s), nothing more.
+    /// Every runner keeps its start once in its flow's count with its call site's arguments, counts it in its flow's budget with its
+    /// kind and node, passes the gate, and hands git those arguments after the one option every git has always been given
+    /// (<c>core.longpaths</c>, <c>GitStart</c>'s), nothing more.
     /// </summary>
     [Theory]
     [MemberData(nameof(Runners))]
     public async Task Every_runner_starts_through_the_seam_once_with_its_arguments_unchanged(GitRunner runner)
     {
         string[] arguments = ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
-        var raised = new List<IReadOnlyList<string>>();
         var handed = new List<IReadOnlyList<string>>();
-        WorkingTree.Started.Value = raised.Add;
-        try
+        using var count = GitLaunch.Count();
+        using (GitLaunch.Within(GitBudget.Review))
+        using (ProcessStarts.Within(info =>
+               {
+                   lock (handed) handed.Add([.. info.ArgumentList]);
+                   return null;
+               }))
         {
-            using var count = GitLaunch.Count();
-            using (GitLaunch.Within(GitBudget.Review))
-            using (ProcessStarts.Within(info =>
-                   {
-                       lock (handed) handed.Add([.. info.ArgumentList]);
-                       return null;
-                   }))
-            {
-                await Start(runner, AppContext.BaseDirectory, arguments);
-            }
+            await Start(runner, AppContext.BaseDirectory, arguments);
+        }
 
-            var start = Assert.Single(count.Starts);
-            Assert.Equal(runner, start.Runner);
-            Assert.Equal(GitKind.Status, start.Kind);
-            Assert.Equal("S", start.Node);
-            Assert.Equal(GitBudget.Review, start.Budget);
-            Assert.True(start.Gated, "the start passed the gate");
-            Assert.Equal(arguments, Assert.Single(raised));
-            Assert.Equal(["-c", "core.longpaths=true", .. arguments], Assert.Single(handed));
-        }
-        finally
-        {
-            WorkingTree.Started.Value = null;
-        }
+        var start = Assert.Single(count.Starts);
+        Assert.Equal(runner, start.Runner);
+        Assert.Equal(GitKind.Status, start.Kind);
+        Assert.Equal("S", start.Node);
+        Assert.Equal(GitBudget.Review, start.Budget);
+        Assert.True(start.Gated, "the start passed the gate");
+        Assert.Equal(arguments, start.Arguments);
+        Assert.Equal(["-c", "core.longpaths=true", .. arguments], Assert.Single(handed));
     }
 
     /// <summary>The gate's wait for a place, the creation inside it and the run are three numbers, never one (the design §1.2).</summary>
@@ -155,7 +146,7 @@ public sealed class GitLaunchTests
     [Fact]
     public async Task A_stand_in_answer_is_counted_and_not_gated()
     {
-        WorkingTree.Answered.Value = _ => (0, "", "");
+        GitFlow.Answered.Value = _ => (0, "", "");
         try
         {
             using var count = GitLaunch.Count();
@@ -165,7 +156,7 @@ public sealed class GitLaunchTests
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -173,7 +164,7 @@ public sealed class GitLaunchTests
     [Fact]
     public async Task A_budget_holds_for_its_span_and_counts_nest()
     {
-        WorkingTree.Answered.Value = _ => (0, "", "");
+        GitFlow.Answered.Value = _ => (0, "", "");
         try
         {
             using var outer = GitLaunch.Count();
@@ -191,7 +182,7 @@ public sealed class GitLaunchTests
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 
@@ -215,7 +206,7 @@ public sealed class GitLaunchTests
         "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "CommandLauncher.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
         "HeavyStep.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
-        "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
+        "GitProcessRuns.cs", "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
     ];
 
     private static List<string> StartProblems(IReadOnlyCollection<string> found) =>
@@ -227,16 +218,14 @@ public sealed class GitLaunchTests
     [Fact]
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
-        // The trees' two: GitRuns (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
-        // starts) and GeneratedWriters, a generator's shell, which is no git. ActSteps' git is an act's effect step, started
-        // held in its act's job and counted at the seam as GitRunner.Held. The rest are other seams' starts (a harness, a plugin's tool, the
-        // launcher's containment), none of them a git start of the trees'.
+        // The trees' git: GitRuns' GitStart, GitProcessRuns' three runners, and ActSteps' held act counted at the seam as
+        // GitRunner.Held. The rest are other seams' starts, none of them a git start of the trees'.
         var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Select(file => (Path.GetFileName(file), File.ReadAllText(file)))));
         Assert.True(problems.Count == 0, string.Join('\n', problems));
 
         // These two are the seam's shape, a count by design: one call per runner, one launch per runner.
-        var tree = File.ReadAllText(SourceFiles.Driver("GitRuns.cs"));
+        var tree = File.ReadAllText(SourceFiles.Driver("GitProcessRuns.cs"));
         foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "ReadLaunchedAsync" })
         {
             Assert.Contains($"() => {runner}(", tree, StringComparison.Ordinal);

@@ -10,7 +10,7 @@ public sealed class GitMemoAsksTests
     {
         var release = new TaskCompletionSource();
         var handed = new List<CancellationToken>();
-        GitRuns.Runs.Value = async (_, _, token) =>
+        GitFlow.Runs.Value = async (_, _, token) =>
         {
             lock (handed) handed.Add(token);
             await release.Task.WaitAsync(token);
@@ -34,7 +34,7 @@ public sealed class GitMemoAsksTests
         }
         finally
         {
-            GitRuns.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
     }
 }

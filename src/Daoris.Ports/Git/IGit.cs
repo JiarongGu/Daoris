@@ -1,20 +1,19 @@
 namespace Daoris.Ports.Git;
 
-/// <summary>
-/// Git at the level of its arguments: one run of the program, the bytes it wrote, or its lines as they come. Where a repository's
-/// questions are known, a typed member of a later ring answers them; this ring carries the rest.
-/// </summary>
+/// <summary>Git at the level of its arguments; a later ring's typed members answer a repository's known questions.</summary>
 public interface IGit
 {
-    /// <summary>Runs git once and answers its exit, its output and its error.</summary>
     Task<GitAnswer> RunAsync(GitAsk ask, CancellationToken ct);
 
-    /// <summary>Runs git once and answers its standard output as bytes, for an object's content that is not text.</summary>
-    Task<GitBytes> ReadBytesAsync(GitAsk ask, CancellationToken ct);
+    /// <summary>The first <paramref name="limit"/> bytes of its output, git stopped once they are read: an object that is not text.</summary>
+    Task<GitBytes> ReadBytesAsync(GitAsk ask, int limit, CancellationToken ct);
 
-    /// <summary>Runs git and yields each line of its output as it is written.</summary>
-    IAsyncEnumerable<string> ReadLinesAsync(GitAsk ask, CancellationToken ct);
+    /// <summary>
+    /// Hands each piece of its output to <paramref name="take"/> as git writes it, and stops git once <paramref name="take"/> answers
+    /// false: 0 then, else git's exit, and null where git did not start, outlived its bound or could not be read.
+    /// </summary>
+    Task<int?> ReadAsync(GitAsk ask, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct);
 
-    /// <summary>The program git is run as for a home, or null where the one the machine has is used.</summary>
+    /// <summary>The program git runs as for a home, with the moment its file changed, or null where none resolves.</summary>
     string? InUse(string? home);
 }

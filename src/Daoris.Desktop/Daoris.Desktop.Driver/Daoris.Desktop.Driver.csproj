@@ -21,7 +21,7 @@
     <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
   </ItemGroup>
 
-  <!-- The effect contracts the driver depends on and the adapters implement: the browser's and the machine's so far. -->
+  <!-- The effect contracts the driver depends on and the adapters implement. -->
   <ItemGroup>
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />

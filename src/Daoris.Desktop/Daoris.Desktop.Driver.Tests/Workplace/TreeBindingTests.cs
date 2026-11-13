@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The fast half: the one check every door that writes through a session's tree asks first
-/// (<see cref="TreeBinding"/>), over git standing in at the runner's seam (<see cref="WorkingTree.Runs"/>). Its real-git twin, the
+/// (<see cref="TreeBinding"/>), over git standing in at the runner's seam (<see cref="GitFlow.Runs"/>). Its real-git twin, the
 /// incident's configuration on each door, is <see cref="TreeBindingGitTests"/>.
 /// </summary>
 public sealed class TreeBindingTests : IDisposable
@@ -25,7 +25,7 @@ public sealed class TreeBindingTests : IDisposable
 
     public void Dispose()
     {
-        WorkingTree.Runs.Value = null;
+        GitFlow.Runs.Value = null;
         GitSeed.Discard(_scratch);
     }
 
@@ -162,7 +162,7 @@ public sealed class TreeBindingTests : IDisposable
 
     /// <summary>git standing in: each start's arguments kept; <paramref name="answer"/>'s reply, or a usage git does not know.</summary>
     private void Git(Func<IReadOnlyList<string>, ChildRun?> answer) =>
-        WorkingTree.Runs.Value = (arguments, _, _) =>
+        GitFlow.Runs.Value = (arguments, _, _) =>
         {
             lock (_asked) _asked.Add(string.Join(' ', arguments));
             return Task.FromResult(answer(arguments) ?? Failed(129, "the stand-in does not answer this"));

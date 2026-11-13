@@ -49,9 +49,9 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         GitAuthor.Hand(expected, null);
         GitLongPaths.Hand(expected, true);
         var gits = 0;
-        WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
+        GitFlow.Started.Value = _ => Interlocked.Increment(ref gits);
         try { SessionGit.Current.Hand(actual, _home, _home); }
-        finally { WorkingTree.Started.Value = null; }
+        finally { GitFlow.Started.Value = null; }
         Assert.Equal(0, gits);
         Assert.Equal(expected.OrderBy(pair => pair.Key), actual.OrderBy(pair => pair.Key));
         Assert.Equal("user.name", actual["GIT_CONFIG_KEY_0"]);
