@@ -23,17 +23,28 @@ export const USAGE = [
 
 /** Why the tool stopped before doing its job. Exit 2 is a refusal; 1 is the branch failing a rule. */
 export class Refusal extends Error {
-  constructor(message, exitCode = 2, usage = false) {
+  exitCode: number;
+  usage: boolean;
+
+  constructor(message: string, exitCode = 2, usage = false) {
     super(message);
     this.exitCode = exitCode;
     this.usage = usage;
   }
 }
 
-const usageError = (message) => new Refusal(message, 2, true);
+export type Options = {
+  branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean;
+  autoPrune: boolean; full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
+  beside: boolean; besideCommit: string | null; ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean; ciStage: boolean;
+  ciNight: boolean; preview: boolean; messageFile: string | null; queue: boolean; recheck: boolean; queueRun: boolean; daorisVerify: boolean;
+  noTimeout?: boolean;
+};
 
-export function parseArgs(argv) {
-  const options = {
+const usageError = (message: string): Refusal => new Refusal(message, 2, true);
+
+export function parseArgs(argv: string[]): Options {
+  const options: Options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, light: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
@@ -46,7 +57,7 @@ export function parseArgs(argv) {
   let besideNext = false;
   let ciNext = false;
   let messageNext = false;
-  const flags = [];
+  const flags: string[] = [];
   for (const arg of argv) {
     // The word after --message is its file.
     if (messageNext) {

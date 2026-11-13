@@ -435,9 +435,9 @@ import {
   promotion, queueLines, readAdmission, readIntegrationPolicy, readQueue, sameCandidate, recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate,
   scopedSet, scopedTier, settleContained, sightingOf, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
-import { Refusal, parseArgs, USAGE } from './merge-branch/args.mjs';
-import { count, pad, classCount } from './merge-branch/format.mjs';
-import { laneMatcher, globToRegExp } from './merge-branch/lanes-file.mjs';
+import { Refusal, parseArgs, USAGE } from './merge/args.ts';
+import { count, pad, classCount } from './merge/format.ts';
+import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
 import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge-branch/reach.mjs';
 import {
   isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
@@ -446,10 +446,10 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
-import { holderRuns, pidAlive, processStart, sameHolder } from './merge-branch/holder.mjs';
+import { holderRuns, pidAlive, processStart, sameHolder } from './merge/holder.ts';
 import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
-import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
-import { stepTrees } from './merge-branch/step-trees.mjs';
+import { diffPaths, isInside, zPaths } from './merge/paths.ts';
+import { stepTrees } from './merge/step-trees.ts';
 import { abnormalEnd } from './merge/processes.ts';
 import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
@@ -462,8 +462,7 @@ import { saidDrained } from './merge/said-drained.ts';
 import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
-export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
-export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
+export { stepTrees, endTree, descendants } from './merge/step-trees.ts';
 export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
   isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, stagePlan, isHeavyGate,
@@ -473,7 +472,7 @@ export {
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
 export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
-export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
+export { globToRegExp, laneMatcher } from './merge/lanes-file.ts';
 
 // test-map: strings name paths as data — the records, tools and commands this file names are what it writes and runs; what it
 // reads is its imports

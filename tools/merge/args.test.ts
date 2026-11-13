@@ -1,6 +1,16 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { tool, refusal } from '../support/merge-branch.ts';
+import * as tool from './args.ts';
+
+function refusal(fn: () => unknown): tool.Refusal {
+  try {
+    fn();
+  } catch (error) {
+    if (error instanceof tool.Refusal) return error;
+    throw error;
+  }
+  throw new Error('expected a refusal, but the call returned');
+}
 
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {

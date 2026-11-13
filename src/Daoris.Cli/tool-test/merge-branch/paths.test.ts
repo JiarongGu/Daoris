@@ -1,28 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join, posix, win32 } from 'node:path';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { makeFixture } from '../../test/_fixture.ts';
 import { tool } from '../support/merge-branch.ts';
 
-// test-map: reads the merge tool's path unit and the two readers of a change's paths
 // reaches: tool-tests — the unit and its test are the tool-tests gate's
-
-const paths = await import(new URL('../../../../tools/merge-branch/paths.mjs', import.meta.url).href) as {
-  isInside: (folder: string, file: string, platform?: typeof posix) => boolean;
-};
-
-test('CODESTRREV2d: a message file is inside local/ only when it is below it: not on another drive, not the folder, a dotted name is', () => {
-  const local = win32.join('C:', 'repo', 'local');
-  assert.equal(paths.isInside(local, win32.join(local, 'msg.txt'), win32), true);
-  assert.equal(paths.isInside(local, win32.join(local, '..notes'), win32), true, 'a name that starts with two dots is inside');
-  assert.equal(paths.isInside(local, win32.join('D:', 'other', 'msg.txt'), win32), false, 'another drive');
-  assert.equal(paths.isInside(local, local, win32), false, 'the folder itself');
-  assert.equal(paths.isInside(local, win32.join('C:', 'repo', 'msg.txt'), win32), false);
-  assert.equal(paths.isInside('/repo/local', '/repo/local/a/b.txt', posix), true);
-  assert.equal(paths.isInside('/repo/local', '/repo/local/../x', posix), false);
-});
 
 test('CODESTRREV2c: the lane report and the tree drift list a non-ASCII path whole', () => {
   const fx = makeFixture('merge-branch-changed-paths');
