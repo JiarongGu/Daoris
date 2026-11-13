@@ -63,7 +63,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         output.WriteLine($"the home made in {_made} ms");
         var list = await MeasuredAsync("the service's list of every record (the service's own)", () => Home.Client.SessionList.ListedAsync(true, CancellationToken.None));
         var driver = new Daoris.Driver.Driver(Home.Client, DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, ProviderRegistry.Built(), Home.Home);
-        await PassesAsync(driver);
+        await FirstLookAsync(driver);
         var look = await MeasuredAsync("look", async () =>
         {
             var passes = await PassesAsync(driver);
@@ -150,6 +150,16 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var git = starts.Starts.OrderByDescending(start => start.WholeTicks).Take(3)
             .Select(start => $"git {string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(3))} {(long)GitLaunched.Ms(start.WholeTicks)} ms");
         output.WriteLine($"{what}: {ms} ms; asked {requests}; {starts.Starts.Count} git starts, the longest {string.Join(", ", git)}");
+        // A short read's every start in order, so the one a neighbour already asked is seen.
+        if (starts.Starts.Count is > 0 and <= 12)
+        {
+            foreach (var start in starts.Starts)
+            {
+                var command = string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("-c", StringComparison.Ordinal) && !argument.StartsWith("core.", StringComparison.Ordinal)).Take(4));
+                output.WriteLine($"    {start.Kind} {(command.Length > 90 ? command[..90] : command)}: {GitLaunched.Ms(start.WholeTicks):0} ms, {GitLaunched.Ms(start.WaitedTicks):0} ms for a place");
+            }
+        }
+
         // Each command asked more than once, by its first words, so a read's starts say which fact it asked again.
         foreach (var asked in starts.Starts.GroupBy(start => string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(2)))
                      .Where(group => group.Count() > 1).OrderByDescending(group => group.Count()))
@@ -159,6 +169,38 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
 
         return ms;
     }
+
+    /// <summary>
+    /// The first look of a driver come up, as a window's first load runs it: each pass with the git starts it made and the places it
+    /// waited for, since every start of it queues behind the process gate and the machine's scanner (the measurement's cause 3).
+    /// </summary>
+    private async Task FirstLookAsync(Daoris.Driver.Driver driver)
+    {
+        var round = new LookRound(driver.Part, [], new LookState([]));
+        var total = 0;
+        var waited = 0.0;
+        foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
+        {
+            foreach (var pass in driver.LookPasses.In(phase))
+            {
+                using var starts = GitLaunch.Count();
+                var watch = Stopwatch.StartNew();
+                await pass.RunAsync(round, CancellationToken.None);
+                var wait = starts.Starts.Sum(start => GitLaunched.Ms(start.WaitedTicks));
+                total += starts.Starts.Count;
+                waited += wait;
+                if (starts.Starts.Count > 0 || watch.ElapsedMilliseconds >= 5)
+                {
+                    output.WriteLine($"first look, {pass.GetType().GetCustomAttribute<LookPassAttribute>()!.Name}: {watch.ElapsedMilliseconds} ms, {starts.Starts.Count} git starts, {wait:0} ms waited for a place");
+                }
+            }
+        }
+
+        output.WriteLine($"first look: {total} git starts, {waited:0} ms waited for a place in all");
+        _firstLookStarts = total;
+    }
+
+    private int _firstLookStarts;
 
     /// <summary>One look's passes in the driver's order, each timed by its name.</summary>
     private static async Task<List<(string Name, long Ms)>> PassesAsync(Daoris.Driver.Driver driver)

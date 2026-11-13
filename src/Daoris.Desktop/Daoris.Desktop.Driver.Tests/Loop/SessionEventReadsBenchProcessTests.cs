@@ -91,6 +91,11 @@ public sealed class SessionEventReadsBenchProcessTests(ITestOutputHelper output)
         var turns = Timed("the turns ended of the largest record", () => events.TurnsEnded(Id(0)));
         var choices = Timed("the choices of the largest record", () => events.ChoicesOf(Id(0)));
         var plan = Timed("the last plan of the largest record", () => events.LastPlan(Id(0)));
+        var spent = Timed("what the largest record spent", () => events.Spent(Id(0)));
+        var spentSweep = Timed("what every record spent", () =>
+        {
+            for (var n = 0; n < Sessions; n++) events.Spent(Id(n));
+        });
         var last = Timed("the last page of one event of every record", () =>
         {
             for (var n = 0; n < Sessions; n++) events.Page(Id(n), limit: 1);
@@ -103,6 +108,9 @@ public sealed class SessionEventReadsBenchProcessTests(ITestOutputHelper output)
         Assert.True(turns < OpenBudget, $"the turns ended took {turns.TotalMilliseconds:0} ms, past {OpenBudget.TotalMilliseconds} ms");
         Assert.True(choices < OpenBudget, $"the choices took {choices.TotalMilliseconds:0} ms, past {OpenBudget.TotalMilliseconds} ms");
         Assert.True(plan < OpenBudget, $"the last plan took {plan.TotalMilliseconds:0} ms, past {OpenBudget.TotalMilliseconds} ms");
+        output.WriteLine($"spent {spent.TotalMilliseconds:0} spent sweep {spentSweep.TotalMilliseconds:0}");
+        Assert.True(spent < OpenBudget, $"what the largest record spent took {spent.TotalMilliseconds:0} ms, past {OpenBudget.TotalMilliseconds} ms");
+        Assert.True(spentSweep < SweepBudget, $"what every record spent took {spentSweep.TotalMilliseconds:0} ms, past {SweepBudget.TotalMilliseconds} ms");
         Assert.True(last < SweepBudget, $"a page of one event of every record took {last.TotalMilliseconds:0} ms, past {SweepBudget.TotalMilliseconds} ms");
     }
 }
