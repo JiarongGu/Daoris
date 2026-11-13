@@ -32,7 +32,10 @@ public sealed class IntakeLeadTests
         Assert.Contains("`team_plan`", led);
         Assert.Contains("One part is a valid plan", led);
         Assert.Contains("`quest_publish`", led);
-        Assert.DoesNotContain("team_plan", alone);
+        Assert.Contains("`deployables`", led);
+        Assert.Contains("`questions`", led);
+        Assert.DoesNotContain("you also lead the ask's team", alone);
+        Assert.DoesNotContain("One part is a valid plan", alone);
         Assert.StartsWith("You are the intake for workspace `work`", led);
     }
 

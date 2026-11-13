@@ -23,7 +23,9 @@ public static class IntakeLead
         + "test) and its `requirements` quoted from the person's words; each becomes a quest under its id, so writing a part again\n"
         + "returns its quest. An edge is `after` only for a true build dependency, and `orders` where two parts share a file and\n"
         + "either order works, each with its reason. Where several parts read one contract, write a first small part that lands only\n"
-        + "that contract and make the others `after` it. Say in `why` why these parts. Read the plan back with `team_plan` and no\n"
+        + "that contract and make the others `after` it. Where the parts are in different repositories, give the `deployables` each\n"
+        + "declares, the release orders you can cite evidence for and a `questions` entry for what only the person can settle, as above.\n"
+        + "Say in `why` why these parts. Read the plan back with `team_plan` and no\n"
         + "`parts`; a flag it names is for you to resolve in the next revision. Never write what the repositories' integrator writes:\n"
         + "the backlog, the archive, the changelog, the areas and generated files are no part's claim.\n\n";
 }
