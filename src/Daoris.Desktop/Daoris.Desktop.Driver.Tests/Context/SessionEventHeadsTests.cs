@@ -80,6 +80,7 @@ public sealed class SessionEventHeadsTests : IDisposable
         }
 
         Assert.Equal(_plain.TurnsEnded(id), _headed.TurnsEnded(id));
+        Assert.Equal(_plain.Spent(id), _headed.Spent(id));
         Assert.Equal(Said(_plain.ChoicesOf(id)), Said(_headed.ChoicesOf(id)));
         Assert.Equal(Said(_plain.LastPlan(id)), Said(_headed.LastPlan(id)));
     }
@@ -122,6 +123,24 @@ public sealed class SessionEventHeadsTests : IDisposable
         File.Copy(_headed.PathOf("again1"), _plain.PathOf("again1"), overwrite: true);
 
         AssertSame("again1");
+    }
+
+    [Fact]
+    public void What_a_part_spent_is_the_heads_and_never_a_read_of_the_whole_record()
+    {
+        Make("spent1", 4000);
+        var turns = _headed.TurnsEnded("spent1");
+        Assert.True(turns > 1);
+
+        // The first turn's line blanked where it stands, in a process come up since: only a head built before it still counts it.
+        var path = _headed.PathOf("spent1");
+        var lines = File.ReadAllText(path).Split('\n');
+        var at = Array.FindIndex(lines, line => line.Contains("\"kind\":\"turn\"", StringComparison.Ordinal));
+        lines[at] = new string(' ', System.Text.Encoding.UTF8.GetByteCount(lines[at]));
+        File.WriteAllText(path, string.Join('\n', lines));
+        SessionEventHeads.LetGoOfMemory();
+
+        Assert.Equal(new SessionSpent((int)turns, (int)turns, 3 * turns, turns, null, null), _headed.Spent("spent1"));
     }
 
     [Fact]

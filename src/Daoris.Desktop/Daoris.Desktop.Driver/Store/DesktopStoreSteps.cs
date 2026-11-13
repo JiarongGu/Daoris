@@ -803,5 +803,17 @@ internal static class DesktopStoreSteps
             );
             CREATE INDEX integration_parts_ask ON integration_parts (ask);
             """)),
+
+        // What each headed record's turns spent. A head built before holds none of it, so the rows go and are built again from their files.
+        new(DesktopStore.SessionEventSpentVersion, PolicyWriter, write => write.Execute(
+            """
+            DELETE FROM session_event_offsets;
+            DELETE FROM session_event_heads;
+            ALTER TABLE session_event_heads ADD COLUMN reported    INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE session_event_heads ADD COLUMN input       INTEGER;
+            ALTER TABLE session_event_heads ADD COLUMN output      INTEGER;
+            ALTER TABLE session_event_heads ADD COLUMN cache_read  INTEGER;
+            ALTER TABLE session_event_heads ADD COLUMN cache_write INTEGER;
+            """)),
     ];
 }

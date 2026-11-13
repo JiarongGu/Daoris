@@ -22,7 +22,7 @@ internal sealed class SessionEventHeads
     private const string Family = "session_event_heads";
 
     private const string Columns =
-        "length, line_start, tail, first_seq, last_seq, turns, opening_at, opening_seq, plan_at, failed_id, first_failure, choices";
+        "length, line_start, tail, first_seq, last_seq, turns, opening_at, opening_seq, plan_at, failed_id, first_failure, choices, reported, input, output, cache_read, cache_write";
 
     private static readonly Lock Gate = new();
 
@@ -102,14 +102,17 @@ internal sealed class SessionEventHeads
     private SessionEventHead? Row(string sessionId)
     {
         using var store = DesktopStoreReader.Open(_location);
-        if (store is null || store.Version < DesktopStore.SessionEventHeadsVersion) return null;
+        if (store is null || store.Version < DesktopStore.SessionEventSpentVersion) return null;
         var offsets = store.Query("SELECT seq, at FROM session_event_offsets WHERE session = $s ORDER BY seq",
             row => new KeyValuePair<long, long>(row.GetInt64(0), row.GetInt64(1)), ("$s", sessionId));
         return store.Query($"SELECT {Columns} FROM session_event_heads WHERE session = $s", row => new SessionEventHead(
-            row.GetInt64(0), row.GetInt64(1), row.GetString(2), row.GetInt64(3), row.GetInt64(4), row.GetInt64(5), row.GetInt64(6), row.GetInt64(7),
-            row.GetInt64(8), row.IsDBNull(9) ? null : row.GetString(9), row.GetInt64(10), SessionEventHead.ReadChoices(row.GetString(11)), offsets),
+            row.GetInt64(0), row.GetInt64(1), row.GetString(2), row.GetInt64(3), row.GetInt64(4),
+            new SessionSpent((int)row.GetInt64(5), (int)row.GetInt64(12), Count(row, 13), Count(row, 14), Count(row, 15), Count(row, 16)),
+            row.GetInt64(6), row.GetInt64(7), row.GetInt64(8), row.IsDBNull(9) ? null : row.GetString(9), row.GetInt64(10), SessionEventHead.ReadChoices(row.GetString(11)), offsets),
             ("$s", sessionId)).FirstOrDefault();
     }
+
+    private static long? Count(System.Data.Common.DbDataReader row, int column) => row.IsDBNull(column) ? null : row.GetInt64(column);
 
     private void Save(string sessionId, SessionEventHead head, bool rebuilt, int from)
     {
@@ -121,13 +124,15 @@ internal sealed class SessionEventHeads
                 if (rebuilt) write.Execute("DELETE FROM session_event_offsets WHERE session = $s", ("$s", sessionId));
                 write.Execute(
                     $"""
-                    INSERT INTO session_event_heads (session, {Columns}) VALUES ($s, $length, $lineStart, $tail, $first, $last, $turns, $openingAt, $openingSeq, $planAt, $failed, $firstFailure, $choices)
+                    INSERT INTO session_event_heads (session, {Columns}) VALUES ($s, $length, $lineStart, $tail, $first, $last, $turns, $openingAt, $openingSeq, $planAt, $failed, $firstFailure, $choices, $reported, $input, $output, $cacheRead, $cacheWrite)
                     ON CONFLICT (session) DO UPDATE SET length = excluded.length, line_start = excluded.line_start, tail = excluded.tail, first_seq = excluded.first_seq,
                       last_seq = excluded.last_seq, turns = excluded.turns, opening_at = excluded.opening_at, opening_seq = excluded.opening_seq, plan_at = excluded.plan_at,
-                      failed_id = excluded.failed_id, first_failure = excluded.first_failure, choices = excluded.choices
+                      failed_id = excluded.failed_id, first_failure = excluded.first_failure, choices = excluded.choices,
+                      reported = excluded.reported, input = excluded.input, output = excluded.output, cache_read = excluded.cache_read, cache_write = excluded.cache_write
                     """,
                     ("$s", sessionId), ("$length", head.Length), ("$lineStart", head.LineStart), ("$tail", head.Tail), ("$first", head.FirstSeq),
-                    ("$last", head.LastSeq), ("$turns", head.Turns), ("$openingAt", head.OpeningAt), ("$openingSeq", head.OpeningSeq), ("$planAt", head.PlanAt),
+                    ("$last", head.LastSeq), ("$turns", head.Turns), ("$reported", head.Spent.Reported), ("$input", head.Spent.Input), ("$output", head.Spent.Output),
+                    ("$cacheRead", head.Spent.CacheRead), ("$cacheWrite", head.Spent.CacheWrite), ("$openingAt", head.OpeningAt), ("$openingSeq", head.OpeningSeq), ("$planAt", head.PlanAt),
                     ("$failed", head.FailedId), ("$firstFailure", head.FirstFailure), ("$choices", SessionEventHead.WriteChoices(head.Choices)));
                 foreach (var (seq, at) in head.Offsets.Skip(rebuilt ? 0 : from))
                 {

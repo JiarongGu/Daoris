@@ -42,6 +42,8 @@ public sealed class DesktopStore : IDisposable
 
     public const int IntegrationPartsVersion = SessionEventHeadsVersion + 1;
 
+    public const int SessionEventSpentVersion = IntegrationPartsVersion + 1;
+
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>
     public const string WakeSuffix = ".wake";
 
