@@ -411,10 +411,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.False(File.Exists(ConfigPath));
     }
 
-    /// <summary>
-    /// A quest held by another quest's pause (q6, published by a session of q2's work) is one state to both verbs: *Try again*
-    /// names the pause that holds it, never its own, and its resume names that pause and its door, changing nothing.
-    /// </summary>
+    /// <summary>A quest q2's pause holds (q6, which q2's work published) is named with q2's pause by *Try again* and by its own resume.</summary>
     [Fact]
     public async Task A_quest_held_by_another_quests_pause_is_said_alike_by_try_again_and_resume()
     {

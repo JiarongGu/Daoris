@@ -373,11 +373,7 @@ public sealed class StartPlanTests : IDisposable
         Assert.Contains("is off on this machine", Assert.Throws<DriverException>(() => StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty)).Message);
     }
 
-    /// <summary>
-    /// A failed record's carry-on is staffed by its role as it stands: the agent it failed on goes on only while the role still
-    /// lists it, else the role's first entry, so a part that failed for want of its agent's tools is not carried on there again.
-    /// A record that did not fail goes on where it ran.
-    /// </summary>
+    /// <summary>A failed record's carry-on keeps its agent only while its role lists it, else the role's first; one not failed goes on where it ran.</summary>
     [Fact]
     public void A_failed_records_carry_on_takes_its_roles_choice_as_it_stands()
     {

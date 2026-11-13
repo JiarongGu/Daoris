@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Whether a continuation goes on with the agent its record ran on. A record that failed is staffed by its role as it stands: it keeps
 /// that agent only while the role still lists it, so a part that failed for want of its agent's tools is not carried on there again
-/// after the role was staffed with another. A record that did not fail keeps its agent, whose conversation it is.
+/// once the role is staffed with another. A record that did not fail keeps its agent, whose conversation it is.
 /// </summary>
 internal static class FailedCarryOn
 {
@@ -13,7 +13,7 @@ internal static class FailedCarryOn
     {
         if (!string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase)) return true;
 
-        // A role read as before has no stored order, so nothing says it was staffed with another.
+        // A role read from the machine's keys has no stored order, so nothing says another agent staffs it.
         var order = ActorChoices.Effective(role, config);
         return order.Count == 0 || order.Any(entry => string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase));
     }

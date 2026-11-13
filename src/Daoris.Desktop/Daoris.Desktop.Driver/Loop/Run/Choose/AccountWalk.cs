@@ -76,7 +76,6 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
         state.MovedTo = null;
         try
         {
-            // A failed record's carry-on its role no longer staffs with that agent (FailedCarryOn) asks the role's entry for its new one.
             if ((handedQuest is not null || cutLine is null) && start.Resumes?.Asked is { } wasAsked
                 && !string.Equals(wasAsked.Agent, state.Agent, StringComparison.OrdinalIgnoreCase))
             {

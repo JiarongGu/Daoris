@@ -91,7 +91,7 @@ public enum ResumeVerdict
     /// <summary>The pause is gone and every stop it made released.</summary>
     Resumed,
 
-    /// <summary>Not paused here: nothing changed.</summary>
+    /// <summary>Not paused here: nothing changed. A quest held by a pause not its own names it (<see cref="ResumeOutcome.PausedBy"/>), whose resume carries it on.</summary>
     NotPaused,
 
     /// <summary>No such ask on this machine, or no such quest here, and no pause of it: <c>WORK_UNKNOWN</c>.</summary>
@@ -164,6 +164,5 @@ public sealed record ResumeOutcome(WorkScope Scope, string Id, ResumeVerdict Ver
     /// <summary>What still holds each quest of the work, named and never released; null where the plan could not be read.</summary>
     public IReadOnlyList<WorkHold>? Holds { get; init; }
 
-    /// <summary>For a quest not paused on its own (<see cref="ResumeVerdict.NotPaused"/>): the pause over a work it is part of, which its resume carries it on.</summary>
     public PausedBy? PausedBy { get; init; }
 }
