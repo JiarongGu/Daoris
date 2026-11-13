@@ -146,8 +146,7 @@ public static class LandingLines
 {
     extension(LandingLine)
     {
-        /// <summary>One try: whose, where, its code, and what it carried or what held it.</summary>
-        /// <param name="run">The run whose <c>land</c> tried it.</param>
+        /// <summary>One try: whose, where, its code, what it carried or what held it, and the run whose <c>land</c> tried it.</summary>
         public static LandingLine Auto(
             string session, string repository, string workspace, string code, int? commits, int? uncommitted, string? run) =>
             new("landing.auto",

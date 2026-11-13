@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The session a run's <c>land</c> judges is the live part of its line: the newest of its branch unit's executors with a tree, by when each was
-/// made and whatever order the executors are read in, so an earlier part a later one went on from never stands for the run. The landing it
+/// The session a run's <c>land</c> judges is the live part of its line: the newest of its branch unit's executors with a tree, by its record's
+/// making and whatever order the executors are read in, so an earlier part a later one went on from never stands for the run. The landing it
 /// then makes is <see cref="GraphRunLandingTests"/>'s.
 /// </summary>
 public sealed class LandSessionsTests

@@ -86,10 +86,7 @@ public sealed class PerformedEndsTests : GraphRunFixture
         Assert.Contains("no longer done", end!.Message);
     }
 
-    /// <summary>
-    /// A session of another quest went on in the run's tree, so the run's own part is superseded: that end is kept for the press and said
-    /// once, and the passes after it neither try it nor write it again.
-    /// </summary>
+    /// <summary>Another quest's session went on in the run's tree: the superseded end is kept for the press and said once.</summary>
     [Fact]
     public async Task A_superseded_part_is_said_once_and_not_tried_again_at_every_pass()
     {

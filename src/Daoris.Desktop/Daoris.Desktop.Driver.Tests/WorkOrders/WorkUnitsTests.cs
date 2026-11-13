@@ -250,10 +250,7 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.All(older, unit => Assert.Empty(unit.Links));
     }
 
-    /// <summary>
-    /// A branch unit's executors are oldest first whatever names them: the session that went on in a tree and landed its work comes after
-    /// the session it went on from, which recorded the tree first, so the last executor is the line's live part.
-    /// </summary>
+    /// <summary>A unit's executors are oldest first by their records, though its landing names the session that went on in its tree.</summary>
     [Fact]
     public void A_landed_units_executors_are_oldest_first_with_the_session_that_went_on_last()
     {

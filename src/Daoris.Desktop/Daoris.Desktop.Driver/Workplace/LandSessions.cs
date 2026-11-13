@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session a run's <c>land</c> judges: the live part of its line, the newest of its branch unit's executors with a tree, by when each was made
+/// The session a run's <c>land</c> judges: the live part of its line, the newest of its branch unit's executors with a tree, by its record's making
 /// and whatever order the executors are read in. An earlier part a later one went on from in the same tree never stands for the run: judged in
 /// its place it closes as superseded and lands nothing, while the work it went on to waits.
 /// </summary>
