@@ -1,9 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The one door that writes an ask's plan: the lead, Ask Daoris, a person by hand and a worker splitting its own part all come through it. It
-/// judges the plan (<see cref="TeamPlanJudge"/>), appends the revision, and publishes each part as a quest under <c>(ask, part)</c>, so a retried
-/// write returns the quests it made and two parts to one repository and lane are two quests.
+/// The one door that writes an ask's plan: it judges it (<see cref="TeamPlanJudge"/>), appends the revision, and publishes each part as a quest under <c>(ask, part)</c>, so a retried write returns its quests.
 /// </summary>
 /// <param name="store">The revisions and the part-to-quest memory.</param>
 /// <param name="ledger">Who is on the team and the choices taken.</param>

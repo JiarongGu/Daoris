@@ -33,12 +33,7 @@ public static class TeamPathPolicies
         }
     }
 
-    /// <summary>
-    /// The outputs a <c>.gitattributes</c> marks <c>linguist-generated</c>, set or <c>true</c>: the declaration the driver reads for a landing's
-    /// replay and the platforms read for a review. A pattern is a path from the root (a leading <c>/</c> is taken off); one with no slash that
-    /// names a file is the root's, and a wildcard pattern with no slash, which git matches at any depth, is read as nothing, since a claim is
-    /// stripped only for a path the declaration names.
-    /// </summary>
+    /// <summary>The paths a <c>.gitattributes</c> marks <c>linguist-generated</c>; a wildcard with no slash, which git matches at any depth, names no path and is read as nothing.</summary>
     internal static IReadOnlyList<string> GeneratedIn(string attributes)
     {
         var paths = new List<string>();
