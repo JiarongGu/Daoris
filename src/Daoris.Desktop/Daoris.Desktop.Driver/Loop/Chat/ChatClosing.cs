@@ -23,6 +23,7 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         // No conversation goes on from here, and one already on its way is let finish its start first, so its process is among those stopped
         // below rather than spawned after them.
         var atClose = Context.Turned.ToDictionary(pair => pair.Key, pair => pair.Value.Turns.State);
+        var limited = Context.Turned.Where(pair => pair.Value.Turns.Limited).Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
         var update = Context.Processes.Close.Build;
         Restart ??= update ?? $"closed-{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfff}";
         Context.Close();
@@ -31,7 +32,7 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         {
             var state = atClose.GetValueOrDefault(id) ?? chat.Turns.State;
             var cut = chat.Turns.HoldForClose();
-            if (cut || state.Taking || state.Opening || state.Queued.Count > 0) Cuts.TryAdd(id, 0);
+            if ((cut || state.Taking || state.Opening || state.Queued.Count > 0) && !limited.Contains(id)) Cuts.TryAdd(id, 0);
         }
         foreach (var id in Context.GoingOn.Keys) Cuts.TryAdd(id, 0);
         try
