@@ -102,6 +102,8 @@ internal sealed class SessionStateReader
             // An answered park goes on at the driver's next look; a teammate's park waits on them, since nothing this window
             // sends reaches its process.
             if (record.Answered) return In(row with { Shown = ShownState.Answered }, SessionGroup.Working);
+            // A park's wait is its own quest's: once that quest is closed, nothing is left to accept or answer.
+            if (QuestClosedUnderPark(record)) return In(row with { Shown = "completed" }, SessionGroup.Done);
             if (SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered)) return In(row, SessionGroup.NeedsYou, SessionReason.Question);
             if (_look.Between.Contains(record.Id)) return In(row with { Shown = ShownState.Idle }, SessionGroup.Working);
             return In(row, record.State == "queued" ? SessionGroup.Pending : SessionGroup.Working);
@@ -169,6 +171,12 @@ internal sealed class SessionStateReader
 
         return Ended(row, record, verdict);
     }
+
+    /// <summary>Whether this is a driven session parked on the person whose own quest the quest list says is closed (Done or Declined).</summary>
+    private bool QuestClosedUnderPark(SessionRecord record) =>
+        record is { State: "awaiting-person", Kind: "driven", Teammate: false, Quest: { } quest }
+        && _quests.TryGetValue(quest, out var own)
+        && own.Status is not ("Open" or "Taken");
 
     /// <summary>
     /// An ended record's state: what the planner's verdict on its quest says where it still considers it (a hold the person
