@@ -14,6 +14,7 @@ internal static class RepositoryConsole
         + "       daoris repository add --system <plugin>/<system> [<name>] [--workspace <name>] [--dry-run]\n"
         + "       daoris repository excludes <folder> [--add <glob>]... [--remove <glob>]...   (none: says them)\n"
         + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]\n"
+        + "       " + DeployablesCommand.Usage["usage: ".Length..] + "   (a read: its line's deployables and their release nodes)\n"
         + "       " + RepositoryCreateCommand.Usage["usage: ".Length..];
 
     public static async Task<int> RunAsync(string[] args)
@@ -121,6 +122,14 @@ internal static class RepositoryConsole
 
                 case "create":
                     return await RepositoryCreateConsole.RunAsync(words, root, service).ConfigureAwait(false);
+
+                case "deployables" when operands.Count == 1:
+                {
+                    var configPath = DriverConfig.ResolvePath();
+                    var config = DriverConfig.Load(configPath);
+                    var world = new RegistrationWorld(service, DriverConfig.HomeOf(configPath), config);
+                    return await DeployablesCommand.RunAsync(operands[0], Console.Out, world, config).ConfigureAwait(false);
+                }
 
                 default:
                     Console.Error.WriteLine(Usage);

@@ -106,7 +106,7 @@ public sealed class PluginToolsProcessTests : IDisposable
         Assert.Contains("daoris-azure-devops_status", names);
         Assert.DoesNotContain("daoris-azure-devops_login", names);
         var result = answers[2].GetProperty("result");
-        Assert.True(result.GetProperty("isError").GetBoolean());
+        Assert.False(result.GetProperty("isError").GetBoolean());
         Assert.Contains("No token is kept", result.GetProperty("content")[0].GetProperty("text").GetString());
     }
 

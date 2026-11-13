@@ -84,9 +84,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     REST API with the token their own `login` keeps in their private storage (rule 29), say a refused or missing token at `status` (a read, which exits 0 whatever it answers, so it is never a failed command), run no
     git, `gh` or `az`, and declare node alone. Azure DevOps's step sets auto-complete where its options say so, and its `release`
     step acts only on the target its options declare by id (pipeline, release definition, stage, action, success), a repository's
-    values over the shared workflow (workflows rule 3a): undeclared or unresolved, it fails `no-target` or `target-changed` listing
-    what it found, writes nothing and is held for the person; it starts the declared stage, or makes the release from the exact merged
-    build (never twice), only where its action says so, as its README says. (D288) Where no token is kept or Azure
+    values over the shared workflow (workflows rule 3a), naming the deployable it releases and its `deploysOn` (rule 3b there):
+    undeclared or unresolved (a pipeline or definition gone included), it fails `no-target` or `target-changed` naming the deployable
+    and listing what it found, writes nothing and is held for the person; it starts the declared stage, or makes the release from the
+    exact merged build (never twice), only where its action says so, as its README says. Its `discover-releases`, a tool that never
+    writes, lists the same candidates (each definition's stages with what starts them, triggers, links and a proposed `deploysOn`) for
+    the person or a planner to declare from, choosing none. (D288, D290) Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
     manifest's `hooks.browser` hands each process the in-app browser's DevTools address as `DAORIS_BROWSER` (`PluginBrowser`), the
     calls are page-side `fetch`es that read no cookie, and each answer's evidence ends `Way: the token.` or `Way: the browser.`

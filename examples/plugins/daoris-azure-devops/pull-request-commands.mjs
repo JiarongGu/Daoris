@@ -89,7 +89,7 @@ async function complete(args) {
 }
 
 /** The answer with its way said, and as `data.way` for the agent's evidence. */
-function ways(answer) {
+export function ways(answer) {
   const way = wayOf();
   if (!way) return answer;
   return { ...answer, said: [...answer.said, wayWords()], ...(answer.data ? { data: { ...answer.data, way } } : {}) };
