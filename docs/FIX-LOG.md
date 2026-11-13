@@ -21,6 +21,13 @@ repository.
   against the published command; `FreeWordsLineBreakTests` holds say, reword, helper, ask (words, requirements, through) and quest
   verbs to keeping their line breaks; `PersonVerbRoutesTests.A_new_ask_with_a_requirement_reaches_the_route_with_its_words_whole`
   failed with `Missing required payload value 'quote'` and passes.
+## 2026-11-13 - Repository deployables was rejected before its host handler
+
+- **Root cause:** b888196bbc added the host's `deployables` case without declaring the sub-verb on `RegistryWords` or listing it in
+  `DriveUsagePlace`. The installed entry's `CommandTree` refused it before dispatch; direct command tests bypassed that entry.
+- **Fix:** declare the sub-verb and list its read in the shared help with English and Chinese descriptions.
+- **Verification:** `DriverHostTests` starts the host used by the installed command: the read reaches the registry, and both
+  `help repository` and bare `repository` list it. All three cases failed before the fix; `CommandTreeTests` covers the routed words.
 
 ## 2026-11-13 - A landed branch never took its line's later merge: the landing judged the session the later one went on from
 
