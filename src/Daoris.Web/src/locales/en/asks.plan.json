@@ -11,5 +11,17 @@
   "asks.plan.flag.missing-reference": "Missing part",
   "asks.plan.flag.claim-record": "Record claimed",
   "asks.plan.flag.claim-generated": "Generated file claimed",
-  "asks.plan.flag.claim-overlap": "Shared path"
+  "asks.plan.flag.claim-overlap": "Shared path",
+  "asks.plan.release": "{{deployable}} is released after {{on}}",
+  "asks.plan.source.declaration": "declaration",
+  "asks.plan.source.stage-condition": "stage condition",
+  "asks.plan.source.contract": "contract",
+  "asks.plan.source.code-read": "code read",
+  "asks.plan.source.policy": "an order, no evidence",
+  "asks.plan.source.person": "added by a person",
+  "asks.plan.evidence": "read in {{where}}",
+  "asks.plan.questions": "Questions for you",
+  "asks.plan.question.yes": "Yes: {{text}}",
+  "asks.plan.question.blocks": "Waits on it: {{text}}",
+  "asks.plan.question.default": "If not answered: {{text}}"
 }

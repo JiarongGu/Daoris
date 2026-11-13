@@ -20,6 +20,15 @@ public sealed record TeamPlan(string Ask, string? Scope, int Revision, string? B
     /// <summary>The edges written, then those the judge added.</summary>
     public IReadOnlyList<TeamEdge> Edges { get; init; } = [];
 
+    /// <summary>What each repository releases, as each declaration reads at its blob; empty for a plan that ends at its landing.</summary>
+    public IReadOnlyList<DeliveryDeployable> Deployables { get; init; } = [];
+
+    /// <summary>The release orders between the deployables, each with its reason, its source and its evidence.</summary>
+    public IReadOnlyList<DeliveryEdge> Releases { get; init; } = [];
+
+    /// <summary>What only a person can settle, asked once each.</summary>
+    public IReadOnlyList<DeliveryQuestion> Questions { get; init; } = [];
+
     /// <summary>What the judge found.</summary>
     public IReadOnlyList<TeamFlag> Flags { get; init; } = [];
 

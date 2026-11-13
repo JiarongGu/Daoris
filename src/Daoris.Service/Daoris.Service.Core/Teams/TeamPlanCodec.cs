@@ -26,14 +26,15 @@ internal static class TeamPlanCodec
             w.WriteString("text", flag.Text);
             w.WriteEndObject();
         });
+        DeliveryCodec.Write(writer, plan);
         writer.WriteEndObject();
     });
 
     public static TeamPlan? Read(string json)
     {
         if (JsonFields.ParseObject(json) is not { } root || JsonFields.Text(root, "ask") is not { } ask) return null;
-        return new TeamPlan(
-            ask, JsonFields.Text(root, "scope"), (int)(JsonFields.Number(root, "revision") ?? 1), JsonFields.Text(root, "by"),
+        return DeliveryCodec.Read(root, new TeamPlan(
+            ask,JsonFields.Text(root, "scope"), (int)(JsonFields.Number(root, "revision") ?? 1), JsonFields.Text(root, "by"),
             JsonFields.Text(root, "why") ?? "", Moments.Read(root, "at") ?? DateTimeOffset.UnixEpoch)
         {
             Base = JsonFields.Text(root, "base"),
@@ -44,7 +45,7 @@ internal static class TeamPlanCodec
                 JsonFields.Text(edge, "milestone"), JsonFields.Text(edge, "why") ?? ""))],
             Flags = [.. JsonFields.Items(root, "flags").Select(flag => new TeamFlag(
                 JsonFields.Text(flag, "kind") ?? "", JsonFields.Text(flag, "part"), JsonFields.Text(flag, "text") ?? ""))],
-        };
+        });
     }
 
     private static void WritePart(Utf8JsonWriter writer, TeamPart part)

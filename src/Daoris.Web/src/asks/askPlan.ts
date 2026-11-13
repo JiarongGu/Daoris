@@ -7,9 +7,16 @@ export type AskPlanEdge = { part: string; on: string; kind: string; why: string 
 /** What the plan's judge found; `kind` names it and `text` is the sentence the supervisor reads. */
 export type AskPlanFlag = { kind: string; part: string | null; text: string };
 
+/** A release order: `deployable` after `on` (each `repository/id`), the `source` it stands on and the evidence's place, null for an order with none. */
+export type AskPlanRelease = { deployable: string; on: string; why: string; source: string; evidence: string | null };
+
+/** A question only the person can settle about the delivery, asked once under its `key`. */
+export type AskPlanQuestion = { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
+
 /** One plan at its newest revision: the ask's own (`scope` null) or a worker's split of one part (`depth` 2 and below). */
 export type AskPlanRevision = {
   scope: string | null; revision: number; depth: number; why: string; parts: AskPlanPart[]; edges: AskPlanEdge[]; flags: AskPlanFlag[];
+  releases: AskPlanRelease[]; questions: AskPlanQuestion[];
 };
 
 /** The plans an ask holds, the ask's own first. */
@@ -38,6 +45,14 @@ export function askPlanOf(raw: unknown): AskPlan | null {
       })),
       edges: rows(plan.edges).map((edge) => ({ part: text(edge.part), on: text(edge.on), kind: text(edge.kind), why: text(edge.why) })),
       flags: rows(plan.flags).map((flag) => ({ kind: text(flag.kind), part: typeof flag.part === 'string' ? flag.part : null, text: text(flag.text) })),
+      releases: rows(plan.releases).map((release) => ({
+        deployable: text(release.deployable), on: text(release.on), why: text(release.why), source: text(release.source),
+        evidence: typeof release.evidence === 'string' ? release.evidence : null,
+      })),
+      questions: rows(plan.questions).map((question) => ({
+        key: text(question.key), kind: text(question.kind), text: text(question.text), yes: text(question.yes),
+        blocks: text(question.blocks), default: text(question.default),
+      })),
     })),
   };
 }

@@ -170,6 +170,34 @@ public sealed class TeamDeskTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_delivery_graph_is_kept_with_the_plan_and_read_back_with_the_edge_that_moved_and_each_question_once()
+    {
+        var schema = new DeliveryRef("schema-owner", "config-migration");
+        var mirror = new DeliveryRef("backend", "mirror-api");
+        var deployables = new DeliveryDeployable[]
+        {
+            new(schema, new("schema-owner", "daoris.json", "", "b1")) { Provides = [new("config-schema", DeliveryUse.Migrates)] },
+            new(mirror, new("backend", "daoris.json", "", "b2")) { Consumes = [new("config-schema", DeliveryUse.Mirror)] },
+        };
+        var asked = new DeliveryQuestion("contract:viewers", DeliveryQuestion.Open, "Viewers or admins?");
+        var tool = new Daoris.Knowledge.Mcp.TeamTools(_desk);
+
+        var wrote = await tool.PlanAsync(_ask.Id, [Part("keel")], why: "plan", deployables: deployables, questions: [asked, asked]);
+        var read = await tool.PlanAsync(_ask.Id, seen: new Dictionary<string, string> { ["backend:daoris.json"] = "moved" });
+
+        Assert.Contains("2 deployable(s) with 1 release order(s) and 1 question(s)", wrote);
+        var plan = (await _desk.ReadAsync(_ask.Id)).Plans.Single();
+        Assert.Equal(DeliveryEdge.Declaration, plan.Releases.Single().Source);
+        Assert.Equal(new DeliveryEvidence("backend", "daoris.json", "", "b2"), plan.Releases.Single().Evidence);
+        Assert.Equal(deployables.Select(each => each.Ref), plan.Deployables.Select(each => each.Ref));
+        Assert.Contains("release `backend/mirror-api` after `schema-owner/config-migration`", read);
+        Assert.Contains("STALE", read);
+        Assert.Equal(2, read.Split("question `").Length - 1);
+        var split = await _desk.SaveAsync(Save([Part("x")], expect: 0) with { Scope = "keel", Deployables = deployables }, Now);
+        Assert.Equal(TeamRefusal.Unfit, split.Refusal);
+    }
+
+    [Fact]
     public void A_moved_pointer_marks_its_pack_stale_alone()
     {
         var pack = new PartPack

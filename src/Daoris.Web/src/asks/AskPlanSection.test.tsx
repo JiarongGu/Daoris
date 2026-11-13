@@ -16,6 +16,11 @@ const RAW = {
       ],
       edges: [{ part: 'page', on: 'api', kind: 'after', why: 'it reads the field' }],
       flags: [{ kind: 'claim-record', part: 'api', text: 'api claims TASKS.md, a record' }],
+      releases: [
+        { deployable: 'backend/mirror-api', on: 'schema/config-migration', why: 'it mirrors the schema', source: 'declaration', evidence: 'backend: daoris.json' },
+        { deployable: 'frontend/web-app', on: 'backend/mirror-api', why: 'the owner releases the API first', source: 'policy', evidence: null },
+      ],
+      questions: [{ key: 'contract:viewers', kind: 'open', text: 'Viewers or admins?', yes: 'viewers see candidates', blocks: 'the contract', default: 'admins only' }],
     },
     { scope: 'api', revision: 1, depth: 2, why: 'three splits of my own', parts: [{ id: 'api.db', repository: 'media', quest: 'q3', outcome: 'the column exists' }], edges: [], flags: [] },
   ],
@@ -41,6 +46,22 @@ describe('an ask’s plan', () => {
 
     await userEvent.click(screen.getByRole('button', { name: quest }));
     expect(onOpenQuest).toHaveBeenCalledWith('q1');
+  });
+
+  it.each([
+    ['en', 'backend/mirror-api is released after schema/config-migration', 'declaration', 'read in backend: daoris.json', 'an order, no evidence', 'Questions for you', 'Viewers or admins?', 'If not answered: admins only'],
+    ['zh', 'backend/mirror-api 在 schema/config-migration 之后发布', '声明', '读自 backend: daoris.json', '仅为指定顺序，无证据', '需要你回答', 'Viewers or admins?', '不回答则：admins only'],
+  ])('shows each release order with its source and evidence and the one queue of questions, in %s', async (language, order, source, evidence, policy, queue, question, fallback) => {
+    await i18n.changeLanguage(language);
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+
+    expect(screen.getByText(new RegExp(order))).toBeTruthy();
+    expect(screen.getByText(source)).toBeTruthy();
+    expect(screen.getByText(evidence)).toBeTruthy();
+    expect(screen.getByText(policy)).toBeTruthy();
+    expect(screen.getByText(queue)).toBeTruthy();
+    expect(screen.getAllByText(question)).toHaveLength(1);
+    expect(screen.getByText(fallback)).toBeTruthy();
   });
 
   it('reads no plan from an answer that is not one, and an ask with none is an answer with no revisions', () => {

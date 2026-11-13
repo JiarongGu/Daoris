@@ -101,9 +101,12 @@ public static class IntakePrompt
         text.Append("(at most 40 characters, about 20 in Chinese), and a body with the why and the evidence — what the\n");
         text.Append("ticket says, and what decided the owner (its declaration, or what its own files say), not the change\n");
         text.Append("you would make. Its agent may decline work that is not its own, and that answer comes back.\n");
-        text.Append("The quest is asked by the ask itself and carries its links and files. Work that needs two\n");
-        text.Append("repositories is a quest to each; a check that should follow the work — in a browser, say — is\n");
-        text.Append("a `then` step on the quest it follows. Where the room lists a repository's lanes and the work is\n");
+        text.Append("The quest is asked by the ask itself and carries its links and files. Work that needs more than one\n");
+        text.Append("repository is a plan, never a chain of quests: write it with `team_plan`, a part for each repository, the\n");
+        text.Append("`deployables` each declares (`daoris repository deployables`), the release orders you can cite evidence\n");
+        text.Append("for, and a `questions` entry for what only the person can settle. The plan orders what the declarations\n");
+        text.Append("show; an order you cannot cite is shown as policy. A check that should follow work in one\n");
+        text.Append("repository — in a browser, say — is a `then` step on the quest it follows. Where the room lists a repository's lanes and the work is\n");
         text.Append("plainly one lane's, address that lane as `repository:lane` (several as `repository:lane+lane`);\n");
         text.Append("otherwise address the repository.\n\n");
 
