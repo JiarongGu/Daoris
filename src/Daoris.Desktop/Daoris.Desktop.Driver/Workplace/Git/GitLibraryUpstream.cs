@@ -1,5 +1,3 @@
-using LibGit2Sharp;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -48,9 +46,7 @@ internal static class GitLibraryUpstream
     {
         if (Held(call, branch) is not (true, var full)) return null;
         if (full is null) return new GitLibraryAnswer(1, "");
-        var found = call.Repository.Refs[full]?.ResolveToDirectReference()?.Target;
-        while (found is TagAnnotation tag) found = tag.Target;
-        return found is Commit commit ? new GitLibraryAnswer(0, commit.Sha + "\n") : null;
+        return GitLibraryRevisions.CommitOf(call, full) is { } commit ? new GitLibraryAnswer(0, commit.Sha + "\n") : null;
     }
 
     /// <summary>Whether the library may say, and the upstream's full name where one is configured and its ref is here; null with none configured.</summary>

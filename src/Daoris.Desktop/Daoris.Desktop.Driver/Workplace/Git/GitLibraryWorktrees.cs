@@ -20,7 +20,7 @@ internal static class GitLibraryWorktrees
 
     private static string? Listed(GitLibraryCall call)
     {
-        if (!GitLibraryLayout.Plain(call) || call.Repository.Info.IsBare || !call.CommonDir.EndsWith(".git", StringComparison.OrdinalIgnoreCase)) return null;
+        if (!GitLibraryLayout.Plain(call) || call.Repository.Info.IsBare || !call.CommonDir.Replace('\\', '/').EndsWith("/.git", StringComparison.OrdinalIgnoreCase)) return null;
         if (GitLibrarySpelling.Real(Path.GetDirectoryName(call.CommonDir)!) is not { } top || TreeOf(call, call.CommonDir, top, locked: false, reason: null) is not { } main) return null;
         var linked = new List<Tree>();
         var folder = Path.Combine(call.CommonDir, "worktrees");

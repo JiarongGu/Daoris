@@ -246,11 +246,17 @@ that only falls, and the port's contract runs on `ScriptedGit` in the unit tier 
 
 The refs' one listing and a plain read's merge-bases, counts, changed names and `rev-parse --verify --quiet` of `HEAD` or a full ref
 name (with or without `^{commit}`; a short name, an operator or a dangling ref is git's), and a plain `rev-parse HEAD`, are
-answered in git's words by LibGit2Sharp where admitted (`GitLibraryReads`, `GitLibraryVerify`), starting nothing; everything else is
-git's. The look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
-are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; the rest of a look's starts are
-`worktree list --porcelain` (seven in a resume tick, each a judgement's own), the combined layout read, `--show-toplevel` and
-the object reads, which GITTICK2 takes.
+answered in git's words by LibGit2Sharp where admitted (`GitLibraryReads`, `GitLibraryVerify`), starting nothing; so are the layout
+and the settings read from the folder's own files: `--show-toplevel`, the combined layout `rev-parse` and its `--show-toplevel
+--abbrev-ref HEAD` part, `worktree list --porcelain` (the main tree, then each linked tree by path, its lock and reason), `config
+--bool core.ignorecase` and a branch's `@{upstream}` in its two forms (`GitLibraryLayout`, `GitLibraryWorktrees`,
+`GitLibraryUpstream`, the path as the file system spells it by `GitLibrarySpelling`). A read after a write asks the files again, so
+none is ever stale. What stays git's: a subfolder, a bare repository, `core.worktree`, an include, a tree git calls prunable, a
+head unborn or ambiguous, an upstream whose ref is gone, a path through a link or a short name. Everything else is git's. The
+look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
+are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; what a resume tick still
+starts is its writes (`switch`, `update-ref`, the rebase, a tree's lock and unlock), `status`, the file reads
+(`ls-files`, `ls-tree`, `log`) and the declarations' object reads, each of a different commit and asked by a different store.
 
 - `GitLibrary` opens a `Repository` per call, eight at once, libgit2's search paths emptied. `GitLibraryAdmission` refuses, at each
   question, any format but SHA-1 objects with files refs, any replacement, a pack rewrite under way (`GitLibraryHousekeeping`,
@@ -279,7 +285,7 @@ command asked again with no write between; *object* what one held `cat-file --ba
 | Review, a tree the line holds by content | 11 | 0 | 1 (0) |
 | A landed session's review | 3 | 0 | 2 (1) |
 | The Accept offer of a tree of work | 3 | 0 | 0 |
-| The look's tidy, six trees (two) | 5 (5) | 1 (`worktree list`) | 1 (0) |
+| The look's tidy, six trees (two) | 5 (5) | 0 | 1 (0) |
 | A session's start, to its spawn | 20 | 0 | 3 (0) |
 | A squash press's landing | 19 | 0 | 4 (1) |
 | A merge press's landing | 32 | 3 (the line's commit) | 9 (0) |
