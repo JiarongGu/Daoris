@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
-import { askPlanOf } from '../work/askPlan';
+import { askPlanOf } from './askPlan';
 import { AskPlanSection } from './AskPlanSection';
 
 const RAW = {

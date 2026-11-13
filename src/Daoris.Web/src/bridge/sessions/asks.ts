@@ -8,7 +8,7 @@ import {
   type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, type LineChannel,
   lineChannelOf, postedOf,
 } from '../../work/channel';
-import { type AskPlan, askPlanOf } from '../../work/askPlan';
+import { type AskPlan, askPlanOf } from '../../asks/askPlan';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 

@@ -36,7 +36,7 @@ public static partial class TeamPlanJudge
         var graph = edges.Concat(otherEdges).Where(edge => known.Contains(edge.On) && known.Contains(edge.Part)).ToList();
         if (Cycle(graph) is { } cycle)
         {
-            flags.Add(new(TeamFlags.Cycle, cycle[0], $"The edges run in a circle: {string.Join(" -> ", cycle)}. Nothing can start first."));
+            flags.Add(new(TeamFlags.Cycle, cycle[0], $"The edges form a cycle: {string.Join(" -> ", cycle)}. Nothing can start first."));
         }
 
         var added = new List<TeamEdge>();

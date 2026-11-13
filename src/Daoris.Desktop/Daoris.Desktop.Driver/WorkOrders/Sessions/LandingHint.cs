@@ -12,11 +12,8 @@ internal static class LandingHint
         $"{lands.Commits} commit{(lands.Commits == 1 ? "" : "s")} on {lands.Branch} in its tree {lands.Tree}, not landed: "
         + $"its run's Accept lands it; {Door(row)}";
 
-    /// <summary>The verb that opens the run a session follows, where its Accept is given; the one way the clean-up's list says it too.</summary>
-    public static string OpenRun(string session) => $"daoris workflow run --session {session}";
-
     private static string Door(SessionGrouping row) =>
         row.Waits?.FirstOrDefault(wait => wait.Why == PersonWaits.Accept) is { } accept
             ? $"daoris workflow accept {accept.Run} {accept.Node}"
-            : OpenRun(row.Session);
+            : SessionBranchDoors.OpenRun(row.Session);
 }

@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import type { AskPlan } from '../work/askPlan';
+import type { AskPlan } from './askPlan';
 import { AskPlanSection } from './AskPlanSection';
 
 // An ask's plan, as its page's *plan* section draws it (`AskPage.tsx`): the parts with the quest each became, the order between

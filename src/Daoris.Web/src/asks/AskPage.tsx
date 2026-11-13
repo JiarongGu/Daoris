@@ -11,7 +11,7 @@ import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
 import { type ChannelAnswered, type ChannelForward, ChannelSection } from './ChannelSection';
 import type { Channel, ChannelItem, ChannelPost } from '../work/channel';
-import type { AskPlan } from '../work/askPlan';
+import type { AskPlan } from './askPlan';
 import { AskPlanSection } from './AskPlanSection';
 import { AtWorkAskView, type AtWorkAskViewProps } from '../work/atWork/AtWorkAskView';
 import { clearOffered, type HistoryDoor } from '../work/history/history';

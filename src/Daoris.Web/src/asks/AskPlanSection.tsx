@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Pill } from '../design/ui';
-import type { AskPlan, AskPlanRevision } from '../work/askPlan';
+import type { AskPlan, AskPlanRevision } from './askPlan';
 
 /** A door into the quest, in the accent, as the page's other doors are. */
 const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';

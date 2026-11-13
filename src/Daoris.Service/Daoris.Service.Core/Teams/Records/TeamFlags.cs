@@ -6,7 +6,7 @@ public static class TeamFlags
     /// <summary>An edge names a part no plan of the ask holds.</summary>
     public const string MissingReference = "missing-reference";
 
-    /// <summary>The edges run in a circle.</summary>
+    /// <summary>The edges form a cycle.</summary>
     public const string Cycle = "cycle";
 
     /// <summary>A claim reached a record the integrator writes; the claim is stripped.</summary>
