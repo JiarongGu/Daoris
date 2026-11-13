@@ -24,7 +24,7 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
         string? agent = null,
         [Description("True when you go on working and want the answer at your next step; otherwise it is your next turn.")]
         bool? urgent = null,
-        [Description("Only for the lead of an ask's team: the id of a part in its plan to have oriented. A scout reads that part's repository and answers its pack (files, contract and tests to read), kept with the plan for `team_plan` to show.")]
+        [Description("Team lead only: a plan part's id; a scout reads its repository and answers its pack, kept with the plan.")]
         string? part = null,
         CancellationToken ct = default)
     {
