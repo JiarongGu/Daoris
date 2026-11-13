@@ -8,7 +8,7 @@ public sealed record TreeReleased(string Repository, string Branch, bool Gone, s
 /// The one act that ends a workflow run's trees: the clean-up's own removal (<see cref="SessionTrees.RemoveBranchAsync"/>), unforced, so a
 /// tree whose work is uncommitted or on no branch of the person's stays, and its reason is written on its branch's record where the tree
 /// list reads it. The run's <c>release</c> step takes it for the branches its run owns, and the sweep (<see cref="SweepAsync"/>) for the
-/// branches of runs that ended or whose record is gone; a tree no run owns is neither's.
+/// branches whose part the run's tidy ended and those of runs that ended or whose record is gone; a tree no run owns is neither's.
 /// </summary>
 /// <param name="home">The Daoris home whose session branches and run records are read.</param>
 public sealed class TreeReleases(string home)
@@ -31,17 +31,21 @@ public sealed class TreeReleases(string home)
 
     /// <summary>
     /// The standing branches of <paramref name="repository"/> a run owns whose run is over for its tree, each ended behind the proof: the run's
-    /// record ended with no attempt unsettled, or none kept here at all (<see cref="IWorkplaceRunTrees"/>); a record that does not read is unknown.
+    /// <c>tidy</c> ended the branch's part once its pull request merged (<see cref="TidiedParts"/>), whether or not its graph carries a
+    /// <c>release</c>; or the run's record ended with no attempt unsettled, or none is kept here at all (<see cref="IWorkplaceRunTrees"/>). A record
+    /// that does not read is unknown.
     /// </summary>
     /// <param name="inUse">The trees sessions still run or wait in, which stay; null where none is known. Where it cannot be read nothing is ended.</param>
     public async Task<IReadOnlyList<TreeReleased>> SweepAsync(
         string root, string repository, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, CancellationToken ct = default)
     {
-        var runs = WorkplaceRunTrees.Current;
-        var due = new SessionBranches(home).All()
-            .Where(entry => entry.Run is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-                            && runs.Due(home, entry.Run))
+        var ownedHere = new SessionBranches(home).All()
+            .Where(entry => entry.Run is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
             .ToList();
+        if (ownedHere.Count == 0) return [];
+        var runs = WorkplaceRunTrees.Current;
+        var landings = new LandedBranches(home).Entries();
+        var due = ownedHere.Where(entry => TidiedParts.Ended(landings, entry) || runs.Due(home, entry.Run!)).ToList();
 
         if (due.Count == 0) return [];
         IReadOnlySet<string> busy = new HashSet<string>();

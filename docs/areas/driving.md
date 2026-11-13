@@ -282,8 +282,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's
-    tree is ended by its graph's `release` (workflows rule 31b) or, for a run that ended settled or whose record is gone, by the
-    look's sweep (`TreeReleases.SweepAsync`, in the lease holder's tidy of each repository, said once in its report). The sweep
+    tree is ended by its graph's `release` (workflows rule 31b) or by the look's sweep (`TreeReleases.SweepAsync`, in the lease
+    holder's tidy of each repository, said once in its report): for a branch whose part the run's `tidy` ended once its pull request
+    merged (`TidiedParts`), whatever the run does after and whether or not its graph carries a `release`, and for a run that ended
+    settled or whose record is gone. The sweep
     leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's
     own unforced proof, so a tree with uncommitted work or commits no branch of the person's holds stays and its reason is kept
     on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a
