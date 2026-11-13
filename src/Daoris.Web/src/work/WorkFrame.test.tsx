@@ -635,7 +635,7 @@ describe('the Work frame', () => {
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
     // Everything moved to the panel, the workflow and *At work* among it, and the side bar closed: it
     // is not drawn at all.
-    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel', atWork: 'panel' }));
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');
     show('s1a2b3c4');
     const tab = await screen.findByRole('tab', { name: 'Console' });
@@ -652,7 +652,7 @@ describe('the Work frame', () => {
     expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
       .toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!))
-      .toEqual({ timeline: 'panel', review: 'panel', workflow: 'panel', atWork: 'panel', console: 'right' });
+      .toEqual({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel', console: 'right' });
   });
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {
@@ -810,7 +810,7 @@ describe('the Work frame', () => {
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Review' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
-    expect(screen.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Outputs' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('lands on a new conversation, not on a session it chose for the person', async () => {

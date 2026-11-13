@@ -48,7 +48,9 @@ const ORGANISMS = new Set<string>([
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',
   './work/review/DiffPane.tsx',
-  './work/review/run/RunReviewPage.tsx',
+  // A run's outputs and its Accept card: each holds the run's review read and its presses, so the view and the card below hold none.
+  './work/outputs/OutputsPage.tsx',
+  './work/review/card/ReviewCards.tsx',
   './work/console/MonitorWindow.tsx',
   './work/rail/SessionRail.tsx',
   // The one owner of each act on a session: it holds the bridge's hooks, so the row, the list and

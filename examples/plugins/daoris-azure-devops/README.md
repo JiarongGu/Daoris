@@ -27,10 +27,16 @@ A workflow that carries a change end to end sets the steps' options as its graph
 { "id": "pull-request", "kind": "daoris-azure-devops/pull-request", "version": 1, "reach": "performed",
   "options": { "autoComplete": true, "mergeStrategy": "squash", "deleteSourceBranch": true, "transitionWorkItems": true } },
 { "id": "release", "kind": "daoris-azure-devops/release", "version": 1, "reach": "performed", "timeoutSeconds": 14400,
-  "options": { "releaseDefinition": "app-release", "stages": ["Staging", "Production"], "deploy": "Production" } }
+  "options": { "action": "observe" } }
 ```
 
-wired `push` → `pull-request` → `monitor`, `monitor` `when merged` → `tidy` → `release`, with `release` the graph's end.
+wired `push` → `pull-request` → `monitor`, `monitor` `when merged` → `tidy` → `release`, with `release` the graph's end. The release
+target is each repository's own, set as its values over that workflow in `driver.json`'s `workflowValues`, by repository, workflow id
+and node id:
+
+```json
+"workflowValues": { "app": { "my-workflow": { "release": { "pipeline": 7, "releaseDefinition": 42, "stage": 402, "action": "start-stage" } } } }
+```
 
 ## What it does
 
