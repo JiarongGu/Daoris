@@ -92,7 +92,8 @@ async function main(argv) {
   const classes = (valueOf(argv, '--classes') ?? '').split(',').filter(Boolean);
   const named = valueOf(argv, '--paths');
   const paths = named !== null ? named.split(',').filter(Boolean) : changedPaths(root, base);
-  const store = new PassedClasses(storeFile(root));
+  // One store for every worktree, the main checkout's, so a builder's passes are the ones its merge replays.
+  const store = new PassedClasses(storeFile(verdictsHome(root)));
   // A store is warmed by running every class the paths reach, which no merge does: its bound is the suite's size.
   const everything = argv.includes('--unbounded') || classes.length > 0;
   const bounds = everything ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
