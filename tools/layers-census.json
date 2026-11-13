@@ -936,7 +936,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Departments/FolderReturnProcessTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/DriverHostTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/DriverStartFailureTests.cs": 1,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/SessionWatchProcessTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitCeilingCensusTests.cs": 3,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitFixture.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitStartTally.cs": 1,

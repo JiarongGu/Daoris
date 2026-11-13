@@ -213,7 +213,8 @@ finishes first and the whole set runs once.
     `tools/time-ratchet.json` names the tests over their limit as `{ ms, why, row? }`: the time each may take, what makes it slow and why that
     cannot be cut (a missing, short or name-only `why` fails the check), and the backlog row that optimizes it. A listed test does not
     get slower, an unlisted one over its limit fails, `--write` only cuts the list, every test over budget is printed with its reason or
-    "no reason", and `--classes` prints the 15 classes of each record with the most total time. A test that needs longer says so and why where it is
+    "no reason", and `--classes` prints the 15 classes of each record with the most total time, each with its reason. A class slow in total with no test over a
+    limit is listed under its class name as `{ ms, why, class: true }` and `--write` keeps it while the class runs. A test that needs longer says so and why where it is
     declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
     `tool-tests.xml`, `tool-unit.json`, `tool-e2e.json`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
     `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and
