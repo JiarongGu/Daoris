@@ -5,6 +5,19 @@ namespace Daoris.Driver;
 /// <param name="Landed">The parts whose request promoted onto the ask's branch (<see cref="TrainParts.Landed"/>).</param>
 public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string> Required, IReadOnlySet<string> Landed)
 {
+    /// <summary>The repository the plan gives each part to, by part; a part the plan gives to none is not in it.</summary>
+    public IReadOnlyDictionary<string, string> Repositories { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// What one repository's delivery run waits for: the parts the plan gives it, and any it gives none yet, which wait everywhere since
+    /// nothing says where they land.
+    /// </summary>
+    public PartsReport For(string repository) =>
+        this with
+        {
+            Required = [.. Required.Where(part => !Repositories.TryGetValue(part, out var at) || string.Equals(at, repository, StringComparison.OrdinalIgnoreCase))],
+        };
+
     /// <summary>The required parts not landed yet.</summary>
     public IReadOnlyList<string> Waiting => [.. Required.Where(part => !Landed.Contains(part))];
 
@@ -19,14 +32,19 @@ public static class PartsReports
     /// Each ask the integration holds a part's request for, with its plan as the service answers it; an ask whose plan is not read is left out,
     /// so its <c>parts</c> waits and is never reached on a guess.
     /// </summary>
-    public static async Task<IReadOnlyDictionary<string, PartsReport>> ReadAsync(IntegrationStore store, ITrainPlans plans, CancellationToken ct)
+    /// <param name="runAsks">The asks a delivery run is bound for, read though no part has asked to land yet.</param>
+    public static async Task<IReadOnlyDictionary<string, PartsReport>> ReadAsync(
+        IntegrationStore store, ITrainPlans plans, CancellationToken ct, IEnumerable<string>? runAsks = null)
     {
         var parts = new TrainParts(store);
         var read = new Dictionary<string, PartsReport>(StringComparer.Ordinal);
-        foreach (var ask in parts.Asks())
+        foreach (var ask in parts.Asks().Concat(runAsks ?? []).Distinct(StringComparer.Ordinal))
         {
             if (await plans.OfAsync(ask, ct).ConfigureAwait(false) is not { } plan) continue;
-            read[ask] = new PartsReport(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], parts.Landed(ask));
+            read[ask] = new PartsReport(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], parts.Landed(ask))
+            {
+                Repositories = plan.Parts.Where(part => part.Repository is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Repository!, StringComparer.Ordinal),
+            };
         }
 
         return read;

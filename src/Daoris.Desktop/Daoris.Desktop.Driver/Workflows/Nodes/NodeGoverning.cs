@@ -237,6 +237,9 @@ internal static class NodeGoverning
 
         var (units, quests) = (reads.Units, reads.Quests);
 
+        // An ask's delivery run works on the ask's branch with no quest of its own.
+        if (AskRunKey.Is(binding)) return AskRunScopes.Governed(run, graph, digest, read, quests, units, IdentityOf(identities, read.Roots.GetValueOrDefault(repository) ?? ""), Declare(graph, steps, Valued));
+
         // Its work here is its chain's quests in its repository, never a look's set-up step, which a run's work leaves out. A conversation's
         // run has no quest; its newest candidate, submitted at the person's press, stands in the quest's place, and a run with none yet
         // judges nothing.

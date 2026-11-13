@@ -65,6 +65,7 @@ public sealed class LandPerformer(
     {
         _start = start;
         if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
+        if (AskRunKey.IsBranchUnit(start.Branch)) return await new AskLanding(home).PerformAsync(start, ct).ConfigureAwait(false);
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         var record = LandSessions.Of(start, records);

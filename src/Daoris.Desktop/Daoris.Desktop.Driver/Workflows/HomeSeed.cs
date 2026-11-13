@@ -36,7 +36,7 @@ public static class HomeSeed
     private static string? CopyOf(IWorkflowStore store, WorkflowDefault shipped) =>
         new PlannedWorkflows(store, "").CopyOf(shipped, opinion: false, look: false);
 
-    private static string Save(string home, IWorkflowStore store, WorkflowDefault shipped)
+    internal static string Save(string home, IWorkflowStore store, WorkflowDefault shipped)
     {
         var made = WorkflowDefaults.Copy(shipped, opinion: false, look: false, id => store.Load(id) is not null);
         var plan = WorkflowOperations.PlanGraph(home, null, made.Id, null, made.Name, "screen", PlannedWorkflows.At, made.Graph, made.From);

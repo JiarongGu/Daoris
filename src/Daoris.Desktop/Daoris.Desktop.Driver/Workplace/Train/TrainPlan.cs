@@ -9,6 +9,9 @@ public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadO
 {
     /// <summary>The quest the plan published for the part; null where it has none yet.</summary>
     public string? Quest { get; init; }
+
+    /// <summary>The repository the plan gives the part to; null where a caller did not name it.</summary>
+    public string? Repository { get; init; }
 }
 
 /// <summary>
@@ -24,7 +27,7 @@ public sealed record TrainPlan(string Ask, int Revision, IReadOnlyList<TrainPlan
         var parts = own.Parts.Select(part => new TrainPlanPart(
             part.Id,
             Named(own.Edges, part.Id, "after"),
-            Named(own.Edges, part.Id, "orders")) { Quest = part.Quest }).ToList();
+            Named(own.Edges, part.Id, "orders")) { Quest = part.Quest, Repository = part.Repository }).ToList();
         return new TrainPlan(answer.Ask, own.Revision, parts);
     }
 

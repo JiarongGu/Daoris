@@ -42,6 +42,7 @@ internal sealed class NodeGates(string home, ServiceClient service)
     {
         try
         {
+            if (AskRunKey.IsBranchUnit(unit.Id)) return await AskRunContent.ReadAsync(home, unit, tip, ct).ConfigureAwait(false);
             var sessions = await (_sessions ??= service.SessionRecordsAsync(ct)).ConfigureAwait(false);
             var tree = sessions.Where(session => unit.Executors.Contains(session.Id, StringComparer.Ordinal) && session.Tree is { Length: > 0 } each && Directory.Exists(each))
                 .MaxBy(session => session.Updated)?.Tree;
