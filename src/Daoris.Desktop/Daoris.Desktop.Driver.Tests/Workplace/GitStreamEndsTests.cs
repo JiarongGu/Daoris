@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// cancellation, never leaving it running unowned. <see cref="GitBoundsTests"/> holds the runner's half with a stand-in.
 /// </summary>
 /// <remarks>
-/// The hang is a textconv helper (<c>diff.hang.textconv</c>, set on <c>hang.txt</c> by the repository's attributes), which git
+/// The hang is a textconv helper (<c>diff.hang.textconv</c>, set on <c>hang.txt</c> by the fixture's <c>.gitattributes</c>), which git
 /// runs through its shell for a diff of the file and for <c>cat-file --textconv</c>: it writes <c>begun</c>, waits three seconds and
 /// writes <c>marker</c>, and a tree ended by the cancellation never writes the marker. An alias would stand in for no command the
 /// scheduler lets run. Fixtures live under the repository's gitignored <c>_fixtures/</c>.
@@ -67,11 +67,11 @@ public sealed class GitStreamEndsTests : IDisposable
     private async Task InitAsync()
     {
         await GitOkAsync("init", "-q");
-        File.WriteAllText(Path.Combine(_root, ".git", "info", "attributes"), "hang.txt diff=hang\n");
+        File.WriteAllText(Path.Combine(_root, ".gitattributes"), "hang.txt diff=hang\n");
         foreach (var text in new[] { "one\n", "two\n" })
         {
             File.WriteAllText(Path.Combine(_root, "hang.txt"), text);
-            await GitOkAsync("add", "hang.txt");
+            await GitOkAsync("add", "hang.txt", ".gitattributes");
             await GitOkAsync("-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "-q", "-m", text.Trim());
         }
     }

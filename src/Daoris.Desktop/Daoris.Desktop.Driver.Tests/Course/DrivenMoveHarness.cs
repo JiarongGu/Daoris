@@ -471,7 +471,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         // and the case fails, until the loop has ended.
         if (_unended) throw new InvalidOperationException($"a loop of {Home} did not end in {Poll.Patience}; its fixture is left in place");
         GitSeed.Discard(Home);
-        CheckoutWorktrees.AssertNoneLeaked();
+        await CheckoutWorktrees.AssertNoneLeakedAsync();
     }
 
     /// <summary>Whether a loop the case started did not end when asked.</summary>
