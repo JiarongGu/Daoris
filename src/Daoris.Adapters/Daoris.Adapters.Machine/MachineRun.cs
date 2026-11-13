@@ -25,9 +25,12 @@ internal sealed class MachineRun : IChildRun
     private readonly Task _read;
     private int _stopped;
 
-    internal MachineRun(Process process, bool input, bool raw)
+    private readonly Func<Process, string?> _end;
+
+    internal MachineRun(Process process, bool input, bool raw, Func<Process, string?>? end = null)
     {
         _process = process;
+        _end = end ?? Kill;
         Id = process.Id;
         Created = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
         if (!input) process.StandardInput.Close();
@@ -105,17 +108,8 @@ internal sealed class MachineRun : IChildRun
 
     public async ValueTask<string?> StopAsync(CancellationToken ct)
     {
-        string? refused = null;
-        try
-        {
-            _process.Kill(entireProcessTree: true);
-            Volatile.Write(ref _stopped, 1);
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException or AggregateException)
-        {
-            // It had exited, or a member of its tree refused: the exit wait says which.
-            refused = error.Message;
-        }
+        var refused = _end(_process);
+        if (refused is null) Volatile.Write(ref _stopped, 1);
 
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(ExitBound);
@@ -134,6 +128,21 @@ internal sealed class MachineRun : IChildRun
         catch (InvalidOperationException)
         {
             return null;
+        }
+    }
+
+    /// <summary>The kill of a host with no owner: the process and its tree; why it is refused, or null where it is made.</summary>
+    private static string? Kill(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+            return null;
+        }
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException or AggregateException)
+        {
+            // It had exited, or a member of its tree refused: the exit wait says which.
+            return error.Message;
         }
     }
 

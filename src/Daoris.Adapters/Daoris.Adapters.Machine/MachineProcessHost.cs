@@ -5,12 +5,12 @@ using Daoris.Ports.Processes;
 namespace Daoris.Adapters.Machine;
 
 /// <summary>
-/// Hands a started process to whatever owns the processes of its purpose, so it ends with the application however that ends: the one
-/// management the root composes (a job object per purpose). True where it took the process.
+/// Whatever owns the processes the host starts, as the root composes it: the one management that joins each to the job of its purpose,
+/// so it ends with the application however that ends, and that ends a process and what it started.
 /// </summary>
-/// <param name="process">The process just started, before its caller holds it.</param>
-/// <param name="purpose">What the start is for, as the specification named it.</param>
-public delegate bool ProcessOwner(Process process, string purpose);
+/// <param name="Take">Takes a process just started, before its caller holds it, and the purpose its specification named; true where it joined a job.</param>
+/// <param name="End">Ends a process and everything it started: why the kill is refused, or null where it is made.</param>
+public sealed record ProcessOwner(Func<Process, string, bool> Take, Func<Process, string?> End);
 
 /// <summary>
 /// The machine's processes: a start is admitted by the application's policy, placed by the machine's places for its class, made on
@@ -19,8 +19,12 @@ public delegate bool ProcessOwner(Process process, string purpose);
 /// <param name="places">The machine's places a start waits for.</param>
 /// <param name="policy">The application's admission of each start.</param>
 /// <param name="owner">Takes each process as it starts, which joins it to a job that ends it with the application; none leaves it uncontained.</param>
-public sealed class MachineProcessHost(IMachineAdmission places, StartPolicy policy, ProcessOwner? owner = null) : IProcessHost
+/// <param name="start">Makes the process a start describes: the runtime's <see cref="Process.Start(ProcessStartInfo)"/> unless a test's host stands in for it.</param>
+public sealed class MachineProcessHost(
+    IMachineAdmission places, StartPolicy policy, ProcessOwner? owner = null, Func<ProcessStartInfo, Process?>? start = null) : IProcessHost
 {
+    private readonly Func<ProcessStartInfo, Process?> _start = start ?? Process.Start;
+
     /// <summary>
     /// Told, for each start, the ticks of <see cref="Stopwatch"/> it waited for its place and the creation inside it, from the flow
     /// that asked, so a caller times the two apart.
@@ -37,11 +41,11 @@ public sealed class MachineProcessHost(IMachineAdmission places, StartPolicy pol
         var info = InfoOf(specification);
         try
         {
-            var process = await Task.Run(() => Process.Start(info), CancellationToken.None).ConfigureAwait(false)
+            var process = await Task.Run(() => _start(info), CancellationToken.None).ConfigureAwait(false)
                 ?? throw new InvalidOperationException($"{specification.Program} did not start");
-            owner?.Invoke(process, specification.Purpose);
+            owner?.Take(process, specification.Purpose);
             placed?.Bind(process.Id);
-            return new MachineRun(process, specification.Input, specification.RawOutput);
+            return new MachineRun(process, specification.Input, specification.RawOutput, owner?.End);
         }
         finally
         {

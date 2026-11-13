@@ -106,6 +106,7 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/Agents/AgentSheetStartsTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/AgentsOpenStartsTests.cs",
             "Daoris.Desktop.Driver.Tests/GitStartTally.cs", "Daoris.Desktop.Driver.Tests/Loop/StartTreeCloseGitTests.cs",
+            "Daoris.Desktop.Driver.Tests/TestPorts.cs",
             "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyGitCountTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyEffectGitTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/TidiedPartKeepingTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyHomeBenchProcessTests.cs",
         ]),

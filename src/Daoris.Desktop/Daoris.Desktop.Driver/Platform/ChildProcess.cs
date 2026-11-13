@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Daoris.Ports.Processes;
 
 namespace Daoris.Driver;
 
@@ -199,6 +200,8 @@ public static class ChildProcess
     /// Tell <paramref name="unended"/> the pid and the reason of each process this flow's runners could not end, until disposed:
     /// the git seam opens it per start, so the fact is said with the node it belongs to.
     /// </summary>
+    internal static void Told(int pid, string reason) => s_unended.Value?.Invoke(pid, reason);
+
     internal static IDisposable Telling(Action<int, string> unended)
     {
         var before = s_unended.Value;
@@ -210,18 +213,4 @@ public static class ChildProcess
     {
         public void Dispose() => restore();
     }
-}
-
-/// <summary>
-/// A runner's cancellation whose process outlived its kill: the pid and why, so the
-/// owner hears the process is not ended rather than a cancellation that reads as one that worked.
-/// </summary>
-public sealed class ProcessUnendedException(int pid, string reason, CancellationToken token)
-    : OperationCanceledException($"process {pid} did not end: {reason}", token)
-{
-    /// <summary>The process that runs on.</summary>
-    public int Pid { get; } = pid;
-
-    /// <summary>Why it is not known to have ended: its kill refused, or no exit seen within the bound.</summary>
-    public string Reason { get; } = reason;
 }

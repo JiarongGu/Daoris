@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Daoris.Driver;
 using Daoris.Ports.Ambient;
+using Daoris.Ports.Processes;
 using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -29,13 +30,26 @@ internal static class TestPorts
         Clock = new MovedClock(),
         Store = MemoryUnitOfWork.Engines,
         Admission = Processes,
+        Processes = Host,
         Liveness = Processes,
         StartPolicy = GitStartAdmission.Admit,
         Seal = ScriptedSeal.Port,
         Git = Git,
     });
 
-    internal static FlowGit Git { get; } = new(GitProcessRuns.Shared);
+    /// <summary>
+    /// The machine's host over this process's scripted places, whose starts are made by the stand-in a flow chose
+    /// (<see cref="ProcessStarts.Within"/>) and else by the runtime, so a test that counts or answers a git start sees it as it did at the gate.
+    /// </summary>
+    internal static IProcessHost Host { get; } = new Daoris.Adapters.Machine.MachineProcessHost(
+        Processes, GitStartAdmission.Admit, new Daoris.Adapters.Machine.ProcessOwner(OwnedProcesses.Own, OwnedProcesses.End),
+        info =>
+        {
+            if (GitStartInputs.Placed is { } asked) GitStartInputs.Hand(info, asked);
+            return (ProcessStarts.Standing ?? Process.Start)(info);
+        }) { Timed = ProcessStarts.Told };
+
+    internal static FlowGit Git { get; } = new(new Daoris.Adapters.Git.GitProcessRuns(Host, GitRunPolicy.Shared));
 
     private static DateTimeOffset Created()
     {

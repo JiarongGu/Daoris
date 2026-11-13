@@ -86,6 +86,12 @@ public sealed class OwnedProcesses
         }
     }
 
+    /// <summary>
+    /// <see cref="Take"/> for a purpose named as the machine's host names it, which is what a root hands the host as its processes' owner,
+    /// so a process the host starts joins its purpose's job as one the gate starts does.
+    /// </summary>
+    public static bool Own(Process process, string purpose) => Enum.TryParse<ProcessPurpose>(purpose, out var known) && Shared.Take(process, known);
+
     /// <summary>The purpose whose job holds <paramref name="process"/>, or null where none of this management's does.</summary>
     public ProcessPurpose? Holding(Process process)
     {

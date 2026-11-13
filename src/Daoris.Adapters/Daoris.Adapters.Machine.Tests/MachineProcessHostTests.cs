@@ -14,16 +14,37 @@ public sealed class MachineProcessHostTests
     public async Task A_started_process_is_handed_to_the_owner_with_its_purpose_before_its_caller_holds_it()
     {
         var taken = new List<(int Id, string Purpose)>();
-        var host = new MachineProcessHost(new StartPlaces(4, 3), (_, _) => null, (process, purpose) =>
+        var host = new MachineProcessHost(new StartPlaces(4, 3), (_, _) => null, new ProcessOwner((process, purpose) =>
         {
             taken.Add((process.Id, purpose));
             return true;
-        });
+        }, _ => null));
 
         await using var run = await host.StartAsync(Exits(), CancellationToken.None);
         await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
 
         Assert.Equal([(run.Id, "Git")], taken);
+    }
+
+    [Fact]
+    public async Task A_stop_ends_the_run_by_the_owners_kill_and_says_why_one_that_did_not_end_is_not_known_to_have()
+    {
+        var kills = 0;
+        var host = new MachineProcessHost(new StartPlaces(4, 3), (_, _) => null, new ProcessOwner((_, _) => true, _ =>
+        {
+            kills++;
+            return "refused by the test";
+        }));
+        var spec = new ProcessSpec("ping.exe", ["-n", "60", "127.0.0.1"], "Git", AdmissionClasses.Background);
+        var run = await host.StartAsync(spec, CancellationToken.None);
+
+        var reason = await run.StopAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
+
+        Assert.Equal(1, kills);
+        Assert.Contains("its kill was refused (refused by the test) and it did not exit", reason);
+        // Ended for real, so no process of the test outlives it.
+        System.Diagnostics.Process.GetProcessById(run.Id).Kill(entireProcessTree: true);
+        await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
     }
 
     [Fact]

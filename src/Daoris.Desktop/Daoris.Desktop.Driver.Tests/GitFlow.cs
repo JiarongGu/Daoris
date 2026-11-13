@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Daoris.Ports.Git;
+using Daoris.Ports.Processes;
 using Daoris.Testing;
 using GitAsk = Daoris.Ports.Git.GitAsk;
 
@@ -46,7 +47,7 @@ internal static class GitFlow
         FlowGit.Use(new ScriptedGit().Seen(ask => seen(ask.Arguments)).Beyond(Beneath));
 
     /// <summary>The git a choice is put over: the flow's own, else the driver's runs, which a root hands where it chose no FlowGit.</summary>
-    private static IGit Beneath => FlowGit.Chosen ?? GitProcessRuns.Shared;
+    private static IGit Beneath => FlowGit.Chosen ?? TestPorts.Git;
 
     /// <summary>Answers each git <paramref name="answer"/> gives a reply for, as git's code and streams; every other is asked of the git beneath.</summary>
     internal static IDisposable Answer(Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?> answer) =>
@@ -72,8 +73,21 @@ internal static class GitFlow
         public Task<GitAnswer> RunAsync(GitAsk ask, CancellationToken ct) => Launched(ask.Arguments, GitRunner.Whole, async () =>
         {
             var bound = ask.Bound ?? GitBounds.Of(ask.Arguments);
-            return GitProcessRuns.Answer(await run(ask.Arguments, bound, ct).ConfigureAwait(false), bound);
+            return AnswerOf(await run(ask.Arguments, bound, ct).ConfigureAwait(false), bound);
         });
+
+        /// <summary>A stand-in run's end as git's answer: its code and streams, or a failure saying it did not start or did not answer in time.</summary>
+        private static GitAnswer AnswerOf(ChildRun run, TimeSpan bound)
+        {
+            if (!run.Started) return new GitAnswer(null, "", run.Error?.Message ?? "git did not start");
+            if (run.TimedOut && run.Error is ProcessUnendedException unended)
+            {
+                return new GitAnswer(null, "", $"git did not answer within {bound.TotalSeconds:0} seconds, and did not end when stopped: {unended.Reason}.");
+            }
+
+            if (run.TimedOut) return new GitAnswer(null, "", $"git did not answer within {bound.TotalSeconds:0} seconds, and was stopped.");
+            return new GitAnswer(run.ExitCode!.Value, run.Stdout, run.Stderr);
+        }
 
         public Task<GitBytes> ReadBytesAsync(GitAsk ask, int limit, CancellationToken ct) => beneath.ReadBytesAsync(ask, limit, ct);
 

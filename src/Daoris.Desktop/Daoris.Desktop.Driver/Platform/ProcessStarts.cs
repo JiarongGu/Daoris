@@ -174,6 +174,15 @@ public sealed class ProcessStarts
     internal static IDisposable? Queued() => s_queue.Value?.Invoke();
 
     /// <summary>
+    /// A start made beside this gate (the machine's host, which the git adapter starts through) told to this flow's timing, as one the gate
+    /// makes is: its wait for a place and its creation inside it, in <see cref="Stopwatch"/> ticks.
+    /// </summary>
+    public static void Told(long waited, long created) => s_timed.Value?.Invoke(waited, created);
+
+    /// <summary>The stand-in this flow makes its starts with (<see cref="Within"/>), or null: a test's host makes its starts by it too.</summary>
+    internal static Func<ProcessStartInfo, Process?>? Standing => s_within.Value;
+
+    /// <summary>
     /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>:
     /// called as a wait begins (<see cref="Queued"/>, the git scheduler's too), and what it returns disposed as the wait ends, handed its place or given
     /// up. A look's stage hands its span, so its line says the wait as the stage's queue, apart from its hold. Null says them to

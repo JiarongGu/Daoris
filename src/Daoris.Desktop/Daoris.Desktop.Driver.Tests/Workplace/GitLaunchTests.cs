@@ -206,7 +206,7 @@ public sealed class GitLaunchTests
         "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "CommandLauncher.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
         "HeavyStep.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
-        "GitProcessRuns.cs", "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
+        "GitRunPolicy.cs", "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
     ];
 
     private static List<string> StartProblems(IReadOnlyCollection<string> found) =>
@@ -218,21 +218,21 @@ public sealed class GitLaunchTests
     [Fact]
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
-        // The trees' git: GitRuns' GitStart, GitProcessRuns' three runners, and ActSteps' held act counted at the seam as
-        // GitRunner.Held. The rest are other seams' starts, none of them a git start of the trees'.
+        // The trees' git: GitRuns' GitStart, the git policy's resolution of it for the adapter's three runners, and ActSteps' held act
+        // counted at the seam as GitRunner.Held. The rest are other seams' starts, none of them a git start of the trees'.
         var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Select(file => (Path.GetFileName(file), File.ReadAllText(file)))));
         Assert.True(problems.Count == 0, string.Join('\n', problems));
 
-        // These two are the seam's shape, a count by design: one call per runner, one launch per runner.
-        var tree = File.ReadAllText(SourceFiles.Driver("GitProcessRuns.cs"));
-        foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "ReadLaunchedAsync" })
+        // These two are the seam's shape, a count by design: one call per runner, one launch per runner, through the policy's seam.
+        var tree = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.Git", "GitProcessRuns.cs"));
+        foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "StreamLaunchedAsync" })
         {
             Assert.Contains($"() => {runner}(", tree, StringComparison.Ordinal);
             Assert.Equal(2, Regex.Matches(tree, $@"\b{runner}\(").Count);
         }
 
-        Assert.Equal(3, Regex.Matches(tree, @"GitLaunch\.LaunchAsync\(").Count);
+        Assert.Equal(3, Regex.Matches(tree, @"policy\.LaunchAsync\(").Count);
     }
 
     /// <summary>A new file that starts a process fails the census; one more start in a listed file passes.</summary>
