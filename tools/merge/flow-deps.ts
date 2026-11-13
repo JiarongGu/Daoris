@@ -6,10 +6,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { spawnGit } from '../fsx.mjs';
 import { isStamped, NPM_CI, stampDependencies } from '../merge-branch/dependencies.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { FlowDeps, GateResult, PlanGate } from './flow.ts';
+import { git } from './git.ts';
 import { LockInstalls } from './lock-install.ts';
 import { findingReds, verdictReds, type MainRed } from './main-red.ts';
 import { MERGE_RECORD, readRecords } from './merge-record.ts';
@@ -21,7 +21,6 @@ import type { StoredVerdict, Toolchain, TreeEntry } from './verdict-store.ts';
 type Signed = { signature: unknown; names?: string; unit?: string; test?: string };
 type Finding = { state: string; gate?: string; test: string; key: string; since?: string; lastSeen?: { commit?: string | null; at?: string } | null };
 
-/** What the merge tool hands in. */
 export type Seams = {
   runGate: FlowDeps['runGate'];
   pathsReaching: (gate: string, paths: string[], lanes: unknown[]) => string[];
@@ -36,17 +35,11 @@ export type Seams = {
   expired: (finding: Finding) => boolean;
 };
 
-const git = (cwd: string, args: string[]): string => {
-  const ran = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-  if (ran.status !== 0) throw new Error(`git ${args[0]} failed: ${String(ran.stderr).trim()}`);
-  return ran.stdout;
-};
-
 const listings = new Map<string, TreeEntry[]>();
 const entriesOf = (where: string, tree: string): TreeEntry[] => {
   const kept = listings.get(tree);
   if (kept) return kept;
-  const entries = git(where, ['ls-tree', '-r', '-z', '--full-tree', tree]).split('\0').filter(Boolean).flatMap((line) => {
+  const entries = git(where, ['ls-tree', '-r', '-z', '--full-tree', tree]).out.split('\0').filter(Boolean).flatMap((line) => {
     const found = /^\d+ \w+ ([0-9a-f]+)\t(.*)$/s.exec(line);
     return found ? [{ blob: found[1] as string, path: found[2] as string }] : [];
   });
@@ -68,7 +61,7 @@ let toolchain: Toolchain | null = null;
 export const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
 
 /** The paths the tree at `where` holds changed against its HEAD: in a merge not yet committed, what the merge changed. */
-const diffOf = (where: string): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean);
+const diffOf = (where: string): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).out.split('\0').filter(Boolean);
 
 const npmCi = (where: string, folder: string): Promise<{ ok: boolean; note: string }> => new Promise((done) => {
   const child = spawn(NPM_CI, { cwd: join(where, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
@@ -109,7 +102,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
 export function mainRedsOf(seams: Seams, root: string, home: string): MainRed[] {
   let mainTree: string | null = null;
   try {
-    mainTree = git(root, ['rev-parse', 'HEAD^{tree}']).trim();
+    mainTree = git(root, ['rev-parse', 'HEAD^{tree}']).out.trim();
   } catch {
     mainTree = null;
   }
