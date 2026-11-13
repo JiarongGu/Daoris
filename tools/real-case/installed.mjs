@@ -7,8 +7,8 @@ import { spawnSync } from 'node:child_process';
  */
 export function installedCommand({ command = 'daoris', home, service, spawn = spawnSync }) {
   const env = { ...process.env, DAORIS_HOME: home, ...(service ? { DAORIS_SERVICE_URL: service } : {}) };
-  return (args) => {
-    const r = spawn(command, args, { env, encoding: 'utf8', windowsHide: true, timeout: 120_000 });
+  return (args, { timeoutMs = 120_000 } = {}) => {
+    const r = spawn(command, args, { env, encoding: 'utf8', windowsHide: true, timeout: timeoutMs });
     return { code: r.status ?? 2, stdout: r.stdout ?? '', stderr: r.error ? String(r.error.message) : r.stderr ?? '' };
   };
 }

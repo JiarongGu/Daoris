@@ -12,7 +12,8 @@ export function verdicts(caseDef, log) {
         : { name, verdict: 'pass', afterFiledMs: hit.afterFiledMs };
     }
     if (log.outcome === 'waiting-on-person' && PERSON_STAGES.has(name)) return { name, verdict: 'person', detail: 'waits on the person\'s Accept; run with --with-word where the person\'s word is given' };
-    return { name, verdict: 'fail', detail: log.outcome === 'could-not-file' ? 'the ask was not filed' : `not reached (${log.outcome})` };
+    const refused = ['could-not-create', 'set-up-declined', 'set-up-timeout'].includes(log.outcome) ? log.creation : log.outcome === 'could-not-file' ? log.filing?.said : null;
+    return { name, verdict: 'fail', detail: refused ? `not reached (${log.outcome}): ${refused}` : `not reached (${log.outcome})` };
   });
 }
 
@@ -38,7 +39,8 @@ export function receiptOf({ caseDef, repository, workspace, service, log, withWo
     expectations,
     interventions: log.interventions,
     words: log.words,
-    filing: log.filing,
+    creation: log.creation ?? null,
+    filing: log.filing ?? null,
     reads: log.reads,
     workflowRun: log.finalRun,
     metrics: log.ask ? `node tools/dev-metrics.mjs --home <home> --service <url> --case ${log.ask} --json` : null,

@@ -10,7 +10,7 @@ export const cases = [
     built: true,
     repositories: 1,
     ask: { words: 'Add a file notes.txt at the repository root saying what this repository is for, in one sentence.', workflow: 'dev-line' },
-    expect: ['filed', 'taken', 'started', 'done', 'review-reached', 'accepted', 'landed'],
+    expect: ['created', 'set-up', 'filed', 'taken', 'started', 'done', 'review-reached', 'accepted', 'landed'],
     needs: [],
   },
   {
@@ -23,7 +23,7 @@ export const cases = [
       require: [[REQUIRE_QUOTE, 'read notes.txt: its last word is done']],
       workflow: 'dev-line',
     },
-    expect: ['filed', 'requirement-kept', 'taken', 'started', 'done', 'requirement-answered', 'review-reached', 'accepted', 'landed'],
+    expect: ['created', 'set-up', 'filed', 'requirement-kept', 'taken', 'started', 'done', 'requirement-answered', 'review-reached', 'accepted', 'landed'],
     needs: [],
   },
   { id: 3, title: 'A chain across two repositories, the later building on the first\'s commit', built: false, repositories: 2, needs: ['a second scratch repository and a chain step (`then`) on the first quest', 'a read of the later quest\'s base against the first\'s landed commit'] },
