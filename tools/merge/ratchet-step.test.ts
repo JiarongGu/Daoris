@@ -3,7 +3,21 @@ import assert from 'node:assert/strict';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ratchetIn, ratchetStep } from './ratchet-step.ts';
+import { gatesToRerun, ratchetIn, ratchetStep, withFinalRatchet } from './ratchet-step.ts';
+
+test('the time check named to --rerun is no gate to run again, and the other names stay', () => {
+  assert.deepEqual(gatesToRerun(['cli', 'time-ratchet', 'web']), ['cli', 'web']);
+  assert.deepEqual(gatesToRerun(['time-ratchet']), []);
+});
+
+test('a rerun judges the records since the merge began, not only since its own start', async () => {
+  const asked: number[] = [];
+  const ratchet = (since: number) => { asked.push(since); return { status: 0, output: 'clean\n' }; };
+  await withFinalRatchet(async () => [], ratchet, () => 5000, 1000);
+  await withFinalRatchet(async () => [], ratchet, () => 5000, null);
+  await withFinalRatchet(async () => [], ratchet, () => 5000, 9000);
+  assert.deepEqual(asked, [1000, 5000, 5000]);
+});
 
 test('a repository with no time ratchet has nothing to judge: the last check passes and says so', () => {
   const root = join(dirname(dirname(dirname(fileURLToPath(import.meta.url)))), '_fixtures', 'ratchet-step-none');

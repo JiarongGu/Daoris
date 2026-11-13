@@ -61,6 +61,12 @@ export class PassedClasses {
 
   save(): void {
     mkdirSync(dirname(this.file), { recursive: true });
+    const beside = new PassedClasses(this.file).passes;
+    for (const [id, theirs] of Object.entries(beside)) {
+      const mine = this.passes[id] ?? [];
+      const joined = [...theirs.filter((each) => !mine.some((own) => own.key === each.key)), ...mine];
+      this.passes[id] = joined.sort((a, b) => a.at.localeCompare(b.at)).slice(-KEPT_PER_CLASS);
+    }
     const temporary = `${this.file}.${process.pid}.tmp`;
     writeFileSync(temporary, `${JSON.stringify({ schema: 1, passes: this.passes }, null, 1)}\n`);
     renameSync(temporary, this.file);

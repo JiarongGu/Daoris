@@ -39,5 +39,7 @@ public sealed class RepositoryCreateWorld(ServiceClient service, string home) : 
 
     public string? RemoteStepOf(DriverConfig config, string repository, string workspace) => CreateRemoteSteps.Of(home, config, repository, workspace);
 
+    public bool WorksApart(DriverConfig config, string repository, string workspace) => PlaceIsolates.Of(home, config, repository, workspace) is not null;
+
     public Task<(bool Ok, string Message)> RegisterAsync(JsonObject body, CancellationToken ct) => service.RegisterAsync(body, ct);
 }
