@@ -155,7 +155,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`). A session
     of the quest that asks for the take while the session here that took it ended failed or stopped is answered as the taker: the
     take passes to it (`QuestRetakes`), so a retry never stands down against a holder that is gone; a running holder or another
-    machine's take is still refused. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
+    machine's take is still refused. A newest stand-down of the quest here is read past at the open to that taker when the claim is
+    this machine's and the taker ended failed or interrupted (`StandDownTakers`), never past the person's own stop. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
     carries it on. (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
@@ -211,7 +212,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
     left is `Unclosed`, a row of *What needs you* until the person's done closes it or their word goes on with the session, its
-    tree's work staying to review. (D46, D83)
+    tree's work staying to review. A park whose own quest is then closed reads ended, not waiting on the person. (D46, D83)
 38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on; on the protocol
     door the session keeps waiting on that work. (D83, D105)
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.

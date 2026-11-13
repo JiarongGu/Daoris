@@ -405,6 +405,12 @@ internal sealed class SessionOpening(
             ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
+        // Or a stand-down against this machine's own dead taker, read past to that taker (StandDownTakers).
+        if (!brought && last is { State: SessionState.StoodDown } && await StandDownTakers.BehindAsync(quests, sessions, last, ct).ConfigureAwait(false) is { } taker)
+        {
+            last = taker;
+        }
+
         // And a session the person's reopen of the work its step grew from stopped: it ended
         // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }
