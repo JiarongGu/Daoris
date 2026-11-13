@@ -30,9 +30,16 @@ export const ratchetIn = (root: string, env: NodeJS.ProcessEnv): RatchetRun => (
   return { status: ran.status, output: `${ran.stdout}${ran.stderr}` };
 };
 
-/** The gates `gates` runs, and after them, once, the ratchet on the records written since they began. */
-export async function withFinalRatchet<R>(gates: () => Promise<R[]>, ratchet: RatchetRun, now: () => number = Date.now): Promise<Array<R | RatchetResult>> {
+/** The gates `gates` runs, then once the ratchet on the records since they began, or since an earlier `since` (a rerun judges the whole merge). */
+export async function withFinalRatchet<R>(
+  gates: () => Promise<R[]>, ratchet: RatchetRun, now: () => number = Date.now, since: number | null = null,
+): Promise<Array<R | RatchetResult>> {
   const began = now();
   const results = await gates();
-  return [...results, ratchetStep(ratchet, began, now)];
+  return [...results, ratchetStep(ratchet, since !== null && since < began ? since : began, now)];
 }
+
+const RATCHET_NAME = 'time-ratchet';
+
+/** `--rerun`'s names less the time check, which is no gate of the plan and runs last in every rerun. */
+export const gatesToRerun = (named: string[]): string[] => named.filter((name) => name !== RATCHET_NAME);

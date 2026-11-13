@@ -6,6 +6,7 @@ import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { spawnGit } from '../fsx.mjs';
 import { Refusal } from './args.ts';
+import { sweepAndSay } from './merge-temps.ts';
 import { SCRATCH } from './paths.ts';
 
 export const MAIN = 'main';
@@ -97,7 +98,9 @@ export function requireMain(root: string): void {
 
 /** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it). */
 export function preconditions(root: string): void {
-  const facts = { ...treeState(root), merging: mergeInProgress(root), ignored: true };
+  const merging = mergeInProgress(root);
+  if (!merging) sweepAndSay(root);
+  const facts = { ...treeState(root), merging, ignored: true };
   const refusal = startRefusal(facts);
   if (refusal) throw new Refusal(refusal);
   // Asked last, and only of a checkout that passed the rest: it is one more git start.

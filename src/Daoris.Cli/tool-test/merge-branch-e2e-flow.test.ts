@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { git, scratch, branch } from './support/merge-branch-kit.ts';
 
@@ -62,5 +62,50 @@ describe('the merge tool\'s flow, end to end in a scratch repository', { concurr
     git(repo.root, 'merge', '--abort');
     assert.equal((await repo.run(['feature/one'])).status, 0);
     assert.deepEqual(records(repo.root).map((each) => [each['attempt'], each['firstPass']]), [[1, true], [2, false]]);
+  });
+
+  test('git merge temp files left at the root are removed when the merge is made, so they do not dirty the checkout', async () => {
+    const repo = scratch('flow-merge-temps', [{ name: 'first', run: 'node gate.mjs first' }]);
+    branch(repo.root, 'feature/one', { 'work/a.txt': 'x\n' });
+    git(repo.root, 'checkout', '--quiet', 'main');
+    writeFileSync(join(repo.root, '.merge_file_a1B2c3'), 'left by a git that was stopped');
+
+    const result = await repo.run(['feature/one']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /removed 1 stray git merge temp file at the root: \.merge_file_a1B2c3/);
+    assert.equal(existsSync(join(repo.root, '.merge_file_a1B2c3')), false);
+  });
+
+  test('--rerun time-ratchet judges the merge\'s timing records again, and runs no gate of the plan', async () => {
+    const ratchet = [
+      "import { existsSync, appendFileSync } from 'node:fs';",
+      "appendFileSync('local/ratchet-asked.txt', `${process.argv.slice(2).join(' ')}\\n`);",
+      "if (existsSync('local/slow.flag')) { console.log('time-ratchet: A.Slow took 9000 ms, longer than its listed 1000 ms'); process.exit(1); }",
+      "console.log('time-ratchet: clean');",
+    ].join('\n');
+    const repo = scratch('flow-ratchet-rerun', [{ name: 'first', run: 'node gate.mjs first' }], { 'tools/time-ratchet.mjs': `${ratchet}\n` });
+    branch(repo.root, 'feature/one', { 'work/a.txt': 'x\n' });
+    git(repo.root, 'checkout', '--quiet', 'main');
+    mkdirSync(join(repo.root, 'local'), { recursive: true });
+    writeFileSync(join(repo.root, 'local', 'slow.flag'), '');
+
+    let result = await repo.run(['feature/one']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /1 gate failed: time-ratchet/);
+    assert.deepEqual(repo.ran(), ['first']);
+
+    // Still red: the check ran again and said so.
+    result = await repo.run(['--rerun', 'time-ratchet']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /failed: time-ratchet/);
+
+    rmSync(join(repo.root, 'local', 'slow.flag'));
+    result = await repo.run(['--rerun', 'time-ratchet']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran(), ['first'], 'the gate that passed is kept, not run again');
+    assert.match(result.out, /kept\s+first\s+PASS/);
+    const asked = readFileSync(join(repo.root, 'local', 'ratchet-asked.txt'), 'utf8').split('\n').filter(Boolean).map((line) => Number(line.split(' ')[1]));
+    assert.equal(asked.length, 3);
+    assert.equal(asked[2], asked[0], 'the rerun judges the records since the merge began, as the first judgement did');
   });
 });

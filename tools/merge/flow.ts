@@ -11,6 +11,7 @@ import type { LockInstalls } from './lock-install.ts';
 import { attribute, gateOutcome, mainRedLines, unspecificLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
+import { parseOutcome, type ClassOutcome } from './reached-classify.ts';
 import { overBudgetNote } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
@@ -19,7 +20,7 @@ export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
   failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; classReplay?: ClassReplay; abnormal?: boolean; slowest?: Slow[];
-  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
+  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; classes?: ClassOutcome; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
 
@@ -137,6 +138,13 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   if (trxFiles.length && !result.slowest?.length) {
     result.slowest = trxFiles.flatMap((file) => deps.slowestOf(readFileSync(file, 'utf8'))).sort((a, b) => b.ms - a.ms).slice(0, 5);
   }
+  const outcome = result.log && existsSync(result.log) ? parseOutcome(readFileSync(result.log, 'utf8')) : null;
+  if (outcome) {
+    result.classes = outcome;
+    if (result.verdict === 'PASS' && outcome.flaked.length) {
+      Object.assign(result, { verdict: 'FLAKE', flakes: outcome.flaked, note: `${outcome.flaked.length} class(es) failed and passed alone: ${outcome.flaked.join(', ')}; ${result.note}`.replace(/; $/, '') });
+    }
+  }
   if (result.verdict === 'PASS' && tree) deps.ledger.passed(gate.name, tree, gate.run);
   if (result.verdict === 'FAIL' && !result.abnormal) result.failures = deps.failuresOf(where, result, trxFiles[0] ?? null);
 
@@ -160,6 +168,7 @@ export function verdictExtras(result: GateResult): { key?: VerdictKey; signature
 const gateRecord = (result: GateResult): GateRecord => ({
   name: result.gate.name, verdict: result.verdict, ms: result.ms ?? 0, replayed: result.replayed !== undefined, mainRed: result.mainRed === true,
   abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [], flakes: result.flakes ?? [],
+  ...(result.classes ? { classes: { ran: result.classes.ran, replayed: result.classes.replayed, flaked: result.classes.flaked.length, mainRed: result.classes.mainRed.length, red: result.classes.red.length } } : {}),
 });
 
 /**

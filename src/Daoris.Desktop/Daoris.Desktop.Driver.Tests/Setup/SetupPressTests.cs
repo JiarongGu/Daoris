@@ -341,6 +341,17 @@ public sealed class SetupPressTests : IDisposable
     }
 
     [Fact]
+    public async Task A_repository_nothing_else_reads_yet_is_asked_in_place_and_one_with_work_keeps_the_refusal()
+    {
+        var fresh = await PlanAsync(new World { Apart = ["billing"], Untouched = ["reports"] });
+        var worked = await PlanAsync(new World { Apart = ["billing"] });
+
+        Assert.Empty(fresh.Refusals);
+        Assert.True(fresh.Pressable);
+        Refused(worked, SetupRefusals.NoOwnTree, "*Work apart*");
+    }
+
+    [Fact]
     public async Task A_line_with_no_history_is_refused_with_what_git_said()
     {
         var plan = await PlanAsync(new World { Line = new LineReading(null, "its line `main` names no commit here") });
@@ -569,6 +580,11 @@ public sealed class SetupPressTests : IDisposable
 
         public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) =>
             Apart.Contains(repository.Repository, StringComparer.OrdinalIgnoreCase) ? IsolateStep.Trees : null;
+
+        public IReadOnlyList<string> Untouched { get; init; } = [];
+
+        public Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) =>
+            Task.FromResult(Untouched.Contains(repository.Repository, StringComparer.OrdinalIgnoreCase));
 
         public LayoutFacts Facts { get; init; } = new LayoutReaderTests.Scratch().File("README.md", "# Reports\n").Read();
 
