@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
+
+> **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.
+
 ## DELIVERY1 row a — deployables declared, release targets named by their deployable, read-only release discovery (2026-11-13, D290)
 
 > **DELIVERY1 a** (service, driver, examples): Outcome: a repository declares its deployables in `daoris.json`; the Azure DevOps plugin's release target names its deployable and `deploysOn`, and its read-only `discover-releases` lists the definitions, stages and actions a deployable could release through and proposes `deploysOn` without choosing (4.1.0); `daoris repository deployables <repository>` shows them. The plugin tools' process test, red on main since integration B made a status read exit 0, fixed in the merge. Merged in `eb23c11ebd`; the run-time check and the registry's deployables are left on the row.
