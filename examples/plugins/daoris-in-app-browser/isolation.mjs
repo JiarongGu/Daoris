@@ -23,10 +23,25 @@ export function isIsolated(setting, { client, role }) {
     || (entry.startsWith('role:') ? taken !== undefined && entry === `role:${taken}` : name !== undefined && name.startsWith(entry)));
 }
 
+/** The person's pages once the list has stopped growing: a host announces its tabs a little after the connection is made. */
+async function settledPages(person, { quiet = 200, limit = 1500 } = {}) {
+  const deadline = Date.now() + limit;
+  let count = person.pages().length;
+  let since = Date.now();
+  while (Date.now() < deadline && Date.now() - since < quiet) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+    if (person.pages().length !== count) {
+      count = person.pages().length;
+      since = Date.now();
+    }
+  }
+  return person.pages();
+}
+
 /** The localStorage of each origin the person has a page open on, as a context's storage state holds it. */
 async function openOrigins(person) {
   const origins = new Map();
-  for (const page of person.pages()) {
+  for (const page of await settledPages(person)) {
     let origin;
     try {
       const url = new URL(page.url());

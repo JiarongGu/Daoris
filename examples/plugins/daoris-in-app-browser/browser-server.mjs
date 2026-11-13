@@ -5,7 +5,9 @@ import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:f
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { holdOthers } from './hold-others.mjs';
 import { chooseContext } from './isolation.mjs';
+import { startRelay } from './relay.mjs';
 
 const PLAYWRIGHT_MCP = '@playwright/mcp@0.0.82';
 
@@ -17,7 +19,7 @@ export function readArguments(argv) {
 }
 
 /** The pinned Playwright MCP, installed once under the plugin's data folder and resolved from there. */
-function loadPackages(dataFolder) {
+export function loadPackages(dataFolder) {
   const runtime = join(dataFolder, 'runtime');
   const marker = join(runtime, 'node_modules', '@playwright', 'mcp', 'package.json');
   if (!existsSync(marker)) {
@@ -42,7 +44,15 @@ function loadPackages(dataFolder) {
     createConnection: require('@playwright/mcp').createConnection,
     chromium: require('playwright-core').chromium,
     StdioServerTransport: require('playwright-core/lib/utilsBundle').StdioServerTransport,
+    ws: { WebSocket: require('playwright-core/lib/utilsBundle').ws, WebSocketServer: require('playwright-core/lib/utilsBundle').wsServer },
   };
+}
+
+/** The browser's DevTools socket for an endpoint given as that socket or as the browser's HTTP address. */
+async function socketOf(endpoint) {
+  if (/^wss?:/i.test(endpoint)) return endpoint;
+  const version = await (await fetch(new URL('/json/version', endpoint))).json();
+  return version.webSocketDebuggerUrl;
 }
 
 async function main() {
@@ -50,13 +60,17 @@ async function main() {
   const endpoint = options['cdp-endpoint'];
   const dataFolder = options.data;
   if (!endpoint || !dataFolder) throw new Error('usage: browser-server.mjs --cdp-endpoint <url> --data <folder> [--output-dir <folder>]');
-  const { createConnection, chromium, StdioServerTransport } = loadPackages(dataFolder);
+  const { createConnection, chromium, StdioServerTransport, ws } = loadPackages(dataFolder);
 
   let browser;
+  let relay;
   let chosen;
   let server;
   const contextOfSession = async () => {
-    browser ??= await chromium.connectOverCDP(endpoint);
+    if (!browser) {
+      relay = await startRelay({ upstream: await socketOf(endpoint), ws, filter: send => holdOthers(send) });
+      browser = await chromium.connectOverCDP(relay.url);
+    }
     const client = server?.getClientVersion?.();
     chosen = await chooseContext(browser, dataFolder, { client: client?.name, role: process.env.DAORIS_SESSION_ROLE });
     return chosen.context;
@@ -69,6 +83,7 @@ async function main() {
     await chosen?.end().catch(() => {});
     // Disconnecting never closes the person's browser: only what this session made goes with it.
     await browser?.close().catch(() => {});
+    await relay?.close().catch(() => {});
   })().finally(() => process.exit(0));
   process.stdin.on('end', end);
   process.on('SIGTERM', end);

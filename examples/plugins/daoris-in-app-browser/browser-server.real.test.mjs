@@ -9,6 +9,8 @@ import { createServer } from 'node:http';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadPackages } from './browser-server.mjs';
+import { startRelay } from './relay.mjs';
 
 const hosts = [
   {
@@ -89,10 +91,30 @@ function session(endpoint, data, client) {
   };
 }
 
-for (const host of hosts) {
-test(`on ${host.name}, sessions share the person's context through tabs of their own, and an isolated agent gets a context of its own`, { skip: !host.executable, timeout: 240_000 }, async () => {
-  const folder = join(scratch, host.name.startsWith('Daoris') ? 'host' : 'chromium');
-  rmSync(folder, { recursive: true, force: true });
+/** A host that announces each target of the default context as `other` first and as a page 60 ms later, as the installed Daoris browser does. */
+const announcesAsOther = send => {
+  const made = new Set();
+  return text => {
+  if (text.includes('"result"') && text.includes('"browserContextId"')) made.add(JSON.parse(text).result?.browserContextId);
+  if (!text.includes('"Target.attachedToTarget"')) return send(text);
+  const message = JSON.parse(text);
+  const info = message.params.targetInfo;
+  if (info.type !== 'page' || made.has(info.browserContextId)) return send(text);
+  message.params.targetInfo = { ...info, type: 'other' };
+  send(JSON.stringify(message));
+  setTimeout(() => send(JSON.stringify({ method: 'Target.targetInfoChanged', params: { targetInfo: info } })), 60);
+  };
+};
+
+const announcements = [
+  { label: '', front: null },
+  { label: ' that announces a new tab as other first', front: announcesAsOther },
+];
+
+for (const host of hosts) for (const announcement of announcements) {
+test(`on ${host.name}${announcement.label}, sessions share the person's context through tabs of their own, and an isolated agent gets a context of its own`, { skip: !host.executable, timeout: 240_000 }, async () => {
+  const folder = join(scratch, `${host.name.startsWith('Daoris') ? 'host' : 'chromium'}${announcement.front ? '-other' : ''}`);
+  rmSync(folder, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
   mkdirSync(join(folder, 'home'), { recursive: true });
   mkdirSync(join(scratch, 'data'), { recursive: true });
   const data = join(scratch, 'data');
@@ -102,12 +124,19 @@ test(`on ${host.name}, sessions share the person's context through tabs of their
   const port = 19000 + Math.floor(Math.random() * 3000);
   const browser = spawn(host.executable, host.command(port, join(folder, 'profile')), { stdio: 'ignore', env: { ...process.env, ...host.environment(folder) } });
   const sessions = [];
+  let front;
   try {
     await until(async () => fetch(`http://127.0.0.1:${port}/json/version`).then(r => r.ok, () => false), 'the browser listens');
     await fetch(`http://127.0.0.1:${port}/json/new?${origin}/?set=who=person`, { method: 'PUT' });
     await until(async () => (await targets(port)).some(t => t.url.includes('set=who')), "the person's tab");
     const personTab = (await targets(port)).find(t => t.url.includes('set=who'));
-    const endpoint = `http://127.0.0.1:${port}`;
+    let endpoint = `http://127.0.0.1:${port}`;
+    if (announcement.front) {
+      const { ws } = loadPackages(data);
+      const upstream = (await (await fetch(`${endpoint}/json/version`)).json()).webSocketDebuggerUrl;
+      front = await startRelay({ upstream, ws, filter: announcement.front });
+      endpoint = front.url;
+    }
 
     const first = session(endpoint, data, 'claude-code');
     const second = session(endpoint, data, 'claude-code');
@@ -145,6 +174,7 @@ test(`on ${host.name}, sessions share the person's context through tabs of their
     for (const open of sessions) open.child.kill();
     if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], { stdio: 'ignore' });
     else browser.kill();
+    await front?.close();
     site.close();
   }
 });
