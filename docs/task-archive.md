@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TOOLDEFS1 — the tool definitions every session is handed, measured and cut (2026-11-13)
+
+> **TOOLDEFS1** (service connector): Outcome: `McpListingBudgetTests` measures the connector's `tools/list` as served (characters and an estimated token count) against a listing budget and a per-tool budget; the descriptions and parameter text of the quest, opinion, brainstorm, question, channel, memory, search and other tools were cut to what an agent needs to choose and call them, every caller still listed every tool (34 tools, 52,247 to 41,776 characters, about 17,400 to 13,900 tokens). Claude Code's deferred tool loading stays off by D230's choice (its search step is a model round trip before the first move).
+
+---
+
 ## CENSUSCOMPILE1 and CENSUSALONE1 — the census classes' time (2026-11-13)
 
 > **CENSUSCOMPILE1** (driver tests): Outcome: the three say-door censuses and `CheckoutWritersCensusTests` read the desktop sources through one shared reading (`SourceTexts`, `SayDoorSources`) that the desktop compilations use too, finding each file's say calls once; alone `ContinuedReaders`, `SayKeys` and `SettledReaders` fell from 6.4, 7.8 and 10.6 s to under 0.8 s each, their entries left the time ratchet's list, and `CheckoutWriters` lost its per-file comment blanking on files with no git call. The structure case and `ReviewGraphCensusTests` are bound by their own analysis and cases, not by reading, and are listed with their reason.

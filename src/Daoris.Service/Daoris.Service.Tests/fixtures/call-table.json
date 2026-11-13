@@ -10,7 +10,7 @@
     "registry", "review_ready", "review_serve", "system_plan", "team_plan"
   ],
   "columns": [
-    "build", "design", "exact", "chat", "intake", "ask-daoris", "help", "partner", "review", "supervise", "step",
+    "build", "design", "exact", "chat", "intake", "ask-daoris", "help", "partner", "review", "supervise", "step", "plan", "orient",
     "brainstorm:generator", "brainstorm:synthesizer", "unplaced", "unread"
   ]
 }

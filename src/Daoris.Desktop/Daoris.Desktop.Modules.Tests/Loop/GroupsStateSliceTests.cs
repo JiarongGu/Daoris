@@ -163,7 +163,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         var row = new SessionGrouping("s1", SessionGroup.Pending, "completed")
         {
             State = SessionGroup.Pending, Reason = WordsHold.Cooling,
-            Archived = true, Strikes = 2, Awaits = "q9", AwaitsOf = "engine", Work = new TreeWork(3, 1) { Branch = "daoris/s1" }, HoldsQuest = true,
+            Archived = true, Name = "Fix the bridge", Pinned = true, Strikes = 2, Awaits = "q9", AwaitsOf = "engine", Work = new TreeWork(3, 1) { Branch = "daoris/s1" }, HoldsQuest = true,
             PausedBy = new PausedBy(WorkScope.Ask, "a1"), Holds = new WordsHold(WordsHold.Cooling, "its account cools") { Repository = "engine", Until = At, Account = "work", AccountName = "Work" },
             Deletable = true, Lands = new LandOffer("daoris/s1", "s1", 3, 1),
             Discards = new DiscardOffer("daoris/s1", "s1", new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/kept/s1", null)),

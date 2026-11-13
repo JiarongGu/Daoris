@@ -18,7 +18,34 @@ export function AskPlanSection({ plan, onOpenQuest }: { plan: AskPlan; onOpenQue
   return (
     <div className="grid gap-4">
       {plan.plans.map((revision) => <Revision key={revision.scope ?? ''} revision={revision} onOpenQuest={onOpenQuest} />)}
+      <Team plan={plan} />
     </div>
+  );
+}
+
+/** Who is on the team and the choices taken, each once: a member by its role and the part it serves, a decision by its revision and its reason. */
+function Team({ plan }: { plan: AskPlan }) {
+  const { t } = useTranslation();
+  if (plan.team.length === 0 && plan.decisions.length === 0) return null;
+  return (
+    <section className="grid gap-1 text-meta text-ink-faint" aria-label={t('asks.plan.team')}>
+      {plan.team.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0">
+          {plan.team.map((member) => (
+            <li key={`${member.part ?? ''}-${member.role}-${member.session}`} className="wrap-anywhere">
+              {t('asks.plan.member', { role: t(`asks.plan.role.${member.role}`, { defaultValue: member.role }), session: member.session, part: member.part ?? t('asks.plan.wholePlan') })}
+            </li>
+          ))}
+        </ul>
+      )}
+      <ul className="m-0 grid list-none gap-1 p-0">
+        {plan.decisions.map((decided) => (
+          <li key={`${decided.scope ?? ''}-${decided.revision}`} className="wrap-anywhere">
+            {t('asks.plan.decided', { revision: decided.revision, author: decided.author, decision: t(`asks.plan.decision.${decided.decision}`, { defaultValue: decided.decision }) })}: {decided.reason}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -53,6 +80,32 @@ function Revision({ revision, onOpenQuest }: { revision: AskPlanRevision; onOpen
             </li>
           ))}
         </ul>
+      )}
+      {revision.releases.length > 0 && (
+        <ul className="m-0 grid list-none gap-1 p-0 text-meta text-ink-faint">
+          {revision.releases.map((release) => (
+            <li key={`${release.deployable}-${release.source}-${release.on}`} className="flex min-w-0 flex-wrap items-baseline gap-x-2 wrap-anywhere">
+              <span>{t('asks.plan.release', { deployable: release.deployable, on: release.on })}: {release.why}</span>
+              <Pill tone={release.source === 'policy' ? 'warn' : 'neutral'}>{t(`asks.plan.source.${release.source}`, { defaultValue: release.source })}</Pill>
+              {release.evidence && <span>{t('asks.plan.evidence', { where: release.evidence })}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {revision.questions.length > 0 && (
+        <section className="grid gap-1" aria-label={t('asks.plan.questions')}>
+          <p className="m-0 text-meta text-ink-faint">{t('asks.plan.questions')}</p>
+          <ul className="m-0 grid list-none gap-1.5 p-0">
+            {revision.questions.map((question) => (
+              <li key={question.key} className="grid min-w-0 gap-0.5 text-meta">
+                <span className="wrap-anywhere text-body text-ink">{question.text}</span>
+                {question.yes && <span className="text-ink-faint">{t('asks.plan.question.yes', { text: question.yes })}</span>}
+                {question.blocks && <span className="text-ink-faint">{t('asks.plan.question.blocks', { text: question.blocks })}</span>}
+                {question.default && <span className="text-ink-faint">{t('asks.plan.question.default', { text: question.default })}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       {revision.flags.length > 0 && (
         <ul className="m-0 grid list-none gap-1 p-0">

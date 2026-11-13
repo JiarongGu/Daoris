@@ -39,7 +39,8 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
         routes.Map<ReadAskPlan, AskPlanResponse>(async (request, _, ct) =>
         {
             var (plans, rows) = await Service.Teams.ReadAsync(request.Id, ct);
-            return TeamAnswers.Plan(request.Id, plans, rows);
+            var (members, decisions) = await Service.Teams.TeamAsync(request.Id, ct);
+            return TeamAnswers.Plan(request.Id, plans, rows, members, decisions);
         });
         routes.Map<ReadAskChannel, ChannelResponse>(ReadChannelAsync);
         routes.Map<ListElsewhereAsks, ElsewhereAsksResponse>(async (_, _, ct) =>

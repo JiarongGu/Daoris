@@ -90,7 +90,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     {
         var exchange = new QuestExchange(_service, _quests, files: _files);
         var teams = new TeamDesk(
-            await TeamStore.OpenAsync(_connection), new AskDesk(_service, await AskStore.OpenAsync(_connection), exchange, _files),
+            await TeamStore.OpenAsync(_connection), await TeamLedger.OpenAsync(_connection), new AskDesk(_service, await AskStore.OpenAsync(_connection), exchange, _files),
             (_, _) => Task.FromResult(TeamPathPolicy.None));
         using var host = Host(services => services
             .AddSingleton(_service)

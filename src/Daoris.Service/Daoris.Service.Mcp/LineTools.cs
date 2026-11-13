@@ -3,8 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// A session's line, read back a page at a time (the session-context design §3.5): a session that continues another (a
+/// <summary>A session's line, read back a page at a time (the session-context design §3.5): a session that continues another (a
 /// hand-over, an account move, a carry-on, a fallback) is handed Daoris's brief of its line, bounded, and what the bound left out is
 /// read here from this machine's event files. Only for the session its connector names, and only the parts of that session's line.
 /// </summary>
@@ -16,19 +15,17 @@ public sealed class LineTools(IntakeScope? intake = null, SessionLedger? ledger 
 {
     [McpServerTool(Name = "line_read")]
     [Description(
-        "Read what the earlier parts of this session said and did, when the brief Daoris handed you left something out, or you need a "
-        + "word, an answer, a tool call or a plan it did not carry whole. This session's line is the sessions it continues (by a "
-        + "hand-over, an account move, a carry-on or a fallback) and itself; each is a part, named by its id. Read-only: it reads "
-        + "Daoris's record of those parts on this machine, never over the network, and refuses any other session's record. A page is "
-        + "a part's newest entries, or those before a number a page named, oldest first: the person's words, the agent's messages, "
-        + "tool calls, plans, turns' ends and Daoris's notes, never the agent's thoughts. An answer is bounded and says where to read on.")]
+        "Read what the earlier parts of this session said and did, when the brief Daoris handed you left something out. This "
+        + "session's line is the sessions it continues and itself, each a part named by its id. Read-only: it reads Daoris's record "
+        + "on this machine, never over the network, and refuses any other session's record. A page is a part's newest entries "
+        + "(or those before a number a page named), oldest first: the person's words, the agent's messages, tool calls, plans and "
+        + "Daoris's notes, never the agent's thoughts. An answer says where to read on.")]
     public async Task<string> ReadAsync(
-        [Description("Optional: the id of a part of this session's line, as an answer lists them. Left out, the part this session "
-            + "continues, or this session itself where it continues none.")]
+        [Description("The id of a part of this session's line, as an answer lists them. Omit for the part this session continues.")]
         string? part = null,
-        [Description("Optional: read the entries before this number, as an answer names it, to page back. Left out, the part's newest.")]
+        [Description("Read the entries before this number, to page back. Omit for the newest.")]
         long? before = null,
-        [Description("Optional: at most this many entries, from 1 to 200. Left out, 50.")] int? limit = null,
+        [Description("At most this many entries, 1 to 200; default 50.")] int? limit = null,
         CancellationToken ct = default)
     {
         var reader = lines ?? LineEvents.FromEnvironment();

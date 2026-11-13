@@ -1,0 +1,22 @@
+namespace Daoris.Knowledge;
+
+/// <summary>A plan's delivery as a caller reads it: each release order with its reason and its evidence, the stale ones named, then the questions the person is asked.</summary>
+public static class DeliveryReading
+{
+    /// <summary>One line per release order and per question; nothing for a plan with no deployables.</summary>
+    /// <param name="seen">The blob each evidence place holds now, where the caller read it: an edge whose evidence differs is named stale.</param>
+    public static IEnumerable<string> Lines(TeamPlan plan, IReadOnlyDictionary<string, string> seen)
+    {
+        var stale = DeliveryGraph.Stale(plan.Releases, seen);
+        foreach (var edge in plan.Releases)
+        {
+            var cited = edge.Evidence is { } evidence ? $" ({edge.Source}: {evidence.Repository} `{evidence.File}`{(evidence.Range.Length > 0 ? $":{evidence.Range}" : "")} at {evidence.Blob})" : $" ({edge.Source})";
+            yield return $"- release `{edge.Deployable}` after `{edge.On}`: {edge.Why}{cited}{(stale.Contains(edge) ? " STALE: its evidence moved; confirm or drop it." : "")}";
+        }
+
+        foreach (var question in DeliveryGraph.Queue(plan.Questions, plan.Releases, seen))
+        {
+            yield return $"- question `{question.Key}` ({question.Kind}) for the person: {question.Text}";
+        }
+    }
+}

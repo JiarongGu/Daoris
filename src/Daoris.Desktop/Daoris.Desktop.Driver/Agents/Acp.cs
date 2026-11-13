@@ -221,7 +221,14 @@ public sealed class AcpSession(
     /// </summary>
     public AcpUsage? Usage => TurnStages.Of<AcpMeasure>().Usage;
 
-    /// <summary>Told when the harness compacted the session's context, read from its counter falling (<see cref="ContextDrop"/>).</summary>
+    /// <summary>Whether the harness reports its compactions as an event (<see cref="AcpCompaction"/>) rather than leaving the counter to say it.</summary>
+    public bool CompactionNamed
+    {
+        get => TurnStages.Of<AcpMeasure>().CompactionNamed;
+        set => TurnStages.Of<AcpMeasure>().CompactionNamed = value;
+    }
+
+    /// <summary>Told when the harness compacted the session's context: its event where it names one, else its counter falling (<see cref="ContextDrop"/>).</summary>
     public event Action Compacted
     {
         add => TurnStages.Of<AcpMeasure>().Compacted += value;

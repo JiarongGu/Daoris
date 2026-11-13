@@ -2695,6 +2695,8 @@
         "  brainstorm    Brainstorm · takes brainstorm on the machine · its staffing's order (the seed)",
         "  ask-daoris    Ask Daoris · takes ask-daoris on the machine · its staffing's order (the seed)",
         "  chat          Chat · takes chat on the machine · its staffing's order (the seed)",
+        "  lead          Lead · takes plan on the machine · its staffing's order (the seed)",
+        "  scout         Scout · takes orient on the machine · its staffing's order (the seed)",
         "  supervisor    Supervisor · holds question.answer, course.go-on, limit.move on the machine · held by your rules · answers held 5 minutes for your overrule (the seed)",
         "  second-check  Second check · holds ask-daoris.report on the machine · held by your rules · answers held 5 minutes for your overrule (the seed)",
         "  steward       Steward · holds drive, undrive, hold, resume, stop, finish, retry on the machine · held by no one (the seed)",

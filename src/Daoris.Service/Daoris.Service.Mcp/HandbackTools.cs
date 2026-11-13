@@ -4,8 +4,7 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// One quest's handback, read whole: the note its session closed it with through <c>quest_respond</c>, by the quest's id
+/// <summary>One quest's handback, read whole: the note its session closed it with through <c>quest_respond</c>, by the quest's id
 /// or the id of the session that served it, in any state, from this session's workspace as <c>quest_list</c> scopes it. The steward
 /// that archives a closed row reads its handback here, and another session reads what a sibling did. Read-only; the words are
 /// <see cref="HandbackReader"/>'s, which every door answers.</summary>
@@ -17,11 +16,9 @@ public sealed class HandbackTools(QuestStore quests, WorkspaceScope circle, Sess
 {
     [McpServerTool(Name = "handback_read")]
     [Description(
-        "Read one quest's handback whole: the note its session closed it with (done, ready or declined), how it answered each of the "
-        + "person's requirements, when, and which session wrote it. Give a quest's id, or a session's id for the quest that session "
-        + "served. It answers in any state, open or closed, for any quest of this workspace, as quest_list does: read it to check or "
-        + "archive finished work, rather than the whole list. Read-only. A handback is its session's claim: check what it names before "
-        + "you rely on it.")]
+        "Read one quest's handback whole: its closing note, how it answered each requirement, when, and which session wrote it. "
+        + "Give a quest's id, or a session's id. It answers for any quest of this workspace, open or closed, as quest_list does. "
+        + "Read-only. A handback is its session's claim: check what it names before you rely on it.")]
     public async Task<string> ReadAsync(
         [Description("A quest's id, from quest_list, or the id of a session, for the quest it served.")] string id,
         [Description(WorkspaceArgument)] string? workspace = null,

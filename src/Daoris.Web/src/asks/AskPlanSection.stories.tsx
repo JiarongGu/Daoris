@@ -22,6 +22,12 @@ const PLAN: AskPlan = {
       ],
       edges: [{ part: 'page', on: 'keel', kind: 'after', why: 'The page reads the contract the keel lands.' }],
       flags: [{ kind: 'claim-record', part: 'docs', text: '`docs` claims `TASKS.md`, a record: the integrator writes it from the part’s intents, so the claim is dropped.' }],
+      releases: [
+        { deployable: 'media-web/settings-page', on: 'media-api/config-api', why: '`settings-page` calls what `config-api` owns.', source: 'code-read', evidence: 'media-web: src/settings/client.ts:10-24' },
+        { deployable: 'media-api/config-api', on: 'media-api/config-migration', why: '`config-api` reads `config-schema`, which `config-migration` migrates.', source: 'declaration', evidence: 'media-api: daoris.json' },
+        { deployable: 'media-web/docs-site', on: 'media-web/settings-page', why: 'The owner releases the page first.', source: 'policy', evidence: null },
+      ],
+      questions: [{ key: 'contract:viewers', kind: 'open', text: 'Do viewers or only admins see candidate versions?', yes: 'Viewers see them.', blocks: 'The contract.', default: 'Admins only.' }],
     },
     {
       scope: 'page', revision: 1, depth: 2, why: 'The page is two splits of my own.',
@@ -29,8 +35,16 @@ const PLAN: AskPlan = {
         { id: 'page.form', repository: 'media-web', quest: 'c41e77', outcome: 'The field is editable.', lanes: ['web'], claims: [] },
         { id: 'page.read', repository: 'media-web', quest: 'd9a0b2', outcome: 'The field is listed read-only.', lanes: ['web'], claims: [] },
       ],
-      edges: [], flags: [],
+      edges: [], flags: [], releases: [], questions: [],
     },
+  ],
+  team: [
+    { part: null, role: 'lead', session: 'a1b2c3', revision: 2 },
+    { part: 'page', role: 'lead', session: 'd4e5f6', revision: 1 },
+  ],
+  decisions: [
+    { scope: null, revision: 1, decision: 'planned', reason: 'Two repositories, so one part each.', author: 'a1b2c3', act: 'keel #3f9a1c, page #8b20d4' },
+    { scope: null, revision: 2, decision: 'revised', reason: 'The docs part is its own, since the guide is read apart.', author: 'a1b2c3', act: 'docs unpublished' },
   ],
 };
 

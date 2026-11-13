@@ -7,8 +7,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// The tools that read the index: <c>knowledge_search</c>, <c>knowledge_get</c>, <c>knowledge_repositories</c>,
-/// <c>knowledge_convergence</c>, <c>registry</c> and <c>knowledge_refresh</c>, over the service and the workspace scope.
-/// How every tool's words are written is said on <see cref="KnowledgeServer"/>.
+/// <c>knowledge_convergence</c>, <c>registry</c> and <c>knowledge_refresh</c>. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
 [McpServerToolType]
 public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScope circle)
@@ -45,13 +44,11 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
 
     [McpServerTool(Name = "knowledge_search")]
     [Description(
-        "Search engineering knowledge across every repository in this family: decisions and their "
-        + "reasoning, recorded fixes and root causes, completed task outcomes, rules and skills, and "
-        + "where things are, from each repository's own index of where things are. "
-        + "Use it before solving a problem that another repository may already have solved, to "
-        + "find out why something was done the way it was, or to find where something is before searching "
-        + "the files. Each hit names its file and lines, so read those lines rather than the file. A question about how "
-        + "something works now answers the present first; a row id, a decision number, why or when asks history too.")]
+        "Search engineering knowledge across every repository in this family: decisions, fixes, completed task outcomes, rules, "
+        + "skills, and where things are (each repository's own index). Use it before solving a problem another repository may have "
+        + "solved, to learn why something was done, or to find where something is before searching the files. Each hit names its "
+        + "file and lines: read those lines, not the file. A question about how something works now answers the present first; a "
+        + "row id, a decision number, why or when asks history too.")]
     public async Task<string> SearchAsync(
         [Description("What to look for, in plain words.")] string query,
         [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task, index, record (a finished session's tree: its "
@@ -59,7 +56,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         string? kinds = null,
         [Description("Restrict to repositories by name. Comma-separated; omit for all.")]
         string? repositories = null,
-        [Description("Only this repository's own knowledge, excluding canonical doctrine installed everywhere. Default true, because canonical content is identical in every repository and rarely what a cross-repository search is for.")]
+        [Description("Only this repository's own knowledge, excluding the canonical doctrine installed everywhere. Default true.")]
         bool localOnly = true,
         [Description("Maximum results. Default 10.")] int limit = 10,
         [Description(WorkspaceArgument)] string? workspace = null,
@@ -231,10 +228,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
 
     [McpServerTool(Name = "knowledge_convergence")]
     [Description(
-        "Find where different repositories learned the SAME lesson independently, including when they "
-        + "wrote it in completely different words. Use when deciding what should become shared "
-        + "doctrine, or before writing a rule that another repository may already have. Works "
-        + "without a model; an embedding endpoint additionally finds different-wording matches.")]
+        "Find where different repositories learned the SAME lesson independently, even in different words. Use when deciding what "
+        + "should become shared doctrine, or before writing a rule another repository may already have.")]
     public async Task<string> ConvergenceAsync(
         [Description("How similar a pair must be, 0 to 1. Higher is stricter. Default 0.82.")]
         double minimumSimilarity = 0.82,
@@ -305,9 +300,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
 
     [McpServerTool(Name = "registry")]
     [Description(
-        "Who is in this family, what each repository owns, and what kind of quest is worth addressing "
-        + "to it. Use it BEFORE publishing a quest, and whenever a problem might belong to someone "
-        + "else — search answers 'has anyone solved this', this answers 'whose problem is this'.")]
+        "Who is in this family, what each repository owns, and what is worth addressing to it. Use it BEFORE publishing a quest, "
+        + "and whenever a problem might belong to someone else.")]
     public async Task<string> RegistryAsync(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)

@@ -13,18 +13,47 @@ public static class TeamPathPolicies
         var registered = (await service.RegistryAsync(ct: ct).ConfigureAwait(false))
             .FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase));
         if (registered?.Root is not { Length: > 0 } root) return TeamPathPolicy.None;
-        var manifest = Path.Combine(root, "daoris.json");
-        if (!File.Exists(manifest)) return TeamPathPolicy.None;
         try
         {
-            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(manifest, ct).ConfigureAwait(false));
-            return Read(document.RootElement);
+            var records = TeamPathPolicy.None;
+            var manifest = Path.Combine(root, "daoris.json");
+            if (File.Exists(manifest))
+            {
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(manifest, ct).ConfigureAwait(false));
+                records = Read(document.RootElement);
+            }
+
+            var attributes = Path.Combine(root, ".gitattributes");
+            var generated = File.Exists(attributes) ? GeneratedIn(await File.ReadAllTextAsync(attributes, ct).ConfigureAwait(false)) : [];
+            return records with { Generated = generated };
         }
         catch (Exception unreadable) when (unreadable is JsonException or IOException or UnauthorizedAccessException)
         {
             return TeamPathPolicy.None;
         }
     }
+
+    /// <summary>The paths a <c>.gitattributes</c> marks <c>linguist-generated</c>; a wildcard with no slash, which git matches at any depth, names no path and is read as nothing.</summary>
+    internal static IReadOnlyList<string> GeneratedIn(string attributes)
+    {
+        var paths = new List<string>();
+        foreach (var raw in attributes.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0 || line[0] == '#') continue;
+            var fields = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            var marked = fields.Skip(1).LastOrDefault(field => field.TrimStart('-').StartsWith(Generated, StringComparison.Ordinal)
+                && (field.Length == Generated.Length || field.StartsWith(Generated + "=", StringComparison.Ordinal) || field[0] == '-'));
+            if (marked is not { } mark || mark[0] == '-' || mark.EndsWith("=false", StringComparison.Ordinal)) continue;
+            var path = fields[0].TrimStart('/');
+            if (path.IndexOfAny(['*', '?', '[']) >= 0 && !fields[0].Contains('/')) continue;
+            if (QuestPaths.Fits(path)) paths.Add(path);
+        }
+
+        return paths;
+    }
+
+    private const string Generated = "linguist-generated";
 
     /// <summary>The records a manifest's <c>documents</c> declare: each file's path, and the areas folder as everything under it.</summary>
     internal static TeamPathPolicy Read(JsonElement manifest)

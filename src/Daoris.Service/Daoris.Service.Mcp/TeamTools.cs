@@ -16,20 +16,25 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
 {
     [McpServerTool(Name = "team_plan")]
     [Description(
-        "Read or write the plan of an ask: its parts, the edges between them and what each part's worker is handed. Leave `parts` out to "
-        + "read the plan, its flags and each part's quest. Give `parts` to write the next revision whole: each part is a feature a person "
-        + "can see working, in one repository and lane, with its claims (path globs it will change), its proof and its pack; each becomes a quest "
-        + "under its id, so writing a part again returns its quest and a reworded part changes nothing already published. An edge is `after` "
-        + "(a build dependency) or `orders` (a landing order only), each with its reason. A cycle, an edge to a part nobody wrote, and a "
-        + "claim on a record or a generated output are saved with a flag, never refused; the integrator writes records and generated files. "
-        + "A worker serving a part writes the split of its own part, one level down, with itself as lead. One part is a valid plan.")]
+        "Read or write the plan of an ask. Leave `parts` out to read the plan, its flags and each part's quest. Give `parts` to write the "
+        + "next revision whole: each part is a feature a person can see working, in one repository and lane, with its claims (path globs it "
+        + "will change), proof and pack; each becomes a quest under its id, so writing a part again returns its quest. An edge is `after` "
+        + "(a build dependency) or `orders` (a landing order only), with its reason. A cycle, an edge to a part nobody wrote, and a claim on a "
+        + "record or a generated output are saved with a flag, never refused; the integrator writes records and generated files. A worker "
+        + "serving a part splits its own part, one level down, as its lead. One part is a valid plan.")]
     public async Task<string> PlanAsync(
         [Description("The ask, where this session does not answer one or serve a part of one.")] string? ask = null,
-        [Description("The parts of the next revision, whole: id, repository, title, body, outcome, and optionally lanes, weight, requirements, claims, reads, proof, pack.")]
+        [Description("The parts of the next revision, whole.")]
         TeamPart[]? parts = null,
-        [Description("The edges: part, on, kind (`after` or `orders`), milestone (oriented, submitted or landed) and why.")]
+        [Description("The edges: `kind` is `after` or `orders`; `milestone` is oriented, submitted or landed.")]
         TeamEdge[]? edges = null,
         [Description("One paragraph: why these parts, and what changed since the last revision. Needed with `parts`.")] string? why = null,
+        [Description("Across repositories: what each releases, from its `deployables` (`daoris repository deployables`). The judge orders them: a `mirror` or `reads` of what another provides is a release order.")]
+        DeliveryDeployable[]? deployables = null,
+        [Description("Release orders you read beyond the declarations: `source` is `stage-condition`, `contract` or `code-read` (with `evidence`), or `policy`/`person`. No evidence is `policy`.")]
+        DeliveryEdge[]? releases = null,
+        [Description("What only the person can settle about the delivery, each under a stable `key` so it is asked once.")]
+        DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
         [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale.")]
@@ -47,12 +52,15 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         if (parts is null or { Length: 0 })
         {
             var (plans, rows) = await teams.ReadAsync(target, ct).ConfigureAwait(false);
-            return json == true ? TeamPlanReading.Json(target, plans, rows) : TeamPlanReading.Of(target, plans, rows, seen ?? []);
+            if (json == true) return TeamPlanReading.Json(target, plans, rows);
+            var (members, decisions) = await teams.TeamAsync(target, ct).ConfigureAwait(false);
+            return TeamPlanReading.Of(target, plans, rows, seen ?? [], members, decisions);
         }
 
         var save = new TeamSave(target, parts, edges ?? [], why ?? "")
         {
             Scope = scope?.Scope, Expect = revision ?? 0, By = session, Base = baseCommit,
+            Deployables = deployables ?? [], Releases = releases ?? [], Questions = questions ?? [],
         };
         return (await teams.SaveAsync(save, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Message;
     }

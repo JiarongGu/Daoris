@@ -13,15 +13,21 @@ internal static class ChatOpenTold
     internal const int Shown = 10;
 
     /// <summary>The words for the newest earlier conversation of <paramref name="workspace"/>; null where it left no request open.</summary>
-    public static async Task<string?> ToldAsync(ServiceClient service, string home, string workspace, string record, CancellationToken ct)
+    public static async Task<string?> ToldAsync(
+        ServiceClient service, string home, string workspace, string record, CancellationToken ct,
+        Func<IReadOnlyDictionary<string, PriorSession>, string, Task<IReadOnlyList<BriefWait>>>? waits = null)
     {
         var json = await LineCountsRead.RecordsJsonAsync(service, ct).ConfigureAwait(false);
         if (json is null) return null;
         var records = ServiceClient.ReadRecords(json);
         var last = Last(records.Values, workspace, record);
         if (last is null) return null;
-        return Of(last.Session, await ContextWorkOrders.Current.WaitsAsync(service, home, records, last.Session, ct).ConfigureAwait(false));
+        return Of(last.Session, await (waits?.Invoke(records, last.Session) ?? OpenAsync(service, home, records, last.Session, ct)).ConfigureAwait(false));
     }
+
+    internal static Task<IReadOnlyList<BriefWait>> OpenAsync(
+        ServiceClient service, string home, IReadOnlyDictionary<string, PriorSession> records, string session, CancellationToken ct) =>
+        ContextWorkOrders.Current.WaitsAsync(service, home, records, session, ct);
 
     /// <summary>The newest conversation of the workspace other than <paramref name="record"/>: a chat of the person's own, no helper's or reviewer's.</summary>
     internal static PriorSession? Last(IEnumerable<PriorSession> records, string workspace, string record) =>
@@ -36,9 +42,15 @@ internal static class ChatOpenTold
     internal static string? Of(string session, IReadOnlyList<BriefWait> open)
     {
         if (open.Count == 0) return null;
-        var text = new StringBuilder(
+        return List(
             $"The conversation before this one, `{session}`, left {(open.Count == 1 ? "a request" : $"{open.Count} requests")} open. "
-            + "File no request again that is among them:");
+            + "File no request again that is among them:", open);
+    }
+
+    /// <summary>The lead and then each open request, as a brief names them, the rest counted.</summary>
+    internal static string List(string lead, IReadOnlyList<BriefWait> open)
+    {
+        var text = new StringBuilder(lead);
         foreach (var wait in open.Take(Shown))
         {
             var asked = wait.Detail is { Length: > 0 } detail ? $": {TextBounds.Clip(TextBounds.OneLine(detail), ContextBrief.StepLimit)}" : "";

@@ -277,6 +277,7 @@ internal sealed class LayerRun(
                 Heard = hold is null ? seat.Heard : hold.Heard,
                 Wrote = Wrote,
                 Outside = Own,
+                Compacted = Hand,
                 Error = Own,
             },
             patience: null, exists);

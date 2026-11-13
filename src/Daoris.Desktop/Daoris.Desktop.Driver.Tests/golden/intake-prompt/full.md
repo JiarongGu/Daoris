@@ -36,9 +36,12 @@ it, a title that says what is wanted, a `shortTitle` of the few words that tell 
 (at most 40 characters, about 20 in Chinese), and a body with the why and the evidence — what the
 ticket says, and what decided the owner (its declaration, or what its own files say), not the change
 you would make. Its agent may decline work that is not its own, and that answer comes back.
-The quest is asked by the ask itself and carries its links and files. Work that needs two
-repositories is a quest to each; a check that should follow the work — in a browser, say — is
-a `then` step on the quest it follows. Where the room lists a repository's lanes and the work is
+The quest is asked by the ask itself and carries its links and files. Work that needs more than one
+repository is a plan, never a chain of quests: write it with `team_plan`, a part for each repository, the
+`deployables` each declares (`daoris repository deployables`), the release orders you can cite evidence
+for, and a `questions` entry for what only the person can settle. The plan orders what the declarations
+show; an order you cannot cite is shown as policy. A check that should follow work in one
+repository — in a browser, say — is a `then` step on the quest it follows. Where the room lists a repository's lanes and the work is
 plainly one lane's, address that lane as `repository:lane` (several as `repository:lane+lane`);
 otherwise address the repository.
 

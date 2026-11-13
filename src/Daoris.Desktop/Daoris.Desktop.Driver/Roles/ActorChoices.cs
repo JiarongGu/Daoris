@@ -45,7 +45,7 @@ public static class ActorChoices
     public static string BuildAgent(DriverConfig config) => ActorKey.FirstAgent("build", config) ?? DefaultAgent;
 
     /// <summary>The seven roles with an order of their own: each holds a written order, never <i>as before</i>.</summary>
-    public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "exact", "chat", "brainstorm", "intake", "ask-daoris"];
+    public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "exact", "chat", "brainstorm", "intake", "ask-daoris", "lead", "scout"];
 
     /// <summary>The model and effort Design runs on where nothing else is set: judgement is its work (<c>docs/model-roles.md</c>, build-judgement).</summary>
     public static ActorChoice DesignSeed { get; } = new(DefaultAgent, "opus", "high");
@@ -60,8 +60,8 @@ public static class ActorChoices
     public static IReadOnlyList<ActorChoice>? Seed(string role) => role switch
     {
         "build" or "chat" or "brainstorm" => [new ActorChoice(DefaultAgent)],
-        "design" => [DesignSeed],
-        "exact" => [ExactSeed],
+        "design" or "lead" => [DesignSeed],
+        "exact" or "scout" => [ExactSeed],
         "intake" or "ask-daoris" => [],
         _ => null,
     };

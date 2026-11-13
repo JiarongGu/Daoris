@@ -93,7 +93,13 @@ of everything it handed, section by section.
 5. A session's events (`<id>.events.jsonl`) and verbatim transcript stay on the machine. No HTTP surface reads them.
    The next event's number, when its record was last written and whether its turn ended are read from the record's end; what
    a part spent is read on from where its last read stopped (`SessionSpentKept`), the whole record again only where it no
-   longer stands as it was read. (from D76)
+   longer stands as it was read. A record over 512 KB has a head in the desktop store (`session_event_heads`, and every 256th
+   event's byte offset in `session_event_offsets`: `SessionEventHeads`): the last number, the turns ended, the opening's and the
+   last plan's place, the first failed call and the answer each word is pressed as. Its newest page or the page before a number,
+   the events after one, its plan, its choices and its turns ended read from the head and a part of the file, never the whole;
+   the first reader builds the head, the next to find the file longer reads on from where it stopped, and one whose last line no
+   longer stands is built again. The file stays the record; without the store, or under 512 KB, a read is the whole file.
+   (from D76, D275)
 
 **Two contexts**
 
@@ -208,12 +214,21 @@ of everything it handed, section by section.
     is `ContextBrief.CharWeight`'s twin). A working session may call it; a reviewer and a
     helper may not. It carries no counts. A tool's output the driver cut is shown with the length its own mark gives, and no cut
     on either side splits a surrogate pair. (from D189, D229)
-34a. A driven session whose harness compacts its context is handed the brief again, once per compaction: the protocol door
-    reads a compaction off the context counter falling to under half of a reading of 10,000 tokens or more (`ContextDrop`;
-    neither door names a compaction itself), and `CompactWord` keeps one urgent word of Daoris's through the session's inbox, the
-    quest's requirements as the start quoted them (`RequirementsPrompt`) then the line's brief (`ContextBriefs`, with the plan, the
-    open requests and the settled work), so it re-checks nothing settled and files no request twice. A word still waiting when
-    the run ends is taken off. The native and text-only doors have no counter and are told nothing.
+34a. A driven session whose harness compacts its context is handed the brief again, once per compaction, and each door reads
+    the compaction from the signal its harness gives. Claude Code's protocol door reads the adapter's event: a `tool_call` or
+    `tool_call_update` whose `_meta.claudeCode.toolName` is `compact` and whose `status` is `completed` (`AcpCompaction`, told
+    once per call id; the door says it by `ISpawn.NamesCompaction`). Claude Code's native door reads the stream's `system` frame
+    of subtype `compact_boundary` (`NativeCompaction`, a `WireReading.Compacted`, read by `HarnessCapture` and by the layer
+    launcher's raw lines). A door that names none keeps the context counter: Codex's protocol door reads a reading under half
+    the one before it, from 10,000 tokens or more (`ContextDrop`), because its adapter says a compaction only as agent text a model
+    could say too. `CompactWord` keeps one urgent word of Daoris's through the session's inbox, the quest's requirements as the
+    start quoted them (`RequirementsPrompt`) then the line's brief (`ContextBriefs`, with the plan, the open requests and the
+    settled work), so it re-checks nothing settled and files no request twice. The protocol door's word reaches the session at its
+    next step; the native door's waits for its turn's end, as a quiet session's word does (its process takes no stdin). A word still
+    waiting when the run ends is taken off. A text-only door says no compaction and is told nothing.
+34b. A compacted conversation on the protocol door (Ask Daoris's and a person's) is told, as a turn of Daoris's own, the requests
+    it sent that nothing has answered (`ChatCompactTold`, taken by its turns under `DaorisKeys.Compact`); one with none open is told
+    nothing. A native conversation is told nothing.
 
 **What a session is told at its start**
 
@@ -225,7 +240,7 @@ of everything it handed, section by section.
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
 37. A conversation's first message carries the browser line, the process in a tree of its
     own, where the person is (bounded; a new conversation that continues none also names the requests the workspace's last
-    conversation left open, `ChatOpenTold`), an open workflow draft, the person's words, then the block. A hand-over's first
+    conversation left open, `ChatOpenTold`, read from the service's records at the start), an open workflow draft, the person's words, then the block. A hand-over's first
     message is the brief, Daoris's briefing and the browser line. The brief, the browser line and the draft are consumed
     only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
     person waits on no answer to it. (from D162, D163, D164, D230)

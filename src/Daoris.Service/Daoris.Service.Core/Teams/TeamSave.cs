@@ -18,4 +18,13 @@ public sealed record TeamSave(string Ask, IReadOnlyList<TeamPart> Parts, IReadOn
 
     /// <summary>The line's commit the plan reads.</summary>
     public string? Base { get; init; }
+
+    /// <summary>What each repository releases, as the lead read it from the declarations; judged into release orders.</summary>
+    public IReadOnlyList<DeliveryDeployable> Deployables { get; init; } = [];
+
+    /// <summary>The release orders the lead read beyond the declarations: a stage condition, a contract, a code read, an owner's order.</summary>
+    public IReadOnlyList<DeliveryEdge> Releases { get; init; } = [];
+
+    /// <summary>What the lead could not settle from evidence.</summary>
+    public IReadOnlyList<DeliveryQuestion> Questions { get; init; } = [];
 }

@@ -13,8 +13,7 @@ namespace Daoris.Knowledge.Mcp;
 /// which asks the workspace again before it reads an entry. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
-/// each told once.
-/// </summary>
+/// each told once.</summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
 /// <param name="intake">The session this connector names, and the role it started in; none names none, a person's own agent's.</param>
@@ -50,9 +49,8 @@ public sealed class MemoryTools(
 
     [McpServerTool(Name = "memory_search")]
     [Description(
-        "Search the memory the repositories of this session's workspace keep: facts earlier sessions confirmed and wrote down, each "
-        + "answered with its reference (`repository:entry`) and its revision. Use the words the entry would use. Read-only: a search "
-        + "changes nothing in the memory.")]
+        "Search the memory this session's workspace keeps: facts earlier sessions confirmed, each with its reference "
+        + "(`repository:entry`) and revision. Read-only.")]
     public async Task<string> SearchAsync(
         [Description("What to look for, in the words an entry would use.")] string query,
         CancellationToken ct = default)
@@ -202,20 +200,17 @@ public sealed class MemoryTools(
 
     [McpServerTool(Name = "memory_write")]
     [Description(
-        "Write one entry into the memory of the repository this session works in, for later sessions to find: a fact you confirmed, in "
-        + "a sentence or two. Cite a record by its knowledge id rather than copying it. With `relation` and `target`, the entry disputes "
-        + "or amends another entry of this repository's memory, which stays as it is. With `supersedes`, it replaces entries of this "
-        + "repository's memory: once its approver agrees, it is written and they end in one change. The write is kept with this session's "
-        + "work and applies when that work is accepted.")]
+        "Write one entry into the memory of the repository this session works in: a fact you confirmed, in a sentence or two. "
+        + "Cite a record by its knowledge id rather than copying it. With `relation` and `target` it disputes or amends another "
+        + "entry, which stays as it is; with `supersedes` it replaces entries once its approver agrees. The write applies when "
+        + "this session's work is accepted.")]
     public async Task<string> WriteAsync(
         [Description("The fact, as later sessions should read it.")] string text,
         [Description("`disputes` or `amends`, given with `target`; omit for an entry that relates to none.")] string? relation = null,
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
         [Description("The entries this one replaces, each `repository:entry@revision` with the revision memory_get answered.")]
         string[]? supersedes = null,
-        [Description(
-            "The knowledge ids of the records that show the fact, as knowledge_search names them, and any entry of another repository's "
-            + "memory it rests on, as `repository:entry@revision` with the revision memory_get answered; each is rechecked later.")]
+        [Description("Knowledge ids of the records that show the fact, and any other repository's memory entry it rests on as `repository:entry@revision`; each is rechecked later.")]
         string[]? cites = null,
         CancellationToken ct = default)
     {
@@ -302,14 +297,14 @@ public sealed class MemoryTools(
 
     [McpServerTool(Name = "memory_propose")]
     [Description(
-        "Ask the repository that owns a memory entry to correct it: whether your finding disputes it, amends it or ends it, why, and the "
-        + "revision you read. It reaches the owner as a quest, whose session decides; nothing changes until it does.")]
+        "Ask the repository that owns a memory entry to correct it. It reaches the owner as a quest, whose session decides; "
+        + "nothing changes until it does.")]
     public async Task<string> ProposeAsync(
         [Description("The entry's reference, `repository:entry`, as memory_search names it.")] string reference,
         [Description("`disputes`, `amends` or `end`.")] string change,
         [Description("What you found, citing what shows it.")] string reason,
         [Description("The revision you read, as memory_get answered it.")] long revision,
-        [Description("The knowledge ids of the records that show what you found, as knowledge_search names them.")] string[]? cites = null,
+        [Description("Knowledge ids of the records that show it.")] string[]? cites = null,
         CancellationToken ct = default)
     {
         if (MemoryReference.Parse(reference) is not { } named) return Words.Malformed(reference);

@@ -6,8 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A brainstorm pass's two result tools: a generator gives its proposals and the synthesis its
-/// ranking, each once, into the one answer file the driver's spawn names for the turn. Each answers only a turn of its own kind,
+/// A brainstorm pass's two result tools: a generator gives its proposals and the synthesis its ranking, each once, into the one answer file the driver's spawn names for the turn. Each answers only a turn of its own kind,
 /// judges the answer as the driver will and says a refusal's codes back, and is a pass's only connector tool: nothing here reads,
 /// asks, publishes or changes anything else.
 /// </summary>
@@ -17,12 +16,10 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
 {
     [McpServerTool(Name = "brainstorm_give")]
     [Description(
-        "Only for a turn Daoris started to propose answers to a brainstorm's question: give your proposals, once, before you end. "
-        + "Each proposal has its idea, its rationale, its effort, risk and reversibility on their scales (unknown is an answer: say it "
-        + "rather than guess the best value), how it would be undone where it is not simply reversible, how sure you are, what it "
-        + "assumes and the packet's sources it rests on. At most eight, no idea twice. With no proposal, give none and say why in "
-        + "`none`. If Daoris refuses the answer it says why by code: give it again, whole. Your proposals are claims a person reads; "
-        + "this changes nothing, and nobody can ask you anything after.")]
+        "Only for a turn Daoris started to propose answers to a brainstorm's question: give your proposals, once, before you end, "
+        + "at most eight, no idea twice (unknown is an answer on a scale: never guess the best value). With none, say why in `none`. "
+        + "A refusal says why by code: give it again, whole. Your proposals are claims a person reads; this changes nothing, "
+        + "and nobody can ask you anything after.")]
     public string Give(
         [Description("Your proposals, at most eight, the strongest first; none where you have no proposal.")]
         BrainstormProposalInput[]? proposals,
@@ -64,11 +61,10 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
 
     [McpServerTool(Name = "brainstorm_synthesize")]
     [Description(
-        "Only for a turn Daoris started to synthesize a brainstorm's proposals: give your ranking, once, before you end. Group the "
-        + "proposals that are the same idea, each by its anonymous id (P1 and on), give each group its title, its merged idea, its "
-        + "rank (1 and on, no gap and no tie) and why, and any flag you add (hard-to-reverse or risky) with why. Every id appears "
-        + "exactly once: in one group, or left out with why. If Daoris refuses the answer it says why by code: give it again, whole. "
-        + "Your ranking is a claim a person reads; this changes nothing, and nobody can ask you anything after.")]
+        "Only for a turn Daoris started to synthesize a brainstorm's proposals: give your ranking, once, before you end. Group "
+        + "proposals that are the same idea by anonymous id (P1 and on); every id appears exactly once, in a group or left out with "
+        + "why. A refusal says why by code: give it again, whole. Your ranking is a claim a person reads; this changes nothing, "
+        + "and nobody can ask you anything after.")]
     public string Synthesize(
         [Description("Your groups, each with its members by id and its rank.")]
         BrainstormGroupInput[]? groups,
@@ -170,17 +166,11 @@ public sealed record BrainstormProposalInput(
     string? Idea,
     [property: Description("Why it answers the question, in at most 1200 characters.")]
     string? Rationale,
-    [property: Description(
-        "small (within one session or a day), medium (several sessions, within a week), large (beyond a week, or more than one "
-        + "repository), or unknown.")]
+    [property: Description("small (a day), medium (within a week), large (longer, or several repositories), or unknown.")]
     string? Effort,
-    [property: Description(
-        "low (a failure shows at once and touches only the change), medium (a failure reaches other parts or shows late), high (a "
-        + "failure reaches data, other repositories, people or a release), or unknown.")]
+    [property: Description("low (a failure shows at once, touches only the change), medium (reaches other parts or shows late), high (reaches data, other repositories, people or a release), or unknown.")]
     string? Risk,
-    [property: Description(
-        "yes (reverting the change undoes it, and nothing outside the repository moved), partly (something stays: a migration, a "
-        + "message sent, a published name), no (data removed, a verdict changed, history rewritten, a publication), or unknown.")]
+    [property: Description("yes (a revert undoes it), partly (something stays: a migration, a message sent), no (data removed, history rewritten, a publication), or unknown.")]
     string? Reversible,
     [property: Description("How it would be undone, or why it cannot be, in at most 400 characters; required unless reversible is yes.")]
     string? Undo,

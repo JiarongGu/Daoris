@@ -16,6 +16,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
 
     private SqliteConnection _connection = null!;
     private QuestStore _quests = null!;
+    private AskStore _askStore = null!;
     private AskDesk _asks = null!;
     private TeamDesk _desk = null!;
     private Ask _ask = null!;
@@ -31,7 +32,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
         await _connection.OpenAsync();
         _quests = await QuestStore.OpenAsync(_connection);
         var sessions = await SessionStore.OpenAsync(_connection);
-        var asks = await AskStore.OpenAsync(_connection);
+        var asks = _askStore = await AskStore.OpenAsync(_connection);
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(), DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.ImportAsync(Path.Combine(_root, "family"), Now);
@@ -40,7 +41,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
         var files = new QuestFiles(Path.Combine(_root, "home"));
         _asks = new AskDesk(service, asks, new QuestExchange(service, _quests, remotes: null, files, sessions, asks), files, sessions);
         _desk = new TeamDesk(
-            await TeamStore.OpenAsync(_connection), _asks,
+            await TeamStore.OpenAsync(_connection), await TeamLedger.OpenAsync(_connection), _asks,
             (_, _) => Task.FromResult(new TeamPathPolicy(["TASKS.md", "docs/areas/**"], ["src/gen/**"])));
         _ask = (await _asks.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
     }
@@ -143,6 +144,51 @@ public sealed class TeamDeskTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_session_that_wrote_a_plan_is_its_lead_and_each_revision_is_a_decision_with_its_reason()
+    {
+        await _desk.SaveAsync(Save([Part("keel")]) with { By = "lead-1" }, Now);
+        await _desk.SaveAsync(Save([Part("keel"), Part("page")], expect: 1) with { By = "lead-2" }, Now.AddMinutes(5));
+        await _desk.SaveAsync(Save([Part("keel"), Part("page")], expect: 2) with { By = "lead-2" }, Now.AddMinutes(6));
+
+        var (members, decisions) = await _desk.TeamAsync(_ask.Id);
+
+        Assert.Equal([("lead-1", 1), ("lead-2", 3)], members.Select(member => (member.Session, member.Revision)));
+        Assert.All(members, member => Assert.Equal((TeamMember.Lead, (string?)null), (member.Role, member.Part)));
+        Assert.Equal(["planned", "revised", "revised"], decisions.Select(decision => decision.Decision));
+        Assert.Equal("split along what a person sees", decisions[1].Reason);
+        Assert.Contains("keel", decisions[0].Act);
+    }
+
+    [Fact]
+    public async Task A_plan_written_by_the_asks_own_intake_is_published_by_it_and_a_hand_written_one_is_not()
+    {
+        await _askStore.RecordIntakeAsync(_ask.Id, "intake-1", Now);
+
+        await _desk.SaveAsync(Save([Part("api", "src/api/**")]), Now);
+        Assert.NotEqual(AskDesk.ByIntake, (await _asks.FindAsync(_ask.Id))!.Tier);
+
+        var byLead = await _desk.SaveAsync(Save([Part("api", "src/api/**"), Part("page", "src/page/**")], expect: 1) with { By = "intake-1" }, Now.AddMinutes(1));
+
+        Assert.Equal(AskDesk.ByIntake, (await _asks.FindAsync(_ask.Id))!.Tier);
+        Assert.All(byLead.Published, each => Assert.NotNull(each.Quest));
+    }
+
+    [Fact]
+    public async Task A_workers_split_makes_it_the_lead_of_its_part_and_a_hand_written_plan_adds_no_member()
+    {
+        var top = await _desk.SaveAsync(Save([Part("feature")]), Now);
+        await _desk.SaveAsync(new TeamSave(_ask.Id, [Part("feature.api")], [], "my own split") { Scope = "feature", By = "worker-1" }, Now.AddMinutes(1));
+
+        var (members, decisions) = await _desk.TeamAsync(_ask.Id);
+
+        var member = Assert.Single(members);
+        Assert.Equal(("worker-1", "feature"), (member.Session, member.Part));
+        Assert.Equal(["person", "worker-1"], decisions.Select(decision => decision.Author));
+        Assert.Equal("feature", decisions[1].Scope);
+        Assert.Equal(1, top.Plan!.Revision);
+    }
+
+    [Fact]
     public async Task A_split_of_a_part_no_plan_holds_is_refused()
     {
         var split = await _desk.SaveAsync(Save([Part("x")]) with { Scope = "nowhere" }, Now);
@@ -167,6 +213,34 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.Equal("keel", whole.GetProperty("plans")[0].GetProperty("parts")[0].GetProperty("id").GetString());
         Assert.True(whole.GetProperty("quests").TryGetProperty("keel", out _));
         Assert.Contains("write one", await new Daoris.Knowledge.Mcp.TeamTools(_desk).PlanAsync("nope"));
+    }
+
+    [Fact]
+    public async Task The_delivery_graph_is_kept_with_the_plan_and_read_back_with_the_edge_that_moved_and_each_question_once()
+    {
+        var schema = new DeliveryRef("schema-owner", "config-migration");
+        var mirror = new DeliveryRef("backend", "mirror-api");
+        var deployables = new DeliveryDeployable[]
+        {
+            new(schema, new("schema-owner", "daoris.json", "", "b1")) { Provides = [new("config-schema", DeliveryUse.Migrates)] },
+            new(mirror, new("backend", "daoris.json", "", "b2")) { Consumes = [new("config-schema", DeliveryUse.Mirror)] },
+        };
+        var asked = new DeliveryQuestion("contract:viewers", DeliveryQuestion.Open, "Viewers or admins?");
+        var tool = new Daoris.Knowledge.Mcp.TeamTools(_desk);
+
+        var wrote = await tool.PlanAsync(_ask.Id, [Part("keel")], why: "plan", deployables: deployables, questions: [asked, asked]);
+        var read = await tool.PlanAsync(_ask.Id, seen: new Dictionary<string, string> { ["backend:daoris.json"] = "moved" });
+
+        Assert.Contains("2 deployable(s) with 1 release order(s) and 1 question(s)", wrote);
+        var plan = (await _desk.ReadAsync(_ask.Id)).Plans.Single();
+        Assert.Equal(DeliveryEdge.Declaration, plan.Releases.Single().Source);
+        Assert.Equal(new DeliveryEvidence("backend", "daoris.json", "", "b2"), plan.Releases.Single().Evidence);
+        Assert.Equal(deployables.Select(each => each.Ref), plan.Deployables.Select(each => each.Ref));
+        Assert.Contains("release `backend/mirror-api` after `schema-owner/config-migration`", read);
+        Assert.Contains("STALE", read);
+        Assert.Equal(2, read.Split("question `").Length - 1);
+        var split = await _desk.SaveAsync(Save([Part("x")], expect: 0) with { Scope = "keel", Deployables = deployables }, Now);
+        Assert.Equal(TeamRefusal.Unfit, split.Refusal);
     }
 
     [Fact]
