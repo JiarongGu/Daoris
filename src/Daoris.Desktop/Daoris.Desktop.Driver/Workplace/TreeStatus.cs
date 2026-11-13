@@ -44,6 +44,15 @@ internal sealed record TreeStatus(int Changed, string? Head, string? Branch)
         return seen == 2 ? new TreeStatus(changed, head, branch) : null;
     }
 
+    /// <summary>
+    /// A head and a branch read from the tree's own files, its paths not yet counted: the walk asks the one <c>status</c> it needs where
+    /// it learns which, so a tree held by content is not counted twice.
+    /// </summary>
+    internal static TreeStatus Unasked(string? head, string? branch) => new(-1, head, branch);
+
+    /// <summary>Whether <see cref="Changed"/> was asked of git.</summary>
+    internal bool Counted => Changed >= 0;
+
     /// <summary>The branch the tree's agent moved it onto, as <see cref="TreeFollows.OwnBranchOfAsync"/> names it: not a session branch.</summary>
     internal string? OwnBranch =>
         Branch is { } branch && !branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) ? branch : null;

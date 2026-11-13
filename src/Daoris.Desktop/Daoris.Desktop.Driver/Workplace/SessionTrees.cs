@@ -523,8 +523,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="TreeWorkReads.WorkAsync"/>
     public Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default) => WorkReads.WorkAsync(tree, ct);
 
-    internal Task<TreeWork?> WorkWithStatusAsync(string tree, TreeStatus? status, CancellationToken ct) =>
-        WorkReads.WorkAsync(tree, ct, read: status);
+    internal Task<TreeWork?> WorkWithStatusAsync(string tree, TreeStatus? status, TreeWalkBack back, CancellationToken ct) =>
+        WorkReads.WorkAsync(tree, ct, read: status, back: back);
 
     /// <inheritdoc cref="TreeWorkReads.UncommittedAsync"/>
     public Task<int?> UncommittedAsync(string tree, CancellationToken ct = default) => WorkReads.UncommittedAsync(tree, ct);
@@ -540,7 +540,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         WorkReads.DeclaredAsync(tree, common, ct);
 
     /// <inheritdoc cref="TreeWorkReads.HeldAgainAsync"/>
-    internal Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared)> HeldAgainAsync(
+    internal Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared, int? Paths)> HeldAgainAsync(
         string tree, string common, HeldWork kept, IReadOnlyList<System.Text.RegularExpressions.Regex>? declared, CancellationToken ct = default) =>
         WorkReads.HeldAgainAsync(tree, common, kept, declared, ct);
 

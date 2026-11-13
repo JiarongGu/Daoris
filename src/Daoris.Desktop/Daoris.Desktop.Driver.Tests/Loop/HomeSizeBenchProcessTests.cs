@@ -102,7 +102,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         Within("the look", look - list, LookBudget);
         Within("a start's manifest", manifest, BesideBudget);
         Within("the nodes' read", nodes - list, BesideBudget);
-        // A tree's ignored build costs a read nothing: its kept read is its two statuses, and its review a tracked tree's.
+        // A tree's ignored build costs a read nothing: its kept read is its one status, and its review a tracked tree's.
         Within("the large tree's kept read", kept, ReviewBudget);
         Within("the large tree's review past a small tree's", large - small, ReviewBudget);
         output.WriteLine($"not yet held: the tidy {tidy} ms, past its {BesideBudget.TotalMilliseconds} ms beside a look");
@@ -120,8 +120,8 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         SessionReadsWithin("tidy", 0);
         StartsWithin("nodes' read", 2);
         SessionReadsWithin("nodes' read", 2);
-        StartsWithin("the large tree's walk", 17);
-        StartsWithin("its kept read", 2);
+        StartsWithin("the large tree's walk", 6);
+        StartsWithin("its kept read", 1);
     }
 
     private void StartsWithin(string what, int budget) =>
