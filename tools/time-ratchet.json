@@ -13,6 +13,31 @@
     "ms": 78820,
     "why": "the first case of its class to ask pays the one binding of every shipping desktop project's semantic model, which the other cases of the run then share; alone the compile is the cost"
   },
+  "Daoris.Desktop.Driver.Tests.DependencyStoreTests": {
+    "ms": 120000,
+    "why": "real git (a worktree open and a commit or two a case) and a real node install script run by the tree-files stage, and one real npm ci; sealing an install and placing it in the next tree is what it proves, and the repository is already a copy of a seed per lock",
+    "class": true
+  },
+  "Daoris.Desktop.Driver.Tests.DrivenMoveDowngradeProcessTests": {
+    "ms": 120000,
+    "why": "each case kills a loop at a boundary, then runs two more real loop incarnations, each waiting three quiet looks of a whole real look (about thirty git starts, a second or more on this machine); the quiet looks are the claim, since a second delivery would show in them, and a loop paced at 200 ms was measured to save nothing because a look, not the pace, is the time",
+    "class": true
+  },
+  "Daoris.Desktop.Driver.Tests.GitSshPinnedProcessTests": {
+    "ms": 120000,
+    "why": "the same real ssh cases as GitSshProcessTests with the toolchain's pinned MinGit as the git: each is a real clone, fetch or push over a real ssh client, and the pin is what it adds, so neither the wire nor the git can be scripted",
+    "class": true
+  },
+  "Daoris.Desktop.Driver.Tests.GitSshProcessTests": {
+    "ms": 120000,
+    "why": "each case is a real git clone, fetch or push through Daoris's built ssh door and a real ssh client against the in-process ssh host; the door's grant, key and trust handling over a real wire is what it proves, and no scripted stand-in would prove it",
+    "class": true
+  },
+  "Daoris.Desktop.Driver.Tests.PluginKitTests": {
+    "ms": 120000,
+    "why": "ninety-five cases, most of which start a real node plugin or `node --test` at about a second each: the kit's try and its wire test are the real handshake with a real process; running the two doors of a case side by side was measured and saved nothing under load",
+    "class": true
+  },
   "Daoris.Desktop.Driver.Tests.ProviderCensusTests.A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census": {
     "ms": 36000,
     "why": "binds the provider seams of every shipping desktop project through the shared compilation; the case waits on the binding the gate's other cases share",
@@ -23,9 +48,24 @@
     "why": "207 combinations each run a real git graph through the review node; 7 s for the class alone, the rest is the census gate's load on the same cores",
     "row": "TESTSLOW1"
   },
+  "Daoris.Desktop.Driver.Tests.SessionMessagesTickTests": {
+    "ms": 120000,
+    "why": "each case is one to three real driver ticks, and a tick is thirty to seventy git starts (worktree list and open, rev-parse, status) with a node stand-in agent and a loopback stand-in service, about five seconds alone; a case reads what a real tick does to a kept record, so a scripted tick would prove nothing. The repeated git reads of a tick are the product's to cut",
+    "class": true
+  },
+  "Daoris.Desktop.Driver.Tests.SessionWatchProcessTests": {
+    "ms": 120000,
+    "why": "the watcher over real runs: three hours of a clock moved three hundred times is thirty-six seconds of real stream and the case's claim, a silent run is marked under the same clock, and a computing child is measured by its real CPU over a window, which only a real process in real time gives",
+    "class": true
+  },
   "Daoris.Desktop.Driver.Tests.ShellStructureTests.Platform_names_no_spawn_of_Agents_and_no_tools_of_Install_or_git_of_Workplace": {
     "ms": 97000,
     "why": "the first structure case to ask pays the shared Roslyn analysis of the driver's whole tree (every file bound once); the other structure cases read it free"
+  },
+  "Daoris.Desktop.Driver.Tests.StartInSyncTickTests": {
+    "ms": 120000,
+    "why": "each case is two real driver ticks (the first run, then the resume after a squash onto the line), thirty to seventy git starts and a node stand-in agent apiece; the start on the line a squash moved is what it proves, and only a real tick over real git reads it",
+    "class": true
   },
   "Daoris.Desktop.Driver.Tests.StructureTests.Workflows_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it": {
     "ms": 89000,

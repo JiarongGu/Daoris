@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run's unit for the node runtime: <c>run:&lt;run&gt;</c>, the unit of its own node
-/// record, projected for the evaluation alone and never listed by the inventory.
+/// A run's unit for the node runtime: <c>run:&lt;run&gt;</c>, its own node record, projected for the evaluation alone, never listed.
 /// </summary>
 public static class RunUnits
 {
@@ -232,6 +231,9 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
     public string? Ask { get; init; }
+
+    /// <summary>What the run's ask requires and has landed on its branch; null where it is not read, and its <c>parts</c> waits.</summary>
+    public PartsReport? Parts { get; init; }
 
     public AskThroughView? Through { get; init; }
 

@@ -33,7 +33,7 @@ public sealed class CapCountTickTests : IDisposable
 
     private string Tree(string name) => Path.Combine(_home, name);
 
-    private DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
+    private DriverConfig Intake(int cap) => Config(cap).StaffIntake("stub");
 
     private DriverConfig Config(int cap) => (DriverConfig.Empty with
     {

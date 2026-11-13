@@ -67,6 +67,7 @@
   "workflow.step.wait.unit": "其他工作",
   "workflow.step.check": "检查",
   "workflow.step.integrate": "集成请求",
+  "workflow.step.parts": "计划中的各部分已落地",
   "workflow.step.work.requests": "工作的请求",
   "workflow.step.request": "给另一个仓库的委托",
   "workflow.step.quest.holds": "委托的拦阻",

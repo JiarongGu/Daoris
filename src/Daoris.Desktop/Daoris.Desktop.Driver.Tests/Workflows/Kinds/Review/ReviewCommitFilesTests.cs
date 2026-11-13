@@ -34,12 +34,12 @@ public sealed class ReviewCommitFilesTests : IDisposable
     {
         Directory.CreateDirectory(_root);
         await Git("init", "--quiet", "-b", "main");
-        await Commit("notes.md", "one\n");
+        var frozen = await Commit("notes.md", "one\n");
         await Git("checkout", "--quiet", "-b", "work");
         await Commit("notes.md", "two\n");
         var tip = await Commit("added.md", "new\n");
         await Commit("later.md", "after the review\n");
-        var branch = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T) { Reference = new() { Branch = "work", Line = "main", Tip = tip } };
+        var branch = new ReviewRecord("q1", "review", 1, ReviewKinds.Branch, "r1", T) { Reference = new() { Branch = "work", Line = "main", Base = frozen, Tip = tip } };
 
         var files = await ReviewCommitFiles.ListAsync(_root, branch);
 

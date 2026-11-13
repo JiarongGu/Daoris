@@ -67,6 +67,7 @@
   "workflow.step.wait.unit": "Other work",
   "workflow.step.check": "The checks",
   "workflow.step.integrate": "The integration request",
+  "workflow.step.parts": "Every planned part landed",
   "workflow.step.work.requests": "The work's requests",
   "workflow.step.request": "The quest to another repository",
   "workflow.step.quest.holds": "The quest's holds",

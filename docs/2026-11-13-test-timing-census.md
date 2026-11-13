@@ -58,7 +58,7 @@ alone, so it is not the bound yet; it will be once the rest is cut.
 
 | s | n | class | what costs the time |
 |---|---|---|---|
-| 628 | 26 | SessionMessagesTickTests | each case a real tick: a node stand-in agent started per run, a git seed copied, a stand-in service; 10 s a case alone |
+| 628 | 26 | SessionMessagesTickTests (§8) | each case a real tick: a node stand-in agent started per run, a git seed copied, a stand-in service; 10 s a case alone |
 | 366 | 17 | DrivenMoveDowngradeProcessTests | kill a shell at each boundary, start an older build, start this build: three node starts and a settling `Delay(1000-1500)` per step |
 | 365 | 17 | GitSshProcessTests | a real ssh server stand-in per case |
 | 294 | 17 | GitSshPinnedProcessTests | the same cases as the line above with a pinned git |
@@ -126,7 +126,7 @@ The merge's timing record reads these files; their durations are what §0's "sti
 - Fixed sleeps. The `Task.Delay` and `Thread.Sleep` calls of the test projects (the driver's alone name 100 ms, 200 ms, 20 ms, 50 ms and 300 ms most often) are mostly 20-500 ms; the 1-4 s ones
   are settle waits after a restart (the `*Move*ProcessTests` families, 1.0-1.5 s, three to five a case) and negative proofs
   (`ChildProcessTests` waits 4 s to show a grandchild did not outlive a kill). They are not what the classes spend: a
-  `DrivenMoveDowngradeProcessTests` case is 21 s of which about 4 s is a delay. The shared `Poll.Until` already polls every 50 ms.
+  `DrivenMoveDowngradeProcessTests` case is 21 s under load and none of it is a delay (§8: it is looks, each about a second of real git). The shared `Poll.Until` already polls every 50 ms.
 - Serialised collections. The 33 classes in `Alone` each say why (an environment variable, a process-wide seam, a few-second bound);
   `CategoryTests` polices the reason, so none is serialised without shared state. The lever is removing the shared thing (§7).
 - Fixtures per case. `GitSeed` already copies one seed per class's case; `SessionMessagesTickTests` builds its seed per case on purpose
@@ -258,3 +258,25 @@ The three say-door censuses and `CheckoutWritersCensusTests` read sources throug
 `ContinuedReadersCensusTests` fell from 6.4 s to 0.7 s, `SayKeysCensusTests` from 7.8 s to 0.6 s and `SettledReadersCensusTests` from
 10.6 s to 0.4 s. The time ratchet's list went from 8 entries with no reason to 9 entries each with one; 7 classes of this table are
 over budget with no reason (TESTSLOW1).
+
+## 8. The Process halves' seven classes, each alone, before and after (TESTSLOW1)
+
+Each class was run alone with its gate's run-settings (`process.runsettings`), from its own build; the figure is the sum of the class's
+case times in seconds. A class that was not cut has three runs; one that was cut has one run before and three after. The runs are listed
+because this machine's other builds moved the same class by up to two times (StartInSyncTickTests ran 62 s, then 132 s and 120 s, with
+nothing changed), so a difference under about a third is not a result.
+
+| Class | Before | After | What changed, or why the time is kept |
+|---|---|---|---|
+| SessionWatchProcessTests | 199 | 161, 164, 163 | the background-compute case's stand-in computed for 60 s under a quiet bound of 10 s (it must outlast five times the bound); a bound of 4 s and 26 s of work prove the same and the case went from 77 s to 44 s. The repository is a copy of the shared seed, not six git starts a case. Kept: three hours of a clock moved 300 times is 36 s of real stream and the case's claim, the silent case and the computing child are measured in real CPU |
+| DependencyStoreTests | 85 | 81, 74, 172 (a spike beside other builds) | the repository is a copy of a seed per lock, seven git starts fewer a case; the saving is about a second a case and does not show beside this machine's spread. Kept: a real worktree, install script and `npm ci` per case |
+| PluginKitTests | 110, 121, 126 | not cut | 95 cases of a real node plugin or `node --test`, about a second each. Running `try` and the wire test of a case side by side was tried and measured 120 s against 110 s, so it was withdrawn: the node starts compete for the same cores |
+| DrivenMoveDowngradeProcessTests | 249, 193, 233 | not cut | not a settle delay (§5 said about 4 s of a case; the case has none): marks in a case read 1-2 s to seed and kill, then 3-7 s for each of two loop incarnations to see three quiet looks, and a look is about a second of real work (thirty-odd git starts). A loop paced at 200 ms instead of 1 s took 307 s, not less: the pace is not the time. Kept with the reason; a look's repeated git reads are the product's to cut |
+| SessionMessagesTickTests | 374, 383, 364 | not cut | a case is one to three real ticks; a tick is thirty to seventy git starts (counted with `GIT_TRACE2_EVENT`: `rev-parse --verify` 10, `worktree list` 7, `rev-parse HEAD` 5, `worktree unlock` 4, `status` 4 in one 11-second case), a node stand-in and a loopback service. The 60 s case of the census run was 26 s under four sibling cases and 11 s alone |
+| StartInSyncTickTests | 62, 132, 120 | not cut | two real ticks a case, the same git starts; kept |
+| GitSshProcessTests | 133, 120, 209 | not cut | a real clone, fetch or push over a real ssh client against the in-process host; the wire is what it proves |
+
+What the counts say about the whole family: the time is not a sleep or a poll in any of the seven but real git starts (about 0.15-0.2 s
+each here) and real node starts, and a driver tick runs dozens. The same `rev-parse` and `worktree list` reads repeated within a tick are the
+cut that would move every tick class at once, and it belongs to the driver, not to a test. The time ratchet's list now carries
+a reason for each of the seven and for GitSshPinnedProcessTests (the same cases with the pinned git), as `class: true` entries.

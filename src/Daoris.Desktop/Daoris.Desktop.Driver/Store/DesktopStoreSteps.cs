@@ -792,5 +792,16 @@ internal static class DesktopStoreSteps
               PRIMARY KEY (session, seq)
             );
             """)),
+
+        // The ask and part a train's request lands for, Workplace's. A new table an older build never opens: such a build reads the request as any other.
+        new(DesktopStore.IntegrationPartsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE integration_parts (
+              request TEXT NOT NULL PRIMARY KEY,
+              ask     TEXT NOT NULL,
+              part    TEXT NOT NULL
+            );
+            CREATE INDEX integration_parts_ask ON integration_parts (ask);
+            """)),
     ];
 }

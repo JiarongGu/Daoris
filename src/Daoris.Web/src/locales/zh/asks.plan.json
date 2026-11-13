@@ -6,7 +6,7 @@
   "asks.plan.quest": "委托 #{{id}}",
   "asks.plan.noQuest": "尚无委托",
   "asks.plan.after": "{{part}} 建立在 {{on}} 之上",
-  "asks.plan.orders": "{{part}} 在 {{on}} 之后合入",
+  "asks.plan.orders": "{{part}} 在 {{on}} 之后落地",
   "asks.plan.team": "团队",
   "asks.plan.member": "{{role}} {{session}}：{{part}}",
   "asks.plan.wholePlan": "整个计划",

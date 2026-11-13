@@ -9,9 +9,8 @@
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
  * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
- * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is `{ ms, why, row? }`:
- * `why` says what makes the test slow and why that cannot be cut, `row` the backlog row that optimizes it; an entry with no real `why`
- * fails, and every test over budget is printed with its reason. With no records nothing is checked. The list only shrinks: `--write` cuts it.
+ * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
+ * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -175,7 +174,7 @@ export function slowestClasses(tests, count, list = {}) {
   });
 }
 
-/** The list cut down to the records: an entry is lowered to the slowest test it covers, and leaves when the records hold a test it covers and none is over a limit. */
+/** The list cut to the records: an entry lowered to its slowest test, gone once none is over; a `class: true` entry stays with its class. */
 export function tighten(found, list, seen = new Set()) {
   const slowest = {};
   for (const [key, { ms }] of Object.entries(found)) {
@@ -184,7 +183,7 @@ export function tighten(found, list, seen = new Set()) {
   }
   const next = {};
   for (const entry of Object.keys(list).sort()) {
-    if (slowest[entry] === undefined && [...seen].some((key) => entryFor(list, key) === entry)) continue;
+    if (list[entry].class !== true && slowest[entry] === undefined && [...seen].some((key) => entryFor(list, key) === entry)) continue;
     next[entry] = { ...list[entry], ms: Math.min(list[entry].ms, slowest[entry] ?? list[entry].ms) };
   }
   return next;

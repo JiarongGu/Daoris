@@ -4,11 +4,10 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The dependency store over real git and real processes: a repository whose own rule names a dependency `deps/`, installed by a
-/// tracked script whose behaviour its tracked `lock.txt` chooses, so each case is a commit; and npm's own `npm ci` over a `file:`
-/// package, read from the shipped signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
-/// </summary>
-/// <remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
+/// The dependency store over real git and real processes: a repository whose own rule names a dependency `deps/`, installed by a tracked script
+/// whose behaviour its tracked `lock.txt` chooses, so each case is a commit; and npm's own `npm ci` over a `file:` package, read from the shipped
+/// signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
+/// </summary><remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
@@ -47,24 +46,25 @@ public sealed class DependencyStoreTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    private async Task MakeAsync(string how)
+    /// <summary>The repository, a copy of the run's seed of this `how`: its commit is made once and never read for its id.</summary>
+    private Task MakeAsync(string how) => GitSeed.MadeAsync(Root, $"deps-store:{how}", async folder =>
     {
-        Directory.CreateDirectory(Path.Combine(Root, "src"));
-        await GitAsync(Root, "init", "-q", "-b", "main");
-        await GitAsync(Root, "config", "user.email", "test@example.com");
-        await GitAsync(Root, "config", "user.name", "Test");
+        Directory.CreateDirectory(Path.Combine(folder, "src"));
+        await GitAsync(folder, "init", "-q", "-b", "main");
+        await GitAsync(folder, "config", "user.email", "test@example.com");
+        await GitAsync(folder, "config", "user.name", "Test");
         // A file written back is compared byte for byte: git checks it out as committed.
-        await GitAsync(Root, "config", "core.autocrlf", "false");
-        await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "deps/\nout/\nbuilt/\nstray/\n");
+        await GitAsync(folder, "config", "core.autocrlf", "false");
+        await File.WriteAllTextAsync(Path.Combine(folder, ".gitignore"), "deps/\nout/\nbuilt/\nstray/\n");
         // CommonJS by its name: the fixture sits under this repository, whose package says its scripts are modules.
-        await File.WriteAllTextAsync(Path.Combine(Root, "install.cjs"), Script);
-        await File.WriteAllTextAsync(Path.Combine(Root, "daoris.files.json"), Rules);
-        await File.WriteAllTextAsync(Path.Combine(Root, "README.md"), "# engine\n");
-        await File.WriteAllTextAsync(Path.Combine(Root, "src", "main.js"), "1\n");
-        await File.WriteAllTextAsync(Path.Combine(Root, "lock.txt"), how + "\n");
-        await GitAsync(Root, "add", ".");
-        await GitAsync(Root, "commit", "-q", "-m", "first");
-    }
+        await File.WriteAllTextAsync(Path.Combine(folder, "install.cjs"), Script);
+        await File.WriteAllTextAsync(Path.Combine(folder, "daoris.files.json"), Rules);
+        await File.WriteAllTextAsync(Path.Combine(folder, "README.md"), "# engine\n");
+        await File.WriteAllTextAsync(Path.Combine(folder, "src", "main.js"), "1\n");
+        await File.WriteAllTextAsync(Path.Combine(folder, "lock.txt"), how + "\n");
+        await GitAsync(folder, "add", ".");
+        await GitAsync(folder, "commit", "-q", "-m", "first");
+    });
 
     /// <summary>A fresh tree of the repository, marked unworked as an opening marks it.</summary>
     private async Task<string> TreeAsync(string name, bool mark = true)

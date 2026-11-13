@@ -166,8 +166,9 @@ public sealed class PluginInterfacesTests : IDisposable
     {
         var (manifest, problem) = PluginCatalog.ReadFolder(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", example));
         Assert.Null(problem);
+        string[] named = ["login", "logout", "status", "create-pull-request", "pull-request-status", "complete-pull-request"];
         Assert.Equal(
-            ["login", "logout", "status", "create-pull-request", "pull-request-status", "complete-pull-request"],
+            example == "daoris-azure-devops" ? [.. named, "discover-releases"] : named,
             manifest.Interfaces.Commands.Select(command => command.Name));
         Assert.True(manifest.Interfaces.Commands[0].Interactive);
         Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool && !command.Interactive && command.Args.Count > 0));

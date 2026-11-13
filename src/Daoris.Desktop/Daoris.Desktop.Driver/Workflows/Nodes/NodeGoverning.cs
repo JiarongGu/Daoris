@@ -290,6 +290,7 @@ internal static class NodeGoverning
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             Ask = askId,
+            Parts = askId is null ? null : read.Parts?.GetValueOrDefault(askId),
             Through = through,
             Requests = WorkRequestsReading.Published(quests, sessions, work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
             Sessions = sessions,

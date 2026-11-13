@@ -39,6 +39,9 @@ public sealed record IntegrationTransportWorld
     /// <summary>A run closed a request: the runtime's pass is asked, so each <c>integrate</c> node reads its request's outcome.</summary>
     public Action? Answered { get; init; }
 
+    /// <summary>Where an ask's plan is read, so its parts' landings go in the plan's order; null reads none, and a part's landing waits.</summary>
+    public ITrainPlans? Plans { get; init; }
+
     /// <summary>Whether a line may run now (the home's lease held here, no update draining); one that may not keeps its place and is tried again later.</summary>
     public Func<bool> Runs { get; init; } = () => true;
 
@@ -47,10 +50,9 @@ public sealed record IntegrationTransportWorld
 }
 
 /// <summary>
-/// The integration transport: each line's run, one per line, on the transport's own
-/// task and never the pass's, as the heavy executor runs a check. A unit's <c>integrate</c> node sends the line its
-/// admitted request waits in; the come-up sends every line a standing candidate or an open request is in. Its answer asks the pass, which reads
-/// each request's outcome onto its node.
+/// The integration transport: each line's run, one per line, on the transport's own task and never the pass's, as the heavy executor runs a check.
+/// A unit's <c>integrate</c> node sends the line its admitted request waits in; the come-up sends every line a standing candidate or an open request
+/// is in. Its answer asks the pass, which reads each request's outcome onto its node.
 /// </summary>
 /// <remarks>
 /// <para><b>Shared with the heavy executor.</b> A line whose rule declares its gates runs holding the home's verification slot and then the
@@ -190,7 +192,11 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         Tell(store, send);
         var config = _world.Config();
         var asks = new IntegrationSweepAsks(
-            new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line) { Say = _world.Say, Config = config },
+            new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line)
+            {
+                Say = _world.Say, Config = config,
+                Train = new TrainSelection(new TrainParts(store), _world.Plans ?? NoPlans.Read),
+            },
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
         VerifySlot? verifying = null;

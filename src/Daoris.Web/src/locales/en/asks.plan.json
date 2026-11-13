@@ -14,7 +14,7 @@
   "asks.plan.decided": "Revision {{revision}}, {{decision}} by {{author}}",
   "asks.plan.decision.planned": "planned",
   "asks.plan.decision.revised": "revised",
-  "asks.plan.flag.cycle": "Circle",
+  "asks.plan.flag.cycle": "Cycle",
   "asks.plan.flag.missing-reference": "Missing part",
   "asks.plan.flag.claim-record": "Record claimed",
   "asks.plan.flag.claim-generated": "Generated file claimed",

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
-/// edit, and the bytes both write. <c>browser/settings.json</c>'s rows are <c>BrowserSettingsTests</c>', and the remotes' go through
+/// edit, and the bytes both write (a key this test's seal kept is read as the table writes it, the key itself). <c>browser/settings.json</c>'s rows are <c>BrowserSettingsTests</c>', and the remotes' go through
 /// <see cref="RemoteOperations"/>, the one writer.
 /// </summary>
 public sealed class HomeFilesKeepTests
@@ -30,7 +30,9 @@ public sealed class HomeFilesKeepTests
             }));
             if (refused is null) Assert.Null(error);
             else Assert.Contains(refused, Assert.IsType<DriverException>(error).Message);
-            Assert.Equal((name, expected), (name, File.ReadAllText(path)));
+            var written = System.Text.RegularExpressions.Regex.Replace(
+                File.ReadAllText(path), $"{ScriptedSeal.Prefix}[A-Za-z0-9+/=]+", kept => ScriptedSeal.Port.Open(kept.Value) ?? kept.Value);
+            Assert.Equal((name, expected), (name, written));
             // What the driver's reader reads from it, as the CLI's and the service's do.
             if (reads is not null) Assert.Equal((name, reads), (name, Read(RemoteTarget.LoadFile(path))));
         }
