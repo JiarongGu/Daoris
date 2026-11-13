@@ -571,6 +571,27 @@ repository port and its `MemoryRepository` first, which no family has yet. After
 plan reaches no real-git suite for a driver-only change: `driver-process-git`, `driver-rehearsals` and `adapters-git` run in the CI beside
 or in the full set before staging, never at the merge itself.
 
+**Row f, the repository port and the Pool (2026-11-14).** `IGitRepository` (`Daoris.Ports/Repositories`) is cut at the funnels the
+families call, read from their call sites: heads, branches, revisions to commits, merge bases, ancestry, counts, refs (by prefix, holding
+a commit, limited), tree entries (whole, top or under paths) and a file's text at a commit, working trees and their locks, status, its
+ignored tops and the hidden paths, `core.ignorecase`, a ref moved from an expected tip, a switch (new, existing or detached, never forced,
+hooks held), a commit, a tree added and removed, a prune, and `Held`, which hands the same repository whose every git runs in a claim's
+job. The driver's `GitRepository` implements it over `WorkingTree.GitAsync`, so the flow's memos and the library's answers hold, and the
+roots hand it in the `PortSet`; it is the implementation of `IGit`'s ring because the memos live in the driver. `MemoryRepository` holds
+commits, refs, working trees with their files and locks, `.gitignore`'s names, directories and extensions, and refuses a switch that
+would overwrite work as git does; `FlowRepository` lets one flow choose it. `RepositoryContract` has 14 cases, run on the fake in the
+testing project (0.2 s) and on real git as `GitRepositoryContractTests`, a Process class of the driver tests (14 cases, 106 s), and it
+held on the first real run. The Pool is on the port end to end but for the slot's making (`TreeOpening`), the take's undo (it deletes
+the branch through the journaled ref transaction) and the sessions' lock: the pool's reads, locks, switches, listings, tree reads and
+prune ask it, and so do `FileGit`'s tracked, ignored, case, worktree and text reads and the working tree's head, branch and tip. Its
+takes, refusals and lock reading run as `TreePoolMemoryTests` (8 cases) with a git that fails any ask no port answered, which is how each
+leaked git was found. **Figures:** real git in the driver tests 261 → 262 `Needs=Git` classes and 1,199 → 1,213 cases (the contract's
+real half is the cost of the twin; the `Parallel=Git` half 127 → 128 classes and 678 → 692 cases); in the rehearsals 72 classes and 661 →
+654 cases, the seven that left `TreePoolGitTests` (five refusal rows, the lock reading and the visit) being, at the sample's 12.4 s a
+case, about 87 case-seconds of real git, whose behaviour the 8 memory cases now run in 2 s for the whole class. The contract's twin-proof
+held; the pool's Process classes were green after the move (the driver tests' 32 cases, the rehearsals' 60 cases, the four rehearsal
+classes run four at once having crashed the host once, the one flake, and each green run alone).
+
 ## 9. Measurement (decision 8)
 
 | Measure | 2026-11-12 | Target |

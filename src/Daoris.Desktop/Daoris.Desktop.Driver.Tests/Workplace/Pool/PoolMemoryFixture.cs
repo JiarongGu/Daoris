@@ -70,7 +70,7 @@ internal sealed class PoolMemoryFixture : IDisposable
 
         var claimed = pool.Claim(new TreeClaimOpening(Workspace, Repository, number, TreeClaimKinds.Make, "quest-1", "", "", "", "", PoolGit.NewJobName()) { Phase = TreeClaimPhases.Opening });
         pool.Complete(claimed.Fence!, new SlotSettled($"k-{number}", folder, line, "", KeptStates.Kept, "", 0, ""));
-        var now = DateTimeOffset.UtcNow;
+        var now = new DateTimeOffset(2026, 11, 14, 0, 0, 0, TimeSpan.Zero);
         pool.RecordEnd(new LineEnd(Workspace, Repository, line, $"{TreeFollows.SessionPrefix}{line}", "session-1", number, LineEndKinds.Output, tip, now, "", "", now));
         return pool.Slot(Workspace, Repository, number)!;
     }

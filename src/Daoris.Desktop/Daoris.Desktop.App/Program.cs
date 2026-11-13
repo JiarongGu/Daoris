@@ -73,6 +73,7 @@ internal static class Program
             StartPolicy = Daoris.Driver.GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
             Git = new Daoris.Adapters.Git.GitProcessRuns(processes, Daoris.Driver.GitRunPolicy.Shared),
+            Repository = Daoris.Driver.GitRepository.Shared,
         });
 
         // The home before anything else: an install's `data/` folder is the Daoris home for this

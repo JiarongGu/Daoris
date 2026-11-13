@@ -50,6 +50,7 @@ AmbientPorts.Set(new PortSet
     StartPolicy = GitStartAdmission.Admit,
     Seal = KeySeal.Port,
     Git = new GitProcessRuns(processes, GitRunPolicy.Shared),
+    Repository = GitRepository.Shared,
 });
 
 if (OperatingSystem.IsWindows())
