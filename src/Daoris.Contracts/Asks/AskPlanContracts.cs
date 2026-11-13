@@ -16,7 +16,21 @@ public sealed record AskPlanResponse(string Ask, IReadOnlyList<AskPlanRevisionRe
 /// <summary>One plan at its newest revision. <c>Scope</c> is the part a split is of, or null for the ask's own plan.</summary>
 public sealed record AskPlanRevisionResponse(
     string? Scope, int Revision, int Depth, string Why, IReadOnlyList<AskPlanPartResponse> Parts,
-    IReadOnlyList<AskPlanEdgeResponse> Edges, IReadOnlyList<AskPlanFlagResponse> Flags);
+    IReadOnlyList<AskPlanEdgeResponse> Edges, IReadOnlyList<AskPlanFlagResponse> Flags, IReadOnlyList<AskPlanDeployableResponse> Deployables,
+    IReadOnlyList<AskPlanReleaseResponse> Releases, IReadOnlyList<AskPlanQuestionResponse> Questions);
+
+/// <summary>What a repository releases as its declaration reads: <c>Provides</c> and <c>Consumes</c> each as <c>resource (mode)</c>.</summary>
+public sealed record AskPlanDeployableResponse(string Repository, string Id, IReadOnlyList<string> Provides, IReadOnlyList<string> Consumes);
+
+/// <summary>
+/// A release order: <c>Deployable</c> after <c>On</c> (each <c>repository/id</c>), why, and the <c>Source</c> it stands on: <c>declaration</c>,
+/// <c>stage-condition</c>, <c>contract</c>, <c>code-read</c>, <c>policy</c> or <c>person</c>. <c>Evidence</c> names the place it stands on, null for an order
+/// with none.
+/// </summary>
+public sealed record AskPlanReleaseResponse(string Deployable, string On, string Why, string Source, string? Evidence);
+
+/// <summary>A question for the person about the delivery, asked once under its <c>Key</c>: what yes does, what waits, and the default.</summary>
+public sealed record AskPlanQuestionResponse(string Key, string Kind, string Text, string Yes, string Blocks, string Default);
 
 /// <summary>One part: where it is done, what a person sees working when it is, and the quest it became, null until it is published.</summary>
 public sealed record AskPlanPartResponse(

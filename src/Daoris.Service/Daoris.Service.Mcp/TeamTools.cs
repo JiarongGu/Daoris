@@ -30,6 +30,12 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         [Description("The edges: part, on, kind (`after` or `orders`), milestone (oriented, submitted or landed) and why.")]
         TeamEdge[]? edges = null,
         [Description("One paragraph: why these parts, and what changed since the last revision. Needed with `parts`.")] string? why = null,
+        [Description("For an ask across repositories: what each repository releases, read from its `daoris.json` `deployables` (`daoris repository deployables`): `ref` {repository, id}, `declared` {repository, file, range, blob} and `provides`/`consumes` as {resource, mode}. The judge orders them itself: a `mirror` or `reads` of what another provides is a release order, citing the declaration; `calls` and the registry's `uses` give none.")]
+        DeliveryDeployable[]? deployables = null,
+        [Description("Release orders you read beyond the declarations: `deployable` released after `on`, `why`, and `source` (`stage-condition`, `contract` or `code-read` with `evidence` {repository, file, range, blob}, or `policy`/`person`). An order that cites no evidence is `policy`, and is shown as one.")]
+        DeliveryEdge[]? releases = null,
+        [Description("What only the person can settle about the delivery (a contract's open point, a target, an account), each with a stable `key` so it is asked once, and `kind`, `text`, `yes`, `blocks`, `default`.")]
+        DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
         [Description("To read: the blob id each path holds now, as `{path: blob}`; a pack's pointer that differs is named stale.")]
@@ -53,6 +59,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         var save = new TeamSave(target, parts, edges ?? [], why ?? "")
         {
             Scope = scope?.Scope, Expect = revision ?? 0, By = session, Base = baseCommit,
+            Deployables = deployables ?? [], Releases = releases ?? [], Questions = questions ?? [],
         };
         return (await teams.SaveAsync(save, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Message;
     }

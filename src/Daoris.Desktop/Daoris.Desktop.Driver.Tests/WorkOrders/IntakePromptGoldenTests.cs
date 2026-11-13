@@ -79,6 +79,17 @@ public sealed class IntakePromptGoldenTests
         Assert.Contains("A `then` step carries the quest's requirements", prompt);
     }
 
+    /// <summary>Work across repositories is a plan with its deployables, its cited orders and its questions, never a chain of quests.</summary>
+    [Fact]
+    public void The_intake_plans_work_across_repositories_instead_of_chaining_quests()
+    {
+        var flat = string.Join(' ', IntakePrompt.Compose(Bare).Split([' ', '\n'], StringSplitOptions.RemoveEmptyEntries));
+
+        Assert.Contains("is a plan, never a chain of quests: write it with `team_plan`", flat);
+        Assert.Contains("an order you cannot cite is shown as policy", flat);
+        Assert.DoesNotContain("is a quest to each", flat);
+    }
+
     /// <summary>
     /// The intake names a requirement's evidence, a path, only where the work plainly leaves a file the person
     /// can name, never one it would guess at; and no gate, which is refused until the landing queue reads gates. Said

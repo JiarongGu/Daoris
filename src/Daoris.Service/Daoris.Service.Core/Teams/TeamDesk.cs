@@ -45,9 +45,18 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
             repository => policies.GetValueOrDefault(repository, TeamPathPolicy.None));
         if (judged.Refusal is { } unfit) return new(TeamRefusal.Unfit, unfit);
 
+        if (save.Scope is not null && (save.Deployables.Count > 0 || save.Releases.Count > 0))
+        {
+            return new(TeamRefusal.Unfit, "A split of a part holds no deployables: what is released is the ask's own plan's to say.");
+        }
+
+        var delivery = DeliveryGraph.Judge(save.Deployables, save.Releases, save.Questions);
+        if (delivery.Refusal is { } unordered) return new(TeamRefusal.Unfit, unordered);
+
         var plan = new TeamPlan(ask.Id, save.Scope, (current?.Revision ?? 0) + 1, save.By, save.Why, now)
         {
-            Base = save.Base, Parts = judged.Parts, Edges = judged.Edges, Flags = judged.Flags, Depth = depth,
+            Base = save.Base, Parts = judged.Parts, Edges = judged.Edges, Flags = [.. judged.Flags, .. delivery.Flags], Depth = depth,
+            Deployables = save.Deployables, Releases = delivery.Edges, Questions = delivery.Questions,
         };
         if (!await store.AppendAsync(plan, ct).ConfigureAwait(false))
         {
@@ -97,7 +106,8 @@ public sealed class TeamDesk(TeamStore store, AskDesk asks, Func<string, Cancell
         var lines = new List<string>
         {
             plan.Scope is null
-                ? $"Plan for ask `#{plan.Ask}`, revision {plan.Revision}: {plan.Parts.Count} part(s), {plan.Edges.Count} edge(s)."
+                ? $"Plan for ask `#{plan.Ask}`, revision {plan.Revision}: {plan.Parts.Count} part(s), {plan.Edges.Count} edge(s)"
+                    + (plan.Deployables.Count > 0 ? $", {plan.Deployables.Count} deployable(s) with {plan.Releases.Count} release order(s) and {plan.Questions.Count} question(s) for the person." : ".")
                 : $"Split of part `{plan.Scope}` of ask `#{plan.Ask}`, revision {plan.Revision} (depth {plan.Depth}): {plan.Parts.Count} part(s).",
         };
         lines.AddRange(published.Select(each => each.Quest is { } quest

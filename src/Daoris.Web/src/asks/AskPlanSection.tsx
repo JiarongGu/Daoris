@@ -54,6 +54,32 @@ function Revision({ revision, onOpenQuest }: { revision: AskPlanRevision; onOpen
           ))}
         </ul>
       )}
+      {revision.releases.length > 0 && (
+        <ul className="m-0 grid list-none gap-1 p-0 text-meta text-ink-faint">
+          {revision.releases.map((release) => (
+            <li key={`${release.deployable}-${release.source}-${release.on}`} className="flex min-w-0 flex-wrap items-baseline gap-x-2 wrap-anywhere">
+              <span>{t('asks.plan.release', { deployable: release.deployable, on: release.on })}: {release.why}</span>
+              <Pill tone={release.source === 'policy' ? 'warn' : 'neutral'}>{t(`asks.plan.source.${release.source}`, { defaultValue: release.source })}</Pill>
+              {release.evidence && <span>{t('asks.plan.evidence', { where: release.evidence })}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {revision.questions.length > 0 && (
+        <section className="grid gap-1" aria-label={t('asks.plan.questions')}>
+          <p className="m-0 text-meta text-ink-faint">{t('asks.plan.questions')}</p>
+          <ul className="m-0 grid list-none gap-1.5 p-0">
+            {revision.questions.map((question) => (
+              <li key={question.key} className="grid min-w-0 gap-0.5 text-meta">
+                <span className="wrap-anywhere text-body text-ink">{question.text}</span>
+                {question.yes && <span className="text-ink-faint">{t('asks.plan.question.yes', { text: question.yes })}</span>}
+                {question.blocks && <span className="text-ink-faint">{t('asks.plan.question.blocks', { text: question.blocks })}</span>}
+                {question.default && <span className="text-ink-faint">{t('asks.plan.question.default', { text: question.default })}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {revision.flags.length > 0 && (
         <ul className="m-0 grid list-none gap-1 p-0">
           {revision.flags.map((flag) => (

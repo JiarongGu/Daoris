@@ -28,7 +28,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | `Driver/Participants/`, `Driver/Loop/` | Helpers, partners and opinions: their admission, waits, person acts and runs; brainstorms and meetings at the look; the routing line (`RoutingStanding`) |
 | `Driver/Course/` | The answers-alone count and its hold |
 | `Modules/` | *What needs you*'s judge (`AttentionStateSlice`, `NeedsAPerson`), the steward desk, the join's and the members' routes |
-| `Web/work/` (`conversation/`, `pieces/`, `team/`, `atWork/`), `Web/asks/`, `Web/notifications/StewardLine.tsx` | The composer's levels, the sender chip and exchange cards; the Pieces section; *Co-workers*; *At work* and *Waiting on*; an ask's channel and a teammate's, and its plan section (`AskPlanSection`: parts with their quests, edges, flags, a worker's split below); the steward's line |
+| `Web/work/` (`conversation/`, `pieces/`, `team/`, `atWork/`), `Web/asks/`, `Web/notifications/StewardLine.tsx` | The composer's levels, the sender chip and exchange cards; the Pieces section; *Co-workers*; *At work* and *Waiting on*; an ask's channel and a teammate's, and its plan section (`AskPlanSection`: parts with their quests, edges, flags, the release orders with their source and evidence, the one queue of questions, a worker's split below); the steward's line |
 
 The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SKILL.md`; it also says what the person sees of an
 agent's part (the sender marks, the wait counted once, a line's channel, the steward desk's history).
