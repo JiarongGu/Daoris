@@ -33,6 +33,9 @@ public sealed class ConversationArchive(string home)
     /// <summary>Every conversation archived, by its id, and when.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Marks() => _facts.Archives();
 
+    /// <summary>Every conversation that is named or pinned, by its id.</summary>
+    public IReadOnlyDictionary<string, HelpKept> Titled() => _facts.Titled();
+
     /// <summary>
     /// Archive the conversations these sessions are parts of, each judged by its parts' places in <paramref name="groups"/>: a finished one
     /// is marked, keeping its first archived time; one with a part working, pending or needing you, or no record here, is refused; nothing

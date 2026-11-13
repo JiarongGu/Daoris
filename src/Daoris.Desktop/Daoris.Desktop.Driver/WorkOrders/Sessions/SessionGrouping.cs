@@ -20,6 +20,12 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// <summary>Whether this machine's archive mark stands. A session that needs the person is shown in its group whatever the mark says.</summary>
     public bool Archived { get; init; }
 
+    /// <summary>The name this machine's person gave its conversation; null for none, its first question then its title.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>Whether this machine's person pinned its conversation to the top of its list.</summary>
+    public bool Pinned { get; init; }
+
     /// <summary>A teammate's record: read here, and acted on from its own machine.</summary>
     public bool Teammate { get; init; }
 

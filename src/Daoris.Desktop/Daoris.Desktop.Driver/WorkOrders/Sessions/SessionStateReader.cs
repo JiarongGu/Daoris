@@ -76,6 +76,8 @@ internal sealed class SessionStateReader
         var row = new SessionGrouping(record.Id, SessionGroup.Done, ShownState.Of(record))
         {
             Archived = _look.Archived.ContainsKey(ConversationArchive.Of(record)),
+            Name = _look.Titled.GetValueOrDefault(ConversationArchive.Of(record))?.Name,
+            Pinned = _look.Titled.GetValueOrDefault(ConversationArchive.Of(record))?.Pinned is not null,
             Teammate = record.Teammate,
             // The ledger's half, as the service answered it, and this machine's.
             Deletable = record.Deletable && !record.Live && !record.Teammate && !_look.Kept.Contains(record.Id),

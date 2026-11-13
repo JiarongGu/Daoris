@@ -149,6 +149,25 @@ public sealed class SessionStatesTests
         Assert.Equal((expected.State, expected.Reason, expected.Group ?? expected.State), (row.State, row.Reason, row.Group));
     }
 
+    // A session's row says what its person kept of its conversation: the name they gave it and whether they pinned it.
+    [Fact]
+    public void A_row_carries_its_conversations_name_and_pin_and_a_conversation_kept_nothing_of_carries_none()
+    {
+        var plain = SessionGroups.Read(Look(Record("s1", "working"))).Single();
+        var kept = SessionGroups.Read(Look(Record("s1", "working")) with
+        {
+            Titled = new Dictionary<string, HelpKept> { ["s1"] = new("Workspaces", T0, null, null) },
+        }).Single();
+        var named = SessionGroups.Read(Look(Record("s1", "working")) with
+        {
+            Titled = new Dictionary<string, HelpKept> { ["s1"] = new("Only a name", null, null, null) },
+        }).Single();
+
+        Assert.Equal((null, false), (plain.Name, plain.Pinned));
+        Assert.Equal(("Workspaces", true), (kept.Name, kept.Pinned));
+        Assert.Equal(("Only a name", false), (named.Name, named.Pinned));
+    }
+
     [Fact]
     public void Only_the_newest_session_of_an_unfinished_quest_is_unfinished_and_an_earlier_one_stays_done()
     {

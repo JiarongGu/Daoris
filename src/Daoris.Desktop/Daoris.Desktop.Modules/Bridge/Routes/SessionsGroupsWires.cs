@@ -32,6 +32,8 @@ public static class SessionsGroupsWires
         row.Reason,
         row.Shown,
         row.Archived,
+        row.Name,
+        row.Pinned,
         row.Teammate,
         row.Strikes,
         row.Awaits,
