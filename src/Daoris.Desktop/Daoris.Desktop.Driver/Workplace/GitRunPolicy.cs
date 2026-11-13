@@ -15,7 +15,7 @@ public sealed class GitRunPolicy : IGitPolicy
     /// <summary>The one instance a root hands.</summary>
     public static GitRunPolicy Shared { get; } = new();
 
-    // The start as the scheduler classifies it: kept beside the answer so a placed run reads the start it was resolved from.
+    // The start the scheduler classifies, kept beside the answer so a placed run reads the start it resolved.
     private static readonly ConditionalWeakTable<GitRunSpec, ProcessStartInfo> s_infos = new();
 
     private GitRunPolicy()

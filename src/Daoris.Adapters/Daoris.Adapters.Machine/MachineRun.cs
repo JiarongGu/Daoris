@@ -131,7 +131,6 @@ internal sealed class MachineRun : IChildRun
         }
     }
 
-    /// <summary>The kill of a host with no owner: the process and its tree; why it is refused, or null where it is made.</summary>
     private static string? Kill(Process process)
     {
         try

@@ -51,7 +51,7 @@ public interface IGitPolicy
     /// </summary>
     Task<T> PlaceAsync<T>(GitAsk ask, GitRunSpec start, GitRunKind kind, Func<CancellationToken, Task<T>> run, CancellationToken ct);
 
-    /// <summary>Tells that the git of <paramref name="id"/> was not ended by its kill, <paramref name="reason"/> saying why, as it is found.</summary>
+    /// <summary>Tells that the git of <paramref name="id"/> did not end at its kill, <paramref name="reason"/> saying why, as it is found.</summary>
     void Unended(int id, string reason);
 
     /// <summary>The program git runs as for a home, with the moment its file changed, or null where none resolves.</summary>

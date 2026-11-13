@@ -16,7 +16,6 @@ public sealed record ProcessSpec(string Program, IReadOnlyList<string> Arguments
     /// <summary>Whether its standard input stays open for <see cref="IChildRun.WriteAsync"/>.</summary>
     public bool Input { get; init; }
 
-    /// <summary>Whether its standard output comes as bytes through <see cref="IChildRun.Bytes"/>, never decoded as text.</summary>
     public bool RawOutput { get; init; }
 }
 

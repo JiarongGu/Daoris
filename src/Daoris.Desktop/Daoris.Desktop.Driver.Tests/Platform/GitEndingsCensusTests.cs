@@ -14,7 +14,6 @@ public sealed class GitEndingsCensusTests
 
     private static readonly Regex Ends = new(@"\bOwnedProcesses\.End\s*\(|\.Kill\s*\(|\bChildProcess\.EndAsync\s*\(|\bEnding\.Cancel\s*\(|\bPoolGit\.EndAsync\s*\(");
 
-    /// <summary>Each file that ends a process early, with what it may end.</summary>
     private static readonly Dictionary<string, string> Endings = new(StringComparer.Ordinal)
     {
         ["ActReconciler.cs"] = "an act's step found by its pid alone after its owner died, reconciled first: the Git job's end with Daoris",

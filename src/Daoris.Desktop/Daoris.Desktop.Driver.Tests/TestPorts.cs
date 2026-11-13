@@ -37,10 +37,7 @@ internal static class TestPorts
         Git = Git,
     });
 
-    /// <summary>
-    /// The machine's host over this process's scripted places, whose starts are made by the stand-in a flow chose
-    /// (<see cref="ProcessStarts.Within"/>) and else by the runtime, so a test that counts or answers a git start sees it as it did at the gate.
-    /// </summary>
+    /// <summary>The machine's host over the scripted places, whose starts are made by the stand-in a flow chose (<see cref="ProcessStarts.Within"/>) and else by the runtime.</summary>
     internal static IProcessHost Host { get; } = new Daoris.Adapters.Machine.MachineProcessHost(
         Processes, GitStartAdmission.Admit, new Daoris.Adapters.Machine.ProcessOwner(OwnedProcesses.Own, OwnedProcesses.End),
         info =>

@@ -173,13 +173,9 @@ public sealed class ProcessStarts
 
     internal static IDisposable? Queued() => s_queue.Value?.Invoke();
 
-    /// <summary>
-    /// A start made beside this gate (the machine's host, which the git adapter starts through) told to this flow's timing, as one the gate
-    /// makes is: its wait for a place and its creation inside it, in <see cref="Stopwatch"/> ticks.
-    /// </summary>
+    /// <summary>A start made by the machine's host, told to this flow's timing as one the gate makes is.</summary>
     public static void Told(long waited, long created) => s_timed.Value?.Invoke(waited, created);
 
-    /// <summary>The stand-in this flow makes its starts with (<see cref="Within"/>), or null: a test's host makes its starts by it too.</summary>
     internal static Func<ProcessStartInfo, Process?>? Standing => s_within.Value;
 
     /// <summary>

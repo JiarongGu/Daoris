@@ -124,7 +124,6 @@ public sealed class ProcessStartsCensusTests
     {
         // A doctrine command at the person's own words (ONEWAY1ai-i).
         ["Daoris.Desktop.Driver.Host/DoctrineConsole.cs"] = StartClass.Person,
-        // git's own streams, a plugin's hook program, and the usage probe.
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = StartClass.Background,
         // npm installing a session's server's package, once, before the session's start.
