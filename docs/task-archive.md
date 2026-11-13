@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITTICK1 — the look's repeated git reads (2026-11-14)
+
+> **GITTICK1** (driver): Outcome: `rev-parse --verify --quiet` of `HEAD` or a full ref name (with or without `^{commit}`) and a plain `rev-parse HEAD` are answered in process by the git library (`GitLibraryVerify`, parity on real git in the checkout and a linked tree), and the look holds one `GitFacts` table; a resume tick of `StartInSyncTickTests` fell from 71 git starts (23 and 48) to 48 (18 and 30), the 29 repeated `rev-parse` reads gone, and `TickGitBudget` holds a tick to its count. A tick-scoped cache of `HEAD` or a ref was rejected: a session's own commit moves them inside a tick, so the library's exact read replaced it. What is left is GITTICK2.
+
 ## CENSUSCOMPILE1 and CENSUSALONE1 — the census classes' time (2026-11-13)
 
 > **CENSUSCOMPILE1** (driver tests): Outcome: the three say-door censuses and `CheckoutWritersCensusTests` read the desktop sources through one shared reading (`SourceTexts`, `SayDoorSources`) that the desktop compilations use too, finding each file's say calls once; alone `ContinuedReaders`, `SayKeys` and `SettledReaders` fell from 6.4, 7.8 and 10.6 s to under 0.8 s each, their entries left the time ratchet's list, and `CheckoutWriters` lost its per-file comment blanking on files with no git call. The structure case and `ReviewGraphCensusTests` are bound by their own analysis and cases, not by reading, and are listed with their reason.

@@ -404,6 +404,8 @@ public sealed class Driver(
 
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
+        // One look asks git once for what a commit's id or a folder's layout decides; a write of the look's drops it.
+        using var facts = GitFacts.Within(ct);
         var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
         {
