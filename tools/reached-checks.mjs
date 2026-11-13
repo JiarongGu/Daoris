@@ -20,11 +20,8 @@
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
  * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
  *
- * A builder runs its own checks through this, in its worktree: `--base main` takes the paths its branch changed against where it left
- * main (committed, edited and new), so each class it runs and passes is recorded under its key, and the merge of the same inputs
- * replays it. `--classes` runs the named classes (a simple or full name, or a test file) whatever they reach. A class that fails is
- * run again alone once: passing alone is a FLAKE (said, never recorded as a pass), a failure main already stands is `main's red`,
- * and the rest are new reds that fail the run. The last line, `reached-classes: {…}`, is what the merge's record reads.
+ * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes; each pass is recorded for the merge
+ * to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
@@ -40,19 +37,17 @@ import { nightLines, tiersOf } from './merge/tiers.ts';
 import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
 
-/**
- * The paths the checkout changes: against HEAD (what an open merge changes), or, for a builder's own checks (`base`), against
- * where its branch left `base`, its commits and its working tree and files not yet tracked.
- */
+/** The paths changed against HEAD (an open merge's), or against where the branch left `base` (a builder's, new files too). */
 export function changedPaths(root, base = null) {
-  const git = (args) => {
-    const ran = spawnSync('git', ['--no-optional-locks', ...args], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const read = (args) => {
+    const ran = spawnSync('git', args, { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     if (ran.status !== 0) throw new Error(`git could not read the checkout's changes: ${String(ran.stderr).trim()}`);
     return ran.stdout;
   };
-  const from = base ? git(['merge-base', base, 'HEAD']).trim() : 'HEAD';
-  const changed = git(['diff', '--name-only', '--no-renames', '-z', from]).split('\0').filter(Boolean);
-  return base ? [...new Set([...changed, ...git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)])] : changed;
+  const from = base ? read(['--no-optional-locks', 'merge-base', base, 'HEAD']).trim() : 'HEAD';
+  const changed = read(['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', from]).split('\0').filter(Boolean);
+  const added = base ? read(['--no-optional-locks', 'ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean) : [];
+  return [...new Set([...changed, ...added])];
 }
 
 export const storeFile = (root) => storeIn(verdictsHome(root));

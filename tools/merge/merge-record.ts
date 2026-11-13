@@ -14,7 +14,6 @@ export type LeftProcess = { pid: number; created: string; stopped: boolean };
 export type GateRecord = {
   name: string; verdict: string; ms: number; replayed: boolean; mainRed: boolean; abnormal: boolean; slowest: Slow[]; over: boolean; left: LeftProcess[];
   flakes?: string[];
-  /** The test classes a reached run ran, replayed from a standing pass, and failed (flaked: passed alone; main's: already red there). */
   classes?: { ran: number; replayed: number; flaked: number; mainRed: number; red: number };
 };
 export type MainRedRecord = { gate: string; unit: string; key: string };

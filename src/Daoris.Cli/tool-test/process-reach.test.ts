@@ -199,7 +199,6 @@ const DESK: Record<string, string> = {
   ].join('\n'),
   'src/Desk/Desk.Core/Desk.Core.csproj': '<Project Sdk="Microsoft.NET.Sdk" />',
   'src/Desk/Desk.Core/Alpha/AlphaThing.cs': 'namespace Desk;\npublic sealed class AlphaThing { }\n',
-  // In Alpha's area, named by no class: a change to it reaches no class that names only AlphaThing.
   'src/Desk/Desk.Core/Alpha/AlphaSpare.cs': 'namespace Desk;\npublic sealed class AlphaSpare { }\n',
   'src/Desk/Desk.Core/Beta/BetaThing.cs': 'namespace Desk;\npublic sealed class BetaThing { }\n',
   'src/Desk/Desk.Core/Gamma/Shining.cs': 'namespace Desk;\npublic static class Shining { public static string Shine(this string text) => text; }\n',

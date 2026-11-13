@@ -59,7 +59,6 @@ export class PassedClasses {
     this.passes[id] = [...rest, { key, at, ...(run ? { run } : {}) }].slice(-KEPT_PER_CLASS);
   }
 
-  /** Writes the passes, joined with those another run (a builder's checks beside a merge's) saved since this store was read. */
   save(): void {
     mkdirSync(dirname(this.file), { recursive: true });
     const beside = new PassedClasses(this.file).passes;
