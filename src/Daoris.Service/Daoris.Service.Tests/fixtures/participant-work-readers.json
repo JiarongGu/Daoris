@@ -563,6 +563,10 @@
       "reads": "tells",
       "note": "tells an active helper by the session it serves, so the channel of the part that asked it stays unspent while it runs; no row of this design moves it"
     },
+    "Core/Teams/TeamDesk.cs": {
+      "reads": "tells",
+      "note": "the plan door reads its caller's ask (a part's quest first, else the session's own ask) to know which ask's plan it writes; no row of this design moves it"
+    },
     "Core/Asks/HistoryDesk.cs": {
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
