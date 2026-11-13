@@ -40,7 +40,7 @@ finishes first and the whole set runs once.
 | The quick checks | `npm run quick` | what a builder runs: the index written, the page's generated types written and checked, typecheck, `daoris check`, the ratchet, partials, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
-| The merge tool | `tools/merge-branch.mjs`, `tools/merge-branch/`, `tools/merge-queue.mjs` | a branch previewed, queued, merged and its checks run (rule 19); its modules re-exported from its path, their tests under `tool-test/merge-branch/` |
+| The merge tool | `tools/merge-branch.mjs`, `tools/merge/`, `tools/merge-branch/`, `tools/merge-queue.mjs` | a branch previewed, queued, merged and its checks run (rule 19); the runner imports its modules and re-exports what other tools read: the typed ones in `tools/merge/` with their Vitest tests beside them, the scripts in `tools/merge-branch/` with theirs under `tool-test/merge-branch/` |
 | Worktree removal | `tools/worktree-remove.mjs` | every removal of a worktree (the prune, the gate tree, by hand) removes the links under it as links first, stops if one stays, then runs `git worktree remove` and checks the main checkout lost no tracked file |
 | The dispatch skill and agents | `.claude/skills/dispatch-subagent/`, `.claude/agents/branch-worker.md`, `branch-scout.md` | how a parent briefs and merges a builder, and the builder's half |
 | The measurement tools | `tools/subagent-usage.mjs`, `tools/subagent-time.mjs` | a builder's tokens and clock, judged against `docs/2026-11-04-consolidation-plan.md`'s targets |
@@ -167,8 +167,9 @@ finishes first and the whole set runs once.
     after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
     main's: a gate declaring `reuse` (`reached`, `censuses`) replays a standing pass whose reaching inputs, command and toolchain are
     unchanged (the verdict's `key`, in the one store `local/gate-verdicts.json`, under the merge tool's one reach table, whose digest
-    the key holds); a failure main already stands in under the same signature (its open findings, its failing verdicts on its own tree)
-    is named as main's and does not fail the merge; a test project is built once per tree (later gates run `--no-build`); a gate's
+    the key holds); a failure main already stands in, the same test under the same signature (its open findings, its failing verdicts
+    on its own tree), is named as main's and does not fail the merge, while a failure read with no test is always the branch's, a
+    finding that names no test excuses nothing and is named on each failed gate, and one not seen for a day is named stale; a test project is built once per tree (later gates run `--no-build`); a gate's
     declared `regenerate` command makes a generated input current before the gates; a gate that ends abnormally is said so and the run
     goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
     in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and

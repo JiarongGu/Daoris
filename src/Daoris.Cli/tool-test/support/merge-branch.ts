@@ -17,22 +17,6 @@ export const TOOL = join(repoRoot, 'tools', 'merge-branch.mjs');
 export interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
 export interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
-interface Options {
-  branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
-  full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean; noTimeout?: boolean;
-  /** The full set in a worktree of its own, at this commit (main's tip when null). */
-  beside: boolean; besideCommit: string | null;
-  /** The declared runner (`--full --beside --daoris-verify`). */
-  daorisVerify: boolean;
-  /** The CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
-  ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
-  /** The queue's verbs: a preview, a request queued with its message file, the queue said or rechecked, the runner. */
-  preview?: boolean; messageFile?: string | null; queue?: boolean; recheck?: boolean; queueRun?: boolean;
-  /** The stage's path, which runs the rehearsals a plain run owes. */
-  ciStage: boolean;
-  /** The nightly run by hand, every gate whole. */
-  ciNight: boolean;
-}
 /** What the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
 export interface GateTreeFacts {
   listed: boolean; head: string | null; changes: string[]; error?: string;
@@ -143,7 +127,6 @@ export const contracts = await import(
 export const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../../tools/merge-branch.mjs') as {
-  parseArgs: (argv: string[]) => Options;
   laneReport: (root: string, branch: string) => string[];
   treeDrift: (root: string, from: string, to: string) => string[] | null;
   runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step; noBuild?: boolean; trees?: Trees | null } & Beside) => Promise<GateResult>;
@@ -214,12 +197,6 @@ export const tool = await import(
   lanesProblems: (parsed: unknown, gateNames: string[]) => string[];
   readLanes: (root: string) => { lanes: Lane[]; laneless: string[] } | null;
   unionRecords: (root: string) => string[];
-  parseStatus: (text: string) => { branch: string; changed: { code: string; path: string }[] };
-  ignoredVerdict: (probe: { status: number | null; err: string }, path: string) => boolean;
-  startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
-  parseCommits: (text: string) => { sha: string; merge: boolean; subject: string; trailer: string }[];
-  commitAttributionProblems: (commits: { sha: string; merge: boolean; subject: string; trailer: string }[]) => string[];
-  worktreeFor: (porcelain: string, branch: string) => string | null;
   isProcessGate: (gate: { name: string; run: string }) => boolean;
   parseWorktrees: (porcelain: string) => Worktree[];
   pruneCandidates: (facts: { merged: string[]; worktrees: Worktree[]; current: string; hold?: string[] }) => Candidate[];
