@@ -27,7 +27,8 @@ export function classKey(unit: Unit, context: KeyContext): string {
   return sha([unitId(unit), context.declaration(unit.suite), context.toolchain, ...reached].join('\n'));
 }
 
-type Passes = Record<string, Array<{ key: string; at: string }>>;
+type Pass = { key: string; at: string; run?: string };
+type Passes = Record<string, Pass[]>;
 const KEPT_PER_CLASS = 3;
 
 export class PassedClasses {
@@ -49,9 +50,14 @@ export class PassedClasses {
     return (this.passes[id] ?? []).some((each) => each.key === key);
   }
 
-  add(id: string, key: string, at: string): void {
+  /** The pass of this key, with the run (a commit) that gave it where one was said. */
+  standing(id: string, key: string): Pass | undefined {
+    return (this.passes[id] ?? []).find((each) => each.key === key);
+  }
+
+  add(id: string, key: string, at: string, run?: string): void {
     const rest = (this.passes[id] ?? []).filter((each) => each.key !== key);
-    this.passes[id] = [...rest, { key, at }].slice(-KEPT_PER_CLASS);
+    this.passes[id] = [...rest, { key, at, ...(run ? { run } : {}) }].slice(-KEPT_PER_CLASS);
   }
 
   save(): void {

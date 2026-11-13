@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
+import type { ClassReplay } from './full-replay.ts';
 import type { LockInstalls } from './lock-install.ts';
 import { attribute, gateOutcome, mainRedLines, unspecificLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
@@ -17,7 +18,7 @@ import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict
 export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
-  failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; abnormal?: boolean; slowest?: Slow[];
+  failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; classReplay?: ClassReplay; abnormal?: boolean; slowest?: Slow[];
   left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
@@ -41,7 +42,12 @@ export type FlowDeps = {
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
+  /** A full set replays every gate whose key has a standing pass, not only the gates that declare `reuse`. */
+  replayAll?: boolean;
 };
+
+/** A gate's run cut down to the classes no pass covers (`run` null: every class has a pass, so nothing runs), with what was replayed. */
+export type Narrowed = { run: string | null; replay: ClassReplay };
 
 /** Build servers a test step leaves by design, which the next gate's build reuses: not a leftover to stop. */
 const BY_DESIGN = /VBCSCompiler|MSBuild|build-server|nodeReuse/i;
@@ -59,11 +65,13 @@ const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string): Ve
   }
 };
 
-export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, trees, step, noBuild }: {
+export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, trees, step, noBuild, narrow }: {
   where: string; gate: PlanGate; logs: string; beside: Record<string, unknown>; tree: string | null; trees: StepTrees | null; step: unknown; noBuild: boolean;
+  /** Asked once the gate is to run; the key and the verdict stay the declared gate's. */
+  narrow?: (gate: PlanGate) => Narrowed | null;
 }): Promise<GateResult> {
   const key = tree ? keyFor(deps, where, gate, tree) : null;
-  const standing = key && gate.reuse ? replayFor(deps.readVerdicts().filter((each) => each.gate === gate.name), key) : null;
+  const standing = key && (gate.reuse || deps.replayAll) ? replayFor(deps.readVerdicts().filter((each) => each.gate === gate.name), key) : null;
   if (standing && key) {
     const log = join(logs, `${gate.name}.log`);
     writeFileSync(log, `${standing.note}\n`);
@@ -76,7 +84,14 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     return { gate, code: null, log, verdict: 'FAIL', note: owed, ms: 0, abnormal: true };
   }
 
-  let run = gate.run;
+  const narrowed = narrow?.(gate) ?? null;
+  if (narrowed && narrowed.run === null) {
+    const note = `${narrowed.replay.replayedCount} classes replayed from standing passes of the same inputs (${narrowed.replay.runs.join(', ')}); none left to run`;
+    const log = join(logs, `${gate.name}.log`);
+    writeFileSync(log, `${note}\n`);
+    return { gate, code: 0, log, verdict: 'PASS', note, ms: 0, classReplay: narrowed.replay, replayed: { from: 'classes', at: narrowed.replay.oldest ?? '', note }, ...(key ? { key } : {}) };
+  }
+  let run = narrowed?.run ?? gate.run;
   let reused = false;
   if (tree && !deps.isProcessGate(gate)) {
     const once = deps.ledger.reuse(tree, run);
@@ -109,6 +124,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   if (timer) clearTimeout(timer);
   result.gate = gate;
   if (key) result.key = key;
+  if (narrowed) result.classReplay = narrowed.replay;
   if (expired !== null && budget !== null && !trees?.ended) {
     Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note: overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name)) });
     result.slowest = deps.lastSlowest(gate.name);
