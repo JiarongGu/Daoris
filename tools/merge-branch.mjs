@@ -420,7 +420,7 @@ import {
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
-import { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
+import { DEPENDENCY_FOLDERS, NPM_CI, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
 export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
@@ -4096,7 +4096,7 @@ export function gateTreeVerdict(facts, { atMerge = false } = {}) {
 function installDependencies(tree) {
   for (const folder of staleDependencies(tree)) {
     console.log(`the gate tree: installing ${folder} from its lockfile (npm ci)…`);
-    const ran = spawnSync('npm ci --no-audit --no-fund', { cwd: join(tree, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true, env: gateEnvironment() });
+    const ran = spawnSync(NPM_CI, { cwd: join(tree, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true, env: gateEnvironment() });
     if (ran.error || ran.status !== 0) {
       throw new Refusal(`npm ci failed in the gate tree's ${folder} (${ran.error?.message ?? `exit ${ran.status}`}), so the full set did not start`);
     }

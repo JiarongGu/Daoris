@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import { fixtureFolder } from './fixture-home.ts';
 import { runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
+import { LockInstalls } from './lock-install.ts';
 import type { StoredVerdict } from './verdict-store.ts';
 
 const gate = { name: 'censuses', run: 'dotnet test src/A --filter Category=Census', reuse: 'inputs' };
@@ -32,6 +33,7 @@ function harness(over: Partial<FlowDeps> = {}) {
     killTree: () => true,
     timeoutMs: () => null,
     lastSlowest: () => [],
+    installs: new LockInstalls({ changed: () => [], current: () => false, install: async () => ({ ok: true, note: '' }), say: () => {} }),
     ...over,
   };
   return { dir, deps, asked, done: remove };
@@ -81,6 +83,47 @@ test('a test gate that follows a passed build of its project on the same tree ru
     assert.match(h.asked[0]!.run, /--no-build/);
     assert.match(h.asked[0]!.run, /--logger "trx;LogFileName=/);
     assert.equal(h.asked[0]!.noBuild, false, 'the hub\'s own reuse adds none beside it');
+  } finally {
+    h.done();
+  }
+});
+
+test('a gate runs after the npm installs its tree owes, which run once however many gates start at once', async () => {
+  const order: string[] = [];
+  const installs = new LockInstalls({
+    changed: () => ['package-lock.json'], current: () => false, say: () => {},
+    install: async (_where, folder) => {
+      await new Promise((done) => setTimeout(done, 5));
+      order.push(`npm ci ${folder}`);
+      return { ok: true, note: 'exit 0' };
+    },
+  });
+  const h = harness({
+    installs,
+    runGate: async (_w, each) => {
+      order.push(each.name);
+      return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 1, log: 'l' };
+    },
+  });
+  try {
+    const results = await Promise.all(['a', 'b'].map((name) => call(h, { gate: { ...gate, name, reuse: '' } })));
+    assert.deepEqual(results.map((result) => result.verdict), ['PASS', 'PASS']);
+    assert.deepEqual(order, ['npm ci .', 'a', 'b']);
+  } finally {
+    h.done();
+  }
+});
+
+test('a failed install fails each gate without running it, and says which folder', async () => {
+  const h = harness({
+    installs: new LockInstalls({ changed: () => ['package-lock.json'], current: () => false, say: () => {}, install: async () => ({ ok: false, note: 'exit 1' }) }),
+  });
+  try {
+    const result = await call(h, { gate: { ...gate, reuse: '' } });
+    assert.equal(result.verdict, 'FAIL');
+    assert.equal(result.abnormal, true);
+    assert.match(result.note, /npm ci failed in \. \(exit 1\)/);
+    assert.equal(h.asked.length, 0, 'the gate did not run');
   } finally {
     h.done();
   }

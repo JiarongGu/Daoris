@@ -1,11 +1,12 @@
 /**
- * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, built once
- * per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
+ * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, run after
+ * the npm installs a moved lockfile owes, built once per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
  * settling: which failures are main's, what the record and the summary say. `tools/merge-branch.mjs` hands this its own seams.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
+import type { LockInstalls } from './lock-install.ts';
 import { attribute, gateOutcome, mainRedLines, type Held, type MainRed } from './main-red.ts';
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
@@ -39,6 +40,8 @@ export type FlowDeps = {
   timeoutMs: (gate: PlanGate) => number | null;
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
+  /** The npm installs the tree owes before its first gate runs. */
+  installs: LockInstalls;
 };
 
 /** Build servers a test step leaves by design, which the next gate's build reuses: not a leftover to stop. */
@@ -66,6 +69,12 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     const log = join(logs, `${gate.name}.log`);
     writeFileSync(log, `${standing.note}\n`);
     return { gate, code: 0, log, verdict: 'PASS', note: standing.note, ms: 0, replayed: standing, key };
+  }
+  const owed = await deps.installs.ready(where);
+  if (owed !== null) {
+    const log = join(logs, `${gate.name}.log`);
+    writeFileSync(log, `${owed}\n`);
+    return { gate, code: null, log, verdict: 'FAIL', note: owed, ms: 0, abnormal: true };
   }
 
   let run = gate.run;

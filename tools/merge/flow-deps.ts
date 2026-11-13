@@ -2,13 +2,15 @@
  * The seams `flow.ts` runs on, made from what the merge tool hands in (its gate runner, its reach table, its failure reader and
  * its stores) and from git and the toolchain, which are read here. One cached listing of a tree serves every gate of a run.
  */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnGit } from '../fsx.mjs';
+import { isStamped, NPM_CI, stampDependencies } from '../merge-branch/dependencies.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { FlowDeps, GateResult, PlanGate } from './flow.ts';
+import { LockInstalls } from './lock-install.ts';
 import { findingReds, verdictReds, type MainRed } from './main-red.ts';
 import { MERGE_RECORD, readRecords } from './merge-record.ts';
 import { killTree, listProcesses } from './processes.ts';
@@ -65,6 +67,19 @@ const sdksOf = (): string => {
 let toolchain: Toolchain | null = null;
 export const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
 
+/** The paths the tree at `where` holds changed against its HEAD: in a merge not yet committed, what the merge changed. */
+const diffOf = (where: string): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean);
+
+/** `npm ci` in a folder of the tree, its output the run's own; an install that passed is stamped as the gate tree's are. */
+const npmCi = (where: string, folder: string): Promise<{ ok: boolean; note: string }> => new Promise((done) => {
+  const child = spawn(NPM_CI, { cwd: join(where, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
+  child.on('error', (error) => done({ ok: false, note: error.message }));
+  child.on('close', (code) => {
+    if (code === 0) stampDependencies(where, folder);
+    done({ ok: code === 0, note: `exit ${code}` });
+  });
+});
+
 /** The deps of one run in the checkout `root`, whose verdict store is `home`'s, with a build ledger of its own. */
 export function flowDepsOf(seams: Seams, root: string, home: string, kind: string | null): FlowDeps {
   const lanes = seams.lanesOf(root);
@@ -76,7 +91,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
     reachSource: createHash('sha1').update(JSON.stringify([seams.table, lanes])).digest('hex'),
     readVerdicts: () => seams.readVerdicts(home).verdicts,
     entriesOf,
-    diffOf: (where) => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean),
+    diffOf,
     toolchain: toolchainOf(),
     slowestOf: (trx) => seams.slowestClasses(trx),
     failuresOf: (where, result, trx) => seams.failuresOf(where, result, trx)
@@ -85,6 +100,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
     ledger: new BuildLedger(),
     listProcesses,
     killTree,
+    installs: new LockInstalls({ changed: diffOf, current: isStamped, install: npmCi, say: (line) => console.log(line) }),
   };
 }
 

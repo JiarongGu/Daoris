@@ -13,6 +13,9 @@ export const DEPENDENCY_FOLDERS = ['.', 'src/Daoris.Web'];
 /** Where a folder's install notes the lockfile it installed from: inside `node_modules`, which `npm ci` lays anew. */
 export const DEPENDENCY_STAMP = '.gate-tree-lockfile';
 
+/** How a folder installs from its lockfile, run in that folder through the shell. */
+export const NPM_CI = 'npm ci --no-audit --no-fund';
+
 const fileHash = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
 const readJson = (file) => {
   try {
@@ -27,6 +30,15 @@ export function stampDependencies(tree, folder) {
   const stamp = join(tree, folder, 'node_modules', DEPENDENCY_STAMP);
   mkdirSync(dirname(stamp), { recursive: true });
   writeAtomic(stamp, `${fileHash(join(tree, folder, 'package-lock.json'))}\n`);
+}
+
+/** Whether a folder's install is stamped with its lockfile as it is now: an install this tool ran from it, and nothing else. */
+export function isStamped(tree, folder) {
+  try {
+    return readFileSync(join(tree, folder, 'node_modules', DEPENDENCY_STAMP), 'utf8').trim() === fileHash(join(tree, folder, 'package-lock.json'));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -45,11 +57,8 @@ export function dependencyState(tree, folder) {
     return 'missing';
   }
   if (entry.isSymbolicLink()) return 'linked';
-  try {
-    if (readFileSync(join(modules, DEPENDENCY_STAMP), 'utf8').trim() === fileHash(lockfile)) return 'current';
-  } catch {
-    // No stamp: an install made another way is judged by npm's own record below.
-  }
+  if (isStamped(tree, folder)) return 'current';
+  // An install made another way has no stamp, and is judged by npm's own record.
   const installed = readJson(join(modules, '.package-lock.json'))?.packages;
   const wanted = readJson(lockfile)?.packages;
   if (!installed || !wanted) return 'stale';

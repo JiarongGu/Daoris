@@ -1,7 +1,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fixtureFolder } from './fixture-home.ts';
@@ -45,6 +45,58 @@ function seeded(dir: string, env: Record<string, string>) {
   return { root, git, write };
 }
 
+/** The tool run in the scratch on `args`, its status and everything it printed. */
+async function runTool(root: string, env: Record<string, string>, args: string[]): Promise<{ status: unknown; out: string }> {
+  const child = spawn(process.execPath, [TOOL, ...args], { cwd: root, env: { ...env, VITEST: 'true', NODE_ENV: 'test' }, windowsHide: true });
+  let out = '';
+  child.stdout.on('data', (chunk) => { out += String(chunk); });
+  child.stderr.on('data', (chunk) => { out += String(chunk); });
+  const status = await new Promise((done) => child.on('close', done));
+  return { status, out };
+}
+
+test('a merge whose package-lock.json moved runs npm ci there once, before the two gates that start together', async () => {
+  const { dir, remove } = fixtureFolder('merge-e2e-lock');
+  try {
+    const env = toolEnvironment();
+    const repo = seeded(dir, env);
+    // The install counts itself by the package's own postinstall; each gate notes how many installs it found when it ran.
+    const manifest = (version: string) => `${JSON.stringify({ name: 'scratch', version, private: true, scripts: { postinstall: 'node count-install.mjs' } }, null, 2)}\n`;
+    const lockfile = (version: string) => `${JSON.stringify({ name: 'scratch', version, lockfileVersion: 3, requires: true, packages: { '': { name: 'scratch', version } } }, null, 2)}\n`;
+    repo.write({
+      '.gitignore': 'local/\nnode_modules/\n',
+      'count-install.mjs': "import { appendFileSync, mkdirSync } from 'node:fs';\nmkdirSync('local', { recursive: true });\nappendFileSync('local/installs.txt', 'installed\\n');\n",
+      'seen.mjs': [
+        "import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';",
+        "mkdirSync('local', { recursive: true });",
+        "const installs = existsSync('local/installs.txt') ? readFileSync('local/installs.txt', 'utf8').split('\\n').filter(Boolean).length : 0;",
+        "appendFileSync('local/ran.txt', `${process.argv[2]} ${installs}\\n`);",
+        '',
+      ].join('\n'),
+      'daoris.gates.json': `${JSON.stringify({ gates: [{ name: 'one', run: 'node seen.mjs one' }, { name: 'two', run: 'node seen.mjs two' }] }, null, 2)}\n`,
+      'package.json': manifest('1.0.0'),
+      'package-lock.json': lockfile('1.0.0'),
+    });
+    repo.git('add', '-A');
+    repo.git('commit', '--quiet', '-m', `the scratch's package${TRAILER}`);
+    repo.git('checkout', '--quiet', '-b', 'feature/lock');
+    repo.write({ 'package.json': manifest('1.0.1'), 'package-lock.json': lockfile('1.0.1') });
+    repo.git('add', '-A');
+    repo.git('commit', '--quiet', '-m', `move the lockfile${TRAILER}`);
+    repo.git('checkout', '--quiet', 'main');
+
+    const { status, out } = await runTool(repo.root, env, ['feature/lock', '--gated']);
+
+    assert.equal(status, 0, out);
+    assert.match(out, /npm ci in \. before the first gate: package-lock\.json moved there/);
+    assert.deepEqual(readFileSync(join(repo.root, 'local', 'installs.txt'), 'utf8').split('\n').filter(Boolean), ['installed'], 'npm ci ran once');
+    assert.deepEqual(readFileSync(join(repo.root, 'local', 'ran.txt'), 'utf8').split('\n').filter(Boolean).sort(), ['one 1', 'two 1'], 'each gate ran after it');
+    assert.ok(existsSync(join(repo.root, 'node_modules', '.gate-tree-lockfile')), 'the install is stamped with the merged lockfile');
+  } finally {
+    remove();
+  }
+});
+
 test('a branch merges in a scratch repository: its gate runs without the runner\'s variables, and the record holds the wall time', async () => {
   const { dir, remove } = fixtureFolder('merge-e2e');
   try {
@@ -57,14 +109,11 @@ test('a branch merges in a scratch repository: its gate runs without the runner\
     repo.git('checkout', '--quiet', 'main');
     const head = repo.git('rev-parse', 'HEAD');
 
-    const child = spawn(process.execPath, [TOOL, 'feature/one', '--gated'], { cwd: repo.root, env: { ...env, VITEST: 'true', NODE_ENV: 'test' }, windowsHide: true });
-    let out = '';
-    child.stdout.on('data', (chunk) => { out += String(chunk); });
-    child.stderr.on('data', (chunk) => { out += String(chunk); });
-    const status = await new Promise((done) => child.on('close', done));
+    const { status, out } = await runTool(repo.root, env, ['feature/one', '--gated']);
 
     assert.equal(status, 0, out);
     assert.match(out, /PASS\s+check\s/);
+    assert.doesNotMatch(out, /npm ci/, 'no lockfile moved, so nothing installs');
     assert.match(out, /NOT committed/);
     assert.equal(repo.git('rev-parse', 'HEAD'), head, 'the tool committed');
     assert.deepEqual(readFileSync(join(repo.root, 'local', 'ran.txt'), 'utf8').split('\n').filter(Boolean), ['check -'], 'the gate ran once, given no runner variable');
