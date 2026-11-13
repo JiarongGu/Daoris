@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The dependency tier of the git adapter: the contract cases the scripted git passes, run on real git through the machine's process
+    host, and what only real git shows (an input written whole, a read stopped at its limit, a run ended past its bound). It runs when
+    the adapter's fingerprint differs from its row of daoris.adapters.lock, and never in a unit half.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RootNamespace>Daoris.Adapters.Git.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Adapters.Git\Daoris.Adapters.Git.csproj" />
+    <ProjectReference Include="..\Daoris.Adapters.Machine\Daoris.Adapters.Machine.csproj" />
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
+  </ItemGroup>
+
+</Project>
