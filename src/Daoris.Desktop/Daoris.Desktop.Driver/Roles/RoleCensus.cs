@@ -31,6 +31,8 @@ public static class RoleCensus
         if (at(role, revision) is not { } record) return $"its start kept role `{role}` at revision {revision}, which the catalogue does not hold";
         return record.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Build && record.Takes.Any(taken => taken is RoleWork.Design or RoleWork.Exact))
             || (work == ParticipantWork.Step && record.Takes.Contains(RoleWork.Build, StringComparer.Ordinal))
+            || (work == ParticipantWork.Intake && record.Takes.Contains(RoleWork.Plan, StringComparer.Ordinal))
+            || (work == ParticipantWork.Help && record.Takes.Contains(RoleWork.Orient, StringComparer.Ordinal))
             ? null
             : $"role `{role}` at revision {revision} does not take `{work}`";
     }

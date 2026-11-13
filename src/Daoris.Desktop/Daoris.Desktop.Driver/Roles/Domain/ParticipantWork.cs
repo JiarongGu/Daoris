@@ -66,6 +66,12 @@ public static class ParticipantWork
     /// <summary>A brainstorm's pass, which keeps no record: no marks read it.</summary>
     public const string Brainstorm = "brainstorm";
 
+    /// <summary>A lead's session, which plans an ask: an intake started as the lead of the team, read as <see cref="Intake"/> from its marks.</summary>
+    public const string Plan = "plan";
+
+    /// <summary>A scout's one turn, which reads one part of a plan and answers a pack: a helper's session, read as <see cref="Help"/> from its marks.</summary>
+    public const string Orient = "orient";
+
     /// <summary>A supervisor's one read-only turn, told by the attempt it decides for before every other mark; no place under the cap.</summary>
     public const string Supervise = "supervise";
 
@@ -73,7 +79,7 @@ public static class ParticipantWork
     public const string Step = "step";
 
     /// <summary>Every work, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise, Step];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Plan, Orient, Supervise, Step];
 
     /// <summary>The work a driven quest starts as, by the weight its publisher declared: a design, an exact build, else a build.</summary>
     public static string OfWeight(string? weight) => weight switch
@@ -106,7 +112,7 @@ public static class ParticipantWork
     /// <c>partner</c> and <c>review</c> do, what the driver starts for itself; <c>chat</c>, <c>ask-daoris</c> and <c>brainstorm</c> do not,
     /// and a record with no work here holds no place.
     /// </summary>
-    public static bool HoldsSlot(string? work) => work is Build or Design or Exact or Intake or Help or Partner or Review;
+    public static bool HoldsSlot(string? work) => work is Build or Design or Exact or Intake or Help or Partner or Review or Plan or Orient;
 
     private static bool Marked(string? mark) => !string.IsNullOrEmpty(mark);
 }
