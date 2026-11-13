@@ -34,24 +34,19 @@ public sealed class ParticipantWorkTests : McpToolsFixture
     }
 
     /// <summary>
-    /// Census A, the connector's half: the connector reads a record's work by the one rule, so where its reading of
-    /// <c>serves</c> and <c>piece</c> says a partner, the work says it as well, on every row; a difference would be a listed decision.
+    /// Census A: a stored record is a partner where the table says one, on every row.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rows))]
-    public async Task The_connector_reads_a_partner_where_the_work_does(string name)
+    public async Task A_stored_record_is_a_partner_where_the_work_says_so(string name)
     {
         var row = Table.Read().Rows.Single(each => each.Name == name);
         var sessions = await SessionStore.OpenAsync(_connection);
-        var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
         var kept = await sessions.CreateAsync(
             null, row.Marks.Repository ?? "Owner", "stub", Now,
             kind: row.Marks.Kind == "chat" ? SessionKind.Chat : SessionKind.Driven,
             ask: row.Marks.Ask, opinion: row.Marks.Opinion, serves: row.Marks.Serves, piece: row.Marks.Piece, decides: row.Marks.Decides, performs: row.Marks.Performs);
 
-        var work = await new SessionWorks(ledger, new IntakeScope(null, kept.Id)).ReadAsync(default);
-
-        Assert.Equal(new SessionWork(ParticipantWork.Of(kept)!), work);
         Assert.Equal(row.ByWork.ConnectorPartner, ParticipantWork.Of(Record(row.Marks)) == ParticipantWork.Partner);
     }
 

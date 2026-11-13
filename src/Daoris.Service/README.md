@@ -247,20 +247,13 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 list (`KnowledgeServer.ToolTypes`, held by `McpToolRegistrationTests`), the driver's `BrainstormPermissions.ConnectorTools` and its
 two `golden/brainstorm-rules` files (a pass is denied every tool but its own), and, as its contract decides, the default allow list
 (the driver's `Permissions.cs`, held by `PermissionRulesTests`) and a reviewer's and a helper's (`OpinionPermissions`);
-`.claude/knowledge/connector-tools.md` lists every place. The call layer's table (`CallTable`, FOUNDATION1r) places it for every work in
-`fixtures/call-table.json` and classes it in `ToolClasses`: until then every session the driver names is refused it.
-**A session is listed only what its work is served** (CONTEXTONE1d2, D230 point 3): its `tools/list` names its row of the table,
-since a Claude door loads every listed tool at its start. A session working in a repository (a quest's, a design's, a conversation's,
-an intake's, a helper's) is served `CallTable.CoreServed` (the knowledge and memory tools, the quests, `line_read`, `registry`,
-`helper_ask`, the channel and `handback_read`: 18 tools) and its own work's: a quest's (or a design's) session its go-ahead,
-question, hand-over, rule proposal, answer to an opinion and a set-up step's two (26 tools, its `check_run` among them), a conversation its go-ahead,
-hand-over, rule proposal and answer to an opinion (22), a helper its answer (12), an intake none (15), each less what its work is
-refused (an intake the memory changes and the helper's ask, a helper the channel, the quests, `memory_propose` and the memory
-changes). Ask Daoris is served every tool but the brainstorm turns, `helper_ask`, `check_run` and the memory changes (51 of the
-57 the host registers). A reviewer, a partner and a supervisor's turn are served fixed lists of reads and their one result tool
-(`CallTable.ReviewerServed`, `PartnerServed`, `SupervisorServed`). `CoreSetTests` holds each row, and keeps the core's definitions
-within 30,000 characters and a repository work's row within 40,000; a new tool is placed in a row before any of these sessions
-is listed it.
+`.claude/knowledge/connector-tools.md` lists every place. It is classed in `ToolClasses` (what the call's place records it as) and
+named in `fixtures/call-table.json`'s `registered` list.
+**The connector lists and serves every registered tool to every session, whatever its work** (ACCESS1 row h, D284): `tools/list`
+names all of them and no call is refused by the session's work or by who made it. A tool whose work has nothing to act on says so
+in its own answer (a brainstorm tool with no turn, `checkout_read` outside Ask Daoris, a memory change by a work with no repository
+of its own). What a one-job session may call is its harness's rules, handed by the driver at its start. `McpRoleFilterTests` holds
+the file to the registration and to the closed set of works.
 `McpToolDescriptionTests` refuses a name that says `history`, `clear` or `forget`, since no tool clears a record, and one that says `evidence` or `verdict`.
 
 **A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
@@ -562,12 +555,9 @@ is never read, a value sent that is not an id is named `malformed` and not kept,
 writes, are not read for it. The driver binds each child to the session's part from these lines and its own
 (`ChildBindings`).
 
-For a connector that names a session, the reads (`ToolClasses`) answer every caller, and every other tool runs only for a
-caller proven the root (`CallerProof`): a Claude Code call whose id joins a hook line naming no agent (`HookJoin`, read
-from the file's end, two seconds at most), or a Codex call whose thread is its session's root with no child signal. A
-child, or a call whose lineage is missing, malformed, conflicting or unjoined, gets an error result before the tool runs,
-saying nothing was done, why, and that the reads remain. A plain `quest_publish` alone passes it. A connector that names no
-session, a person's own agent's, writes nothing and is not guarded.
+Every tool runs for every caller: a subagent's call counts as its session's, and a call whose lineage is missing, malformed or
+unjoined runs the same. The record only lets the driver bind a child to its session's part. A connector that names no session, a
+person's own agent's, writes nothing.
 
 ## Running it
 

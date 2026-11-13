@@ -5,14 +5,13 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A session working in a system department plans through one typed tool, <c>system_plan</c>: each call is a keyed request in the
-/// home's session requests for the session's own record, which the loop running it takes, hands to the system's adapter and answers
-/// beside with the plan's number and its resources. The connector judges only what it can: that it speaks for a session, and that the
-/// call names changes; which system, and what they come to there, are the driver's and the adapter's.
+/// A session in a system department plans through <c>system_plan</c>: each call is a keyed request in the home's session requests for
+/// the session's own record, which the loop running it takes, hands to the system's adapter and answers beside with the plan's number
+/// and its resources. The connector judges that it speaks for a session and that the call names changes;
+/// which system, and what they come to there, are the driver's and the adapter's.
 /// </summary>
 /// <remarks>
-/// A twin: the request's fields are the driver's <c>SessionRequests</c> (<c>text</c> holding the changes), held there by
-/// <c>SystemPlanningTests</c> with the same names; the two change together.
+/// A twin: the request's fields are the driver's <c>SessionRequests</c>, held there by <c>SystemPlanningTests</c>; the two change together.
 /// </remarks>
 public sealed class McpSystemPlanToolTests : McpToolsFixture
 {
@@ -119,21 +118,6 @@ public sealed class McpSystemPlanToolTests : McpToolsFixture
         var (tools, _) = await ConnectorAsync(named: false);
 
         Assert.EndsWith("Nothing was planned.", await tools.PlanAsync([new SystemPlanChange("release", "2")]), StringComparison.Ordinal);
-    }
-
-    /// <summary>A session's work is read in a system where its record's department is registered as one, and in none elsewhere.</summary>
-    [Fact]
-    public async Task A_session_s_work_is_in_a_system_where_its_department_is_registered_as_one()
-    {
-        var sessions = await SessionStore.OpenAsync(_connection);
-        var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
-        await _service.RegisterAsync(new Registration("store", false, null, [], [], [], 0, Kind: PlaceKinds.System, System: "stand-in-system/stand-in"), DateTimeOffset.UtcNow);
-        await _service.RegisterAsync(new Registration("engine", false, null, [], [], [], 0, Root: _root), DateTimeOffset.UtcNow);
-        var store = await sessions.CreateAsync(null, "store", "claude-code", DateTimeOffset.UtcNow);
-        var engine = await sessions.CreateAsync(null, "engine", "claude-code", DateTimeOffset.UtcNow);
-
-        Assert.True((await new SessionWorks(ledger, new IntakeScope(null, store.Id)).ReadAsync(default)).InSystem);
-        Assert.False((await new SessionWorks(ledger, new IntakeScope(null, engine.Id)).ReadAsync(default)).InSystem);
     }
 
     [Fact]

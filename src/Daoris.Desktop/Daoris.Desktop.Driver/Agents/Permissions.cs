@@ -133,7 +133,7 @@ public static class PermissionRules
                 "helper_ask", "helper_answer", "check_run", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
                 "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Select(tool => ConnectorPrefix + tool)],
-            // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
+            // Not `knowledge_refresh`: it rebuilds the index every session shares, so the harness asks. And
             // `permission_propose` only PROPOSES — a widening still waits for the person. `go_ahead_ask`
             // only ASKS — the act it names still waits for the person's yes. `review_serve` and
             // `review_ready` are a set-up step's, answered for its own session only:

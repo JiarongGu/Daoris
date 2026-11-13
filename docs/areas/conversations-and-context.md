@@ -222,7 +222,7 @@ of everything it handed, section by section.
     message is the brief, Daoris's briefing and the browser line. The brief, the browser line and the draft are consumed
     only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
     person waits on no answer to it. (from D162, D163, D164, D230)
-38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
+38. A session is listed every connector tool, whatever its kind. A Claude
     session keeps its account's auto-memory and synced skills, plugins and connectors, as by hand, and is handed the skills,
     subagents, commands, servers, enabled plugins, Chrome switch, settings beneath Daoris's rules and memory file of the person's
     own tool home; a Codex session its configuration, instructions, skills and prompts; each family the person's to switch off

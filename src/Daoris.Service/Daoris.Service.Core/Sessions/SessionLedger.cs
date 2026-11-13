@@ -28,9 +28,7 @@ namespace Daoris.Knowledge;
 /// This machine's home, where a park's question is filed (<see cref="QuestionBox"/>), or null on a host with none: a supervisor's word is
 /// then refused <see cref="SessionSayRefusal.NoHome"/>, since its question cannot be checked.
 /// </param>
-/// <param name="opinions">
-/// The second opinions, where findings an open moved to a new part are followed: the part that holds them answers them.
-/// </param>
+/// <param name="opinions">The second opinions, where findings an open moved to a new part are followed: the part that holds them answers them.</param>
 public sealed class SessionLedger(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null,
     OpinionStore? opinions = null)
@@ -158,10 +156,6 @@ public sealed class SessionLedger(
 
     /// <summary>The record of one session, as the store holds it.</summary>
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
-
-    /// <summary>Whether <paramref name="record"/>'s department is registered as a system; false with no registry to ask.</summary>
-    public async Task<bool> InSystemAsync(Session record, CancellationToken ct = default) =>
-        registry is not null && (await registry.RegistryAsync(ct: ct).ConfigureAwait(false)).Named(record.Repository) is { PlaceKind: PlaceKinds.System };
 
     /// <summary>The line <paramref name="named"/> is on, walked to its head.</summary>
     public Task<LineWalk> WalkLineAsync(Session named, CancellationToken ct = default) => Lines.WalkAsync(sessions, named, ct);
