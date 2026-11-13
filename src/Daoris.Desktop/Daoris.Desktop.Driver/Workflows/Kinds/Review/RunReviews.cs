@@ -30,11 +30,16 @@ public static class RunReviews
             Before = [.. Preceding(graph, review.Id).Select(node => Step(record, node, null))],
             Newer = read is not null && newest is not null && newest.Attempt > read.Attempt
                 ? new RunReviewNewer(newest.Attempt, newest.Revision, Changed(read, newest)) : null,
-            Follows = [.. Following(graph, review.Id).Select(each => Step(record, each.Node, each.Via))],
+            Follows = RunReviews.Follows(graph, record),
             Ended = record.Ended?.Outcome,
             Operations = read?.Kind == ReviewKinds.Plan ? PlanReview.Named(home, read).Plan?.Operations : null,
         };
     }
+
+    public static IReadOnlyList<RunReviewStep> Follows(NodeGraph graph, NodeRecord record) =>
+        graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
+            ? [.. Following(graph, review.Id).Select(each => Step(record, each.Node, each.Via))]
+            : [];
 
     /// <summary>What a reached step reached, by its evidence or its target: a pull request's address, a landed branch's ref.</summary>
     public static string? DoorOf(NodeStatus status) => status.Current is { } reached ? reached.Evidence?.Ref ?? reached.Target?.Ref : null;

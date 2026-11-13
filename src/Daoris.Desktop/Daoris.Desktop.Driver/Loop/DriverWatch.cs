@@ -351,6 +351,8 @@ public sealed class DriverWatch(
             : wake.Topic is ChangeTopics.Ledger or ChangeTopics.Requests ? ChainEvents.Ledger
             : ChainEvents.Home);
         _wakes.Counted();
+        // A quest a person or an agent moved moves its run's node: link 8 reads it now, beside whatever look runs, not a look later.
+        if (wake is { Topic: ChangeTopics.Ledger } && LedgerChanges.Names(wake.Subject, LedgerChanges.Quests)) NodesWoken(LedgerChanges.Quests);
     }
 
     /// <summary>
