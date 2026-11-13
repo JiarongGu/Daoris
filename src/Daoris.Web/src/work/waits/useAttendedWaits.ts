@@ -258,7 +258,7 @@ export function useAttendedWaits({
     // What each running session holds of git access, with the press that tightens it.
     gitAccess: heldGitAccess,
     // Its review, wherever the review stands: the move beside unlanded work.
-    onReview: () => openView('review'),
+    onReview: () => openView('outputs'),
     // Commits its tree holds, offered to land beside what it left; the Accept is the review page's, which `onReviewRun` opens.
     lands,
     review: headReview,

@@ -78,13 +78,13 @@ export type KeyReach = 'everywhere' | 'fields' | 'outside' | 'native';
 /** One key an item answers by, as its menu prints it, and who takes it where the focus is. */
 export type KeyBinding = { combo: string; reach: KeyReach };
 
-/** What the frame does with the session attended on Sessions, which only the frame can; `review/<run>` opens that run's review. */
+/** What the frame does with the session attended on Sessions, which only the frame can; `outputs/<run>` opens that run's outputs. */
 export type FrameIntent =
   | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'atWork' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
-  | `review/${string}`;
+  | `outputs/${string}`;
 
-export const reviewOfIntent = (intent: FrameIntent | null | undefined): string | null =>
-  intent?.startsWith('review/') ? intent.slice('review/'.length) || null : null;
+export const outputsOfIntent = (intent: FrameIntent | null | undefined): string | null =>
+  intent?.startsWith('outputs/') ? intent.slice('outputs/'.length) || null : null;
 
 /** What is true now, which decides what applies. Every field a value, so each world is an argument. */
 export type CommandState = {

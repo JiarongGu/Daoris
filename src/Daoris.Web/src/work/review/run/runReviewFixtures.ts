@@ -68,6 +68,39 @@ export const BRANCH_REVIEW = answer('branch', {
   parts: [PARTS[0], { quest: 'q42', title: 'Check the totals', session: 's-42', unchecked: true, requirements: [], note: 'Checked.' }],
 });
 
+const PATCH = (path: string, from: string, to: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1,3 +1,3 @@\n line one\n-${from}\n+${to}\n line three\n`;
+
+/** A branch at its review with its outputs: two commits, their patch per file, and the two parts' handbacks. */
+export const BRANCH_OUTPUTS: RunReviewAnswer = {
+  ...BRANCH_REVIEW,
+  supervisor: null,
+  outputs: [
+    { id: 'handback:q41', type: 'handback', display: 'document', title: 'Tidy the budget notes', part: 'q41', digest: 'h1' },
+    { id: 'handback:q42', type: 'handback', display: 'document', title: 'Check the totals', part: 'q42', digest: 'h2' },
+    { id: 'changes', type: 'changes', display: 'change-set', title: null, digest: 'c1' },
+  ],
+  commits: {
+    commits: [
+      { sha: 'a1b2c3d4e5f6', author: 'Fixture', at: '2026-11-12T08:00:00Z', subject: 'Check the totals', files: ['notes/totals.md'] },
+      { sha: 'f6e5d4c3b2a1', author: 'Fixture', at: '2026-11-12T07:00:00Z', subject: 'Tidy the summary', files: ['notes/summary.md'] },
+    ],
+    uncommitted: [],
+  },
+  diff: {
+    base: '0e4b9c000000',
+    truncated: null,
+    files: [
+      { path: 'notes/summary.md', status: 'modified', added: 1, removed: 1, patch: PATCH('notes/summary.md', 'old summary', 'new summary') },
+      { path: 'notes/totals.md', status: 'modified', added: 1, removed: 1, patch: PATCH('notes/totals.md', 'total 10', 'total 12') },
+    ],
+  },
+};
+
+/** The same branch with r3 ready: its tip moved and a handback was corrected, no file row changed. */
+export const BRANCH_NEWER: RunReviewAnswer = {
+  ...BRANCH_OUTPUTS, standing: 3, presses: [], newer: { attempt: 3, revision: 'c9d2f1', changed: [], outputs: ['changes', 'handback:q42'] },
+};
+
 /** A folder's review with a newer revision ready, two files changed since. */
 export const NEWER_REVIEW = answer('folder', {
   standing: 3, presses: [], newer: { attempt: 3, revision: 'c9d2f1', changed: ['notes/summary.md', 'notes/new.md'] }, follows: [],

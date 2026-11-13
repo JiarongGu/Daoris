@@ -1,5 +1,4 @@
 {
-  "work.review.tab": "Review",
   "work.review.timelineTab": "Timeline",
   "work.review.files": "{{count}} file changed",
   "work.review.progress": "{{done}} of {{total}} viewed",

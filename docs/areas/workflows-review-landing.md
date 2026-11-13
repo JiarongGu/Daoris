@@ -318,17 +318,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.
-57. The review page reads a run's review by its run alone (`RUN_REVIEW`): the record, the steps before it, presses only on the
-    attempt the review stands on, the supervisor's held decision with *Overrule*, the steps an Accept may start. A newer record is
-    announced with *Read it*, never swapped in. A folder's file is drawn at the record's hash, or from the place only while it still
-    hashes so, else refused `moved`; a branch's or a checkout's files are the answer's list between the record's commits
-    (`ReviewCommitFiles`), each drawn at those commits, whatever the checkout holds now. A Markdown file is read rendered, its changes
-    one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are this
-    page's alone: a session's own changes (`DiffPane`) keep the tree's discard and draw no Accept, Send back or landing plan, and the
-    run view draws no *Ask for changes…* under a review. The session's head and its strip at the foot draw no Accept either, nor
-    does an entry's part: where its tree offers work they draw a *Review* door, opening `review/<run>` where the work could be
-    accepted now and the session's review otherwise; *What needs you* and the run view open the review by run; the one press left
-    outside this page is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
+57. A run's review is read by its run alone (`RUN_REVIEW`): the record, its outputs (`ReviewOutputs`: each handback a document, the
+    changes a change set, a plan a resource plan, each with a stable id and a digest), a branch's or a checkout's commits with the
+    uncommitted paths apart (`ReviewBranchCommits`) and the patch per file between the record's commits, the steps before it, presses
+    only on the attempt the review stands on, the supervisor's held decision, the steps an Accept may start. A branch's base is the
+    commit its chain grew from the line (`RunWorkBase`), frozen with the tip on the record; a record with none reads the newer of the
+    local and origin line's merge bases. The **Outputs** view (`outputs/<run>`) pins the attempt first answered, picks any revision,
+    and draws *Under review · rN* (the change set first: commits, then every file's hunks in one scroll, a viewed or large file folded)
+    and *After the Accept*; a newer revision is a banner naming the outputs that moved, never swapped in. A folder's file is drawn at
+    the record's hash, or from the place only while it still hashes so, else refused `moved`; a Markdown file opens on its changes,
+    rendered one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are
+    the **Accept card**'s alone (`ReviewCard`), under the session's conversation, bound to the attempt and revision it draws: a newer
+    revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
+    tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
+    open the outputs by run; the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.
