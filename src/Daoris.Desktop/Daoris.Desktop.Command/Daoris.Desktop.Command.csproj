@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The command's start and its words: `CommandLauncherTests` holds them. -->
+    <!-- The command's start and its words: `CommandLauncherProcessTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\CommandLauncher.cs" Link="CommandLauncher.cs" />
   </ItemGroup>
 

@@ -62,7 +62,7 @@ session.** \`daoris place list\` shows what this machine will drive.
 
 \`${CLI_BIN.join('/')}/\` holds \`${CLI_LAUNCHERS[0]}\`, for Command Prompt, PowerShell and Git Bash alike: Daoris's one command,
 \`daoris …\` (ONEWAY1ai), and \`daoris help\` names each of its groups. It is a program, not a batch file, so words of several
-lines reach a verb whole (SAYLINES1). It runs the desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node. Its doctrine commands
+lines reach a verb whole. It runs the desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node. Its doctrine commands
 (\`check\`, \`sync\`, \`status\` and the rest) it hands to the \`daoris\` package this install carries in
 \`${CLI_HOME.join('/')}/\`, packed from the same build as the application, as the release packs the one it publishes to npm
 (\`daoris --version\` says which), on the \`node\` your PATH finds: they need Node.js 22 or later.
