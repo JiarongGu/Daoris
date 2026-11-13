@@ -19,10 +19,11 @@ public static class RunOutcomeNotices
     public static IReadOnlyList<NewsOccurrence> Occurrences(string home, DateTimeOffset now)
     {
         var occurrences = new List<NewsOccurrence>();
-        foreach (var run in new GraphRuns(new NodeRecordFiles(home, () => false)).Read().Where(run => run.Line is null))
+        var records = new NodeRecordFiles(home, () => false);
+        foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
         {
-            if (RunReviews.Read(home, run.Run, null) is not { } review) continue;
-            foreach (var step in review.Follows.Where(step => step.State is NodeStates.Reached or NodeStates.Failed))
+            if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
+            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State is NodeStates.Reached or NodeStates.Failed))
             {
                 var at = step.Since ?? now;
                 if (now - at >= News.Horizon) continue;

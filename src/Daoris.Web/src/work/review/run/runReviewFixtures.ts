@@ -96,7 +96,7 @@ export const BRANCH_OUTPUTS: RunReviewAnswer = {
   },
 };
 
-/** The same branch with r3 ready: its tip moved and a handback was corrected, no file row changed. */
+/** The same branch with r3 ready: a moved tip and a corrected handback, no file row changed. */
 export const BRANCH_NEWER: RunReviewAnswer = {
   ...BRANCH_OUTPUTS, standing: 3, presses: [], newer: { attempt: 3, revision: 'c9d2f1', changed: [], outputs: ['changes', 'handback:q42'] },
 };

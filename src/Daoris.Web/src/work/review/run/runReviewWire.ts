@@ -43,16 +43,12 @@ export type RunReviewSupervisor = {
 /** One operation of a plan the record names: its resource, `create`, `update` or `delete`, and its value before and after. */
 export type ReviewOperation = { resource: string; op: string; before?: string | null; after?: string | null };
 
-/**
- * One output under review: a stable id across attempts, its type (declared by what made it: `handback`, `changes`, `plan`), its display
- * (`change-set`, `document`, `resource-plan`, else drawn raw), the part it is of and the digest of the version captured.
- */
+/** One output under review: its type is declared by what made it, its display drawn raw where this window has none. */
 export type ReviewOutput = { id: string; type: string; display: string; title?: string | null; part?: string | null; digest: string };
 
 /** One commit of the record's work, newest first, with the paths it touched. */
 export type ReviewCommit = { sha: string; author: string; at?: string | null; subject: string; files: string[] };
 
-/** A branch's or a checkout's patch per file between the record's commits, the host's bound said as it said it. */
 export type ReviewDiff = { files: DiffFile[]; truncated?: string | null; base: string };
 
 /** What `RUN_REVIEW` answers: the run's review, or `refused` (`not-run`) where none is bound here with a review. */

@@ -53,7 +53,31 @@ public sealed class LookStages
 
     /// <summary>Begin a span of <paramref name="stage"/>, for <paramref name="subject"/> where it has one; it ends when disposed.</summary>
     /// <param name="beside">Whether it runs beside the look rather than in it: marked <c>~</c> on the line.</param>
-    public StageSpan Begin(string stage, string? subject = null, bool beside = false) => new(this, stage, subject, beside, _clock());
+    public StageSpan Begin(string stage, string? subject = null, bool beside = false)
+    {
+        if (s_pass.Value is { } pass) pass.Named = true;
+        return new(this, stage, subject, beside, _clock());
+    }
+
+    // The look's pass running in this flow (PassAsync): a span begun within it says the pass's time itself.
+    private static readonly AsyncLocal<PassScope?> s_pass = new();
+
+    /// <summary>
+    /// Run one pass of the look as a span of its <paramref name="part"/>, unless it begins a span of its own, which then says its time:
+    /// so every pass is in the line, the ones that time nothing of themselves included, and none is said twice.
+    /// </summary>
+    public async Task PassAsync(string part, Func<Task> work)
+    {
+        var pass = new PassScope();
+        s_pass.Value = pass;
+        using var span = new StageSpan(this, part, null, beside: false, _clock(), said: () => pass.Named);
+        await span.RunAsync(work).ConfigureAwait(false);
+    }
+
+    private sealed class PassScope
+    {
+        public volatile bool Named;
+    }
 
     /// <summary>
     /// Run <paramref name="work"/> as a span of <paramref name="stage"/>, ended however the work ends, its starts' waits for a place
@@ -130,6 +154,7 @@ public sealed class LookStages
     {
         private readonly LookStages _stages;
         private readonly Timer? _slow;
+        private readonly Func<bool>? _said;
         private readonly object _gate = new();
         private long _queued;
         private int _ended;
@@ -140,13 +165,15 @@ public sealed class LookStages
         private int _waits;
         private long _waitingSince;
 
-        internal StageSpan(LookStages stages, string stage, string? subject, bool beside, long began)
+        /// <param name="said">Whether a span within it says its time instead: then it is neither named slow nor kept.</param>
+        internal StageSpan(LookStages stages, string stage, string? subject, bool beside, long began, Func<bool>? said = null)
         {
             _stages = stages;
             Stage = stage;
             Subject = subject;
             _beside = beside;
             Began = began;
+            _said = said;
             // Named once if it outlives the threshold; a log nobody keeps names nothing, so no timer is spent on it.
             if (stages._log is { Writing: true }) _slow = new Timer(_ => Slowed(), null, stages._slowAfter, Timeout.InfiniteTimeSpan);
         }
@@ -222,13 +249,14 @@ public sealed class LookStages
 
         private void Slowed()
         {
-            if (Volatile.Read(ref _ended) == 0) _stages.Slow(this);
+            if (Volatile.Read(ref _ended) == 0 && _said?.Invoke() != true) _stages.Slow(this);
         }
 
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _ended, 1) == 1) return;
             _slow?.Dispose();
+            if (_said?.Invoke() == true) return;
             long queued;
             lock (_gate) queued = Interlocked.Read(ref _queued);
             var took = _stages._clock() - Began;

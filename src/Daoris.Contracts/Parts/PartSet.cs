@@ -11,8 +11,11 @@ public sealed class PartSet<TPart>
     /// <summary>The declarations, in the order the root runs them.</summary>
     public IReadOnlyList<PartDeclaration> Order => [.. _parts.Select(each => each.Declared)];
 
-    /// <summary>The parts of <paramref name="phase"/>, in order: what the root runs at that phase's anchor.</summary>
+    /// <summary>The parts of <paramref name="phase"/>, in order: what the root runs at that phase's anchor; with their names, <see cref="NamedIn"/>.</summary>
     public IEnumerable<TPart> In(Enum phase) => _parts.Where(each => each.Declared.Phase.Equals(phase)).Select(each => each.Part);
+
+    public IEnumerable<(string Name, TPart Part)> NamedIn(Enum phase) =>
+        _parts.Where(each => each.Declared.Phase.Equals(phase)).Select(each => (each.Declared.Name, each.Part));
 
     /// <summary>The one built part of type <typeparamref name="T"/>: for a root that also calls a module's other doors.</summary>
     public T Of<T>()

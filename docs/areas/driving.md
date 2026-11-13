@@ -170,10 +170,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     trees once a look until one of its stages writes, a branch's end judgement is three starts, and a repository whose last pass did nothing and said nothing starts no git while the stamp of git's own
     files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
-    (`JudgedOnce`); a look reads the open records and every record once each; the overlaps read a running tree's changes only
+    (`JudgedOnce`); a look reads the open records and every record once each, and every graph run and its record once
+    (`RunOutcomeNotices`, a workflow file decoded once a read); the overlaps read a running tree's changes only
     where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
-    look and its own wakes, never a ledger change, reading tips from git's ref files (`NodeTips`) and a run's record once while
-    its file stands. The budgets are the bench tests' (below) and the git area's *Git's starts, counted*. (D68, D181)
+    look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent
+    closed is read within a pass, never another ledger change, reading tips from git's ref files (`NodeTips`) and a run's record
+    once while its file stands. Each look pass is a stage of its part's name in `watch.looked` unless it times itself, so a look's
+    own stages add up to its milliseconds. The budgets are the bench tests' (below) and the git area's *Git's starts, counted*.
+    (D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing; the migration's driver-keys step takes it out. (D200)
@@ -338,7 +342,7 @@ are roots that wire and grow by a one-line door at most.
 | a part of the look | a pass of its own marked `[LookPass]`, reaching the driver on `ILookWiring`, sharing on `LookState` written by one pass | `DriverPartsTests` |
 | a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
 | a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
-| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests` |
+| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs: a look's stages add up to it, a warm look under 2 s), `NodeWakesTests` |
 | what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
