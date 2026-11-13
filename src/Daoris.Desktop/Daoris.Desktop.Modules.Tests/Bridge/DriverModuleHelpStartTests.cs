@@ -49,6 +49,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         // The person's words wait for it, said as waiting on its opening.
         var said = await AnswerAsync(module, "SESSION_INPUT", new { id = "h1", text = Words });
         Assert.True(said.GetProperty("sent").GetBoolean());
+        // Kept on its record from the moment it is taken: another driver coming up on the same service reads it there.
+        Assert.Equal([Words], service.Said("h1"));
         var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "h1" });
         Assert.True(queue.GetProperty("opening").GetBoolean());
         Assert.False(queue.GetProperty("taking").GetBoolean());
@@ -59,10 +61,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 2);
         Assert.Contains("""{"Session":"h1","State":"failed"}""", Raised.Where(m => m.Type == "SESSION_ENDED").Select(m => JsonSerializer.Serialize(m.Payload)));
         Assert.True(File.Exists(room));
-        // Its failure is said in the conversation, and the words it held are there as the person's: never lost.
+        // Its failure is said in the conversation, and the words wait on its record for its go-on: never lost, never sent.
         Assert.Contains("this test spawns nothing", service.Note("h1"));
-        await UntilAsync(() => loop.Events.Page("h1").Events.Any(e => e.Kind == SessionEventKind.User && e.Text == Words));
-        Assert.Empty((await AnswerAsync(module, "SESSION_QUEUE", new { id = "h1" })).GetProperty("queued").EnumerateArray());
+        Assert.Equal([Words], service.Said("h1"));
+        Assert.Equal(Words, Assert.Single((await AnswerAsync(module, "SESSION_QUEUE", new { id = "h1" })).GetProperty("queued").EnumerateArray()).GetProperty("text").GetString());
     }
 
     /// <summary>
@@ -138,7 +140,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.All(new[] { "alpha", "beta" }, workspace => Assert.Contains(
             $"This conversation is workspace `{workspace}`'s", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home, workspace), "AGENTS.md"))));
         Assert.DoesNotContain("This conversation is workspace", File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
-        await UntilAsync(() => loop.Events.Page("h2").Events.Any(e => e.Kind == SessionEventKind.User && e.Text == Words));
+        Assert.Equal([Words], service.Said("h2"));
+        Assert.Empty(service.Said("h1"));
     }
 
     /// <summary>A workspace this machine does not hold is refused at the press, naming those it does, and nothing is opened.</summary>
@@ -383,6 +386,12 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
             lock (_gate) return Find(id)?["workspace"]?.GetValue<string>();
         }
 
+        /// <summary>The words a record keeps waiting, in the order kept.</summary>
+        public string[] Said(string id)
+        {
+            lock (_gate) return [.. (Find(id)?["said"] as JsonArray ?? []).Select(word => word!["text"]!.GetValue<string>())];
+        }
+
         public string Note(string id)
         {
             lock (_gate) return Find(id)?["note"]?.ToJsonString() ?? "";
@@ -439,6 +448,28 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                         _sessions.Add(session);
                         return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                     }
+                }
+
+                // The say door: a word kept on a running record only where its driver asks for its run.
+                if (method == "POST" && path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal))
+                {
+                    var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/say".Length]);
+                    var session = Find(id)!;
+                    var said = JsonNode.Parse(body)!;
+                    var runs = session["state"]!.GetValue<string>() is "queued" or "starting" or "working";
+                    if (runs && said["running"]?.GetValue<bool>() != true)
+                    {
+                        return (HttpStatusCode.Conflict, """{"error":"it runs","refusal":"running"}""");
+                    }
+
+                    var kept = (JsonArray)session["said"]!;
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"w{kept.Count + 1}", ["text"] = said["text"]!.GetValue<string>(), ["at"] = "2026-10-15T06:43:00Z",
+                        ["files"] = new JsonArray(), ["reopens"] = false, ["key"] = said["key"]?.GetValue<string>(),
+                    };
+                    kept.Add(word);
+                    return (HttpStatusCode.OK, new JsonObject { ["message"] = "kept", ["said"] = word.DeepClone() }.ToJsonString());
                 }
 
                 if (method == "POST" && path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal))

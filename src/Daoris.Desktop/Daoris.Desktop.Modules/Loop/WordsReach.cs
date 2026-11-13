@@ -29,9 +29,6 @@ internal sealed class WordsReach(DriverLoop loop, Func<SessionRecord, bool> take
             return new(true, Spelled(inbox.Reach), null) { Door = inbox.Reach is null ? null : new TurnDoor(inbox.Steers, inbox.KeepingStop) };
         }
 
-        // Ask Daoris's conversation still starting: a word waits for its door, which opens with it as its first turn.
-        if (loop.HelpStarting.Queue(id) is not null) return new(true, null, null);
-
         if (loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && loop.Processes.RefusesInput(id) is null)
         {
             // A conversation this machine runs: a word goes into the running turn where its agent takes words at its
@@ -56,6 +53,8 @@ internal sealed class WordsReach(DriverLoop loop, Func<SessionRecord, bool> take
             if (await WordsRead.OfAsync(loop, id, ct).ConfigureAwait(false) is not { } read) return new(false, null, null);
             if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
             // The person's words waiting on it, which the queue lists where nothing here holds it.
+            // Ask Daoris's conversation still starting: a word waits on its record for its door, which opens with it as its first turn.
+            if (loop.HelpStarting.Is(id)) return new(true, null, null) { Waiting = WordsRead.WaitingOn(read.Json, id, starting: true) };
             var waiting = WordsRead.WaitingOn(read.Json, id);
             // Being handed over or moved: a word said now is held for the take, as SayAsync holds it.
             if (takeWaits(record)) return new(true, "resume", null) { Waiting = waiting };

@@ -89,6 +89,47 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
     }
 
     /// <summary>
+    /// A word kept on the record while the conversation starts is its door's first turn once it opens, marked attempted before the wire and
+    /// taken off the record once written: said once, in the order kept, with nothing held in the driver's memory meanwhile.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_on_the_record_while_it_starts_is_taken_by_its_door_once_and_only_once()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = DriverConfig.Empty with
+        {
+            Actors = StaffedRoles.On("acp-stub", helper: "acp-stub"),
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, Up] },
+        };
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        File.WriteAllText(Up, "");
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var client = ledger.Client();
+        var adapters = ProviderRegistry.Built();
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            OpeningBound = TimeSpan.FromSeconds(20),
+        };
+
+        var placed = await runner.PlaceHelpAsync("acp-stub", config);
+        var id = placed.SessionId!;
+        ledger.For(id).Say("w1", "are you there?");
+        ledger.For(id).Say("w2", "and now?");
+        var start = await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(Machine));
+        Assert.Equal(id, start.SessionId);
+
+        Assert.Equal(2, await runner.TakeKeptAsync(id));
+        // Handed again, nothing goes twice: the turns know each word by its record id.
+        await runner.TakeKeptAsync(id);
+        await Poll.Until(
+            () => HeardLines().Contains("prompt: and now?"), () => $"heard [{string.Join(" | ", HeardLines())}], taken [{string.Join(" | ", ledger.Taken)}]");
+        Assert.Equal(["initialize", "session/new opened", "prompt: are you there?", "prompt: and now?"], HeardLines());
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
     /// A protocol-door harness that opens its conversation only once its servers are up: until <c>servers-up</c> exists it waits on them for
     /// ever, as one handed a server that never answers does; after, it opens at once and answers each prompt.
     /// </summary>
