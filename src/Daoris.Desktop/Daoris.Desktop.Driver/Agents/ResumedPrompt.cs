@@ -106,7 +106,7 @@ internal static class ResumedPrompt
             text.Append('\n').Append(DaorisWaited(daoris)).Append('\n');
         }
 
-        return text.ToString();
+        return text.Append(HelperAnswersCarried.Told(target.Handed)).ToString();
     }
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>

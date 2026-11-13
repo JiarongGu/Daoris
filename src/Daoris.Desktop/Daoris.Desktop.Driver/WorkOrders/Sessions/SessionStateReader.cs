@@ -101,6 +101,7 @@ internal sealed class SessionStateReader
             // sends reaches its process.
             if (record.Answered) return In(row with { Shown = ShownState.Answered }, SessionGroup.Working);
             if (SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered)) return In(row, SessionGroup.NeedsYou, SessionReason.Question);
+            if (_look.Between.Contains(record.Id)) return In(row with { Shown = ShownState.Idle }, SessionGroup.Working);
             return In(row, record.State == "queued" ? SessionGroup.Pending : SessionGroup.Working);
         }
 

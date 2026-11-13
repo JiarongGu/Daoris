@@ -76,6 +76,7 @@ describe('a session note’s codes, held to both catalogues', () => {
       'ledger.went-on-supervisor',
       // A quest's note (QUESTCLOSE1b1): the person's done, its lead coded and their words beneath it.
       'quest.person-done',
+      'ledger.intake-closed',
     ]);
     expect(new Set(codes.map((code) => code.code)).size).toBe(codes.length);
   });

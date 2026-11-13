@@ -33,6 +33,9 @@ public static class ShownState
     /// <summary>A session that ended its turn on its own check: the check waits its turn on the machine and the verdict goes on with it.</summary>
     public const string AwaitingCheck = "awaiting-check";
 
+    /// <summary>An open conversation whose turn ended: its record stays <c>working</c> while it waits for the person's next word.</summary>
+    public const string Idle = "idle";
+
     /// <summary>
     /// A <c>failed</c> record an account's limit ended: no failure, since its line goes on by itself at the reset or on another
     /// account. The page's <c>limited</c>.

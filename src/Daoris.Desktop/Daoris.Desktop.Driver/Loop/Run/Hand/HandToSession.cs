@@ -220,8 +220,9 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // A resume's words said to the session that asked while it waited, each under its id; a carry-on a cooling account's
                 // switch made, Daoris's own words it carries; and the words the open moved here, as this record holds them.
                 Handed = handsOn is not null
-                    ? [.. (movedOn ?? handsOn.Waiting).Where(DriverContinuations.HandedToResume)]
-                    : switched ? [.. (movedOn ?? written!.Waiting).Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
+                    ? [.. (movedOn ?? handsOn.Waiting).Where(word => DriverContinuations.HandedToResume(word) || HelperAnswersCarried.Is(word))]
+                    : [.. (movedOn ?? written?.Waiting ?? [])
+                        .Where(word => (switched && word.Daoris && DaorisWords.NewPartCarries(word)) || HelperAnswersCarried.Is(word))],
                 // The person's stop, which they released with Try again: told so, never that it is cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest is handed over from that session: told so, with the agent it ran on.

@@ -235,7 +235,11 @@ public static class WorkPausing
             var known = scope == WorkScope.Ask
                 ? await world.Service.FindAskAsync(named, ct).ConfigureAwait(false) is not null
                 : await world.Service.FindQuestAsync(named, ct).ConfigureAwait(false) is not null;
-            return new ResumeOutcome(scope, named, known ? ResumeVerdict.NotPaused : ResumeVerdict.Unknown);
+            if (!known) return new ResumeOutcome(scope, named, ResumeVerdict.Unknown);
+            return new ResumeOutcome(scope, named, ResumeVerdict.NotPaused)
+            {
+                PausedBy = scope == WorkScope.Quest ? await PauseHolder.OfAsync(world.Service, config, named, ct).ConfigureAwait(false) : null,
+            };
         }
 
         var resumed = WithPause(config, scope, named, null);
@@ -300,6 +304,8 @@ public static class WorkPausing
         {
             case ResumeVerdict.Unknown:
                 return [Unknown(outcome.Scope, outcome.Id)];
+            case ResumeVerdict.NotPaused when outcome.PausedBy is { } holder:
+                return [$"{what} is not paused on its own: {holder.Word} #{holder.Id}'s pause holds it — `{holder.Door}` carries it on."];
             case ResumeVerdict.NotPaused:
                 return [$"{what} is not paused on this machine, so nothing changed."];
         }
