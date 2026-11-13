@@ -64,7 +64,8 @@ public sealed class LandPerformer(
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
     {
         _start = start;
-        if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);        var fresh = world.Again();
+        if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
+        var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         var record = LandSessions.Of(start, records);
         if (record is null) return null;
