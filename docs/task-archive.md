@@ -25,6 +25,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **GITSTREAM1** (driver; `GitStreamEndsTests`): Outcome: both cases stand the hang in a `diff.hang.textconv` helper (set by the fixture's attributes) over `diff HEAD~1 HEAD -- hang.txt` and `cat-file --batch --textconv` (its input line names the path after the object), commands the scheduler lets run; the same pass made green the other known reds (limit-move older-build copy, stash drop's session, the driven-move fixture's leak guard, the modules' heard-file read, the connector tool's answer write).
 
 ---
+- **PERFMATRIX1 (2026-11-13):** the performance specification, scoped lifecycle/workflow/communication/queue receipts, declared budgets and daily JSON snapshots are in `tools/dev-metrics.mjs`; fixture-home tests and `npm run quick` pass. The first installed receipt is `docs/metrics/2026-11-13.json`; RCASE1 keeps the installed catalogue open. → `docs/areas/code-structure-and-process.md`
 
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 

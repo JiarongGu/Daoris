@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * How this repository's development cycle performed over a date range, read without changing anything.
+ * How this repository's development cycle performed over a date range, from read-only sources.
  *
  *   node tools/dev-metrics.mjs --home <data> --logs <logs> --since YYYY-MM-DD --until YYYY-MM-DD
- *        [--service <url> | --quests <file>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--json]
+ *        [--service <url> | --quests <file>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--case <ask-or-quest-ids>] [--json]
  *   node tools/dev-metrics.mjs --transcripts <subagents dir> --ids <a,b,...> [--json]
  *
  * `--home` is an install's `data` folder, `--logs` its `logs` folder. A quest's record comes from the running
- * service (`/api/quests?workspace=`, a read) when `--service` is given, else from the JSON file `--quests` names. A figure
- * whose source holds nothing is "not recorded" or "not read", with the place it would have to be logged: never a zero.
+ * service (`/api/quests?workspace=`, a read) when `--service` is given, else from `--quests` or the home's knowledge.db. A figure
+ * whose source holds nothing names where it would have to be logged: never a fabricated zero.
  * `--merge-queue` is this repository's `local/merge-queue.json`, where integration requests land or are handed back.
- * Builder mode times subagent transcripts with the clock `subagent-time.mjs` already keeps.
+ * `--json` also writes docs/metrics/<until-or-today>.json, retaining each case's receipt. Builder mode times transcripts.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -19,10 +19,19 @@ import { isMain } from './fsx.mjs';
 import { clockOf } from './subagent-time.mjs';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { MERGE_RECORD, readRecords, summarize } from './merge/merge-record.ts';
+import { readHome, missing } from './dev-metrics/records.mjs';
+import { sessionLinks, caseScope, askOf } from './dev-metrics/scope.mjs';
+import { lifecycleRows } from './dev-metrics/lifecycle.mjs';
+import { workflowRows, personQueue } from './dev-metrics/workflow.mjs';
+import { communicationRows } from './dev-metrics/communication.mjs';
+import { actorRows, replyRows } from './dev-metrics/actors.mjs';
+import { BUDGET_FILE, budgets, judge } from './dev-metrics/budgets.mjs';
+import { writeSnapshot } from './dev-metrics/snapshot.mjs';
+import { parse } from './dev-metrics/options.mjs';
+import { addTokens, zeroTokens as zero, sumTokens, costBreakdown } from './dev-metrics/cost.mjs';
+export { writeSnapshot } from './dev-metrics/snapshot.mjs';
 
 const HOUR = 3600000;
-const TOKENS = ['input', 'output', 'cacheRead', 'cacheWrite'];
-const NOT_COUNTED = 'not recorded';
 
 const readJson = (file, fallback) => { try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return fallback; } };
 const readLines = (file) => {
@@ -46,22 +55,25 @@ function spread(values) {
 }
 const hoursOf = (ms) => { const s = spread(ms.map((m) => m / HOUR)); return s.n ? { n: s.n, medianHours: round(s.median), meanHours: round(s.mean), p90Hours: round(s.p90) } : { n: 0 }; };
 const round = (x) => Math.round(x * 100) / 100;
-const addTokens = (into, t) => { for (const k of TOKENS) into[k] += Number(t[k] ?? 0); return into; };
-const zero = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
 
 async function questsOf({ file, service, workspaces }) {
   if (service) {
     const out = [];
+    let recorded = workspaces.length > 0;
     for (const w of workspaces) {
       try {
         const res = await fetch(`${service.replace(/\/$/, '')}/api/quests?workspace=${encodeURIComponent(w)}`);
-        if (res.ok) out.push(...await res.json());
-      } catch { /* the service not answering leaves the home's own records */ }
+        if (res.ok) {
+          const body = await res.json();
+          if (Array.isArray(body)) out.push(...body); else recorded = false;
+        } else recorded = false;
+      } catch { recorded = false; }
     }
-    return out;
+    return { rows: out, recorded };
   }
-  const body = file ? readJson(file, []) : [];
-  return Array.isArray(body) ? body : [body];
+  const body = file ? readJson(file, null) : null;
+  const rows = Array.isArray(body) ? body : body?.id ? [body] : [];
+  return { rows: rows.filter(q => typeof q?.id === 'string'), recorded: body != null && rows.every(q => typeof q?.id === 'string') };
 }
 
 function sessionsOf(home) {
@@ -119,8 +131,7 @@ function lyntaiOf(calls) {
     searches: searches.length,
     searchesWithHits: hits.length,
     hitsFetchedSameSession: fetched.length,
-    cited: NOT_COUNTED,
-    citedWhere: 'the handback or the session would have to log the memory entry ids a result names (nothing carries an entry id today)',
+    cited: missing('the handback or session log of memory entry ids cited by a result'),
     gets: by('get').length,
     writes: by('write').length,
     proposes: by('propose').length,
@@ -141,7 +152,7 @@ async function storeCounts(home) {
     try { out.nodes = count('lyntai_memory_node'); } catch { /* an older schema */ }
     db.close();
     return out;
-  } catch { return 'not read: this Node has no node:sqlite'; }
+  } catch { return missing('memory.db readable Lyntai tables through node:sqlite'); }
 }
 
 /** Merge commits on the repository's main in the range, less the ones that only bring main into a branch. */
@@ -151,7 +162,7 @@ function mergesOnMain(repo, { since, until }) {
     if (since) args.push(`--since=${since}T00:00:00Z`);
     if (until) args.push(`--until=${until}T23:59:59Z`);
     return execFileSync('git', args, { encoding: 'utf8', windowsHide: true }).split('\n').filter((s) => s && !/^Merge (branch 'main'|main\b)/.test(s)).length;
-  } catch { return 'not read'; }
+  } catch { return missing('readable main merge commit log'); }
 }
 
 function leftoversOf(home, work, landings) {
@@ -184,73 +195,126 @@ export async function collect(options) {
   const inRange = windowOf(options);
   const work = options.work ?? join(dirname(home), 'work');
   const workspaces = (options.workspaces ?? filesOf(join(work, 'trees'), () => true).join(',')).split(',').filter(Boolean);
-  const quests = await questsOf({ file: options.quests, service, workspaces });
-  const landings = readJson(homeEntry(home, 'landings'), { branches: [] }).branches ?? [];
-  const { quests: sessionQuest, events } = sessionsOf(home);
-  const turns = turnsOf(home);
-  const logRows = logEvents(logs, inRange);
+  const records = await readHome(home);
+  const questRead = options.quests || service ? await questsOf({ file: options.quests, service, workspaces }) : { rows: records.tables.quests, recorded: records.availability.quests === true };
+  const allQuests = questRead.rows;
+  const allLandings = readJson(homeEntry(home, 'landings'), { branches: [] }).branches ?? [];
+  const allEvents = sessionsOf(home).events;
+  const sessionQuest = sessionLinks(records.tables.sessions, allEvents, allLandings);
+  const scope = caseScope(options.case, allQuests, records.tables.asks, records.tables.sessions, sessionQuest, allEvents);
+  const scoped = scope.requested.length > 0;
+  const quests = allQuests.filter(q => !scoped || scope.quests.includes(q.id));
+  const sessions = records.tables.sessions.filter(s => !scoped || scope.sessions.includes(s.id));
+  const events = new Map([...allEvents].filter(([id]) => !scoped || scope.sessions.includes(id)));
+  const landings = allLandings.filter(l => !scoped || scope.quests.includes(l.quest) || scope.sessions.includes(l.session));
+  const turns = turnsOf(home).filter(t => !scoped || scope.sessions.includes(t.session));
+  const allLogs = logEvents(logs, inRange);
+  const logRows = allLogs.filter(e => !scoped || scope.sessions.includes(e.data?.session) || scope.quests.includes(e.data?.quest) || scope.quests.includes(e.data?.run) || scope.asks.includes(e.data?.ask));
+  const now = options.now ?? new Date().toISOString();
 
-  const doneAt = (q) => q.accepted ?? q.updated;
+  const doneAt = (q) => q.submission?.at ?? records.tables.quest_log.find(o => o.quest === q.id && o.kind === 'done')?.at ?? q.updated;
   const filed = quests.filter((q) => inRange(q.filed));
   const done = quests.filter((q) => q.status === 'Done' && inRange(doneAt(q)));
   const onLine = (id) => landings.find((l) => l.quest === id && l.goneAt && ['on-line', 'merged'].includes(l.removedAs));
 
   const served = new Map();
   for (const [session, q] of sessionQuest) served.set(q, [...(served.get(q) ?? []), session]);
-  const perQuest = [...new Map([...filed, ...done].map((q) => [q.id, q])).values()].map((q) => {
+  const activeQuests = quests.filter(q => scoped || turns.some(t => sessionQuest.get(t.session) === q.id && inRange(t.ended ?? t.written)));
+  const perQuest = [...new Map([...filed, ...done, ...activeQuests].map(q => [q.id, q])).values()].map((q) => {
     const sessions = served.get(q.id) ?? [];
-    const tokens = turns.filter((t) => sessions.includes(t.session)).reduce(addTokens, zero());
-    return { quest: q.id, sessions: sessions.length, tokens };
+    const used = turns.filter((t) => sessions.includes(t.session) && inRange(t.ended ?? t.written));
+    const tokens = sumTokens(used);
+    return { quest: q.id, sessions: sessions.length || missing('knowledge.db sessions.quest/took_quest, landing session links or opening quest prompt'), tokens };
   });
   const perActor = {};
   for (const t of turns.filter((t) => inRange(t.ended ?? t.written))) perActor[t.actor ?? 'unknown'] = addTokens(perActor[t.actor ?? 'unknown'] ?? zero(), t);
 
   const answers = done.flatMap((q) => (q.answers ?? []));
   const requirements = done.reduce((n, q) => n + (q.requirements?.length ?? 0), 0);
-  const met = answers.filter((a) => a.met !== undefined).length;
-  const departed = answers.filter((a) => a.departed !== undefined).length;
+  const met = answers.filter((a) => a.met != null).length;
+  const departed = answers.filter((a) => a.departed != null).length;
 
   const queue = mergeQueue ? readJson(mergeQueue, null) : null;
   const firstPass = queue
-    ? { integrated: (queue.landed ?? []).filter((l) => inRange(l.at)).length, handedBack: (queue.handedBack ?? []).filter((l) => inRange(l.at)).length }
-    : 'not read: pass --merge-queue <local/merge-queue.json>';
+    ? { integrated: (queue.landed ?? []).filter(l => inRange(l.at) && (!scoped || landings.some(b => b.branch === l.branch))).length, handedBack: (queue.handedBack ?? []).filter(l => inRange(l.at) && (!scoped || landings.some(b => b.branch === l.branch))).length }
+    : missing('merge queue records; pass --merge-queue <local/merge-queue.json>');
 
-  if (options.repo && firstPass && typeof firstPass === 'object') firstPass.mergeCommitsOnMain = mergesOnMain(options.repo, options);
+  if (options.repo && firstPass && typeof firstPass === 'object') firstPass.mergeCommitsOnMain = scoped ? missing('case-specific main merge correlation') : mergesOnMain(options.repo, options);
   const recordFile = options.mergeRecord ?? (options.repo ? join(options.repo, MERGE_RECORD) : null);
-  const mergeFlow = recordFile ? summarize(readRecords(recordFile).filter((each) => inRange(each.at))) : 'not read: pass --merge-record <local/merge-record.jsonl>';
+  const branches = landings.map(l => l.branch).filter(Boolean);
+  const mergeRecords = recordFile ? readRecords(recordFile).filter(each => inRange(each.at) && (!scoped || branches.includes(each.branch))) : [];
+  const mergeFlow = recordFile ? mergeRecords.length ? summarize(mergeRecords) : missing('merge-record rows in the selected range and scope') : missing('merge run records; pass --merge-record <local/merge-record.jsonl>');
   const askTurns = turns.filter((t) => t.actor === 'ask-daoris' && inRange(t.ended ?? t.written));
   const lyntai = lyntaiOf(memoryCalls(events, inRange));
   lyntai.store = await storeCounts(home);
 
-  return {
+  const asks = records.tables.asks.filter(a => !scoped || scope.asks.includes(a.id));
+  const workflow = workflowRows(records, scope, logRows, inRange, now);
+  scope.completed = !scoped ? missing('--case and a completed workflow receipt') : quests.some(q => q.status !== 'Done') ? false
+    : workflow.length && workflow.every(r => r.ended?.outcome === 'completed') ? true : missing('workflow run ended.outcome=completed for every case run');
+  const questSource = questRead.recorded;
+  const report = {
+    generatedAt: now,
+    scope,
+    budgets: { file: BUDGET_FILE, values: budgets },
     range: { since: options.since ?? null, until: options.until ?? null },
-    source: { quests: service ? `service ${service}` : options.quests ? `file ${options.quests}` : 'none named', workspaces, questRecords: quests.length },
+    source: { quests: service ? 'service read' : options.quests ? 'supplied quest file' : 'knowledge.db quests', workspaces, questRecords: questSource ? quests.length : missing('quest records'), tables: records.availability },
     throughput: {
-      questsFiled: filed.length,
-      questsDone: done.length,
-      asksFiled: new Set(filed.map((q) => q.from).filter((f) => /^ask #/.test(f ?? ''))).size,
-      asksClosed: `${NOT_COUNTED}: the home keeps no ask records (its asks folder is empty); an ask's close would have to be logged when its last quest closes`,
+      questsFiled: questSource ? filed.length : missing('knowledge.db quests or --quests/--service quest records'),
+      questsDone: questSource ? done.length : missing('knowledge.db quests or --quests/--service quest records'),
+      asksFiled: records.availability.asks === true ? asks.filter(a => inRange(a.asked)).length : questSource ? new Set(filed.map(askOf).filter(Boolean)).size : missing('knowledge.db asks.asked or quest sender'),
+      asksClosed: records.availability.asks === true ? asks.filter(a => a.state === 'Closed' && inRange(a.updated)).length : missing('knowledge.db asks state Closed and updated; derived Done is not a stored close'),
     },
     leadTime: {
       filedToDone: hoursOf(done.map((q) => Date.parse(doneAt(q)) - Date.parse(q.filed))),
       doneToLine: hoursOf(done.map((q) => { const l = onLine(q.id); return l ? Date.parse(l.goneAt) - Date.parse(doneAt(q)) : NaN; })),
       doneNotOnLine: done.filter((q) => !onLine(q.id)).length,
     },
-    cost: { perQuest, perActor, total: Object.values(perActor).reduce(addTokens, zero()) },
+    cost: { perQuest, perActor, total: sumTokens(turns.filter(t => inRange(t.ended ?? t.written))), ...costBreakdown(turns, sessions, quests, asks, sessionQuest, inRange) },
     completion: { requirements, met, departed, unanswered: requirements - met - departed },
     firstPass,
     mergeFlow,
-    friction: frictionOf(logRows),
+    friction: frictionOf([...logRows.filter(e => !['watch.looked', 'look.slow'].includes(e.event)), ...allLogs.filter(e => ['watch.looked', 'look.slow'].includes(e.event))]),
     leftovers: leftoversOf(home, work, landings),
     askDaoris: {
       conversations: new Set(askTurns.map((t) => t.session)).size,
       turns: askTurns.length,
-      tokens: askTurns.reduce(addTokens, zero()),
+      tokens: sumTokens(askTurns),
       actsInFullAccess: logRows.filter((e) => e.event === 'help.pressed').length,
       cardsAsked: logRows.filter((e) => e.event === 'person.confirmation' && e.data?.state === 'asked').length,
+      replies: replyRows(sessions, events, inRange),
     },
     lyntai,
+    lifecycle: lifecycleRows(quests.filter(q => inRange(q.filed) || inRange(q.updated) || scoped), sessions, sessionQuest, records, landings, allLogs, workflow),
+    workflow,
+    communication: communicationRows(records, scope, events, quests, inRange),
+    actors: actorRows(sessions, records, inRange, allLogs),
+    browser: { openMs: missing('browser plugin session tab open request and completion clock'), signInShared: missing('browser probe local storage key names; no credential values') },
   };
+  report.personQueue = personQueue(records, sessions, quests, report.workflow, logRows, now, scope);
+  if (!report.friction.lookMs.n) report.friction.lookMs = missing('logs watch.looked data.ms');
+  if (!allLogs.length) for (const k of ['permissionRefused', 'refusalsToAgents', 'lookSlow']) report.friction[k] = missing('machine logs events in range');
+  if (!Array.isArray(readJson(homeEntry(home, 'landings'), null)?.branches)) report.leftovers.landedBranchesPresent = missing('readable landings branches and goneAt');
+  const branchRecords = readJson(homeEntry(home, 'session-branches'), null)?.branches;
+  if (!Array.isArray(branchRecords)) report.leftovers.sessionBranchesPresent = missing('readable session-branches branches and goneAt');
+  else if (scoped) {
+    const selected = branchRecords.filter(b => landings.some(l => l.branch === b.branch) || sessions.some(s => b.branch?.endsWith(`/s-${s.id}`)));
+    report.leftovers.sessionBranchesPresent = selected.length ? selected.filter(b => !b.goneAt).length : missing('case branch identity in landing records or session branch name');
+  }
+  if (scoped) report.leftovers.trees = sessions.some(s => s.tree) ? sessions.filter(s => s.tree && existsSync(s.tree)).length : missing('case session tree paths in knowledge.db sessions.tree');
+  else if (!existsSync(join(work, 'trees'))) report.leftovers.trees = missing('work/trees directory inventory');
+  report.leftovers.staleWorktrees = missing('git worktree prunable inventory correlated with case sessions');
+  if (!questSource) for (const key of Object.keys(report.completion)) report.completion[key] = missing('quest requirements and answers in the selected range');
+  for (const key of ['filedToDone', 'doneToLine']) if (!report.leadTime[key].n) report.leadTime[key] = missing(key === 'filedToDone' ? 'quests.filed and done timestamp pairs' : 'quest done and landing line removal timestamp pairs');
+  if (!questSource || typeof report.leftovers.landedBranchesPresent === 'string') report.leadTime.doneNotOnLine = missing('quest done and readable landing line-removal records');
+  if (!events.size) {
+    for (const key of ['searches', 'searchesWithHits', 'hitsFetchedSameSession', 'gets', 'writes', 'proposes', 'latencyMs']) report.lyntai[key] = missing('session events memory tool calls');
+  }
+  if (typeof report.lyntai.latencyMs !== 'string' && !report.lyntai.latencyMs.n) report.lyntai.latencyMs = missing('memory tool call start and completion timestamp pairs');
+  if (!askTurns.length) for (const key of ['turns', 'conversations']) report.askDaoris[key] = missing('usage-history Ask Daoris turns in range');
+  if (!logRows.length) for (const key of ['actsInFullAccess', 'cardsAsked']) report.askDaoris[key] = missing('scoped machine log help.pressed or person.confirmation events');
+  Object.assign(report, judge(report, allLogs, mergeRecords));
+  return report;
 }
 
 export function builderTimes(dir, ids) {
@@ -269,8 +333,8 @@ export function builderTimes(dir, ids) {
   });
 }
 
-const tok = (t) => `in ${t.input}, out ${t.output}, cacheRead ${t.cacheRead}, cacheWrite ${t.cacheWrite}`;
-const stat = (s, unit = '') => (s.n ? `n=${s.n}, median ${s.median ?? s.medianHours}${unit}, mean ${s.mean ?? s.meanHours}${unit}, p90 ${s.p90 ?? s.p90Hours}${unit}` : 'none');
+const tok = (t) => typeof t === 'string' ? t : `in ${t.input}, out ${t.output}, cacheRead ${t.cacheRead}, cacheWrite ${t.cacheWrite}`;
+const stat = (s, unit = '') => typeof s === 'string' ? s : (s.n ? `n=${s.n}, median ${s.median ?? s.medianHours}${unit}, mean ${s.mean ?? s.meanHours}${unit}, p90 ${s.p90 ?? s.p90Hours}${unit}` : missing('source timestamps for this distribution'));
 
 export function render(r) {
   const L = [];
@@ -287,8 +351,8 @@ export function render(r) {
   L.push('Cost (tokens)');
   put('all turns in range', tok(r.cost.total));
   for (const [a, t] of Object.entries(r.cost.perActor).sort()) put(`  actor ${a}`, tok(t));
-  const quests = r.cost.perQuest.filter((q) => q.sessions);
-  put('quests with sessions found', `${quests.length} of ${r.cost.perQuest.length}`);
+  const quests = r.cost.perQuest.filter((q) => typeof q.sessions === 'number');
+  put('quests with sessions found', quests.length ? `${quests.length} of ${r.cost.perQuest.length}` : missing('quest-linked sessions in knowledge.db, landing records or session opening events'));
   for (const q of quests.sort((a, b) => b.tokens.output - a.tokens.output).slice(0, 10)) put(`  quest ${q.quest}`, `${q.sessions} sessions; ${tok(q.tokens)}`);
   L.push('Completion');
   put('requirements met / departed', `${r.completion.met} / ${r.completion.departed} of ${r.completion.requirements} (unanswered ${r.completion.unanswered})`);
@@ -299,7 +363,7 @@ export function render(r) {
   put('permission.refused', `${r.friction.permissionRefused} ${JSON.stringify(r.friction.permissionRefusedByTool)}`);
   put('refusals answered to agents', r.friction.refusalsToAgents);
   put('look.slow', r.friction.lookSlow);
-  put('look duration (watch.looked)', `${stat(r.friction.lookMs, ' ms')}, max ${r.friction.lookMs.max ?? '-'}, total ${r.friction.lookMs.total} ms`);
+  put('look duration (watch.looked)', typeof r.friction.lookMs === 'string' ? r.friction.lookMs : `${stat(r.friction.lookMs, ' ms')}, max ${r.friction.lookMs.max}, total ${r.friction.lookMs.total} ms`);
   L.push('Leftovers (now)');
   put('session trees under work/trees', r.leftovers.trees);
   put('session branches still present', r.leftovers.sessionBranchesPresent);
@@ -312,11 +376,18 @@ export function render(r) {
   L.push('Lyntai (memory through the connector)');
   put('searches / with hits', `${y.searches} / ${y.searchesWithHits}`);
   put('hits fetched in the same session', `${y.hitsFetchedSameSession} of ${y.searchesWithHits}`);
-  put('hits cited', `${y.cited}: ${y.citedWhere}`);
+  put('hits cited', y.cited);
   put('gets / writes / proposes', `${y.gets} / ${y.writes} / ${y.proposes}`);
-  put('latency per call', `${stat(y.latencyMs, ' ms')}, max ${y.latencyMs.max ?? '-'}`);
+  put('latency per call', typeof y.latencyMs === 'string' ? y.latencyMs : `${stat(y.latencyMs, ' ms')}, max ${y.latencyMs.max ?? missing('memory tool call completion timestamps')}`);
   put('latency note', y.latencyNote);
   put('store row counts', y.store);
+  for (const [label, rows] of [['Quest lifecycle', r.lifecycle], ['Workflow steps', r.workflow], ['Communication', r.communication], ["Person's queue", r.personQueue], ['Actors and roles', r.actors], ['Browser', r.browser]]) {
+    L.push(label);
+    if (Array.isArray(rows)) { if (!rows.length) put('source', missing(`${label} records in the selected scope and date range`)); for (const row of rows) put('record', row); }
+    else put('records', rows);
+  }
+  L.push(`Budgets (${r.budgets.file})`);
+  for (const check of r.checks) put(check.verdict === 'defect' ? `DEFECT ${check.metric}` : check.metric, check);
   return L.join('\n');
 }
 
@@ -330,16 +401,6 @@ export function renderBuilders(rows) {
   return L.join('\n');
 }
 
-function parse(argv) {
-  const o = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--json') o.json = true;
-    else if (a.startsWith('--')) o[a.slice(2).replace(/-(\w)/g, (_, c) => c.toUpperCase())] = argv[++i];
-  }
-  return o;
-}
-
 async function main() {
   const o = parse(process.argv.slice(2));
   if (o.transcripts) {
@@ -349,9 +410,14 @@ async function main() {
     return 0;
   }
   if (!o.home || !o.logs) { console.error('dev-metrics: name --home <data> and --logs <logs>, or --transcripts <dir> --ids <a,b>'); return 2; }
+  if (o.json) { o.since ??= o.until ?? new Date().toISOString().slice(0, 10); o.until ??= o.since; }
   const result = await collect(o);
+  if (o.json) writeSnapshot(result);
   console.log(o.json ? JSON.stringify(result, null, 2) : render(result));
-  return 0;
+  return result.defects.length ? 1 : 0;
 }
 
-if (isMain(import.meta.url)) process.exitCode = await main();
+if (isMain(import.meta.url)) {
+  try { process.exitCode = await main(); }
+  catch (error) { console.error(`dev-metrics: ${error.message}`); process.exitCode = 2; }
+}
