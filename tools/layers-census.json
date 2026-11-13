@@ -365,7 +365,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitPushUpdatesTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitSshHoldsProcessTests.cs": 3,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitSshProcessTests.cs": 7,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitStreamEndsTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitTlsHost.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitTlsProcessTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GraphLand.cs": 1,

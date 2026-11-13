@@ -10,8 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ends), cancelled during its creation and while it runs; and one whose kill is refused says <c>git.unended</c>, its place counted apart.
 /// </summary>
 /// <remarks>
-/// <see cref="GitStreamEndsTests"/> sees that git's tree is ended, by a marker a grandchild would have written; never
-/// that the runner returned after the exit. The stand-in is a node that waits and ignores its input, started in git's place through the
+/// The git adapter's own suite (<c>GitProcessRunsTreeEndTests</c>) sees that git's tree is ended, by a marker a grandchild would have
+/// written; never that the runner returned after the exit. The stand-in is a node that waits and ignores its input, started in git's place through the
 /// gate's test seam (<see cref="ProcessStarts.Within"/>); its pid is watched through a handle of the test's own, which the runner's
 /// dispose of its own cannot close. Fixtures live under the repository's gitignored <c>_fixtures/</c>. Nothing here reaches a network.
 /// </remarks>
