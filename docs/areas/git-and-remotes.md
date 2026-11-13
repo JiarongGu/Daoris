@@ -280,7 +280,7 @@ command asked again with no write between; *object* what one held `cat-file --ba
 | A landed session's review | 3 | 0 | 2 (1) |
 | The Accept offer of a tree of work | 3 | 0 | 0 |
 | The look's tidy, six trees (two) | 5 (5) | 1 (`worktree list`) | 1 (0) |
-| A tree's walk (`TreeReadPass`), a tree the line holds by content: first, then its kept read after an edit | 6 (1) | 0 | 1 (0) |
+| A tree's walk (`TreeReadPass`), a tree the line holds by content: first, then its kept read after an edit | 5 (1) | 0 | 1 (0) |
 | A session's start, to its spawn | 20 | 0 | 3 (0) |
 | A squash press's landing | 19 | 0 | 4 (1) |
 | A merge press's landing | 32 | 3 (the line's commit) | 9 (0) |

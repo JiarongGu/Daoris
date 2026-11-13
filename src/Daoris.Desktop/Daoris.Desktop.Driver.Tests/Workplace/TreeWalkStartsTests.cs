@@ -46,7 +46,7 @@ public sealed class TreeWalkStartsTests(ITestOutputHelper output) : LandedFixtur
         Assert.Equal(1, Asked(starts, "status"));
         Assert.Equal(1, Asked(starts, "cat-file"));
         Assert.Equal(starts.Length, starts.Select(start => string.Join(' ', start)).Distinct().Count());
-        Assert.True(starts.Length <= 6, $"the walk started {starts.Length} gits, over its 6");
+        Assert.True(starts.Length <= 5, $"the walk started {starts.Length} gits, over its 5");
     }
 
     [Fact]
