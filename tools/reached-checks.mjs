@@ -15,80 +15,107 @@
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
  * left to the nightly run, and said.
  *
- *   node tools/reached-checks.mjs [--plan] [--unbounded] [--paths <path>[,<path>…]]
+ *   node tools/reached-checks.mjs [--plan] [--unbounded] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
  *
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
  * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
  *
+ * A builder runs its own checks through this, in its worktree: `--base main` takes the paths its branch changed against where it left
+ * main (committed, edited and new), so each class it runs and passes is recorded under its key, and the merge of the same inputs
+ * replays it. `--classes` runs the named classes (a simple or full name, or a test file) whatever they reach. A class that fails is
+ * run again alone once: passing alone is a FLAKE (said, never recorded as a pass), a failure main already stands is `main's red`,
+ * and the rest are new reds that fail the run. The last line, `reached-classes: {…}`, is what the merge's record reads.
+ *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
-import { verdictsHome } from './merge-branch.mjs';
+import { CLASS_VERDICTS_FILE, verdictsHome } from './merge-branch.mjs';
 import { keyContextOf, storeFile as storeIn } from './merge-branch/full-set.mjs';
 import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
-import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
+import { PassedClasses, classKey, splitByReuse } from './merge/class-reuse.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
-import { passesOf, withReport } from './merge/reached-reports.ts';
+import { mainStandsRed } from './merge/reached-classify.ts';
+import { runPlan } from './merge/reached-run.ts';
 
-/** The paths the checkout changes against HEAD: staged, unstaged, a merge's. */
-export function changedPaths(root) {
-  const diff = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD'], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  if (diff.status !== 0) throw new Error(`git could not read the checkout's changes: ${String(diff.stderr).trim()}`);
-  return diff.stdout.split('\0').filter(Boolean);
+/**
+ * The paths the checkout changes: against HEAD (what an open merge changes), or, for a builder's own checks (`base`), against
+ * where its branch left `base`, its commits and its working tree and files not yet tracked.
+ */
+export function changedPaths(root, base = null) {
+  const git = (args) => {
+    const ran = spawnSync('git', ['--no-optional-locks', ...args], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    if (ran.status !== 0) throw new Error(`git could not read the checkout's changes: ${String(ran.stderr).trim()}`);
+    return ran.stdout;
+  };
+  const from = base ? git(['merge-base', base, 'HEAD']).trim() : 'HEAD';
+  const changed = git(['diff', '--name-only', '--no-renames', '-z', from]).split('\0').filter(Boolean);
+  return base ? [...new Set([...changed, ...git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)])] : changed;
 }
 
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
-export function planFor(root, paths, store, { bounds = {} } = {}) {
-  if (paths.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map() };
+export function planFor(root, paths, store, { bounds = {}, classes = [] } = {}) {
+  if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0 };
   const { map, gates, gatesText, context } = keyContextOf(root);
   const processSuites = processSuitesOf(gates);
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
-  const reached = map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
-  const { units, night } = unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });
+  // Classes a builder names are run whatever they reach, and the dependency classes among them too.
+  const reached = classes.length
+    ? map.units.filter((unit) => classes.some((name) => unit.unit === name || unit.unit.endsWith(`.${name}`) || unit.unit.endsWith(`/${name}`)))
+    : map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
+  const { units, night } = classes.length
+    ? { units: reached, night: {} }
+    : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });
   const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
-  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys };
+  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length };
 }
+
+const readJson = (file) => {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return {};
+  }
+};
+
+/** The value of `--name <value>` among `argv`, or null. */
+const valueOf = (argv, name) => {
+  const at = argv.indexOf(name);
+  return at >= 0 ? (argv[at + 1] ?? null) : null;
+};
 
 async function main(argv) {
   const root = process.cwd();
-  const at = argv.indexOf('--paths');
-  const paths = at >= 0 ? (argv[at + 1] ?? '').split(',').filter(Boolean) : changedPaths(root);
+  const base = valueOf(argv, '--base');
+  const classes = (valueOf(argv, '--classes') ?? '').split(',').filter(Boolean);
+  const named = valueOf(argv, '--paths');
+  const paths = named !== null ? named.split(',').filter(Boolean) : changedPaths(root, base);
   const store = new PassedClasses(storeFile(root));
   // A store is warmed by running every class the paths reach, which no merge does: its bound is the suite's size.
-  const bounds = argv.includes('--unbounded') ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
-  const { plan, night, keys } = planFor(root, paths, store, { bounds });
+  const everything = argv.includes('--unbounded') || classes.length > 0;
+  const bounds = everything ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
+  const { plan, night, keys, replayed } = planFor(root, paths, store, { bounds, classes });
   for (const line of [...reachedLines(plan), ...nightLines(night)]) console.log(line);
-  const commands = reachedCommands(plan);
   if (argv.includes('--plan')) {
-    for (const each of commands) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
+    for (const each of reachedCommands(plan)) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
     return 0;
   }
-  const failed = [];
-  commands.forEach((each, index) => {
-    const group = plan.groups[index];
-    const { args, report } = withReport(each, `reached-${each.label}-${index + 1}`);
-    mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
-    rmSync(join(root, report), { force: true });
-    console.log(`reached: ${each.label}: ${each.command} ${each.args.slice(0, 2).join(' ')} …`);
-    const ran = spawnSync(each.command, args, { cwd: each.cwd, stdio: 'inherit', windowsHide: true });
-    if (ran.status !== 0) failed.push(each.label);
-    for (const unit of passesOf(group, ran.status, join(root, report), root)) {
-      store.add(unitId(unit), keys.get(unitId(unit)), new Date().toISOString());
-    }
+  const home = verdictsHome(root);
+  const findings = readJson(join(home, 'local', 'ci-findings.json')).findings ?? [];
+  const verdicts = readJson(join(home, CLASS_VERDICTS_FILE)).gates ?? {};
+  const outcome = runPlan({
+    root, plan, keys, store, replayed, say: (line) => console.log(line),
+    exec: (command, args, cwd) => spawnSync(command, args, { cwd, stdio: 'inherit', windowsHide: true }).status,
+    mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
   });
   store.save();
-  if (failed.length) {
-    console.log(`reached: failed: ${failed.join(', ')}`);
-    return 1;
-  }
-  return 0;
+  return outcome.red.length ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {

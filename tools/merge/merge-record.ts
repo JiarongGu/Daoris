@@ -14,6 +14,8 @@ export type LeftProcess = { pid: number; created: string; stopped: boolean };
 export type GateRecord = {
   name: string; verdict: string; ms: number; replayed: boolean; mainRed: boolean; abnormal: boolean; slowest: Slow[]; over: boolean; left: LeftProcess[];
   flakes?: string[];
+  /** The test classes a reached run ran, replayed from a standing pass, and failed (flaked: passed alone; main's: already red there). */
+  classes?: { ran: number; replayed: number; flaked: number; mainRed: number; red: number };
 };
 export type MainRedRecord = { gate: string; unit: string; key: string };
 export type MergeRecord = {
@@ -62,8 +64,9 @@ export function readRecords(file: string): MergeRecord[] {
 /** The figures a reader wants of a set of records. */
 export function summarize(records: MergeRecord[]): {
   runs: number; firstPass: number; mainReds: number; replayed: number; gates: Record<string, number>; overBudget: string[];
-  wall: { measured: number; medianMs: number | null; totalMs: number }; flakes: number;
+  wall: { measured: number; medianMs: number | null; totalMs: number }; flakes: number; classes: { ran: number; replayed: number };
 } {
+  const classes = { ran: 0, replayed: 0 };
   const walls = records.flatMap((each) => (each.wallMs === undefined ? [] : [each.wallMs]));
   const gates: Record<string, number> = {};
   const over = new Set<string>();
@@ -72,6 +75,8 @@ export function summarize(records: MergeRecord[]): {
     for (const gate of record.gates) {
       gates[gate.name] = (gates[gate.name] ?? 0) + gate.ms;
       if (gate.replayed) replayed += 1;
+      classes.ran += gate.classes?.ran ?? 0;
+      classes.replayed += gate.classes?.replayed ?? 0;
     }
     for (const name of record.overBudget.gates) over.add(name);
   }
@@ -79,6 +84,6 @@ export function summarize(records: MergeRecord[]): {
     runs: records.length, firstPass: records.filter((each) => each.firstPass).length,
     mainReds: records.reduce((n, each) => n + each.mainReds.length, 0), replayed, gates, overBudget: [...over],
     wall: { measured: walls.length, medianMs: median(walls), totalMs: walls.reduce((n, ms) => n + ms, 0) },
-    flakes: records.reduce((n, each) => n + (each.flakes ?? 0), 0),
+    flakes: records.reduce((n, each) => n + (each.flakes ?? 0), 0), classes,
   };
 }
