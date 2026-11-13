@@ -172,7 +172,7 @@ public sealed class SwitchActsGitTests : TreeSyncFixture
         var press = await PressAsync(root, "other");
 
         var off = await Acts().RunAsync(Context(root, allowed: false), press, CancellationToken.None);
-        var session = await Acts().RunAsync(Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s-running")])), press, CancellationToken.None);
+        var session = await Acts().RunAsync(Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s-running") { Leases = true, Runs = true }])), press, CancellationToken.None);
         var unread = await Acts().RunAsync(Context(root, beside: _ => throw new IOException("the service did not answer")), press, CancellationToken.None);
         var none = await Acts().RunAsync(new StageContext("engine", root, () => true, null), press, CancellationToken.None);
 

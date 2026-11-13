@@ -141,10 +141,14 @@ public sealed class GitReadsTests : IDisposable
         Assert.Equal(("c.txt", "renamed"), (renamed.Value!.Changes!.Files.Single().Path, renamed.Value.Changes.Files.Single().Status));
     }
 
-    /// <summary>One process per view: a commit is two starts, and none once its answer is kept.</summary>
+    /// <summary>
+    /// One process per view: a commit is two starts, and one once its fields are kept, since its changes read the tree's attributes and
+    /// are asked again. The clock is a minute ahead, as a person's settled repository is to a copy made seconds before.
+    /// </summary>
     [Fact]
-    public async Task A_commit_starts_two_git_processes_and_none_when_read_again()
+    public async Task A_commit_starts_two_git_processes_and_one_for_its_changes_when_read_again()
     {
+        using var _ = SettledClock.Ahead();
         var history = await HistoryAsync();
         var starts = 0;
         var reads = new GitReads(new GitReadCache(), (root, arguments, take, ct) =>
@@ -158,13 +162,13 @@ public sealed class GitReadsTests : IDisposable
 
         var again = await reads.CommitAsync(history.Root, history.Merge);
         Assert.True(again.Remembered);
-        Assert.Equal(2, starts);
+        Assert.Equal(3, starts);
 
         await reads.CompareAsync(history.Root, history.Topic, history.MainB);
         await reads.BlameAsync(history.Root, history.Renamed, "c.txt");
         await reads.HistoryAsync(history.Root, history.Renamed, "c.txt");
         await reads.GraphAsync(history.Root, [history.Renamed]);
-        Assert.Equal(2 + 2 + 1 + 1 + 1, starts);
+        Assert.Equal(3 + 2 + 1 + 1 + 1, starts);
     }
 
     [Fact]

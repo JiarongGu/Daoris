@@ -232,7 +232,7 @@ public sealed class StageActsGitTests : TreeSyncFixture
         await WriteAsync(root, "lines.txt", Edited((2, "two")));
         var press = await PressAsync(root, StageVerbs.Stage, "lines.txt");
 
-        var run = await Acts().RunAsync(Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, session)])), press, CancellationToken.None);
+        var run = await Acts().RunAsync(Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, session) { Leases = true, Runs = true }])), press, CancellationToken.None);
 
         Assert.True(run.Refused);
         Assert.Contains($"`{session}`", run.Said);
