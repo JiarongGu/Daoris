@@ -20,6 +20,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
+| `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
 | `Review/` | The look and the opinion (`Review/Domain/`), entry Accepts, the session-tree gates, the heavy executor |
@@ -42,6 +43,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options (`NodeValues`)
    wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
    binding stay the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
+3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
+   (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
+   and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
+   an entry that does not read is left out and said, the others stand). A release node's values name the deployable under
+   `deployable` and the earliest act that deploys into its target under `deploysOn` (`push`, `pull-request`, `merge` or `start`; read
+   as `push` where undeclared, so every exposing act waits); a repository with two deployables on one build has two release nodes.
+   `DeployableTargets` keys each deployable to the nodes naming it: undeclared where none does, several where two of one workflow do,
+   and a node naming a deployable the manifest does not declare is said. Daoris reads those two names alone; the target's ids are the
+   release step's plugin's to resolve. `daoris repository deployables <repository>` says it, writing nothing. (D290)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
    every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access

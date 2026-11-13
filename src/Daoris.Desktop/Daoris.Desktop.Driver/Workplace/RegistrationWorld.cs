@@ -121,7 +121,8 @@ public static class LineDeclarationReader
             assign(text);
         }
 
-        return new(line, commit, null) { Manifest = manifest, Lanes = lanes, FileProblem = odd };
+        var blob = manifest is null ? null : entries.First(each => each.Path == DeclarationNames.Manifest).Object;
+        return new(line, commit, null) { Manifest = manifest, ManifestBlob = blob, Lanes = lanes, FileProblem = odd };
     }
 }
 
