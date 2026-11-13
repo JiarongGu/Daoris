@@ -29,6 +29,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
+import { CI_FINDINGS } from './ci-background.mjs';
 import { CLASS_VERDICTS_FILE, verdictsHome } from './merge-branch.mjs';
 import { keyContextOf, storeFile as storeIn } from './merge-branch/full-set.mjs';
 import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
@@ -101,9 +102,9 @@ async function main(argv) {
     for (const each of reachedCommands(plan)) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
     return 0;
   }
-  const home = verdictsHome(root);
-  const findings = readJson(join(home, 'local', 'ci-findings.json')).findings ?? [];
-  const verdicts = readJson(join(home, CLASS_VERDICTS_FILE)).gates ?? {};
+  const checkout = verdictsHome(root);
+  const findings = readJson(join(checkout, CI_FINDINGS)).findings ?? [];
+  const verdicts = readJson(join(checkout, CLASS_VERDICTS_FILE)).gates ?? {};
   const outcome = runPlan({
     root, plan, keys, store, replayed, say: (line) => console.log(line),
     exec: (command, args, cwd) => spawnSync(command, args, { cwd, stdio: 'inherit', windowsHide: true }).status,
