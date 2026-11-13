@@ -71,7 +71,7 @@ describe("the session's Workflow view", () => {
     // The session's record, which the side bar follows, is pushed in as the window holds it: the tabs are pressed once it is here.
     await screen.findByRole('heading', { level: 1, name: 'Fix the header' });
     const tabs = within(side).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
-    expect(tabs.slice(0, 3)).toEqual(['Timeline', 'Review', 'Workflow']);
+    expect(tabs.slice(0, 3)).toEqual(['Timeline', 'Outputs', 'Workflow']);
     expect(asked()).toHaveLength(0);
 
     await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));

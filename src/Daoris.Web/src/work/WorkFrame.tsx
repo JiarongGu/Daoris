@@ -21,7 +21,7 @@ import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
 import { coolingFor } from './say';
-import { type FrameIntent, reviewOfIntent } from '../menus/commands';
+import { type FrameIntent, outputsOfIntent } from '../menus/commands';
 import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
@@ -258,18 +258,18 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
-  // The run `review/<run>` opened, kept while the session it opened over stays followed.
-  const [reviewing, setReviewing] = useState<{ run: string; over: string | null } | null>(null);
-  const onReviewRun = (run: string) => {
-    setReviewing({ run, over: following?.id ?? null });
-    openView('review');
+  // The run `outputs/<run>` opened, at the attempt an Accept card named, kept while the session it opened over stays followed.
+  const [reviewing, setReviewing] = useState<{ run: string; over: string | null; attempt: number | null } | null>(null);
+  const onReviewRun = (run: string, attempt: number | null = null) => {
+    setReviewing({ run, over: following?.id ?? null, attempt });
+    openView('outputs');
   };
   if (intent && intent !== taken) {
     setTaken(intent);
-    const run = reviewOfIntent(intent);
+    const run = outputsOfIntent(intent);
     if (run) onReviewRun(run);
     else if (intent === 'start') newConversationPressed();
-    else if (intent === 'review') openView('review');
+    else if (intent === 'review') openView('outputs');
     else if (intent === 'workflow') openView('workflow');
     else if (intent === 'atWork') openView('atWork');
   }
@@ -371,6 +371,7 @@ export function WorkFrame({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
     session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
+    reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
   // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
@@ -444,6 +445,7 @@ export function WorkFrame({
             onOpenBranch={onOpenBranch}
           />
           <AttendedConversation
+            onOpenOutputs={onReviewRun}
             t={t}
             session={session}
             boxState={boxState}

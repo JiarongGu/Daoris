@@ -1,7 +1,7 @@
 // The trigger readers on their own: a pipeline's YAML `trigger:` in the shapes pipelines write it, and which stages of a release start themselves.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { startsByHand, yamlTrigger } from './triggers.mjs';
+import { selfStarting, yamlTrigger } from './triggers.mjs';
 
 test('a YAML trigger is read in its scalar, list, flow and map shapes, and left unread in any other', () => {
   assert.equal(yamlTrigger('pool:\n  vmImage: x\n'), undefined);
@@ -14,11 +14,11 @@ test('a YAML trigger is read in its scalar, list, flow and map shapes, and left 
   assert.equal(yamlTrigger('trigger: main\n  extra: 1\n'), null);
 });
 
-test('a release whose every stage waits on no event or earlier stage starts by hand; one a stage chains to an event does not', () => {
+test('the stages a release\'s creation starts are those on its start event and those chained after them; one not read in a known shape is said', () => {
   const event = [{ conditionType: 'event', name: 'ReleaseStarted' }];
   const after = (name) => [{ conditionType: 'environmentState', name }];
-  assert.equal(startsByHand({ environments: [{ name: 'A', conditions: [] }, { name: 'B', conditions: after('A') }] }), true);
-  assert.equal(startsByHand({ environments: [{ name: 'A', conditions: event }, { name: 'B', conditions: after('A') }] }), false);
-  assert.equal(startsByHand({ environments: [{ name: 'A' }] }), false);
-  assert.equal(startsByHand({ environments: [{ name: 'A', conditions: after('B') }, { name: 'B', conditions: after('A') }] }), true);
+  assert.deepEqual(selfStarting([{ name: 'A', conditions: [] }, { name: 'B', conditions: after('A') }]), []);
+  assert.deepEqual(selfStarting([{ name: 'A', conditions: event }, { name: 'B', conditions: after('A') }, { name: 'C', conditions: [] }]), ['A', 'B']);
+  assert.deepEqual(selfStarting([{ name: 'A' }]), ['A']);
+  assert.deepEqual(selfStarting([{ name: 'A', conditions: after('B') }, { name: 'B', conditions: after('A') }]), []);
 });

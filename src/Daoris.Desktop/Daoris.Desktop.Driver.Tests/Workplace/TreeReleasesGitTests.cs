@@ -104,6 +104,43 @@ public sealed class TreeReleasesGitTests : LandedFixture
         Assert.True(Directory.Exists(liveTree));
     }
 
+    /// <summary>A run goes on past its tidy, its record unsettled, so the part its tidy ended is what makes its tree over.</summary>
+    [Fact]
+    public async Task The_sweep_ends_the_tree_of_a_live_run_whose_tidy_ended_its_part_and_leaves_one_whose_chain_is_not_tidied()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tidiedTree, tidied) = await OwnedAsync(trees, root, "q1", "a.txt");
+        var (openTree, open) = await OwnedAsync(trees, root, "q2", "b.txt");
+        await MergeAsync(root, tidied);
+        await MergeAsync(root, open);
+        Record("q1", ended: false);
+        Record("q2", ended: false);
+        await LandedAsync(root, "q1", tidied, tidy: true);
+        await LandedAsync(root, "q2", open, tidy: false);
+
+        var swept = await new TreeReleases(Home).SweepAsync(root, "engine", null);
+
+        var gone = Assert.Single(swept);
+        Assert.Equal((tidied, true), (gone.Branch, gone.Gone));
+        Assert.False(Directory.Exists(tidiedTree));
+        Assert.True(Directory.Exists(openTree));
+    }
+
+    private async Task LandedAsync(string root, string run, string part, bool tidy)
+    {
+        var tip = (await GitAsync(root, "rev-parse", part)).Trim();
+        var landing = $"feature/{run}";
+        await GitAsync(root, "branch", landing, tip);
+        var landings = new LandedBranches(Home);
+        landings.Record(new LandedBranch("engine", "aurora", landing, "main", tip, $"s-{run}", run, "Fix", DateTimeOffset.UtcNow));
+        if (!tidy) return;
+        landings.Tidied("engine", landing, new ChainTidied(tip, DateTimeOffset.UtcNow)
+        {
+            Parts = [new TidiedPart(part, tip) { KeptOn = $"refs/daoris/discarded/{run}", Kept = "it is checked out at its tree" }],
+        });
+    }
+
     [Fact]
     public async Task The_sweep_keeps_an_ended_runs_unlanded_tree_and_says_why_and_a_tree_no_run_owns_is_not_its_to_end()
     {

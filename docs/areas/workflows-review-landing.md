@@ -38,6 +38,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    (D157, D227, D232)
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
+3a. A repository's own values for a workflow it follows are options over it, never a copy: `driver.json`'s `workflowValues`, by
+   repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options (`NodeValues`)
+   wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
+   binding stay the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
    every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
@@ -197,8 +201,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
     after its step failed), so the run goes on to its monitor and the held list clears.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its
-    branch deleted through the journal with its Undo, `tidied` written when every part ended, else `partly` for the next pass;
-    nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
+    branch deleted through the journal with its Undo, or kept where a tree has it checked out (a run's own tree then goes at the
+    look's sweep, rule 31b), `tidied` written when every part ended, else `partly` for the next pass; nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
     (`tidy-merged`) and a `push` no `branch` landing leads to (`land-tail`). (D241, D245, D247)
 31b. A `release` ends the trees a run owns once its work has landed: it is performed through its door, once per node and attempt
     (`TreeReleases`), and removes each session branch the run owns (`GrownBranch.Run`, written on its record at every governed
@@ -207,8 +211,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     said in the step's words. It reaches either way and fails nothing; in a graph that sets nothing apart it finds no tree and says
     so. A save refuses one no way from a `land` reaches (`release-landing`). The shipped development workflows put one after the
     landing (after the line, or the tidy), the editor draws it in `Git` after the line, and a drawn graph matches its shipped copy
-    with or without it (`MigratedGraphs.Shape`). A run that holds none, ended or abandoned, has its trees ended by the look's sweep
-    (driving rule 51). (D228)
+    with or without it (`MigratedGraphs.Shape`). A tree whose part a run's `tidy` ended, and the trees of a run that holds no
+    `release`, ended or abandoned, are ended by the look's sweep (driving rule 51). (D228)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
     goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
     `workflows/agent-steps/<invocation>.json`, and the step's session starts off the pass: staffed as the place's builds, a chat on
@@ -321,17 +325,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.
-57. The review page reads a run's review by its run alone (`RUN_REVIEW`): the record, the steps before it, presses only on the
-    attempt the review stands on, the supervisor's held decision with *Overrule*, the steps an Accept may start. A newer record is
-    announced with *Read it*, never swapped in. A folder's file is drawn at the record's hash, or from the place only while it still
-    hashes so, else refused `moved`; a branch's or a checkout's files are the answer's list between the record's commits
-    (`ReviewCommitFiles`), each drawn at those commits, whatever the checkout holds now. A Markdown file is read rendered, its changes
-    one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are this
-    page's alone: a session's own changes (`DiffPane`) keep the tree's discard and draw no Accept, Send back or landing plan, and the
-    run view draws no *Ask for changes…* under a review. The session's head and its strip at the foot draw no Accept either, nor
-    does an entry's part: where its tree offers work they draw a *Review* door, opening `review/<run>` where the work could be
-    accepted now and the session's review otherwise; *What needs you* and the run view open the review by run; the one press left
-    outside this page is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
+57. A run's review is read by its run alone (`RUN_REVIEW`): the record, its outputs (`ReviewOutputs`: each handback a document, the
+    changes a change set, a plan a resource plan, each with a stable id and a digest), a branch's or a checkout's commits with the
+    uncommitted paths apart (`ReviewBranchCommits`) and the patch per file between the record's commits, the steps before it, presses
+    only on the attempt the review stands on, the supervisor's held decision, the steps an Accept may start. A branch's base is the
+    commit its chain grew from the line (`RunWorkBase`), frozen with the tip on the record; a record with none reads the newer of the
+    local and origin line's merge bases. The **Outputs** view (`outputs/<run>`) pins the attempt first answered, picks any revision,
+    and draws *Under review · rN* (the change set first: commits, then every file's hunks in one scroll, a viewed or large file folded)
+    and *After the Accept*; a newer revision is a banner naming the outputs that moved, never swapped in. A folder's file is drawn at
+    the record's hash, or from the place only while it still hashes so, else refused `moved`; a Markdown file opens on its changes,
+    rendered one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are
+    the **Accept card**'s alone (`ReviewCard`), under the session's conversation, bound to the attempt and revision it draws: a newer
+    revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
+    tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
+    open the outputs by run; the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.

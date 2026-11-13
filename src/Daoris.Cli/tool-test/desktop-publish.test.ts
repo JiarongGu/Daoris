@@ -886,11 +886,11 @@ test('the locales an install keeps are the kit’s fallback and the ones the app
 /**
  * The install carries Daoris's own example plugins as OFFERS, in `app/plugin-offers/`,
  * never under `data/plugins/`, so none is installed until a press. The ones meant for people: the two that
- * land work, and the one that hands a session the install's own browser. Not the rehearsal fixture, and not
+ * land work, the install's own browser and the report a session files. Not the rehearsal fixture, and not
  * the browser a machine without the shell launches, which claims the same server name.
  */
 test('the offers are the examples meant for people, never a rehearsal fixture', () => {
-  assert.deepEqual([...OFFERED_PLUGINS], ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser']);
+  assert.deepEqual([...OFFERED_PLUGINS], ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser', 'daoris-dev-report']);
   assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
   assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
   // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`'.
@@ -911,7 +911,7 @@ test('the offers folder is where the driver looks for it', () => {
 
 test('laying out the offers copies each one whole into app/plugin-offers, and nothing into the home', () => {
   const examples = folder();
-  for (const id of ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser', 'hold-by-title']) {
+  for (const id of [...OFFERED_PLUGINS, 'hold-by-title']) {
     mkdirSync(join(examples, id, 'lib'), { recursive: true });
     writeFileSync(join(examples, id, 'plugin.json'), `{ "id": "${id}" }\n`);
     writeFileSync(join(examples, id, 'lib', 'part.mjs'), `// ${id}\n`);

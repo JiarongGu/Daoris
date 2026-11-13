@@ -481,11 +481,11 @@ internal sealed class StartPlan
     public static string ContinuedOn(
         PriorSession? record, DriverConfig config, string work = "build", string? bound = null, RoleCatalog? catalogue = null, RolePlace place = default)
     {
-        if (record?.Asked?.Agent is { Length: > 0 } asked) return asked;
-        if (record?.Adapter is { Length: > 0 } opened) return opened;
         var role = bound is { Length: > 0 } && catalogue is not null
             ? BoundRole(bound, work, catalogue, place)
             : record?.Actor is { } actor && ActorChoices.Ids.Contains(actor, StringComparer.Ordinal) ? actor : RoleOf(work);
+        if (record?.Asked?.Agent is { Length: > 0 } asked && FailedCarryOn.Keeps(record, asked, role, config)) return asked;
+        if (record?.Adapter is { Length: > 0 } opened && FailedCarryOn.Keeps(record, opened, role, config)) return opened;
         return ActorChoices.FirstAgent(role, config)
             ?? throw new DriverException($"{ActorWords.Name(role)} is off on this machine, so a record of its work does not go on until it is given a choice.");
     }

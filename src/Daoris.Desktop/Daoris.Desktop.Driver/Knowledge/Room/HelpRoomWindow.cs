@@ -24,13 +24,13 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and\n");
         text.Append("Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
-        // The session's Workflow view stands beside the timeline and the
-        // review and moves as they do; the doors say what it draws.
+        // The session's Workflow view stands beside the timeline and
+        // Outputs and moves as they do; the doors say what it draws.
         // Notifications is a view, on the right by default, shown
         // by the title bar's bell; it holds the presses waiting for the person's confirmation and What needs you.
         // At work, after the workflow, says who works on the attended session from Daoris's records.
         text.Append("attended session. Eight views stand in the two regions and move between them:\n");
-        text.Append("Notifications, the timeline, the review, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        text.Append("Notifications, the timeline, Outputs, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
         text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
         text.Append("terminal is the person's, never a session's. At work lists the session's parts and its subagents, each with\n");
@@ -52,9 +52,9 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("`Ctrl+Shift+Alt+L`.\n\n");
         // The file preview, so asked how to read a file an agent touched, the helper points
         // at it rather than at an editor there is none of. Its doors are a session's; Ask Daoris has none.
-        text.Append("A file path in a session's tool card, or a file's button in the review's list, opens a preview of that\n");
+        text.Append("A file path in a session's tool card, or a file's button in Outputs' list, opens a preview of that\n");
         text.Append("file as a tab of the right side bar: the file in the session's tree as it is on disk now, read-only,\n");
-        text.Append("the lines a read named marked, and its changes one press away where the review holds them. One preview\n");
+        text.Append("the lines a read named marked, and its changes one press away where Outputs holds them. One preview\n");
         text.Append("a session; opening another replaces it, and its own × goes back. In this conversation a path is plain text.\n\n");
         text.Append("You cannot see the window. Where the person is, and where the views stand, comes with their\n");
         text.Append("message when it changed. It names the quest, ask, repository, workspace, agent or plugin the view has open, by the id a go names,\n");

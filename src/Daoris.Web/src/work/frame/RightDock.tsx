@@ -84,7 +84,7 @@ export function NothingFollowed({ ended, onOpenSessions }: {
  * moves.
  */
 export function RightDock({
-  tab, onTab, views = ['timeline', 'review'], onMove, onReset, onDrag, preview,
+  tab, onTab, views = ['timeline', 'outputs'], onMove, onReset, onDrag, preview,
   mode, width, range, autoFull = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
 }: {
   /** The view shown; ignored when it is not one of `views`, or `preview` with no preview. */

@@ -540,6 +540,7 @@
   "note.opening.why.first-order": "它在 Daoris 的账户顺序中排第一",
   "note.ledger.answered": "已答复：",
   "note.ledger.parked": "它停下来问人；问题在它的记录中。",
+  "note.ledger.intake-closed": "需求 #{{ask}} 已由人关闭：",
   "note.ledger.went-on": "于 {{at}} 带着你的话继续。",
   "note.ledger.went-on-findings": "于 {{at}} 带着另一个智能体的发现继续。",
   "note.ledger.went-on-both": "于 {{at}} 带着你的话和另一个智能体的发现继续。",

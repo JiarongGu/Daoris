@@ -9,7 +9,7 @@ import { ViewsMenu, viewEntries } from './ViewsMenu';
 // is never the only way to it, and VS Code's *Move to*, for the tab that is shown.
 
 const t = (key: string) => ({
-  'work.review.timelineTab': 'Timeline', 'work.review.tab': 'Review', 'help.title': 'Ask Daoris', 'work.views.console': 'Console',
+  'work.review.timelineTab': 'Timeline', 'work.outputs.title': 'Outputs', 'help.title': 'Ask Daoris', 'work.views.console': 'Console',
 }[key] ?? key);
 
 async function open(props: Partial<Parameters<typeof ViewsMenu>[0]> = {}) {
@@ -19,8 +19,8 @@ async function open(props: Partial<Parameters<typeof ViewsMenu>[0]> = {}) {
     <Tooltip.Provider>
       <ViewsMenu
         region="right"
-        views={viewEntries(t, ['timeline', 'review', 'ask'])}
-        selected="review"
+        views={viewEntries(t, ['timeline', 'outputs', 'ask'])}
+        selected="outputs"
         onSelect={onSelect}
         onMove={onMove}
         {...props}
@@ -45,10 +45,10 @@ describe('the views menu', () => {
     expect(screen.getByRole('button', { name: 'views in the right side bar' })).toHaveClass('h-7', 'w-7');
     const group = screen.getByRole('group', { name: 'views in the right side bar' });
     const views = within(group).getAllByRole('menuitemradio');
-    expect(views.map((view) => view.textContent)).toEqual(['Timeline', 'Review', 'Ask Daoris']);
+    expect(views.map((view) => view.textContent)).toEqual(['Timeline', 'Outputs', 'Ask Daoris']);
     expect(views.map((view) => view.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false']);
     // The moves are acts, not choices: they stay plain items.
-    expect(screen.getByRole('menuitem', { name: 'Move Review to the panel' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Move Outputs to the panel' })).toBeInTheDocument();
   });
 
   it('ticks no view when none is shown', async () => {
@@ -66,8 +66,8 @@ describe('the views menu', () => {
 
   it('moves the shown view to the other region, and says which and where', async () => {
     const { onMove } = await open();
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Move Review to the panel' }));
-    expect(onMove).toHaveBeenCalledWith('review', 'panel');
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Move Outputs to the panel' }));
+    expect(onMove).toHaveBeenCalledWith('outputs', 'panel');
   });
 
   it('moves out of the panel to the right side bar', async () => {

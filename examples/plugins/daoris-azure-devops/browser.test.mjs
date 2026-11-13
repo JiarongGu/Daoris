@@ -89,7 +89,7 @@ test('the browser way gives the token way\'s outputs and evidence fields, and th
   assert.match(browser.message, /Way: the browser\.$/);
   assert.match(token.message, /Way: the token\.$/);
 
-  // The release after the merge: a build of the merged commit on main, taken by no release definition, its pipeline run's stages watched.
+  // The release after the merge: a build of the merged commit on main, its pipeline run's declared stage watched.
   const release = async ({ api, env, root }) => {
     api.builds.push({ id: 41, buildNumber: '20261112.1', definition: { id: 7, name: 'app-ci' }, project: { id: 'project-1' }, repository: { id: 'repo-1' },
       sourceBranch: 'refs/heads/main', sourceVersion: MERGED, status: 'completed', result: 'succeeded',
@@ -97,7 +97,8 @@ test('the browser way gives the token way\'s outputs and evidence fields, and th
     api.pipelines.push({ id: 7, name: 'app-ci' });
     api.timelines[41] = [{ id: 's1', type: 'Stage', name: 'Staging', state: 'completed', result: 'succeeded' }];
     const unit = unitAt(root, ['release'], { line: 'main', pullRequest: `${WEB}/pullrequest/1` });
-    return (await performed(t, env, unit, { step: RELEASE, options: { everySeconds: 0.02, findSeconds: 0.4 } })).step.params;
+    return (await performed(t, env, unit, { step: RELEASE,
+      options: { everySeconds: 0.02, findSeconds: 0.4, pipeline: 7, releaseDefinition: 'none', stage: 'Staging', action: 'observe' } })).step.params;
   };
   const releasedByToken = await release(viaToken);
   const releasedByBrowser = await release(viaBrowser);
