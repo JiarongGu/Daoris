@@ -42,10 +42,25 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
 
     /// <summary>A branch's or a checkout's changed files at the record's commits, where the checkout stands on this machine (<see cref="ReviewCommitFiles"/>); null otherwise.</summary>
     public IReadOnlyList<ReviewRow>? Files { get; init; }
+
+    /// <summary>What the record presents (<see cref="ReviewOutputs"/>), each with its type, display and captured version.</summary>
+    public IReadOnlyList<ReviewOutput> Outputs { get; init; } = [];
+
+    /// <summary>A branch's or a checkout's commits and uncommitted paths at the record's commits (<see cref="ReviewBranchCommits"/>); null otherwise.</summary>
+    public ReviewCommitList? Commits { get; init; }
+
+    /// <summary>A branch's or a checkout's patch per file between the record's commits (<see cref="TreeDiffs.DiffBetweenAsync(string, string, string, CancellationToken)"/>), bounded; null otherwise.</summary>
+    public TreeDiff? Diff { get; init; }
 }
 
-/// <summary>A record newer than the one read: its attempt, its revision and the paths whose content differs from the one read.</summary>
-public sealed record RunReviewNewer(int Attempt, string Revision, IReadOnlyList<string> Changed);
+/// <summary>
+/// A record newer than the one read: its attempt, its revision, the paths whose content differs from the one read, and the outputs that differ
+/// (<see cref="ReviewOutputs.Delta"/>), a moved tip or a corrected handback among them where no row did.
+/// </summary>
+public sealed record RunReviewNewer(int Attempt, string Revision, IReadOnlyList<string> Changed)
+{
+    public IReadOnlyList<string> Outputs { get; init; } = [];
+}
 
 /// <summary>A step before or after the review: its kind, its state, the way that leads to it, its outcome and door, and its recovery.</summary>
 public sealed record RunReviewStep(string Node, string Kind, string State)

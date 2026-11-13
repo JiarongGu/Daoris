@@ -29,7 +29,8 @@ public static class RunReviews
             Says = RunReviewSays.Of(read),
             Before = [.. Preceding(graph, review.Id).Select(node => Step(record, node, null))],
             Newer = read is not null && newest is not null && newest.Attempt > read.Attempt
-                ? new RunReviewNewer(newest.Attempt, newest.Revision, Changed(read, newest)) : null,
+                ? new RunReviewNewer(newest.Attempt, newest.Revision, Changed(read, newest)) { Outputs = ReviewOutputs.Delta(read, newest) } : null,
+            Outputs = read is null ? [] : ReviewOutputs.Of(read),
             Follows = [.. Following(graph, review.Id).Select(each => Step(record, each.Node, each.Via))],
             Ended = record.Ended?.Outcome,
             Operations = read?.Kind == ReviewKinds.Plan ? PlanReview.Named(home, read).Plan?.Operations : null,
