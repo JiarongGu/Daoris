@@ -14,8 +14,11 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
-    /// <summary>Characters of the listing as the wire carries it; raise it only with the reason beside it.</summary>
-    internal const int ListingBudget = 42_000;
+    /// <summary>
+    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 41,776 of the other tools, with
+    /// the descriptions cut to what an agent needs to call them, plus <see cref="PlanBudget"/> for the plan door.
+    /// </summary>
+    internal const int ListingBudget = 48_700;
 
     /// <summary>One tool's definition may not exceed this many characters.</summary>
     internal const int ToolBudget = 2_600;
@@ -25,6 +28,13 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
     /// needs in one call, and a second tool for them would be a second way to publish.
     /// </summary>
     internal const int PublishBudget = 5_600;
+
+    /// <summary>
+    /// The second tool over <see cref="ToolBudget"/>: team_plan writes a plan whole in one call, so its schema carries the shapes of a
+    /// part (with its requirements and pack), an edge, a deployable, a release order and a question; its text is already cut to what
+    /// the shapes do not say, and a second tool for some of them would be a second way to write a plan.
+    /// </summary>
+    internal const int PlanBudget = 7_000;
 
     /// <summary>The tokens a model reads in JSON text, at about three characters each.</summary>
     internal static int EstimatedTokens(int characters) => (characters + 2) / 3;
@@ -49,7 +59,7 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
         foreach (var (name, characters) in tools) output.WriteLine($"{characters,7} {name}");
 
         Assert.True(total <= ListingBudget, $"{total} characters is over the {ListingBudget} budget: cut or give the reason");
-        var heavy = tools.Where(tool => tool.Characters > (tool.Name == "quest_publish" ? PublishBudget : ToolBudget)).Select(tool => $"{tool.Name} {tool.Characters}").ToList();
+        var heavy = tools.Where(tool => tool.Characters > tool.Name switch { "quest_publish" => PublishBudget, "team_plan" => PlanBudget, _ => ToolBudget }).Select(tool => $"{tool.Name} {tool.Characters}").ToList();
         Assert.True(heavy.Count == 0, "over " + ToolBudget + ": " + string.Join(", ", heavy));
     }
 }
