@@ -287,4 +287,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **STEWARDROLE1d**: the steward's activation (until then the desk answers `not-staffed`); **1e, 1f, 1g** its hand-over, go-on
   and set-up. **SUPERVISOR1a-iii**: the supervisor offered.
 - **COWORKVIEW1** row f, after BRAINSTORM1d and AGENTROOM1b. **MSG1j**, **SESSONE1c-look**: the installed canaries.
+- **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): a contract shared across an ask's repositories as a versioned
+  revision its consumers acknowledge, a moved one told at urgent, and a quest a session publishes while serving a part added to the
+  ask's plan; until then a contract travels as channel posts and such a quest stands outside its ask.
 - With no row: *Send to its session* from a line's own channel; D177's floor request.
