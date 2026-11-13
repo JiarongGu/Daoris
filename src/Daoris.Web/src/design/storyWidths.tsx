@@ -89,6 +89,7 @@ export const NOT_IN_A_MAIN_AREA: Readonly<Record<string, string>> = {
   './work/conversation/ContextRing.stories.tsx': "an atom in the composer's control row (`work/conversation/Composer.tsx:707`)",
   './work/conversation/SessionOptions.stories.tsx': "an atom in the composer's control row (`work/conversation/Composer.tsx:706`)",
   './work/frame/chrome.stories.tsx': "the window's strip and activity bar (`app/App.tsx:985`, `app/App.tsx:1102`)",
+  './work/outputs/OutputsView.stories.tsx': "a side-bar or panel session view (`work/frame/regionSurface.tsx:164`)",
   './work/rail/SessionRailSearch.stories.tsx': "the session rail's list column (`work/rail/SessionRail.tsx:395`)",
   './work/review/DiffFileRow.stories.tsx': "a row of the review's list, in the side bar or panel (`work/review/ReviewFrame.tsx:175`)",
   './work/review/LandedNote.stories.tsx': "the review's note, in the side bar or panel (`work/review/DiffPane.tsx:512`)",

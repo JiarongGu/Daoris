@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { ReviewOutput, ReviewRow, RunReviewAnswer, RunReviewStep } from '../review/run/runReviewWire';
-import { Button, Inline } from '../../design/ui';
+import { Button, Inline, SelectField } from '../../design/ui';
 import { Markdown } from '../conversation/Markdown';
 import { PlanOperations, type ViewedMarks } from '../review/run/ReviewChanges';
 import { ChangeSetDisplay } from './ChangeSetDisplay';
@@ -140,17 +140,18 @@ export function OutputsView({ answer, viewed, onRead, fileBody }: {
       <header className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-line bg-page px-3 py-1.5">
         <h2 className="m-0 text-body font-semibold">{t('work.outputs.title')}</h2>
         {record && latest > 0 && (
-          <select
-            aria-label={t('work.outputs.revisionPick')}
-            value={attempt}
-            disabled={!onRead}
-            onChange={(event) => onRead?.(Number(event.target.value))}
-            className="ml-auto rounded-control border border-line-strong bg-raised px-1.5 py-0.5 font-mono text-meta text-ink"
-          >
-            {Array.from({ length: latest }, (_, at) => latest - at).map((each) => (
-              <option key={each} value={each}>{t('work.outputs.revisionOption', { attempt: each })}{each === attempt ? ` · ${record.revision.slice(0, 7)}` : ''}</option>
-            ))}
-          </select>
+          <span className="ml-auto">
+            <SelectField
+              ariaLabel={t('work.outputs.revisionPick')}
+              value={String(attempt)}
+              disabled={!onRead}
+              onChange={(value) => onRead?.(Number(value))}
+              options={Array.from({ length: latest }, (_, at) => latest - at).map((each) => ({
+                value: String(each),
+                label: `${t('work.outputs.revisionOption', { attempt: each })}${each === attempt ? ` · ${record.revision.slice(0, 7)}` : ''}`,
+              }))}
+            />
+          </span>
         )}
       </header>
       <Newer answer={answer} onRead={onRead} />

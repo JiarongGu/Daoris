@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../../design/storyLanguage';
+import { sessionWidths } from '../../../design/storyWidths';
 import { InTheme } from '../../../plugins/storyIcons';
 import type { NodeWordAnswer, NodeWordAsk } from '../../../workflow/run';
 import { BRANCH_OUTPUTS, BRANCH_REVIEW } from '../run/runReviewFixtures';
@@ -19,13 +20,15 @@ const meta = {
     onWord: (ask: NodeWordAsk): Promise<NodeWordAnswer> => Promise.resolve({ run: ask.run, node: ask.node, act: ask.act, done: true }),
     onOpenOutputs: () => {},
   },
-  decorators: [(Story) => <div className="w-[640px] p-3"><Story /></div>],
+  decorators: [sessionWidths.half],
 } satisfies Meta<typeof ReviewCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Waiting: Story = {};
+export const WaitingWide: Story = { decorators: [sessionWidths.wide] };
+export const WaitingNarrow: Story = { decorators: [sessionWidths.narrow] };
 export const WaitingChinese: Story = { decorators: [chinese] };
 export const WaitingDark: Story = { decorators: [dark] };
 export const Moved: Story = {

@@ -125,7 +125,7 @@ export function ReviewCard({ answer, viewed, onWord, onOpenOutputs, onOverrule, 
           <Button variant="ghost" className="min-h-0 px-2 py-0.5 text-small" onClick={() => onOpenOutputs?.(null)}>{t('work.reviewCard.readNewer')}</Button>
         </p>
       )}
-      {refused && <p className="m-0 text-small text-danger">{refused}</p>}
+      {refused && <p className="m-0 text-small text-ink-danger">{refused}</p>}
       {!supersededBy && answer.ended && <p className="m-0 text-small text-ink-soft">{t('work.reviewCard.ended', { outcome: answer.ended })}</p>}
       {!supersededBy && !answer.ended && settled && (
         <p className="m-0 text-small text-ink-soft">
