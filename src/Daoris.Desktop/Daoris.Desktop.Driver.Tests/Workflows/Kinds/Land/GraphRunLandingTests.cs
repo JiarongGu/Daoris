@@ -433,8 +433,9 @@ public sealed class GraphRunLandingTests : GraphRunFixture
         var root = await RepositoryAsync("engine");
         var tree = await DoneSessionAsync(root, "s1", "q1");
         await CommitAsync(tree, "s2.txt", "the work of s2", "the work of s2");
-        _world.Records.Add(new SessionRecord("s2", "engine", "completed") { Quest = "q1", Tree = tree, Created = DateTimeOffset.UtcNow.AddSeconds(1) });
-        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ReviewedLand(BranchLand)), DateTimeOffset.UtcNow);
+        var made = _world.Records.Single(record => record.Id == "s1").Created;
+        _world.Records.Add(new SessionRecord("s2", "engine", "completed") { Quest = "q1", Tree = tree, Created = made.AddSeconds(1) });
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ReviewedLand(BranchLand)), made);
         var files = new NodeRecordFiles(_home, () => true);
         var door = Door();
         IEnumerable<(string?, string?)> Tries() => _lines.Where(line => line.Event == "landing.auto").Select(line => (Value(line, "session") as string, CodeOf(line)));

@@ -92,7 +92,8 @@ public sealed class PerformedEndsTests : GraphRunFixture
     {
         var (root, tree, branch) = await BoundRunAsync(Merge);
         var start = await HeadAsync(tree);
-        _world.Records.Add(new SessionRecord("s9", "engine", "completed") { Quest = "q9", Tree = tree, Created = DateTimeOffset.UtcNow.AddMinutes(1) });
+        var made = _world.Records.Single(record => record.Id == "s1").Created;
+        _world.Records.Add(new SessionRecord("s9", "engine", "completed") { Quest = "q9", Tree = tree, Created = made.AddMinutes(1) });
         var door = Door();
 
         for (var pass = 0; pass < 3; pass++)
