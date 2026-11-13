@@ -216,7 +216,7 @@ public sealed class TreeLock : IDisposable
         if (HolderOf(home, checkout) is { } named) return named;
         try
         {
-            using (new FileStream(PathOf(home, checkout), FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read)) { }
+            using (new FileStream(PathOf(home, checkout), FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read)) { } // read-shares: the lock's own sharing is the answer
             return null;
         }
         catch (IOException)
