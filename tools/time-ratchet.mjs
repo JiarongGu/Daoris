@@ -9,11 +9,8 @@
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
  * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
- * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is `{ ms, why, row? }`:
- * `why` says what makes the test slow and why that cannot be cut, `row` the backlog row that optimizes it; an entry with no real `why`
- * fails, and every test over budget is printed with its reason. With no records nothing is checked. The list only shrinks: `--write` cuts it.
- * An entry may also be `{ ms, why, class: true }`, keyed by a test class: the class is slow in total with no test over its limit, and
- * `--classes` prints its `why`; `--write` keeps it while the class runs.
+ * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
+ * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -177,11 +174,7 @@ export function slowestClasses(tests, count, list = {}) {
   });
 }
 
-/**
- * The list cut down to the records: an entry is lowered to the slowest test it covers, and leaves when the records hold a test it covers
- * and none is over a limit. An entry marked `class: true` gives a whole class its reason (the class is slow in total, no test of it
- * over a limit), so it stays while the class does.
- */
+/** The list cut to the records: an entry lowered to its slowest test, gone once none is over; a `class: true` entry stays with its class. */
 export function tighten(found, list, seen = new Set()) {
   const slowest = {};
   for (const [key, { ms }] of Object.entries(found)) {

@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run's unit for the node runtime: <c>run:&lt;run&gt;</c>, the unit of its own node
-/// record, projected for the evaluation alone and never listed by the inventory.
+/// A run's unit for the node runtime: <c>run:&lt;run&gt;</c>, its own node record, projected for the evaluation alone, never listed.
 /// </summary>
 public static class RunUnits
 {

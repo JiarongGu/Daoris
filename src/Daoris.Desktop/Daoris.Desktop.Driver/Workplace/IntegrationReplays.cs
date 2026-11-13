@@ -427,8 +427,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
     /// <summary>
     /// A merge rule's press (the legacy exception): one <c>merge --no-ff</c> with today's message, its repository's hooks run
-    /// as the checkout's merge ran them, nothing resolved. A conflict, or a merge the repository's own hook refused, is the press's
-    /// refusal in today's words.
+    /// as the checkout's merge ran them, nothing resolved; a conflict, or a merge its own hook refused, is the press's refusal.
     /// </summary>
     private async Task<IntegrationStepEnd> PressedAsync(
         string tree, string onto, IntegrationMember member, IntegrationRequest request, IntegrationReplayAsk ask, CancellationToken ct)
