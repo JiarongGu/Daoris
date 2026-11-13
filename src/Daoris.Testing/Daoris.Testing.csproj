@@ -11,6 +11,7 @@
     <RootNamespace>Daoris.Testing</RootNamespace>
     <AssemblyName>Daoris.Testing</AssemblyName>
     <Description>the fakes of the ports and the contract cases that hold each fake to its real adapter</Description>
+    <IsTestProject>false</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
