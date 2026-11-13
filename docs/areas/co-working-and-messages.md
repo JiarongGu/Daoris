@@ -22,7 +22,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 |---|---|
 | `Service/Asks/` | The channel: its store (messages, read marks, acknowledgments, cursors), `ChannelDesk` (post, read, receipts, Daoris's lines, the judge), `ChannelParts` (a line's own channel and posts to one part, never synced), `LineChannel`, `TeammateAskChannel`, the members (`ChannelMembers`, `ChannelMemberRoll`), the bounds and refusals (`ChannelTerms.cs`), `HistoryDesk` |
 | `Service/Sessions/`, `Service/Quests/` | The sender rule (`Senders`, twinned in the driver and the web, held to `fixtures/senders.json`), the one door for solicited answers (`SolicitedAnswers`), the helper's, partner's, brainstorm's and meeting's desks; the quest exchange and its addresses |
-| `Service/Teams/` | An ask's plan: its parts (each a quest under `(ask, part)`), edges and packs, written whole through one door and judged, never refused; a worker's split of its own part is a plan one level down (depth 2) |
+| `Service/Teams/` | An ask's plan: its parts (each a quest under `(ask, part)`), edges and packs, written whole through one door and judged, never refused; a revised part changes its quest (`revised`); a worker's split of its own part is a plan one level down (depth 2); the members are leads, workers and scouts, and a scout's pack is kept beside the plan |
 | `Mcp/` | `channel_post` and `channel_read`; `team_plan`, the plan door; every tool's class (`ToolClasses`, held by a census) |
 | `Driver/WorkOrders/` | `Exchanges.Of`, delivery to running parts (`ChannelReach`), the terminal's channel verb and its member forms, *At work*'s reading, the members' look |
 | `Driver/Participants/`, `Driver/Loop/` | Helpers, partners and opinions: their admission, waits, person acts and runs; brainstorms and meetings at the look; the routing line (`RoutingStanding`) |
@@ -136,7 +136,10 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     with `piece`) or helper (`serves` alone). Parts, other repositories' sessions, meeting voices, subagents, Ask Daoris, intakes
     and brainstorm passes are not co-workers. (from D203, D212)
 28. A helper is a read-only session on another agent that answers one question, once, from a clone of its own, and asks nobody.
-    It starts when the asker's turn ends and reads uncommitted work too. (from D163, D203)
+    It starts when the asker's turn ends and reads uncommitted work too. A lead of an ask's team (its intake, or a worker splitting
+    its part) asks a scout the same way, with `helper_ask`'s `part`: the ask names the part the plan holds, the pass starts at once under
+    the Scout role in that part's repository at the line's commit, and its answer is a pack kept with the plan and recorded as a team
+    member, never a word to the lead. (from D163, D203, D285)
 29. The `helpers` rule is per repository, else its workspace: `ask`, `on` or `off`. With none set, an agent's ask is `on` for
     agents Daoris has set up and signed in here; one naming none goes to another maker than the asker's. (from D163)
 30. A driven lead that ends its turn on its own helper ask, with no question or go-ahead on the person, ends `completed`

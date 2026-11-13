@@ -34,7 +34,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
    the works it takes, a scope and a staffing. An appointed role: a name, its kind (supervisor or steward), the acts it holds of
    that kind's vocabulary, a scope, its holder and the supervisor's window. A role carries no doors of its own. (D212, D222, D233)
 2. The works are build, design, exact, chat, ask-daoris, intake, help, partner, review, brainstorm, plan and orient, read from a
-   record's marks by one rule, never stored; plan and orient read from no marks: a lead is an intake, and a scout a helper, by theirs,
+   record's marks by one rule, never stored; plan and orient read from no marks: a lead is an intake, and a scout a helper whose ask names a part (`HelperAsk.Scout`, walked as orient work), by theirs,
    the census admitting a role taking plan on an intake's record and one taking orient on a helper's. Design and exact fall to the
    role taking build when none takes them, plan to the role taking design, orient to the role taking exact (`RoleCatalog.Fallback`).
    (D212, D285)
