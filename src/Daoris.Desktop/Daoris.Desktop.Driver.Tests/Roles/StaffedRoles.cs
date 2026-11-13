@@ -17,7 +17,8 @@ internal static class StaffedRoles
             ["chat"] = [new ActorChoice(agent)],
             ["brainstorm"] = [new ActorChoice(agent)],
         };
-        if (intake is { Length: > 0 }) orders["intake"] = [new ActorChoice(intake)];
+        // The lead is the intake where the workspace has more than one repository, so an intake on an agent is a lead on it too.
+        if (intake is { Length: > 0 }) orders["intake"] = orders["lead"] = [new ActorChoice(intake)];
         if (helper is { Length: > 0 }) orders["ask-daoris"] = [new ActorChoice(helper)];
         return orders;
     }
@@ -26,5 +27,9 @@ internal static class StaffedRoles
     public static DriverConfig Config(string agent) => DriverConfig.Empty with { Actors = On(agent) };
 
     /// <summary>Intake on <paramref name="agent"/> alone, as the role door writes it: the <c>intakeAdapter</c> key no longer turns it on.</summary>
-    public static DriverConfig StaffIntake(this DriverConfig config, string agent) => ActorChoices.With(config, "intake", [new ActorChoice(agent)]);
+    public static DriverConfig StaffIntake(this DriverConfig config, string agent) => config.StaffIntake([new ActorChoice(agent)]);
+
+    /// <summary>Intake and the lead, which answers an ask where the workspace has more than one repository, on one order.</summary>
+    public static DriverConfig StaffIntake(this DriverConfig config, IReadOnlyList<ActorChoice> order) =>
+        ActorChoices.With(ActorChoices.With(config, "intake", order), "lead", order);
 }

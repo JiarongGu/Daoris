@@ -56,7 +56,7 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
         }
 
         var published = new List<TeamPublished>();
-        foreach (var part in plan.Parts) published.Add(await PublishAsync(ask, part, now, ct).ConfigureAwait(false));
+        foreach (var part in plan.Parts) published.Add(await PublishAsync(ask, part, save.By, now, ct).ConfigureAwait(false));
         await KeepTeamAsync(plan, published, ct).ConfigureAwait(false);
 
         return new(TeamRefusal.None, Said(plan, published), plan) { Published = published };
@@ -88,7 +88,8 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
         return caller?.Ask is { } ask ? (ask, null) : null;
     }
 
-    private async Task<TeamPublished> PublishAsync(Ask ask, TeamPart part, DateTimeOffset now, CancellationToken ct)
+    // The writing session publishes, so the ask's own intake, which is the lead, moves the ask's tier as its own quest_publish does.
+    private async Task<TeamPublished> PublishAsync(Ask ask, TeamPart part, string? session, DateTimeOffset now, CancellationToken ct)
     {
         // The title is kept with the part before its quest is made, so a retry after a crash, or a revision that rewords the part, asks the same.
         var row = await store.ReserveAsync(ask.Id, part.Id, part.Title, ct).ConfigureAwait(false);
@@ -101,7 +102,7 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
             Weight = part.Weight,
             Paths = part.Claims,
         };
-        var outcome = await asks.PublishAsync(ask.Id, QuestAddress.Spell(part.Repository, part.Lanes), now, ct, draft, session: null, byAgent: true)
+        var outcome = await asks.PublishAsync(ask.Id, QuestAddress.Spell(part.Repository, part.Lanes), now, ct, draft, session, byAgent: true)
             .ConfigureAwait(false);
         if (outcome.Quest is not { } quest) return new(part.Id, null, outcome.Message);
 

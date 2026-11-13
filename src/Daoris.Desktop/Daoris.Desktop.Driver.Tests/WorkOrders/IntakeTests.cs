@@ -492,19 +492,19 @@ public sealed class IntakeTests : IDisposable
     public async Task An_intake_walks_its_order_past_an_agent_this_machine_lacks_and_waits_when_none_can_run()
     {
         await using var service = StandInService.Start(Circle, Ask());
-        var walked = ActorChoices.With(Config(), "intake", [new ActorChoice("gone"), new ActorChoice("stub")]);
+        var walked = Config().StaffIntake([new ActorChoice("gone"), new ActorChoice("stub")]);
 
         await Driver(walked, service).RunOnceAsync();
 
         Assert.Equal("stub", Assert.Single(service.Intakes)["door"]!.GetValue<string>());
 
         await using var none = StandInService.Start(Circle, Ask());
-        var nothing = ActorChoices.With(Config(), "intake", [new ActorChoice("gone"), new ActorChoice("away")]);
+        var nothing = Config().StaffIntake([new ActorChoice("gone"), new ActorChoice("away")]);
 
         var report = await Driver(nothing, none).RunOnceAsync();
 
         Assert.Empty(none.Intakes);
-        Assert.Contains(report.Events, line => line.Contains("Intake waits: none of its choices can run now. choice 1, gone", StringComparison.Ordinal));
+        Assert.Contains(report.Events, line => line.Contains("Lead waits: none of its choices can run now. choice 1, gone", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -675,9 +675,8 @@ public sealed class IntakeTests : IDisposable
         foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        var config = ActorChoices.With(
-            Config() with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent(), "account-1:opus"] } },
-            "intake", [new ActorChoice("acp-stub", "opus")]);
+        var config = (Config() with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent(), "account-1:opus"] } })
+            .StaffIntake([new ActorChoice("acp-stub", "opus")]);
         Daoris.Driver.Driver Started()
         {
             var adapters = ProviderRegistry.Built();

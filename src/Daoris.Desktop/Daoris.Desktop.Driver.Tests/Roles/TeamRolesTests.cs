@@ -39,6 +39,22 @@ public sealed class TeamRolesTests
     }
 
     [Fact]
+    public void A_home_older_than_the_lead_and_the_scout_holds_no_row_for_them_and_their_seeds_stand_until_the_person_sets_an_order()
+    {
+        var none = new Dictionary<string, string>();
+        var older = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), none, none));
+        var own = new ActorChoice("claude-code", "sonnet", "low");
+        var set = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>> { ["lead"] = [own] }, none, none));
+        var unread = StaffingProjection.Config(new StaffingRead(new Dictionary<string, IReadOnlyList<ActorChoice>>(), new Dictionary<string, string> { ["scout"] = "bad" }, none));
+
+        Assert.Equal([ActorChoices.DesignSeed], older.Actors["lead"]);
+        Assert.Equal([ActorChoices.ExactSeed], older.Actors["scout"]);
+        Assert.Equal([own], set.Actors["lead"]);
+        Assert.False(unread.Actors.ContainsKey("scout"));
+        Assert.Equal("bad", unread.ActorErrors["scout"]);
+    }
+
+    [Fact]
     public void Plan_and_orient_work_take_the_seeded_roles_and_walk_their_own_orders()
     {
         var catalogue = RoleCatalog.Of([]);

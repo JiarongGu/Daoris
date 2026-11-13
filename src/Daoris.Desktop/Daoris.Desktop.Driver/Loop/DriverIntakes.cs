@@ -118,8 +118,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
     /// walks the same order as a probe, a later entry of the same agent on the same account set on the open session and
     /// anything else ending the record <c>choice-not-offered</c>, its ask let go.
     /// </summary>
-    private StartPlan PlanOf(AskView ask, DriverConfig config) =>
-        new(ParticipantWork.Intake, config, _context.Harnesses, _context.Adapters, _driver.Passed, catalogue: RoleCatalog.ReadHome(_context.Harnesses.Home), place: new RolePlace(ask.Workspace))
+    private StartPlan PlanOf(AskView ask, DriverConfig config, bool lead) =>
+        new(IntakeLead.WorkOf(lead), config, _context.Harnesses, _context.Adapters, _driver.Passed, catalogue: RoleCatalog.ReadHome(_context.Harnesses.Home), place: new RolePlace(ask.Workspace))
         {
             Workspace = ask.Workspace,
             Kind = StartKind.Driven,
@@ -146,10 +146,25 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var named = $"ask #{ask.Id} in {ask.Workspace}";
         // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says.
         StartRun Hold(string why) => new($"held  intake for {named}: {why}", false, Held: why);
+
+        // The declarations are read first: a workspace with more than one repository makes the intake the lead of the ask's team,
+        // which starts as plan work on the Lead role's order (IntakeLead).
+        IReadOnlyList<DeclarationView> declarations;
+        try
+        {
+            declarations = await service.DeclarationsAsync(ask.Workspace, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return Hold($"its room could not be written — {error.Message}");
+        }
+
+        var lead = IntakeLead.Leads([.. declarations.Select(declaration => declaration.Repository)]);
+        var role = lead ? "lead" : "intake";
         StartPlan plan;
         try
         {
-            plan = PlanOf(ask, config);
+            plan = PlanOf(ask, config, lead);
         }
         catch (DriverException held)
         {
@@ -191,7 +206,6 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         IReadOnlyList<string> routedByIntake;
         try
         {
-            var declarations = await service.DeclarationsAsync(ask.Workspace, ct).ConfigureAwait(false);
             // The repositories whose setup takes the intake's route without the person's accept.
             routedByIntake = IntakePrompt.RoutedByIntake(config, ask.Workspace, declarations.Select(declaration => declaration.Repository));
             // The workspace's kinds per repository, read from the choices as they stand now, like the declarations.
@@ -236,8 +250,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // An intake on another account of the order says so, as a quest's start does.
         RotatedOpening.Say(service, _context.Events, sessionId, adapterName, selection, carried: null);
         // Where a later choice of Intake's order ran, its actor line says which and why.
-        RotatedOpening.SayActor(_context.Events, sessionId, "intake", chosen, passes);
-        await RotatedOpening.SayStaffAsync(_context.Events, _context.Harnesses.Staff(), service, null, sessionId, selection, "intake").ConfigureAwait(false);
+        RotatedOpening.SayActor(_context.Events, sessionId, role, chosen, passes);
+        await RotatedOpening.SayStaffAsync(_context.Events, _context.Harnesses.Staff(), service, null, sessionId, selection, role).ConfigureAwait(false);
 
         SessionStop? stoppedFirst = null;
 
@@ -268,7 +282,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 Choice = chosen.From,
                 // Its workspace's session language: an intake answers a workspace's ask, in no repository.
                 Prompt = IntakePrompt.Compose(
-                    ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake),
+                    ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake, lead),
                 // In no repository, its standing block is its workspace's part alone.
                 Block = new StandingFacts { Workspace = ask.Workspace },
             };

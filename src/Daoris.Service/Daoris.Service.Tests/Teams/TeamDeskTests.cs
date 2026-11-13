@@ -16,6 +16,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
 
     private SqliteConnection _connection = null!;
     private QuestStore _quests = null!;
+    private AskStore _askStore = null!;
     private AskDesk _asks = null!;
     private TeamDesk _desk = null!;
     private Ask _ask = null!;
@@ -31,7 +32,7 @@ public sealed class TeamDeskTests : IAsyncLifetime
         await _connection.OpenAsync();
         _quests = await QuestStore.OpenAsync(_connection);
         var sessions = await SessionStore.OpenAsync(_connection);
-        var asks = await AskStore.OpenAsync(_connection);
+        var asks = _askStore = await AskStore.OpenAsync(_connection);
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(), DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.ImportAsync(Path.Combine(_root, "family"), Now);
@@ -156,6 +157,20 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.Equal(["planned", "revised", "revised"], decisions.Select(decision => decision.Decision));
         Assert.Equal("split along what a person sees", decisions[1].Reason);
         Assert.Contains("keel", decisions[0].Act);
+    }
+
+    [Fact]
+    public async Task A_plan_written_by_the_asks_own_intake_is_published_by_it_and_a_hand_written_one_is_not()
+    {
+        await _askStore.RecordIntakeAsync(_ask.Id, "intake-1", Now);
+
+        await _desk.SaveAsync(Save([Part("api", "src/api/**")]), Now);
+        Assert.NotEqual(AskDesk.ByIntake, (await _asks.FindAsync(_ask.Id))!.Tier);
+
+        var byLead = await _desk.SaveAsync(Save([Part("api", "src/api/**"), Part("page", "src/page/**")], expect: 1) with { By = "intake-1" }, Now.AddMinutes(1));
+
+        Assert.Equal(AskDesk.ByIntake, (await _asks.FindAsync(_ask.Id))!.Tier);
+        Assert.All(byLead.Published, each => Assert.NotNull(each.Quest));
     }
 
     [Fact]

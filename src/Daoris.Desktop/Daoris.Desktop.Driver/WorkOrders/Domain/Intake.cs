@@ -20,8 +20,9 @@ public static class IntakePrompt
     /// The workspace's repositories whose access setup takes the intake's route without the person's accept
     /// (<c>routing</c> <c>intake</c>), as <see cref="RoutedByIntake"/> reads them.
     /// </param>
+    /// <param name="lead">Whether it leads the ask's team (<see cref="IntakeLead"/>): it is then told how to write a plan.</param>
     public static string Compose(
-        AskView ask, SessionLanguage? language = null, string? browser = null, IReadOnlyList<string>? routedByIntake = null)
+        AskView ask, SessionLanguage? language = null, string? browser = null, IReadOnlyList<string>? routedByIntake = null, bool lead = false)
     {
         var text = new StringBuilder();
         text.Append($"You are the intake for workspace `{ask.Workspace}`. You are not any repository's agent: this\n");
@@ -156,6 +157,8 @@ public static class IntakePrompt
         text.Append($"`{IntakeUnowned.Marker} <the work, and why nothing here owns it, in one sentence>`. Daoris holds the ask with\n");
         text.Append("that sentence for Ask Daoris, which can open a department or a room for it; you never create one, and you\n");
         text.Append("never send it to the nearest repository for want of an owner.\n\n");
+
+        if (lead) text.Append(IntakeLead.Instruction);
 
         // The browser it is handed, in a block of its own; nothing where none is.
         if (browser is not null) text.Append(browser).Append("\n\n");

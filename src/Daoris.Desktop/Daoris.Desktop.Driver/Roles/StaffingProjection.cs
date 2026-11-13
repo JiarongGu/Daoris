@@ -14,13 +14,13 @@ internal static class StaffingProjection
     };
 
     /// <summary>
-    /// A home older than the Design or Exact build role holds no row for it, which would read as no order at all: its seed stands until the
+    /// A home older than the Design, Exact build, Lead or Scout role holds no row for it, which would read as no order at all: its seed stands until the
     /// person sets one, as a fresh home's does. A row that does not read keeps its error and holds the start.
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> WithSeeded(StaffingRead read)
     {
         var actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(read.Actors, StringComparer.Ordinal);
-        foreach (var role in (string[])["design", "exact"])
+        foreach (var role in (string[])["design", "exact", "lead", "scout"])
         {
             if (!read.Actors.ContainsKey(role) && !read.Errors.ContainsKey(role)) actors[role] = ActorChoices.Seed(role)!;
         }
