@@ -13,6 +13,11 @@
 # exact bytes, and a normalized fixture would fail its own verification for a reason that is ours.
 src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/vendor/** -text
 
+# The outputs a tool writes: a plan strips a claim on one (the integrator regenerates it), and a landing's replay takes the line's copy.
+docs/code-map.json linguist-generated
+examples/engine/docs/code-map.json linguist-generated
+src/Daoris.Web/src/data/api.ts linguist-generated
+
 # Written by `daoris sync`, which writes LF atomically. Never a merge conflict worth resolving by
 # hand: regenerate it instead.
 daoris.lock -merge
