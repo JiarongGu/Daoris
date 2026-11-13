@@ -30,7 +30,7 @@ public sealed class GitReviewCommandTests
     [Fact]
     public async Task The_times_name_each_start_and_the_line_names_no_path()
     {
-        WorkingTree.Answered.Value = _ => (0, "", "");
+        GitFlow.Answered.Value = _ => (0, "", "");
         try
         {
             using var count = GitLaunch.Count();
@@ -56,7 +56,7 @@ public sealed class GitReviewCommandTests
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
     }
 

@@ -28,6 +28,7 @@
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="Bridge\ProcessLiveness.cs" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
+    <Using Include="Daoris.Ports.Git.GitWait" Alias="GitWait" />
     <!-- Built first and never referenced (DRV8a): its tests start `daoris-driver` itself, to hold that a
          bare invocation starts nothing and a held home is refused before the service is reached. -->
     <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />

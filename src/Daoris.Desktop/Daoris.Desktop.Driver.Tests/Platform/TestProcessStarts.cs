@@ -58,8 +58,8 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Review/IntegrationVerdictProcessTests.cs", "Daoris.Desktop.Driver.Tests/Settings/DriverConfigFenceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Store/KeepLockProcessTests.cs", "Daoris.Desktop.Driver.Tests/Store/RecordLockProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/GitLibraryFaultProcessTests.cs",
-            "Daoris.Desktop.Driver.Tests/Workplace/GitRunnersEndTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/IntegrationPromoteGitTests.cs",
-            "Daoris.Desktop.Driver.Tests/Workplace/TreeGuardTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/Pool/TreePoolStopsGitTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/GitRunnersEndTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationPromoteGitTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/TreeGuardTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/Pool/TreePoolStopsGitTests.cs",
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationProcessTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleDriverTests.cs",
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionQuietTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/ReleaseStandIn.cs",
             "Daoris.Desktop.Modules.Tests/Browser/ProcessBrowserChildTests.cs",
@@ -106,8 +106,8 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/Agents/AgentSheetStartsTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/AgentsOpenStartsTests.cs",
             "Daoris.Desktop.Driver.Tests/GitStartTally.cs", "Daoris.Desktop.Driver.Tests/Loop/StartTreeCloseGitTests.cs",
-            "Daoris.Desktop.Driver.Tests/Workplace/TidyGitCountTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/TidyEffectGitTests.cs",
-            "Daoris.Desktop.Driver.Tests/Workplace/TidiedPartKeepingTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/TidyHomeBenchProcessTests.cs",
+            "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyGitCountTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyEffectGitTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/TidiedPartKeepingTests.cs", "Daoris.Desktop.Driver.Rehearsals/Workplace/TidyHomeBenchProcessTests.cs",
         ]),
         (TestStartKind.Words,
         [

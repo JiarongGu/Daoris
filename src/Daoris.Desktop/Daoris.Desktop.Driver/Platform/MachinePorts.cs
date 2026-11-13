@@ -1,12 +1,13 @@
 using Daoris.Ports.Ambient;
+using Daoris.Ports.Git;
 using Daoris.Ports.Processes;
 
 namespace Daoris.Driver;
 
 /// <summary>
 /// The one place the driver reads the machine's ports its root chose: the places a start takes, the admission each start is asked
-/// for, and the seal a kept key is kept under. The static start funnels and the key file ask here, so the root's choice is read once
-/// for the machine's whole family; a process whose root chose none has nothing real behind them, and a read throws.
+/// for, the seal a kept key is kept under, and the git every git is asked of. The static start funnels, the git runners and the key
+/// file ask here, so the root's choice is read once for the machine's whole family; a process whose root chose none has nothing real behind them, and a read throws.
 /// </summary>
 internal static class MachinePorts
 {
@@ -29,4 +30,7 @@ internal static class MachinePorts
 
     /// <summary>The seal a kept key is kept under.</summary>
     internal static SecretSeal Seal => Chosen.Seal ?? throw new InvalidOperationException("the root handed no seal, so this process keeps no key.");
+
+    /// <summary>Git, which the static git funnel (<see cref="GitRuns"/>) runs every git through.</summary>
+    internal static IGit Git => Chosen.Git ?? throw new InvalidOperationException("the root handed no git, so this process runs no git.");
 }

@@ -74,7 +74,7 @@ public sealed class TerminalStartsCensusTests
 
     private static bool Starting(MethodBase method) =>
         method.DeclaringType is { Namespace: "Daoris.Driver" } type && Sinks.Contains(type.Name.Split('`')[0])
-        || method.DeclaringType == typeof(Daoris.Ports.Processes.IProcessHost)
+        || method.DeclaringType == typeof(Daoris.Ports.Processes.IProcessHost) || method.DeclaringType == typeof(Daoris.Ports.Git.IGit)
         || method is { Name: "Start", DeclaringType.FullName: "System.Diagnostics.Process" };
 
     /// <summary>The type a method is written in: a lambda's or a state machine's outermost.</summary>

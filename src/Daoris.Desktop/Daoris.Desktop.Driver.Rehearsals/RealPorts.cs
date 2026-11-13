@@ -3,6 +3,7 @@ using Daoris.Adapters.DesktopStore.Sqlite;
 using Daoris.Adapters.Machine;
 using Daoris.Driver;
 using Daoris.Ports.Ambient;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Rehearsals;
 
@@ -21,5 +22,6 @@ internal static class RealPorts
         Liveness = MachineLiveness.Shared,
         StartPolicy = GitStartAdmission.Admit,
         Seal = KeySeal.Port,
+        Git = new FlowGit(GitProcessRuns.Shared),
     });
 }

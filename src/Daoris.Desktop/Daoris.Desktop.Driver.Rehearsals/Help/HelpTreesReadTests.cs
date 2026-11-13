@@ -103,7 +103,7 @@ public sealed class HelpTreesReadTests : IDisposable
         await GitAsync(root, "branch", "-D", "feature/held");
 
         var starts = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (starts) starts.Add(string.Join(' ', arguments));
         };
@@ -114,7 +114,7 @@ public sealed class HelpTreesReadTests : IDisposable
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.Equal(await TruthAsync(all), after);
@@ -203,7 +203,7 @@ public sealed class HelpTreesReadTests : IDisposable
         await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None);
 
         var starts = new List<string>();
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             lock (starts) starts.Add(string.Join(' ', arguments));
         };
@@ -214,7 +214,7 @@ public sealed class HelpTreesReadTests : IDisposable
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
 
         Assert.All(starts, start => Assert.Contains(" status ", " " + start + " "));
@@ -299,7 +299,7 @@ public sealed class HelpTreesReadTests : IDisposable
         Func<CancellationToken, Task<HelpTrees>> read, List<string>? asked = null)
     {
         var starts = 0;
-        WorkingTree.Started.Value = arguments =>
+        GitFlow.Started.Value = arguments =>
         {
             Interlocked.Increment(ref starts);
             if (asked is not null) lock (asked) asked.Add(string.Join(' ', arguments));
@@ -312,7 +312,7 @@ public sealed class HelpTreesReadTests : IDisposable
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
     }
 

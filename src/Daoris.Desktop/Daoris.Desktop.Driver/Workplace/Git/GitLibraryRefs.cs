@@ -25,6 +25,8 @@ internal static class GitLibraryRefs
     private static readonly (string Prefix, string Suffix)[] Rules =
         [("", ""), ("refs/", ""), ("refs/tags/", ""), ("refs/heads/", ""), ("refs/remotes/", ""), ("refs/remotes/", "/HEAD")];
 
+    internal static readonly string[] Listed = [$"--format={RefSnapshot.Format}", "refs/heads", "refs/remotes/origin"];
+
     /// <summary>The listing in <paramref name="folder"/>; null where git answers it.</summary>
     internal static Task<string?> ListingAsync(string folder, CancellationToken ct) => GitLibrary.AskAsync(folder, GitLibraryQuestion.Refs, Listing, ct);
 

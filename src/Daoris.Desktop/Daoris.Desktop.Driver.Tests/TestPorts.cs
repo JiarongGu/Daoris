@@ -32,7 +32,10 @@ internal static class TestPorts
         Liveness = Processes,
         StartPolicy = GitStartAdmission.Admit,
         Seal = ScriptedSeal.Port,
+        Git = Git,
     });
+
+    internal static FlowGit Git { get; } = new(GitProcessRuns.Shared);
 
     private static DateTimeOffset Created()
     {

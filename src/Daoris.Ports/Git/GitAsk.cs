@@ -25,21 +25,24 @@ public sealed record GitAsk(
     bool Writes,
     string? Input = null,
     TimeSpan? Bound = null,
-    string? Home = null);
+    string? Home = null)
+{
+    /// <summary>Variables git takes beside its start's own (a private index, a fetch's), or null for none.</summary>
+    public IReadOnlyDictionary<string, string>? Environment { get; init; }
+}
 
-/// <summary>What one run of git answered.</summary>
-/// <param name="Exit">Its exit code, or null where it did not start or its end came before its exit.</param>
-/// <param name="Output">What it wrote to its standard output.</param>
-/// <param name="Error">What it wrote to its standard error.</param>
+/// <summary>What one run of git answered: its exit, or null where it did not start or outlived its bound, and its two streams.</summary>
 public sealed record GitAnswer(int? Exit, string Output, string Error)
 {
-    /// <summary>Whether it exited with zero.</summary>
     public bool Ok => Exit == 0;
 }
 
-/// <summary>What one run of git wrote to its standard output, as bytes, with its exit and error.</summary>
-public sealed record GitBytes(int? Exit, byte[] Content, string Error)
+/// <summary>
+/// The bytes one run of git wrote, never more than the limit asked, its exit and its error. <paramref name="Cut"/> says more is
+/// waiting, so git is stopped at the limit and has no exit.
+/// </summary>
+public sealed record GitBytes(int? Exit, byte[] Content, string Error, bool Cut = false)
 {
-    /// <summary>Whether it exited with zero.</summary>
-    public bool Ok => Exit == 0;
+    /// <summary>Whether the bytes read stand: git exited with zero, or the limit came whole.</summary>
+    public bool Read => Exit == 0 || Cut;
 }

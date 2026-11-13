@@ -306,7 +306,7 @@ public sealed class GitHistoryEditTests : TreeSyncFixture
         await GitAsync(root, "config", $"--{scope}", "merge.ours.driver", "true");
         var tip = await RevAsync(root, "topic");
         var merges = 0;
-        WorkingTree.Started.Value = arguments => { if (arguments.Contains("merge-tree")) Interlocked.Increment(ref merges); };
+        GitFlow.Started.Value = arguments => { if (arguments.Contains("merge-tree")) Interlocked.Increment(ref merges); };
         try
         {
             var run = await GitHistoryEdits.EditAsync(Runs(), Ask(root, "rebase", "topic", "main"), "window", "window", CancellationToken.None);
@@ -318,7 +318,7 @@ public sealed class GitHistoryEditTests : TreeSyncFixture
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
     }
 

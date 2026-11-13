@@ -16,8 +16,7 @@ namespace Daoris.Driver;
 /// <para><b>Reads only, and nothing the files decide.</b> `status`, and a `diff` that reads the working tree or the index, are never
 /// kept: what the working tree holds is not a ref (a `diff` of two commits by their ids is). A git that did not start
 /// (code -1), a read cancelled and a question of commits git could not answer (<see cref="Answered"/>) are not kept, so
-/// the next asker asks again. A call with its own environment or bound (a fetch) and a test's stand-in answer
-/// (<see cref="WorkingTree.Answered"/>) are not touched. Outside a landing, a judgement keeps the same questions of commits for
+/// the next asker asks again. A call with its own environment or bound (a fetch) is not touched. Outside a landing, a judgement keeps the same questions of commits for
 /// itself (<see cref="RefSnapshot.Asked"/>).</para>
 /// </remarks>
 internal sealed class GitFacts

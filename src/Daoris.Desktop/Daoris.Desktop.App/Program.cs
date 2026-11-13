@@ -64,6 +64,7 @@ internal static class Program
             Liveness = Daoris.Adapters.Machine.MachineLiveness.Shared,
             StartPolicy = Daoris.Driver.GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
+            Git = Daoris.Driver.GitProcessRuns.Shared,
         });
 
         // The home before anything else: an install's `data/` folder is the Daoris home for this

@@ -222,7 +222,7 @@ function census(): { found: Join[]; scanned: number } {
       if (TWINS.has(basename(path)) || basename(path) === 'home-census.test.ts') continue;
       scanned += 1;
       const name = relative(SRC, path).replaceAll('\\', '/');
-      const testing = /\.Tests\//.test(name) || name.startsWith('Daoris.Cli/test/');
+      const testing = /\.(?:Tests|Rehearsals)\//.test(name) || name.startsWith('Daoris.Cli/test/');
       for (const each of joinsIn(name, readFileSync(path, 'utf8'), root.csharp)) {
         // A join has a part under the home: `resolve(home)` alone is the home made whole, no place in it.
         if (each.parts.length < 2) continue;

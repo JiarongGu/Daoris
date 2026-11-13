@@ -23,7 +23,7 @@ const scratch = join(root, '_fixtures', 'tree-base-test');
 rmSync(scratch, { recursive: true, force: true });
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
-const TEST = /(\.test\.|[/\\]test[/\\]|Tests[/\\]|tool-test[/\\])/;
+const TEST = /(\.test\.|[/\\]test[/\\]|(?:Tests|Rehearsals)[/\\]|tool-test[/\\])/;
 const FINDERS = /\b(?:applicationsAt|running|startedHere|commandLinesAt|ago|takeWindow|existsSync)\(/;
 
 /** Why a site may read a build output unguarded, each checked against the code. */
@@ -88,7 +88,7 @@ const CENSUS = [
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/Heavy/UnreleasedBasesTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/ServiceHostLocatorTests.cs',
-    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ContentProofLossTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/ContentProofLossTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/TreeBaseWordsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/FileAnalysisTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/RuleFileFormTests.cs',

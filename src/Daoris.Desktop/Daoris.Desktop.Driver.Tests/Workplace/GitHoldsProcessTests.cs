@@ -69,7 +69,7 @@ public sealed class GitHoldsProcessTests : IDisposable
     private async Task<(string? Failed, string? Url, int Fetches)> FetchAsync(string repo)
     {
         var fetches = 0;
-        WorkingTree.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
+        GitFlow.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
         try
         {
             var (failed, url) = await TreeRefs.FetchAsync(_home, repo, "main", CancellationToken.None, "engine", "work");
@@ -77,7 +77,7 @@ public sealed class GitHoldsProcessTests : IDisposable
         }
         finally
         {
-            WorkingTree.Started.Value = null;
+            GitFlow.Started.Value = null;
         }
     }
 

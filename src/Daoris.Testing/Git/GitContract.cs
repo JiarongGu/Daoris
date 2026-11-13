@@ -1,3 +1,4 @@
+using System.Text;
 using Daoris.Ports.Git;
 using Xunit;
 
@@ -39,18 +40,34 @@ public abstract class GitContract
         var answer = await Backend(Unknown).RunAsync(Ask("definitely-not-a-command"), CancellationToken.None);
 
         Assert.False(answer.Ok);
+        Assert.NotNull(answer.Exit);
         Assert.False(string.IsNullOrWhiteSpace(answer.Error));
     }
 
     [Fact]
-    public async Task The_lines_are_the_output_split_at_its_line_ends()
+    public async Task A_read_hands_on_the_output_as_it_was_written_and_answers_the_exit()
     {
         var git = Backend(Version);
         var run = await git.RunAsync(Ask("--version"), CancellationToken.None);
-        var lines = new List<string>();
-        await foreach (var line in git.ReadLinesAsync(Ask("--version"), CancellationToken.None)) lines.Add(line);
+        var read = new StringBuilder();
+        var exit = await git.ReadAsync(Ask("--version"), piece =>
+        {
+            read.Append(piece.Span);
+            return true;
+        }, CancellationToken.None);
 
-        Assert.Equal(run.Output.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'), lines);
+        Assert.Equal(0, exit);
+        Assert.Equal(run.Output, read.ToString());
+    }
+
+    [Fact]
+    public async Task A_read_whose_taker_has_enough_stops_git_and_answers_zero()
+    {
+        var exit = await Backend(Unknown).ReadAsync(Ask("definitely-not-a-command"), _ => false, CancellationToken.None);
+        var stopped = await Backend(Version).ReadAsync(Ask("--version"), _ => false, CancellationToken.None);
+
+        Assert.NotEqual(0, exit);
+        Assert.Equal(0, stopped);
     }
 
     [Fact]
@@ -58,10 +75,21 @@ public abstract class GitContract
     {
         var git = Backend(Version);
         var run = await git.RunAsync(Ask("--version"), CancellationToken.None);
-        var bytes = await git.ReadBytesAsync(Ask("--version"), CancellationToken.None);
+        var bytes = await git.ReadBytesAsync(Ask("--version"), 1 << 20, CancellationToken.None);
 
-        Assert.True(bytes.Ok);
-        Assert.Equal(run.Output, System.Text.Encoding.UTF8.GetString(bytes.Content));
+        Assert.True(bytes.Read);
+        Assert.False(bytes.Cut);
+        Assert.Equal(run.Output, Encoding.UTF8.GetString(bytes.Content));
+    }
+
+    [Fact]
+    public async Task Bytes_past_the_limit_are_cut_and_what_was_read_stands()
+    {
+        var bytes = await Backend(Version).ReadBytesAsync(Ask("--version"), 3, CancellationToken.None);
+
+        Assert.True(bytes.Cut);
+        Assert.True(bytes.Read);
+        Assert.Equal("git", Encoding.UTF8.GetString(bytes.Content));
     }
 
     [Fact]

@@ -108,6 +108,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   { paths: ['src/Daoris.Desktop/git.pinned.process.runsettings'], gates: ['driver-process-git-pinned'], why: "the settings of the git library's proofs run on the pinned MinGit (GITLIB1d)" },
+  { paths: ['src/Daoris.Desktop/rehearsals.process.runsettings'], gates: ['driver-rehearsals'], why: "the driver's rehearsal tier's settings, every Process class four at once (LAYERS1 e)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
   // A vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.
   {
@@ -176,7 +177,7 @@ export const REACH = Object.freeze([
     gates: ['modules'],
     why: "the modules' LandingSaysTwinTests read the landing sentences' table, the terminal's words and the card's",
   },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses'], why: "the driver's tests, the fast half and the Process halves, and the censuses among them" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses', 'driver-rehearsals'], why: "the driver's tests, the fast half and the Process halves, the censuses among them, and the rehearsals, which compile its git fixtures in" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses'], why: "the modules' tests, both halves, and the censuses among them" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
   {

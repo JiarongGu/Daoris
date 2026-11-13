@@ -81,7 +81,7 @@ public sealed class UnreadRecordGitTests : LandedFixture
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
         var made = new LandedBranches(Home).Of("engine", landed.Branch!)!.Tip;
-        WorkingTree.Answered.Value = arguments => arguments is ["merge-base", "--is-ancestor", var ancestor, _] && ancestor == made
+        GitFlow.Answered.Value = arguments => arguments is ["merge-base", "--is-ancestor", var ancestor, _] && ancestor == made
             ? (128, "", "fatal: could not read the object store")
             : null;
         SweepDone done;
@@ -91,7 +91,7 @@ public sealed class UnreadRecordGitTests : LandedFixture
         }
         finally
         {
-            WorkingTree.Answered.Value = null;
+            GitFlow.Answered.Value = null;
         }
 
         Assert.NotNull(new LandedBranches(Home).Of("engine", landed.Branch!));

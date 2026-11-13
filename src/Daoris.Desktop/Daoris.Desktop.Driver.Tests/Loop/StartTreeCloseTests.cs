@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. The driver has no <c>Runner</c>, so the look reaches the start's own path; git is a small model
-/// of one repository standing in through <see cref="WorkingTree.Runs"/>, which sees the token each git is asked on, and every other
+/// of one repository standing in through <see cref="GitFlow.Runs"/>, which sees the token each git is asked on, and every other
 /// start in the flow is refused through <see cref="ProcessStarts.Within"/>. The loop closes as the start reads its tree's head, the
 /// last await between the open and the record's. The branch's delete is the journal's <c>ref.delete</c> act, whose git
 /// starts as a held child no stand-in reaches, so that half of the case, with the tree's, is <see cref="StartTreeCloseGitTests"/>', over
@@ -73,7 +73,7 @@ public sealed class StartTreeCloseTests : IDisposable
             _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
-        WorkingTree.Runs.Value = GitAsync;
+        GitFlow.Runs.Value = GitAsync;
         Exception? thrown;
         TickReport? report = null;
         try
@@ -89,7 +89,7 @@ public sealed class StartTreeCloseTests : IDisposable
         }
         finally
         {
-            WorkingTree.Runs.Value = null;
+            GitFlow.Runs.Value = null;
         }
 
         var said = $"git asked:\n{string.Join('\n', _asked)}\nother starts: {string.Join(", ", _seen)}"
