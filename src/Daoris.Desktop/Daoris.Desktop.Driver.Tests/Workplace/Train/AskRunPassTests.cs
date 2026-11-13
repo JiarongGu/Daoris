@@ -63,7 +63,9 @@ public sealed class AskRunPassTests : NodeRunFixture
         _units = [];
         _branchTips[Branch] = Tip1;
         _landed = new HashSet<string>(StringComparer.Ordinal) { "p1", "p2" };
+        var checks = new Checks();
         var runtime = Runtime();
+        runtime.Doors = NodeDoors.None.With(NodeKinds.Check, checks);
 
         await PassAsync(runtime);
         await PassAsync(runtime);
@@ -71,6 +73,26 @@ public sealed class AskRunPassTests : NodeRunFixture
         var check = Files.Read(Unit)!.Statuses["check"];
         Assert.Equal(Tip1, check.Binding?.SubjectRevision);
         Assert.Equal(AskRunKey.BranchUnit(Run), check.Binding?.Observes);
+        Assert.Equal(Tip1, Assert.Single(checks.Sent).Call.SubjectRevision);
+    }
+
+    private sealed class Checks : ICheckPort
+    {
+        public List<NodeAttempt> Sent { get; } = [];
+
+        public Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
+        {
+            Sent.Add(attempt);
+            return Task.CompletedTask;
+        }
+
+        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(new WorkReconcileAnswer(ReconcileStates.Running));
+
+        public bool Answered(string invocation) => false;
+
+        public void Stop(string invocation)
+        {
+        }
     }
 
     private const string PartsThenReview = """

@@ -17,7 +17,7 @@ public sealed class AskRunChecksTests : IDisposable
     }
 
     private static NodeAttempt Attempt(string run) =>
-        new("check", 1, "", new WorkPerformCall(RunUnits.IdOf(run), "gates", 1, "inv-1", "key-1", Tip, [], DateTimeOffset.UnixEpoch), AttemptStates.Active);
+        new("check", 1, "", new WorkPerformCall(RunUnits.IdOf(run), "gates", 1, "inv-1", "key-1", Tip, [], DateTimeOffset.UnixEpoch), AttemptStates.Sent);
 
     private static readonly NodeDeclaration Check = new("check", NodeKinds.Check, 1, NodeReach.Performed);
 
@@ -31,7 +31,7 @@ public sealed class AskRunChecksTests : IDisposable
         var send = AskRunChecks.SendOf(_home, RunUnits.IdOf(Run), Attempt(Run), Check);
 
         Assert.NotNull(send);
-        Assert.Equal((Run, "inv-1", "engine", "checkout-engine", Tip), (send.Run, send.Invocation, send.Repository, send.Checkout, send.Commit));
+        Assert.Equal((Run, "inv-1", "engine", Path.GetFullPath("checkout-engine"), Tip),(send.Run, send.Invocation, send.Repository, send.Checkout, send.Commit));
     }
 
     [Fact]

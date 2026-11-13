@@ -25,7 +25,10 @@ public sealed class AskLandingGitTests : LandedFixture
     }
 
     private static LandStart Start(string tip) =>
-        new(RunUnits.IdOf(Run), Run, "landing", AskRunKey.BranchUnit(Run), [], "engine", "default", tip, "gph-1", "review");
+        new(RunUnits.IdOf(Run), Run, "landing", AskRunKey.BranchUnit(Run), [], "engine", "default", tip, "gph-1", "review")
+        {
+            Authority = StepAuthority.OfDoor(RunUnits.IdOf(Run), "landing", 1),
+        };
 
     [Fact]
     public async Task The_ask_branch_at_the_accepted_tip_is_merged_into_the_line()
