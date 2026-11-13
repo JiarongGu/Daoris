@@ -38,8 +38,8 @@ internal static class TidyHolders
 
     /// <summary>
     /// The trees sessions hold, for every door that removes or rebases one: a session running or waiting on the person, a
-    /// record the person's words or its own helper wait on, and the newest part of each quest still open, whatever that part's state, since
-    /// its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
+    /// record the person's words or its own helper wait on, and the newest part of each quest still open, whatever that part's state but
+    /// declined, since its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
     /// the run that opened it. A tree a step's hand-off reserves is held too, by that step.
     /// </summary>
     public static async Task<HashSet<string>> HeldTreesAsync(string home, ServiceClient service, CancellationToken ct) =>
@@ -99,7 +99,9 @@ internal static class TidyHolders
         || !(record.State.Equals("completed", StringComparison.OrdinalIgnoreCase) || record.State.Equals("declined", StringComparison.OrdinalIgnoreCase)
              || record.State.Equals("failed", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The tree of the newest part of each quest still open or taken; a teammate's record is none here.</summary>
+    private static bool Declined(PriorSession record) => record.State.Equals("declined", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The tree of the newest part of each quest still open or taken, unless that part declined; a teammate's record is none here.</summary>
     public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
         LineHolders(records, quests).Select(each => each.Tree);
 
@@ -114,7 +116,8 @@ internal static class TidyHolders
             .Where(record => !record.Teammate && record.Quest is { Length: > 0 } quest && open.Contains(quest))
             .GroupBy(record => record.Quest!, StringComparer.OrdinalIgnoreCase)
             .Select(line => line.MaxBy(record => record.Created ?? DateTimeOffset.MinValue)!)
-            .Where(record => record.Tree is { Length: > 0 } && (!goingOn || GoesOn(record)))
+            // A declined part is never carried on (the person's decline of a parked session leaves its quest taken), so it holds no tree.
+            .Where(record => record.Tree is { Length: > 0 } && !Declined(record) && (!goingOn || GoesOn(record)))
             .Select(record => new TreeHolder(record.Tree!, record.Session));
     }
 

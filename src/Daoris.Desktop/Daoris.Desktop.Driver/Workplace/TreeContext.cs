@@ -90,9 +90,10 @@ internal sealed class TreeContext
         CanonicalLine.ResolveAsync(root, repository, workspace, Config(), GuessAsync, ct);
 
     /// <summary>
-    /// The output a repository declares, which an unforced removal of its tree takes with it: its <c>integration.scratch</c>,
-    /// read from the declaration the owner accepted for integration at its line's tip alone (<see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
-    /// so the tree keeps what it names.
+    /// The output a repository declares, which an unforced removal of its tree takes with it (<see cref="TreeScratch.DeclaredAsync"/>):
+    /// its <c>integration.scratch</c>, read from the declaration the owner accepted for integration at its line's tip alone, and the
+    /// generated index its manifest at that tip declares. None where the choices could not be read or the line is not known, so the tree
+    /// keeps what it names.
     /// </summary>
     /// <param name="line">The repository's line where the caller read it already; null reads it here.</param>
     internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchAsync(
@@ -102,7 +103,7 @@ internal sealed class TreeContext
         {
             var config = Config();
             line ??= (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            return await TreeScratch.AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
+            return await TreeScratch.DeclaredAsync(config, root, repository, line, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
@@ -120,7 +121,7 @@ internal sealed class TreeContext
         {
             var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
             var line = (await CanonicalLine.ResolveAsync(root, repository, workspace, config, s_gitGuess, ct).ConfigureAwait(false)).Branch;
-            return await TreeScratch.AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
+            return await TreeScratch.DeclaredAsync(config, root, repository, line, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
