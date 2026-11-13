@@ -5,13 +5,9 @@ namespace Daoris.Driver;
 /// <param name="Landed">The parts whose request promoted onto the ask's branch (<see cref="TrainParts.Landed"/>).</param>
 public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string> Required, IReadOnlySet<string> Landed)
 {
-    /// <summary>The repository the plan gives each part to, by part; a part the plan gives to none is not in it.</summary>
     public IReadOnlyDictionary<string, string> Repositories { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>
-    /// What one repository's delivery run waits for: the parts the plan gives it, and any it gives none yet, which wait everywhere since
-    /// nothing says where they land.
-    /// </summary>
+    /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet.</summary>
     public PartsReport For(string repository) =>
         this with
         {
@@ -32,7 +28,6 @@ public static class PartsReports
     /// Each ask the integration holds a part's request for, with its plan as the service answers it; an ask whose plan is not read is left out,
     /// so its <c>parts</c> waits and is never reached on a guess.
     /// </summary>
-    /// <param name="runAsks">The asks a delivery run is bound for, read though no part has asked to land yet.</param>
     public static async Task<IReadOnlyDictionary<string, PartsReport>> ReadAsync(
         IntegrationStore store, ITrainPlans plans, CancellationToken ct, IEnumerable<string>? runAsks = null)
     {

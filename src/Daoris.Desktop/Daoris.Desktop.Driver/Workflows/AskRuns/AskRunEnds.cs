@@ -15,6 +15,7 @@ internal static class AskRunEnds
             NodeRunKeeping.Over(governed, current) ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, scope.Ask!, clock()) }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
-        said.Add($"work  {unit}: the delivery of ask #{scope.Ask} ended, {ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}.");
+        var at = ended.Node is { } step ? $" at `{step}`" : "";
+        said.Add($"work  {unit}: the delivery of ask #{ended.Quest} ended, {ended.Outcome}{at}.");
     }
 }

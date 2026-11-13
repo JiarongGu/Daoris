@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// the integration the session landings merge through. No session or tree stands behind the branch, so the checkout's own line is read and the
 /// branch is requested by its name; what the try came to is kept for the Accept that waits on it (<see cref="LandOutcomes"/>).
 /// </summary>
-public sealed class AskLanding(string home)
+public sealed class AskLanding(string home, Func<DateTimeOffset> clock)
 {
     /// <summary>Merges the run's branch where it still stands at the start's tip; the line said for the try, or null where nothing here lands.</summary>
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
@@ -29,7 +29,7 @@ public sealed class AskLanding(string home)
         var (merged, refused, refusal) = await IntegrationPresses.MergeAsync(
             home, config, root, binding.Repository, binding.Workspace, line, name, start.Tip, ct, delivered: true, automatic: !start.Reviewed).ConfigureAwait(false);
         if (!merged) return Kept(start, refusal ?? LandingCode.Refused, refused!);
-        RegistryFollowing.Moved(home, binding.Repository, DateTimeOffset.UtcNow);
+        RegistryFollowing.Moved(home, binding.Repository, clock());
         return Kept(start, LandingCode.Landed, $"merged `{name}` into `{line}`.", landed: true);
     }
 

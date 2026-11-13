@@ -9,8 +9,6 @@ public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadO
 {
     /// <summary>The quest the plan published for the part; null where it has none yet.</summary>
     public string? Quest { get; init; }
-
-    /// <summary>The repository the plan gives the part to; null where a caller did not name it.</summary>
     public string? Repository { get; init; }
 }
 

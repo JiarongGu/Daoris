@@ -35,7 +35,7 @@ public sealed class AskLandingGitTests : LandedFixture
     {
         var (root, tip) = await AskBranchAsync();
 
-        var said = await new AskLanding(Home).PerformAsync(Start(tip));
+        var said = await Landing().PerformAsync(Start(tip));
 
         Assert.Contains("merged", said);
         var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, "main"], CancellationToken.None);
@@ -51,7 +51,7 @@ public sealed class AskLandingGitTests : LandedFixture
         await CommitAsync(root, "more.txt", "more\n", "a later part");
         await GitAsync(root, "checkout", "main");
 
-        var said = await new AskLanding(Home).PerformAsync(Start(tip));
+        var said = await Landing().PerformAsync(Start(tip));
 
         Assert.Contains("moved", said);
         var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, "main"], CancellationToken.None);
@@ -64,6 +64,8 @@ public sealed class AskLandingGitTests : LandedFixture
     {
         var (_, tip) = await AskBranchAsync();
 
-        Assert.Null(await new AskLanding(Home).PerformAsync(Start(tip) with { Run = "q7" }));
+        Assert.Null(await Landing().PerformAsync(Start(tip) with { Run = "q7" }));
     }
+
+    private AskLanding Landing() => new(Home, () => DateTimeOffset.UnixEpoch);
 }

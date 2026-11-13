@@ -21,7 +21,7 @@ public static class AskRunKey
 
     /// <summary>Whether <paramref name="binding"/> is an ask's delivery run: its id is the one its ask and repository name.</summary>
     public static bool Is(WorkflowRunBinding binding) =>
-        binding.Ask is { Length: > 0 } ask && string.Equals(binding.Run, Of(ask, binding.Repository), StringComparison.Ordinal);
+        !string.IsNullOrEmpty(binding.Ask) && string.Equals(binding.Run, Of(binding.Ask, binding.Repository), StringComparison.Ordinal);
 
     /// <summary>The unit standing for the ask's branch in <paramref name="run"/>, which no session made.</summary>
     public static string BranchUnit(string run) => $"unit-{run}";

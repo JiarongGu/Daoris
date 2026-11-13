@@ -21,7 +21,7 @@ public sealed class AskRunBinderTests : IDisposable
         public Task<TrainPlan?> OfAsync(string ask, CancellationToken ct) => Task.FromResult(plans.GetValueOrDefault(ask));
     }
 
-    private AskRunBinder Binder() => new(_home, WorkflowPorts.Store(_home), WorkflowPorts.Runs(_home), new Plans(_plans));
+    private AskRunBinder Binder() => new(_home, WorkflowPorts.Store(_home), WorkflowPorts.Runs(_home), new Plans(_plans), () => _now);
 
     private static TrainPlanPart Part(string id, string repository) =>
         new(id, new HashSet<string>(), new HashSet<string>()) { Repository = repository, Quest = "q" + id };
@@ -32,7 +32,7 @@ public sealed class AskRunBinderTests : IDisposable
         [new("engine", true, "checkout-engine"), new("site", true, "checkout-site"), new("away", true, null)];
 
     private Task<IReadOnlyList<string>> BindAsync(AskRunBinder binder, params AskView[] asks) =>
-        binder.BindAsync(DriverConfig.Empty, asks, Registry, [], _now, CancellationToken.None);
+        binder.BindAsync(DriverConfig.Empty, asks, Registry, [], CancellationToken.None);
 
     [Fact]
     public async Task A_plan_with_parts_binds_one_run_per_repository_with_a_checkout_here()
