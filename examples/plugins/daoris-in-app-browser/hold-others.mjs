@@ -4,7 +4,7 @@ const TARGET_EVENTS = /"Target\.(attachedToTarget|targetInfoChanged|detachedFrom
  * What the host says to Playwright, with one change: a target the host announces as `other` is held until the host says it is a
  * page, and then announced as a page. Some hosts announce every new tab as `other` and turn it into a `page` a few tens of
  * milliseconds later; Playwright decides what a target is when it is announced and drops `other`, so such a tab would never
- * exist for it. A target that stays `other` (the browser's own toolbar and the like) is announced as it was once `patience` ms are
+ * exist for it. A target that stays `other` (the browser's own toolbar and the like) is announced unchanged once `patience` ms are
  * out, and held no longer than that, since a target the host started paused waits for Playwright to let it run.
  *
  * @param send Sends one message on to Playwright.
