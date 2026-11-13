@@ -343,16 +343,16 @@ public sealed class SessionTreesTests : IDisposable
         var root = await MakeRepositoryAsync("engine");
         using var closing = new CancellationTokenSource();
         string? lockSaid = null;
-        // The git right after `worktree add`, which reads the branch it made: the open is cut there.
+        // The open's last git, which lets go of the lock (the library answers the branch read before it, starting none): cut there.
         GitFlow.Started.Value = arguments =>
         {
-            if (closing.IsCancellationRequested || arguments is not ["rev-parse", "--verify", "--quiet", var reference]
-                || !reference.StartsWith("refs/heads/daoris/s-", StringComparison.Ordinal))
+            if (closing.IsCancellationRequested || arguments is not ["worktree", "unlock", var tree]
+                || !Path.GetFileName(tree).StartsWith("s-", StringComparison.Ordinal))
             {
                 return;
             }
 
-            var locked = Path.Combine(root, ".git", "worktrees", reference["refs/heads/daoris/".Length..], "locked");
+            var locked = Path.Combine(root, ".git", "worktrees", Path.GetFileName(tree), "locked");
             lockSaid = File.Exists(locked) ? File.ReadAllText(locked).TrimEnd('\n') : null;
             closing.Cancel();
         };

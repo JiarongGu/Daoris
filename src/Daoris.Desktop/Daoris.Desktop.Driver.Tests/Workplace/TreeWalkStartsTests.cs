@@ -19,7 +19,9 @@ public sealed class TreeWalkStartsTests(ITestOutputHelper output) : LandedFixtur
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "part.txt", "part\n", "part");
-        // The line holds the work by content: a copy of the commit, not its ancestry.
+        // The line holds the work by content: a copy of the commit, not its ancestry. The line moves first, so the copy has another
+        // parent and is never the same commit as the original, as it would be were both made in one second on one parent.
+        await CommitAsync(root, "line.txt", "line\n", "line");
         await GitAsync(root, "cherry-pick", "--allow-empty", (await GitAsync(opened.Path, "rev-parse", "HEAD")).Trim());
         return (opened.Path, trees);
     }

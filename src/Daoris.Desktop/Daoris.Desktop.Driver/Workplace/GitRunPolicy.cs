@@ -56,6 +56,8 @@ public sealed class GitRunPolicy : IGitPolicy
         // An object read's question is its input: two of them start the same command, which a count tells apart by it.
         return GitScheduler.Shared.RunAsync(placed, token =>
         {
+            // The adapter's host takes the machine's place for the start, which the funnel the older runs went through said.
+            LockWaits.Waits(LockWaits.Starts);
             using (kind == GitRunKind.Bytes && ask.Input is not null ? GitStartInputs.Placing(ask.Input) : null) return run(token);
         }, ct);
     }
