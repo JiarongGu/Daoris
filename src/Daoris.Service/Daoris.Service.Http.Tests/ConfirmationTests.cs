@@ -917,9 +917,9 @@ public sealed class ConfirmationProcessTests : IDisposable
         // A yes whose quest's id holds a space, sent escaped: the door reads it unescaped, and its refusal names that quest.
         const string Accept = "/api/quests/my%20quest/accept";
         Assert.Equal(403, (await SendAsync(client, host.Url, "POST", Accept, null)).Status);
-        var (retire, retireToken) = await AskedAsync(client, host.Url, "POST", Accept, null);
-        var retired = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{retire}/confirm", null, person: KeyedHost.Key);
-        Assert.Contains("my quest", retired.Body);
+        var (accept, acceptToken) = await AskedAsync(client, host.Url, "POST", Accept, null);
+        var yes = await SendAsync(client, host.Url, "POST", $"/api/confirmations/{accept}/confirm", null, person: KeyedHost.Key);
+        Assert.Contains("my quest", yes.Body);
 
         // An ask with a body, bound whole at the Confirm; no workspace is held here, so its door's refusal names the body's.
         const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
@@ -938,7 +938,7 @@ public sealed class ConfirmationProcessTests : IDisposable
         Assert.True(host.Process.WaitForExit(Poll.Patience), "the host did not stop when its input closed");
         Assert.All(host.LogLines(), line =>
         {
-            Assert.DoesNotContain(retireToken, line);
+            Assert.DoesNotContain(acceptToken, line);
             Assert.DoesNotContain(secondToken, line);
             Assert.DoesNotContain(KeyedHost.Key, line);
         });

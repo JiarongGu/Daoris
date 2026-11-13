@@ -281,7 +281,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Contains(Lines("supervisor.refused"), line => line.GetProperty("data").GetProperty("why").GetString() == SupervisorWhy.NotHolder);
     }
 
-    /// <summary>A caller in an agent's job is refused before its proof is read, and a role act no terminal holds is refused.</summary>
+    /// <summary>A holder in an agent's job acts by its proof, and a role act no terminal holds is refused.</summary>
     [Fact]
     public async Task A_contained_holder_acts_and_a_dark_build_covers_nothing()
     {
