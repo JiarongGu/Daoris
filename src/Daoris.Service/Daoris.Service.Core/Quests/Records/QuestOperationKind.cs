@@ -105,4 +105,11 @@ public enum QuestOperationKind
     /// since a run is bound at its first start; the latest stands, and one naming neither clears it. It moves no status.
     /// </summary>
     Chosen,
+
+    /// <summary>
+    /// A plan revision reworded or rescoped the part this quest publishes (TEAMWORK1d): its title, body, weight and claimed paths are the
+    /// revision's, so the quest a worker reads is the part as the plan now says it. It applies while the quest is open or taken, and the
+    /// latest stands. It moves no status.
+    /// </summary>
+    Revised,
 }

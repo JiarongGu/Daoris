@@ -429,7 +429,7 @@ public sealed class QuestStore
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
         QuestOperationRef? submission = null, string? session = null, QuestOperationRef? forward = null,
-        QuestWorkflowChoice? choice = null)
+        QuestWorkflowChoice? choice = null, QuestRevision? revision = null)
     {
         // Each field kept only on the kinds that carry it, so the row written and the operation handed back read the same; a publish
         // carries the quest as asked, open from this moment.
@@ -450,7 +450,8 @@ public sealed class QuestStore
             Submission: Carries(kind) ? submission : null,
             Session: KeepsSession(kind) ? session : null,
             Forward: kind == QuestOperationKind.Dismissed ? forward : null,
-            Choice: kind == QuestOperationKind.Chosen ? choice : null);
+            Choice: kind == QuestOperationKind.Chosen ? choice : null,
+            Revision: kind == QuestOperationKind.Revised ? revision : null);
 
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -546,6 +547,10 @@ public sealed class QuestStore
     /// <inheritdoc cref="QuestChoiceOperation.ChooseAsync"/>
     public Task<QuestMove> ChooseAsync(string id, QuestWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestChoiceOperation>().ChooseAsync(tx, id, choice, now), ct);
+
+    /// <inheritdoc cref="QuestReviseOperation.ReviseAsync"/>
+    public Task<QuestMove> ReviseAsync(string id, QuestRevision revision, DateTimeOffset now, CancellationToken ct = default) =>
+        WriteAsync(tx => Operations.Of<QuestReviseOperation>().ReviseAsync(tx, id, revision, now), ct);
 
     /// <inheritdoc cref="QuestEvidenceOperation.EvidenceAsync"/>
     public Task<QuestMove> EvidenceAsync(string id, QuestEvidenceVerdict verdict, DateTimeOffset now, CancellationToken ct = default) =>

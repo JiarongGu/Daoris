@@ -71,6 +71,39 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.Equal(quest, again.Published.Single().Quest);
         Assert.Single(await _quests.FromAsync(AskDesk.SenderOf(_ask.Id)));
         Assert.Equal(2, again.Plan!.Revision);
+        // The quest says the revision, so a worker reads the part as the plan now words it.
+        var kept = (await _quests.FromAsync(AskDesk.SenderOf(_ask.Id))).Single();
+        Assert.Equal("A new title", kept.Title);
+        Assert.Equal("other words", kept.Body);
+        Assert.True(again.Published.Single().Revised);
+        Assert.Contains("reworded", again.Message);
+    }
+
+    [Fact]
+    public async Task A_revision_that_rescopes_a_part_changes_its_quest_paths_and_one_that_says_the_same_changes_nothing()
+    {
+        var first = await _desk.SaveAsync(Save([Part("keel", "src/a/**")]), Now);
+        var quest = first.Published.Single().Quest!;
+
+        var rescoped = await _desk.SaveAsync(Save([Part("keel", "src/b/**")], expect: 1), Now.AddMinutes(1));
+        Assert.True(rescoped.Published.Single().Revised);
+        Assert.Equal(["src/b/**"], (await _quests.FindAsync(quest))!.Paths);
+
+        var same = await _desk.SaveAsync(Save([Part("keel", "src/b/**")], expect: 2), Now.AddMinutes(2));
+        Assert.False(same.Published.Single().Revised);
+    }
+
+    [Fact]
+    public async Task A_revision_of_a_part_whose_quest_is_closed_leaves_the_quest_as_it_closed()
+    {
+        var first = await _desk.SaveAsync(Save([Part("keel")]), Now);
+        var quest = first.Published.Single().Quest!;
+        await _quests.DeleteAsync(quest, Now.AddSeconds(30), travels: false);
+
+        var again = await _desk.SaveAsync(Save([Part("keel") with { Title = "Reworded" }], expect: 1), Now.AddMinutes(1));
+
+        Assert.False(again.Published.Single().Revised);
+        Assert.Contains("not reworded", again.Message);
     }
 
     [Fact]

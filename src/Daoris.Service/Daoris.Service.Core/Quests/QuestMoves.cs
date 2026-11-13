@@ -118,6 +118,8 @@ public static class QuestMoves
         // A workflow choice answers none of its own: the quest's own answer says what stands, and the person's words
         // stay in the log.
         QuestOperationKind.Chosen => move,
+        // A revision's words and scope stay in the log: the quest's own answer says what stands.
+        QuestOperationKind.Revised => move,
         QuestOperationKind.Conflict => move with { Attempted = operation.Attempted },
         QuestOperationKind.Dismissed => move with { Dismisses = operation.Dismisses },
         QuestOperationKind.Waited => move with { WaitsOn = IsQuestId(operation.Note) ? operation.Note : null },

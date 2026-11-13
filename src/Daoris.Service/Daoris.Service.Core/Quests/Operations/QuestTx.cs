@@ -30,7 +30,7 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
     internal Task<QuestOperation> AppendAsync(QuestOperation draft) => store.AppendAsync(
         draft.Quest, draft.Kind, draft.At, draft.Note, draft.Published, transaction, ct, draft.Dismisses, draft.Answers, draft.WhileOpen,
         draft.Evidence, draft.SetUp, draft.Verdict, draft.NoteParts, draft.Close, draft.Submission, draft.Session, draft.Forward,
-        draft.Choice);
+        draft.Choice, draft.Revision);
 
     internal Task WriteCacheAsync(Quest quest) => store.WriteCacheAsync(quest, transaction, ct);
 

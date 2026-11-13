@@ -150,6 +150,11 @@ public sealed class QuestOperationKindsTests
         {
             Choice = new QuestWorkflowChoice("docs", "docs-to-pr") { Words = "only the documentation" },
         },
+        // A plan revision's rewording and rescoping of the part this quest publishes (TEAMWORK1d).
+        [QuestOperationKind.Revised] = s => Op(QuestOperationKind.Revised, s) with
+        {
+            Revision = new QuestRevision("Build the bridge, twice as wide", "Widen it.", "exact", ["src/bridge/**", "docs/bridge.md"]),
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -282,6 +287,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Rebound] = "a rebind",
         [QuestOperationKind.Taken] = "a take's",
         [QuestOperationKind.Chosen] = "a workflow choice",
+        [QuestOperationKind.Revised] = "a revision",
     };
 
     /// <summary>
@@ -458,6 +464,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Reopened] = [],
         [QuestOperationKind.Rebound] = [],
         [QuestOperationKind.Chosen] = [],
+        [QuestOperationKind.Revised] = [],
     };
 
     /// <summary>
