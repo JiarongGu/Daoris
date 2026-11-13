@@ -66,12 +66,14 @@ export type HelpPress = 'help-approve' | 'help-reads' | 'help-withdraw';
  * and *Approve*, which approves all its reads and each write ticked; *Withdraw* once approved. None for a refused
  * one, and none on an offer's page, which nothing here has installed. Nothing where it offers nothing.
  */
-export function HelpServers({ plugin, servers, onHelp }: {
+export function HelpServers({ plugin, servers, onHelp, full = false }: {
   /** The plugin's id, which a press names; absent on an offer's page. */
   plugin?: string;
   servers?: HelpServerShown[];
   /** The press, with the writes the person ticked for an approval (each on its own); none for a withdrawal. */
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
+  /** Ask Daoris runs with full access: each server it is offered is handed whole, approved or not. */
+  full?: boolean;
 }) {
   const { t } = useTranslation();
   if (!servers?.length) return null;
@@ -79,7 +81,7 @@ export function HelpServers({ plugin, servers, onHelp }: {
     <PageSection title={t('plugin.section.help')}>
       <Body className="mb-2">{t('plugin.help.trusted')}</Body>
       <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-        {servers.map((server) => <HelpServerRow key={server.name} plugin={plugin} server={server} onHelp={onHelp} />)}
+        {servers.map((server) => <HelpServerRow key={server.name} plugin={plugin} server={server} onHelp={onHelp} full={full} />)}
       </ul>
       <Body className="mt-2">{t('plugin.help.body')}</Body>
     </PageSection>
@@ -87,10 +89,11 @@ export function HelpServers({ plugin, servers, onHelp }: {
 }
 
 /** One server a plugin offers Ask Daoris, with the writes the person has ticked so far for its approval. */
-function HelpServerRow({ plugin, server, onHelp }: {
+function HelpServerRow({ plugin, server, onHelp, full }: {
   plugin?: string;
   server: HelpServerShown;
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
+  full: boolean;
 }) {
   const { t } = useTranslation();
   const [ticked, setTicked] = useState<string[]>([]);
@@ -106,7 +109,8 @@ function HelpServerRow({ plugin, server, onHelp }: {
     <li className="flex flex-col gap-0.5 text-small text-ink-soft">
       <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <code className="font-mono text-meta text-ink">{server.name}</code>
-        <span>{t(state === 'waits' && server.changed ? 'plugin.help.state.changed' : `plugin.help.state.${state}`)}</span>
+        <span>{t(full && state !== 'refused' ? 'plugin.help.state.full'
+          : state === 'waits' && server.changed ? 'plugin.help.state.changed' : `plugin.help.state.${state}`)}</span>
       </span>
       {server.allow.length > 0 && <span>{t('plugin.help.reads', { tools: server.allow.join(', ') })}</span>}
       {state === 'approved' && accepted.length > 0 && <span>{t('plugin.help.writesAccepted', { tools: accepted.join(', ') })}</span>}
@@ -267,7 +271,8 @@ export function NameRows({ names }: { names: string[] }) {
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
   toolStanding, checkingTools = false, fixingTool = null, toolRefused = null, onCheckTools, onFixTool, setup, setupFirst = false,
-  round, signOut, onSwitch, onHelp, onTry, onTryAgain, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
+  round, signOut, onSwitch, onHelp, helpFull = false, onTry, onTryAgain, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove,
+  onCancelRemove,
 }: {
   plugin: PluginShown;
   /** Its *Set up* tab's body, where it declares an interface or a point; none draws no tabs. */
@@ -311,6 +316,8 @@ export function PluginPage({
    * none offers no press.
    */
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
+  /** Ask Daoris runs with full access, where it is handed every server whole and asks nothing: no server waits for an approval. */
+  helpFull?: boolean;
   onTry: (id: string) => void;
   /** The person's *Try again* on a plugin the loop holds unsound; none offers none. */
   onTryAgain?: (id: string) => void;
@@ -392,7 +399,7 @@ export function PluginPage({
     <PluginAbout
       plugin={plugin} kitPoints={kitPoints} trial={trial} trying={trying} tryable={tryable} toolStanding={toolStanding}
       checkingTools={checkingTools} fixingTool={fixingTool} toolRefused={toolRefused} onCheckTools={onCheckTools} onFixTool={onFixTool}
-      onHelp={onHelp} onTry={onTry}
+      onHelp={onHelp} helpFull={helpFull} onTry={onTry}
     />
   );
 
@@ -401,7 +408,7 @@ export function PluginPage({
       {/* Status leads (platform language §4): a refused plugin's sentence comes first. */}
       {plugin.problem && <Lead text={plugin.problem} />}
       {plugin.unsound && <Lead text={t('plugin.unsound')} />}
-      <HelpWaitsLead servers={plugin.helpServers} />
+      {!helpFull && <HelpWaitsLead servers={plugin.helpServers} />}
 
       {asking && (
         <InlineConfirm
@@ -444,9 +451,10 @@ export function PluginPage({
 }
 
 function PluginAbout({
-  plugin, kitPoints, trial, trying, tryable, toolStanding, checkingTools, fixingTool, toolRefused, onCheckTools, onFixTool, onHelp, onTry,
+  plugin, kitPoints, trial, trying, tryable, toolStanding, checkingTools, fixingTool, toolRefused, onCheckTools, onFixTool, onHelp, helpFull,
+  onTry,
 }: Pick<Parameters<typeof PluginPage>[0],
-  'plugin' | 'kitPoints' | 'trial' | 'toolStanding' | 'fixingTool' | 'toolRefused' | 'onCheckTools' | 'onFixTool' | 'onHelp' | 'onTry'>
+  'plugin' | 'kitPoints' | 'trial' | 'toolStanding' | 'fixingTool' | 'toolRefused' | 'onCheckTools' | 'onFixTool' | 'onHelp' | 'helpFull' | 'onTry'>
   & { trying: boolean; tryable: boolean; checkingTools: boolean }) {
   const { t } = useTranslation();
   return (
@@ -482,7 +490,7 @@ function PluginAbout({
         </PageSection>
       )}
 
-      <HelpServers plugin={plugin.id} servers={plugin.helpServers} onHelp={onHelp} />
+      <HelpServers plugin={plugin.id} servers={plugin.helpServers} onHelp={onHelp} full={helpFull} />
       <SkillRows skills={plugin.skills} />
       <StepRows plugin={plugin.id} steps={plugin.steps} resources={plugin.resources} />
       {onCheckTools && onFixTool && (

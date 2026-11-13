@@ -137,7 +137,8 @@ public static class PluginsCommand
     {
         var (id, json, _) = Parse(args, "show", takesSince: false);
         var page = PluginPage.Read(Home(home), id);
-        output.Write(json ? JsonSerializer.Serialize(page, Json) + "\n" : Show(page));
+        var full = DriverConfig.Load(DriverConfig.ResolvePath(Home(home))).HelpMode == HelpModes.Full;
+        output.Write(json ? JsonSerializer.Serialize(page, Json) + "\n" : Show(page, full));
         return 0;
     }
 
@@ -162,7 +163,8 @@ public static class PluginsCommand
     }
 
     /// <summary>A plugin's page, as a terminal says it: the page's sections, one field a line.</summary>
-    public static string Show(PluginPageRead page)
+    /// <param name="full">Ask Daoris runs with full access, where it is handed every server whole and asks nothing, so none waits for an approval.</param>
+    public static string Show(PluginPageRead page, bool full = false)
     {
         var text = new StringBuilder();
         text.Append($"plugins: `{page.Id}` — {page.Name}{(page.Version.Length > 0 ? " " + page.Version : "")}\n");
@@ -228,7 +230,8 @@ public static class PluginsCommand
                 if (state == HelpGrants.Approved && accepted.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", accepted)}, accepted");
                 if (state == HelpGrants.Approved && asked.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", asked)}, not accepted");
                 if (state != HelpGrants.Approved && server.Writes.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", server.Writes)}");
-                var said = state == HelpGrants.Approved ? "approved"
+                var said = full && state != HelpGrants.Refused ? "handed whole in full access, where it asks nothing"
+                    : state == HelpGrants.Approved ? "approved"
                     : state == HelpGrants.Refused ? $"refused, {server.Refusal}"
                     : server.Changed ? "changed since you approved it, so it asks again and Ask Daoris is handed nothing of it until you do"
                     : "waiting for your approval";

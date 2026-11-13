@@ -128,8 +128,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 22. A sample frame names no repository: an empty scratch root and a `GIT_DIR` that is not there. (D101)
 23. A tool is found and checked only at a trial or on a press, never at a load or on a timer. A check's `fix` (such as `az login`)
     runs only on the person's press, in a console they see. Daoris never signs in or downloads. (D150)
-24. A server goes to sessions by default. One handed to Ask Daoris reaches it only once the person approved its exact tools; a
-    write only as an accepted write; a generic execution tool never. A server run through `npx` names its package and version, and
+24. A server goes to sessions by default. One handed to Ask Daoris in restricted mode reaches it only once the person approved its
+    exact tools; a write only as an accepted write; a generic execution tool never. In full access Ask Daoris is handed every server
+    whole and asks nothing, and the plugin's page and `plugin show` follow its mode: no server waits for an approval. A server run through `npx` names its package and version, and
     a session is handed node and that package's script, installed once into the toolchain, never `npx` itself; one driving Daoris's
     browser stays under a 512 MB ceiling by a restart between calls (agents area, rule 13). An approval is the person's and stands
     while the plugin is switched off, but a switched-off plugin's grant is handed nothing. (D170)

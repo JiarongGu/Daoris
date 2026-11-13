@@ -135,6 +135,7 @@
   "plugin.help.state.waits": "Not approved: Ask Daoris is handed nothing of it",
   "plugin.help.state.changed": "Changed since you approved it: asks again, and Ask Daoris is handed nothing of it until you do",
   "plugin.help.state.refused": "Refused for Ask Daoris",
+  "plugin.help.state.full": "Full access: Ask Daoris is handed it whole, and nothing is asked",
   "plugin.help.lead": "Ask Daoris is handed nothing of {{servers}} until you approve it below, under Ask Daoris.",
   "plugin.help.acceptWrite": "Accept {{tool}}, a write outside Daoris",
   "plugin.help.reads": "Reads with {{tools}}",

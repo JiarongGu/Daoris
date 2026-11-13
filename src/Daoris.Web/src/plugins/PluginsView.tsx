@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginToolFix, usePluginTools, usePluginTry,
-  usePluginUpdate,
+  helpModeOf, useDriver, usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginToolFix, usePluginTools,
+  usePluginTry, usePluginUpdate,
 } from '../bridge/shell';
 import { sentence } from '../locales/format';
 import { Drawer, failure, type Notify, useErrorNotify } from '../design/ui';
@@ -136,6 +136,8 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
 }): ViewLayout {
   const { t, i18n } = useTranslation();
   const catalog = usePlugins({ enabled: active });
+  // Ask Daoris's mode: in full access it is handed every server whole, so the page says none waits for an approval.
+  const driver = useDriver();
   const act = usePluginAction();
   const trying = usePluginTry();
   const updating = usePluginUpdate();
@@ -288,6 +290,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             asking={asking === shown.plugin.id}
             onSwitch={switchOne}
             onHelp={helpOne}
+            helpFull={helpModeOf(driver.data?.helpMode) === 'full'}
             onTry={tryOne}
             onTryAgain={tryAgain}
             toolStanding={standings[shown.plugin.id]}

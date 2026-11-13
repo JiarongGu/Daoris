@@ -887,9 +887,8 @@ test('the locales an install keeps are the kit’s fallback and the ones the app
 /**
  * The install carries Daoris's own example plugins as OFFERS, in `app/plugin-offers/`,
  * never under `data/plugins/`, so none is installed until a press. The ones meant for people: the two that
- * land work, the one that hands a session the install's own browser, and the one a session files a report with for
- * the development agent. Not the rehearsal fixture, and not the browser a machine without the shell launches, which
- * claims the same server name.
+ * land work, the install's own browser and the report a session files. Not the rehearsal fixture, and not
+ * the browser a machine without the shell launches, which claims the same server name.
  */
 test('the offers are the examples meant for people, never a rehearsal fixture', () => {
   assert.deepEqual([...OFFERED_PLUGINS], ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser', 'daoris-dev-report']);
