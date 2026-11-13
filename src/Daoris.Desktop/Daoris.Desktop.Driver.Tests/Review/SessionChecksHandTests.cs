@@ -48,7 +48,7 @@ public sealed class SessionChecksHandTests : IDisposable
     {
         var bin = Path.Combine([Install, .. Tools.InstallBinLayout]);
         Directory.CreateDirectory(bin);
-        File.WriteAllText(Path.Combine(bin, "daoris.cmd"), "");
+        File.WriteAllText(Path.Combine(bin, "daoris.exe"), "");
     }
 
     private void Marked() =>
