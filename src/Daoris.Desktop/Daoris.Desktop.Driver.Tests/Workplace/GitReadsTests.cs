@@ -141,10 +141,7 @@ public sealed class GitReadsTests : IDisposable
         Assert.Equal(("c.txt", "renamed"), (renamed.Value!.Changes!.Files.Single().Path, renamed.Value.Changes.Files.Single().Status));
     }
 
-    /// <summary>
-    /// One process per view: a commit is two starts, and one once its fields are kept, since its changes read the tree's attributes and
-    /// are asked again. The clock is a minute ahead, as a person's settled repository is to a copy made seconds before.
-    /// </summary>
+    /// <summary>One process per view: a commit is two starts, and one once its fields are kept, its changes asked again.</summary>
     [Fact]
     public async Task A_commit_starts_two_git_processes_and_one_for_its_changes_when_read_again()
     {

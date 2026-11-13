@@ -82,10 +82,7 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         Assert.Equal(2, ledger.Count);
     }
 
-    /// <summary>
-    /// 🔴 A word said while the move stands between its decision and its hold, its own turn refused by the same limit before the hold:
-    /// that turn's end took no move, one standing, so the move judges again and carries both refused turns' words, in their order.
-    /// </summary>
+    /// <summary>🔴 A word refused while the move stands before its hold goes on with the refused turn's, in their order.</summary>
     [Fact]
     public async Task A_word_refused_while_the_move_stood_goes_on_with_the_refused_turn_s_words()
     {
@@ -237,10 +234,7 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>
-    /// The conversation on account-1, one exchange answered and the next refused by that account's limit. <paramref name="cut"/> kills
-    /// the shell at that point of the move; <paramref name="stand"/> hears every point, on the move's own flow.
-    /// </summary>
+    /// <summary>The conversation on account-1, one exchange answered and the next refused by that account's limit; <paramref name="stand"/> hears each cut.</summary>
     private async Task<(ChatLedger Ledger, ChatRunner Runner, List<AccountLine> Lines, string Old)> LimitedAsync(
         string mode, string? cut = null, Action<string>? stand = null)
     {
@@ -359,7 +353,6 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
                 if (account === 'account-1') {
                   send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
                     update: { sessionUpdate: 'usage_update', used: mode === 'large' ? 150000 : 1000, size: 1000000 } } });
-                  // The first words go with the place the start tells the agent, before them, and the standing block after.
                   if (!blocks.join('\n').includes('Earlier answered exchange.')) {
                     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
                     continue;

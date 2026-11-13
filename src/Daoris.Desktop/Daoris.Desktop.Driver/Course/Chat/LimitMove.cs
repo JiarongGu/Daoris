@@ -114,7 +114,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     public async Task<StartedFrom?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        // A turn that ended while the move stood was judged then and moved nothing: the move it stood for is judged again, reading it.
+        // A turn that ends while a move stands is judged then and moves nothing, so that move judges again with it read.
         var stale = new StrongBox<bool>();
         while (true)
         {
