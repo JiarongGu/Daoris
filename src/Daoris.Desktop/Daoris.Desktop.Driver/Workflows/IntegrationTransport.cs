@@ -50,10 +50,9 @@ public sealed record IntegrationTransportWorld
 }
 
 /// <summary>
-/// The integration transport: each line's run, one per line, on the transport's own
-/// task and never the pass's, as the heavy executor runs a check. A unit's <c>integrate</c> node sends the line its
-/// admitted request waits in; the come-up sends every line a standing candidate or an open request is in. Its answer asks the pass, which reads
-/// each request's outcome onto its node.
+/// The integration transport: each line's run, one per line, on the transport's own task and never the pass's, as the heavy executor runs a check.
+/// A unit's <c>integrate</c> node sends the line its admitted request waits in; the come-up sends every line a standing candidate or an open request
+/// is in. Its answer asks the pass, which reads each request's outcome onto its node.
 /// </summary>
 /// <remarks>
 /// <para><b>Shared with the heavy executor.</b> A line whose rule declares its gates runs holding the home's verification slot and then the

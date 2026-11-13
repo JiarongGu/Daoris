@@ -4,17 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The session watcher over REAL runs on the pipe door, told what to do through the
-/// watch's stand-in (<see cref="WatchStandIn"/>). The watcher's clock is moved, never waited out: a second of the run is five minutes
-/// of its clock. A stand-in that streams on stdout, or on stderr alone, is left alone across three hours of that clock; a silent
-/// one is marked quiet under the same clock; and a silent one whose child computes is busy, never marked, and brought to the person as
-/// <i>busy, nothing heard</i>.
+/// The session watcher over REAL runs on the pipe door, told what to do through the watch's stand-in (<see cref="WatchStandIn"/>). The clock is moved,
+/// never waited out: a second of the run is five minutes of it. A stand-in that streams on stdout, or on stderr alone, is left alone across three hours
+/// of it; a silent one is marked quiet; and a silent one whose child computes is busy, never marked, and brought to the person as <i>busy, nothing heard</i>.
 /// </summary>
-/// <remarks>
-/// Runs alone: its claim is a bound of a few seconds on a real process, a line heard within a second or two of the last on a clock
-/// that counts each second as five minutes, and a computation's CPU over a one-second window, which the load of classes beside it could
-/// break.
-/// </remarks>
+/// <remarks>Runs alone: its claim is a bound of a few seconds on a real process and a computation's CPU over a one-second window, which the load of classes beside it could break.</remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -80,10 +74,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         Assert.Contains("nothing came from its agent", service.Session("s1")["note"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Case 4: a busy foreground call, nothing said while a child computes: busy by its job's CPU over the window, never marked, and at
-    /// three times its bound the <i>busy, nothing heard</i> row; done, it ends as it finished.
-    /// </summary>
+    /// <summary>Case 4: a busy foreground call, nothing said while a child computes: busy by its job's CPU over the window, never marked, and at three times its bound the <i>busy, nothing heard</i> row; done, it ends as it finished.</summary>
     [Fact]
     public async Task A_run_whose_child_computes_silently_is_busy_never_marked_and_brought_as_busy()
     {
@@ -112,10 +103,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         Assert.DoesNotContain("\"watch.quiet\"", Events(), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Case 8's first half (state C): a protocol-door session backgrounds a child that writes and computes and ends its turn, waiting on
-    /// its own work: past 5Q, nothing, since its work moves. Its quest done, it ends as it finished.
-    /// </summary>
+    /// <summary>Case 8's first half (state C): a protocol-door session backgrounds a child that writes and computes and ends its turn, waiting on its own work: past 5Q, nothing, since its work moves. Its quest done, it ends as it finished.</summary>
     [Fact]
     public async Task A_session_waiting_on_its_own_background_work_that_moves_is_left_alone_past_five_times_its_bound()
     {
@@ -133,8 +121,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        // The machine's clock, its bounds short: a moved clock would read a second of CPU over minutes of it as idle. Q is four
-        // seconds, so its work computing for twenty-six is past five times it, and its end once its quest is done comes within 3Q.
+        // The machine's clock, its bounds short: a moved clock would read a second of CPU over minutes of it as idle. Q is four seconds, so twenty-six of computing is past 5Q and its end comes within 3Q.
         driver.Watch.Quiet = TimeSpan.FromSeconds(4);
         driver.Watch.Window = TimeSpan.FromSeconds(1);
         var row = false;

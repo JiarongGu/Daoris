@@ -4,11 +4,10 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The dependency store over real git and real processes: a repository whose own rule names a dependency `deps/`, installed by a
-/// tracked script whose behaviour its tracked `lock.txt` chooses, so each case is a commit; and npm's own `npm ci` over a `file:`
-/// package, read from the shipped signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
-/// </summary>
-/// <remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
+/// The dependency store over real git and real processes: a repository whose own rule names a dependency `deps/`, installed by a tracked script
+/// whose behaviour its tracked `lock.txt` chooses, so each case is a commit; and npm's own `npm ci` over a `file:` package, read from the shipped
+/// signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
+/// </summary><remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
