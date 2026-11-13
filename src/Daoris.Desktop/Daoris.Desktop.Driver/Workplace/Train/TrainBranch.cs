@@ -7,7 +7,12 @@ public sealed record TrainRef(string Ask, string Part);
 public static class TrainBranch
 {
     /// <summary>The ask's branch name, <c>daoris/ask-&lt;id&gt;</c>.</summary>
-    public static string Of(string ask) => $"daoris/ask-{ask.TrimStart('#')}";
+    public static string Of(string ask) => $"{Prefix}{ask.TrimStart('#')}";
+
+    private const string Prefix = "daoris/ask-";
+
+    /// <summary>The ask a line is the branch of; null for any other line.</summary>
+    public static string? AskOf(string line) => line.StartsWith(Prefix, StringComparison.Ordinal) && line.Length > Prefix.Length ? line[Prefix.Length..] : null;
 
     /// <summary>
     /// Make the ask's branch at <paramref name="from"/> (the line's commit) where the repository has none; whether it stands. An existing

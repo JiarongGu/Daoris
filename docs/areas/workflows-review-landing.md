@@ -270,7 +270,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     untouched. A part is landed when its member is promoted onto the ask's branch, never when its quest says Done. The `parts` node
     (`Workflows/Kinds/Parts`, observed from the integration record, no failure of its own) is reached once every part of the ask's own
     plan at its standing revision has landed (`PartsReports`, read by each pass for the asks the integration holds a part for); a part
-    a revision dropped is no longer required. (TEAMWORK1f)
+    a revision dropped is no longer required. A part's `integrate` start tags its own request: the quest's publish key
+    (`<ask>/<part>/<n>`) names the pair, and the ask's plan must give that part to that very quest (`TrainPartOf`, the plan's part
+    carrying its `Quest`), else the request is an ordinary landing's. Before each batch the line's tip is merged into the ask's branch
+    from objects alone (`TrainBases`: `merge-tree`, `commit-tree`, one verified `update-ref`; a conflict leaves the branch as it was
+    and the parts land on it unmerged; a missing branch is made at the line's tip), and each promoted batch is kept on
+    `refs/daoris/train/<ask>/<n>` (`TrainRefs`). The shipped `team-part` (work, checks, `integrate` with `request: done`, the line)
+    and `ask-delivery` (`parts`, a joint `check`, the one `review`, a `merge` landing, the line) presets are saved and chosen as any
+    other. (TEAMWORK1f)
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
@@ -375,7 +382,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Which workflow work follows:** `WorkflowSelection`, held by `fixtures/workflow-selection.json`.
 - **A shipped workflow:** a JSON file under `Defaults/workflows/`; the presets derive.
 - **A landing:** `Workflows/Kinds/Land/`; the act in `Workplace/` (`LandPerformer`, `TreeLands`, the deliveries).
-- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`), hooked at `IntegrationReplayAsk.Train`; the `parts` kind in `Workflows/Kinds/Parts/`.
+- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainPartOf`, `TrainBases`, `TrainRefs`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the `parts` kind in `Workflows/Kinds/Parts/`.
 - **A gate or hold:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, the page under `src/workflow/` or `src/agents/setup/`.
 - **Tests:** driver `Workflows/`, `Review/`, `Workplace/` (each landing through a run bound by `GraphLand`), `Setup/`; modules
@@ -399,9 +406,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Open
 
-- **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train's queue, the `parts` kind and the tagged landing are built; left are the
-  shipped `team-part` and ask delivery workflows, the ask-keyed run (rule 15) and a `check` in a development graph (rule 11), the `integrate`
-  node's start naming its part, the line's tip merged into the ask's branch before each batch, `refs/daoris/train/<ask>/<n>`, and the verdict store's replay.
+- **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
+  line's tip merged into the ask's branch and its batch refs are built; left are the ask-keyed run (rule 15: nothing yet binds `ask-delivery`
+  to an ask, so its landing has no session branch to land), the verdict store's replay and the red's bisect read part by part.
 - **THROUGH1** (D277): a direct ask taken through to its pull request on the person's quoted words.
 - **APPROVE1y**: the work workspace's API token on its git identity, the person's act.
 - **CHATFLOW1**, **SETUPUX1x**, **NODEKIT1**, **FABRIC-SQUASHCHAIN1**, **FABRIC-MILESTONE1c**: the installed look.

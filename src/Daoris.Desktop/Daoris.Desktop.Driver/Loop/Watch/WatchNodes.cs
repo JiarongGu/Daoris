@@ -120,6 +120,7 @@ internal sealed class WatchNodes
             Runs = () => HomeLease.HeldHere(home) && !watch.DrainsNow(),
         });
         nodes.Lines = _transport;
+        nodes.Plans = new ServiceTrainPlans(service);
         nodes.Integrated = (unit, repository) => Log?.Info("work.integrated", ("unit", unit), ("repository", repository));
         _transport.Start();
     }

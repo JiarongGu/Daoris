@@ -271,7 +271,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`, `in-place`, `plan-review-apply`, `in-copy`."
+        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`, `in-place`, `plan-review-apply`, `in-copy`, `team-part`, `ask-delivery`."
       ],
       "after": null,
       "changed": "Plan, review and apply and In-copy ship as defaults after In-place, so the presets name them."
@@ -2159,6 +2159,8 @@
         "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `plan-review-apply` — Plan, review and apply workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `in-copy` — In-copy workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `team-part` — Team part workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `ask-delivery` — Ask delivery workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -2186,6 +2188,8 @@
         "  `in-place` — In-place workflow. For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
         "  `plan-review-apply` — Plan, review and apply workflow. For a system: one session at a time plans its change, you review the plan, and the plan you accepted is applied; a plan gone stale goes back to the work, which plans again from what the system holds.",
         "  `in-copy` — In-copy workflow. For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
+        "  `team-part` — Team part workflow. For one piece of a planned ask: its work is checked, and once its agent is done its integration request, tagged with the ask and the part, joins the line's one queue and lands on the ask's branch.",
+        "  `ask-delivery` — Ask delivery workflow. For a planned ask: it waits until every part of its plan has landed on the ask's branch, the whole is checked together, and you accept it once; then the ask's branch lands on the line.",
         "  `daoris workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file."
       ],
       "err": [],
@@ -2309,6 +2313,8 @@
         "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `plan-review-apply` — Plan, review and apply workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `in-copy` — In-copy workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `team-part` — Team part workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `ask-delivery` — Ask delivery workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -4164,6 +4170,8 @@
         "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `plan-review-apply` — Plan, review and apply workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  `in-copy` — In-copy workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `team-part` — Team part workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `ask-delivery` — Ask delivery workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
