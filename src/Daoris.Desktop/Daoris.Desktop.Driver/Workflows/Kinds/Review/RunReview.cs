@@ -49,7 +49,7 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
     /// <summary>A branch's or a checkout's commits and uncommitted paths at the record's commits (<see cref="ReviewBranchCommits"/>); null otherwise.</summary>
     public ReviewCommitList? Commits { get; init; }
 
-    /// <summary>A branch's or a checkout's patch per file between the record's commits (<see cref="TreeDiffs.DiffBetweenAsync(string, string, string, CancellationToken)"/>), bounded; null otherwise.</summary>
+    /// <summary>A branch's or a checkout's patch per file between the record's commits (<see cref="WorkingTree.DiffBetweenAsync"/>), bounded; null otherwise.</summary>
     public TreeDiff? Diff { get; init; }
 }
 

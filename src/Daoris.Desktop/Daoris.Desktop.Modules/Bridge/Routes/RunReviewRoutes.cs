@@ -32,7 +32,7 @@ public sealed class RunReviewRoutes(DriverLoop loop)
         var commits = await ReviewBranchCommits.ListAsync(root, record, cancellationToken).ConfigureAwait(false);
         var before = await ReviewCommits.CommitAsync(root, record, ReviewContent.Before, cancellationToken).ConfigureAwait(false);
         var after = await ReviewCommits.CommitAsync(root, record, ReviewContent.After, cancellationToken).ConfigureAwait(false);
-        var diff = before is null || after is null ? null : await TreeDiffs.DiffBetweenAsync(root, before, after, cancellationToken).ConfigureAwait(false);
+        var diff = before is null || after is null ? null : await WorkingTree.DiffBetweenAsync(root, before, after, cancellationToken).ConfigureAwait(false);
         return review with { Supervisor = RunReviewSupervisor.Of(decided, review.Record), Files = files, Commits = commits, Diff = diff };
     }
 
