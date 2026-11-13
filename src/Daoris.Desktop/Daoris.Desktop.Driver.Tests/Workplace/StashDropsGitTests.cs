@@ -162,7 +162,7 @@ public sealed class StashDropsGitTests : TreeSyncFixture
 
         var off = await new StashDrops(Journal()).RunAsync(Context(root, allowed: false), new StashDropPress(id), CancellationToken.None);
         var held = await new StashDrops(Journal()).RunAsync(
-            Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s-running")])), new StashDropPress(id), CancellationToken.None);
+            Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s-running") { Runs = true }])), new StashDropPress(id), CancellationToken.None);
 
         Assert.True(off.Refused);
         Assert.Contains("may not change", off.Said);
