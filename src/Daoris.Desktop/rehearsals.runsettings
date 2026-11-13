@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The driver's rehearsal tier (the gate driver-rehearsals): every class there proves the application over the real adapters, so
+  each is a Process class, the git-only ones marked Parallel=Git among them, and all run in one host, four at once, as the driver's
+  git half runs its classes (git.process.runsettings says why four). A file, not an argument, so the merge tool can add its own filter.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=Process</TestCaseFilter>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeTestCollections>true</ParallelizeTestCollections>
+    <MaxParallelThreads>4</MaxParallelThreads>
+  </xUnit>
+</RunSettings>

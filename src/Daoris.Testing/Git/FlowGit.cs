@@ -17,6 +17,9 @@ public sealed class FlowGit(IGit otherwise) : IGit
     /// <summary>The git the root chose, reached by every flow that chose none.</summary>
     public IGit Otherwise => otherwise;
 
+    /// <summary>The git this flow chose, or null where it chose none.</summary>
+    public static IGit? Chosen => s_chosen.Value;
+
     /// <summary>Makes <paramref name="git"/> the git of this flow and what it awaits, until disposed, when the one before is restored.</summary>
     public static IDisposable Use(IGit git)
     {

@@ -6,7 +6,7 @@ using GitAsk = Daoris.Ports.Git.GitAsk;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git a test chooses for its own flow, over the port the test root hands (<see cref="TestPorts.Git"/>): one that watches what is
+/// The git a test chooses for its own flow, over the port the test root hands (<see cref="FlowGit"/>): one that watches what is
 /// asked, one that answers some asks itself, or one that stands in for every run. Each lasts until disposed, in the flow that chose it
 /// and what that flow awaits, so classes running beside it never see it.
 /// </summary>
@@ -43,7 +43,10 @@ internal static class GitFlow
 
     /// <summary>Tells <paramref name="seen"/> the arguments of each git asked, every one still asked of the git beneath.</summary>
     internal static IDisposable Watch(Action<IReadOnlyList<string>> seen) =>
-        FlowGit.Use(new ScriptedGit().Seen(ask => seen(ask.Arguments)).Beyond(TestPorts.Git.Current));
+        FlowGit.Use(new ScriptedGit().Seen(ask => seen(ask.Arguments)).Beyond(Beneath));
+
+    /// <summary>The git a choice is put over: the flow's own, else the driver's runs, which a root hands where it chose no FlowGit.</summary>
+    private static IGit Beneath => FlowGit.Chosen ?? GitProcessRuns.Shared;
 
     /// <summary>Answers each git <paramref name="answer"/> gives a reply for, as git's code and streams; every other is asked of the git beneath.</summary>
     internal static IDisposable Answer(Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?> answer) =>
@@ -51,7 +54,7 @@ internal static class GitFlow
             .On(ask => answer(ask.Arguments) is var (code, stdout, stderr)
                 ? Launched(ask.Arguments, GitRunner.Whole, () => Task.FromResult(new GitAnswer(code, stdout, stderr))).GetAwaiter().GetResult()
                 : null)
-            .Beyond(TestPorts.Git.Current));
+            .Beyond(Beneath));
 
     /// <summary>A stand-in's answer, counted and timed as the launch it stands in for, so a count of the flow's starts holds it.</summary>
     private static Task<T> Launched<T>(IReadOnlyList<string> arguments, GitRunner runner, Func<Task<T>> answer) =>
@@ -62,7 +65,7 @@ internal static class GitFlow
     /// sees the bound a kind is given and the token that reaches git; a byte read is still asked of the git beneath.
     /// </summary>
     internal static IDisposable Run(Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>> run) =>
-        FlowGit.Use(new StandIn(run, TestPorts.Git.Current));
+        FlowGit.Use(new StandIn(run, Beneath));
 
     private sealed class StandIn(Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>> run, IGit beneath) : IGit
     {
