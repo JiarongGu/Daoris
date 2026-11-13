@@ -268,8 +268,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             : null;
         var protocol = abilities.HeldOnWire;
 
-        // What a compacted session is told: its requirements and its brief, composed when the compaction is read. Not a one-turn session's
-        // and not Ask Daoris's, which hold no quest's requirements.
+        // A one-turn session and Ask Daoris hold no quest's requirements to put back.
         Func<CancellationToken, Task<string>>? compactWords = target.Ask is null && !target.OneTurn
             ? async compactCt => CompactedWords.Of(
                 target,
@@ -277,8 +276,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                     service, context.Events, home, sessionId, CompactedWords.Why, conversation: false, ct: compactCt).ConfigureAwait(false)).Text)
             : null;
 
-        // The native door says a compaction as a frame of its stream; its word waits for the turn's end, as a quiet session's does. A door
-        // that holds no words (the text-only one) says nothing of it.
+        // The native door's word waits for the turn's end, as a quiet session's does.
         using var nativeCompactWord = held is not null && !protocol && compactWords is not null
             ? new CompactWord(
                 sessionId, held, new SaidDoor(service, sessionId), compactWords,

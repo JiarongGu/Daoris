@@ -13,7 +13,6 @@ internal static class ChatOpenTold
     internal const int Shown = 10;
 
     /// <summary>The words for the newest earlier conversation of <paramref name="workspace"/>; null where it left no request open.</summary>
-    /// <param name="waits">What a conversation's open requests are read from; null reads them as the work orders do.</param>
     public static async Task<string?> ToldAsync(
         ServiceClient service, string home, string workspace, string record, CancellationToken ct,
         Func<IReadOnlyDictionary<string, PriorSession>, string, Task<IReadOnlyList<BriefWait>>>? waits = null)
@@ -26,7 +25,6 @@ internal static class ChatOpenTold
         return Of(last.Session, await (waits?.Invoke(records, last.Session) ?? OpenAsync(service, home, records, last.Session, ct)).ConfigureAwait(false));
     }
 
-    /// <summary>The requests <paramref name="session"/> left open, as the work orders read a line's.</summary>
     internal static Task<IReadOnlyList<BriefWait>> OpenAsync(
         ServiceClient service, string home, IReadOnlyDictionary<string, PriorSession> records, string session, CancellationToken ct) =>
         ContextWorkOrders.Current.WaitsAsync(service, home, records, session, ct);

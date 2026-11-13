@@ -23,10 +23,6 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
     private readonly ContextDrop _drop = new();
     private readonly AcpCompaction _events = new();
 
-    /// <summary>
-    /// Whether the harness names its compactions on the wire (<see cref="AcpCompaction"/>): then they are read from that event and the
-    /// counter's fall is not read; a harness that names none keeps the counter.
-    /// </summary>
     public bool CompactionNamed { get; set; }
 
     // The models the turn's own updates named, and the response's split as this process last said it.

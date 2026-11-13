@@ -45,7 +45,6 @@ public sealed class CompactWord : IDisposable
     /// <summary>The compactions told so far, with the record's id of each word kept there (none where it is held in this process alone).</summary>
     public IReadOnlyDictionary<int, string?> Told => _told;
 
-    /// <summary>The harness compacted: the next compaction's word is composed and kept, its failure said and never thrown.</summary>
     internal void Compacted()
     {
         if (Volatile.Read(ref _disposed) == 0) _ = Guard(TellAsync());

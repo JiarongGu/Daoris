@@ -33,10 +33,7 @@ public interface ISpawn
     /// </summary>
     bool ClaudeSeam => false;
 
-    /// <summary>
-    /// Whether its protocol door reports a compaction as an event of its own (<see cref="AcpCompaction"/>), read in place of the context
-    /// counter's fall. False by default: Codex's adapter says one only as agent text, which the model could say too.
-    /// </summary>
+    /// <summary>Whether its protocol door reports a compaction as an event (<see cref="AcpCompaction"/>), read in place of the context counter's fall.</summary>
     bool NamesCompaction => false;
 
     /// <summary>
