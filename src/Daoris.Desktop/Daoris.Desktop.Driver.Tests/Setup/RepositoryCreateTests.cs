@@ -271,6 +271,30 @@ public sealed class RepositoryCreateTests : IDisposable
     // ---- the apply: a real repository with one empty commit, registered, driven, its set-up asked ----
 
     [Fact]
+    public async Task In_a_workspace_that_works_in_place_a_new_repository_is_set_up_in_its_checkout_and_the_plan_says_so()
+    {
+        var stand = await MakeAsync(each => { each.Apart = false; each.Setup.Apart = false; each.Setup.Untouched = true; });
+
+        var (plan, result) = await Apply(stand, Ask());
+
+        Assert.Contains(plan.Steps, step => step.Id == CreateOperations.SetUp
+            && step.Said == "ask its own session to set it up, in its checkout: nothing else reads it yet");
+        Assert.True(result.Done, result.Message);
+        Assert.Equal(("aurora", "ledger"), (Assert.Single(stand.Setup.Published).Workspace, stand.Setup.Published[0].To));
+    }
+
+    [Fact]
+    public async Task In_a_workspace_that_works_in_place_a_repository_with_work_keeps_the_refusal()
+    {
+        var stand = await MakeAsync(each => { each.Apart = false; each.Setup.Apart = false; each.Setup.Untouched = false; });
+
+        var (_, result) = await Apply(stand, Ask());
+
+        Assert.Empty(stand.Setup.Published);
+        Assert.Contains("a tree of their own", result.Message);
+    }
+
+    [Fact]
     public async Task An_apply_makes_a_real_repository_with_one_empty_commit_registers_it_drives_it_and_asks_its_set_up_once()
     {
         var stand = await MakeAsync();
@@ -765,6 +789,10 @@ public sealed class RepositoryCreateTests : IDisposable
 
         public string? RemoteStepOf(DriverConfig config, string repository, string workspace) => RemoteStep;
 
+        public bool Apart { get; set; } = true;
+
+        public bool WorksApart(DriverConfig config, string repository, string workspace) => Apart;
+
         public Task<(bool Ok, string Message)> RegisterAsync(JsonObject body, CancellationToken ct)
         {
             OnRegister?.Invoke();
@@ -798,7 +826,13 @@ public sealed class RepositoryCreateTests : IDisposable
 
         public List<QuestView> Quests { get; } = [];
 
-        public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => IsolateStep.Trees;
+        public bool Apart { get; set; } = true;
+
+        public bool Untouched { get; set; }
+
+        public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => Apart ? IsolateStep.Trees : null;
+
+        public Task<bool> NothingReadsItAsync(RepoView repository, string line, CancellationToken ct) => Task.FromResult(Untouched);
 
         public Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct) => Task.FromResult(Registry?.Invoke() ?? []);
 

@@ -12,6 +12,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **MERGEFILE1** (tools): Outcome: the `.merge_file_XXXXXX` files are git's own temp files for a merge driver's base, ours and theirs, made in the cwd (the checkout's root); no driver or step of this tool writes them (`git merge-file` makes none), and git leaves them only when it is stopped mid-driver or cannot unlink one at once on Windows, after which the untracked files refuse the next merge as "the tree is not clean". The tool now sweeps them (`tools/merge/merge-temps.ts`) before it checks a checkout with no merge open and after the merge it runs, and says so.
 
 ---
+## CREATESETUP1 — a repository just created is set up where its workspace works in place (2026-11-14)
+
+> **CREATESETUP1** (driver): Outcome: `SetupPress.PlanAsync` asks `ISetupWorld.NothingReadsItAsync` (one commit on every ref, no session record) and treats such a repository as set up apart, so a creation in a workspace working in place asks its set-up quest in the checkout and its plan's step says so; a repository with a second commit or a session keeps the `no-own-tree` refusal.
 
 ## TOOLDEFS1 — the tool definitions every session is handed, measured and cut (2026-11-13)
 
