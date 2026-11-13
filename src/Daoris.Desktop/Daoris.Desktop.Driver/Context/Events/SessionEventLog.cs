@@ -532,7 +532,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>
-    /// What a session spent, by its record (<see cref="SessionSpentKept"/>): its turns ended, those whose door said what they consumed and
+    /// What a session spent, by its record's head (<see cref="SessionEventHeads"/>) or, for a short record, read on (<see cref="SessionSpentKept"/>): its turns ended, those whose door said what they consumed and
     /// the four counts summed, a part's cost on the *Parts* strip's own row. None for no record, an unreadable one, or no id.
     /// </summary>
     public SessionSpent Spent(string sessionId)
@@ -540,7 +540,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         if (!SessionEventText.IsId(sessionId)) return SessionSpent.None;
         try
         {
-            return SessionSpentKept.Shared.Of(PathOf(sessionId));
+            return Headed(sessionId) is { } head ? head.Spent : SessionSpentKept.Shared.Of(PathOf(sessionId));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

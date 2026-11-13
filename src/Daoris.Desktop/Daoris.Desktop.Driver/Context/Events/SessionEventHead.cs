@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an events file's whole read answers for its long-lived questions, kept with how far into the file it reached: the last
-/// number, the turns ended, where the opening and the last plan are, the first call that failed and the answer each word is pressed as,
+/// number, the turns ended and what they spent, where the opening and the last plan are, the first call that failed and the answer each word is pressed as,
 /// and the byte offset of every 256th event. It is built by reading the file from <see cref="Length"/> on, so a head that stands for
 /// the file's start reads only the lines written after it.
 /// </summary>
@@ -23,7 +23,7 @@ internal sealed record SessionEventHead(
     string Tail,
     long FirstSeq,
     long LastSeq,
-    long Turns,
+    SessionSpent Spent,
     long OpeningAt,
     long OpeningSeq,
     long PlanAt,
@@ -35,7 +35,10 @@ internal sealed record SessionEventHead(
     /// <summary>Every this-many events a number's byte offset is kept.</summary>
     public const int Every = 256;
 
-    public static SessionEventHead Empty { get; } = new(0, 0, "", 0, 0, 0, -1, 0, -1, null, 0, new Dictionary<string, string>(), []);
+    /// <summary>The turns the record says ended.</summary>
+    public long Turns => Spent.Turns;
+
+    public static SessionEventHead Empty { get; } = new(0, 0, "", 0, 0, SessionSpent.None, -1, 0, -1, null, 0, new Dictionary<string, string>(), []);
 
     /// <summary>Whether the file's bytes before <see cref="Length"/> are the ones this head read.</summary>
     public bool Stands(FileStream stream)
@@ -56,7 +59,7 @@ internal sealed record SessionEventHead(
         var offsets = new List<KeyValuePair<long, long>>(Offsets);
         var firstSeq = FirstSeq;
         var lastSeq = LastSeq;
-        var turns = Turns;
+        var spent = Spent;
         var openingAt = OpeningAt;
         var openingSeq = OpeningSeq;
         var planAt = PlanAt;
@@ -88,7 +91,7 @@ internal sealed record SessionEventHead(
                     if (firstSeq == 0) firstSeq = e.Seq;
                     lastSeq = e.Seq;
                     if (e.Seq > 0 && e.Seq % Every == 0) offsets.Add(new(e.Seq, at));
-                    if (e.Kind == SessionEventKind.Turn) turns++;
+                    if (e.Kind == SessionEventKind.Turn) spent = spent.With(e.Tokens);
                     if (e.Kind == SessionEventKind.User)
                     {
                         if (openingAt < 0)
@@ -115,7 +118,7 @@ internal sealed record SessionEventHead(
             seen += count;
         }
 
-        head = new SessionEventHead(at, lineStart, tail, firstSeq, lastSeq, turns, openingAt, openingSeq, planAt, failedId, FirstFailure, choices, offsets);
+        head = new SessionEventHead(at, lineStart, tail, firstSeq, lastSeq, spent, openingAt, openingSeq, planAt, failedId, FirstFailure, choices, offsets);
         return failedId is not null && head.FirstFailure == 0 ? head with { FirstFailure = FirstCallOf(stream, failedId) } : head;
     }
 
