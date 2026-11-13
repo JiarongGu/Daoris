@@ -124,13 +124,13 @@ test('LAYERS1: a process start in the application or a unit test is held to its 
     [at('src/Daoris.Adapters', 'Daoris.Adapters.Machine')]: project(),
     [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 'var p = Process.Start(info);\n// Process.Start(said) in a comment\nvar q = new Process { StartInfo = info };',
     [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Data.cs`]: 'var info = new ProcessStartInfo("git");',
-    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Probe.cs`]: 'foreach (var each in Process.GetProcessesByName("node")) { }',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Platform/Probe.cs`]: 'foreach (var each in Process.GetProcessesByName("node")) { }',
     ['src/Daoris.Adapters/Daoris.Adapters.Machine/Host.cs']: 'Process.Start(info);',
   };
   const found = scanProcesses(tree(sources));
 
   assert.deepEqual(found, {
-    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Probe.cs`]: 1,
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Platform/Probe.cs`]: 1,
     [`${DESKTOP}/Daoris.Desktop.Driver/Platform/Starts.cs`]: 2,
   });
   assert.deepEqual(checkProcesses(found, found), []);
