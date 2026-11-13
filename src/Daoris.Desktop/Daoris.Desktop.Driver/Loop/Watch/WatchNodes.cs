@@ -32,6 +32,7 @@ internal sealed class WatchNodes
     private readonly HeavyExecutor _executor;
     private readonly IntegrationTransport _transport;
     private readonly OpenHandOffs _handOffs;
+    private readonly AskRunBinder _askRuns;
     private PassAsks? _asks;
     private System.Threading.Timer? _due;
     private int _wholeAsked;
@@ -48,10 +49,12 @@ internal sealed class WatchNodes
         _config = config;
         var home = watch.Home;
         var service = watch.Service;
+        Func<DateTimeOffset> clock = () => DateTimeOffset.UtcNow;
+        _askRuns = new AskRunBinder(home, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), new ServiceTrainPlans(service), clock);
 
         // A closure graph arms it too, and its `quest.close` is sent through this loop's service client, the local host's close
         // door. A quest is bound at its take, as its first session opens (Driver's start), never here.
-        var nodes = Runtime = new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
+        var nodes = Runtime = new NodeRuntime(new NodeRecordFiles(home), hooks, clock, () => HomeLease.HeldHere(home), service);
         // What a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
@@ -83,6 +86,7 @@ internal sealed class WatchNodes
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
             Log = (code, said) => Log?.Info(code, ("said", said)),
+            Clock = clock,
             Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(home, service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
             Executor = _executor,
@@ -220,8 +224,16 @@ internal sealed class WatchNodes
                     DateTimeOffset.UtcNow, token).ConfigureAwait(false));
             }
 
+            // At a whole look, each planned ask binds the delivery run its plan's repositories owe before the pass reads the runs.
+            if (whole && HomeLease.HeldHere(home))
+            {
+                lines.AddRange(await _askRuns.BindAsync(
+                    config, await service.AsksAsync(token).ConfigureAwait(false), await service.RegistryAsync(token).ConfigureAwait(false),
+                    WorkflowSteps.PluginsOf(PluginCatalog.Load(home)), token).ConfigureAwait(false));
+            }
+
             var gates = new NodeGates(home, service);
-            pass = await _watch.Stages.TimeAsync("nodes", () => Runtime.PassAsync(new NodeRuntimeLook(_config(), whole)
+            pass =await _watch.Stages.TimeAsync("nodes", () => Runtime.PassAsync(new NodeRuntimeLook(_config(), whole)
             {
                 Asked = asked.Units,
                 Judged = asked.Judged,
@@ -302,10 +314,12 @@ internal sealed class WatchNodes
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
         // Why the work's attribution is not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
+        var branches = await AskRunReads.ReadAsync(home, roots, DriverConfig.Load(DriverConfig.ResolvePath(home)), token).ConfigureAwait(false);
         return new NodeUnitsRead(units, roots)
         {
-            Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked,
-            Parts = await PartsReports.ReadAsync(new IntegrationStore(home), new ServiceTrainPlans(service), token).ConfigureAwait(false),
+            Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked, AskBranches = branches,
+            Parts = await PartsReports.ReadAsync(new IntegrationStore(home), new ServiceTrainPlans(service), token, branches.Values.Select(each => each.Ask))
+                .ConfigureAwait(false),
         };
     }
 
