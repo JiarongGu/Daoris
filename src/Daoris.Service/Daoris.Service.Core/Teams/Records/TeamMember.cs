@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <param name="Ask">The ask the team builds.</param>
 /// <param name="Part">The part the session serves; null for the ask's own plan.</param>
-/// <param name="Role">What the session is on the team: <see cref="Lead"/>.</param>
+/// <param name="Role">What the session is on the team: <see cref="Lead"/>, <see cref="Worker"/> or <see cref="Scout"/>.</param>
 /// <param name="Session">The session.</param>
 /// <param name="Revision">The newest plan revision the session wrote or served.</param>
 /// <param name="At">When the row last moved.</param>
@@ -14,4 +14,10 @@ public sealed record TeamMember(string Ask, string? Part, string Role, string Se
 {
     /// <summary>The session that writes the plan.</summary>
     public const string Lead = "lead";
+
+    /// <summary>A session driving a part's quest.</summary>
+    public const string Worker = "worker";
+
+    /// <summary>A helper that oriented a part and answered its pack.</summary>
+    public const string Scout = "scout";
 }

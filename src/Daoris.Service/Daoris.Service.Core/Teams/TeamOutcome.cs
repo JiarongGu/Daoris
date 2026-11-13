@@ -19,8 +19,12 @@ public enum TeamRefusal
     Unfit,
 }
 
-/// <summary>One part's publish: the quest it is, or why it has none yet.</summary>
-public sealed record TeamPublished(string Part, string? Quest, string? Note);
+/// <summary>One part's publish: the quest it is, or why it has none yet. <see cref="Revised"/> where the revision reworded or rescoped a quest already made.</summary>
+public sealed record TeamPublished(string Part, string? Quest, string? Note)
+{
+    /// <summary>The part's quest now says what the revision says, having said otherwise.</summary>
+    public bool Revised { get; init; }
+}
 
 /// <summary>What a plan door answered: its sentence, the revision it kept, and each part's quest.</summary>
 public sealed record TeamOutcome(TeamRefusal Refusal, string Message, TeamPlan? Plan = null)

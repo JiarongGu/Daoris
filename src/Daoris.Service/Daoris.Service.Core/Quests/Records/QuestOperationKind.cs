@@ -105,4 +105,7 @@ public enum QuestOperationKind
     /// since a run is bound at its first start; the latest stands, and one naming neither clears it. It moves no status.
     /// </summary>
     Chosen,
+
+    /// <summary>A plan revision reworded or rescoped the part this quest publishes: it applies while the quest is open or taken, and moves no status.</summary>
+    Revised,
 }

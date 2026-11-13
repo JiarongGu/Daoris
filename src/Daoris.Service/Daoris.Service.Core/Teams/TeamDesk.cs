@@ -9,6 +9,10 @@ namespace Daoris.Knowledge;
 /// <param name="policy">The paths no worker changes, by repository.</param>
 public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, Func<string, CancellationToken, Task<TeamPathPolicy>> policy)
 {
+    public TeamScouts Scouts { get; } = new(store, ledger);
+
+    public TeamWorkers Workers { get; } = new(store, ledger);
+
     /// <summary>Judge, keep and publish a plan revision; see the class.</summary>
     public async Task<TeamOutcome> SaveAsync(TeamSave save, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -103,7 +107,18 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
     {
         // The title is kept with the part before its quest is made, so a retry after a crash, or a revision that rewords the part, asks the same.
         var row = await store.ReserveAsync(ask.Id, part.Id, part.Title, ct).ConfigureAwait(false);
-        if (row.Quest is { } made) return new(part.Id, made, null);
+        // A part the plan now words or scopes otherwise changes its quest, never leaves it stale and never makes another.
+        if (row.Quest is { } made)
+        {
+            var move = await asks.ReviseQuestAsync(made, new QuestRevision(part.Title, part.Body, QuestWeights.Judge(part.Weight).Weight, part.Claims), now, ct).ConfigureAwait(false);
+            if (move.Moved) await store.RetitleAsync(ask.Id, part.Id, part.Title, ct).ConfigureAwait(false);
+            var standing = move.Quest?.Status;
+            var closed = !move.Moved && standing is not (QuestStatus.Open or QuestStatus.Taken);
+            return new TeamPublished(part.Id, made, closed ? $"its quest is {standing?.ToString().ToLowerInvariant() ?? "gone"}, so it is not reworded" : null)
+            {
+                Revised = move.Moved,
+            };
+        }
 
         var draft = new AskDraft(row.Title, part.Body)
         {
@@ -130,7 +145,7 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
                 : $"Split of part `{plan.Scope}` of ask `#{plan.Ask}`, revision {plan.Revision} (depth {plan.Depth}): {plan.Parts.Count} part(s).",
         };
         lines.AddRange(published.Select(each => each.Quest is { } quest
-            ? $"- `{each.Part}` is quest `#{quest}`."
+            ? $"- `{each.Part}` is quest `#{quest}`" + (each.Revised ? ", reworded to this revision" : "") + (each.Note is { } kept ? $" ({kept})." : ".")
             : $"- `{each.Part}` has no quest yet: {each.Note}"));
         lines.AddRange(plan.Flags.Select(flag => $"- Flag `{flag.Kind}`: {flag.Text}"));
         return string.Join('\n', lines);

@@ -62,7 +62,12 @@ public static class HelperJudge
     {
         if (state is { State: HelperStates.Started or HelperStates.Answered or HelperStates.Refused }) return HelperVerdict.Done;
         if (asker is null or { Teammate: true }) return HelperVerdict.Refuse(HelperWhy.AskerGone);
-        if (StartAdmission.HelperAsker(StartAdmission.Marks(asker)) is not null) return HelperVerdict.Refuse(HelperWhy.AskerUnfit);
+        // A lead that is an ask's intake asks a scout, which reads the repository and not the lead's work: it is no helper's asker otherwise.
+        if (StartAdmission.HelperAsker(StartAdmission.Marks(asker)) is { } unfit && !(ask.Scout is not null && unfit == StartAdmission.Intake))
+        {
+            return HelperVerdict.Refuse(HelperWhy.AskerUnfit);
+        }
+
 
         if (ask.AskedBy == HelperAsk.ByAgent)
         {
@@ -80,7 +85,8 @@ public static class HelperJudge
         }
 
         if (started >= PerAsker) return HelperVerdict.Refuse(HelperWhy.TooMany);
-        if (!between) return HelperVerdict.Wait(HelperVerdict.Turn);
+        // A scout reads the repository's line, never its asker's work in progress, so no turn of the asker's holds it.
+        if (!between && ask.Scout is null) return HelperVerdict.Wait(HelperVerdict.Turn);
         return slot ? HelperVerdict.Go : HelperVerdict.Wait(HelperVerdict.Cap);
     }
 }

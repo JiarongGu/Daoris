@@ -55,7 +55,7 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
                 await Service.Helpers.OpenAsync(
                     new HelperOpen(request.Asker ?? "", request.Door ?? "", request.Tree ?? "")
                     {
-                        Account = request.Account, DoorVersion = request.DoorVersion, BaseCommit = request.BaseCommit,
+                        Account = request.Account, DoorVersion = request.DoorVersion, BaseCommit = request.BaseCommit, ScoutIn = request.ScoutIn,
                     },
                     DateTimeOffset.UtcNow, ct),
                 http)

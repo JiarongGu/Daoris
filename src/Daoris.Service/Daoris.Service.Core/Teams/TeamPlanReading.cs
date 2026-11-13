@@ -23,7 +23,7 @@ public static class TeamPlanReading
     /// <param name="seen">The blob id each path holds now, where the caller read them: a pack's pointer that differs is named stale.</param>
     public static string Of(
         string ask, IReadOnlyList<TeamPlan> plans, IReadOnlyList<TeamPartRow> rows, IReadOnlyDictionary<string, string> seen,
-        IReadOnlyList<TeamMember> members, IReadOnlyList<TeamDecision> decisions)
+        IReadOnlyList<TeamMember> members, IReadOnlyList<TeamDecision> decisions, IReadOnlyList<TeamScouted>? scouted = null)
     {
         if (plans.Count == 0) return $"Ask `#{ask}` has no plan yet: write one with parts, each a quest a worker takes.";
         var text = new StringBuilder();
@@ -51,6 +51,12 @@ public static class TeamPlanReading
         foreach (var member in members)
         {
             text.AppendLine($"- {member.Role} `{member.Session}` of {(member.Part is null ? "the plan" : $"part `{member.Part}`")}, at revision {member.Revision}");
+        }
+
+        foreach (var pack in scouted ?? [])
+        {
+            text.AppendLine($"- scout `{pack.Session}` oriented part `{pack.Part}`, its pack (write what it names into the next revision):");
+            foreach (var line in pack.Pack.Split('\n')) text.AppendLine($"  > {line.TrimEnd('\r')}");
         }
 
         foreach (var decision in decisions)

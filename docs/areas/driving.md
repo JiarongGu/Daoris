@@ -247,7 +247,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. Where
     the workspace has more than one repository it is the lead of the ask's team (`IntakeLead`): it starts as plan work on the Lead
     role's order, is told to decide one part or several and to write several through `team_plan`, and the plan door publishes as
-    the writing session, so its tier moves as its `quest_publish` moves it (TEAMWORK1d). A parked
+    the writing session, so its tier moves as its `quest_publish` moves it, and it may ask a scout to orient a part (`helper_ask` with `part`, the one helper start; its pack is kept with the plan, `team_plan` shows it) (TEAMWORK1d). A parked
     one ends in the ask's close's own step, with its reason (`AskIntakeClose`, `ledger.intake-closed`), whichever door closed it;
     at the look when the person publishes or deletes the ask, or when one running at the close parks. Where no declaration covers the work and no repository's own files fit it, the
     intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
