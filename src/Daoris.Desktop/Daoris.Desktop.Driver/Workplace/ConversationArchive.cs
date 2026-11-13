@@ -33,7 +33,6 @@ public sealed class ConversationArchive(string home)
     /// <summary>Every conversation archived, by its id, and when.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Marks() => _facts.Archives();
 
-    /// <summary>Every conversation that is named or pinned, by its id.</summary>
     public IReadOnlyDictionary<string, HelpKept> Titled() => _facts.Titled();
 
     /// <summary>

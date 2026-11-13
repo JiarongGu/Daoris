@@ -63,11 +63,7 @@ public sealed class HelpRoutes(DriverContext context)
                 $"there is no workspace `{circle}` on this machine — one of {string.Join(", ", held.Select(name => $"`{name}`"))}.");
     }
 
-    /// <summary>
-    /// The conversation placed, started off the request: the room read through the loop's <c>DescribeHelp</c>, then the agent
-    /// spawned. Words said to it meanwhile are on its record, and go to its door in order once it opens; where it could not start,
-    /// they wait there for its go-on.
-    /// </summary>
+    /// <summary>The conversation placed, started off the request; the words its record kept meanwhile go to its door once it opens.</summary>
     private async Task RunPlacedAsync(ChatRunner chat, HelpPlaced place, DriverConfig config)
     {
         var id = place.SessionId!;
@@ -81,16 +77,13 @@ public sealed class HelpRoutes(DriverContext context)
         }
         catch (Exception)
         {
-            // The runner ended the record saying why; nothing here could say more, and the words below are kept either way.
+            // The runner ended the record saying why.
         }
         finally
         {
-            // Over first, so a word said from here on goes the way any conversation's goes; what was kept on its record meanwhile goes to
-            // its door, and where the start failed waits on the record for its go-on.
             await _loop.HelpStarting.OverAsync(id).ConfigureAwait(false);
             if (start?.SessionId is not null) await chat.TakeKeptAsync(id).ConfigureAwait(false);
 
-            // What a word said to it now would do, told again: its own queue now, or its record.
             _loop.Words.Tell(id);
             _loop.Nudge();
         }

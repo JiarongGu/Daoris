@@ -88,10 +88,7 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
         Assert.True(runner.Finish(fresh));
     }
 
-    /// <summary>
-    /// A word kept on the record while the conversation starts is its door's first turn once it opens, marked attempted before the wire and
-    /// taken off the record once written: said once, in the order kept, with nothing held in the driver's memory meanwhile.
-    /// </summary>
+    /// <summary>A word kept on the record while the conversation starts is taken by its door once it opens, in the order kept, once.</summary>
     [Fact]
     public async Task A_word_kept_on_the_record_while_it_starts_is_taken_by_its_door_once_and_only_once()
     {

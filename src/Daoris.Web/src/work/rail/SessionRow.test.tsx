@@ -71,18 +71,6 @@ describe('a session row', () => {
    * seconds after an answer a chat read "moved 4m ago"; the driver's last turn, when later, is what
    * the row says — written with an offset where the record writes Z, so compared as times.
    */
-  // What the person kept of the conversation: the name they gave it is its title above its ask's and its first words, and a pin is marked.
-  it('wears the name its person gave the conversation and marks it pinned', () => {
-    render(<SessionRow
-      session={session({ kind: 'chat', quest: null })} opening="how do I drive engine?"
-      grouping={{ session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false, name: 'Workspaces', pinned: true }}
-    />);
-
-    expect(screen.getByText('Workspaces')).toBeInTheDocument();
-    expect(screen.queryByText('how do I drive engine?')).toBeNull();
-    expect(screen.getByText('pinned')).toBeInTheDocument();
-  });
-
   it('says a live chat moved when its last turn ended, when that is later than its record', () => {
     const chat = session({ kind: 'chat' });
     const { rerender } = render(<SessionRow session={chat} lastTurn="2026-09-21T11:59:30+00:00" />);

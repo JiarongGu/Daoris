@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words kept on a conversation's record before its door was open, handed to its turns once it is: each under its record id, so it is
-/// marked attempted before the wire and taken off once written, and a shell cut off under one settles it as uncertain, never sent again.
-/// A word the record names already attempted is left for that settling. With no turns (a start that failed) the words wait on the
-/// record for the conversation's go-on, which is where they were kept.
+/// The words kept on a conversation's record before its door opened, handed to its turns under their record ids, so each is marked
+/// attempted before the wire and taken off once written. A word already attempted is left to the come-up's settling as uncertain;
+/// with no turns (a failed start) the words wait on the record for the go-on.
 /// </summary>
 internal sealed class ChatKeptTake(ChatContext context, ChatWords words)
 {

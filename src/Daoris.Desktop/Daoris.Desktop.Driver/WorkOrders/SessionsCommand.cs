@@ -50,7 +50,7 @@ public static class SessionsCommand
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
+        ["session", "group", "state", "reason", "shown", "archived", "name", "pinned", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
             "lands", "discards", "calling", "waits", "line"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field.</summary>

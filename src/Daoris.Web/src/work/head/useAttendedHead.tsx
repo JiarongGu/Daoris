@@ -210,7 +210,6 @@ export function useAttendedHead({
   const originAsk: AskOrigin | null = originAskId
     ? { id: originAskId, words: (entryAsks ?? []).find((ask) => ask.id === originAskId)?.sentence ?? null }
     : null;
-  // The name the person gave its conversation is its title above all; else its ask's name, else what its record says.
   const attendedTitle = attended
     ? grouping?.name
       ?? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})

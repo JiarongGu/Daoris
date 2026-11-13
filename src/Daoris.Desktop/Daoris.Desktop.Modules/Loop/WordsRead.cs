@@ -54,7 +54,6 @@ internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Ne
     /// waiting there, a second opinion's findings (<c>by</c>) or a helper's answer (<c>helper</c>), which are not the person's to
     /// take back or reword. A word without its id or its words is skipped, as the driver's client skips it.
     /// </summary>
-    /// <param name="starting">The record is Ask Daoris's conversation between its record and its agent: its words wait on the record for its door.</param>
     public static IReadOnlyList<WaitingWord> WaitingOn(string json, string id, bool starting = false)
     {
         using var document = JsonDocument.Parse(json);

@@ -47,7 +47,6 @@ public sealed class ConversationFacts(string home, Func<StoreSettled>? settled =
             .Where(pair => pair.Value.Archived is not null)
             .ToDictionary(pair => pair.Key, pair => pair.Value.Archived!.Value, StringComparer.Ordinal);
 
-    /// <summary>Every conversation that carries a name or a pin, with what is kept of it: what each session's row says of its conversation.</summary>
     public IReadOnlyDictionary<string, HelpKept> Titled() =>
         Query($"SELECT {Columns} FROM conversation_facts WHERE name IS NOT NULL OR pinned IS NOT NULL");
 

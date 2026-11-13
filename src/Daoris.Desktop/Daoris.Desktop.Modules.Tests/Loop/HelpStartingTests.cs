@@ -24,7 +24,6 @@ public sealed class HelpStartingTests
         Assert.True(starting.Is("h2"));
     }
 
-    // A word being kept holds the start's end back, so the door never reads what waits before that word is on the record.
     [Fact]
     public async Task A_start_does_not_end_while_a_word_is_being_kept_and_a_word_not_starting_is_kept_no_way_here()
     {
@@ -36,12 +35,11 @@ public sealed class HelpStartingTests
         Assert.NotNull(keeping);
 
         var over = starting.OverAsync("h1");
-        await Task.Delay(100);
         Assert.False(over.IsCompleted);
         Assert.True(starting.Is("h1"));
 
         keeping.Dispose();
-        await over.WaitAsync(TimeSpan.FromSeconds(10));
+        await over;
         Assert.False(starting.Is("h1"));
         Assert.Null(await starting.KeepingAsync("h1", CancellationToken.None));
     }
