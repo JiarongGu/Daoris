@@ -83,7 +83,7 @@ function expanded(value: string, props: string, depth = 0): string | null {
   return unset ? null : expanded(next, props, depth + 1);
 }
 
-/** The version a `nuget:` or `tool:` pin names, read where it is written; null where the pin is not there. */
+/** The version a `nuget:` or `tool:` pin names, read where it is written (a tool's is the versions its table holds); null where the pin is not there. */
 export function pinOf(pin: string, sight: Sight, versions: string = NUGET_PINS): string | null {
   const [kind, name] = pin.split(':', 2);
   if (kind === 'nuget') {
@@ -92,8 +92,9 @@ export function pinOf(pin: string, sight: Sight, versions: string = NUGET_PINS):
     return found?.[1] === undefined ? null : expanded(found[1], props);
   }
   if (kind === 'tool') {
-    const table = JSON.parse(sight.text(TOOL_PINS) ?? '{}') as Record<string, { version?: string } | undefined>;
-    return table[name ?? '']?.version ?? null;
+    const table = JSON.parse(sight.text(TOOL_PINS) ?? '{}') as { tools?: Record<string, { versions?: Record<string, unknown> } | undefined> };
+    const held = Object.keys(table.tools?.[name ?? '']?.versions ?? {}).sort();
+    return held.length === 0 ? null : held.join(',');
   }
   return null;
 }
