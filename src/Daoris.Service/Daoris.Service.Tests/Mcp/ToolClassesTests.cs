@@ -6,8 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// One class for every tool the host registers, so a tool added later is refused to
-/// a child until it is classed.
+/// One class for every tool the host registers, so a tool added later is classed as it names a call's place; no class refuses a caller.
 /// </summary>
 public sealed class ToolClassesTests
 {
@@ -42,14 +41,13 @@ public sealed class ToolClassesTests
                 "memory_search", "quest_list", "registry",
             ],
             Advertised().Where(name => ToolClasses.Of(name) == ToolClass.Read));
-        Assert.Equal(["quest_publish"], Advertised().Where(name => ToolClasses.Of(name) == ToolClass.Publish));
         Assert.All(
             new[]
             {
-                "helper_ask", "channel_post", "quest_respond", "go_ahead_ask", "opinion_give", "permission_propose", "channel_read",
+                "quest_publish", "helper_ask", "channel_post", "quest_respond", "go_ahead_ask", "opinion_give", "permission_propose", "channel_read",
                 "helper_answer", "opinion_answer", "review_serve", "review_ready", "knowledge_refresh", "checkout_read",
                 "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Concat(Advertised().Where(name => name.EndsWith("_propose", StringComparison.Ordinal))),
-            name => Assert.Equal(ToolClass.Restricted, ToolClasses.Of(name)));
+            name => Assert.Equal(ToolClass.Acts, ToolClasses.Of(name)));
     }
 }

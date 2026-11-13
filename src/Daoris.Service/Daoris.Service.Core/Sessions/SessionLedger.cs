@@ -159,10 +159,6 @@ public sealed class SessionLedger(
     /// <summary>The record of one session, as the store holds it.</summary>
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
 
-    /// <summary>Whether <paramref name="record"/>'s department is registered as a system; false with no registry to ask.</summary>
-    public async Task<bool> InSystemAsync(Session record, CancellationToken ct = default) =>
-        registry is not null && (await registry.RegistryAsync(ct: ct).ConfigureAwait(false)).Named(record.Repository) is { PlaceKind: PlaceKinds.System };
-
     /// <summary>The line <paramref name="named"/> is on, walked to its head.</summary>
     public Task<LineWalk> WalkLineAsync(Session named, CancellationToken ct = default) => Lines.WalkAsync(sessions, named, ct);
 

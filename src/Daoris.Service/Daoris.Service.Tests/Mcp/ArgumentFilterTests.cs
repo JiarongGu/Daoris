@@ -147,61 +147,18 @@ public sealed class ArgumentFilterTests : IDisposable
         Assert.Contains(".RefuseMissingArguments(log)", program);
     }
 
-    /// <summary>
-    /// 🔴 A partner's call to a tool its role refuses, with a required argument left out, is answered with the role's denial
-    /// and never the argument refusal, which would name the denied tool's parameters. Over the wire with every tool the host advertises,
-    /// the two filters registered in the host's order, and nothing in the log for the argument refusal.
-    /// </summary>
+    /// <summary>Whatever a caller's work, a call to a tool missing an argument gets the argument refusal naming what the tool takes.</summary>
     [Fact]
-    public async Task A_partners_call_to_a_refused_tool_missing_an_argument_gets_the_roles_denial()
+    public async Task A_call_missing_an_argument_gets_the_argument_refusal_whatever_the_callers_work()
     {
-        var answers = await CallAsync(new SessionWork(ParticipantWork.Partner), ("quest_respond", new JsonObject()), ("quest_publish", new JsonObject { ["not_a_parameter"] = 1 }));
+        var answers = await CallAsync(("quest_respond", new JsonObject()), ("knowledge_search", new JsonObject { ["not_a_parameter"] = 1 }));
 
         Assert.All(answers, answer =>
         {
-            Assert.Contains("is not a partner's to call", answer.Text);
-            Assert.DoesNotContain("was called without", answer.Text);
-            Assert.DoesNotContain("It takes", answer.Text);
-            Assert.DoesNotContain("`id`", answer.Text);
-            Assert.DoesNotContain("`action`", answer.Text);
+            Assert.True(answer.IsError);
+            Assert.Contains("was called without", answer.Text);
+            Assert.DoesNotContain("to call", answer.Text);
         });
-        Assert.DoesNotContain(Lines(), line => line.Contains(ConnectorArguments.Event));
-    }
-
-    /// <summary>🔴 A helper's record (it serves, writes no piece) is refused the quest tools: its denial comes first for a call missing an argument, too.</summary>
-    [Fact]
-    public async Task A_helpers_call_to_a_quest_tool_missing_an_argument_gets_the_roles_denial()
-    {
-        var answers = await CallAsync(new SessionWork(ParticipantWork.Help), ("quest_respond", new JsonObject()));
-
-        var answer = Assert.Single(answers);
-        Assert.Contains("is refused to a session that serves another", answer.Text);
-        Assert.DoesNotContain("was called without", answer.Text);
-        Assert.DoesNotContain("It takes", answer.Text);
-        Assert.DoesNotContain(Lines(), line => line.Contains(ConnectorArguments.Event));
-    }
-
-    /// <summary>The role judges only what it refuses: a partner's call to a tool it may use, missing an argument, still gets the argument refusal.</summary>
-    [Fact]
-    public async Task A_partners_call_to_an_allowed_tool_missing_an_argument_still_gets_the_argument_refusal()
-    {
-        var answers = await CallAsync(new SessionWork(ParticipantWork.Partner), ("knowledge_search", new JsonObject { ["not_a_parameter"] = 1 }));
-
-        var answer = Assert.Single(answers);
-        Assert.True(answer.IsError);
-        Assert.Contains("`knowledge_search` was called without", answer.Text);
-        Assert.DoesNotContain("not a partner's to call", answer.Text);
-    }
-
-    /// <summary>The host registers the role's judgement before the argument refusal, so the first to see a call is the role.</summary>
-    [Fact]
-    public void The_host_registers_the_role_before_the_argument_refusal()
-    {
-        var program = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Mcp", "Program.cs"));
-
-        var role = program.IndexOf(".RefuseOutsideRole(", StringComparison.Ordinal);
-        var arguments = program.IndexOf(".RefuseMissingArguments(", StringComparison.Ordinal);
-        Assert.True(role >= 0 && arguments > role, "RefuseOutsideRole must be registered before RefuseMissingArguments");
     }
 
     private static int CountTools(Type type) =>
@@ -211,15 +168,13 @@ public sealed class ArgumentFilterTests : IDisposable
 
     private sealed record Answer(bool IsError, string Text);
 
-    private Task<List<Answer>> CallAsync(params (string Tool, JsonObject Arguments)[] calls) => CallAsync(null, calls);
-
-    private async Task<List<Answer>> CallAsync(SessionWork? role, params (string Tool, JsonObject Arguments)[] calls)
+    private async Task<List<Answer>> CallAsync(params (string Tool, JsonObject Arguments)[] calls)
     {
         List<Answer> answers = [];
         await RunAsync(async session =>
         {
             foreach (var (tool, arguments) in calls) answers.Add(await session.CallAsync(tool, arguments));
-        }, role);
+        });
         return answers;
     }
 
@@ -270,7 +225,7 @@ public sealed class ArgumentFilterTests : IDisposable
     }
 
     /// <summary>The host's own tools, logging and filter over in-memory streams, the stand-ins beside them.</summary>
-    private async Task RunAsync(Func<Session, Task> calls, SessionWork? role = null)
+    private async Task RunAsync(Func<Session, Task> calls)
     {
         var toServer = new Pipe();
         var fromServer = new Pipe();
@@ -280,7 +235,6 @@ public sealed class ArgumentFilterTests : IDisposable
         builder.Services
             .AddMcpServer(options => options.ServerInfo = new() { Name = "example-knowledge", Version = "0.0.1" })
             .WithStreamServerTransport(toServer.Reader.AsStream(), fromServer.Writer.AsStream())
-            .RefuseOutsideRole(_ => Task.FromResult(role ?? SessionWork.Unnamed))
             .RefuseMissingArguments(log)
             .WithKnowledgeTools()
             .WithTools(toolTypes: [typeof(StandInTools)]);

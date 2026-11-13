@@ -1,27 +1,19 @@
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Who may call a tool, for a connector that names a session.</summary>
+/// <summary>What a call does, which names the act a call that reached beyond its session's place is recorded as (<see cref="CallPlace"/>).</summary>
 public enum ToolClass
 {
-    /// <summary>Answers from what Daoris knows and changes nothing: served to every caller.</summary>
+    /// <summary>Answers from what Daoris knows and changes nothing.</summary>
     Read,
 
-    /// <summary>Changes a record, a mark or another's work, asks or answers someone, or uses a person's grant: a proven root's alone.</summary>
-    Restricted,
-
-    /// <summary>A quest to another repository, which a child may publish in its plain shape (the plan's §4; canary 8).</summary>
-    Publish,
+    /// <summary>Changes a record, a mark or another's work, asks or answers someone, or uses a person's grant.</summary>
+    Acts,
 }
 
 /// <summary>
-/// Every tool the connector registers, and its class; <c>ToolClassesTests</c> holds it to the registration.
+/// Every tool the connector registers, and its class; <c>ToolClassesTests</c> holds it to the registration. A class refuses no
+/// caller: every tool is listed and served to every caller.
 /// </summary>
-/// <remarks>
-/// The reads, including <c>line_read</c> and <c>handback_read</c>, which read records and move nothing, and
-/// <c>memory_search</c> and <c>memory_get</c>, which open every engine with no reinforcement.
-/// <c>channel_read</c> is restricted because it moves the parent's read mark, <c>knowledge_refresh</c> because it rebuilds the
-/// index every session shares, and <c>checkout_read</c> because it reads under a person's grant to the session. Every <c>*_propose</c> is restricted by its suffix.
-/// </remarks>
 public static class ToolClasses
 {
     private const string ProposalSuffix = "_propose";
@@ -39,37 +31,34 @@ public static class ToolClasses
         ["handback_read"] = ToolClass.Read,
         ["memory_search"] = ToolClass.Read,
         ["memory_get"] = ToolClass.Read,
-        ["quest_publish"] = ToolClass.Publish,
-        ["quest_respond"] = ToolClass.Restricted,
-        ["helper_ask"] = ToolClass.Restricted,
-        ["helper_answer"] = ToolClass.Restricted,
-        ["check_run"] = ToolClass.Restricted,
-        ["channel_post"] = ToolClass.Restricted,
-        ["channel_read"] = ToolClass.Restricted,
-        ["go_ahead_ask"] = ToolClass.Restricted,
-        ["question_ask"] = ToolClass.Restricted,
-        ["opinion_give"] = ToolClass.Restricted,
-        ["opinion_answer"] = ToolClass.Restricted,
-        ["review_serve"] = ToolClass.Restricted,
-        ["review_ready"] = ToolClass.Restricted,
-        ["partner_answer"] = ToolClass.Restricted,
-        ["brainstorm_give"] = ToolClass.Restricted,
-        ["brainstorm_synthesize"] = ToolClass.Restricted,
-        ["knowledge_refresh"] = ToolClass.Restricted,
-        ["checkout_read"] = ToolClass.Restricted,
-        ["memory_write"] = ToolClass.Restricted,
-        ["memory_end"] = ToolClass.Restricted,
-        ["system_plan"] = ToolClass.Restricted,
+        ["quest_publish"] = ToolClass.Acts,
+        ["quest_respond"] = ToolClass.Acts,
+        ["helper_ask"] = ToolClass.Acts,
+        ["helper_answer"] = ToolClass.Acts,
+        ["check_run"] = ToolClass.Acts,
+        ["channel_post"] = ToolClass.Acts,
+        ["channel_read"] = ToolClass.Acts,
+        ["go_ahead_ask"] = ToolClass.Acts,
+        ["question_ask"] = ToolClass.Acts,
+        ["opinion_give"] = ToolClass.Acts,
+        ["opinion_answer"] = ToolClass.Acts,
+        ["review_serve"] = ToolClass.Acts,
+        ["review_ready"] = ToolClass.Acts,
+        ["partner_answer"] = ToolClass.Acts,
+        ["brainstorm_give"] = ToolClass.Acts,
+        ["brainstorm_synthesize"] = ToolClass.Acts,
+        ["knowledge_refresh"] = ToolClass.Acts,
+        ["checkout_read"] = ToolClass.Acts,
+        ["memory_write"] = ToolClass.Acts,
+        ["memory_end"] = ToolClass.Acts,
+        ["system_plan"] = ToolClass.Acts,
     };
-
-    /// <summary>The reads, which a refusal names as what remains.</summary>
-    public static IReadOnlyList<string> Reads { get; } = [.. Named.Where(pair => pair.Value == ToolClass.Read).Select(pair => pair.Key)];
 
     /// <summary>The class of <paramref name="tool"/>, or null for a name this table does not class.</summary>
     public static ToolClass? Of(string? tool)
     {
         if (tool is null) return null;
         if (Named.TryGetValue(tool, out var named)) return named;
-        return tool.EndsWith(ProposalSuffix, StringComparison.Ordinal) ? ToolClass.Restricted : null;
+        return tool.EndsWith(ProposalSuffix, StringComparison.Ordinal) ? ToolClass.Acts : null;
     }
 }

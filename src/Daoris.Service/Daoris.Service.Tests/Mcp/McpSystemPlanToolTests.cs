@@ -121,21 +121,6 @@ public sealed class McpSystemPlanToolTests : McpToolsFixture
         Assert.EndsWith("Nothing was planned.", await tools.PlanAsync([new SystemPlanChange("release", "2")]), StringComparison.Ordinal);
     }
 
-    /// <summary>A session's work is read in a system where its record's department is registered as one, and in none elsewhere.</summary>
-    [Fact]
-    public async Task A_session_s_work_is_in_a_system_where_its_department_is_registered_as_one()
-    {
-        var sessions = await SessionStore.OpenAsync(_connection);
-        var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
-        await _service.RegisterAsync(new Registration("store", false, null, [], [], [], 0, Kind: PlaceKinds.System, System: "stand-in-system/stand-in"), DateTimeOffset.UtcNow);
-        await _service.RegisterAsync(new Registration("engine", false, null, [], [], [], 0, Root: _root), DateTimeOffset.UtcNow);
-        var store = await sessions.CreateAsync(null, "store", "claude-code", DateTimeOffset.UtcNow);
-        var engine = await sessions.CreateAsync(null, "engine", "claude-code", DateTimeOffset.UtcNow);
-
-        Assert.True((await new SessionWorks(ledger, new IntakeScope(null, store.Id)).ReadAsync(default)).InSystem);
-        Assert.False((await new SessionWorks(ledger, new IntakeScope(null, engine.Id)).ReadAsync(default)).InSystem);
-    }
-
     [Fact]
     public async Task A_plan_no_loop_takes_is_said_untaken()
     {
