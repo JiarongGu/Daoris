@@ -18,8 +18,8 @@ import { budgetMs } from './timeout.ts';
 import type { Slow } from './timing.ts';
 import type { StoredVerdict, Toolchain, TreeEntry } from './verdict-store.ts';
 
-type Signed = { signature: unknown; unit?: string; test?: string };
-type Finding = { state: string; gate?: string; test: string; key: string; lastSeen?: { commit?: string | null } | null; at?: string };
+type Signed = { signature: unknown; names?: string; unit?: string; test?: string };
+type Finding = { state: string; gate?: string; test: string; key: string; since?: string; lastSeen?: { commit?: string | null; at?: string } | null };
 
 /** What the merge tool hands in. */
 export type Seams = {
@@ -94,7 +94,9 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
     toolchain: toolchainOf(),
     slowestOf: (trx) => seams.slowestClasses(trx),
     failuresOf: (where, result, trx) => seams.failuresOf(where, result, trx)
-      .map((each) => ({ unit: each.unit ?? each.test ?? result.gate.name, key: seams.signatureKey(each.signature) })),
+      .map((each) => ({
+        unit: each.unit ?? each.test ?? result.gate.name, key: seams.signatureKey(each.signature), test: each.names === 'test' ? each.test ?? null : null,
+      })),
     isProcessGate: seams.isProcessGate,
     ledger: new BuildLedger(),
     listProcesses,

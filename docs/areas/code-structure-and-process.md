@@ -167,8 +167,9 @@ finishes first and the whole set runs once.
     after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
     main's: a gate declaring `reuse` (`reached`, `censuses`) replays a standing pass whose reaching inputs, command and toolchain are
     unchanged (the verdict's `key`, in the one store `local/gate-verdicts.json`, under the merge tool's one reach table, whose digest
-    the key holds); a failure main already stands in under the same signature (its open findings, its failing verdicts on its own tree)
-    is named as main's and does not fail the merge; a test project is built once per tree (later gates run `--no-build`); a gate's
+    the key holds); a failure main already stands in, the same test under the same signature (its open findings, its failing verdicts
+    on its own tree), is named as main's and does not fail the merge, while a failure read with no test is always the branch's, a
+    finding that names no test excuses nothing and is named on each failed gate, and one not seen for a day is named stale; a test project is built once per tree (later gates run `--no-build`); a gate's
     declared `regenerate` command makes a generated input current before the gates; a gate that ends abnormally is said so and the run
     goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
     in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and
