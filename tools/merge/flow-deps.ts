@@ -33,6 +33,7 @@ export type Seams = {
   readVerdicts: (home: string) => { verdicts: StoredVerdict[] };
   readFindings: (home: string) => { findings: Finding[] };
   expired: (finding: Finding) => boolean;
+  privateOf: (where: string) => string;
 };
 
 const listings = new Map<string, TreeEntry[]>();
@@ -77,6 +78,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
   const lanes = seams.lanesOf(root);
   return {
     replayAll,
+    privateOf: seams.privateOf,
     timeoutMs: (gate) => budgetMs(gate, kind),
     lastSlowest: (name) => readRecords(join(home, MERGE_RECORD)).reverse().flatMap((record) => record.gates.filter((each) => each.name === name && each.slowest.length)).at(0)?.slowest ?? [],
     runGate: seams.runGate,

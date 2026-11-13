@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { TS_SUITES, census, treeOf, tsReaches, unitReaches } from '../test-map.mjs';
+import { privateDigest } from '../private-gate-files.mjs';
 import { halfOf, pathReach, reachSettings, withSettings } from '../process-reach.mjs';
 import { PassedClasses } from '../merge/class-reuse.ts';
 import { toolchainOf } from '../merge/flow-deps.ts';
@@ -17,7 +18,7 @@ import { reuseContext } from '../merge/reached-reuse.ts';
 export const READERS = { tsSuites: TS_SUITES, tsReaches, unitReaches, pathReach };
 
 /** The file the class passes are kept in: the main checkout's `local/reached-classes.json`, or the file `DAORIS_REACHED_STORE` names. */
-export const storeFile = (home) => process.env.DAORIS_REACHED_STORE || join(home, 'local', 'reached-classes.json');
+export const storeFile = (checkout) => process.env.DAORIS_REACHED_STORE || join(checkout, 'local', 'reached-classes.json');
 
 /** The census of the tree at `root` with the key context over it, under the gates the tree declares. */
 export function keyContextOf(root) {
@@ -26,7 +27,9 @@ export function keyContextOf(root) {
   const gatesText = read('daoris.gates.json');
   const gates = JSON.parse(gatesText).gates ?? [];
   const toolchain = toolchainOf();
-  return { map, gates, gatesText, context: reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS }) };
+  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS });
+  const privates = privateDigest(root);
+  return { map, gates, gatesText, context: { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` } };
 }
 
 /**
@@ -35,8 +38,8 @@ export function keyContextOf(root) {
  * by reach (`gate.reach`) and one whose command names no run settings runs as declared. The census is read once, when the first
  * half asks (about a minute and a half on this repository), unless `world` is handed.
  */
-export function fullReplayOf({ root, home, dir, commit, say = console.log, world = null }) {
-  const store = new PassedClasses(storeFile(home));
+export function fullReplayOf({ root, checkout, dir, commit, say = console.log, world = null }) {
+  const store = new PassedClasses(storeFile(checkout));
   const pending = new Map();
   return {
     narrow(gate) {

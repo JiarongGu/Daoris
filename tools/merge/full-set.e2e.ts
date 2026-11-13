@@ -18,7 +18,7 @@ test("a Process half's run is narrowed by this repository's census to the classe
     const units = world.map.units.filter((unit: { kind: string; suite: string }) => unit.kind === 'dotnet' && unit.suite === GATE.name);
     assert.ok(units.length > 5, 'the census reads the half\'s classes');
     const say = () => {};
-    const none = fullReplayOf({ root, home: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
+    const none = fullReplayOf({ root, checkout: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
     assert.equal(none?.run, GATE.run, 'with no pass standing it runs as declared');
     assert.equal(none?.replay.replayedCount, 0);
 
@@ -26,7 +26,7 @@ test("a Process half's run is narrowed by this repository's census to the classe
     const keys = planClasses(units, world.context, store).keys;
     for (const unit of units.slice(1)) store.add(unitId(unit), keys.get(unitId(unit)) as string, '2026-11-12T10:00:00Z', 'abc1234');
     store.save();
-    const some = fullReplayOf({ root, home: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
+    const some = fullReplayOf({ root, checkout: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
     assert.equal(some?.replay.replayedCount, units.length - 1);
     assert.equal(some?.replay.ran, 1);
     const file = /--settings "?([^"\s]+)"?/.exec(String(some?.run))?.[1] as string;
@@ -37,7 +37,7 @@ test("a Process half's run is narrowed by this repository's census to the classe
 
     store.add(unitId(units[0]!), keys.get(unitId(units[0]!)) as string, '2026-11-12T10:00:00Z', 'abc1234');
     store.save();
-    const all = fullReplayOf({ root, home: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
+    const all = fullReplayOf({ root, checkout: dir, dir, commit: 'aaaaaaa', say, world }).narrow(GATE);
     assert.equal(all?.run, null, 'every class replayed: nothing runs');
     assert.equal(join(dir, 'local', 'reached-classes.json'), storeFile(dir));
   } finally {

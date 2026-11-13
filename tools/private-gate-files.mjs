@@ -1,6 +1,7 @@
 /**
  * The private files a gate tree is handed from the main checkout, and the copy of them.
  */
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { writeAtomic } from './fsx.mjs';
@@ -23,6 +24,15 @@ export function privateGateFiles(checkout) {
   }
   const path = declared.replace(/\\/g, '/');
   return path.startsWith('local/') && !path.split('/').includes('..') ? [path, ...SIBLING_PROPS] : [...SIBLING_PROPS];
+}
+
+/** A digest of what the tree at `tree` holds of each private file a gate reads, `missing` where absent: a replay's key holds it. */
+export function privateDigest(tree) {
+  const parts = privateGateFiles(tree).map((file) => {
+    const path = join(tree, file);
+    return `${file}\0${existsSync(path) ? createHash('sha1').update(readFileSync(path)).digest('hex') : 'missing'}`;
+  });
+  return createHash('sha1').update(parts.join('\n')).digest('hex');
 }
 
 /** Copies each of `files` from `checkout` into `tree`, refreshed on every run; returns the lines to say. */
