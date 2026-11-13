@@ -54,6 +54,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached; a delivery's is TreeDeliveries' transaction instead", ["switch@full", "update-ref@sync.Root"]),
         ["TreeBranches.cs"] = (Refs,"a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
         ["TrainBranch.cs"] = (Refs, "an ask's train branch made at the line's commit where the repository has none; an existing one is left where it is", ["branch@root"]),
+        ["TrainBases.cs"] = (Refs, "the line's tip merged into an ask's train branch from objects alone, moved by one verified `update-ref` from the tip judged; the branch is never checked out", ["update-ref@root"]),
+        ["TrainRefs.cs"] = (Refs, "an ask's promoted batch kept on its own numbered ref under `refs/daoris/train/`, created once and never moved", ["update-ref@root"]),
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),

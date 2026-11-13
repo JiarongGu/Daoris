@@ -6,23 +6,23 @@ public sealed record TrainBased(string Kind, string Said);
 /// <summary>The kinds of <see cref="TrainBased"/>.</summary>
 public static class TrainBaseKinds
 {
-    /// <summary>The ask's branch holds the line's tip already (or was made at it): nothing moved.</summary>
+    /// <summary>The ask's branch holds the line's tip already, or is made at it: nothing moves.</summary>
     public const string Current = "current";
 
-    /// <summary>The line's tip was merged into the ask's branch.</summary>
+    /// <summary>The line's tip is merged into the ask's branch.</summary>
     public const string Merged = "merged";
 
-    /// <summary>The line's tip and the ask's branch conflict: the branch is left exactly as it was.</summary>
+    /// <summary>The line's tip and the ask's branch conflict: the branch stays where it stands.</summary>
     public const string Conflict = "conflict";
 
-    /// <summary>git could not say, or the move lost to another writer: nothing is written, and it is asked again at the next look.</summary>
+    /// <summary>git cannot say, or the move loses to another writer: nothing is written, and it is asked again at the next look.</summary>
     public const string Unread = "unread";
 }
 
 /// <summary>
 /// The line's tip merged into the ask's branch before each batch, so the branch never drifts more than one train from the line. The merge is
 /// made from objects alone (<c>merge-tree</c>, <c>commit-tree</c>, one <c>update-ref</c> verifying the old value), so no working tree is
-/// touched and a conflict leaves the branch where it was; the batch is then replayed onto the merged branch as on any line.
+/// touched and a conflict leaves the branch where it stands; the batch is then replayed onto the merged branch as on any line.
 /// </summary>
 public static class TrainBases
 {

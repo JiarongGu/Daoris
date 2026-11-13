@@ -31,7 +31,6 @@ internal sealed record IntegrationReplayAsk(string Repository, string Workspace,
     /// <summary>Which queued requests are ready, and in what order, where the line's requests are an ask's parts; null takes the queue as it stands.</summary>
     public TrainSelection? Train { get; init; }
 
-    /// <summary>The repository's line, which an ask's branch is brought up to (<see cref="TrainBases"/>) before each batch; null leaves the branch as it is.</summary>
     public string? TrainBase { get; init; }
 }
 
@@ -136,7 +135,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         if (ask.Train is { } train && queued.Count > 0) queued = await train.ReadyAsync(queued, ct).ConfigureAwait(false);
         if (queued.Count == 0) return new(IntegrationReplayRuns.Idle, $"no request of `{ask.Line}` is queued and ready.");
 
-        // The line's tip first, so the ask's branch never drifts more than one batch from the line it lands on.
         if (ask.TrainBase is { } trainBase && TrainBranch.AskOf(ask.Line) is { } trainAsk)
         {
             var based = await TrainBases.PrepareAsync(ask.Root, trainAsk, trainBase, ct).ConfigureAwait(false);

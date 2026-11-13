@@ -11,7 +11,6 @@ public static class TrainBranch
 
     private const string Prefix = "daoris/ask-";
 
-    /// <summary>The ask a line is the branch of; null for any other line.</summary>
     public static string? AskOf(string line) => line.StartsWith(Prefix, StringComparison.Ordinal) && line.Length > Prefix.Length ? line[Prefix.Length..] : null;
 
     /// <summary>

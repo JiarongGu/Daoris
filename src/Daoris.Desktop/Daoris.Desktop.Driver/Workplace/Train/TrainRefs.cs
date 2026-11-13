@@ -8,7 +8,7 @@ public static class TrainRefs
 {
     public const string Prefix = "refs/daoris/train/";
 
-    /// <summary>Keep <paramref name="tip"/> as the next batch of <paramref name="line"/>'s ask; nothing for a line that is no ask's branch. Whether a ref was written.</summary>
+    /// <summary>Keep <paramref name="tip"/> as the next batch of <paramref name="line"/>'s ask; nothing for a line that is no ask's branch.</summary>
     public static async Task<bool> KeepAsync(string root, string line, string tip, CancellationToken ct)
     {
         if (TrainBranch.AskOf(line) is not { } ask) return false;

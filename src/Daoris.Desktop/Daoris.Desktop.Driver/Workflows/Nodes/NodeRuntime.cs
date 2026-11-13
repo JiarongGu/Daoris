@@ -106,7 +106,6 @@ public sealed class NodeRuntime(
     /// <summary>The transport an open request's line is sent to: none by default, and an admitted request then waits queued. The watch sets it.</summary>
     public IIntegrationLines? Lines { get; set; }
 
-    /// <summary>Where an ask's plan is read, to tell a part's quest from any other: none by default, and no request is then tagged. The watch sets it.</summary>
     public ITrainPlans? Plans { get; set; }
 
     /// <summary>A unit whose <c>line</c> has reached after its <c>integrate</c> (<c>work.integrated</c>): told once, with its repository.</summary>
