@@ -75,7 +75,7 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  BUILD_MANIFEST, CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
@@ -155,9 +155,9 @@ export function offerProblems(install, homes) {
 
 /**
  * What is wrong with the install's doctrine tool, as sentences: a launcher not in
- * `app/bin/`; the package without its bin entry, its built dispatcher, its manifest or its canon; its
- * TypeScript sources, which only the source tree carries and the packed artefact never does; and a package or
- * canon at a version other than `version`. Empty when the install carries the release's package, laid out.
+ * `app/bin/`; `app/cli/` without its bundle, its manifest or its canon; an npm layout or the TypeScript sources left in it,
+ * which an older publish laid and this one never does; and a manifest or canon at a version other than `version`. Empty when
+ * the install carries the bundle laid out.
  */
 export function cliProblems(install, version) {
   const problems = [];
@@ -165,12 +165,13 @@ export function cliProblems(install, version) {
     if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
   }
   problems.push(...driverProblems(install));
-  const pkg = join(install, ...CLI_PACKAGE);
-  const where = CLI_PACKAGE.join('/');
-  for (const file of [CLI_ENTRY.join('/'), 'dist/cli.js', 'package.json', 'canon/canon.json']) {
+  const pkg = join(install, ...CLI_HOME);
+  const where = CLI_HOME.join('/');
+  for (const file of ['daoris.mjs', 'package.json', 'canon/canon.json']) {
     if (!existsSync(join(pkg, ...file.split('/')))) problems.push(`${where}/${file} is not there`);
   }
-  if (existsSync(join(pkg, 'src'))) problems.push(`${where}/src/ is there: the source tree, not the packed artefact`);
+  if (existsSync(join(pkg, 'node_modules'))) problems.push(`${where}/node_modules/ is there: an npm layout, not the bundle`);
+  if (existsSync(join(pkg, 'src'))) problems.push(`${where}/src/ is there: the source tree, not the bundle`);
   for (const file of ['package.json', 'canon/canon.json']) {
     const path = join(pkg, ...file.split('/'));
     if (!existsSync(path)) continue;
@@ -774,11 +775,10 @@ async function main() {
   check('…and the publish installed none of them', !existsSync(join(install, HOME, 'plugins')),
     `${join(install, HOME, 'plugins')} exists`);
 
-  // The doctrine tool: the package the release publishes, laid out as npm lays one out
-  // under app/cli/, at the canon's version, with the command, daoris.exe, in app/bin/; the packed artefact,
-  // never the source tree. Phase 8 runs it.
+  // The doctrine tool: one bundled file with its canon beside it under app/cli/, at the canon's version, with the
+  // command, daoris.exe, in app/bin/. Phase 8 runs it.
   const toolProblems = cliProblems(install, canonVersion);
-  check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_PACKAGE.join('/')}/, `
+  check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_HOME.join('/')}/, `
     + `with ${CLI_LAUNCHERS.join(' and ')} in ${CLI_BIN.join('/')}/`, toolProblems.length === 0, toolProblems.join('; '));
 
   // The git doors: laid out in app/bin/, and each, started with nothing, answers as itself, so the copy
@@ -853,7 +853,7 @@ async function main() {
   }
   // …and a file in each of the doctrine tool's folders that its last layout had and this one does not:
   // both folders are replaced whole.
-  const staleTool = [join(install, ...CLI_PACKAGE, 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
+  const staleTool = [join(install, ...CLI_HOME, 'node_modules', 'daoris', 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
   for (const path of staleTool) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, '// from the publish before\n');

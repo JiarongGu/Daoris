@@ -86,12 +86,14 @@ import { HOST_HOME, INSTALL_RID, LAUNCHER, MARKER, RETIRED_BROWSER_EXE, RETIRED_
 import { HOME, KEPT_LOCALES, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, layOffers, layResources } from './desktop-publish/lay.mjs';
 import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME } from './desktop-publish/launchers.mjs';
 import { layCli } from './desktop-publish/cli.mjs';
+import { bundleCli } from './desktop-publish/cli-bundle.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
 export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, RETIRED_LAUNCHERS, RETIRED_IN_APP, RETIRED_BROWSER_EXE, retiredPaths, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
-export { CLI_HOME, CLI_PACKAGE, CLI_ENTRY, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
+export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
 export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand, BIN_STAGES, layBinPrograms } from './desktop-publish/publish-commands.mjs';
 export { layCli } from './desktop-publish/cli.mjs';
+export { bundleCli } from './desktop-publish/cli-bundle.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
 export { GATE_COMMAND, insideFixtures, askGates, ungatedRefusal } from './desktop-publish/gates.mjs';
@@ -246,34 +248,15 @@ async function main() {
   run(gitDoorPublishCommand(join(stages, BIN_STAGES.doors), artifacts));
   run(pieceStartPublishCommand(join(stages, BIN_STAGES.pieceStart), artifacts));
 
-  // The doctrine tool: `src/Daoris.Cli` packed as the release packs it, `npm pack` in
-  // its own folder, whose `prepack` builds `dist/` and stages the canon, the licence and the readme. The
-  // tarball is the artefact the release rehearsal installs and the release workflow publishes, never the
-  // source tree. Packed before anything is published, so a package that will not pack stops the publish
-  // while the install is still untouched.
-  console.log('desktop-publish: packing the doctrine tool…');
+  // The doctrine tool: `src/Daoris.Cli` bundled into one file with the canon beside it, in a stage of its own. Bundled before
+  // anything is published, so a tool that will not bundle stops the publish while the install is still untouched.
+  console.log('desktop-publish: bundling the doctrine tool…');
   const cliStage = join(stages, 'cli');
-  mkdirSync(cliStage, { recursive: true });
-  // `postpack` removes what the pack staged, and this removes it again whatever happened, as the release
-  // rehearsal does: a `dist/` outliving a pack shadows the sources for every later bin-driven run (FIX-LOG
-  // 2026-09-20).
-  const unstagePackage = () => execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'ignore', windowsHide: true });
-  let cliTarball;
   try {
-    // The tarball's name is the last line npm prints; the build `prepack` runs prints above it.
-    const packed = execSync(`npm pack --pack-destination "${cliStage}"`, {
-      cwd: join(repoRoot, 'src', 'Daoris.Cli'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
-    }).trim().split('\n').pop().trim();
-    cliTarball = join(cliStage, packed);
+    await bundleCli(repoRoot, cliStage);
   } catch (error) {
-    unstagePackage();
-    console.error(`${error.stdout ?? ''}${error.stderr ?? ''}`);
-    console.error('desktop-publish: `npm pack` of src/Daoris.Cli failed, so the install would carry no doctrine tool.');
-    process.exit(1);
-  }
-  unstagePackage();
-  if (!existsSync(cliTarball)) {
-    console.error(`desktop-publish: \`npm pack\` named ${cliTarball}, and there is no such file.`);
+    console.error(error.message);
+    console.error('desktop-publish: bundling src/Daoris.Cli failed, so the install would carry no doctrine tool.');
     process.exit(1);
   }
 
@@ -330,7 +313,7 @@ async function main() {
   // The doctrine tool: the package under `app/cli/`, and `app/bin/` made empty for its programs, laid below.
   const build = { id: buildId(), commit: commitOf(repoRoot) };
   try {
-    const tool = await layCli(cliTarball, root, {}, build);
+    const tool = await layCli(cliStage, root, {}, build);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
       + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}, laid out below.`);
   } catch (error) {

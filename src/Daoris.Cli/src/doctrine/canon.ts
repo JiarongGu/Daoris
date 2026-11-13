@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareOrdinal, digestBytes, listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
+import { BUNDLE_FILE } from '../platform/package-root.ts';
 import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts';
 
 /**
@@ -31,7 +32,8 @@ export function resolveCanonRoot(packageRoot: string): string {
   // a copy into the source tree and a leftover would otherwise SHADOW the real one — gitignored,
   // silent, and stale from whenever the last pack ran. Two copies with one quietly winning is the
   // exact failure this tool exists to prevent, so it must not be possible in the tool itself.
-  if (packageRoot.replace(/\\/g, '/').includes('/node_modules/')) {
+  // An install's bundle is the same case: its folder holds the bundle file, which no source tree does.
+  if (packageRoot.replace(/\\/g, '/').includes('/node_modules/') || existsSync(join(packageRoot, BUNDLE_FILE))) {
     return join(packageRoot, 'canon');
   }
 

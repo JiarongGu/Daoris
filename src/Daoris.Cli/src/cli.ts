@@ -1,5 +1,4 @@
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { packageRootOf } from './platform/package-root.ts';
 import { versionLine } from './platform/build-stamp.ts';
 import { DaorisError, type ExitCode } from './platform/errors.ts';
 import type { CliCommand } from './platform/types.ts';
@@ -16,8 +15,8 @@ import { HANDED_VARIABLE, runDriverProgram, type DriverProgramSeam } from './pla
 
 export { HANDED_VARIABLE };
 
-/** The package root — `src/` sits one level below it, `dist/` likewise once built. */
-export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+/** The package root — `src/` sits one level below it, `dist/` likewise once built; an install's bundle is its own folder. */
+export const packageRoot = packageRootOf(import.meta.url);
 
 /**
  * The doctrine commands, in the order `daoris --help` prints them, and nothing else: these rows are the one declaration of them. The
