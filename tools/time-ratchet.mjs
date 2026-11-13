@@ -12,6 +12,8 @@
  * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. An entry is `{ ms, why, row? }`:
  * `why` says what makes the test slow and why that cannot be cut, `row` the backlog row that optimizes it; an entry with no real `why`
  * fails, and every test over budget is printed with its reason. With no records nothing is checked. The list only shrinks: `--write` cuts it.
+ * An entry may also be `{ ms, why, class: true }`, keyed by a test class: the class is slow in total with no test over its limit, and
+ * `--classes` prints its `why`; `--write` keeps it while the class runs.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -175,7 +177,11 @@ export function slowestClasses(tests, count, list = {}) {
   });
 }
 
-/** The list cut down to the records: an entry is lowered to the slowest test it covers, and leaves when the records hold a test it covers and none is over a limit. */
+/**
+ * The list cut down to the records: an entry is lowered to the slowest test it covers, and leaves when the records hold a test it covers
+ * and none is over a limit. An entry marked `class: true` gives a whole class its reason (the class is slow in total, no test of it
+ * over a limit), so it stays while the class does.
+ */
 export function tighten(found, list, seen = new Set()) {
   const slowest = {};
   for (const [key, { ms }] of Object.entries(found)) {
@@ -184,7 +190,7 @@ export function tighten(found, list, seen = new Set()) {
   }
   const next = {};
   for (const entry of Object.keys(list).sort()) {
-    if (slowest[entry] === undefined && [...seen].some((key) => entryFor(list, key) === entry)) continue;
+    if (list[entry].class !== true && slowest[entry] === undefined && [...seen].some((key) => entryFor(list, key) === entry)) continue;
     next[entry] = { ...list[entry], ms: Math.min(list[entry].ms, slowest[entry] ?? list[entry].ms) };
   }
   return next;

@@ -142,6 +142,14 @@ test('the list is cut to what the records show and never grows', () => {
   assert.deepEqual(tighten(found, list, seen), { 'A.stays': entry(200_000), 'C.unseen': entry(300_000) });
 });
 
+test('a class entry keeps its reason while the class runs, though no test of it is over a limit', () => {
+  const list = { 'A.Class': { ...entry(120_000), class: true }, 'B.faster': entry(300_000) };
+  const seen = new Set(['A.Class.one', 'A.Class.two', 'B.faster']);
+  assert.deepEqual(tighten({}, list, seen), { 'A.Class': { ...entry(120_000), class: true } });
+  const ranked = slowestClasses([{ key: 'A.Class.one', ms: 5000 }, { key: 'A.Class.two', ms: 4000 }], 15, list);
+  assert.equal(ranked[0].reason, entry(120_000).why);
+});
+
 test('records on disk are scanned by their file and an absent folder holds nothing', () => {
   const dir = join('_fixtures', 'time-ratchet-test');
   rmSync(dir, { recursive: true, force: true });

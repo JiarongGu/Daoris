@@ -30,13 +30,7 @@ public sealed class SessionWatchProcessTests : IDisposable
     {
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "watch@example.com");
-        Git("config", "user.name", "SESSWATCH1a");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "watch@example.com", "SESSWATCH1a");
     }
 
     public void Dispose()
@@ -133,15 +127,15 @@ public sealed class SessionWatchProcessTests : IDisposable
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 3,
             PollSeconds = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", WatchStandIn.WriteAcp(_home), "background-compute", "60000"] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", WatchStandIn.WriteAcp(_home), "background-compute", "26000"] },
         };
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        // The machine's clock, its bounds short: a moved clock would read a second of CPU over minutes of it as idle. Q is ten
-        // seconds, so its work computing for a minute is past five times it, and its end once its quest is done comes within 3Q.
-        driver.Watch.Quiet = TimeSpan.FromSeconds(10);
+        // The machine's clock, its bounds short: a moved clock would read a second of CPU over minutes of it as idle. Q is four
+        // seconds, so its work computing for twenty-six is past five times it, and its end once its quest is done comes within 3Q.
+        driver.Watch.Quiet = TimeSpan.FromSeconds(4);
         driver.Watch.Window = TimeSpan.FromSeconds(1);
         var row = false;
         using var watching = new CancellationTokenSource();
@@ -197,14 +191,5 @@ public sealed class SessionWatchProcessTests : IDisposable
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-    }
-
-    private void Git(params string[] arguments)
-    {
-        var info = new ProcessStartInfo("git") { WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(TestGit.Past(info))!;
-        process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
     }
 }
