@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "look": { "medianMs": 3000, "p90Ms": 6000, "maxMs": 30000 },
-  "quest": { "publishedToTakenLooks": 1, "takenToStartedMs": 60000, "acceptedToLandedLooks": 2 },
+  "quest": { "publishedToTakenLooks": 1, "takenToStartedMs": 60000, "acceptedToLandedLooks": 2, "orderViolations": 0 },
   "workflow": { "mechanicalWorkLooks": 1, "unnamedWaiters": 0 },
   "actors": { "untypedFailures": 0, "silentFailures": 0 },
   "communication": { "deliveryLooks": 1, "lostWords": 0 },

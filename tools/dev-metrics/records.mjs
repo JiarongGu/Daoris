@@ -9,7 +9,7 @@ export const documents = (dir) => files(dir, '.json').map(f => json(join(dir, f)
 export const moment = (at, where) => Number.isFinite(Date.parse(at)) ? at : missing(where);
 export const elapsed = (from, to, where) => {
   const ms = Date.parse(to) - Date.parse(from);
-  return Number.isFinite(ms) && ms >= 0 ? ms : missing(where);
+  return Number.isFinite(ms) ? ms : missing(where);
 };
 export const earliest = (values) => values.filter(v => Number.isFinite(Date.parse(v))).sort((a, b) => Date.parse(a) - Date.parse(b))[0];
 
@@ -26,7 +26,7 @@ function decoded(row) {
 }
 
 export async function readHome(home) {
-  const result = { tables: {}, availability: {}, runs: documents(homeEntry(home, 'workflows', 'runs')), units: documents(homeEntry(home, 'workflows', 'units')) };
+  const result = { tables: {}, availability: {}, runs: documents(homeEntry(home, 'workflows', 'runs')), units: documents(homeEntry(home, 'workflows', 'units')), definitions: documents(homeEntry(home, 'workflows')) };
   const file = homeEntry(home, 'knowledge');
   let db;
   try {

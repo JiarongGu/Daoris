@@ -5,6 +5,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+- **PERFMATRIX1 (2026-11-13):** the performance specification, scoped lifecycle/workflow/communication/queue receipts, declared budgets and daily JSON snapshots are in `tools/dev-metrics.mjs`; fixture-home tests and `npm run quick` pass. The first installed receipt is `docs/metrics/2026-11-13.json`; RCASE1 keeps the installed catalogue open. → `docs/areas/code-structure-and-process.md`
+
 ## MERGETS1 step 3 — the merge's plan as a typed module (2026-11-13)
 
 > **MERGETS1 step 3** (tools): Outcome: `tools/merge/plan.ts` holds which gates a merge runs, the rerun plan, the plan's lines and the plan-only print, with 22 Vitest cases reading the gate lists from `daoris.gates.json`; `plan.mjs` is gone and its callers import the typed module. The runner 419,904 to 411,581 bytes. Merged in `347f862f3d`.

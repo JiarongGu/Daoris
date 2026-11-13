@@ -8,7 +8,7 @@
  *
  * `--home` is an install's `data` folder, `--logs` its `logs` folder. A quest's record comes from the running
  * service (`/api/quests?workspace=`, a read) when `--service` is given, else from `--quests` or the home's knowledge.db. A figure
- * whose source holds nothing is "not recorded" or "not read", with the place it would have to be logged: never a zero.
+ * whose source holds nothing names where it would have to be logged: never a fabricated zero.
  * `--merge-queue` is this repository's `local/merge-queue.json`, where integration requests land or are handed back.
  * `--json` also writes docs/metrics/<until-or-today>.json, retaining each case's receipt. Builder mode times transcripts.
  */
@@ -32,7 +32,6 @@ import { addTokens, zeroTokens as zero, sumTokens, costBreakdown } from './dev-m
 export { writeSnapshot } from './dev-metrics/snapshot.mjs';
 
 const HOUR = 3600000;
-const NOT_COUNTED = 'not recorded';
 
 const readJson = (file, fallback) => { try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return fallback; } };
 const readLines = (file) => {
@@ -132,8 +131,7 @@ function lyntaiOf(calls) {
     searches: searches.length,
     searchesWithHits: hits.length,
     hitsFetchedSameSession: fetched.length,
-    cited: NOT_COUNTED,
-    citedWhere: 'the handback or the session would have to log the memory entry ids a result names (nothing carries an entry id today)',
+    cited: missing('the handback or session log of memory entry ids cited by a result'),
     gets: by('get').length,
     writes: by('write').length,
     proposes: by('propose').length,
@@ -164,7 +162,7 @@ function mergesOnMain(repo, { since, until }) {
     if (since) args.push(`--since=${since}T00:00:00Z`);
     if (until) args.push(`--until=${until}T23:59:59Z`);
     return execFileSync('git', args, { encoding: 'utf8', windowsHide: true }).split('\n').filter((s) => s && !/^Merge (branch 'main'|main\b)/.test(s)).length;
-  } catch { return 'not read'; }
+  } catch { return missing('readable main merge commit log'); }
 }
 
 function leftoversOf(home, work, landings) {
@@ -239,18 +237,21 @@ export async function collect(options) {
   const queue = mergeQueue ? readJson(mergeQueue, null) : null;
   const firstPass = queue
     ? { integrated: (queue.landed ?? []).filter(l => inRange(l.at) && (!scoped || landings.some(b => b.branch === l.branch))).length, handedBack: (queue.handedBack ?? []).filter(l => inRange(l.at) && (!scoped || landings.some(b => b.branch === l.branch))).length }
-    : 'not read: pass --merge-queue <local/merge-queue.json>';
+    : missing('merge queue records; pass --merge-queue <local/merge-queue.json>');
 
   if (options.repo && firstPass && typeof firstPass === 'object') firstPass.mergeCommitsOnMain = scoped ? missing('case-specific main merge correlation') : mergesOnMain(options.repo, options);
   const recordFile = options.mergeRecord ?? (options.repo ? join(options.repo, MERGE_RECORD) : null);
   const branches = landings.map(l => l.branch).filter(Boolean);
   const mergeRecords = recordFile ? readRecords(recordFile).filter(each => inRange(each.at) && (!scoped || branches.includes(each.branch))) : [];
-  const mergeFlow = recordFile ? mergeRecords.length ? summarize(mergeRecords) : missing('merge-record rows in the selected range and scope') : 'not read: pass --merge-record <local/merge-record.jsonl>';
+  const mergeFlow = recordFile ? mergeRecords.length ? summarize(mergeRecords) : missing('merge-record rows in the selected range and scope') : missing('merge run records; pass --merge-record <local/merge-record.jsonl>');
   const askTurns = turns.filter((t) => t.actor === 'ask-daoris' && inRange(t.ended ?? t.written));
   const lyntai = lyntaiOf(memoryCalls(events, inRange));
   lyntai.store = await storeCounts(home);
 
   const asks = records.tables.asks.filter(a => !scoped || scope.asks.includes(a.id));
+  const workflow = workflowRows(records, scope, logRows, inRange, now);
+  scope.completed = !scoped ? missing('--case and a completed workflow receipt') : quests.some(q => q.status !== 'Done') ? false
+    : workflow.length && workflow.every(r => r.ended?.outcome === 'completed') ? true : missing('workflow run ended.outcome=completed for every case run');
   const questSource = questRead.recorded;
   const report = {
     generatedAt: now,
@@ -284,10 +285,10 @@ export async function collect(options) {
       replies: replyRows(sessions, events, inRange),
     },
     lyntai,
-    lifecycle: lifecycleRows(quests.filter(q => inRange(q.filed) || inRange(q.updated) || scoped), sessions, sessionQuest, records, landings, allLogs),
-    workflow: workflowRows(records, scope, logRows, inRange, now),
+    lifecycle: lifecycleRows(quests.filter(q => inRange(q.filed) || inRange(q.updated) || scoped), sessions, sessionQuest, records, landings, allLogs, workflow),
+    workflow,
     communication: communicationRows(records, scope, events, quests, inRange),
-    actors: actorRows(sessions, records, inRange),
+    actors: actorRows(sessions, records, inRange, allLogs),
     browser: { openMs: missing('browser plugin session tab open request and completion clock'), signInShared: missing('browser probe local storage key names; no credential values') },
   };
   report.personQueue = personQueue(records, sessions, quests, report.workflow, logRows, now, scope);
@@ -302,12 +303,14 @@ export async function collect(options) {
   }
   if (scoped) report.leftovers.trees = sessions.some(s => s.tree) ? sessions.filter(s => s.tree && existsSync(s.tree)).length : missing('case session tree paths in knowledge.db sessions.tree');
   else if (!existsSync(join(work, 'trees'))) report.leftovers.trees = missing('work/trees directory inventory');
+  report.leftovers.staleWorktrees = missing('git worktree prunable inventory correlated with case sessions');
   if (!questSource) for (const key of Object.keys(report.completion)) report.completion[key] = missing('quest requirements and answers in the selected range');
   for (const key of ['filedToDone', 'doneToLine']) if (!report.leadTime[key].n) report.leadTime[key] = missing(key === 'filedToDone' ? 'quests.filed and done timestamp pairs' : 'quest done and landing line removal timestamp pairs');
   if (!questSource || typeof report.leftovers.landedBranchesPresent === 'string') report.leadTime.doneNotOnLine = missing('quest done and readable landing line-removal records');
   if (!events.size) {
     for (const key of ['searches', 'searchesWithHits', 'hitsFetchedSameSession', 'gets', 'writes', 'proposes', 'latencyMs']) report.lyntai[key] = missing('session events memory tool calls');
   }
+  if (typeof report.lyntai.latencyMs !== 'string' && !report.lyntai.latencyMs.n) report.lyntai.latencyMs = missing('memory tool call start and completion timestamp pairs');
   if (!askTurns.length) for (const key of ['turns', 'conversations']) report.askDaoris[key] = missing('usage-history Ask Daoris turns in range');
   if (!logRows.length) for (const key of ['actsInFullAccess', 'cardsAsked']) report.askDaoris[key] = missing('scoped machine log help.pressed or person.confirmation events');
   Object.assign(report, judge(report, allLogs, mergeRecords));
@@ -349,7 +352,7 @@ export function render(r) {
   put('all turns in range', tok(r.cost.total));
   for (const [a, t] of Object.entries(r.cost.perActor).sort()) put(`  actor ${a}`, tok(t));
   const quests = r.cost.perQuest.filter((q) => typeof q.sessions === 'number');
-  put('quests with sessions found', `${quests.length} of ${r.cost.perQuest.length}`);
+  put('quests with sessions found', quests.length ? `${quests.length} of ${r.cost.perQuest.length}` : missing('quest-linked sessions in knowledge.db, landing records or session opening events'));
   for (const q of quests.sort((a, b) => b.tokens.output - a.tokens.output).slice(0, 10)) put(`  quest ${q.quest}`, `${q.sessions} sessions; ${tok(q.tokens)}`);
   L.push('Completion');
   put('requirements met / departed', `${r.completion.met} / ${r.completion.departed} of ${r.completion.requirements} (unanswered ${r.completion.unanswered})`);
@@ -373,7 +376,7 @@ export function render(r) {
   L.push('Lyntai (memory through the connector)');
   put('searches / with hits', `${y.searches} / ${y.searchesWithHits}`);
   put('hits fetched in the same session', `${y.hitsFetchedSameSession} of ${y.searchesWithHits}`);
-  put('hits cited', `${y.cited}: ${y.citedWhere}`);
+  put('hits cited', y.cited);
   put('gets / writes / proposes', `${y.gets} / ${y.writes} / ${y.proposes}`);
   put('latency per call', typeof y.latencyMs === 'string' ? y.latencyMs : `${stat(y.latencyMs, ' ms')}, max ${y.latencyMs.max ?? missing('memory tool call completion timestamps')}`);
   put('latency note', y.latencyNote);

@@ -4,6 +4,7 @@ import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node
 import { join } from 'node:path';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { spawnGit } from './fsx.mjs';
 import { collect, builderTimes, render, writeSnapshot } from './dev-metrics.mjs';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
@@ -117,14 +118,13 @@ test('Lyntai use counts the connector\'s memory calls and says what is not recor
   assert.equal(r.lyntai.writes, 1);
   assert.equal(r.lyntai.latencyMs.n, 5);
   assert.equal(r.lyntai.latencyMs.max, 6000);
-  assert.equal(r.lyntai.cited, 'not recorded');
-  assert.match(r.lyntai.citedWhere, /handback/i);
+  assert.match(r.lyntai.cited, /^not recorded: .*handback/);
   assert.equal(r.lyntai.proposes, 0);
 });
 
 test('the table says "not recorded" where nothing is logged, and an absent source is never a zero', async () => {
   const r = await collect({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
-  assert.equal(r.firstPass, 'not read: pass --merge-queue <local/merge-queue.json>');
+  assert.equal(r.firstPass, 'not recorded: merge queue records; pass --merge-queue <local/merge-queue.json>');
   const text = render(r);
   assert.match(text, /not recorded/);
   assert.match(text, /Lead time/);
@@ -191,12 +191,13 @@ async function matrixHome(name) {
   writeFileSync(homeEntry(data, 'helpers', 'h.state.json'), JSON.stringify({ id: 'h', helper: 'helper-session', state: 'answered', at: at(50), handed: 'answer-word' }));
   mkdirSync(homeEntry(data, 'workflows', 'runs'), { recursive: true });
   mkdirSync(homeEntry(data, 'workflows', 'units'), { recursive: true });
-  writeFileSync(homeEntry(data, 'workflows', 'runs', '111111111111.json'), JSON.stringify({ run: '111111111111', ask: 'a11111', at: at(8) }));
+  writeFileSync(homeEntry(data, 'workflows', 'runs', '111111111111.json'), JSON.stringify({ run: '111111111111', ask: 'a11111', at: at(8), workflow: 'fixture', version: 1 }));
+  writeFileSync(homeEntry(data, 'workflows', 'fixture.json'), JSON.stringify({ id: 'fixture', versions: [{ version: 1, schema: 2, graph: { nodes: [{ id: 'check', kind: 'check', reach: 'performed' }, { id: 'review', kind: 'review', reach: 'pressed' }] } }] }));
   writeFileSync(homeEntry(data, 'workflows', 'units', 'record.json'), JSON.stringify({
     unit: 'run:111111111111',
-    statuses: { check: { node: 'check', state: 'reached', since: at(60), attempt: 1, by: 'plugin' }, review: { node: 'review', state: 'held', holds: 'person', since: at(120), attempt: 1 } },
+    statuses: { check: { node: 'check', state: 'reached', since: at(60), attempt: 1, by: 'plugin' }, review: { node: 'review', state: 'active', holds: 'Waiting for Accept', since: at(120), attempt: 1 } },
     attempts: [{ node: 'check', attempt: 1, recordedAt: at(60), state: 'settled', outcome: 'reached', resolution: 'happened', resolvedAt: at(90), call: { step: 'check' } }],
-    history: [{ at: at(60), why: 'person-again', was: { node: 'check', state: 'unknown', since: at(50), holds: 'person', attempt: 0 } }],
+    history: [{ at: at(55), why: 'person-again', was: { node: 'check', state: 'unknown', since: at(50), attempt: 0 } }],
   }));
   writeFileSync(homeEntry(data, 'landings'), JSON.stringify({ branches: [{ quest: '111111111111', session: 'lead', landedAt: at(150) }] }));
   writeFileSync(join(dir, 'logs', 'driver.jsonl'), jl([
@@ -214,7 +215,8 @@ test('matrix reads database links, actual lifecycle clocks and ask closures with
   assert.equal(q.stages.taken, '2026-01-02T00:00:05.000Z');
   assert.equal(q.stages.started, '2026-01-02T00:00:10.000Z');
   assert.equal(q.elapsedMs.takenToStarted, 5000);
-  assert.equal(q.elapsedMs.acceptedToLanded, 30000);
+  assert.equal(q.stages.questAccepted, '2026-01-02T00:02:00.000Z');
+  assert.match(q.elapsedMs.acceptedToLanded, /^not recorded:/);
   assert.match(q.stages.firstCommit, /^not recorded: .*commit/);
   assert.match(q.stages.pushed, /^not recorded:/);
 });
@@ -241,9 +243,10 @@ test('workflow attempts keep work clocks, hold clearer and unknown wait boundari
   const r = await collect(options);
   const step = r.workflow[0].steps.find(s => s.node === 'check');
   assert.equal(step.workMs, 30000);
-  assert.match(step.waitMs, /^not recorded:/);
+  assert.equal(step.waitMs, 5000);
   assert.equal(step.clearedBy, 'person');
-  assert.match(r.personQueue.items.find(i => i.node === 'review').ageMs, /^not recorded:/);
+  assert.equal(r.personQueue.items.find(i => i.node === 'review').ageMs, 3880000);
+  assert.equal(r.personQueue.items.find(i => i.node === 'review').waiter, 'person');
   assert.equal(r.personQueue.items.find(i => i.session === 'lead').ageMs, 3820000);
   assert.match(r.personQueue.items.find(i => i.node === 'review').surfacedAt, /^not recorded:/);
 });
@@ -318,4 +321,65 @@ test('missing acknowledgements stay visible and a send is not reported as a read
   const r = await collect(o);
   assert.match(r.communication.channel[0].latencyMs, /^not recorded:/);
   assert.equal(r.communication.channel[0].deliveredMs, 4000);
+});
+
+test('a bound graph reports every node, including nodes with no status, and actual observed push/release clocks', async () => {
+  const o = await matrixHome('matrix-graph');
+  const path = homeEntry(o.home, 'workflows', 'runs', '111111111111.json');
+  writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, 'utf8')), workflow: 'delivery', version: 1 }));
+  writeFileSync(homeEntry(o.home, 'workflows', 'delivery.json'), JSON.stringify({ id: 'delivery', versions: [{ version: 1, schema: 2, graph: { nodes: [{ id: 'push', kind: 'push' }, { id: 'release', kind: 'sample/release' }, { id: 'unstarted', kind: 'check' }], wires: [] } }] }));
+  const unit = homeEntry(o.home, 'workflows', 'units', 'record.json');
+  writeFileSync(unit, JSON.stringify({ unit: 'run:111111111111', statuses: { push: { node: 'push', state: 'reached', since: '2026-01-02T00:02:40Z', attempt: 1 }, release: { node: 'release', state: 'reached', since: '2026-01-02T00:03:20Z', attempt: 1 } }, observations: [{ node: 'push', commit: 'tip', state: 'reached', at: '2026-01-02T00:03:00Z' }, { node: 'release', commit: 'tip', state: 'reached', at: '2026-01-02T00:04:00Z' }] }));
+  const r = await collect({ ...o, case: '111111111111' });
+  assert.ok(r.workflow[0].steps.some(s => s.node === 'unstarted' && /^not recorded:/.test(s.state)));
+  assert.equal(r.lifecycle[0].stages.pushed, '2026-01-02T00:03:00Z');
+  assert.equal(r.lifecycle[0].stages.released, '2026-01-02T00:04:00Z');
+  assert.equal(r.workflow[0].steps.find(s => s.node === 'push').workMs, 20000);
+});
+
+test('the first commit uses a real fixture tree after the recorded base, never a queued/start clock', async () => {
+  const o = await matrixHome('matrix-commit');
+  const tree = resolve(root, 'commit-tree');
+  mkdirSync(tree, { recursive: true });
+  const git = (args, at) => {
+    const result = spawnGit(['-C', tree, ...args], { encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at } });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  git(['init', '--quiet'], '2026-01-02T00:00:00Z');
+  const commit = ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '--quiet', '-m', 'fixture'];
+  git(commit, '2026-01-02T00:00:00Z');
+  const base = git(['rev-parse', 'HEAD'], '2026-01-02T00:00:00Z');
+  git(commit, '2026-01-02T00:00:25Z');
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(homeEntry(o.home, 'knowledge'));
+  db.exec('ALTER TABLE sessions ADD COLUMN tree TEXT; ALTER TABLE sessions ADD COLUMN base_commit TEXT');
+  db.prepare("UPDATE sessions SET tree = ?, base_commit = ? WHERE id = 'lead'").run(tree, base);
+  db.close();
+  const r = await collect({ ...o, case: '111111111111' });
+  assert.equal(Date.parse(r.lifecycle[0].stages.firstCommit), Date.parse('2026-01-02T00:00:25Z'));
+  assert.equal(r.lifecycle[0].elapsedMs.startedToFirstCommit, 15000);
+});
+
+test('an unreadable prior snapshot is kept, and a case alias replaces the same receipt', async () => {
+  const o = await matrixHome('matrix-retain');
+  const directory = join(root, 'retained');
+  const r = await collect({ ...o, case: '#111111111111' });
+  const file = writeSnapshot(r, { directory, date: '2026-01-02' });
+  writeSnapshot(await collect({ ...o, case: '11111111' }), { directory, date: '2026-01-02' });
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).receipts.length, 1);
+  writeFileSync(file, '{torn');
+  assert.throws(() => writeSnapshot(r, { directory, date: '2026-01-02' }), /kept unchanged/);
+  assert.equal(readFileSync(file, 'utf8'), '{torn');
+});
+
+test('recorded out-of-order lifecycle clocks stay values and become defects', async () => {
+  const o = await matrixHome('matrix-order');
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(homeEntry(o.home, 'knowledge'));
+  db.prepare("UPDATE event_journal SET at = ? WHERE record = 'session:lead'").run(Date.parse('2026-01-02T00:00:01Z'));
+  db.close();
+  const r = await collect({ ...o, case: '111111111111' });
+  assert.equal(r.lifecycle[0].elapsedMs.takenToStarted, -4000);
+  assert.ok(r.defects.some(d => d.metric === 'quest.orderViolations' && d.value === 1));
 });
