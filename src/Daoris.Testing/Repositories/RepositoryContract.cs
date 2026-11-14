@@ -8,7 +8,7 @@ namespace Daoris.Testing;
 /// a test cannot ask of the port (a fresh repository, a file written, a path hidden, a folder gone): the memory repository does them in
 /// memory and the real one on disk, so the same case holds both to what git answers.
 /// </summary>
-public abstract class RepositoryContract
+public abstract partial class RepositoryContract
 {
     protected abstract IGitRepository Backend { get; }
 

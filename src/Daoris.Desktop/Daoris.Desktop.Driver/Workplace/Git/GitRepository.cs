@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <see cref="WorkingTree"/>'s funnel so this flow's memos and counts hold, or through a run a claim holds in its own job
 /// (<see cref="Held"/>). The funnel answers from the git library where it can; a failure is told as the port says, never as an empty answer.
 /// </summary>
-public sealed class GitRepository : IGitRepository
+public sealed partial class GitRepository : IGitRepository
 {
     internal delegate Task<(int Code, string Stdout, string Stderr)> Runner(string folder, IReadOnlyList<string> arguments, CancellationToken ct);
 
