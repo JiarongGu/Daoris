@@ -65,7 +65,6 @@ public sealed class CommandTreeTests
     [InlineData("agent account order claude-code a b", "agent profile order claude-code a b")]
     [InlineData("agent login claude-code --account work", "agent login claude-code --account work")]
     [InlineData("plugin add D:/p", "plugin add D:/p")]
-    [InlineData("plugin new acme --point gate", "plugins new acme --point gate")]
     [InlineData("brainstorm why --agents a,b", "brainstorm why --agents a,b")]
     [InlineData("brainstorm why --kind meeting --agents a,b", "meeting ask why --agents a,b")]
     [InlineData("brainstorm show m-1 --kind meeting", "meeting show m-1")]
@@ -78,6 +77,43 @@ public sealed class CommandTreeTests
 
         Assert.Equal(TreeRouteKind.Run, route.Kind);
         Assert.Equal(inward.Split(' '), route.Words);
+    }
+
+    // `switch` printed the kit's usage when it fell to the `plugins` door.
+    [Theory]
+    [InlineData("plugin list", "plugin list")]
+    [InlineData("plugin add D:/p", "plugin add D:/p")]
+    [InlineData("plugin update acme.gate --yes", "plugin update acme.gate --yes")]
+    [InlineData("plugin remove acme.gate", "plugin remove acme.gate")]
+    [InlineData("plugin enable acme.gate", "plugin enable acme.gate")]
+    [InlineData("plugin disable acme.gate", "plugin disable acme.gate")]
+    [InlineData("plugin try-again acme.gate", "plugin try-again acme.gate")]
+    [InlineData("plugin switch acme.gate storage on", "plugin switch acme.gate storage on")]
+    [InlineData("plugin switch acme.gate tools on --place workspace:games", "plugin switch acme.gate tools on --place workspace:games")]
+    [InlineData("plugin new acme.gate --point gate", "plugins new acme.gate --point gate")]
+    [InlineData("plugin try acme.gate", "plugins try acme.gate")]
+    [InlineData("plugin install Acme.Gate.1.0.0.nupkg", "plugins install Acme.Gate.1.0.0.nupkg")]
+    [InlineData("plugin show acme.gate --json", "plugins show acme.gate --json")]
+    [InlineData("plugin activity acme.gate --since 2h", "plugins activity acme.gate --since 2h")]
+    [InlineData("plugin approve acme.gate browser --reads-only", "plugins approve acme.gate browser --reads-only")]
+    [InlineData("plugin withdraw acme.gate browser", "plugins withdraw acme.gate browser")]
+    [InlineData("plugin tools --session s-1", "plugins tools --session s-1")]
+    public void PLUGINVERB1_each_plugin_verb_reaches_the_command_that_answers_it(string typed, string inward)
+    {
+        var route = CommandTree.Route(typed.Split(' '));
+
+        Assert.Equal(TreeRouteKind.Run, route.Kind);
+        Assert.Equal(inward.Split(' '), route.Words);
+    }
+
+    [Fact]
+    public void PLUGINVERB1_a_verb_of_the_plugin_command_never_falls_to_the_kits_door()
+    {
+        foreach (var verb in CommandWords.Group("plugin")!.Verbs)
+        {
+            var door = CommandTree.Route(["plugin", verb]).Words[0];
+            Assert.Equal(PluginCommand.Verbs.Contains(verb, StringComparer.Ordinal) ? "plugin" : "plugins", door);
+        }
     }
 
     /// <summary>A word no group owns is handed to the CLI whole, a typo too, which the CLI refuses; one the CLI handed here is refused with the usage.</summary>

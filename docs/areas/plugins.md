@@ -157,7 +157,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     at the machine, asking `PLUGINS` only while open, a row opening the plugin's page at its card. *Remove…* where `storage.forget`
     names a command offers to ask it to sign out first, ticked; a disabled `forget` says why. A failed step's `needs: "<command>"` (on `work/perform`'s completion, a reconcile or `step_answer`) is kept on its record and, where its plugin declares that command, drawn on the run's step as a door to its round card; any other name is ignored and said (`RunNeeds`). (D274)
 28. A plugin's presses and its command line are open to every caller, a session's terminal included. With Daoris running a verb
-    takes the route, else it acts alone under the home's lease. (D194)
+    takes the route, else it acts alone under the home's lease. (D194) The command tree hands `daoris plugin`'s own verbs
+    (`PluginCommand.Verbs`: list, add, update, remove, enable, disable, try-again, switch) to `plugin`, and the kit's `new` and `try`,
+    `install`, `show`, `activity`, `approve`, `withdraw`, `tools` and a bare `plugin` to the host's `plugins` door (`CommandTree`).
 29. A manifest's `interfaces` names what Daoris reaches the plugin through besides its points: `commands` (each `{ name, title,
     about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each `{ id, title,
     icon, where, places, context, body }`), every word authored (D222). `args` are `{ name, type: text | number | boolean | choice,
