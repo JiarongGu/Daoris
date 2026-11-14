@@ -18,8 +18,9 @@ internal static class HandbackReader
         var behind = await repository.CountAsync(folder, line, ["HEAD"], ct).ConfigureAwait(false);
         var touched = await repository.ChangedAsync(folder, mergeBase, tip, ct).ConfigureAwait(false);
         if (touched is null) return null;
-        var unsigned = await CommitAttribution.UnsignedAsync(folder, mergeBase, tip, ct).ConfigureAwait(false);
-        return HandbackObservation.Judge(tip, mergeBase, behind ?? 0, touched, gates, checks, left, unsigned);
+        var log = await repository.LogAsync(folder, mergeBase, tip, CommitAttribution.Trailer, ct).ConfigureAwait(false);
+        var unsigned = log.Commits is { } commits ? CommitAttribution.Unsigned(commits) : null;
+        return HandbackObservation.Judge(tip, mergeBase, behind ?? 0, touched, gates, checks, left, unsigned, log.Commits is null ? log.Error : null);
     }
 
     private static readonly NoteCode[] Dones = [EndNoteCodes.EndedDone, EndNoteCodes.EndedDoneLeft, EndNoteCodes.EndedSubmitted];

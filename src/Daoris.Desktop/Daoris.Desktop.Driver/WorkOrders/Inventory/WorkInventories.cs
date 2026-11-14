@@ -133,7 +133,8 @@ public static class WorkInventories
 
             var declared = await TreeContext.ScratchOfHomeAsync(home, root, tree.Repository, tree.Workspace, ct).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
-                tree.Path, root, declared, ct, new LinePlaces(home).SlotAt(tree.Workspace, tree.Repository, tree.Path)).ConfigureAwait(false);
+                tree.Path, root, declared, ct, new LinePlaces(home).SlotAt(tree.Workspace, tree.Repository, tree.Path),
+                TreeFilesRecord.Read(home, tree.Path)).ConfigureAwait(false);
             if (holds is null) keeps[full] = new TreeKeep(null);
             else if (holds.KeepSaid is { } said)
             {

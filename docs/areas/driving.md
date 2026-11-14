@@ -54,7 +54,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
 7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
-    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule), the gates those paths reach (the landing's own selection, never a
+    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule, over the repository port's log; a log git could not read is said in git's words and refuses nothing), the gates those paths reach (the landing's own selection, never a
     list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
     this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
     selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is
@@ -324,12 +324,19 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
     the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
     counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
-    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). (D195, D218)
+    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). A copy of a machine-local file
+    Daoris made into the tree (the files record's `Copies`, by the hash it wrote) and the half-made copy a cut-off open left
+    (`.daoris-making-`) are never the session's work, whatever the checkout's file holds now: a stale copy keeps no tree, an edited one
+    does (`TreeCopies.IsOwn`, passed to `ContentHolds.HoldsAsync`). (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
-    again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
+    again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. A judged branch delete
+    that finds the repository held by a start or another writer waits for it, thirty seconds in a flow holding no checkout alone
+    (`ActPlan.Waits`, `JournaledDeletes.Waits`), and is then kept and said with the holder's words; a read git said nothing of says so
+    (`TreeSweeps.TipUnread`). (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's
     tree is ended by its graph's `release` (workflows rule 31b) or by the look's sweep (`TreeReleases.SweepAsync`, in the lease
-    holder's tidy of each repository, said once in its report): for a branch whose part the run's `tidy` ended once its pull request
+    holder's tidy of each repository, said once in its report): for a branch the line holds (the end judgement's `GrownBranch.Held`,
+    on a standing entry), for a branch whose part the run's `tidy` ended once its pull request
     merged (`TidiedParts`), whatever the run does after and whether or not its graph carries a `release`, and for a run that ended
     settled or whose record is gone. The sweep
     leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's

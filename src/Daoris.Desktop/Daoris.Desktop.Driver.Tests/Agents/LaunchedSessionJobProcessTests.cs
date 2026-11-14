@@ -5,12 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session started through the launcher, as every agent is, still has a
-/// job the driver reads and ends. The stand-in harness (the system's <c>cmd</c> running a script of this test's, never an agent) leaves a
-/// child computing whose parent has already exited, so no walk of the tree from the launcher finds it, then waits on its standard input,
-/// saying nothing. The registry opens the launcher's own job by name (<see cref="SessionProcesses.JobOf"/>), the watcher reads its CPU
-/// through the driver's own read of it and brings the session as <i>busy, nothing heard</i>, never marking it, and the person's stop ends
-/// the launcher, the harness and the orphaned child.
+/// A session started through the launcher, as every agent is, still has a job the driver reads and ends. The stand-in harness (the
+/// system's <c>cmd</c> running a script of this test's, never an agent) leaves a child computing in memory, whose parent has already
+/// exited (a batch file's loop rereads its file and starves under a scanner), then waits on its standard input, saying nothing. The
+/// registry opens the launcher's own job by name (<see cref="SessionProcesses.JobOf"/>), the watcher reads its CPU through the driver's
+/// own read and brings the session as <i>busy, nothing heard</i>, never marking it, and the person's stop ends the whole tree.
 /// </summary>
 /// <remarks>
 /// Alone: its claim is a computation's CPU over a one-second window of the machine's clock, as
@@ -33,6 +32,8 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
 
     private static string Cmd => Path.Combine(Environment.SystemDirectory, "cmd.exe");
 
+    private static string Spinner => Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+
     /// <summary>A process id no process here holds a job under: high, and its own per test.</summary>
     private static int StandInId() => 1_900_000_000 + Random.Shared.Next(100_000_000);
 
@@ -42,10 +43,8 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
     /// </summary>
     private ProcessStartInfo Harness()
     {
-        var spin = Path.Combine(_root, "spin.cmd");
         var harness = Path.Combine(_root, "harness.cmd");
-        File.WriteAllText(spin, "@echo off\r\n:spin\r\nset /a n+=1 >nul\r\ngoto spin\r\n");
-        File.WriteAllText(harness, $"@echo off\r\ncmd /d /c start \"\" /b cmd /d /c \"{spin}\"\r\necho ready\r\nset /p line=\r\n");
+        File.WriteAllText(harness, $"@echo off\r\ncmd /d /c start \"\" /b \"{Spinner}\" -NoProfile -NonInteractive -Command \"while ($true) {{ }}\"\r\necho ready\r\nset /p line=\r\n");
         var info = new ProcessStartInfo(Cmd)
         {
             UseShellExecute = false,

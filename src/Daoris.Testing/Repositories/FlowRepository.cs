@@ -35,6 +35,8 @@ public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 
     public Task<int?> CountAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct) => Current.CountAsync(folder, tip, exclude, ct);
 
+    public Task<GitLogged> LogAsync(string folder, string from, string to, string trailer, CancellationToken ct) => Current.LogAsync(folder, from, to, trailer, ct);
+
     public Task<IReadOnlyList<GitRef>?> RefsAsync(string folder, IReadOnlyList<string> prefixes, string? contains, int? limit, CancellationToken ct) =>
         Current.RefsAsync(folder, prefixes, contains, limit, ct);
 

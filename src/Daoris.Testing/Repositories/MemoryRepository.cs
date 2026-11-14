@@ -154,6 +154,19 @@ public sealed class MemoryRepository : IGitRepository
         return Task.FromResult(GitDone.Done);
     }
 
+    public Task<GitLogged> LogAsync(string folder, string from, string to, string trailer, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(new GitLogged(null, $"fatal: not a git repository: {folder}"));
+        if (_history.Resolve(to, HeadOf(tree)?.Id) is not { } top || _history.Resolve(from, HeadOf(tree)?.Id) is not { } bottom)
+        {
+            return Task.FromResult(new GitLogged(null, $"fatal: ambiguous argument '{from}..{to}': unknown revision or path not in the working tree."));
+        }
+
+        var reach = _history.Reach(top);
+        reach.ExceptWith(_history.Reach(bottom));
+        return Task.FromResult(new GitLogged([.. reach.Select(id => _history.Commit(id)!).OrderBy(each => each.Order).Select(each => MemoryLog.Entry(each, trailer))], ""));
+    }
+
     public Task<GitDone> SwitchAsync(string folder, GitSwitch to, CancellationToken ct) =>
         Task.FromResult(Find(folder) is { } tree ? new MemorySwitch(_history, _trees).Make(tree, to) : GitDone.Not($"{folder} is not a git repository"));
 

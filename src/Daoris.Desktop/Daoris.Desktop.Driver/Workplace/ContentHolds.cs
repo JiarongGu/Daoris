@@ -418,9 +418,14 @@ internal sealed class ContentHolds(TreeContext context)
     /// (<see cref="TreeScratch.AcceptedAsync"/>); none where nothing is accepted, which keeps what it names.
     /// </param>
     /// <param name="slot">The kept slot <paramref name="tree"/> is, where it is one: it opened when its present line took it.</param>
+    /// <param name="files">The tree's files record: a copy of Daoris's own in it, as written, is never the session's work, however the checkout's file moved since.</param>
     internal static async Task<TreeHolds?> HoldsAsync(
-        string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct, KeptTree? slot = null)
+        string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct, KeptTree? slot = null,
+        TreeFilesState? files = null)
     {
+        bool DaorisOwn(string relative) =>
+            TreeCopies.IsOwn(files, tree, relative) || Path.GetFileName(relative.TrimEnd('/')).StartsWith(DependencyStore.MakingPrefix, StringComparison.Ordinal);
+
         IReadOnlyDictionary<string, string> status;
         try
         {
@@ -443,7 +448,11 @@ internal sealed class ContentHolds(TreeContext context)
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
-                if (TreeScratch.IsDeclared(declared, path))
+                if (!path.EndsWith('/') && DaorisOwn(path))
+                {
+                    shared.Add(path);
+                }
+                else if (TreeScratch.IsDeclared(declared, path))
                 {
                     // The repository says this is its own output, which its checks write again, whatever the checkout holds.
                     shared.Add(path);
@@ -458,7 +467,7 @@ internal sealed class ContentHolds(TreeContext context)
                     else if (path.EndsWith('/'))
                     {
                         // No file of it is the checkout's: what is neither declared output nor a build's is the tree's own, named by file.
-                        var own = TreeScratch.OwnFilesIn(tree, path, declared, out var wide);
+                        var own = TreeScratch.OwnFilesIn(tree, path, declared, out var wide, DaorisOwn);
                         if (wide) tooLarge.Add(path);
                         else if (own.Count > 0) ignored.AddRange(own);
                         else shared.Add(path);
@@ -471,7 +480,7 @@ internal sealed class ContentHolds(TreeContext context)
                 else if (path.EndsWith('/') && !TreeScratch.UnderBuildFolder(path))
                 {
                     // Not a build's folder: what the session wrote in it is its own, unless the checkout holds it as written.
-                    var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large, declared);
+                    var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large, declared, DaorisOwn);
                     if (large) tooLarge.Add(path);
                     else if (mine.Count > 0) written.AddRange(mine);
                     else shared.Add(path);
