@@ -122,6 +122,46 @@ test('Lyntai use counts the connector\'s memory calls and says what is not recor
   assert.equal(r.lyntai.proposes, 0);
 });
 
+test('memory reads, hits and writes are counted for a Codex session\'s result shape too, and a get that found nothing is no hit', async () => {
+  const dir = join(root, 'shape-home');
+  mkdirSync(homeEntry(dir, 'sessions'), { recursive: true });
+  const user = { seq: 1, at: '2026-01-02T01:00:00Z', kind: 'user', text: 'Your target is quest `#aaa111111111`, asked by x' };
+  const call = (id, title, at) => ({ seq: 2, at, kind: 'tool', id, title, status: 'in_progress', input: '{}' });
+  // Codex completes a call with its result wrapped as JSON in `output`, and the title only on the in-progress row.
+  const wrapped = (id, at, text) => ({ seq: 3, at, kind: 'tool', id, status: 'completed', output: JSON.stringify({ result: { content: [{ type: 'text', text }] }, error: null }) });
+  writeFileSync(homeEntry(dir, 'sessions', 'aaaa1111.events.jsonl'), jl([
+    user,
+    call('c1', 'mcp.daoris-knowledge.memory_search', '2026-01-02T01:10:00Z'), wrapped('c1', '2026-01-02T01:10:02Z', 'No memory entry in workspace `w` matches `x`.'),
+    call('c2', 'mcp.daoris-knowledge.memory_search', '2026-01-02T01:11:00Z'), wrapped('c2', '2026-01-02T01:11:02Z', 'Memory in workspace `w`:\n\n- `r:e1` (revision 1): a fact'),
+    call('c3', 'mcp.daoris-knowledge.memory_get', '2026-01-02T01:12:00Z'), wrapped('c3', '2026-01-02T01:12:01Z', 'No memory entry `r:zz`. References come from memory_search.'),
+    call('c4', 'mcp.daoris-knowledge.memory_get', '2026-01-02T01:13:00Z'), wrapped('c4', '2026-01-02T01:13:01Z', '`r:e1`, revision 1\n\na fact'),
+    call('c5', 'mcp.daoris-knowledge.memory_write', '2026-01-02T01:14:00Z'), wrapped('c5', '2026-01-02T01:14:01Z', 'Kept as operation `abc`, staged: ...'),
+    call('c6', 'mcp.daoris-knowledge.memory_write', '2026-01-02T01:15:00Z'), wrapped('c6', '2026-01-02T01:15:01Z', 'Refused: this session works in no repository. Nothing was kept.'),
+  ]));
+  const r = await collect({ home: dir, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
+  assert.equal(r.lyntai.searches, 2);
+  assert.equal(r.lyntai.searchesWithHits, 1);
+  assert.equal(r.lyntai.reads, 4, 'a read is a search or a get');
+  assert.equal(r.lyntai.readsWithHits, 2, 'a hit is a read that returned an entry');
+  assert.equal(r.lyntai.writes, 2, 'every write call is counted');
+  assert.equal(r.lyntai.writesKept, 1, 'a kept write is one the connector said it staged');
+  assert.match(render(r), /memory reads/);
+});
+
+test('the store\'s memory operations are counted by state beside its entries, and no store is no figure', async () => {
+  const dir = join(root, 'ops-home');
+  mkdirSync(dir, { recursive: true });
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(homeEntry(dir, 'knowledge'));
+  db.exec('create table memory_ops (id text primary key, state text not null)');
+  for (const [id, state] of [['a', 'staged'], ['b', 'applied'], ['c', 'applied'], ['d', 'dropped']]) db.prepare('insert into memory_ops values (?, ?)').run(id, state);
+  db.close();
+  const r = await collect({ home: dir, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
+  assert.deepEqual(r.lyntai.store.operations, { staged: 1, applied: 2, dropped: 1 });
+  const none = await collect({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
+  assert.match(none.lyntai.store.operations, /^not recorded/);
+});
+
 test('the table says "not recorded" where nothing is logged, and an absent source is never a zero', async () => {
   const r = await collect({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02' });
   assert.equal(r.firstPass, 'not recorded: merge queue records; pass --merge-queue <local/merge-queue.json>');
