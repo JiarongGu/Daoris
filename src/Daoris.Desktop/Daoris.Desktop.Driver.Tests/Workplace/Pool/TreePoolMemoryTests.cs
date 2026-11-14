@@ -5,10 +5,11 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The pool's takes on a repository kept in memory: a slot let go and taken by another line with nothing of the first line's files,
-/// refused for each kind of work it holds with nothing changed, its lock read by the pool's own rules, a visit holding a take back.
-/// What stays in the real-git class <c>TreePoolGitTests</c> is git's own and the disk's: a hook, a nested repository, a half-done
-/// operation, the lines' scratch folder, the sessions' lock, and the undo of a take, which deletes its branch through the journaled
-/// ref transaction, not yet a port.
+/// refused for each kind of work it holds with nothing changed, its lock read by the pool's own rules, a visit holding a take back,
+/// a line returned in place and to another slot, a line's end told by what its slot holds, a waiting claim left to its own run. The
+/// slots are made by the real tree opening, which asks the port. What stays in the real-git classes is git's own and the disk's: a hook,
+/// a nested repository, a half-done operation, the lines' scratch folder, the sessions' lock read from the checkout's files, and every
+/// undo of a take or finish that deletes its branch through the journaled ref act, whose git is a held, process-owned start.
 /// </summary>
 public sealed class TreePoolMemoryTests : IDisposable
 {
@@ -98,6 +99,86 @@ public sealed class TreePoolMemoryTests : IDisposable
         var taken = await pool.TakeAsync(_fixture.Take(1, "s-bbbb0001"));
 
         Assert.Contains("terminal visit", taken.Refused);
+    }
+
+    [Fact]
+    public async Task A_line_returns_to_its_own_slot_in_place_and_to_another_switched_to_its_branch()
+    {
+        using var _ = _fixture.Use();
+        var pool = Pool(_fixture);
+        var first = await _fixture.LetGoAsync(pool, 1, "s-aaaa0001");
+        var tip = (await _fixture.Repo.HeadAsync(first.Path, Ct))!;
+
+        var own = await pool.ReturnAsync(new PoolTake(_fixture.Site, 1, "quest-1", "s-aaaa0001", tip, true, "main", null, ""));
+        Assert.True(own.Ok, own.Refused ?? own.Stuck);
+        Assert.Equal("s-aaaa0001", own.Slot!.Line);
+        Assert.Equal(tip, await _fixture.Repo.HeadAsync(first.Path, Ct));
+
+        await pool.EndAsync(new PoolEnd(_fixture.Site, 1, "quest-1", "session-1"));
+        var taken = await pool.TakeAsync(_fixture.Take(1, "s-bbbb0001"));
+        Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
+        await pool.EndAsync(new PoolEnd(_fixture.Site, 1, "quest-2", "session-2"));
+        await _fixture.MadeAsync(pool, 2, "s-cccc0001");
+
+        var back = await pool.ReturnAsync(new PoolTake(_fixture.Site, 1, "quest-1", "s-aaaa0001", tip, true, "main", null, ""));
+
+        Assert.True(back.Ok, back.Refused ?? back.Stuck);
+        Assert.Equal(1, pool.WhereIs(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, "s-aaaa0001")!.Number);
+        Assert.Equal(tip, await _fixture.Repo.HeadAsync(first.Path, Ct));
+        Assert.Equal("s-aaaa0001\n", _fixture.Repo.Read(first.Path, "work.txt"));
+    }
+
+    [Theory]
+    [InlineData(LineEndKinds.Output)]
+    [InlineData(LineEndKinds.NoOutput)]
+    [InlineData(LineEndKinds.Uncommitted)]
+    [InlineData(LineEndKinds.Held)]
+    public async Task A_lines_end_is_recorded_by_what_the_slot_holds(string kind)
+    {
+        using var _ = _fixture.Use();
+        var pool = Pool(_fixture);
+        var slot = await _fixture.MadeAsync(pool, 1, "s-aaaa0001");
+        var repo = _fixture.Repo;
+        switch (kind)
+        {
+            case LineEndKinds.Output:
+                repo.Write(slot.Path, "out.txt", "x\n");
+                Assert.True((await repo.CommitAllAsync(slot.Path, "out", Ct)).Ok);
+                break;
+            case LineEndKinds.Uncommitted:
+                repo.Write(slot.Path, "loose.txt", "x\n");
+                break;
+            case LineEndKinds.Held:
+                Assert.True((await repo.SwitchAsync(slot.Path, new GitSwitch(null), Ct)).Ok);
+                break;
+        }
+
+        var ended = await pool.EndAsync(new PoolEnd(_fixture.Site, 1, "quest-1", "session-1"));
+
+        Assert.True(ended.Ok, ended.Refused ?? ended.Stuck);
+        var end = pool.LastEnd(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, "s-aaaa0001")!;
+        Assert.Equal(kind, end.Kind);
+        Assert.Equal(await repo.HeadAsync(slot.Path, Ct), end.Tip);
+        Assert.Equal(PoolLocks.Free, await _fixture.LockReasonAsync(slot.Path));
+        Assert.Null(pool.ClaimOn(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1));
+    }
+
+    [Fact]
+    public async Task A_waiting_claim_is_never_taken_by_its_own_run_while_its_step_runs()
+    {
+        using var _ = _fixture.Use();
+        await _fixture.LetGoAsync(Pool(_fixture), 1, "s-aaaa0001");
+        var pool = Pool(_fixture);
+        var claimed = pool.Claim(new TreeClaimOpening(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1, TreeClaimKinds.Take, "quest-2", "s-bbbb0001", "daoris/s-bbbb0001", _fixture.Start, "", PoolGit.NewJobName()));
+        pool.Undoing(claimed.Fence!);
+        Assert.Equal("", pool.Slot(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1)!.Line);
+
+        Assert.Contains("own", pool.TakeOver(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1, claimed.Claim!.ClaimGeneration).Refused);
+
+        pool.Advance(claimed.Fence!, TreeClaimPhases.UndoWaiting);
+        var taken = pool.TakeOver(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1, claimed.Claim!.ClaimGeneration);
+        Assert.Equal(claimed.Claim.ClaimGeneration + 1, taken.Claim?.ClaimGeneration);
+        Assert.Contains("took it first", pool.TakeOver(PoolMemoryFixture.Workspace, PoolMemoryFixture.Repository, 1, claimed.Claim.ClaimGeneration).Refused);
     }
 
     private async Task PlantAsync(KeptTree slot, string work)

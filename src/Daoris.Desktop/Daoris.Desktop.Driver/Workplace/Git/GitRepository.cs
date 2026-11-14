@@ -209,6 +209,14 @@ public sealed class GitRepository : IGitRepository
         return code == 0 && stdout.Trim() is { Length: > 0 } top ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(top)) : null;
     }
 
+    public async Task<GitDone> FastForwardAsync(string folder, string commit, CancellationToken ct) =>
+        Done(await RunGitAsync(folder, ["merge", "--ff-only", "--quiet", commit], ct).ConfigureAwait(false));
+
+    public async Task<GitDone> ResetHardAsync(string folder, string commit, CancellationToken ct) =>
+        Done(await RunGitAsync(folder, ["reset", "--quiet", "--hard", commit], ct).ConfigureAwait(false));
+
+    public Task<string?> DefaultBranchAsync(string folder, CancellationToken ct) => GitDefaultBranch.AskAsync(RunGitAsync, folder, ct);
+
     public async Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct) =>
         Done(await RunGitAsync(folder, ["branch", "-D", branch], ct).ConfigureAwait(false));
 

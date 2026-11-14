@@ -52,27 +52,24 @@ internal sealed class PoolMemoryFixture : IDisposable
 
     internal PoolTake Take(int number, string line, string session = "") => new(Site, number, "quest-2", line, Start, false, "main", null, session);
 
-    /// <summary>
-    /// A slot made as an open leaves it, a line's commit made in it and the line let go as the pool records it: the slot is a folder, a
-    /// working tree of the repository locked as the pool locks a free slot, on the line's branch at its tip, and a row and a let-go name it.
-    /// </summary>
+    /// <summary>A slot made as the pool makes one: its folder, then the working tree the tree opening adds on the line's branch.</summary>
+    internal async Task<KeptTree> MadeAsync(TreePool pool, int number, string line)
+    {
+        Directory.CreateDirectory(Site.FolderOf(number));
+        var done = await pool.MakeAsync(new PoolMake(Site, number, "quest-1", line, ""));
+        Assert.True(done.Ok, done.Refused ?? done.Stuck);
+        return done.Slot!;
+    }
+
+    /// <summary>A slot made for <paramref name="line"/>, the line's commit made in it, and the line let go as the pool records it.</summary>
     internal async Task<KeptTree> LetGoAsync(TreePool pool, int number, string line, string file = "work.txt")
     {
-        var folder = Site.FolderOf(number);
-        Directory.CreateDirectory(folder);
-        var ct = CancellationToken.None;
-        Assert.True((await Repo.AddWorktreeAsync(Root, new GitWorktreeAdd(folder, Start), ct)).Ok);
-        Assert.True((await Repo.SwitchAsync(folder, new GitSwitch($"{TreeFollows.SessionPrefix}{line}", Start, Creates: true), ct)).Ok);
-        Repo.Write(folder, file, $"{line}\n");
-        Assert.True((await Repo.CommitAllAsync(folder, line, ct)).Ok);
-        Assert.True((await Repo.LockAsync(Root, folder, PoolLocks.Free, ct)).Ok);
-        var tip = (await Repo.HeadAsync(folder, ct))!;
-
-        var claimed = pool.Claim(new TreeClaimOpening(Workspace, Repository, number, TreeClaimKinds.Make, "quest-1", "", "", "", "", PoolGit.NewJobName()) { Phase = TreeClaimPhases.Opening });
-        pool.Complete(claimed.Fence!, new SlotSettled($"k-{number}", folder, line, "", KeptStates.Kept, "", 0, ""));
-        var now = new DateTimeOffset(2026, 11, 14, 0, 0, 0, TimeSpan.Zero);
-        pool.RecordEnd(new LineEnd(Workspace, Repository, line, $"{TreeFollows.SessionPrefix}{line}", "session-1", number, LineEndKinds.Output, tip, now, "", "", now));
-        return pool.Slot(Workspace, Repository, number)!;
+        var slot = await MadeAsync(pool, number, line);
+        Repo.Write(slot.Path, file, $"{line}\n");
+        Assert.True((await Repo.CommitAllAsync(slot.Path, line, CancellationToken.None)).Ok);
+        var ended = await pool.EndAsync(new PoolEnd(Site, number, "quest-1", "session-1"));
+        Assert.True(ended.Ok, ended.Refused ?? ended.Stuck);
+        return ended.Slot!;
     }
 
     internal async Task<IReadOnlyList<string>> BranchesAsync() =>

@@ -71,6 +71,12 @@ public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 
     public Task<string?> TopOfAsync(string folder, CancellationToken ct) => Current.TopOfAsync(folder, ct);
 
+    public Task<GitDone> FastForwardAsync(string folder, string commit, CancellationToken ct) => Current.FastForwardAsync(folder, commit, ct);
+
+    public Task<GitDone> ResetHardAsync(string folder, string commit, CancellationToken ct) => Current.ResetHardAsync(folder, commit, ct);
+
+    public Task<string?> DefaultBranchAsync(string folder, CancellationToken ct) => Current.DefaultBranchAsync(folder, ct);
+
     public Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct) => Current.DeleteBranchAsync(folder, branch, ct);
 
     public Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct) => Current.ChangedAsync(folder, from, to, ct);

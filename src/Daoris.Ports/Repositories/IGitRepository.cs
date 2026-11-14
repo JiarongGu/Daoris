@@ -135,6 +135,15 @@ public interface IGitRepository
     /// <summary>The working root git reports for <paramref name="folder"/>, as one full spelling; null where it is in no repository.</summary>
     Task<string?> TopOfAsync(string folder, CancellationToken ct);
 
+    /// <summary>Moves the checkout's branch on to <paramref name="commit"/>, files included, only where it is a descendant of HEAD and no work in the files is in the way.</summary>
+    Task<GitDone> FastForwardAsync(string folder, string commit, CancellationToken ct);
+
+    /// <summary>Moves the checkout's branch, files and index to <paramref name="commit"/>, tracked changes lost; what is untracked stays.</summary>
+    Task<GitDone> ResetHardAsync(string folder, string commit, CancellationToken ct);
+
+    /// <summary>The branch the repository treats as its line as far as this checkout knows: the remote's own HEAD, else <c>main</c>, else <c>master</c>; null where none stands.</summary>
+    Task<string?> DefaultBranchAsync(string folder, CancellationToken ct);
+
     /// <summary>Deletes <paramref name="branch"/> though its work is unmerged, with its configuration; refused where a working tree has it out.</summary>
     Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct);
 

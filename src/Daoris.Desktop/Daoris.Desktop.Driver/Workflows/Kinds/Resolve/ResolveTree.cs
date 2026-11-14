@@ -136,7 +136,7 @@ internal sealed class ResolveTree(ReplaySettles settles)
     {
         if (keepEdits && await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await KeepEditsAsync(hand, ct).ConfigureAwait(false);
         if (await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await WorkingTree.GitAsync(hand.Tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
-        await WorkingTree.GitAsync(hand.Tree, ["reset", "--quiet", "--hard"], ct).ConfigureAwait(false);
+        await MachinePorts.Repository.ResetHardAsync(hand.Tree, "HEAD", ct).ConfigureAwait(false);
         await WorkingTree.GitAsync(hand.Tree, ["clean", "-fdq"], ct).ConfigureAwait(false);
         var (switched, _, err) = await WorkingTree.GitAsync(hand.Tree, ["switch", "--quiet", hand.Branch], ct).ConfigureAwait(false);
         if (switched != 0) return $"git would not put the tree back on `{hand.Branch}`: {Failure(err)}";

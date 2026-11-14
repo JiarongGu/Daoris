@@ -220,6 +220,19 @@ public sealed class MemoryRepository : IGitRepository
             || full.StartsWith(each.Path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)).OrderByDescending(each => each.Path.Length).FirstOrDefault()?.Path);
     }
 
+    public Task<GitDone> FastForwardAsync(string folder, string commit, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree && _history.Resolve(commit, HeadOf(tree)?.Id) is { } target
+            ? new MemoryAdvance(_history).FastForward(tree, HeadOf(tree), target)
+            : GitDone.Not($"{commit} is not something we can merge"));
+
+    public Task<GitDone> ResetHardAsync(string folder, string commit, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree && _history.Resolve(commit, HeadOf(tree)?.Id) is { } target
+            ? new MemoryAdvance(_history).ResetHard(tree, HeadOf(tree), target)
+            : GitDone.Not($"ambiguous argument '{commit}': unknown revision"));
+
+    public Task<string?> DefaultBranchAsync(string folder, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is null ? null : new[] { "main", "master" }.FirstOrDefault(name => _history.Refs.ContainsKey($"refs/heads/{name}")));
+
     public Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct)
     {
         if (Find(folder) is null) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));

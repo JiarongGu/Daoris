@@ -74,10 +74,10 @@ internal static class LinePulls
                 return new(pull, false, $"`{line}` moved since the list, so it was left for another look.");
             }
 
-            var (code, _, err) = await WorkingTree.GitAsync(root, ["merge", "--ff-only", "--quiet", pull.To!], ct).ConfigureAwait(false);
-            return code == 0
+            var forwarded = await MachinePorts.Repository.FastForwardAsync(root, pull.To!, ct).ConfigureAwait(false);
+            return forwarded.Ok
                 ? new(pull, true, took)
-                : new(pull, false, $"git would not fast-forward `{line}`: {Failure(err)} The checkout is as it was.");
+                : new(pull, false, $"git would not fast-forward `{line}`: {Failure(forwarded.Error)} The checkout is as it was.");
         }
 
         // The ref alone, and only from the commit it is judged at: git refuses the move if it is elsewhere now.

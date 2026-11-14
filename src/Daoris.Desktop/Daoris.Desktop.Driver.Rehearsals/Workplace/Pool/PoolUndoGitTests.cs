@@ -182,24 +182,6 @@ public sealed class PoolUndoGitTests : IDisposable
     }
 
     [Fact]
-    public async Task A_waiting_claim_is_never_taken_by_its_own_run_while_its_step_runs()
-    {
-        var fixture = _fixture = await PoolGitFixture.CreateAsync();
-        await fixture.LetGoAsync(fixture.Pool(), 1, A);
-        var pool = fixture.Pool();
-        var claimed = pool.Claim(new TreeClaimOpening(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, TreeClaimKinds.Take, "quest-2", B, $"daoris/{B}", fixture.Start, "", PoolGit.NewJobName()));
-        pool.Undoing(claimed.Fence!);
-        Assert.Equal("", Row(pool).Line);
-
-        Assert.Contains("own", pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim!.ClaimGeneration).Refused);
-
-        pool.Advance(claimed.Fence!, TreeClaimPhases.UndoWaiting);
-        var taken = pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim!.ClaimGeneration);
-        Assert.Equal(claimed.Claim.ClaimGeneration + 1, taken.Claim?.ClaimGeneration);
-        Assert.Contains("took it first", pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim.ClaimGeneration).Refused);
-    }
-
-    [Fact]
     public async Task The_previous_lines_branch_moved_on_meanwhile_is_not_switched_onto_and_the_slot_is_freed_detached_at_its_tip()
     {
         var (fixture, slot, tip) = await LetGoWithOutputsAsync();

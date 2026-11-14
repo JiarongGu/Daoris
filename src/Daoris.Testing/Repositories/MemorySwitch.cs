@@ -36,12 +36,7 @@ internal sealed class MemorySwitch(MemoryHistory history, IReadOnlyList<MemoryTr
             return GitDone.Not($"Your local changes to the following files would be overwritten by checkout: {path}");
         }
 
-        foreach (var gone in held.Keys.Where(each => !target.Tree.ContainsKey(each))) { tree.Files.Remove(gone); tree.Submodules.Remove(gone); }
-        foreach (var (file, blob) in target.Tree)
-        {
-            if (blob.Mode == MemoryBlob.Submodule) tree.Submodules.Add(file);
-            else tree.Files[file] = blob.Content;
-        }
+        Place(tree, held, target);
 
         if (to.Branch is { } name)
         {
@@ -53,7 +48,18 @@ internal sealed class MemorySwitch(MemoryHistory history, IReadOnlyList<MemoryTr
         return GitDone.Done;
     }
 
-    private static string? Blocked(MemoryTree tree, IReadOnlyDictionary<string, MemoryBlob> held, IReadOnlyDictionary<string, MemoryBlob> target, bool keepIgnored)
+    /// <summary>Makes the files of <paramref name="tree"/> the target's: what the old commit held and the target does not goes, the rest is written.</summary>
+    internal static void Place(MemoryTree tree, IReadOnlyDictionary<string, MemoryBlob> held, MemoryCommit target)
+    {
+        foreach (var gone in held.Keys.Where(each => !target.Tree.ContainsKey(each))) { tree.Files.Remove(gone); tree.Submodules.Remove(gone); }
+        foreach (var (file, blob) in target.Tree)
+        {
+            if (blob.Mode == MemoryBlob.Submodule) tree.Submodules.Add(file);
+            else tree.Files[file] = blob.Content;
+        }
+    }
+
+    internal static string? Blocked(MemoryTree tree, IReadOnlyDictionary<string, MemoryBlob> held, IReadOnlyDictionary<string, MemoryBlob> target, bool keepIgnored)
     {
         foreach (var path in held.Keys.Concat(target.Keys).Distinct())
         {

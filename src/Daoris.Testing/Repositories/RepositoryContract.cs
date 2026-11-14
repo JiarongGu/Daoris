@@ -320,6 +320,57 @@ public abstract class RepositoryContract
     }
 
     [Fact]
+    public async Task A_fast_forward_moves_the_branch_on_where_it_is_a_descendant_and_no_work_is_in_the_way_and_a_hard_reset_loses_tracked_changes_only()
+    {
+        var (root, first) = await OneAsync();
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("feature", Creates: true), Ct)).Ok);
+        await WriteAsync(root, "a.txt", "feature\n");
+        await WriteAsync(root, "extra.txt", "more\n");
+        Assert.True((await Backend.CommitAllAsync(root, "feature", Ct)).Ok);
+        var feature = (await Backend.HeadAsync(root, Ct))!;
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("main"), Ct)).Ok);
+
+        await WriteAsync(root, "a.txt", "work\n");
+        Assert.False((await Backend.FastForwardAsync(root, feature, Ct)).Ok);
+        Assert.Equal(first, await Backend.HeadAsync(root, Ct));
+        Assert.True((await Backend.ResetHardAsync(root, first, Ct)).Ok);
+        Assert.Empty(await Backend.StatusAsync(root, false, Ct));
+
+        await WriteAsync(root, "loose.txt", "x\n");
+        Assert.True((await Backend.FastForwardAsync(root, feature, Ct)).Ok);
+        Assert.Equal(feature, await Backend.HeadAsync(root, Ct));
+        Assert.Equal("feature\n", await Backend.TextAtAsync(root, "HEAD", "a.txt", Ct));
+        Assert.Equal([("loose.txt", "??")], (await Backend.StatusAsync(root, false, Ct)).Select(each => (each.Key, each.Value)));
+        Assert.True((await Backend.FastForwardAsync(root, feature, Ct)).Ok);
+
+        Assert.True((await Backend.ResetHardAsync(root, first, Ct)).Ok);
+        Assert.Equal(first, await Backend.HeadAsync(root, Ct));
+        Assert.Equal([("loose.txt", "??")], (await Backend.StatusAsync(root, false, Ct)).Select(each => (each.Key, each.Value)));
+        await WriteAsync(root, "b.txt", "diverged\n");
+        Assert.True((await Backend.CommitAllAsync(root, "diverge", Ct)).Ok);
+        Assert.False((await Backend.FastForwardAsync(root, feature, Ct)).Ok);
+        Assert.False((await Backend.ResetHardAsync(root, "refs/heads/none", Ct)).Ok);
+    }
+
+    [Fact]
+    public async Task The_default_branch_is_main_where_it_stands_else_master_else_none()
+    {
+        var root = await NewAsync();
+        Assert.Null(await Backend.DefaultBranchAsync(root, Ct));
+        await WriteAsync(root, "a.txt", "one\n");
+        Assert.True((await Backend.CommitAllAsync(root, "first", Ct)).Ok);
+        Assert.Equal("main", await Backend.DefaultBranchAsync(root, Ct));
+
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("master", Creates: true), Ct)).Ok);
+        Assert.True((await Backend.DeleteBranchAsync(root, "main", Ct)).Ok);
+        Assert.Equal("master", await Backend.DefaultBranchAsync(root, Ct));
+
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("other", Creates: true), Ct)).Ok);
+        Assert.True((await Backend.DeleteBranchAsync(root, "master", Ct)).Ok);
+        Assert.Null(await Backend.DefaultBranchAsync(root, Ct));
+    }
+
+    [Fact]
     public async Task The_paths_two_commits_differ_in_are_named_in_path_order_and_a_commit_that_is_none_names_nothing()
     {
         var (root, first) = await OneAsync();
