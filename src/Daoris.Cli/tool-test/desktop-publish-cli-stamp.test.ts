@@ -7,7 +7,6 @@ import { CLI_HOME, layCli } from '../../../tools/desktop-publish.mjs';
 import { BUILD_STAMP, versionLine } from '../src/platform/build-stamp.ts';
 import { makeFixture } from '../test/_fixture.ts';
 
-/** The bundle folder in miniature, as `bundleCli` writes it: what `layCli` checks before it lays it. */
 function built(at: string): string {
   const folder = join(at, 'built');
   mkdirSync(join(folder, 'canon'), { recursive: true });

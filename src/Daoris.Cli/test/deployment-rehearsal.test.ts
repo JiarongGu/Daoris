@@ -112,10 +112,8 @@ test('symbols and package doc files are strays, and the marker and the bundle ar
 });
 
 /**
- * The gate reads the install's doctrine tool back off the published folder, and each
- * thing the publish claims is a sentence when it is not so: a launcher missing, the bundle or its
- * canon missing, an npm layout (or the source tree) left in its folder, or a version that
- * is not the canon's.
+ * The gate reads the install's doctrine tool back off the published folder: a launcher, the bundle or its canon
+ * missing, an npm layout left in its folder, or a version that is not the canon's is a sentence.
  */
 test('the doctrine tool check names what an install lacks, and passes on a sound one', () => {
   const fx = makeFixture('deploy-cli');

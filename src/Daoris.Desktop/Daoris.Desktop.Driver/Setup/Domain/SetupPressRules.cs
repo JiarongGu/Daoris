@@ -103,7 +103,6 @@ public static partial class SetupPressRules
     /// <summary>The doctrine tool the install carries, refused where its files are not there or it does not answer a version.</summary>
     internal static SetupRefusal? ToolRefusal(SetupTools tools)
     {
-        // Where no node runs it, the node's own refusal says so, and the bundle is not asked.
         string? found = tools.Daoris is null
             ? "the install carries no doctrine tool (its app/cli/daoris.mjs is not there)"
             : tools.Node is not null && !IsVersion(tools.DaorisVersion)

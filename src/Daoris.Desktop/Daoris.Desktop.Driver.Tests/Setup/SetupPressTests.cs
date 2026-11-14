@@ -389,7 +389,6 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains(said, Find(plan, SetupRefusals.NoTool).Sentence);
     }
 
-    /// <summary>Where no node runs, the bundle is not asked its version, so the refusal is the node's alone.</summary>
     [Fact]
     public async Task No_node_refuses_once_and_the_bundle_is_not_judged_by_an_unasked_version()
     {

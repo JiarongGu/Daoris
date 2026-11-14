@@ -15,7 +15,6 @@ import { HANDED_VARIABLE, runDriverProgram, type DriverProgramSeam } from './pla
 
 export { HANDED_VARIABLE };
 
-/** The package root — `src/` sits one level below it, `dist/` likewise once built; an install's bundle is its own folder. */
 export const packageRoot = packageRootOf(import.meta.url);
 
 /**

@@ -27,12 +27,11 @@ const TIERS = ['rules', 'knowledge', 'skills'];
 export function resolveCanonRoot(packageRoot: string): string {
   if (process.env.DAORIS_CANON) return process.env.DAORIS_CANON;
 
-  // INSTALLED: the canon ships beside the package and is the only one that exists. Deciding by
+  // INSTALLED (under node_modules, or an install's bundle folder, which holds daoris.mjs): the canon ships beside the package and is the only one that exists. Deciding by
   // `node_modules` rather than by "does a canon happen to be here" matters, because `prepack` stages
   // a copy into the source tree and a leftover would otherwise SHADOW the real one — gitignored,
   // silent, and stale from whenever the last pack ran. Two copies with one quietly winning is the
   // exact failure this tool exists to prevent, so it must not be possible in the tool itself.
-  // An install's bundle is the same case: its folder holds the bundle file, which no source tree does.
   if (packageRoot.replace(/\\/g, '/').includes('/node_modules/') || existsSync(join(packageRoot, BUNDLE_FILE))) {
     return join(packageRoot, 'canon');
   }

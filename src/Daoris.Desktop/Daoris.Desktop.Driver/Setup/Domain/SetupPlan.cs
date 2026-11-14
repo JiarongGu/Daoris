@@ -31,12 +31,11 @@ public static class SetupRefusals
 }
 
 /// <summary>
-/// The programs a set-up's session runs: <c>node</c> as Tools names it, which the doctrine tool runs on, and the doctrine tool the
-/// install carries (its bundle, found by its place in the install, never by the <c>PATH</c>), with what each answered for its
-/// version. The files are this machine's and are never put in the quest.
+/// The programs a set-up's session runs: <c>node</c> as Tools names it, and the doctrine tool the install carries (its bundle,
+/// found by its place in the install, never by the <c>PATH</c>), with what each answered for its version. The files are this machine's.
 /// </summary>
 /// <param name="NodeProblem">Why no <c>node</c> could be named, in Tools' words, where none is.</param>
-/// <param name="Daoris">The install's bundled doctrine tool, or null where the install carries none.</param>
+/// <param name="Daoris">The install's bundled doctrine tool, or null where it carries none.</param>
 /// <param name="DaorisProblem">What is found in place of an answer, where the doctrine tool did not give one.</param>
 public sealed record SetupTools(
     string? Node, string? NodeVersion, string? NodeProblem, string? Daoris, string? DaorisVersion, string? DaorisProblem);

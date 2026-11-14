@@ -52,12 +52,10 @@ public static class CommandWords
     /// </summary>
     public static string? CarriedCli(string programFolder) => Existing(Path.Combine(programFolder, "..", "cli", BundleFile));
 
-    /// <summary>The CLI the install of a home carries (<see cref="DaorisHome.FolderOf"/>), where its bundle is there: by the install's files, never by a <c>PATH</c> lookup.</summary>
     public static string? CarriedCliOf(string home) =>
         Existing(Path.Combine(DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, DaorisHome.InstallApp, "cli", BundleFile));
 
     private const string BundleFile = "daoris.mjs";
-
     private static string? Existing(string entry) => File.Exists(Path.GetFullPath(entry)) ? Path.GetFullPath(entry) : null;
 
     /// <summary>What a word no group owns says where no CLI is carried beside this program to run it as a doctrine command.</summary>
