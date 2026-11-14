@@ -89,24 +89,31 @@ export function readJunit(text, root) {
 /** Each record file of `dir` (written at or after `since`, when given) with its tests as { key, ms }. */
 export function readRecords(dir, root, { since = null } = {}) {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir).sort().filter((file) => since === null || statSync(join(dir, file)).mtimeMs >= since).map((file) => {
+  return readdirSync(dir).sort().map((file) => ({ file, at: statSync(join(dir, file)).mtimeMs })).filter(({ at }) => since === null || at >= since).map(({ file, at }) => {
     const text = () => readFileSync(join(dir, file), 'utf8');
     const tests = file.endsWith('.trx') ? readTrx(text()) : VITEST_REPORTS.includes(file) ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
-    return { file, tests };
+    return { file, at, tests };
   });
 }
 
-/** Every test over its limit in the records of `dir`, as key -> { ms, limit } (the slowest run of a key wins), and every key the records hold. */
+/** Every test over its limit in the records of `dir`, as key -> { ms, limit } (a key's newest record decides), and every key the records hold. */
 export function scanRecords(dir, root, { since = null } = {}) {
-  const over = {};
+  const latest = new Map();
   const seen = new Set();
-  for (const { file, tests } of readRecords(dir, root, { since })) {
+  for (const { file, at, tests } of readRecords(dir, root, { since })) {
     const limit = limitFor(file);
+    const slowest = new Map();
     for (const { key, ms } of tests) {
       seen.add(key);
-      if (ms > limit && (over[key]?.ms ?? 0) < ms) over[key] = { ms, limit };
+      if ((slowest.get(key) ?? -1) < ms) slowest.set(key, ms);
+    }
+    for (const [key, ms] of slowest) {
+      const kept = latest.get(key);
+      if (!kept || kept.at < at || (kept.at === at && kept.ms < ms)) latest.set(key, { ms, limit, at });
     }
   }
+  const over = {};
+  for (const [key, { ms, limit }] of latest) if (ms > limit) over[key] = { ms, limit };
   return { over, seen };
 }
 

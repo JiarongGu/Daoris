@@ -114,6 +114,22 @@ test('a merge judges only the records its own gates wrote: a stale record is not
   }
 });
 
+test("a test's newest record decides: a run measured again replaces an older slow one, and a newer slow one still fails", () => {
+  const dir = join('_fixtures', 'time-ratchet-newest');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    const older = join(dir, 'reached-driver-process-4.trx');
+    writeFileSync(older, trx([['P.loaded', '00:02:31'], ['P.slower', '00:00:10']]));
+    const earlier = new Date(Date.now() - 3_600_000);
+    utimesSync(older, earlier, earlier);
+    writeFileSync(join(dir, 'reached-driver-process-1.trx'), trx([['P.loaded', '00:00:40'], ['P.slower', '00:02:05']]));
+    assert.deepEqual(scanRecords(dir, '.').over, { 'P.slower': { ms: 125_000, limit: LIMITS.process } });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('a merge whose own census run is over its listed time fails the ratchet', () => {
   const dir = join('_fixtures', 'time-ratchet-own');
   rmSync(dir, { recursive: true, force: true });
