@@ -1,3 +1,5 @@
+using Daoris.Ports.Repositories;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -21,6 +23,6 @@ internal static class ActRefs
     /// The act's ref let go of in one transaction, a <c>delete</c> at <paramref name="id"/>, the id its record journaled: refused, nothing
     /// moved, where it stands anywhere else.
     /// </summary>
-    public static Task<RefRun> ExpireAsync(string root, string act, string id, CancellationToken ct) =>
+    public static Task<GitRefRun> ExpireAsync(string root, string act, string id, CancellationToken ct) =>
         new RefTransaction().Delete(Of(act), id).RunAsync(root, ct);
 }

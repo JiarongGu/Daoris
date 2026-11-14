@@ -14,11 +14,14 @@ public sealed class GitRepository : IGitRepository
     internal delegate Task<(int Code, string Stdout, string Stderr)> Runner(string folder, IReadOnlyList<string> arguments, CancellationToken ct);
 
     /// <summary>The repository as every family reads it, which the roots hand: through the application's git funnel.</summary>
-    public static GitRepository Shared { get; } = new(WorkingTree.GitAsync);
+    public static GitRepository Shared { get; } = new(WorkingTree.GitAsync, WorkingTree.GitAsync);
 
     private readonly Runner RunGitAsync;
+    private readonly GitRefTransacting.InputRunner? RunGitWithInputAsync;
 
-    internal GitRepository(Runner run) => RunGitAsync = run;
+    /// <param name="run">The git every operation runs.</param>
+    /// <param name="withInput">The git that reads standard input, which a ref transaction needs; null where the run holds none.</param>
+    internal GitRepository(Runner run, GitRefTransacting.InputRunner? withInput = null) => (RunGitAsync, RunGitWithInputAsync) = (run, withInput);
 
     public async Task<string?> HeadAsync(string folder, CancellationToken ct)
     {
@@ -191,10 +194,53 @@ public sealed class GitRepository : IGitRepository
     public async Task<GitDone> PruneAsync(string folder, CancellationToken ct) =>
         Done(await RunGitAsync(folder, ["worktree", "prune"], ct).ConfigureAwait(false));
 
-    public async Task<GitDone> AddWorktreeAsync(string folder, string path, string commit, string? lockReason, CancellationToken ct) =>
-        Done(await RunGitAsync(folder, lockReason is null
-            ? ["worktree", "add", "--quiet", "--detach", path, commit]
-            : ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", lockReason, path, commit], ct).ConfigureAwait(false));
+    public async Task<GitDone> AddWorktreeAsync(string folder, GitWorktreeAdd add, CancellationToken ct)
+    {
+        List<string> ask = add.HooksPath is { } hooks ? ["-c", $"core.hooksPath={hooks}", "worktree", "add"] : ["worktree", "add"];
+        if (add.LockReason is { } reason) ask.AddRange(["--lock", "--reason", reason]);
+        ask.AddRange(add.Branch is { } branch ? (string[])["-b", branch, add.Path, add.Start] : ["--detach", add.Path, add.Start]);
+        var (code, _, stderr) = await RunGitAsync(folder, ask, ct).ConfigureAwait(false);
+        return code == 0 ? GitDone.Done : GitDone.Not(TreeGit.Failure(stderr));
+    }
+
+    public async Task<string?> TopOfAsync(string folder, CancellationToken ct)
+    {
+        var (code, stdout, _) = await RunGitAsync(folder, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
+        return code == 0 && stdout.Trim() is { Length: > 0 } top ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(top)) : null;
+    }
+
+    public async Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct) =>
+        Done(await RunGitAsync(folder, ["branch", "-D", branch], ct).ConfigureAwait(false));
+
+    public async Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct)
+    {
+        var (code, stdout, _) = await RunGitAsync(folder, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, to, "--"], ct).ConfigureAwait(false);
+        return code == 0 ? [.. stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
+    }
+
+    public async Task<IReadOnlyList<GitMatch>> GrepAsync(string folder, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct)
+    {
+        if (names.Count == 0) return [];
+        List<string> arguments = ["--no-optional-locks", "grep", "-I", "-F", "-z", "--no-color"];
+        foreach (var name in names) arguments.AddRange(["-e", name]);
+        arguments.AddRange([commit, "--", .. pathspecs]);
+        var (code, stdout, stderr) = await RunGitAsync(folder, arguments, ct).ConfigureAwait(false);
+        if (code > 1) throw new DriverException($"git grep in {folder} failed: {TreeGit.Failure(stderr)}");
+        var prefix = commit + ":";
+        return [.. stdout.ReplaceLineEndings("\n").Split('\n').Select(line => line.Split('\0', 2)).Where(parts => parts.Length == 2)
+            .Select(parts => new GitMatch(parts[0].StartsWith(prefix, StringComparison.Ordinal) ? parts[0][prefix.Length..] : parts[0], parts[1]))];
+    }
+
+    public Task<GitRefRun> TransactAsync(string folder, GitRefTransaction transaction, CancellationToken ct) =>
+        RunGitWithInputAsync is { } withInput
+            ? GitRefTransacting.RunAsync(RunGitAsync, withInput, folder, transaction, ct)
+            : Task.FromResult(new GitRefRun(false, "a git held in a claim's job takes no ref transaction"));
+
+    public async Task<GitDone> RestoreAsync(string folder, IReadOnlyList<string> paths, CancellationToken ct) =>
+        Done(await RunGitAsync(folder, ["checkout", "HEAD", "--", .. paths], ct).ConfigureAwait(false));
+
+    public async Task<GitDone> RunHookAsync(string folder, string hook, IReadOnlyList<string> arguments, CancellationToken ct) =>
+        Done(await RunGitAsync(folder, ["hook", "run", "--ignore-missing", hook, "--", .. arguments], ct).ConfigureAwait(false));
 
     public async Task<GitDone> RemoveWorktreeAsync(string folder, string path, CancellationToken ct) =>
         Done(await RunGitAsync(folder, ["worktree", "remove", "--force", "--force", path], ct).ConfigureAwait(false));

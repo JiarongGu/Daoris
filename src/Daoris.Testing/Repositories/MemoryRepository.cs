@@ -200,14 +200,67 @@ public sealed class MemoryRepository : IGitRepository
         return Task.FromResult(GitDone.Done);
     }
 
-    public Task<GitDone> AddWorktreeAsync(string folder, string path, string commit, string? lockReason, CancellationToken ct)
+    public Task<GitDone> AddWorktreeAsync(string folder, GitWorktreeAdd add, CancellationToken ct)
     {
         if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
-        if (_history.Resolve(commit, HeadOf(tree)?.Id) is not { } at) return Task.FromResult(GitDone.Not($"invalid reference: {commit}"));
-        if (Find(path) is not null) return Task.FromResult(GitDone.Not($"'{path}' already exists"));
-        var added = new MemoryTree(Full(path), null, at.Id) { Locked = lockReason is not null, Reason = lockReason };
+        if (_history.Resolve(add.Start, HeadOf(tree)?.Id) is not { } at) return Task.FromResult(GitDone.Not($"invalid reference: {add.Start}"));
+        if (Find(add.Path) is not null) return Task.FromResult(GitDone.Not($"'{add.Path}' already exists"));
+        if (add.Branch is { } branch && _history.Refs.ContainsKey($"refs/heads/{branch}")) return Task.FromResult(GitDone.Not($"a branch named '{branch}' already exists"));
+        var added = new MemoryTree(Full(add.Path), add.Branch, add.Branch is null ? at.Id : null) { Locked = add.LockReason is not null, Reason = add.LockReason };
         foreach (var (file, blob) in at.Tree) if (blob.Mode == MemoryBlob.File) added.Files[file] = blob.Content; else added.Submodules.Add(file);
+        if (add.Branch is { } made) _history.Refs[$"refs/heads/{made}"] = at.Id;
         _trees.Add(added);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<string?> TopOfAsync(string folder, CancellationToken ct)
+    {
+        var full = Full(folder);
+        return Task.FromResult(_trees.Where(each => string.Equals(each.Path, full, StringComparison.OrdinalIgnoreCase)
+            || full.StartsWith(each.Path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)).OrderByDescending(each => each.Path.Length).FirstOrDefault()?.Path);
+    }
+
+    public Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct)
+    {
+        if (Find(folder) is null) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (!_history.Refs.ContainsKey($"refs/heads/{branch}")) return Task.FromResult(GitDone.Not($"branch '{branch}' not found"));
+        if (_trees.FirstOrDefault(each => each.Branch == branch) is { } holder) return Task.FromResult(GitDone.Not($"cannot delete branch '{branch}' used by worktree at '{holder.Path}'"));
+        _history.Refs.Remove($"refs/heads/{branch}");
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct)
+    {
+        if (Pair(folder, from, to) is not var (one, two)) return Task.FromResult<IReadOnlyList<string>?>(null);
+        return Task.FromResult<IReadOnlyList<string>?>([.. one.Tree.Keys.Union(two.Tree.Keys)
+            .Where(path => one.Tree.GetValueOrDefault(path) != two.Tree.GetValueOrDefault(path)).Order(StringComparer.Ordinal)]);
+    }
+
+    public Task<IReadOnlyList<GitMatch>> GrepAsync(string folder, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct) =>
+        Find(folder) is { } tree && _history.Resolve(commit, HeadOf(tree)?.Id) is { } found
+            ? Task.FromResult(names.Count == 0 ? (IReadOnlyList<GitMatch>)[] : MemoryGrep.Lines(found, names, pathspecs))
+            : Task.FromException<IReadOnlyList<GitMatch>>(new InvalidOperationException($"{commit} names no commit in {folder}"));
+
+    public Task<GitRefRun> TransactAsync(string folder, GitRefTransaction transaction, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is null ? new GitRefRun(false, $"{folder} is not a git repository") : MemoryRefTransaction.Run(_history, transaction, CaseIgnored));
+
+    public Task<GitDone> RestoreAsync(string folder, IReadOnlyList<string> paths, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        var held = HeadOf(tree)?.Tree ?? new Dictionary<string, MemoryBlob>();
+        var each = paths.Select(path => (path, found: held.Where(blob => blob.Key == path || blob.Key.StartsWith(path.TrimEnd('/') + "/", StringComparison.Ordinal)).ToList())).ToList();
+        if (each.FirstOrDefault(one => one.found.Count == 0) is { path: { } missing }) return Task.FromResult(GitDone.Not($"pathspec '{missing}' did not match any file(s) known to git"));
+        foreach (var blob in each.SelectMany(one => one.found)) if (blob.Value.Mode == MemoryBlob.File) tree.Files[blob.Key] = blob.Value.Content;
+        return Task.FromResult(GitDone.Done);
+    }
+
+    /// <summary>The hooks run, in order, as (folder, hook, arguments): the fake runs none, and says each was asked.</summary>
+    public List<(string Folder, string Hook, IReadOnlyList<string> Arguments)> HooksRun { get; } = [];
+
+    public Task<GitDone> RunHookAsync(string folder, string hook, IReadOnlyList<string> arguments, CancellationToken ct)
+    {
+        if (Find(folder) is null) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        HooksRun.Add((folder, hook, arguments));
         return Task.FromResult(GitDone.Done);
     }
 

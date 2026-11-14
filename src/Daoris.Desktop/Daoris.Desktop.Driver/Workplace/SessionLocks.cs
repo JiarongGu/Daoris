@@ -62,13 +62,12 @@ internal static class SessionLocks
         if (entry.Locked)
         {
             if (entry.LockReason == Reason(session) || (SessionOf(entry.LockReason) is null && !PoolLocks.IsOwn(entry.LockReason))) return null;
-            var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
-            if (unlocked != 0) return FirstLine(unlockErr);
+            var unlocked = await MachinePorts.Repository.UnlockAsync(tree, entry.Path, ct).ConfigureAwait(false);
+            if (!unlocked.Ok) return FirstLine(unlocked.Error);
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(tree, ["worktree", "lock", "--reason", Reason(session), entry.Path], ct)
-            .ConfigureAwait(false);
-        return code == 0 ? null : FirstLine(err);
+        var locked = await MachinePorts.Repository.LockAsync(tree, entry.Path, Reason(session), ct).ConfigureAwait(false);
+        return locked.Ok ? null : FirstLine(locked.Error);
     }
 
     /// <summary>
@@ -79,8 +78,7 @@ internal static class SessionLocks
     {
         if (!Directory.Exists(tree) || HolderOf(tree) != session) return false;
         if (await EntryAsync(tree, ct).ConfigureAwait(false) is not { Locked: true } entry || entry.LockReason != Reason(session)) return false;
-        var (code, _, _) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
-        return code == 0;
+        return (await MachinePorts.Repository.UnlockAsync(tree, entry.Path, ct).ConfigureAwait(false)).Ok;
     }
 
     /// <summary>A terminal record lets go of its own lock; a park, helper wait or setup continuation still holds it.</summary>
@@ -114,14 +112,13 @@ internal static class SessionLocks
         foreach (var entry in await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) ?? [])
         {
             if (busy.Contains(Normal(entry.Path))) continue;
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["worktree", "unlock", entry.Path], CancellationToken.None).ConfigureAwait(false);
-            if (code != 0) continue;
+            if (!(await MachinePorts.Repository.UnlockAsync(root, entry.Path, CancellationToken.None).ConfigureAwait(false)).Ok) continue;
             let.Add(entry.Path);
 
             // A kept slot goes back to the pool's free reason rather than to no lock at all.
             if (KeptTree.IsSlotFolder(entry.Path))
             {
-                await WorkingTree.GitAsync(root, ["worktree", "lock", "--reason", PoolLocks.Free, entry.Path], CancellationToken.None).ConfigureAwait(false);
+                await MachinePorts.Repository.LockAsync(root, entry.Path, PoolLocks.Free, CancellationToken.None).ConfigureAwait(false);
             }
         }
 

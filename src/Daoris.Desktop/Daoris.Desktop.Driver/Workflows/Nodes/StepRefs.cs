@@ -1,3 +1,5 @@
+using Daoris.Ports.Repositories;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -17,7 +19,7 @@ internal static class StepRefs
     public static string EditsOf(string run, string node) => $"{Prefix}{run}/{node}/edits";
 
     /// <summary>The attempt's commit kept on its ref in one transaction, made only where the ref is absent.</summary>
-    public static Task<RefRun> KeepAsync(string root, string run, string node, int attempt, string commit, CancellationToken ct) =>
+    public static Task<GitRefRun> KeepAsync(string root, string run, string node, int attempt, string commit, CancellationToken ct) =>
         new RefTransaction().Create(Of(run, node, attempt), commit).RunAsync(root, ct);
 
     /// <summary>
@@ -40,10 +42,10 @@ internal static class StepRefs
         record.Ended is not null && record.Attempts.All(attempt => attempt.State == AttemptStates.Settled && !record.RetryPending(attempt));
 
     /// <summary>Every step ref of <paramref name="run"/> deleted in one transaction, each at the commit it holds; done where it holds none.</summary>
-    public static async Task<RefRun> ReleaseAsync(string root, string run, CancellationToken ct)
+    public static async Task<GitRefRun> ReleaseAsync(string root, string run, CancellationToken ct)
     {
-        if (await OfRunAsync(root, run, ct).ConfigureAwait(false) is not { } held) return new RefRun(false, "the run's step refs are unread");
-        if (held.Count == 0) return new RefRun(true, "no step refs");
+        if (await OfRunAsync(root, run, ct).ConfigureAwait(false) is not { } held) return new GitRefRun(false, "the run's step refs are unread");
+        if (held.Count == 0) return new GitRefRun(true, "no step refs");
         var release = new RefTransaction();
         foreach (var (reference, commit) in held) release.Delete(reference, commit);
         return await release.RunAsync(root, ct).ConfigureAwait(false);

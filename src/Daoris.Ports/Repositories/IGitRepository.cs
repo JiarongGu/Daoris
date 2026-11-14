@@ -38,6 +38,19 @@ public sealed record GitDone(bool Ok, string Error)
 /// <param name="HooksPath">A folder git's hooks are read from for this act alone (the repository's own are held), or null.</param>
 public sealed record GitSwitch(string? Branch, string? Start = null, bool Creates = false, bool KeepIgnored = false, string? HooksPath = null);
 
+/// <summary>A working tree to add: where, at what, and on which branch.</summary>
+/// <param name="Path">Its folder.</param>
+/// <param name="Start">The commit it is added at.</param>
+/// <param name="Branch">The new branch it is made on at <paramref name="Start"/>; null for a detached tree.</param>
+/// <param name="LockReason">The reason it is locked under from the first, or null for no lock.</param>
+/// <param name="HooksPath">A folder git's hooks are read from for this act alone (the repository's own are held), or null.</param>
+public sealed record GitWorktreeAdd(string Path, string Start, string? Branch = null, string? LockReason = null, string? HooksPath = null);
+
+/// <summary>A tracked line that holds a name searched.</summary>
+/// <param name="Path">The file, from the tree's top, with <c>/</c>.</param>
+/// <param name="Line">The line's text.</param>
+public sealed record GitMatch(string Path, string Line);
+
 /// <summary>
 /// A repository's operations at the level the application's families ask them: refs, commits, trees, status and working trees, each
 /// with the answer a family reads, never git's whole surface. Every folder is a checkout of the repository, its own or a working
@@ -116,8 +129,32 @@ public interface IGitRepository
     /// <summary>Forgets the working trees whose folders are gone.</summary>
     Task<GitDone> PruneAsync(string folder, CancellationToken ct);
 
-    /// <summary>Adds a working tree at <paramref name="path"/> detached at <paramref name="commit"/>, locked with <paramref name="lockReason"/> where given.</summary>
-    Task<GitDone> AddWorktreeAsync(string folder, string path, string commit, string? lockReason, CancellationToken ct);
+    /// <summary>Adds a working tree as <paramref name="add"/> says; refused where its branch stands or its folder holds a tree.</summary>
+    Task<GitDone> AddWorktreeAsync(string folder, GitWorktreeAdd add, CancellationToken ct);
+
+    /// <summary>The working root git reports for <paramref name="folder"/>, as one full spelling; null where it is in no repository.</summary>
+    Task<string?> TopOfAsync(string folder, CancellationToken ct);
+
+    /// <summary>Deletes <paramref name="branch"/> though its work is unmerged, with its configuration; refused where a working tree has it out.</summary>
+    Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct);
+
+    /// <summary>The paths that differ between two commits, by name alone and in path order; null where git could not say.</summary>
+    Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct);
+
+    /// <summary>
+    /// Every line of the text files <paramref name="pathspecs"/> name in <paramref name="commit"/> that holds one of <paramref name="names"/>,
+    /// in path order; a pathspec may be a path, a folder ending in <c>/</c>, a <c>*</c> glob or <c>:(exclude)</c> then one. Thrown where git could not search.
+    /// </summary>
+    Task<IReadOnlyList<GitMatch>> GrepAsync(string folder, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct);
+
+    /// <summary>Makes every act of the transaction or none: where an expectation fails, git's words say which and nothing moves.</summary>
+    Task<GitRefRun> TransactAsync(string folder, GitRefTransaction transaction, CancellationToken ct);
+
+    /// <summary>Puts each path back as HEAD holds it, in the files and the index.</summary>
+    Task<GitDone> RestoreAsync(string folder, IReadOnlyList<string> paths, CancellationToken ct);
+
+    /// <summary>Runs the repository's hook named <paramref name="hook"/> with <paramref name="arguments"/>; done where it is absent or ends clean.</summary>
+    Task<GitDone> RunHookAsync(string folder, string hook, IReadOnlyList<string> arguments, CancellationToken ct);
 
     /// <summary>Removes the working tree at <paramref name="path"/> with its files.</summary>
     Task<GitDone> RemoveWorktreeAsync(string folder, string path, CancellationToken ct);

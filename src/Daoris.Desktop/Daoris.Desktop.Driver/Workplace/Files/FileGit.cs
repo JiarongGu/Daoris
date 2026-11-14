@@ -16,11 +16,7 @@ internal static class FileGit
     internal static Task<string?> ShowAsync(string root, string commit, string path, CancellationToken ct) => MachinePorts.Repository.TextAtAsync(root, commit, path, ct);
 
     /// <summary>The paths that differ between two commits, by name alone; null where git cannot say (a commit it no longer holds).</summary>
-    internal static async Task<IReadOnlyList<string>?> ChangedAsync(string root, string from, string to, CancellationToken ct)
-    {
-        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, to, "--"], ct).ConfigureAwait(false);
-        return code == 0 ? Split(stdout) : null;
-    }
+    internal static Task<IReadOnlyList<string>?> ChangedAsync(string root, string from, string to, CancellationToken ct) => MachinePorts.Repository.ChangedAsync(root, from, to, ct);
 
     internal static Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) => MachinePorts.Repository.IgnoredTopsAsync(root, ct);
 
@@ -37,30 +33,10 @@ internal static class FileGit
     /// <paramref name="pathspecs"/> name, as (file, line).
     /// </summary>
     internal static async Task<IReadOnlyList<(string File, string Line)>> LinesAsync(
-        string root, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct)
-    {
-        if (names.Count == 0) return [];
-        List<string> arguments = ["--no-optional-locks", "grep", "-I", "-F", "-z", "--no-color"];
-        foreach (var name in names) arguments.AddRange(["-e", name]);
-        arguments.Add(commit);
-        arguments.Add("--");
-        arguments.AddRange(pathspecs);
-        var (code, stdout, stderr) = await WorkingTree.GitAsync(root, arguments, ct).ConfigureAwait(false);
-        if (code > 1) throw new DriverException($"git grep in {root} failed: {TreeGit.Failure(stderr)}");
-        var prefix = commit + ":";
-        return [.. stdout.ReplaceLineEndings("\n").Split('\n').Select(line => line.Split('\0', 2)).Where(parts => parts.Length == 2)
-            .Select(parts => (parts[0].StartsWith(prefix, StringComparison.Ordinal) ? parts[0][prefix.Length..] : parts[0], parts[1]))];
-    }
+        string root, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct) =>
+        [.. (await MachinePorts.Repository.GrepAsync(root, commit, names, pathspecs, ct).ConfigureAwait(false)).Select(each => (each.Path, each.Line))];
 
     /// <summary>The commit <paramref name="revision"/> names.</summary>
     internal static async Task<string> CommitAsync(string root, string revision, CancellationToken ct) =>
-        (await Ask(root, ["rev-parse", "--verify", "--end-of-options", revision + "^{commit}"], ct).ConfigureAwait(false)).Trim();
-
-    private static async Task<string> Ask(string root, IReadOnlyList<string> arguments, CancellationToken ct)
-    {
-        var (code, stdout, stderr) = await WorkingTree.GitAsync(root, ["--no-optional-locks", .. arguments], ct).ConfigureAwait(false);
-        return code == 0 ? stdout : throw new DriverException($"git {arguments[0]} in {root} failed: {TreeGit.Failure(stderr)}");
-    }
-
-    private static IReadOnlyList<string> Split(string listed) => listed.Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        await MachinePorts.Repository.CommitOfAsync(root, revision, ct).ConfigureAwait(false) ?? throw new DriverException($"git rev-parse in {root} failed: `{revision}` names no commit");
 }

@@ -93,7 +93,8 @@ internal static class TreeOpenings
             return;
         }
 
-        await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);
+        var git = MachinePorts.Repository;
+        await git.RemoveWorktreeAsync(root, path, done).ConfigureAwait(false);
         if (ours && Directory.Exists(path))
         {
             try
@@ -114,10 +115,10 @@ internal static class TreeOpenings
         // A record git still keeps of it, its folder gone now: that record alone, never a prune of every stale one.
         if (await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is true)
         {
-            await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);
+            await git.RemoveWorktreeAsync(root, path, done).ConfigureAwait(false);
         }
 
         if (home is not null && !Directory.Exists(path)) TreeFilesRecord.Forget(home, path);
-        if (!keepBranch) await WorkingTree.GitAsync(root, ["branch", "-D", branch], done).ConfigureAwait(false);
+        if (!keepBranch) await git.DeleteBranchAsync(root, branch, done).ConfigureAwait(false);
     }
 }

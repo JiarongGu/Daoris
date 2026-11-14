@@ -61,7 +61,7 @@ internal sealed class PoolMemoryFixture : IDisposable
         var folder = Site.FolderOf(number);
         Directory.CreateDirectory(folder);
         var ct = CancellationToken.None;
-        Assert.True((await Repo.AddWorktreeAsync(Root, folder, Start, null, ct)).Ok);
+        Assert.True((await Repo.AddWorktreeAsync(Root, new GitWorktreeAdd(folder, Start), ct)).Ok);
         Assert.True((await Repo.SwitchAsync(folder, new GitSwitch($"{TreeFollows.SessionPrefix}{line}", Start, Creates: true), ct)).Ok);
         Repo.Write(folder, file, $"{line}\n");
         Assert.True((await Repo.CommitAllAsync(folder, line, ct)).Ok);

@@ -269,8 +269,8 @@ public abstract class RepositoryContract
         var listed = (await Backend.WorktreesAsync(root, Ct))!;
         Assert.Equal([(root, "main", false)], listed.Select(each => (each.Path, each.Branch, each.Locked)));
 
-        Assert.True((await Backend.AddWorktreeAsync(root, tree, first, "daoris opening", Ct)).Ok);
-        Assert.False((await Backend.AddWorktreeAsync(root, tree, first, null, Ct)).Ok);
+        Assert.True((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(tree, first, LockReason: "daoris opening"), Ct)).Ok);
+        Assert.False((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(tree, first), Ct)).Ok);
 
         var both = (await Backend.WorktreesAsync(tree, Ct))!;
         Assert.Equal([root, tree], both.Select(each => each.Path));
@@ -291,8 +291,107 @@ public abstract class RepositoryContract
         Assert.Single((await Backend.WorktreesAsync(root, Ct))!);
 
         var again = Beside(root, "tree-2");
-        Assert.True((await Backend.AddWorktreeAsync(root, again, first, null, Ct)).Ok);
+        Assert.True((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(again, first), Ct)).Ok);
         Assert.True((await Backend.RemoveWorktreeAsync(root, again, Ct)).Ok);
         Assert.Single((await Backend.WorktreesAsync(root, Ct))!);
+    }
+
+    [Fact]
+    public async Task A_working_tree_is_added_on_a_new_branch_which_cannot_go_while_it_is_out_and_the_root_is_the_top_of_each_folder()
+    {
+        var (root, first) = await OneAsync();
+        var tree = Beside(root, "tree-1");
+
+        Assert.True((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(tree, first, Branch: "daoris/s-1", LockReason: "opening"), Ct)).Ok);
+
+        Assert.Equal("daoris/s-1", await Backend.BranchAsync(tree, Ct));
+        Assert.Equal(first, await Backend.CommitOfAsync(root, "refs/heads/daoris/s-1", Ct));
+        Assert.Equal([(tree, "daoris/s-1", true)], (await Backend.WorktreesAsync(root, Ct))!.Skip(1).Select(each => (each.Path, each.Branch, each.Locked)));
+        Assert.False((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(Beside(root, "tree-2"), first, Branch: "daoris/s-1"), Ct)).Ok);
+        Assert.Equal(root, await Backend.TopOfAsync(root, Ct));
+        Assert.Equal(tree, await Backend.TopOfAsync(tree, Ct));
+        Assert.Equal(root, await Backend.TopOfAsync(Path.Combine(root, "src"), Ct));
+
+        Assert.False((await Backend.DeleteBranchAsync(root, "daoris/s-1", Ct)).Ok);
+        Assert.True((await Backend.RemoveWorktreeAsync(root, tree, Ct)).Ok);
+        Assert.True((await Backend.DeleteBranchAsync(root, "daoris/s-1", Ct)).Ok);
+        Assert.Null(await Backend.CommitOfAsync(root, "refs/heads/daoris/s-1", Ct));
+        Assert.False((await Backend.DeleteBranchAsync(root, "daoris/s-1", Ct)).Ok);
+    }
+
+    [Fact]
+    public async Task The_paths_two_commits_differ_in_are_named_in_path_order_and_a_commit_that_is_none_names_nothing()
+    {
+        var (root, first) = await OneAsync();
+        await WriteAsync(root, "a.txt", "changed\n");
+        await WriteAsync(root, "new/c.txt", "three\n");
+        await RemoveAsync(root, "src/b.txt");
+        Assert.True((await Backend.CommitAllAsync(root, "second", Ct)).Ok);
+        var second = (await Backend.HeadAsync(root, Ct))!;
+
+        Assert.Equal(["a.txt", "new/c.txt", "src/b.txt"], await Backend.ChangedAsync(root, first, second, Ct));
+        Assert.Empty((await Backend.ChangedAsync(root, second, second, Ct))!);
+        Assert.Null(await Backend.ChangedAsync(root, first, "0000000000000000000000000000000000000001", Ct));
+    }
+
+    [Fact]
+    public async Task A_search_finds_each_line_holding_a_name_in_the_files_the_pathspecs_name_and_not_those_excluded()
+    {
+        var root = await NewAsync();
+        await WriteAsync(root, "a.txt", "alpha\nbeta needle\n");
+        await WriteAsync(root, "src/b.cs", "needle one\nnothing\nneedle two\n");
+        await WriteAsync(root, "src/gen/c.cs", "needle generated\n");
+        await WriteAsync(root, "doc/d.md", "needle doc\n");
+        Assert.True((await Backend.CommitAllAsync(root, "all", Ct)).Ok);
+        var head = (await Backend.HeadAsync(root, Ct))!;
+
+        var all = await Backend.GrepAsync(root, head, ["needle"], ["a.txt", "src/", "doc/"], Ct);
+        var code = await Backend.GrepAsync(root, head, ["needle"], ["*.cs", ":(exclude)src/gen/"], Ct);
+
+        Assert.Equal([("a.txt", "beta needle"), ("doc/d.md", "needle doc"), ("src/b.cs", "needle one"), ("src/b.cs", "needle two"), ("src/gen/c.cs", "needle generated")], all.Select(each => (each.Path, each.Line)));
+        Assert.Equal([("src/b.cs", "needle one"), ("src/b.cs", "needle two")], code.Select(each => (each.Path, each.Line)));
+        Assert.Empty(await Backend.GrepAsync(root, head, ["absent"], ["src/"], Ct));
+    }
+
+    [Fact]
+    public async Task A_ref_transaction_makes_every_act_or_none_and_each_act_holds_the_expectation_it_names()
+    {
+        var (root, first) = await OneAsync();
+        await WriteAsync(root, "a.txt", "changed\n");
+        Assert.True((await Backend.CommitAllAsync(root, "second", Ct)).Ok);
+        var second = (await Backend.HeadAsync(root, Ct))!;
+        GitRefTransaction Make(GitRefAct[] acts, params GitRefCheck[] checks) => new(acts, checks);
+
+        Assert.True((await Backend.TransactAsync(root, Make([new(GitRefActKind.Create, "refs/heads/one", null, first), new(GitRefActKind.Create, "refs/heads/two", null, second)]), Ct)).Done);
+        Assert.Equal((first, second), (await Backend.CommitOfAsync(root, "refs/heads/one", Ct), await Backend.CommitOfAsync(root, "refs/heads/two", Ct)));
+
+        var refused = await Backend.TransactAsync(root, Make([new(GitRefActKind.Update, "refs/heads/one", second, first), new(GitRefActKind.Delete, "refs/heads/two", second, null)]), Ct);
+        Assert.False(refused.Done);
+        Assert.False(refused.Unanswered);
+        Assert.Equal((first, second), (await Backend.CommitOfAsync(root, "refs/heads/one", Ct), await Backend.CommitOfAsync(root, "refs/heads/two", Ct)));
+
+        Assert.False((await Backend.TransactAsync(root, Make([new(GitRefActKind.Create, "refs/heads/one", null, second)]), Ct)).Done);
+        Assert.False((await Backend.TransactAsync(root, Make([new(GitRefActKind.Delete, "refs/heads/two", second, null)], new GitRefCheck("refs/heads/one", second)), Ct)).Done);
+        Assert.Equal(second, await Backend.CommitOfAsync(root, "refs/heads/two", Ct));
+
+        Assert.True((await Backend.TransactAsync(root, Make([new(GitRefActKind.Update, "refs/heads/one", first, second), new(GitRefActKind.Delete, "refs/heads/two", second, null)], new GitRefCheck("refs/heads/absent", null)), Ct)).Done);
+        Assert.Equal(second, await Backend.CommitOfAsync(root, "refs/heads/one", Ct));
+        Assert.Null(await Backend.CommitOfAsync(root, "refs/heads/two", Ct));
+    }
+
+    [Fact]
+    public async Task Paths_are_put_back_as_head_holds_them_and_a_hook_that_is_absent_is_done()
+    {
+        var (root, _) = await OneAsync();
+        await WriteAsync(root, "a.txt", "changed\n");
+        await WriteAsync(root, "src/b.txt", "changed too\n");
+        await WriteAsync(root, "loose.txt", "x\n");
+        Assert.Equal(2, (await Backend.StatusAsync(root, false, Ct)).Count(each => each.Value == " M"));
+
+        Assert.True((await Backend.RestoreAsync(root, ["a.txt", "src/b.txt"], Ct)).Ok);
+
+        Assert.Equal([("loose.txt", "??")], (await Backend.StatusAsync(root, false, Ct)).Select(each => (each.Key, each.Value)));
+        Assert.False((await Backend.RestoreAsync(root, ["missing.txt"], Ct)).Ok);
+        Assert.True((await Backend.RunHookAsync(root, "post-checkout", ["0000000000000000000000000000000000000000", (await Backend.HeadAsync(root, Ct))!, "1"], Ct)).Ok);
     }
 }

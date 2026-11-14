@@ -20,12 +20,8 @@ internal sealed class TreeLeftovers(TreeContext context)
     /// <summary>Whether git still counts <paramref name="tree"/> as one of this repository's working trees.</summary>
     internal static async Task<bool?> RegisteredAsync(string root, string tree, CancellationToken ct)
     {
-        var (code, porcelain, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        return porcelain.Split('\n')
-            .Select(line => line.TrimEnd('\r'))
-            .Where(line => line.StartsWith("worktree ", StringComparison.Ordinal))
-            .Any(line => SamePath(line["worktree ".Length..], tree));
+        if (await MachinePorts.Repository.WorktreesAsync(root, ct).ConfigureAwait(false) is not { } trees) return null;
+        return trees.Any(each => SamePath(each.Path, tree));
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Daoris.Ports.Repositories;
 using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
@@ -39,18 +40,19 @@ internal sealed class TreeOpening(TreeContext context)
         // branches on whatever repository CONTAINS it. The first run of this class's own test suite
         // did exactly that, to this repository: this check refuses loudly.
         // Asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
-        var top = await AskAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        if (top.Code != 0)
+        var git = MachinePorts.Repository;
+        var top = await git.TopOfAsync(root, ct).ConfigureAwait(false);
+        if (top is null)
         {
             throw new DriverException(
-                $"`{repository}`'s registered root is not a git repository ({top.FirstWords()}) — "
+                $"`{repository}`'s registered root is not a git repository (git named no working root) — "
                 + "a session's tree is one git links to its checkout, and there is nothing here to link it to.");
         }
 
-        if (!SamePath(top.Stdout.Trim(), root))
+        if (!SamePath(top, root))
         {
             throw new DriverException(
-                $"`{repository}`'s registered root {root} is INSIDE the repository at {top.Stdout.Trim()} "
+                $"`{repository}`'s registered root {root} is INSIDE the repository at {top} "
                 + "rather than being one — refusing to grow a tree on a repository the registration "
                 + "does not name. Re-run `daoris repository connect` from the actual root.");
         }
@@ -69,17 +71,15 @@ internal sealed class TreeOpening(TreeContext context)
         string? grewFrom = null;
         if (from is { Length: > 0 })
         {
-            var (known, _, _) = await WorkingTree.GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{from}"], ct).ConfigureAwait(false);
-            var (chain, _, _) = known != 0 && landed is { Length: > 0 } && BranchName.IsValid(landed)
-                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
-                : (1, "", "");
-            if (known == 0)
+            var known = await git.CommitOfAsync(root, $"refs/heads/{from}", ct).ConfigureAwait(false) is not null;
+            var chain = !known && landed is { Length: > 0 } && BranchName.IsValid(landed)
+                && await git.CommitOfAsync(root, $"refs/heads/{landed}", ct).ConfigureAwait(false) is not null;
+            if (known)
             {
                 start = grewFrom = from;
                 basedOn = $"`{from}`, the branch the step before it landed on (not merged yet)";
             }
-            else if (chain == 0 && landed is not null)
+            else if (chain && landed is not null)
             {
                 start = grewFrom = landed;
                 basedOn = $"`{landed}`, the branch its chain landed on (not merged yet) — `{from}`, the branch the step before it "
@@ -94,10 +94,9 @@ internal sealed class TreeOpening(TreeContext context)
         {
             // A further part whose session's tree went at its landing: the branch that work landed on, where it stands.
             var gone = $"the tree session `{partOf}` worked in is gone";
-            var (stands, _, _) = landed is { Length: > 0 } && BranchName.IsValid(landed)
-                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
-                : (1, "", "");
-            if (stands == 0 && landed is { } standing)
+            var stands = landed is { Length: > 0 } && BranchName.IsValid(landed)
+                && await git.CommitOfAsync(root, $"refs/heads/{landed}", ct).ConfigureAwait(false) is not null;
+            if (stands && landed is { } standing)
             {
                 start = grewFrom = standing;
                 basedOn = $"`{standing}`, the branch its session's work landed on (not merged yet) — {gone}";
@@ -128,13 +127,12 @@ internal sealed class TreeOpening(TreeContext context)
             // Locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
             // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded. Its hooks are
             // held, so its `post-checkout` runs at the files stage, after its dependencies.
-            var added = await AskAsync(
-                root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
-                .ConfigureAwait(false);
-            if (added.Code != 0)
+            var added = await git.AddWorktreeAsync(
+                root, new GitWorktreeAdd(path, start, branch, TreeOpenings.LockReason(Environment.ProcessId), TreeOpenings.HooksPath(context.Home)), ct).ConfigureAwait(false);
+            if (!added.Ok)
             {
                 throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git said: {added.Failure()}");
+                    $"could not open a session tree for `{repository}` — git said: {added.Error}");
             }
 
             // A tree git binds to another checkout (a shared `core.worktree` under worktree-specific
@@ -148,14 +146,12 @@ internal sealed class TreeOpening(TreeContext context)
 
             // Where the branch started, the moment it exists: bringing it up to date after the line moves cuts
             // here, so a chain's step replays only its own commits once the step before's are on the line.
-            var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-                .ConfigureAwait(false);
-            if (headCode == 0)
+            if (await git.CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false) is { } head)
             {
                 try
                 {
                     // The branch work unit's id, written once here; every later record of the branch keeps it.
-                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow)
+                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head, grewFrom, DateTimeOffset.UtcNow)
                     {
                         Unit = GrownBranch.NewUnit(),
                     });
@@ -169,11 +165,11 @@ internal sealed class TreeOpening(TreeContext context)
             // Marked before the lock goes: the files stage, outside the start's hold, places, installs and copies into it.
             TreeFilesRecord.Mark(context.Home, path);
 
-            var unlocked = await AskAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
-            if (unlocked.Code != 0)
+            var unlocked = await git.UnlockAsync(root, path, ct).ConfigureAwait(false);
+            if (!unlocked.Ok)
             {
                 throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {unlocked.Failure()}");
+                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {unlocked.Error}");
             }
         }
         catch
@@ -230,13 +226,9 @@ internal sealed class TreeOpening(TreeContext context)
         // The checkout's own guess is the branch either way (its answer is the same where it stands or not), so git is
         // not asked whether it does; a line the person set is the one checked.
         if (line.Source == LineSource.Checkout) return branch;
-        var (local, _, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
-        if (local == 0) return branch;
-
-        var (remote, _, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
-        if (remote == 0) return $"origin/{branch}";
+        var git = MachinePorts.Repository;
+        if (await git.CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false) is not null) return branch;
+        if (await git.CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct).ConfigureAwait(false) is not null) return $"origin/{branch}";
 
         throw new DriverException(
             $"{CanonicalLine.Describe(line)} is `{repository}`'s line, and its checkout has no such branch, here "

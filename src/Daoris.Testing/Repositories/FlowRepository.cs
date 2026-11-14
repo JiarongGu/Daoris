@@ -67,8 +67,22 @@ public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 
     public Task<GitDone> PruneAsync(string folder, CancellationToken ct) => Current.PruneAsync(folder, ct);
 
-    public Task<GitDone> AddWorktreeAsync(string folder, string path, string commit, string? lockReason, CancellationToken ct) =>
-        Current.AddWorktreeAsync(folder, path, commit, lockReason, ct);
+    public Task<GitDone> AddWorktreeAsync(string folder, GitWorktreeAdd add, CancellationToken ct) => Current.AddWorktreeAsync(folder, add, ct);
+
+    public Task<string?> TopOfAsync(string folder, CancellationToken ct) => Current.TopOfAsync(folder, ct);
+
+    public Task<GitDone> DeleteBranchAsync(string folder, string branch, CancellationToken ct) => Current.DeleteBranchAsync(folder, branch, ct);
+
+    public Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct) => Current.ChangedAsync(folder, from, to, ct);
+
+    public Task<IReadOnlyList<GitMatch>> GrepAsync(string folder, string commit, IReadOnlyCollection<string> names, IReadOnlyList<string> pathspecs, CancellationToken ct) =>
+        Current.GrepAsync(folder, commit, names, pathspecs, ct);
+
+    public Task<GitRefRun> TransactAsync(string folder, GitRefTransaction transaction, CancellationToken ct) => Current.TransactAsync(folder, transaction, ct);
+
+    public Task<GitDone> RestoreAsync(string folder, IReadOnlyList<string> paths, CancellationToken ct) => Current.RestoreAsync(folder, paths, ct);
+
+    public Task<GitDone> RunHookAsync(string folder, string hook, IReadOnlyList<string> arguments, CancellationToken ct) => Current.RunHookAsync(folder, hook, arguments, ct);
 
     public Task<GitDone> RemoveWorktreeAsync(string folder, string path, CancellationToken ct) => Current.RemoveWorktreeAsync(folder, path, ct);
 
