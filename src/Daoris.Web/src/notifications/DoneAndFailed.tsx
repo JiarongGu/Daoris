@@ -49,7 +49,6 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
   }
   if (notice.kind === 'set-aside') {
-    // A row the person set aside: the row's kind by its status words, and what it was about.
     const kind = notice.route ? t(`work.attention.${notice.route}`, { defaultValue: notice.route }) : '';
     return t('notifications.done.setAside', { kind, subject: notice.code ?? '' });
   }

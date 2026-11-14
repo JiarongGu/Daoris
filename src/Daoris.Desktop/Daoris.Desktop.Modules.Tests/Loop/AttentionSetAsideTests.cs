@@ -4,10 +4,7 @@ using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>
-/// NOTIFYDIET1: a row of <i>What needs you</i> the person set aside with no act (<see cref="Notices.Aside"/>) is not judged while it stands as
-/// it did, by its kind, its id and the moment it had waited since; the same row waiting since a later moment, and any other row, is.
-/// </summary>
+/// <summary>A row set aside is hidden as it stood and shown again once it waits since a later moment.</summary>
 public sealed class AttentionSetAsideTests
 {
     private static JsonObject Parked(string id, string updated) => Session($$"""{"id":"{{id}}","state":"awaiting-person","updated":"{{updated}}"}""");
@@ -19,7 +16,7 @@ public sealed class AttentionSetAsideTests
         var all = new AttentionFacts { Sessions = [Parked("a1b2c3d4", "2026-09-21T10:00:00Z"), other] };
         Assert.Equal(["parked:a1b2c3d4", "parked:e5f6a7b8"], Keys(Rows(all)));
 
-        var hidden = Notices.Hidden([Notices.SetAsideOf("parked", "a1b2c3d4", "2026-09-21T10:00:00Z", null, DateTimeOffset.UtcNow)]);
+        var hidden = Notices.Hidden([Notices.SetAsideOf("parked", "a1b2c3d4", "2026-09-21T10:00:00Z", null, new DateTimeOffset(2026, 9, 21, 12, 0, 0, TimeSpan.Zero))]);
         Assert.Equal(["parked:e5f6a7b8"], Keys(Rows(all with { Hidden = hidden })));
 
         var moved = new AttentionFacts { Sessions = [Parked("a1b2c3d4", "2026-09-21T11:00:00Z"), other], Hidden = hidden };

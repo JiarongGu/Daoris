@@ -31,8 +31,7 @@ export type Notice = {
    * `ended`, a session that ended without the person asking; `expired`, a terminal's press refused by its time; `answered`, a
    * conversation that answered the person's words, one per conversation; `look`, a line of the driver's look that is news,
    * by its `code`; `withdrawn`, a terminal's press taken back once shown, and `closed`, one an earlier build's close ended;
-   * `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept; `set-aside`, a row of *What
-   * needs you* the person set aside (its `route` the row's kind, its `code` what it was about), kept read in the history.
+   * `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept; `set-aside`, a row set aside.
    */
   kind: string;
   at: string;
@@ -238,10 +237,6 @@ export const useMarkNoticesRead = () =>
     mutationFn: async (ids: string[]): Promise<boolean> => writtenOf(await call('NOTICES_READ', { ids })),
   });
 
-/**
- * The person's *Set aside* of one row of *What needs you* (`NOTICE_DISMISS` naming the row by its kind, its id and the moment it had
- * waited since): kept in the history as a `set-aside` notice, read, and the row hidden while it stands as it did.
- */
 export const useSetAsideRow = () =>
   useMutation({
     mutationFn: async (row: { kind: string; id: string; since?: string | null; workspace?: string }): Promise<boolean> =>

@@ -43,7 +43,6 @@ public sealed class NoticesRoutes(DriverLoop loop)
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
     private Task<object?> NoticeDismissAsync(NoticeDismissPress press, CancellationToken cancellationToken)
     {
-        // A row of What needs you set aside with no act: one read entry in the history, which the judge hides the row by.
         if (press.RowKind is not null || press.RowId is not null)
         {
             if (string.IsNullOrWhiteSpace(press.RowKind) || string.IsNullOrWhiteSpace(press.RowId))

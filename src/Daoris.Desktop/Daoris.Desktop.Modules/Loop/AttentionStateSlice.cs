@@ -339,7 +339,6 @@ public static class AttentionStateSlice
             Supervised = loop.Supervisor.Answering(),
             StoppedQuests = StoppedRuns.Quests(loop.Home),
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
-            // The rows the person set aside, read from the history (the notices record), which the judge hides them by.
             Hidden = Notices.Hidden(Notices.Read(loop.Home, DateTimeOffset.UtcNow) ?? []),
         };
     }

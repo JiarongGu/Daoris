@@ -296,8 +296,6 @@ public static class NeedsAPerson
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
 
-        // A row the person set aside with no act stays out while it stands as it did: the same kind, id and since. One that moved on, or
-        // any other, is judged as it was.
         return facts.Hidden.Count == 0
             ? rows
             : [.. rows.Where(row => !facts.Hidden.Contains(Notices.HiddenKey(Text(row, "kind") ?? "", Text(row, "id") ?? "", Text(row, "since"))))];

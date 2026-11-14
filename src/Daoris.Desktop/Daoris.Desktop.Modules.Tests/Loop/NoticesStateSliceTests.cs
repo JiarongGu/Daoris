@@ -271,10 +271,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Equal(StateScopes.Notices, DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = "NOTICE_DISMISS" })!.Scopes);
     }
 
-    /// <summary>
-    /// NOTIFYDIET1: <c>NOTICE_DISMISS</c> naming a row of <i>What needs you</i> (its kind, id and since) sets that row aside: one read entry in the
-    /// history, which the attention judge hides it by; it dismisses no notice and refuses a row naming no kind or id.
-    /// </summary>
+    /// <summary>A row named to <c>NOTICE_DISMISS</c> is kept read in the history.</summary>
     [Fact]
     public async Task A_row_of_what_needs_you_is_set_aside_through_the_dismissal_and_kept_read_in_the_history()
     {
@@ -284,7 +281,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         var set = await AnswerAsync(module, "NOTICE_DISMISS", new { rowKind = "go-ahead", rowId = "a1#2", rowSince = "2026-10-22T08:00:00.000Z", workspace = "games" });
         Assert.True(set.GetProperty("written").GetBoolean());
 
-        var kept = Assert.Single(Daoris.Driver.Notices.Read(Home, DateTimeOffset.UtcNow)!);
+        var kept = Assert.Single(Daoris.Driver.Notices.Read(Home, Now)!);
         Assert.Equal((Daoris.Driver.Notices.Aside, true, "games", "go-ahead", "a1#2"), (kept.Kind, kept.Read, kept.Workspace, kept.Route, kept.Code));
         Assert.Contains(Daoris.Driver.Notices.HiddenKey("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z"), Daoris.Driver.Notices.Hidden([kept]));
     }

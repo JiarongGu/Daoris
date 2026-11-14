@@ -259,10 +259,6 @@ public sealed class NoticesStateSlice
     /// <summary>The person's dismissal of <paramref name="ids"/>: written and pushed. Null where written; else why not, logged.</summary>
     public string? Dismiss(IReadOnlyCollection<string> ids) => Refusal(Notices.Dismiss(_home, ids, _clock.GetUtcNow()));
 
-    /// <summary>
-    /// The person's setting aside of one row of <i>What needs you</i> with no act: a read entry in the history (<see cref="Notices.SetAsideOf"/>), written and
-    /// pushed, and the attention judge told by the push. Null where written; else why not, logged.
-    /// </summary>
     public string? SetAside(string kind, string id, string? since, string? workspace) =>
         Refusal(Notices.Renew(_home, Notices.SetAsideOf(kind, id, since, workspace, _clock.GetUtcNow()), _clock.GetUtcNow()));
 

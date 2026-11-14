@@ -253,7 +253,6 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       answered,
     ),
     acceptDeparture: (item) => run(item, () => accept.mutateAsync(item.id), (answer) => notify(answer.message)),
-    // Any row set aside with no act: kept in the history, and the row leaves as the slice judges again (a shell's alone: a browser keeps no history).
     setAside: (item) => run(
       item,
       () => setAside.mutateAsync({ kind: item.kind, id: item.id, since: item.since ?? undefined, workspace }),

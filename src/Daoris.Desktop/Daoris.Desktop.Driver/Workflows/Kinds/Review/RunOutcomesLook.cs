@@ -2,9 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The look's claim of the run outcomes (<see cref="RunOutcomeNotices"/>) after everything it did, so a step that failed this look is in
-/// <i>Done and failed</i> by its end, and one a lost write left is claimed at the next. The same pass clears what no longer needs the
-/// person: an outcome whose step went on or whose run is gone, and a kind an earlier build kept that this one does not
-/// (<see cref="Notices.Spent"/>), so a notice's subject moving on takes the notice with it.
+/// <i>Done and failed</i> by its end, and one a lost write left is claimed at the next.
+/// The same pass clears a notice whose subject moved on.
 /// </summary>
 [LookPass("run-outcomes", LookPhase.After, "members")]
 internal sealed class RunOutcomesLook(ILookWiring wiring) : ILookPass

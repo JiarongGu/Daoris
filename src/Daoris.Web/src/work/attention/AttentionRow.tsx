@@ -267,10 +267,7 @@ export type AttentionActs = {
   passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | TaskAct) => void;
   /** An end the sweep wrote, which names no session, approved or declined by its operation, as a session's Memory section decides one. */
   memoryEnd?: (item: Attention, approve: boolean) => void;
-  /**
-   * The row set aside with no act: kept in the history, and gone while it stands as it did. Every kind offers it where the band hands the
-   * means, whatever its wait; a terminal's press, answered on its card, never does.
-   */
+  /** The row set aside, kept in the history. */
   setAside?: (item: Attention) => void;
 };
 

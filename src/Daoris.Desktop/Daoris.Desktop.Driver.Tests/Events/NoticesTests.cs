@@ -76,7 +76,6 @@ public sealed class NoticesTests : IDisposable
         Assert.Equal("answered", Written()["notices"]!["answered-c1"]!["kind"]!.GetValue<string>());
     }
 
-    /// <summary>NOTIFYDIET1: a session that ended well is no notice (its review and landing say the rest); a failed, stopped or limited end is.</summary>
     [Theory]
     [InlineData("completed", false)]
     [InlineData("declined", false)]
@@ -90,7 +89,6 @@ public sealed class NoticesTests : IDisposable
         Assert.Equal(kept, made is not null);
     }
 
-    /// <summary>NOTIFYDIET1: what an earlier build kept and this one would not (a clean end, a plugin round that went well) is spent; the rest is not.</summary>
     [Fact]
     public void A_notice_of_a_kind_no_longer_kept_is_spent()
     {
@@ -104,10 +102,6 @@ public sealed class NoticesTests : IDisposable
         Assert.Equal(["ended-s1", "ended-s3", "plugin-command:p/c/1"], Notices.Spent(kept));
     }
 
-    /// <summary>
-    /// NOTIFYDIET1: a row set aside is kept in the history as a read notice naming the row's kind, its id and the moment it has waited
-    /// since; it hides that row only, so the same row waiting since a later moment is shown again.
-    /// </summary>
     [Fact]
     public void A_row_set_aside_is_kept_read_in_the_history_and_hides_only_the_row_it_names_as_it_stood()
     {
@@ -122,7 +116,6 @@ public sealed class NoticesTests : IDisposable
         Assert.False(hidden.Contains(Notices.HiddenKey("go-ahead", "a1#3", "2026-10-22T08:00:00.000Z")));
         Assert.False(hidden.Contains(Notices.HiddenKey("parked", "a1#2", "2026-10-22T08:00:00.000Z")));
 
-        // Setting the same row aside again at a later moment is one entry, not two.
         Assert.Null(Notices.Renew(_home, Notices.SetAsideOf("go-ahead", "a1#2", "2026-10-22T08:30:00.000Z", "games", Now.AddMinutes(1)), Now.AddMinutes(1)));
         Assert.Single(Notices.Read(_home, Now.AddMinutes(1))!);
     }
