@@ -28,6 +28,15 @@ public sealed class ThroughAcceptsTests
     private static readonly string Unchecked = UncheckedDones.Of(Quest())!;
 
     [Fact]
+    public void A_set_up_quest_is_never_an_unchecked_done_and_a_quest_with_a_requirement_neither()
+    {
+        var setUp = new QuestView("q2", "ask #a2", "reports", SetupQuests.Title(SetupQuests.SetUp, new DateOnly(2026, 11, 15)), "", "Done");
+        Assert.Null(UncheckedDones.Of(setUp));
+        Assert.Null(UncheckedDones.Of(Quest(new QuestRequirementView("ship it", "it ships"))));
+        Assert.NotNull(UncheckedDones.Of(Quest()));
+    }
+
+    [Fact]
     public void An_unchecked_done_is_passed_first_and_the_review_accepted_once_it_waits()
     {
         var waiting = Record(("claimed", NodeStates.Reached, null), ("holds", NodeStates.Active, Unchecked), ("look", NodeStates.Skipped, null),

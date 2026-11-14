@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// A quest one repository asks of another is asked on no ask, so it can carry no requirement, and its publisher reads its done at its own
-/// <c>work.requests</c>: only the person's quest is checked by nobody.
+/// <c>work.requests</c>; a set-up quest is Daoris's own, whose press reads the repository it set up: only the person's quest is checked by nobody.
 /// </remarks>
 internal static class UncheckedDones
 {
@@ -18,7 +18,7 @@ internal static class UncheckedDones
 
     /// <summary>Why <paramref name="quest"/>'s done waits unchecked, or null where it carries a requirement or no ask published it.</summary>
     public static string? Of(QuestView quest) =>
-        quest.Requirements.Count == 0 && AskSender.AskOf(quest.From) is { } ask
+        quest.Requirements.Count == 0 && !SetupQuests.IsSetup(quest.Title) && AskSender.AskOf(quest.From) is { } ask
             ? $"{Lead}: ask #{ask} gave its quest no requirement, so nothing compared the done with what you asked; read its "
               + $"handback (quest #{quest.Id}'s done note) and pass this step with your words where it does what you asked"
             : null;
