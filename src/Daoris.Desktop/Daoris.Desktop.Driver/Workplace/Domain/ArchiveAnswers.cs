@@ -25,7 +25,6 @@ public sealed record ArchiveOutcome(string Session, ArchiveVerdict Verdict)
     /// <summary>For <see cref="ArchiveVerdict.NeedsYou"/>: <see cref="SessionGroup.NeedsYou"/>.</summary>
     public string? Group { get; init; }
 
-    /// <summary>For <see cref="ArchiveVerdict.Live"/> of a record that itself ended while its line goes on: its state; else null.</summary>
     public string? Ended { get; init; }
 }
 

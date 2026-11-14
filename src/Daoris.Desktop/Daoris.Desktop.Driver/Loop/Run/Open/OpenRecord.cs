@@ -108,8 +108,7 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         }
 
         state.Begun = sessionId;
-        // Marked the moment its record exists, before the awaits below, so a driver that goes between the open and the spawn leaves a
-        // record the sweep proves is nobody's.
+        // Marked before the awaits below: a driver gone between the open and the spawn leaves a record the sweep proves is nobody's.
         context.Processes.MarkOpening(sessionId);
 
         // The open's answer with every word it moved, by its id on the new session, then `delivering` and the prompt's mark before the

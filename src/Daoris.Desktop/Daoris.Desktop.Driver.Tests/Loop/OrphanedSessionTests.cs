@@ -143,10 +143,7 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.True(service.Interrupted("q1"));
     }
 
-    /// <summary>
-    /// A start whose driver went before it marked its record leaves a `queued` one nothing starts: past the grace it is ended as
-    /// the sweep's, so its quest starts again; a young unmarked one, or one a live driver marks, is left.
-    /// </summary>
+    /// <summary>Past the grace an unmarked `queued` record is the sweep's; a young one, or one a live driver marks, is left.</summary>
     [Fact]
     public async Task The_sweep_ends_a_queued_record_no_driver_ever_marked_once_it_is_old()
     {

@@ -92,13 +92,9 @@ public static class Orphans
         return ended;
     }
 
-    /// <summary>How long a start's record may stand unmarked before its opener is taken as gone: a driver that went in the breath between its open and its mark.</summary>
     internal static readonly TimeSpan UnmarkedGrace = TimeSpan.FromMinutes(2);
 
-    /// <summary>
-    /// A <c>queued</c> or <c>starting</c> record no process here marks, untouched for longer than <see cref="UnmarkedGrace"/>: its
-    /// opener went before it marked it, so nothing starts it and its quest would wait on it for ever. A record with no time is left.
-    /// </summary>
+    /// <summary>A <c>queued</c> or <c>starting</c> record no process marks, untouched past <see cref="UnmarkedGrace"/>: its opener went first.</summary>
     private static bool NeverMarked(SessionView session, SessionProcesses processes) =>
         session.Updated is { } updated && DateTimeOffset.UtcNow - updated > UnmarkedGrace && !processes.HasMarker(session.Id);
 
