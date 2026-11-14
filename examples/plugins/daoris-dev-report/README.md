@@ -1,7 +1,8 @@
 # `daoris-dev-report` — a session's report to the person's own development agent
 
 Daoris's own plugin, in the `daoris-` family. A session (Ask Daoris or a driven one) that traced a defect or has a finding to hand over
-files a report here; the development agent the person works with reads it from a terminal. It declares two commands. A manifest with
+files a report here; the development agent the person works with reads it from a terminal. Its manifest's `brief` tells sessions
+when to report, with evidence, while its tools are on at their place and handed to them. It declares two commands. A manifest with
 interfaces must list a point, so it listens on the observation `session/ended` and does nothing with it.
 
 It needs no network and knows no repository: a report is words, a time, and the session and place Daoris handed the round. Everything is

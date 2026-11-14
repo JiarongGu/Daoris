@@ -237,7 +237,7 @@ of everything it handed, section by section.
 
 35. The driver composes the standing block with no model. It is handed once, at the start or at a move (with the memory the
     line read), and never at a go-on. It says where things are, the routing, the person's choices, and the repository's and
-    workspace's facts. (from D230)
+    workspace's facts, and the manifest briefs of the plugins whose tools it is handed and whose tools are on at its place. (from D230)
 36. The whole first prompt fits the one value Windows allows (32,767 characters: the native door takes it on stdin, and
     `DAORIS_TARGET` carries it as an environment variable). Over 30,000, the block goes to
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)

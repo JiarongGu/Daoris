@@ -26,6 +26,7 @@
   "plugin.update.askNamed": "更新 {{id}}",
   "plugin.update.title": "更新内容",
   "plugin.update.what.version": "版本",
+  "plugin.update.what.brief": "会话简报",
   "plugin.update.what.command": "命令",
   "plugin.update.what.points": "挂点",
   "plugin.update.what.harnesses": "智能体",

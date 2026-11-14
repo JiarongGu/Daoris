@@ -26,6 +26,7 @@
   "plugin.update.askNamed": "Update {{id}}",
   "plugin.update.title": "What an update changes",
   "plugin.update.what.version": "Version",
+  "plugin.update.what.brief": "Session brief",
   "plugin.update.what.command": "Command",
   "plugin.update.what.points": "Points",
   "plugin.update.what.harnesses": "Agents",

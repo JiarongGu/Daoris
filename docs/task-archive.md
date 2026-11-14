@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **PLUGINBRIEF1 (2026-11-14):** A plugin's manifest declares an optional one-line `brief` that `PluginBriefs` hands in a session's standing block only where its `tools` switch is on at that place and its tools are handed (chat, intake, driven quest, one-plugin step); `daoris-dev-report` declares the line telling sessions to file a report with `daoris-dev-report_report`; scoped checks are `PluginBriefsTests` and `ChatRoutingProcessTests`, and `docs/areas/plugins.md` item 24 says it.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---

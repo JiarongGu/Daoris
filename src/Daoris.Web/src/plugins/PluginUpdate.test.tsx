@@ -54,6 +54,13 @@ const drawPlan = (plan: PluginUpdatePlanShown, busy = false) => {
 };
 
 describe('what an update changes', () => {
+  it('labels a plugin brief change and keeps its authored words', () => {
+    drawPlan({ ...PLAN, changes: [{ what: 'brief', was: '', now: 'File a report with evidence.' }] });
+
+    expect(screen.getByText('Session brief')).toBeInTheDocument();
+    expect(screen.getByText('File a report with evidence.')).toBeInTheDocument();
+  });
+
   it('lists each change as the manifests write it, before the press, and updates or not', async () => {
     const { onApply, onCancel } = drawPlan(PLAN);
 
