@@ -1,22 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules a driven session waiting on its own check is read by, the twin of <see cref="HelperWaits"/>: a session whose agent asked the
-/// broker for a check and ended its turn waits on that check, not on the person. It ends <c>completed</c> by
-/// <see cref="EndNoteCodes.EndedAwaitsCheck"/> holding its tree, and the verdict is its next word in the same conversation.
+/// The rules a driven session waiting on its own check is read by: a session whose agent asked the broker for a check and ended its turn
+/// waits on that check as on a step (<see cref="StepWait.Check"/>, <c>awaiting-step</c>), holding its tree, and the verdict is its next
+/// word in the same conversation.
 /// </summary>
 public static class CheckWaits
 {
     /// <summary>The checks <paramref name="session"/>'s agent asked that are still open: no verdict handed yet.</summary>
     public static IReadOnlyList<CheckAsk> Open(string session, IEnumerable<CheckAsk> asks, Func<string, CheckState?> state) =>
         [.. asks.Where(ask => string.Equals(ask.Session, session, StringComparison.Ordinal) && state(ask.Id)?.Handed is null)];
-
-    /// <summary>Whether a run's conclusion is the wait on its own check: its note's code.</summary>
-    public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, EndNoteCodes.EndedAwaitsCheck);
-
-    /// <summary>Whether <paramref name="record"/> ended waiting on its own check with nothing waiting on it yet: the verdict's word is what goes on with it.</summary>
-    public static bool Waits(PriorSession record) =>
-        !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase) && Ended(record.NoteParts) && !record.WordsWaiting;
 
     /// <summary>The key a verdict's word is kept under, so it is said once however often a look asks.</summary>
     public static string Key(CheckAsk ask) => $"check/{ask.Id}";

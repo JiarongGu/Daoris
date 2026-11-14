@@ -338,6 +338,7 @@ public static class WireEvaluation
         {
             if (!statuses.TryGetValue(wire.To.Node, out var target) || !NodeStates.Bound.Contains(target.State)) continue;
             if (receipts.GetValueOrDefault(wire.From!.Node) is not { } receipt || !Takes(wire, receipt)) continue;
+            if (!CheckRounds.SendsBack(nodes.FirstOrDefault(node => node.Id == wire.From.Node), run.Reds)) continue;
             var key = FiringKey(run, wire.To.Node, wire.Id, receipt.Id);
             if (!run.Fired.Contains(key)) taken.Add(new WireFiring(key, wire.Id, receipt.Id, wire.To.Node));
         }

@@ -239,6 +239,8 @@ internal sealed class RunState(Action<long>? giveBack = null) : IDisposable, IAs
         set => _bound.Set(value);
     }
 
+    public WorkflowBind? BoundIfAny => _bound.Peek();
+
     /// <summary>The set-up step this start follows, or null where it is no set-up step.</summary>
     public ReviewEnvironment? SetUp
     {

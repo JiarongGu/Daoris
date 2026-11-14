@@ -17,6 +17,7 @@
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
       { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
+      { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
       { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
       { "id": "tree", "kind": "release", "version": 1, "reach": "performed" }
@@ -25,7 +26,9 @@
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
       { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
       { "id": "i", "kind": "after", "from": "holds", "to": "content" },
-      { "id": "b", "kind": "after", "from": "content", "to": "review" },
+      { "id": "ck", "kind": "after", "from": "content", "to": "check" },
+      { "id": "b", "kind": "after", "from": "check", "to": "review" },
+      { "id": "cb", "kind": "back", "from": "check", "on": "failed", "to": "work" },
       { "id": "e", "kind": "after", "from": "review", "to": "landing" },
       { "id": "r", "kind": "after", "from": "landing", "to": "tree" }
     ]

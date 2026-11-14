@@ -34,22 +34,39 @@ public sealed class CheckWaitsTests
                      Observation.Resumed(0, "completed", "Taken", "Taken", lastWords: "Asked for the tests.", awaitsCheck: true),
                  })
         {
-            Assert.Equal("completed", conclusion.State);
-            Assert.Equal(EndNoteCodes.EndedAwaitsCheck.Code, Assert.Single(conclusion.Parts!).Code);
-            Assert.True(CheckWaits.Ended(conclusion.Parts));
+            Assert.Equal("awaiting-step", conclusion.State);
+            var part = Assert.Single(conclusion.Parts!);
+            Assert.Equal(EndNoteCodes.WaitsCheck.Code, part.Code);
+            Assert.Null(StepWaits.From(conclusion.Parts));
             Assert.DoesNotContain("Asked for the tests.", conclusion.Note);
         }
 
         Assert.Equal("ended.done", Observation.Conclude(0, "Done", took: true, awaitsCheck: true).Parts![0].Code);
         Assert.Equal(EndNoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, awaitsCheck: true).Parts![0].Code);
         Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, awaitsCheck: true).State);
+    }
 
-        var waiting = new PriorSession("s1", "trees/s-1", "completed") { Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsCheck.Part("a line.", [])], Said = [] };
-        Assert.True(HelperWaits.HoldsTree(waiting));
-        Assert.True(CheckWaits.Waits(waiting));
-        // The helper's own return to the person must never read a check's wait as its own.
-        Assert.False(HelperWaits.Waits(waiting));
-        Assert.False(CheckWaits.Waits(waiting with { Said = [new SaidWordView("w1", "verdict", At, [], true)] }));
+    [Fact]
+    public void A_done_in_a_workflow_s_run_waits_on_its_next_step_and_every_later_turn_waits_on_the_same_run()
+    {
+        var waits = new StepWait("v-run1");
+        var first = Observation.Conclude(0, "Done", took: true, waits: waits);
+
+        Assert.Equal("awaiting-step", first.State);
+        Assert.Equal(waits, StepWaits.From(first.Parts));
+        Assert.Equal("awaiting-step", Observation.Conclude(0, "Taken", took: true, submitted: true, waits: waits).State);
+        // A fix turn whose quest closed before it waits again; one with no run ends as its done.
+        Assert.Equal("awaiting-step", Observation.Resumed(0, "awaiting-step", "Done", "Done", waits: waits).State);
+        Assert.Equal("completed", Observation.Conclude(0, "Done", took: true).State);
+        // Its failure stays a cut-off, never a wait.
+        Assert.Equal("failed", Observation.Conclude(1, "Taken", took: true, resumed: true, waits: waits).State);
+    }
+
+    [Fact]
+    public void A_run_s_end_ends_its_waiting_sessions_completed_at_its_end_and_stopped_otherwise()
+    {
+        Assert.Equal("completed", RunSessionEnds.StateOf(new RunEnd("q1", At) { Outcome = RunOutcomes.Completed }));
+        Assert.Equal("stopped", RunSessionEnds.StateOf(new RunEnd("q1", At) { Outcome = RunOutcomes.Failed, Node = "check" }));
     }
 
     [Fact]

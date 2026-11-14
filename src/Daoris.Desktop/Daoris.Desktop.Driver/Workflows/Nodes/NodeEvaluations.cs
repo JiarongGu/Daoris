@@ -27,6 +27,7 @@ internal static class NodeEvaluations
             Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
             NodeRevisions = tipped ? TipRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
+            Reds = CheckRounds.Reds(record),
             Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
             Git = git,
             Opinions = gates.Opinion is { } opinion
@@ -128,6 +129,7 @@ internal static class NodeEvaluations
             Targets = WireTargets.Read(nodes, git?.Tip, scope.Branch?.Records.Branch?.Line),
             Units = units,
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
+            Reds = CheckRounds.Reds(record),
             Git = git,
             GoAheads = scope.GoAheads is { } asked
                 ? new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal) { [self.Id] = asked }

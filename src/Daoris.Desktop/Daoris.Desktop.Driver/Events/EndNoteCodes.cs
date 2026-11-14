@@ -51,7 +51,8 @@ public static class EndNoteCodes
     /// </summary>
     public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
 
-    public static readonly NoteCode EndedAwaitsCheck = new("ended.awaits-check", []);
+    public static readonly NoteCode WaitsStep = new("waits.step", ["run"]);
+    public static readonly NoteCode WaitsCheck = new("waits.check", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);

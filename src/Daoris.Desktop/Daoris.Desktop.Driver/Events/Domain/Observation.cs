@@ -68,8 +68,13 @@ public static class Observation
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
         string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false,
-        bool awaitsHelper = false, bool providerRefused = false, int departed = 0, bool awaitsCheck = false) => questStatus switch
+        bool awaitsHelper = false, bool providerRefused = false, int departed = 0, bool awaitsCheck = false, StepWait? waits = null) => questStatus switch
     {
+        // In a workflow's run the agent's done, or its submission, ends its turn and not its session: it waits on the run's next step,
+        // running nothing, and only the workflow's end ends it.
+        "Done" or "Taken" when waits is not null && (questStatus == "Done" || submitted)
+            => SessionConclusion.Of(StepWait.State, waits.Note()),
+
         // Ask and wait: the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
         "Taken" when Asks(awaitsBefore, awaitsAfter)
@@ -138,7 +143,7 @@ public static class Observation
         // Its agent asked the broker for a check and ended its turn so the check could run: it waits on the machine, which is no question
         // of the person's, and the verdict is its next word in the same conversation (CheckWaits).
         "Taken" when exitCode == 0 && awaitsCheck && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
-            => SessionConclusion.Of("completed", AwaitsCheck),
+            => SessionConclusion.Of(StepWait.State, StepWait.Check.Note()),
 
         // 🔴 A session that holds its own quest and ended its turn cleanly is WAITING ON THE PERSON:
         // it took the quest itself, or resumed or carried on one this machine already
@@ -263,10 +268,6 @@ public static class Observation
         "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, "
         + "and comes to you only if no answer comes.");
 
-    /// <summary>A session that ended its turn on its own open check: it waits on the machine and goes on with the verdict, quoting nothing of its words.</summary>
-    public static Noted AwaitsCheck => Noted.Of(
-        EndNoteCodes.EndedAwaitsCheck,
-        "It asked for a check and stopped while the check waits its turn: it goes on in the same conversation with the verdict.");
 
     /// <summary>
     /// The park a session that waited on its own helper is brought back to when that helper ends with no answer: the
@@ -307,14 +308,19 @@ public static class Observation
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null,
-        bool submitted = false, bool awaitsHelper = false, bool providerRefused = false, string? reopenedFrom = null, bool awaitsCheck = false) =>
+        bool submitted = false, bool awaitsHelper = false, bool providerRefused = false, string? reopenedFrom = null, bool awaitsCheck = false,
+        StepWait? waits = null) =>
         startedOn is "Open" or "Taken"
             ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, reopenedFrom: reopenedFrom,
-                backgroundCut: backgroundCut, submitted: submitted, awaitsHelper: awaitsHelper, providerRefused: providerRefused, awaitsCheck: awaitsCheck)
+                backgroundCut: backgroundCut, submitted: submitted, awaitsHelper: awaitsHelper, providerRefused: providerRefused, awaitsCheck: awaitsCheck,
+                waits: waits)
             : turnFailed is not { Length: > 0 } && providerRefused
                 // Its words went on and its provider refused the turn, which never ends as the state it went on from.
                 ? SessionConclusion.Of("failed", ProviderRefusedNote(lastWords))
-                : WentOn(exitCode, before, turnFailed);
+                // A fix turn of a workflow's run whose quest closed before it waits on the run's next step again, as its first turn did.
+                : waits is not null && exitCode == 0 && turnFailed is not { Length: > 0 }
+                    ? SessionConclusion.Of(StepWait.State, waits.Note())
+                    : WentOn(exitCode, before, turnFailed);
 
     /// <summary>
     /// How a session whose quest has closed ends after going on with the person's words: in the state it
