@@ -191,6 +191,27 @@ public abstract class RepositoryContract
     }
 
     [Fact]
+    public async Task A_log_reads_each_commit_a_tip_adds_oldest_first_with_its_parents_subject_and_the_trailer_asked()
+    {
+        var (root, first) = await OneAsync();
+        await WriteAsync(root, "c.txt", "3\n");
+        Assert.True((await Backend.CommitAllAsync(root, "plain", Ct)).Ok);
+        var plain = (await Backend.HeadAsync(root, Ct))!;
+        await WriteAsync(root, "d.txt", "4\n");
+        Assert.True((await Backend.CommitAllAsync(root, "signed\n\nWhy.\n\nCo-Authored-By: A Maker <maker@example.test>\nSigned-off-by: B <b@example.test>", Ct)).Ok);
+
+        var logged = await Backend.LogAsync(root, first, "main", "Co-Authored-By", Ct);
+
+        Assert.Equal(
+            [(plain, first, "plain", ""), ((await Backend.HeadAsync(root, Ct))!, plain, "signed", "A Maker <maker@example.test>")],
+            logged.Commits!.Select(each => (each.Id, Assert.Single(each.Parents), each.Subject, string.Join('|', each.Trailers))));
+        Assert.Empty((await Backend.LogAsync(root, "main", "main", "Co-Authored-By", Ct)).Commits!);
+        var refused = await Backend.LogAsync(root, "nothing-by-this-name", "main", "Co-Authored-By", Ct);
+        Assert.Null(refused.Commits);
+        Assert.StartsWith("fatal:", refused.Error);
+    }
+
+    [Fact]
     public async Task Refs_are_listed_by_name_under_their_prefixes_and_by_the_commit_they_hold()
     {
         var (root, first) = await OneAsync();

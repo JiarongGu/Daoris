@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Daoris.Ports.Repositories;
 
 namespace Daoris.Driver;
 
@@ -12,7 +13,8 @@ internal sealed record UnsignedCommit(string Sha, string Subject, string? Traile
 /// </summary>
 internal static partial class CommitAttribution
 {
-    private const string Format = "--format=%h%x1f%p%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly)%x1e";
+    /// <summary>The trailer the check reads, as <see cref="IGitRepository.LogAsync"/> is asked for it.</summary>
+    internal const string Trailer = "Co-Authored-By";
 
     // The makers of the built-in agents, and Daoris for the commits its driver writes: the same words the merge check accepts.
     [GeneratedRegex(@"\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b", RegexOptions.IgnoreCase)]
@@ -21,28 +23,14 @@ internal static partial class CommitAttribution
     [GeneratedRegex(@"^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$")]
     private static partial Regex Named();
 
-    /// <summary>The commits in <paramref name="mergeBase"/>..<paramref name="tip"/> without a maker's trailer, oldest first; null where git could not say.</summary>
-    internal static async Task<IReadOnlyList<UnsignedCommit>?> UnsignedAsync(string folder, string mergeBase, string tip, CancellationToken ct)
-    {
-        var (code, stdout, _) = await WorkingTree.GitAsync(folder, ["--no-optional-locks", "log", "--reverse", Format, $"{mergeBase}..{tip}"], ct).ConfigureAwait(false);
-        return code == 0 ? Unsigned(stdout) : null;
-    }
+    /// <summary>The commits of <paramref name="log"/> without a maker's trailer, a merge of the line into the work aside, in the log's order.</summary>
+    internal static IReadOnlyList<UnsignedCommit> Unsigned(IReadOnlyList<GitLogEntry> log) =>
+    [
+        .. log.Where(commit => commit.Parents.Count <= 1 && !commit.Trailers.Any(Signs))
+            .Select(commit => new UnsignedCommit(TextBounds.ShortCommit(commit.Id, 8), commit.Subject, commit.Trailers.Count == 0 ? null : string.Join('\n', commit.Trailers))),
+    ];
 
-    /// <summary>The unsigned commits of <paramref name="log"/>, a <c>git log</c> in the check's format.</summary>
-    internal static IReadOnlyList<UnsignedCommit> Unsigned(string log)
-    {
-        var found = new List<UnsignedCommit>();
-        foreach (var entry in log.Split('\x1e').Select(each => each.Trim()).Where(each => each.Length > 0))
-        {
-            var parts = entry.Split('\x1f');
-            if (parts.Length < 4 || parts[1].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1) continue;
-            var trailer = parts[3].Trim();
-            var named = trailer.Split('\n').Any(line => Named().Match(line) is { Success: true } match && Maker().IsMatch(match.Groups[1].Value));
-            if (!named) found.Add(new(parts[0], parts[2], trailer.Length == 0 ? null : trailer));
-        }
-
-        return found;
-    }
+    private static bool Signs(string trailer) => Named().Match(trailer) is { Success: true } match && Maker().IsMatch(match.Groups[1].Value);
 
     /// <summary>The reading's lines: what is wrong and what to do about it, none where every commit is signed.</summary>
     internal static string? Words(IReadOnlyList<UnsignedCommit> unsigned) => unsigned.Count == 0

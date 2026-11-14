@@ -51,6 +51,18 @@ public sealed record GitWorktreeAdd(string Path, string Start, string? Branch = 
 /// <param name="Line">The line's text.</param>
 public sealed record GitMatch(string Path, string Line);
 
+/// <summary>One commit as a log reads it.</summary>
+/// <param name="Id">Its full id.</param>
+/// <param name="Parents">Its parents' full ids, two or more for a merge.</param>
+/// <param name="Subject">Its message's first paragraph on one line.</param>
+/// <param name="Trailers">The values of the trailer asked, as its message's trailer block gives them; none where it carries none.</param>
+public sealed record GitLogEntry(string Id, IReadOnlyList<string> Parents, string Subject, IReadOnlyList<string> Trailers);
+
+/// <summary>What a log came to: its commits, or git's words for why it could not say.</summary>
+/// <param name="Commits">The commits, oldest first; null where git could not say.</param>
+/// <param name="Error">Git's words where it could not, empty where it could.</param>
+public sealed record GitLogged(IReadOnlyList<GitLogEntry>? Commits, string Error);
+
 /// <summary>
 /// A repository's operations at the level the application's families ask them: refs, commits, trees, status and working trees, each
 /// with the answer a family reads, never git's whole surface. Every folder is a checkout of the repository, its own or a working
@@ -76,6 +88,9 @@ public interface IGitRepository : IGitIntegration, IGitTrees, IGitSetup
 
     /// <summary>How many commits <paramref name="tip"/> reaches that none of <paramref name="exclude"/> does; null where git could not say.</summary>
     Task<int?> CountAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct);
+
+    /// <summary>The commits <paramref name="to"/> reaches that <paramref name="from"/> does not, oldest first, each with the values of its <paramref name="trailer"/> trailers.</summary>
+    Task<GitLogged> LogAsync(string folder, string from, string to, string trailer, CancellationToken ct);
 
     /// <summary>
     /// The refs under <paramref name="prefixes"/> (<c>refs/heads</c>) by name, those whose history holds <paramref name="contains"/> where it is

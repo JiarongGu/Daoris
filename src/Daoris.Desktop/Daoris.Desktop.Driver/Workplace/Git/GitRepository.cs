@@ -58,6 +58,21 @@ public sealed class GitRepository : IGitRepository
         return code == 0 && int.TryParse(stdout.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var count) ? count : null;
     }
 
+    public async Task<GitLogged> LogAsync(string folder, string from, string to, string trailer, CancellationToken ct)
+    {
+        var format = $"--format=%H%x1f%P%x1f%s%x1f%(trailers:key={trailer},valueonly)%x1e";
+        var (code, stdout, stderr) = await RunGitAsync(folder, ["--no-optional-locks", "log", "--reverse", format, $"{from}..{to}"], ct).ConfigureAwait(false);
+        if (code != 0) return new GitLogged(null, stderr.Trim() is { Length: > 0 } said ? said : $"git log ended with {code}");
+        var commits = new List<GitLogEntry>();
+        foreach (var parts in stdout.Split('\x1e').Select(each => each.Trim()).Where(each => each.Length > 0).Select(each => each.Split('\x1f')).Where(parts => parts.Length >= 4))
+        {
+            string[] parents = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            commits.Add(new GitLogEntry(parts[0], parents, parts[2], parts[3].Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)));
+        }
+
+        return new GitLogged(commits, "");
+    }
+
     public async Task<IReadOnlyList<Ports.Repositories.GitRef>?> RefsAsync(string folder, IReadOnlyList<string> prefixes, string? contains, int? limit, CancellationToken ct)
     {
         List<string> ask = ["for-each-ref", "--format=%(objectname) %(refname)"];
