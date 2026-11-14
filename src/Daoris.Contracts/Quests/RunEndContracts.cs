@@ -12,7 +12,7 @@ public sealed record BindQuestToRun(string Id, string? Run) : IRoute<RunBindResp
     public static string Path => "/api/quests/{id}/run";
 }
 
-/// <summary>Whether the bind was made, and why not.</summary>
+/// <summary>Whether the bind is made, and why not.</summary>
 public sealed record RunBindResponse(bool Bound, string Message);
 
 /// <summary>
@@ -32,5 +32,5 @@ public sealed record EndRun(
 /// <summary>A quest a run's end closes, with the submission (its machine and sequence) it closes on.</summary>
 public sealed record RunEndQuest(string Id, string Machine, long Sequence);
 
-/// <summary>What the end wrote: the refusal's name where the close was refused, the quests closed and the sessions ended.</summary>
+/// <summary>What the end writes: the refusal's name where the close is refused, the quests closed and the sessions ended.</summary>
 public sealed record RunEndResponse(string? Refused, string Message, IReadOnlyList<string> Closed, IReadOnlyList<string> Ended);

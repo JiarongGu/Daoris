@@ -255,7 +255,6 @@ export const NOTE_VALUES: Readonly<
 > = {
   // The routing standing a chat is told, each of the judge's four worded by `work.note.routing.*`.
   standing: 'routing',
-  // The workflow step a waiting session waits after, and the commit its turn handed.
   node: 'text', tip: 'id',
   // Who a word is by, each a code worded by `work.note.author.*` and joined the reader's way.
   authors: 'authors',

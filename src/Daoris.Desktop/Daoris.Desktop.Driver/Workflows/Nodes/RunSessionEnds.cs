@@ -11,7 +11,7 @@ public sealed record RunFinish(string Run, IReadOnlyList<RunEndQuest> Quests, IR
 
 /// <summary>
 /// A run's end ends the sessions that wait on its steps, and writes its quests' Done: a session is the work's passage through its workflow,
-/// so only the workflow's end ends it, and the agent's done was its submission. A run that came to its graph's end closes its submitted
+/// so only the workflow's end ends it, and the agent's done is its submission. A run that came to its graph's end closes its submitted
 /// quests and ends its sessions completed; one that ended any other way (failed at a step, stopped) leaves its work abandoned, its quests
 /// taken, and ends them stopped. The service moves only a session still awaiting a step, so one working again is never moved.
 /// </summary>

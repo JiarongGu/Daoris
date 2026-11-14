@@ -122,7 +122,6 @@ internal sealed class QuestResponses(
             return new(QuestRespondRefusal.SourceReopened, QuestWords.SourceReopenedWords(move.Quest), Quest: null);
         }
 
-        // A done where its workflow's run closes the quest is its submission: it stays taken, and the run's end writes its Done.
         if (move.ClosedByGraph) return await readies.ReadyAsync(move.Quest.Id, reason, answers ?? [], now, ct, session).ConfigureAwait(false);
 
         if (move.Moved && status == QuestStatus.Taken
@@ -133,8 +132,7 @@ internal sealed class QuestResponses(
 
         if (move.Moved)
         {
-            // The chain moved on with the close — said here, because the next step is now
-            // somebody's open quest and whoever closed this one should know whose.
+            // The chain moved on with the close: the next step is somebody's open quest now, and its closer is told whose.
             return new(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await answering.AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"

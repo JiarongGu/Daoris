@@ -179,7 +179,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestRespondRefusal.None, done.Refusal);
         Assert.Equal((QuestStatus.Taken, "s0a1b2c3"), ((await Find(quest.Id)).Status, (await Find(quest.Id)).Submission!.Session));
 
-        // The person's override (§E5): their done at any time, closed as theirs.
         await Ready(quest);
         var theirs = await _exchange.PersonDoneAsync(quest.Id, "I checked it myself.", Now);
         Assert.Equal(QuestRespondRefusal.None, theirs.Refusal);

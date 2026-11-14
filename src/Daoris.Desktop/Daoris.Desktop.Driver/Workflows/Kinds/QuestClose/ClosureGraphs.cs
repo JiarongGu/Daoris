@@ -14,7 +14,6 @@ public static class ClosureGraphs
     /// <summary>The folder the kept graphs sit in, beside the node records (<see cref="NodeRecordFiles.FolderOf"/>).</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "closures");
 
-    /// <summary>Whether a quest's closure names a closure graph, not the workflow run whose end closes it (<c>run:</c>).</summary>
     public static bool IsGraph(string? closure) => closure is { Length: > 0 } && !closure.StartsWith("run:", StringComparison.Ordinal);
 
     /// <summary>Whether this home keeps any closure graph: one stat, so a home that never bound a quest reads no record.</summary>

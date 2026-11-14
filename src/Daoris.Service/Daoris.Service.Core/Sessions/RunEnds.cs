@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 /// A workflow run's end, the one place the runtime writes quest state: the run's quests Done on the submissions their agents' dones made,
 /// and the sessions waiting on the run ended, in one write, so no reader sees the work done while its session still waits, or the reverse.
 /// </summary>
-/// <param name="Refusal">Why the quests were not closed, which then moves no session; <see cref="QuestCloseRefusal.None"/> where it was made.</param>
+/// <param name="Refusal">Why the quests stay unclosed, which then moves no session; <see cref="QuestCloseRefusal.None"/> where the close is made.</param>
 /// <param name="Closed">The quests written Done.</param>
 /// <param name="Ended">The sessions moved to their end; one no longer waiting on a step is left as it stands.</param>
 public sealed record RunEndOutcome(QuestCloseRefusal Refusal, string Message, IReadOnlyList<Quest> Closed, IReadOnlyList<Session> Ended);
