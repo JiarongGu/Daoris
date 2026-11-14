@@ -59,6 +59,9 @@ public static class SessionsGroupsWires
         // whether it waits on the person's answer to its permission request.
         Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting, call.Told } : null,
         Waits = row.Waits?.Select(wait => new { wait.Run, wait.Node, wait.Why, wait.Since }).ToArray(),
+        Passage = row.Passage is { } passage
+            ? new { passage.Run, passage.Workflow, passage.Version, Steps = passage.Steps.Select(step => new { step.Node, step.Kind, step.Mark }).ToArray() }
+            : null,
         Line = row.Line is { } line ? new { line.State, line.Group, line.Reason, line.By, line.Role } : null,
     };
 }
