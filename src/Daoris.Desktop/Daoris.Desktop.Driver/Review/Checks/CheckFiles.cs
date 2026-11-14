@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using static Daoris.Driver.Json;
 
@@ -16,6 +17,48 @@ public sealed class CheckFiles(string home)
 
     /// <summary>The log a run writes to.</summary>
     public string LogOf(string id) => PathOf(id, "log");
+
+    /// <summary>
+    /// The machine's one broker seat, held while a check runs: a second Daoris process on this home gets null and runs nothing, so it
+    /// never queues again a run the first holds nor opens the log the first writes.
+    /// </summary>
+    public IDisposable? TakeSeat()
+    {
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            return new FileStream(PathOf("broker", "lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The one place a log is opened to write: a reader may read it, and it may be removed, while the run writes.</summary>
+    public StreamWriter OpenLogWriter(string id)
+    {
+        Directory.CreateDirectory(Folder);
+        var stream = new FileStream(LogOf(id), FileMode.Create, FileAccess.Write, FileShare.Read | FileShare.Delete);
+        return new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
+    }
+
+    /// <summary>The one place a log is opened to read: a run may be writing it.</summary>
+    public FileStream OpenLogReader(string id) => new(LogOf(id), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+
+    /// <summary>The log's text, or null where there is none or it cannot be read.</summary>
+    public string? ReadLog(string id)
+    {
+        try
+        {
+            using var reader = new StreamReader(OpenLogReader(id), new UTF8Encoding(false));
+            return reader.ReadToEnd();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>Every ask on file, oldest first; one unreadable or of another shape is not an ask here.</summary>
     public IReadOnlyList<CheckAsk> Asks()
@@ -81,6 +124,7 @@ public sealed class CheckFiles(string home)
                 Tail = Text(element, "tail"),
                 Tip = Text(element, "tip"),
                 Handed = Text(element, "handed"),
+                Error = Text(element, "error"),
             };
         }
     }
@@ -95,6 +139,7 @@ public sealed class CheckFiles(string home)
         if (state.Tail is not null) writer.WriteString("tail", state.Tail);
         if (state.Tip is not null) writer.WriteString("tip", state.Tip);
         if (state.Handed is not null) writer.WriteString("handed", state.Handed);
+        if (state.Error is not null) writer.WriteString("error", state.Error);
         writer.WriteEndObject();
     });
 

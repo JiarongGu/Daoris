@@ -65,8 +65,13 @@ internal sealed class DriverChecks
     {
         try
         {
-            while (await _broker.RunNextAsync(_closing.Token).ConfigureAwait(false) is not null)
+            while (await _broker.RunNextAsync(_closing.Token).ConfigureAwait(false) is { } state)
             {
+                // Daoris's own failure to run a check is the run's to say, never the session's: the check is asked again after its delay.
+                if (state.State == CheckStates.Errored)
+                {
+                    _context.Said.Retry("check", $"check `{state.Id}` could not be run by Daoris ({state.Error}); it is asked again in {CheckQueue.RetryAfter.TotalMinutes:0} minute.");
+                }
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or OperationCanceledException)

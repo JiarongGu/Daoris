@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Daoris.Driver;
 
 /// <summary>How a check is run: the heavy run's own door, <see cref="HeavyRun.RunAsync"/>, which a test stands in for.</summary>
@@ -20,8 +18,6 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
     /// <summary>The most of a log's end a verdict keeps, in characters.</summary>
     public const int TailBound = 4000;
 
-    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
-
     private readonly CheckFiles _files = new(home);
     private readonly BrokeredRun _run = run ?? HeavyRun.RunAsync;
     private string? _holding;
@@ -29,8 +25,14 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
     /// <summary>The ask this broker runs now, or null.</summary>
     public string? Holding => _holding;
 
-    /// <summary>Run the next ask to its verdict; null where none waits or one runs.</summary>
+    /// <summary>Run the next ask to its verdict; null where none waits, one runs, or another Daoris process on this home holds the seat.</summary>
     public async Task<CheckState?> RunNextAsync(CancellationToken ct)
+    {
+        using var seat = _files.TakeSeat();
+        return seat is null ? null : await RunSeatedAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task<CheckState?> RunSeatedAsync(CancellationToken ct)
     {
         var asks = _files.Asks();
         foreach (var ask in asks.Where(each => _files.ReadState(each.Id) is { State: CheckStates.Running } && each.Id != _holding))
@@ -50,7 +52,7 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
         try
         {
             int exit;
-            await using (var log = new StreamWriter(_files.LogOf(next.Id), append: false, Utf8) { AutoFlush = true })
+            await using (var log = _files.OpenLogWriter(next.Id))
             {
                 var world = new HeavyRunWorld(home, folder, System.Environment.GetEnvironmentVariable);
                 exit = await _run(new HeavyRunAsk(next.Gate)
@@ -71,7 +73,7 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return Keep(new CheckState(next.Id, CheckStates.Failed, DateTimeOffset.UtcNow) { Tail = error.Message, Tip = tip });
+            return Keep(new CheckState(next.Id, CheckStates.Errored, DateTimeOffset.UtcNow) { Error = error.Message, Tip = tip });
         }
         finally
         {
@@ -87,9 +89,7 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
 
     private string? TailOf(string id)
     {
-        var path = _files.LogOf(id);
-        if (!File.Exists(path)) return null;
-        var text = File.ReadAllText(path, Utf8);
+        if (_files.ReadLog(id) is not { } text) return null;
         if (text.Length <= TailBound) return text;
         var cut = text[^TailBound..];
         var line = cut.IndexOf('\n');

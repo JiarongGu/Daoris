@@ -48,7 +48,7 @@ internal sealed record HandbackObservation(
         var finished = own.Where(each => each.State is { Tip: { } at } state && at == tip && CheckStates.Finished(state.State))
             .OrderByDescending(each => each.State!.At).FirstOrDefault();
         if (finished.State is { } done) return done.State == CheckStates.Reached ? CheckVerdicts.Reached : CheckVerdicts.Failed;
-        var waiting = own.Any(each => each.State is null or { State: CheckStates.Queued or CheckStates.Running });
+        var waiting = own.Any(each => each.State is null or { State: CheckStates.Queued or CheckStates.Running or CheckStates.Errored });
         return waiting ? CheckVerdicts.Checking : CheckVerdicts.Missing;
     }
 

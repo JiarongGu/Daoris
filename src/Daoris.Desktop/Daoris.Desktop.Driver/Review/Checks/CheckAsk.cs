@@ -23,6 +23,9 @@ public static class CheckStates
     public const string Failed = "failed";
     public const string Stopped = "stopped";
 
+    /// <summary>Daoris could not run the check (its log, its process, a tool error): no verdict, never said to the asker, asked again after a delay.</summary>
+    public const string Errored = "errored";
+
     /// <summary>Whether the state is a verdict: the run is over.</summary>
     public static bool Finished(string state) => state is Reached or Failed or Stopped;
 }
@@ -43,4 +46,7 @@ public sealed record CheckState(string Id, string State, DateTimeOffset At)
     public string? Tip { get; init; }
 
     public string? Handed { get; init; }
+
+    /// <summary>Why Daoris could not run the check, where its state is <see cref="CheckStates.Errored"/>.</summary>
+    public string? Error { get; init; }
 }
