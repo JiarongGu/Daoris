@@ -32,10 +32,10 @@ public static class AskRunReads
             if (binding is null || !AskRunKey.Is(binding) || records.Read(RunUnits.IdOf(binding.Run))?.Ended is not null) continue;
             if (!roots.TryGetValue(binding.Repository, out var root)) continue;
             var line = (await CanonicalLine.ResolveAsync(root, binding.Repository, binding.Workspace, config, ct).ConfigureAwait(false)).Branch;
-            var (code, shared, _) = line is null
-                ? (1, "", "")
-                : await WorkingTree.GitAsync(root, ["merge-base", $"refs/heads/{line}", $"refs/heads/{TrainBranch.Of(binding.Ask!)}"], ct).ConfigureAwait(false);
-            read[binding.Run] = new AskBranchRead(binding.Ask!, line, code == 0 ? shared.Trim() : null);
+            var shared = line is null
+                ? null
+                : await MachinePorts.Repository.MergeBaseAsync(root, $"refs/heads/{line}", $"refs/heads/{TrainBranch.Of(binding.Ask!)}", ct).ConfigureAwait(false);
+            read[binding.Run] = new AskBranchRead(binding.Ask!, line, shared);
         }
 
         return read;

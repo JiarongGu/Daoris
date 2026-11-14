@@ -94,8 +94,8 @@ public sealed class RebaseDoor(string home, Action<string>? log = null, Func<boo
     /// <summary>Whether the attempt's step ref already holds <paramref name="commit"/>: a replay written again finds its ref made.</summary>
     private static async Task<bool> KeptAsync(string root, RebaseStart start, string commit, CancellationToken ct)
     {
-        var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", StepRefs.Of(start.Run, start.Node, start.Attempt)], ct).ConfigureAwait(false);
-        return code == 0 && string.Equals(at.Trim(), commit, StringComparison.OrdinalIgnoreCase);
+        var at = await MachinePorts.Repository.CommitOfAsync(root, StepRefs.Of(start.Run, start.Node, start.Attempt), ct).ConfigureAwait(false);
+        return string.Equals(at, commit, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The work's session tree where one stands here; null where none does.</summary>

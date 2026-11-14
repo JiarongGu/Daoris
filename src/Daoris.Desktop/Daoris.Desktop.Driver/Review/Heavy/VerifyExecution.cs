@@ -74,7 +74,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         // A batch runs the gates its changed paths reach and those owed; the rest are named as kept. Where git cannot
         // say what changed, every gate runs.
         IReadOnlyList<VerifyGate> kept = [];
-        if (send.Reach is { } reach && await GateReach.ChangedAsync(send.Checkout, reach.Base, send.Commit, ct).ConfigureAwait(false) is { } changed)
+        if (send.Reach is { } reach && await MachinePorts.Repository.ChangedAsync(send.Checkout, reach.Base, send.Commit, ct).ConfigureAwait(false) is { } changed)
         {
             var plan = GateReach.Of(chosen, changed, reach.Passed);
             chosen = [.. plan.Run];

@@ -335,7 +335,12 @@ The integration run's replay of a merge rule's press (a merge commit whose secon
 settled at once, a conflict aborted and handed back, a stop kept until the line moves) and its crash recovery by ancestry run on
 `MemoryRepository` (`IntegrationReplayMemoryTests`, `IntegrationResumeMemoryTests`): the replay, resume, promotion, settle, line
 pull and landed review ask the port. What stays on real git is whatever reads the line's holds by patch and content (`LineHolds`,
-`LandedProofs`, `ContentHolds`, `BranchJudging`), the backlog's rows, a diff's text, and `ResolveTree`'s rebase and index plumbing.
+`ContentHolds`, `BranchJudging`), the backlog's rows, a diff's text, and `ResolveTree`'s rebase and index plumbing.
+
+The landed proof (`LandedProofs.ProveAsync`, the changed names every proof reads, the standing tip), the hand-back read, the step refs, and
+the workflow nodes' one-commit, ancestry, merge-base and ref-list reads ask the repository port, and their cases run on `MemoryRepository`
+(`LandedProofMemoryTests`, `HandbackReaderTests`, `StepRefsMemoryTests`); the review graph's reads (a command-level census of what
+starts), the diff and patch text, and the merges, rebases and the landing's judgements stay on git's commands.
 Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 
