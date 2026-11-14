@@ -274,6 +274,7 @@ public static class NodeLifecycle
             // on their own word and never as its plugin's, on a plugin's performed node alone (NodeAuthority.PersonSettles).
             new(NodeStates.Unknown, NodeStates.Reached, person, "the person settles an attempt nothing else can establish: it happened, on their word"),
             new(NodeStates.Unknown, NodeStates.Failed, person, "the person settles an attempt nothing else can establish: it did not"),
+            new(NodeStates.Unknown, NodeStates.Ready, daoris, "a check Daoris could not run (unrun) with asks left: a new attempt (UnrunChecks)"),
             new(NodeStates.Failed, NodeStates.Ready, daoris, "a declared retry: a transient code with attempts left, as a new attempt"),
             new(NodeStates.Failed, NodeStates.Ready, person, "a new attempt the person asks for"),
             new(NodeStates.Rejected, NodeStates.Ready, person, "a new attempt the person asks for"),
@@ -472,6 +473,9 @@ public static class NodeLifecycle
                 if (!status.Transient) return Refuse(NodeRefusal.NotTransient);
                 if (status.Tries >= (node.Retry?.MaxAttempts ?? 1)) return Refuse(NodeRefusal.NoAttemptsLeft);
                 return To(Reset(next));
+
+            case NodeStates.Ready when status.State == NodeStates.Unknown && move.By == NodeCause.Daoris:
+                return status.Tries >= UnrunChecks.Bound ? Refuse(NodeRefusal.NoAttemptsLeft) : To(Reset(next) with { Unreconciled = null });
 
             case NodeStates.Ready or NodeStates.Blocked when status.State is NodeStates.Invalidated or NodeStates.Skipped:
                 // Judged again on a fresh binding, or the person's skip withdrawn: the bound counts afresh.
