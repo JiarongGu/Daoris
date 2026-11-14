@@ -105,7 +105,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person included (`SESSION_INPUT` too). The verb alone, with no
     Daoris running, writes `ask` and refuses `act`. `data/terminal-acts.json` keeps the newest 20 tier changes with the door
     each came by and the newest 100 presses under `act` with their ends; while the tier is `act` or a press is kept,
-    *Notifications* heads the presses' group with who turned it on and when, and *Back to ask*. (from D201, D209, D271)
+    *Notifications* heads the presses' group with a compact line (the words, a count, *Back to ask*, *Show* for who turned it
+    on and when and each press, *Got it*), drawn only for a change or press newer than the person's last *Got it*. (from D201, D209, D271)
 
 **The windows**
 
@@ -152,8 +153,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     session's end, none for a part whose line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), and each
     watched step after a run's review once reached or failed, one line by run, node and attempt
     (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once). Beside the presses waiting, counting toward no
-    group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run
-    (`HelpPressLine`: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
+    group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run, the latter
+    a compact line drawn only for a press newer than the person's last *Got it* (`HelpPressLine`, behind *Show*: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a press that opened a place says what it made under its row, as the
     conversation does (`PressReceiptLine`); a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
