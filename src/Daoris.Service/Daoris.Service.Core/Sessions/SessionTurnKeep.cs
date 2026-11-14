@@ -10,10 +10,7 @@ internal static class SessionTurnKeep
     public static Task<Session> AddAsync(SessionStore store, Session record, SessionTurn turn, CancellationToken ct) =>
         KeepAsync(store, record, [.. SessionTurns.Own(record), turn], ct);
 
-    /// <summary>
-    /// Keep on the record's last turn what its door reported for it: <paramref name="spent"/> less the figures the turns before it kept.
-    /// A count the door never said leaves the figure unset.
-    /// </summary>
+    /// <summary>Keep on the last turn <paramref name="spent"/> less what the turns before it kept; a count its door never gave stays unset.</summary>
     public static Task<Session> UsageAsync(SessionStore store, Session record, TurnSpent spent, CancellationToken ct)
     {
         var own = SessionTurns.Own(record);

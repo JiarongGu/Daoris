@@ -53,7 +53,6 @@ public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string
     /// <summary>Whether the start holds on it: its run is not bound, so no take may go on under a graph it is not bound to.</summary>
     public bool Holds => Came is WorkflowBindCame.Unread or WorkflowBindCame.Failed;
 
-    /// <summary>What a first turn's end waits on: its run, and the commit its quest's submission handed where one stands.</summary>
     public StepWait? WaitsAfter(QuestView? handed) =>
         this is { Run: { Length: > 0 } run, Binding: { IsCurrent: false } } ? new StepWait(run, Tip: handed?.Submission?.Commit) : null;
 }

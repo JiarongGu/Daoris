@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The day the session lifecycle was built for, replayed through the runtime on the repository's own development graph: the agent's done
+/// A development day for the session lifecycle, run through the runtime on the repository's own development graph: the agent's done
 /// is a submission, the check's red goes back to the work, its green lets the opinion and the look go on, the landing is reached before
 /// the run's end, no check is asked of any session, and the quest's Done is written once, with the run's end.
 /// </summary>

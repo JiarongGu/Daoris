@@ -47,10 +47,7 @@ export function workSentence(t: TFunction, session: Session, grouping: SessionGr
 /** The words for what woke a turn; a cause a newer host adds is said as Daoris's. */
 const CAUSES: ReadonlySet<string> = new Set(['start', 'step', 'person', 'limit', 'curve', 'agent', 'daoris']);
 
-/**
- * Its turns beneath it, oldest first: the number, what woke it (and the step that did), its agent, its account by the name the person
- * gave it, and the input and output tokens its door reported for it, where it reported them.
- */
+/** Its turns beneath it, oldest first: what woke each, its agent, its account by the person's name, and the tokens its door reported. */
 export function turnLines(
   t: TFunction, turns: readonly SessionTurn[] | null | undefined, accountName: (id: string) => string = (id) => id,
 ): string[] {

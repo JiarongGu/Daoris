@@ -29,7 +29,6 @@ export type SessionRowFacts = {
   lastTurn?: string | null;
   /** Its repository's checkout, to tell a tree of its own from the root. */
   root?: string | null;
-  /** Where its work is now. */
   where?: SessionWhere | null;
   /** Whose work a second opinion's reviewer reads, by that session's title (XAGENT1g4c). */
   reads?: string | null;

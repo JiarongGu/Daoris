@@ -17,10 +17,7 @@ public static class CheckRounds
             .GroupBy(attempt => attempt.Node, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    /// <summary>
-    /// Whether <paramref name="node"/> has already settled a failure at <paramref name="tip"/>: another attempt there would repeat a red that no
-    /// commit has answered, and spend a round the work never had.
-    /// </summary>
+    /// <summary>Whether <paramref name="node"/> already failed at <paramref name="tip"/>: asking again there spends a round the work never had, so the check waits for a commit.</summary>
     public static bool RedAt(NodeRecord? record, string node, string? tip) =>
         !string.IsNullOrEmpty(tip) && record?.Attempts.Any(attempt =>
             attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed }

@@ -238,7 +238,6 @@ export function SessionRail({
     label: (account) => nameOf(session.door, account),
     now: new Date(),
   })?.[0] ?? null;
-  // What each helper and each part that continues another spent, on its own row; a browser asks nothing.
   const spent = useSessionSpent(listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id), 1);
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,

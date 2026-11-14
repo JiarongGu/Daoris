@@ -49,7 +49,6 @@ public sealed record ListSessionChanges(string? Since = null) : IRoute<SessionCh
 /// <param name="UnbindAsk">An intake's end lets its ask go in the same step, for the next intake.</param>
 /// <param name="Expect">The exact supervisor words a move to working admits; none admits none.</param>
 /// <param name="Turns">The usage history's turn lines of each session a commit point releases memory for, by session.</param>
-/// <param name="Spent">What the door reported over every turn of the record so far, which a move ending a turn hands; its last turn keeps its share.</param>
 public sealed record AdvanceSession(
     string Id, string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
     JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null,
@@ -60,7 +59,7 @@ public sealed record AdvanceSession(
     public static string Path => "/api/sessions/{id}/state";
 }
 
-/// <summary>The tokens a door reported over a record's turns so far; a count it never said is null.</summary>
+/// <summary>The tokens a door reported over a record's turns so far, handed by a move ending a turn; a count it never gave is null.</summary>
 public sealed record TurnSpentRequest(long? Input, long? Output);
 
 /// <summary>The words a keyed open moves onto the record it opens: the record they move from, the ids the course named, and the ids it saw waiting.</summary>

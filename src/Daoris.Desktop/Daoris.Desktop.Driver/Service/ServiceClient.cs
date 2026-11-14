@@ -405,10 +405,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
 
-    /// <summary>
-    /// What a session's door reported over its turns so far (input and output tokens, each null where none was said): a move out of a
-    /// running turn hands it, and the record's last turn keeps its share. Null hands none.
-    /// </summary>
     public Func<string, (long? Input, long? Output)>? TurnSpent { get; init; }
 
     public Func<string, CancellationToken, Task<IReadOnlyList<string>?>>? PlaceEnds { get; init; }
