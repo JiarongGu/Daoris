@@ -10,7 +10,7 @@ namespace Daoris.Contracts.Sessions;
 public static class SessionPageTypes
 {
     public const string State =
-        "'queued' | 'starting' | 'working' | 'awaiting-person' | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped'";
+        "'queued' | 'starting' | 'working' | 'awaiting-person' | 'awaiting-step' | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped'";
 
     public const string Kind = "'driven' | 'chat'";
 

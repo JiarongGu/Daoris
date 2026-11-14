@@ -717,14 +717,14 @@ describe('the session tone map', () => {
   // The twin of QUEST_TONE, and the reason that one exists: the compiler holds the completeness, so
   // a tenth state cannot ship half-toned. The runtime half is that every state resolves to a tone.
   const STATES: SessionState[] = [
-    'queued', 'starting', 'working', 'awaiting-person',
+    'queued', 'starting', 'working', 'awaiting-person', 'awaiting-step',
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
   // The nine the wire carries, the one the page shows a live chat between turns, the two words the
   // session list's reader derives from the session's quest, the park the person answered, a
   // record going on with their words, and a session waiting on its own helper.
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'awaiting-check', 'limited', 'limit-waits', 'not-started'];
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'limit-waits', 'not-started'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -756,8 +756,8 @@ describe('the session tone map', () => {
     // Waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
     expect(SESSION_TONE['awaiting-helper']).toBe('neutral');
     expect(SESSION_DOT['awaiting-helper']).toBe('idle');
-    expect(SESSION_TONE['awaiting-check']).toBe('neutral');
-    expect(SESSION_DOT['awaiting-check']).toBe('idle');
+    expect(SESSION_TONE['awaiting-step']).toBe('neutral');
+    expect(SESSION_DOT['awaiting-step']).toBe('idle');
   });
 
   /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown`. */
@@ -881,9 +881,9 @@ describe('the session tone map', () => {
     expect(SESSION_DOT.completed).toBe('ended');
   });
 
-  it('counts exactly the four states that still hold a repository', () => {
+  it('counts exactly the five states that still hold a repository', () => {
     expect([...SESSION_ACTIVE].sort())
-      .toEqual(['awaiting-person', 'queued', 'starting', 'working']);
+      .toEqual(['awaiting-person', 'awaiting-step', 'queued', 'starting', 'working']);
     // Parked counts as active on purpose: the person is the flow control, not an exit.
     expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
     expect(STATES.filter((state) => !SESSION_ACTIVE.has(state))).toHaveLength(5);
