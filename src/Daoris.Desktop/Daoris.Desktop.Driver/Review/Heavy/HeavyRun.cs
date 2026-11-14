@@ -481,6 +481,7 @@ public static class HeavyRun
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
+                HeavyGateLog.CopyTo(steps?.Log, output);
                 if (code == 0) continue;
 
                 keep?.Invoke(holder => holder with { Failed = new HeavyGateFailed(gateName, code) });
@@ -494,6 +495,7 @@ public static class HeavyRun
             step?.Stop();
             step?.Dispose();
             await EndAsync(job, output, sayLeft: false).ConfigureAwait(false);
+            HeavyGateLog.CopyTo(steps?.Log, output);
             output.WriteLine($"run-heavy: stopped while `{current?.Name}` ran; everything it started was ended before the slot was let go.");
             return 1;
         }

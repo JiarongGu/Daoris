@@ -53,6 +53,25 @@ public sealed class CheckBrokerErrorTests : IDisposable
     }
 
     [Fact]
+    public async Task A_wrapper_that_could_not_run_is_errored_and_not_a_gate_failure()
+    {
+        var files = new CheckFiles(_home);
+        files.WriteAsk(Ask("a1"));
+        var broker = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
+        {
+            await output.WriteLineAsync("run-heavy: no declared gate could be run");
+            return 2;
+        });
+
+        var state = await broker.RunNextAsync(CancellationToken.None);
+
+        Assert.Equal(CheckStates.Errored, state!.State);
+        Assert.Contains("no declared gate", state.Error);
+        Assert.Null(CheckQueue.Next(files.Asks(), files.ReadState));
+        Assert.Equal("a1", CheckQueue.Next(files.Asks(), files.ReadState, state.At + CheckQueue.RetryAfter)?.Id);
+    }
+
+    [Fact]
     public async Task A_gate_that_ran_and_exited_one_is_said_to_the_session_as_today()
     {
         var files = new CheckFiles(_home);

@@ -107,12 +107,16 @@ public sealed class CheckBrokerTests : IDisposable
     }
 
     [Fact]
-    public async Task An_asker_with_no_tree_is_a_failed_check_and_a_stopped_run_is_stopped()
+    public async Task An_asker_with_no_tree_is_an_error_and_a_stopped_run_is_stopped()
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         var none = new CheckBroker(_home, _ => null, (_, _, _, _) => Task.FromResult(0));
-        Assert.Equal(CheckStates.Failed, (await none.RunNextAsync(CancellationToken.None))!.State);
+        var missing = await none.RunNextAsync(CancellationToken.None);
+        Assert.Equal(CheckStates.Errored, missing!.State);
+        Assert.Contains("no tree", missing.Error);
+        Assert.Null(missing.Exit);
+        Assert.Equal("a1", CheckQueue.Next(files.Asks(), files.ReadState, missing.At + CheckQueue.RetryAfter)?.Id);
 
         files.WriteAsk(Ask("a2", minute: 1));
         using var cancel = new CancellationTokenSource();

@@ -43,7 +43,7 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
         if (CheckQueue.Next(asks, _files.ReadState) is not { } next) return null;
         if (folderOf(next.Session) is not { Length: > 0 } folder || !Directory.Exists(folder))
         {
-            return Keep(new CheckState(next.Id, CheckStates.Failed, DateTimeOffset.UtcNow) { Tail = "its session has no tree on this machine to run in." });
+            return Keep(new CheckState(next.Id, CheckStates.Errored, DateTimeOffset.UtcNow) { Error = "its session has no tree on this machine to run in." });
         }
 
         var tip = await TipAsync(folder, ct).ConfigureAwait(false);
@@ -54,7 +54,7 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
             int exit;
             await using (var log = _files.OpenLogWriter(next.Id))
             {
-                var world = new HeavyRunWorld(home, folder, System.Environment.GetEnvironmentVariable);
+                var world = new HeavyRunWorld(home, folder, System.Environment.GetEnvironmentVariable) { Log = _files.PathOf(next.Id, "gate.log") };
                 exit = await _run(new HeavyRunAsk(next.Gate)
                 {
                     Command = next.Command,
@@ -62,9 +62,9 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
                 }, world, log, ct).ConfigureAwait(false);
             }
 
-            return Keep(new CheckState(next.Id, exit == 0 ? CheckStates.Reached : CheckStates.Failed, DateTimeOffset.UtcNow)
+            return Keep(new CheckState(next.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, DateTimeOffset.UtcNow)
             {
-                Exit = exit, Tail = TailOf(next.Id), Tip = tip,
+                Exit = exit, Tail = TailOf(next.Id), Tip = tip, Error = exit == 2 ? TailOf(next.Id) : null,
             });
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
