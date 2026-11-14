@@ -233,8 +233,23 @@ public sealed class SessionLedger(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null) =>
-        advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace);
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null, TurnSpent? spent = null) =>
+        spent is null
+            ? advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace)
+            : AdvanceSpentAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, spent);
+
+    // A move out of a running turn hands what the door reported over the record's turns so far; it lands on the turn that move ends.
+    private async Task<SessionAdvanceOutcome> AdvanceSpentAsync(
+        string id, string state, string? note, string? evidence, string? transcript, DateTimeOffset now, CancellationToken ct, bool interrupted,
+        bool limit, string? noteParts, string? expected, bool unbindAsk, IReadOnlyCollection<string>? expect,
+        IReadOnlyDictionary<string, MemoryTurns>? turns, IReadOnlyList<string>? holdsPlace, TurnSpent spent)
+    {
+        var outcome = await advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace)
+            .ConfigureAwait(false);
+        return outcome.Session is { Origin: null } moved
+            ? outcome with { Session = await SessionTurnKeep.UsageAsync(sessions, moved, spent, ct).ConfigureAwait(false) }
+            : outcome;
+    }
 
     /// <summary>End a workflow's run: its quests Done and its waiting sessions ended in one write; see <see cref="RunEnds.EndAsync"/>.</summary>
     public Task<RunEndOutcome> EndRunAsync(

@@ -15,6 +15,12 @@ public sealed record SessionTurn(int Number, string Cause, DateTimeOffset At)
     /// <summary>That step's attempt, where one is named.</summary>
     public int? Attempt { get; init; }
 
+    /// <summary>The input tokens its door reported for it; null where it reported none, or the turn runs.</summary>
+    public long? Input { get; init; }
+
+    /// <summary>The output tokens its door reported for it; null where it reported none, or the turn runs.</summary>
+    public long? Output { get; init; }
+
     /// <summary>The record it ran in: a move to another account or agent runs its turn in a record of its own on the same line.</summary>
     public string? Part { get; init; }
 
