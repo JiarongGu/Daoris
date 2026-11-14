@@ -372,16 +372,16 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var ran = plan.Count(each => each.Allowed);
 
             if (stop.IsCancellationRequested) return Ran(LookClass.Own, Stopped(id, packet, passes, answered, needs, files, digest));
-            if (answered.Count == 0)
+            // A maker that cooled, met its limit twice or found the cap full is said, with the offer to ask again, where any answered or none did.
+            var shortOf = passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Unavailable or BrainstormPassRecord.Failed }
+                                             && pass.Codes.Any(code => code is StartPasses.Cooling or CapFull or Limit)).ToList();
+            if (answered.Count == 0 && shortOf.Count == 0)
             {
                 files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.NoAgent, DateTimeOffset.UtcNow));
                 return Ran(LookClass.Progress, $"brainstorm `{id}` ended: no agent could answer, and its packet is kept.");
             }
 
             var handed = BrainstormSyntheses.Number(answered);
-            // No synthesis from the makers left where one cooled or the cap held it: it says so and leaves the wait to the person.
-            var shortOf = passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Unavailable }
-                                             && pass.Codes.Any(code => code is StartPasses.Cooling or CapFull or Limit)).ToList();
             if (shortOf.Count > 0)
             {
                 var why = BrainstormDocuments.ShortOfMakers(shortOf, answered.Count);
@@ -621,14 +621,20 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         // The person's stop: said at the loop's top.
                     }
 
-                    if (!stop.IsCancellationRequested && !await SlotAsync().ConfigureAwait(false))
+                    var again = false;
+                    if (!stop.IsCancellationRequested)
                     {
-                        return stop.IsCancellationRequested
-                            ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns)
-                            : Ended(BrainstormPassRecord.Unavailable, [StartPasses.Cooling, CapFull], turns, why: ran.Why);
+                        if (!await SlotAsync().ConfigureAwait(false))
+                        {
+                            return stop.IsCancellationRequested
+                                ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns)
+                                : Ended(BrainstormPassRecord.Unavailable, [StartPasses.Cooling, CapFull], turns, why: ran.Why);
+                        }
+
+                        again = true;
                     }
 
-                    holding = !stop.IsCancellationRequested;
+                    holding = again;
                     ownEnd = Clock.GetUtcNow() + own;
                     end = ownEnd < until ? ownEnd : until;
                     cutCode = until < ownEnd ? Deadline : TimedOut;

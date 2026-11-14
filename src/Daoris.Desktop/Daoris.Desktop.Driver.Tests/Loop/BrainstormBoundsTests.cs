@@ -388,7 +388,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         Assert.Equal(("failed", "deadline", 1), Of(Pass(id, "g1")));
         Assert.Equal(("unavailable", "cap-full"), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Codes));
         Assert.DoesNotContain("g2", script.Started);
-        Assert.Equal((BrainstormStates.Ended, BrainstormStates.NoAgent), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        Assert.Equal((BrainstormStates.Ended, BrainstormStates.ShortHanded), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
     }
 
     /// <summary>
@@ -445,7 +445,105 @@ public sealed class BrainstormBoundsTests : IDisposable
         Assert.Contains("short of makers: 1 answered", text, StringComparison.Ordinal);
         Assert.Contains("`acp-stub`", text, StringComparison.Ordinal);
         Assert.Contains("is cooling", text, StringComparison.Ordinal);
-        Assert.Contains("ask the brainstorm again once it lifts", text, StringComparison.Ordinal);
+        Assert.Contains("ask the brainstorm again once its account lifts", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>🔴 A maker that meets its limit on its one restart too is short, though its pass reads failed: no synthesis.</summary>
+    [Fact]
+    public async Task A_maker_that_meets_its_limit_twice_is_short_and_no_synthesis_runs()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Behaviours["g2"] = (turn, _) => Task.FromResult(new BrainstormTurnRun(true, "work", "limit", $"limit  brainstorm turn {turn.Turn}"));
+        script.Behaviours["g2r"] = script.Behaviours["g2"];
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["s1"] = Synthesize("P1");
+
+        await LookAsync(driver);
+
+        Assert.Equal("failed", Of(Pass(id, "g2")).State);
+        Assert.DoesNotContain("s1", script.Started);
+        Assert.Equal((BrainstormStates.Ended, BrainstormStates.ShortHanded), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        Assert.Contains("met its account's limit", Files.DocumentText(id)!, StringComparison.Ordinal);
+        Assert.Contains("once its account's limit resets", Files.DocumentText(id)!, StringComparison.Ordinal);
+    }
+
+    /// <summary>🔴 Where no maker answered and one cooled, the brainstorm still says so and offers the wait, not only that no agent answered.</summary>
+    [Fact]
+    public async Task Where_nobody_answered_and_a_maker_cooled_the_wait_is_still_offered()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Behaviours["g1"] = (_, _) => Task.FromResult(
+            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromHours(1)));
+        script.Behaviours["g2"] = script.Behaviours["g1"];
+
+        await LookAsync(driver);
+
+        Assert.Empty(script.Started.Where(turn => turn == "s1"));
+        Assert.Equal((BrainstormStates.Ended, BrainstormStates.ShortHanded), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        Assert.Contains("short of makers: 0 answered", Files.DocumentText(id)!, StringComparison.Ordinal);
+    }
+
+    /// <summary>🔴 A cooling pass lets its slot go while it waits: on a cap of one, the other maker runs meanwhile, then the waiter again.</summary>
+    [Fact]
+    public async Task A_cooling_pass_lets_its_slot_go_while_it_waits()
+    {
+        var (driver, script) = Start(cap: 1, rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        var asked = 0;
+        script.Behaviours["g1"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(300))
+            : script.Answer(turn));
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["g2"] = Give("Cache the report");
+        script.Answers["s1"] = Synthesize("P1", "P2");
+
+        await LookAsync(driver);
+
+        Assert.Equal(["g1", "g2", "g1"], script.Started.Where(turn => turn is "g1" or "g2").ToList());
+        Assert.Equal(1, script.Most);
+        Assert.Equal("answered", Of(Pass(id, "g1")).State);
+    }
+
+    /// <summary>🔴 A pass's own minutes start when it runs again, not when it first asked: a lift later than they would have lasted still answers.</summary>
+    [Fact]
+    public async Task A_pass_s_own_minutes_start_again_when_the_cool_off_lifts()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 5, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        var asked = 0;
+        script.Behaviours["g2"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(800))
+            : script.Answer(turn));
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["g2"] = Give("Cache the report");
+        script.Answers["s1"] = Synthesize("P1", "P2");
+
+        await LookAsync(driver);
+
+        Assert.Equal(("answered", 1), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Turns));
+        Assert.True(Document(id)["ranked"]!.GetValue<bool>());
+    }
+
+    /// <summary>🔴 The person's stop during a cooling wait ends the pass stopped and the brainstorm stopped, with nothing synthesized.</summary>
+    [Fact]
+    public async Task The_person_s_stop_during_a_cooling_wait_ends_the_pass_stopped()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Behaviours["g2"] = (_, _) =>
+        {
+            _ = Task.Delay(150).ContinueWith(_ => Files.WriteStop(id, At), TaskScheduler.Default);
+            return Task.FromResult(new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10)));
+        };
+        script.Answers["g1"] = Give("Make the window inclusive");
+
+        await LookAsync(driver);
+
+        Assert.Equal("stopped", Of(Pass(id, "g2")).State);
+        Assert.DoesNotContain("s1", script.Started);
+        Assert.Equal((BrainstormStates.Ended, BrainstormStates.Stopped), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
     }
 
     /// <summary>
