@@ -40,7 +40,7 @@ internal static class MovedParts
     public static void SayCarried(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried)
     {
         var ranOn = prior.Adapter ?? agent;
-        Keep(context, prior.Session, CarriedNotes.On(sessionId, agent, account, why, carried.Tokens));
+        Keep(context, prior.Session, CarriedNotes.On(sessionId, agent, account, why, carried));
         context.Service.AccountSaid(Continuations.Moved(
             sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: false,
             carry: carried is CarryPlan.Compacted ? "compacted" : "whole"));

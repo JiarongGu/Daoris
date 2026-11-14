@@ -309,7 +309,7 @@ public sealed class HandOverTests : IDisposable
                 taken.Calls.Add($"end {session}");
                 return Task.CompletedTask;
             },
-            start: (prior, request, from, keyed, _) =>
+            start: (prior, request, from, keyed, _, _) =>
             {
                 taken.Calls.Add($"start {Path.GetFileName(prior.Tree)} {prior.Repository} {request.Agent} {request.Account}");
                 taken.From = from;
@@ -415,7 +415,7 @@ public sealed class HandOverTests : IDisposable
                 taken.Calls.Add($"end {session}");
                 return Task.CompletedTask;
             },
-            start: (prior, request, from, _, _) =>
+            start: (prior, request, from, _, _, _) =>
             {
                 taken.Calls.Add($"start {prior.Repository} {request.Agent} {request.Account}");
                 taken.From = from;

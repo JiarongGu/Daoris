@@ -1,18 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's limit move onto another account of its own agent that carries its own conversation there: planned from the door's
-/// declaration and the context the part left, its files copied once that part ended, and its new part's record opened as a resume of that
-/// conversation, the refused turns' words and the moved ones its prompt with Daoris's word after them, no brief. Where the door refuses the
-/// resume before any prompt, the same part goes on in the brief, the copy taken out of that account's home and the refusal said.
+/// A move's new part that goes on in a conversation rather than from the brief: onto another account of its own agent its own conversation,
+/// carried there; onto another agent, or where the copy cannot be made, the session written as the new agent's own conversation (the Seed
+/// form). Planned once the start's walk has settled the door and the account (<see cref="ChatCarries"/>), its new part's record is opened as a
+/// resume of that conversation, the refused turns' words and the moved ones its prompt with Daoris's word for the move's reason after them, no
+/// brief. Where the door refuses the resume before any prompt, the same part goes on in the brief, what was placed in that account's home
+/// taken out and the refusal said.
 /// </summary>
-/// <remarks>
-/// Ask Daoris's room, a move to another agent and a host whose open moves no word are briefed, and plan nothing here.
-/// </remarks>
-internal sealed class ChatLimitCarry(
-    IExecutorWiring wiring, AgentDoor door, PriorSession prior, HarnessSelection selection, CarryPlan.Carried carried,
-    IReadOnlyList<SessionEvent> refused, IReadOnlyList<ChatMessage> unkept, int before, ConversationMove move, MoveFence fence,
-    TaskCompletionSource<Task> read)
+/// <remarks>Ask Daoris's room and a host whose open moves no word are briefed, and plan nothing here.</remarks>
+internal sealed class ChatCarry(
+    IExecutorWiring wiring, AgentDoor door, PriorSession prior, HarnessSelection selection, CarryPlan.Carried carried, string why, ComposedBrief brief,
+    IReadOnlyList<SessionEvent> refused, IReadOnlyList<ChatMessage> unkept, ConversationMove move, MoveFence fence, TaskCompletionSource<Task> read)
 {
     private ChatContext context => wiring.Context;
 
@@ -21,19 +20,30 @@ internal sealed class ChatLimitCarry(
     // What the carried run is handed, which the brief's run on the same part takes again where the resume is refused.
     private (string To, ChatAgent Agent, DriverConfig Config, ChatPlace Place, Func<string, string, Task>? OnEnded, IReadOnlyList<MovedWord> Moved)? _ran;
 
-    /// <summary>The carry as planned: whole, or compacted first.</summary>
+    /// <summary>The carry as planned: whole, compacted first, or seeded.</summary>
     public CarryPlan.Carried Plan => carried;
 
     /// <summary>Whether the new part runs as the carried resume; false where the move's fence holds it, so nothing is handed there.</summary>
     public bool Resumed { get; private set; }
 
     /// <summary>
-    /// How the move takes the conversation, asked once the part it leaves has ended so its files are whole: carried, its copy made in the
-    /// new account's home, or briefed by the carry's code.
+    /// How the new part on <paramref name="door"/> takes the conversation, asked once the part it leaves has ended so its files are whole: on its
+    /// own agent carried, its copy made in the new account's home, or seeded there where the copy cannot be made; on another agent seeded.
+    /// Briefed by the carry's code on its own agent; null on another agent that cannot be seeded, which is handed the brief as before.
     /// </summary>
-    public static CarryPlan Planned(ChatContext context, AgentDoor door, PriorSession prior, HarnessSelection selection, string tree, string record)
+    public static CarryPlan? Planned(ChatContext context, AgentDoor door, PriorSession prior, HarnessSelection selection, string tree, ComposedBrief brief)
     {
         var registry = context.Harnesses.Adapters;
+        var to = selection.Profile is { Length: > 0 } ? selection.ProfileHome : null;
+        var seeding = ConversationSeedings.Through(registry, door.Id);
+        SeedAsk Seed(string home) =>
+            new(door.Id.Value, home, tree, Guid.NewGuid().ToString(), context.Events.After(prior.Session, 0).Events, brief.Context, DateTimeOffset.UtcNow);
+        if (prior.Adapter is { Length: > 0 } ran && !new AgentOfDoor(registry).Same(ran, door.Id.Value))
+        {
+            // Another agent holds no conversation of this one's to carry: it goes on in one written for it, in a home of Daoris's.
+            return to is null ? null : SeedCarry.Seeded(new CarryPlan.Briefed(LimitCarry.Unable), seeding, Seed(to)) as CarryPlan.Seeded;
+        }
+
         var carry = LimitCarry.Declared(registry, door.Id);
         string? from;
         try
@@ -45,13 +55,10 @@ internal sealed class ChatLimitCarry(
             from = null;
         }
 
-        var to = selection.Profile is { Length: > 0 } ? selection.ProfileHome : null;
         var high = context.Events.After(prior.Session, 0).Events.Where(e => e.Kind == SessionEventKind.Usage && e.Used is not null).MaxBy(e => e.Used);
         var plan = LimitCarry.Plan(carry, context.Conversations.Read(prior.Session)?.Conversation, from, to, high?.Used, high?.Size);
         if (from is null || to is null) return plan;
-        plan = LimitCarry.Copied(plan, carry, from, to, tree);
-        return SeedCarry.Seeded(plan, ConversationSeedings.Through(registry, door.Id),
-            new SeedAsk(door.Id.Value, to, tree, Guid.NewGuid().ToString(), context.Events.After(prior.Session, 0).Events, record, DateTimeOffset.UtcNow));
+        return SeedCarry.Seeded(LimitCarry.Copied(plan, carry, from, to, tree), seeding, Seed(to));
     }
 
     /// <summary>The carry's code where the move asked to carry and is briefed instead; null where it carries or asked nothing.</summary>
@@ -93,16 +100,16 @@ internal sealed class ChatLimitCarry(
         }
 
         var ask = new ResumeAsk(
-            carried.Conversation, words?.Words ?? [], CarriedNotes.From(prior.Session, prior.Adapter ?? agent.Name, prior.Profile, HandOverWhy.Limit, carried),
-            LimitCarry.Words, word => ChatFiles.Kept(context.Home, to, word.Files))
+            carried.Conversation, words?.Words ?? [], CarriedNotes.From(prior.Session, prior.Adapter ?? agent.Name, prior.Profile, why, carried),
+            CarryWords.Of(why, carried), word => ChatFiles.Kept(context.Home, to, word.Files))
         {
             Resent = [.. refused.Select(word => new ChatMessage(word.Text ?? "", ChatFiles.Kept(context.Home, prior.Session, word.Files ?? []))), .. unkept],
         };
         Resumed = true;
         // Said before the run, so a refusal's brief, which follows its run, is always said after it.
-        context.Note(prior.Session, CarriedNotes.On(to, agent.Name, selection.Profile, HandOverWhy.Limit, carried.Tokens));
+        context.Note(prior.Session, CarriedNotes.On(to, agent.Name, selection.Profile, why, carried));
         context.Service.AccountSaid(Continuations.Moved(
-            to, prior.Session, prior.Adapter ?? agent.Name, agent.Name, prior.Profile, selection.Profile, HandOverWhy.Limit, briefed: false,
+            to, prior.Session, prior.Adapter ?? agent.Name, agent.Name, prior.Profile, selection.Profile, why, briefed: false,
             carry: carried switch { CarryPlan.Compacted => "compacted", CarryPlan.Seeded => "seeded", _ => "whole" }));
         var started = await runner.RunAsync("chat", to, message, agent, selection, config, place, onEnded, ct, new GoingOn(record, ask) { Carried = this })
             .ConfigureAwait(false);
@@ -132,17 +139,14 @@ internal sealed class ChatLimitCarry(
     }
 
     /// <summary>
-    /// The door refused the carried resume before any prompt, and its run let go: the copy taken out of the new account's home, and the same
-    /// part, its record working, opened afresh and handed Daoris's brief, the refused turns' words and the moved ones, the refusal said.
+    /// The door refused the carried resume before any prompt, and its run let go: what was placed taken out of the new account's home, and the
+    /// same part, its record working, opened afresh and handed Daoris's brief, the refused turns' words and the moved ones, the refusal said.
     /// </summary>
     public async Task<ChatStart> FallBackAsync()
     {
         if (_ran is not { } ran) return new ChatStart(null, "");
         Withdraw();
         var service = context.Service;
-        var brief = await ContextBriefs.ComposeAsync(
-                service, context.Events, context.Home, prior.Session, HandOverWhy.Limit, conversation: true, ct: CancellationToken.None, before: before)
-            .ConfigureAwait(false);
         var started = await runner.RunAsync(
                 "chat", ran.To, $"conversation `{ran.To}` goes on, handed Daoris's brief.", ran.Agent, selection, ran.Config, ran.Place, ran.OnEnded, CancellationToken.None, working: true)
             .ConfigureAwait(false);
@@ -159,7 +163,7 @@ internal sealed class ChatLimitCarry(
             [.. refused.SelectMany(word => ChatFiles.Kept(context.Home, prior.Session, word.Files ?? [])), .. moved?.Files ?? [], .. unkept.SelectMany(word => word.Files)])
         {
             Brief = brief,
-            TakenOver = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, HandOverWhy.Limit, high, brief.Text.Length),
+            TakenOver = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, why, high, brief.Text.Length),
             Delivered = () =>
             {
                 move.Wire(transfers);
@@ -172,10 +176,10 @@ internal sealed class ChatLimitCarry(
         };
 
         var said = await wiring.Of<ChatHandOver>().SayHandedOver(ran.To, message, LimitMove.Shown(refused, handed, unkept)).ConfigureAwait(false);
-        context.Note(prior.Session, HandOverNotes.MovedOn(ran.To, ran.Agent.Name, selection.Profile, HandOverWhy.Limit, high, brief.Text.Length));
+        context.Note(prior.Session, HandOverNotes.MovedOn(ran.To, ran.Agent.Name, selection.Profile, why, high, brief.Text.Length));
         context.Note(ran.To, CarriedNotes.NotCarried(LimitCarry.Refused));
         service.AccountSaid(Continuations.Moved(
-            ran.To, prior.Session, ranOn, ran.Agent.Name, prior.Profile, selection.Profile, HandOverWhy.Limit, briefed: true, carry: LimitCarry.Refused));
+            ran.To, prior.Session, ranOn, ran.Agent.Name, prior.Profile, selection.Profile, why, briefed: true, carry: LimitCarry.Refused));
         if (!said) context.Note(ran.To, HandOverNotes.Unsaid());
         return started;
     }

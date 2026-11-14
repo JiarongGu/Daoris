@@ -4,7 +4,7 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A provider's seeding through the layer: the session's events as the history, Daoris's record as the context's one host entry, rendered in
+/// A provider's seeding through the layer: the session's events as the history, its context entries as Lyntai's context, rendered in
 /// the Seed form by Lyntai's rendering with the provider's own writer, and its files written under the account's home, each beside its place
 /// first and then moved over it. What the provider states for each door is the rendering's: the writer's word and the door's resume.
 /// </summary>
@@ -28,9 +28,7 @@ internal sealed class LayerSeeding(AgentProviderDescriptor provider, Func<string
     /// <inheritdoc/>
     public SeedPlacement Place(SeedAsk ask)
     {
-        var context = string.IsNullOrWhiteSpace(ask.Record)
-            ? SessionContext.Empty
-            : SessionContext.Empty.Append(new SessionContextNote(SessionContextKind.Standing, ask.Record), SessionContextAuthor.Host);
+        var context = Context(ask.Context);
         var rendering = new StandardContextRendering(provider, seedWriter: writer(Path.GetFullPath(ask.Tree), ask.At));
         var result = rendering.Render(context, new ContextRenderRequest(ContextForm.Seed, ask.Door)
         {
@@ -61,6 +59,23 @@ internal sealed class LayerSeeding(AgentProviderDescriptor provider, Func<string
 
         return new SeedPlacement(rendered.ResumeToken ?? ask.Conversation, placed, null);
     }
+
+    /// <summary>The session's entries as Lyntai's context, an agent's as its claim; a blank entry, or an agent's of the work, is none the log takes.</summary>
+    internal static SessionContext Context(IReadOnlyList<ContextEntry> entries) =>
+        entries.Where(entry => !string.IsNullOrWhiteSpace(entry.Text) && !(entry.Claim && entry.Kind == ContextKind.Work)).Aggregate(
+            SessionContext.Empty,
+            (context, entry) => context.Append(
+                new SessionContextNote(Kind(entry.Kind), entry.Text) { Subject = string.IsNullOrWhiteSpace(entry.Subject) ? null : entry.Subject },
+                entry.Claim ? SessionContextAuthor.Agent : SessionContextAuthor.Host));
+
+    private static SessionContextKind Kind(ContextKind kind) => kind switch
+    {
+        ContextKind.Work => SessionContextKind.Work,
+        ContextKind.Decided => SessionContextKind.Decided,
+        ContextKind.Found => SessionContextKind.Found,
+        ContextKind.Tree => SessionContextKind.Tree,
+        _ => SessionContextKind.Standing,
+    };
 
     /// <inheritdoc/>
     public void Remove(string home, SeedPlacement placed)

@@ -312,6 +312,8 @@ public static class HandOverTake
     /// Opens the new conversation in the old one's tree on the ask's agent and account, its record naming the one it continues,
     /// why and who asked, asking the host to move the old part's waiting words under the move's key where it has one
     /// (<paramref name="opens"/>): every word of the person's kept there meanwhile, none named, since a hand-over carries none of its own.
+    /// Handed the brief, from which a part that goes on in a carried or seeded conversation (<see cref="ChatStart.Carried"/>) is written and
+    /// which it is then never told.
     /// </param>
     /// <param name="opens">The key the move's open is sent with; null for an open with no move record behind it.</param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
@@ -328,7 +330,7 @@ public static class HandOverTake
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
-        Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
+        Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, ComposedBrief, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
         CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null, string? opens = null)
     {
         var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct, home).ConfigureAwait(false);
@@ -349,13 +351,16 @@ public static class HandOverTake
         // The open is keyed with nothing named and nothing read, as the curve's is, so the host moves every
         // word of the person's kept on the old part meanwhile and the new part's own go-on says it after the brief, never before.
         var moves = opens is null ? null : MovedWords.Asked(id, [], []) with { Opens = opens };
-        var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, ct).ConfigureAwait(false);
+        var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, brief, ct).ConfigureAwait(false);
         if (started.SessionId is not { } to)
         {
             return new HandedOver(
                 null, false, null,
                 $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
         }
+
+        // Going on in its conversation, its parts have said where it went and what it goes on from, and it is handed no brief.
+        if (started.Carried) return new HandedOver(to, true, null, $"conversation `{to}` goes on from `{id}` with {ask.Agent}, in its own conversation.");
 
         // A move by the usage curve names the account it left and the one it went to: the record that says so stays
         // on this machine. Only where the decision is the move's own, on the account the record ran on.

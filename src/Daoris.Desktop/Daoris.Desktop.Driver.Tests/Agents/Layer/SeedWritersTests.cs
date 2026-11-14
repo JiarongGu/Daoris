@@ -76,7 +76,10 @@ public sealed class SeedWritersTests : IDisposable
         Assert.Equal(["user", "assistant", "assistant", "user"], lines.Where(l => (string?)l["payload"]!["type"] == "message").Select(l => (string?)l["payload"]!["role"]));
     }
 
-    /// <summary>🔴 A session's events become one conversation in the account's home: the person's words, the agent's call and its result, then Daoris's record.</summary>
+    /// <summary>
+    /// 🔴 A session's events become one conversation in the account's home: the person's words, the agent's call and its result, then the
+    /// session's context entries as the host's record, an agent's as its claim.
+    /// </summary>
     [Fact]
     public void The_layer_s_seeding_writes_a_session_s_events_and_record_as_the_agent_s_conversation()
     {
@@ -92,7 +95,15 @@ public sealed class SeedWritersTests : IDisposable
             new() { Kind = SessionEventKind.Message, Text = "It shares a clock." },
         ];
 
-        var placed = ClaudeSeeding.Seeding.Place(new SeedAsk("claude-code", home, Tree, "seed-1", events, "Where it stands: the clock is shared.", At));
+        ContextEntry[] context =
+        [
+            new(ContextKind.Work, "Fix the login test."),
+            new(ContextKind.Standing, "Where it stands: the clock is shared."),
+            new(ContextKind.Found, "a.cs (2 times)") { Subject = "files read" },
+            new(ContextKind.Standing, "I was about to move the clock.") { Claim = true },
+        ];
+
+        var placed = ClaudeSeeding.Seeding.Place(new SeedAsk("claude-code", home, Tree, "seed-1", events, context, At));
 
         Assert.Null(placed.Refused);
         var name = Assert.Single(placed.Files);
@@ -102,7 +113,13 @@ public sealed class SeedWritersTests : IDisposable
         Assert.Equal([new SeedText("Reading the fixture."), new SeedToolCall("t1", "Read", "{\"path\":\"a.cs\"}")], read.Messages[1].Parts);
         Assert.Equal(new SeedToolResult("t1", "line 1"), read.Messages[2].Parts[0]);
         Assert.Equal(new SeedText("It shares a clock."), read.Messages[3].Parts[0]);
-        Assert.Contains("Where it stands: the clock is shared.", ((SeedText)read.Messages[^1].Parts[0]).Text);
+        // The session's context entries are the host's last message, each by its kind, the agent's quoted as its claim.
+        var record = ((SeedText)read.Messages[^1].Parts[0]).Text;
+        Assert.Equal(SeedRole.Host, read.Messages[^1].Role);
+        Assert.Contains("work: Fix the login test.", record);
+        Assert.Contains("standing: Where it stands: the clock is shared.", record);
+        Assert.Contains("(files read) found: a.cs (2 times)", record);
+        Assert.Matches(@"(?m)^> .*I was about to move the clock\.", record);
         Assert.DoesNotContain(read.Messages, m => m.Parts.OfType<SeedText>().Any(t => t.Text.Contains("a note of Daoris's")));
 
         ClaudeSeeding.Seeding.Remove(home, placed);

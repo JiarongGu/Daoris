@@ -9,6 +9,9 @@ public sealed record ComposedBrief(IReadOnlyList<BriefPiece> Pieces, IReadOnlyLi
     /// <summary>The brief whole.</summary>
     public string Text => string.Concat(Pieces.Select(piece => piece.Text));
 
+    /// <summary>The same line as the session's context entries (<see cref="SeedContext"/>), which a seed tells in place of the text.</summary>
+    public IReadOnlyList<ContextEntry> Context { get; init; } = [];
+
     /// <summary>The session it continues: the part moved from, the last of its line.</summary>
     public string? Continues { get; init; }
 
