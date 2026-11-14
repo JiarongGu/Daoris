@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The files stage as a start runs it after its record opens, a driven session's and a conversation's alike, each line it says kept on
-/// the record; and the hand's own step, which takes the <c>unworked</c> mark off before anything is handed the tree.
-/// </summary>
+/// <summary>The files stage as a start runs it, and the hand's step that takes the <c>unworked</c> mark off before anything is handed the tree.</summary>
 internal static class TreeFilesStep
 {
     /// <summary>The stage in <paramref name="tree"/>, one of Daoris's trees of <paramref name="root"/>; a failure of git or the disk said, never thrown.</summary>
@@ -17,8 +14,7 @@ internal static class TreeFilesStep
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
-            var why = error.Message.Trim();
-            outcome = new([Noted.Of(StartNoteCodes.StartedFilesFailed, $"Daoris could not prepare this tree's dependencies ({why}), so the session starts as a fresh tree does, installing its own.", ("why", why))], false, null);
+            outcome = new([TreeFilesStage.Failed(error)], false, null);
         }
 
         foreach (var line in outcome.Said) say(line);

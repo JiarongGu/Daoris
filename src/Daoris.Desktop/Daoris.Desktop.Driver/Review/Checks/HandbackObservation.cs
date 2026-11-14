@@ -22,13 +22,14 @@ public sealed record ObservedCheck(string Gate, string Verdict);
 /// (<see cref="GateReach"/>), never a list of the worker's.
 /// </summary>
 internal sealed record HandbackObservation(
-    string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<ObservedCheck> Checks, IReadOnlyList<LeftProcess> Left)
+    string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<ObservedCheck> Checks, IReadOnlyList<LeftProcess> Left,
+    IReadOnlyList<UnsignedCommit> Unsigned)
 {
     /// <summary>The gates with no verdict and no ask: the ones Daoris runs itself, never refusing the hand-back for them.</summary>
     public IReadOnlyList<ObservedCheck> Missing => [.. Checks.Where(check => check.Verdict == CheckVerdicts.Missing)];
 
-    /// <summary>Based on the line, every reached check green, nothing left running.</summary>
-    public bool Ready => Behind == 0 && Left.Count == 0 && Checks.All(check => check.Verdict == CheckVerdicts.Reached);
+    /// <summary>Based on the line, every reached check green, nothing left running, every commit signed by its maker.</summary>
+    public bool Ready => Behind == 0 && Left.Count == 0 && Unsigned.Count == 0 && Checks.All(check => check.Verdict == CheckVerdicts.Reached);
 
     /// <summary>
     /// Judge what is read: the gates <paramref name="touched"/> reaches, each with the newest finished verdict of <paramref name="tip"/> among
@@ -36,10 +37,10 @@ internal sealed record HandbackObservation(
     /// </summary>
     public static HandbackObservation Judge(
         string tip, string? mergeBase, int behind, IReadOnlyList<string> touched, IReadOnlyList<DeclaredGate> gates,
-        IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks, IReadOnlyList<LeftProcess> left)
+        IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks, IReadOnlyList<LeftProcess> left, IReadOnlyList<UnsignedCommit>? unsigned = null)
     {
         var reached = gates.Where(gate => GateReach.Reaches(gate, touched)).Select(gate => new ObservedCheck(gate.Name, VerdictOf(gate.Name, tip, checks)));
-        return new HandbackObservation(tip, mergeBase, behind, touched, [.. reached], left);
+        return new HandbackObservation(tip, mergeBase, behind, touched, [.. reached], left, unsigned ?? []);
     }
 
     private static string VerdictOf(string gate, string tip, IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks)
@@ -76,6 +77,7 @@ internal sealed record HandbackObservation(
             lines.Add($"Left running: `{process.Name}` ({process.Pid}), " + (process.Owned ? "started by this run, stopped now." : "not started by this run, left alone."));
         }
 
+        if (CommitAttribution.Words(Unsigned) is { } unsigned) lines.Add(unsigned);
         return string.Join('\n', lines);
     }
 }
