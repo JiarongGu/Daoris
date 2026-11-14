@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MERGEFAST1 — the merge runs the fast tier; the heavy tier runs after the landing (2026-11-14)
+
+> **MERGEFAST1** (tools; the owner, 2026-11-14, after merges still ran heavy gates): Outcome: a merge runs the light gates, the CLI's checks (`cli` is `npm run verify:checks`) and the reached unit classes (the CLI's and the tools' tests among them), never a Process, git or rehearsal class; the queue's promotion starts `tools/heavy-run.mjs` on the new tip, which runs those classes in `local/heavy-tree` and files a red as a finding naming the merge commit, and the whole CLI and tool tests are the CI's `cli-tests`; a driver `Platform/` change that ran about 100 Process classes in the merge now defers 334 to the landing's run.
+
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
 
 > **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.

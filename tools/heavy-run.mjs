@@ -32,10 +32,10 @@ export function settleInto(home, run, outcome, code, now = new Date().toISOStrin
 const git = (cwd, args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
 
 /** The heavy tree at `commit`: made where none stands, moved there where it holds another. */
-function prepareTree(home, commit) {
-  const path = join(home, HEAVY_TREE);
+function prepareTree(checkout, commit) {
+  const path = join(checkout, HEAVY_TREE);
   if (!existsSync(path)) {
-    const made = git(home, ['worktree', 'add', '--detach', path, commit]);
+    const made = git(checkout,['worktree', 'add', '--detach', path, commit]);
     if (made.status !== 0) throw new Error(`the heavy tree could not be made: ${String(made.stderr).trim()}`);
     return path;
   }

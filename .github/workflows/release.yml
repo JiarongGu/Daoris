@@ -252,7 +252,7 @@ jobs:
       # The merge tool's reached gate: it runs the test units a change reaches, read from the checkout's difference against HEAD,
       # so on a clean checkout it reaches nothing and passes. It is declared in daoris.gates.json, so the workflow runs it too.
       - name: Reached checks gate
-        run: node tools/reached-checks.mjs --check
+        run: node tools/reached-checks.mjs --tier fast
 
       # Everything that protects a consumer, in the order a consumer meets it — ending with the devkit's
       # five universal gates over THIS repository (DEVKIT3, SEN1). They ran here as a step of their own
