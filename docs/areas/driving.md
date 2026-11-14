@@ -274,7 +274,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     repositories through `team_plan` (a part each, the declared deployables, the cited release orders, the questions) and chains
     no quest for it; a `then` step stays for a check that follows work in one repository (DELIVERY1b). Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
-    never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
+    never is. A publish names the session that made it and says when it carries no requirement. A parked intake's page offers a box beside its
+    card's door to the ask: the session takes no words, so what the person writes there is posted on the ask's channel as theirs,
+    and a proposed ask's page draws *Close ask* and *Delete…* in its header, both any caller's (D284). (D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)
     is named with that pause by *Try again* and by its own resume, which changes nothing and names the resume that carries it on
     (`PauseHolder`). Work is abandoned by a listed second press that discards only what

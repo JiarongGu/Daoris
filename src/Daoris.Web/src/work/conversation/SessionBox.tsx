@@ -18,6 +18,7 @@ import type { HeadLink } from '../head/headRows';
  *   word with its level's menu, and *Send* sends the box's words at the person's default, the level menu beside it at
  *   another. Where words wait for the turn's end on a door that can stop a turn keeping the session, the keeping
  *   stop stands beside them, its own press; never on the native door's run, which has no such stop.
+ * - **A parked intake's answer**: the session takes no words, so the words are posted on its ask's channel; the frame's send does that.
  * - **The park's answer**: its box is the answer, as *Answer…* opens it; a second word joins the first. What the park
  *   asks stands above its words, each answer a row to select (`ParkAnswer`): its *Send* sends the selected
  *   one with the words, or the words alone, the one draft and the one send.
@@ -144,13 +145,25 @@ function Boxed({
       </div>
     );
   }
-  if (box.kind !== 'steer' && box.kind !== 'say') return null;
+  if (box.kind !== 'steer' && box.kind !== 'say' && box.kind !== 'ask') return null;
 
   // Every box here: words alone, no endings of its own (the page header and the parked card own those).
   const shared = {
     live: true, endings: false, attachments: false, sending, refusal, draft, onDraft, focus, accepts, going,
     onSend: (text: string, _files: File[], level?: Level) => (level ? onSend(text.trim(), level) : onSend(text.trim())), onFinish: () => {},
   };
+
+  // A parked intake: words alone, posted on its ask's channel. Nothing waits on its record, since it takes none.
+  if (box.kind === 'ask') {
+    return (
+      <Composer
+        {...shared}
+        fold
+        placeholder={t('work.intake.placeholder')}
+        sendLabel={t('work.intake.post')}
+      />
+    );
+  }
 
   if (box.kind === 'steer') {
     return (

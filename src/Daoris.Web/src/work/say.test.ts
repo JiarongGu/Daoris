@@ -44,6 +44,13 @@ describe('boxOf', () => {
       .toEqual({ kind: 'line', why: 'intake' });
   });
 
+  it('offers a parked intake the box whose words go to its ask', () => {
+    const intake = { kind: 'chat' as const, quest: null, ask: '0fda18' };
+    expect(boxOf(facts({ session: session({ ...intake, state: 'awaiting-person' }), intake: true }))).toEqual({ kind: 'ask' });
+    expect(boxOf(facts({ session: session({ ...intake, state: 'awaiting-person' }), intake: true, here: false })))
+      .toEqual({ kind: 'line', why: 'teammate' });
+  });
+
   /** A second opinion's reviewer takes no words, live or ended, and its line says why. */
   it('offers a second opinion’s reviewer no box, and says why once it ended', () => {
     const reviewer = { kind: 'chat' as const, quest: null, opinion: 'o1a2b3c4' };

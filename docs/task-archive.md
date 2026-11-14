@@ -18,6 +18,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **STOPRETRY1** (driver): Outcome: `quest retry` reads the records again where the last look refuses it (`QuestRetryReading`), and `session stop` and `session archive` say an ended record whose line goes on in one sentence (`EndedLine`).
 
 ---
+## ASKANSWER1 — a conversation that waits on the person takes the answer where it asks (2026-11-14)
+
+> **ASKANSWER1** (web): Outcome: a parked intake's page has a box (`Box` kind `ask`) whose words are posted on its ask's channel as the person's own through the existing channel door, with the refusal in the channel's words and the words kept in the box (the session still takes none, and publish and close stay the card's doors); a proposed ask's header draws *Close ask* and *Delete…* as presses of their own; page tests are `AskPage.proposed.test.tsx`, `say.test.ts`, `SessionBox.test.tsx` and the intake cases of `WorkFrame.words.test.tsx` (driving.md, rule 44).
 
 ## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
 
