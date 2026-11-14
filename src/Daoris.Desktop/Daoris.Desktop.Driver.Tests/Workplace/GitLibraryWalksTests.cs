@@ -22,9 +22,14 @@ public sealed class GitLibraryWalksTests : LandedFixture
     };
 
     [GitLegFact]
-    public async Task Merge_bases_ancestry_and_counts_are_git_s_in_the_checkout_and_a_linked_tree()
+    public Task Merge_bases_ancestry_and_counts_are_git_s_in_the_checkout() => WalksAsync(inLinked: false);
+
+    [GitLegFact]
+    public Task Merge_bases_ancestry_and_counts_are_git_s_in_a_linked_tree() => WalksAsync(inLinked: true);
+
+    private async Task WalksAsync(bool inLinked)
     {
-        var (root, _) = await RepositoryWithOriginAsync("walks");
+        var (root, _) = await RepositoryWithOriginAsync(inLinked ? "walks-linked" : "walks");
         var first = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
         var linked = Path.Combine(Scratch, "walks-topic");
         await GitAsync(root, "worktree", "add", "-b", "topic", linked);
@@ -35,7 +40,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         var lone = (await GitAsync(root, "commit-tree", "-m", "lone", (await GitAsync(root, "rev-parse", "HEAD^{tree}")).Trim())).Trim();
         await GitAsync(root, "update-ref", "refs/heads/lone", lone);
 
-        foreach (var folder in new[] { root, linked })
+        foreach (var folder in new[] { inLinked ? linked : root })
         {
             await SameAsync(folder, "merge-base", "main", "topic");
             await SameAsync(folder, "merge-base", "HEAD", "refs/heads/main");

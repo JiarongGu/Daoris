@@ -51,8 +51,8 @@ public sealed class StartTreeCloseGitTests : LandedFixture
             lock (asked) asked.Add(string.Join(' ', arguments));
             if (arguments is ["-c", _, "worktree", "add", ..]) opened = true;
 
-            // The tree's head, read just before the record's open is asked: the driver closes here.
-            else if (opened && arguments is ["rev-parse", "HEAD"]) closing.Cancel();
+            // The open's last git, which lets go of the tree's lock before the record's open is asked: the driver closes here.
+            else if (opened && arguments is ["worktree", "unlock", _]) closing.Cancel();
         };
         try
         {
