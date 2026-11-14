@@ -659,7 +659,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// ACCOUNTREADY1: the line a cooling account is given names <c>agent account ready &lt;agent&gt; &lt;account&gt;</c>, and the terminal
+    /// The line a cooling account is given names <c>agent account ready &lt;agent&gt; &lt;account&gt;</c>, and the terminal
     /// sends the account's owner (<c>codex</c> for <c>codex-acp</c>, an agent no door carries); the screen sends a door. Every name the
     /// verbs take, and its owner, ends its account's cool-off and its own sign-in's: none is refused as an unknown adapter.
     /// </summary>
