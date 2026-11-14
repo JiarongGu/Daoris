@@ -5,6 +5,13 @@ Status: proposed, 2026-11-14, under decision D293 point 5. Source: brainstorm `7
 raised. The packet left out the two conversation carries and cut ContextBrief and the course decision (BRAINPACKET1), so claims
 marked *(to check)* are read against the code first. It builds on SESSIONLIFE1's session record.
 
+**The second maker's reading** (DeepSeek, `268f92b4`, a secondary opinion): agrees on one renderer the brief and the standing block
+fold into, a pure course decision choosing resume or a fresh start, a port whose forms each provider declares, a resume handed only
+what it cannot know, size bounded by channel (inline under the budget, past it a file the first prompt names), and proof on the
+stand-ins by characters handed. Taken from it: the rendered context is cached under a stamp of the records it covered and rendered
+again only when one moves. Not taken: starting every step fresh even on the same agent (its own confidence low, its risk high, and
+against the person's aim of one continued context).
+
 ## The shape
 
 1. **The context is a log of typed entries per session, kept with the session.** Entry kinds: the work, what was decided, what was
