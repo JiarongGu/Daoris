@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public static class PluginCommandNotices
 {
     /// <summary>The notice's kind.</summary>
-    public const string Kind = "plugin-command";
+    public const string Kind = Notices.PluginCommand;
 
     /// <summary>The news teller whose occurrences these are.</summary>
     public const string Teller = "plugin-commands";

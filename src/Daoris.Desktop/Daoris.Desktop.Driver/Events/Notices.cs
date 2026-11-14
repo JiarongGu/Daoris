@@ -71,6 +71,8 @@ public static class Notices
     /// <summary>A row of <i>What needs you</i> the person set aside, kept read: its kind in <see cref="Notice.Route"/>, its id in <see cref="Notice.Code"/>, its since in <see cref="Notice.Act"/>.</summary>
     public const string Aside = "set-aside";
 
+    public const string PluginCommand = "plugin-command";
+
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
     /// <summary>The ids of kept notices of a kind this build no longer keeps.</summary>
@@ -78,7 +80,7 @@ public static class Notices
     [
         .. notices
             .Where(notice => (notice.Kind == Ended && Of(new AttentionEvent(AttentionKind.Ended, notice.Session ?? "", "", notice.State), notice.At) is null)
-                || (notice.Kind == PluginCommandNotices.Kind && notice.State == "reached"))
+                || (notice.Kind == PluginCommand && notice.State == "reached"))
             .Select(notice => notice.Id),
     ];
 

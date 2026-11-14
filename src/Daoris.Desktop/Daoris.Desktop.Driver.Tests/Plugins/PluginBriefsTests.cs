@@ -8,10 +8,7 @@ public sealed class PluginBriefsTests : IDisposable
     private static readonly PluginPlace Place = new("engine", "games");
     private const string Line = "File a report with acme-report_report, with evidence.";
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     private void Install(string id = "acme-report", string brief = "\"  " + Line + "  \"")
     {
