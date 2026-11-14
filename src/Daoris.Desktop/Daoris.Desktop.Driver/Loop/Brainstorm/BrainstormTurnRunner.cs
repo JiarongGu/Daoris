@@ -141,7 +141,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
 
         if (!selection.Allowed)
         {
-            return new BrainstormTurnRun(false, null, PassCode(selection), $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
+            return new BrainstormTurnRun(false, null, PassCode(selection), $"held  brainstorm turn {turn.Turn}: {selection.Refusal}", Lifts: selection.Cooling?.Until);
         }
 
         var files = new BrainstormFiles(_context.Home);

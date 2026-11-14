@@ -27,6 +27,8 @@ public static class BrainstormStates
     /// <summary>The code of a brainstorm whose synthesis did not finish: the document is unranked.</summary>
     public const string Unranked = "unranked";
 
+    public const string ShortHanded = "short-handed";
+
     /// <summary>The code of a brainstorm the person stopped: what answered is kept, unranked.</summary>
     public const string Stopped = "stopped";
 

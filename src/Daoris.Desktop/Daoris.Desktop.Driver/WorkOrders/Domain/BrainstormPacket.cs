@@ -19,8 +19,9 @@ public sealed record BrainstormSource(
 /// <summary>A source found and left out of the packet, with why: <c>bound</c>, <c>machine-path</c> or <c>removed</c>.</summary>
 public sealed record BrainstormLeftOut(string Path, string Why);
 
-/// <summary>The packet's bounds: first values, to read again on the first real run.</summary>
-public sealed record BrainstormBounds(int Sources = 24, int Each = 12_000, int All = 60_000, int Question = 4_000)
+/// <summary>The packet's bounds: first values, to read again on the first real run; a named source has its own, apart from a search's.</summary>
+public sealed record BrainstormBounds(
+    int Sources = 24, int Each = 12_000, int All = 60_000, int Question = 4_000, int NamedEach = 200_000, int NamedAll = 400_000)
 {
     public static BrainstormBounds First { get; } = new();
 }
@@ -67,6 +68,7 @@ public static class BrainstormPackets
         var left = new List<BrainstormLeftOut>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var room = bounds.All;
+        var namedRoom = bounds.NamedAll;
         foreach (var each in found)
         {
             if (!seen.Add($"{each.Path}:{each.First}-{each.Last}")) continue;
@@ -76,14 +78,18 @@ public static class BrainstormPackets
                 continue;
             }
 
-            if (sources.Count >= bounds.Sources || room <= 0)
+            var named = each.Tier == NamedTier;
+            if (sources.Count >= bounds.Sources || (named ? namedRoom : room) <= 0)
             {
                 left.Add(new BrainstormLeftOut(Named(each), LeftForBound));
                 continue;
             }
 
-            var kept = Math.Min(Math.Min(each.Text.Length, bounds.Each), room);
-            room -= kept;
+            var kept = named
+                ? Math.Min(Math.Min(each.Text.Length, bounds.NamedEach), namedRoom)
+                : Math.Min(Math.Min(each.Text.Length, bounds.Each), room);
+            if (named) namedRoom -= kept;
+            else room -= kept;
             sources.Add(new BrainstormSource(
                 $"S{sources.Count + 1}", each.Kind, each.Path.Replace('\\', '/'), each.First, each.Last, revision, each.Words, each.Tier ?? tier ?? Files,
                 each.Text[..kept], kept, each.Text.Length, each.Reason));
