@@ -35,6 +35,12 @@ public interface IGitIntegration
     /// </summary>
     Task<GitMerged> MergeAsync(string folder, GitMergeAsk ask, CancellationToken ct);
 
+    /// <summary><see cref="IGitRepository.CommitOfAsync"/>, with a git that did not answer told from one that named no commit.</summary>
+    Task<GitFound> FindCommitAsync(string folder, string revision, CancellationToken ct);
+
+    /// <summary><see cref="IGitRepository.MergeBaseAsync"/>, with a git that did not answer told from two revisions that share no ancestor.</summary>
+    Task<GitFound> FindMergeBaseAsync(string folder, string first, string second, CancellationToken ct);
+
     /// <summary>The commits <paramref name="tip"/> reaches that none of <paramref name="exclude"/> does, by full id, newest first; null where git could not say.</summary>
     Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct);
 

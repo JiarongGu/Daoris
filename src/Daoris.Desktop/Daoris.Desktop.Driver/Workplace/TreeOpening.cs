@@ -41,13 +41,15 @@ internal sealed class TreeOpening(TreeContext context)
         // did exactly that, to this repository: this check refuses loudly.
         // Asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
         var git = MachinePorts.Repository;
-        var top = await git.TopOfAsync(root, ct).ConfigureAwait(false);
-        if (top is null)
+        var fresh = await git.FreshTopAsync(root, ct).ConfigureAwait(false);
+        if (!fresh.Done)
         {
             throw new DriverException(
-                $"`{repository}`'s registered root is not a git repository (git named no working root) — "
+                $"`{repository}`'s registered root is not a git repository ({(fresh.Said.Length > 0 ? fresh.Said : "git named no working root")}) — "
                 + "a session's tree is one git links to its checkout, and there is nothing here to link it to.");
         }
+
+        var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(fresh.Top.Trim()));
 
         if (!SamePath(top, root))
         {

@@ -29,6 +29,10 @@ public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 
     public Task<string?> CommitOfAsync(string folder, string revision, CancellationToken ct) => Current.CommitOfAsync(folder, revision, ct);
 
+    public Task<GitFound> FindCommitAsync(string folder, string revision, CancellationToken ct) => Current.FindCommitAsync(folder, revision, ct);
+
+    public Task<GitFound> FindMergeBaseAsync(string folder, string first, string second, CancellationToken ct) => Current.FindMergeBaseAsync(folder, first, second, ct);
+
     public Task<string?> MergeBaseAsync(string folder, string first, string second, CancellationToken ct) => Current.MergeBaseAsync(folder, first, second, ct);
 
     public Task<bool?> IsAncestorAsync(string folder, string ancestor, string descendant, CancellationToken ct) => Current.IsAncestorAsync(folder, ancestor, descendant, ct);
