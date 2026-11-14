@@ -222,7 +222,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
     newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83) `AwaitingStep` (`awaiting-step`)
     is a session whose agent's turn ended while its work goes through its workflow (D293): open, holding its tree, running no process, its
-    note's `waits.step` part naming what it waits on (the run, and where known the node, its attempt and the tip). A word kept on it wakes
+    note's `waits.step` part naming the run it waits on (`waits.check` for its own broker check). A word kept on it wakes
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
     (`RunSessionEnds`, through the runtime's `Finish` door, expecting `awaiting-step`): `completed` where the run came to its graph's end,
@@ -243,7 +243,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (D173, D206, D210)
 40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
     `daoris gate run` makes) and ends its turn on it with no question to the person waits as `awaiting-step` on that check
-    (`StepWait.Check`, its `waits.step` naming `check_run`), holding its tree; the verdict (reached, failed or stopped, a red's log tail)
+    (`StepWait.Check`, its note `waits.check`), holding its tree; the verdict (reached, failed or stopped, a red's log tail)
     is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker runs one
     check at a time on this machine, the oldest ask first. One broker
     seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
