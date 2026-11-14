@@ -28,9 +28,10 @@ public sealed class HelperDoors
     /// refusal is an answer, the host's sentence, not an exception, and so is a host older than the door.
     /// </summary>
     public async Task<HelperOpened> OpenAsync(
-        string asker, string adapter, string tree, string? account, string? doorVersion, string? baseCommit, CancellationToken ct = default)
+        string asker, string adapter, string tree, string? account, string? doorVersion, string? baseCommit, CancellationToken ct = default,
+        string? scoutIn = null)
     {
-        var route = new OpenHelper(asker, adapter, tree, account, doorVersion, baseCommit);
+        var route = new OpenHelper(asker, adapter, tree, account, doorVersion, baseCommit, scoutIn);
         var door = RouteRequest.Of(route).Path;
         var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");

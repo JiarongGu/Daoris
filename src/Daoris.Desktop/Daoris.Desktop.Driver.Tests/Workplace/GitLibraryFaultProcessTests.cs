@@ -119,12 +119,12 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
         }
 
         var opened = inside.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(2, opened.Length);
         Assert.Equal($"package\t{Uri.EscapeDataString(GitLibraryFaults.Package)}", opened[0]);
-        Assert.StartsWith("open\t", opened[1]);
+        var own = opened.Select(line => line.Split('\t')).Single(parts => parts is ["open", _, var repository] && Uri.UnescapeDataString(repository) == root);
         var after = ReadLease().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(3, after.Length);
-        Assert.StartsWith("close\t", after[2]);
+        var closed = $"close\t{own[1]}";
+        Assert.DoesNotContain(closed, opened);
+        Assert.Contains(closed, after);
     }
 
     private string ReadLease()

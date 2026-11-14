@@ -28,7 +28,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     /// <summary>The heavy executor's port: its answer asks a pass, which reconciles it.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Executor is { } executor
-        ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node))
+        ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node) ?? AskRunChecks.SendOf(wiring.Home, unit, attempt, node))
         : null;
 
     /// <summary>

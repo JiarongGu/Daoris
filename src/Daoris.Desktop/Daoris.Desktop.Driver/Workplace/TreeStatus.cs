@@ -44,6 +44,10 @@ internal sealed record TreeStatus(int Changed, string? Head, string? Branch)
         return seen == 2 ? new TreeStatus(changed, head, branch) : null;
     }
 
+    internal static TreeStatus Unasked(string? head, string? branch) => new(-1, head, branch);
+
+    internal bool Counted => Changed >= 0;
+
     /// <summary>The branch the tree's agent moved it onto, as <see cref="TreeFollows.OwnBranchOfAsync"/> names it: not a session branch.</summary>
     internal string? OwnBranch =>
         Branch is { } branch && !branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) ? branch : null;

@@ -32,9 +32,11 @@ public sealed class AskDesk
     private readonly AskGoAheadAnswers goAheads;
     private readonly AskDeletes deletes;
     private readonly AskThroughs throughs;
+    private readonly QuestExchange exchange;
 
     public AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files, SessionStore? sessions = null)
     {
+        this.exchange = exchange;
         // The files an ask keeps, until it becomes quests: the home's AskFiles.
         var askFiles = files?.For(HomeEntry.AskFiles);
         standings = new(asks, exchange);
@@ -105,6 +107,10 @@ public sealed class AskDesk
     /// <summary>The person sets the ask's review choice; see <see cref="AskChoices.ChooseReviewAsync"/>.</summary>
     public Task<AskOutcome> ChooseReviewAsync(string id, string? choice, string? words, DateTimeOffset now, CancellationToken ct = default) =>
         choices.ChooseReviewAsync(id, choice, words, now, ct);
+
+    /// <summary>A plan revision rewords or rescopes the part an ask's quest publishes; see <see cref="QuestReviseOperation.ReviseAsync"/>.</summary>
+    public Task<QuestMove> ReviseQuestAsync(string quest, QuestRevision revision, DateTimeOffset now, CancellationToken ct = default) =>
+        exchange.Store.ReviseAsync(quest, revision, now, ct);
 
     /// <summary>The person sets the ask's kind and workflow; see <see cref="AskChoices.ChooseWorkflowAsync"/>.</summary>
     public Task<AskOutcome> ChooseWorkflowAsync(

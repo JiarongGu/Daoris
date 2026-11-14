@@ -89,6 +89,16 @@ public sealed class TeamStore
         return (await ReadRowsAsync("ask = $ask AND part = $part", ("$ask", ask), ("$part", part), ct).ConfigureAwait(false))[0];
     }, ct);
 
+    public Task RetitleAsync(string ask, string part, string title, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE team_parts SET title = $title WHERE ask = $ask AND part = $part";
+        command.Parameters.AddWithValue("$ask", ask);
+        command.Parameters.AddWithValue("$part", part);
+        command.Parameters.AddWithValue("$title", title);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
     /// <summary>Keeps the quest a part's publish made.</summary>
     public Task RecordQuestAsync(string ask, string part, string quest, CancellationToken ct = default) => _db.RunAsync(async () =>
     {

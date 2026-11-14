@@ -115,9 +115,9 @@ public static class QuestMoves
         QuestOperationKind.Published or QuestOperationKind.Taken or QuestOperationKind.Done or QuestOperationKind.Declined
             or QuestOperationKind.Deleted or QuestOperationKind.Accepted or QuestOperationKind.Bound or QuestOperationKind.Reopened
             or QuestOperationKind.Rebound => move,
-        // A workflow choice answers none of its own: the quest's own answer says what stands, and the person's words
+        // A workflow choice or a revision answers none of its own: the quest's own answer says what stands, and the words
         // stay in the log.
-        QuestOperationKind.Chosen => move,
+        QuestOperationKind.Chosen or QuestOperationKind.Revised => move,
         QuestOperationKind.Conflict => move with { Attempted = operation.Attempted },
         QuestOperationKind.Dismissed => move with { Dismisses = operation.Dismisses },
         QuestOperationKind.Waited => move with { WaitsOn = IsQuestId(operation.Note) ? operation.Note : null },

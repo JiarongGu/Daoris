@@ -268,9 +268,13 @@ internal sealed class SessionOpening(
     /// carried (rule 6): the course composes Daoris's again under their keys. Each keeps its id and its producer key, and its transfer id is
     /// the open's key and that id, so a word with no key has one too.
     /// </remarks>
-    private Task<SessionOpenOutcome> KeyedOpenAsync(
-        string key, string? from, OpenMoves? moves, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
-        sessions.ExclusiveAsync(async inside =>
+    private async Task<SessionOpenOutcome> KeyedOpenAsync(
+        string key, string? from, OpenMoves? moves, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct)
+    {
+        // The registry's first read of a cold index writes it, on the index's own connection; begun inside the step's write
+        // transaction it would wait on the lock the step holds and the step on it. Read before the step begins.
+        if (registry is not null) await registry.RegistryAsync(ct: ct).ConfigureAwait(false);
+        return await sessions.ExclusiveAsync(async inside =>
         {
             // Replay precedes even the record-left and request checks: the committed result owns the key, its transfer the receipt's, never
             // read again from any record's words.
@@ -326,7 +330,8 @@ internal sealed class SessionOpening(
 
             await sessions.Opens.KeepAsync(key, before.Id, opened.Id, transfer, inside).ConfigureAwait(false);
             return result with { Opens = key, Transfer = transfer, Session = opened, Message = message };
-        }, ct);
+        }, ct).ConfigureAwait(false);
+    }
 
     /// <summary>Moves asked of an open with no key: nothing would answer them again, so a lost answer could move twice.</summary>
     private static ArgumentException Unkeyed() => new(
@@ -405,6 +410,12 @@ internal sealed class SessionOpening(
             ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
+        // Or a stand-down against this machine's own dead taker, read past to that taker (StandDownTakers).
+        if (!brought && last is { State: SessionState.StoodDown } && await StandDownTakers.BehindAsync(quests, sessions, last, ct).ConfigureAwait(false) is { } taker)
+        {
+            last = taker;
+        }
+
         // And a session the person's reopen of the work its step grew from stopped: it ended
         // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }

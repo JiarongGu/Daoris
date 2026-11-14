@@ -10,7 +10,8 @@ namespace Daoris.Knowledge.Mcp;
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>
 /// <param name="helpers">Where a working session's ask and a helper's answer are written — under the home.</param>
 [McpServerToolType]
-public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledger = null, HelperBox? helpers = null)
+/// <param name="teams">The team's plan, which a scout's ask is judged against and a scout's pack is kept with.</param>
+public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledger = null, HelperBox? helpers = null, TeamDesk? teams = null)
 {
     [McpServerTool(Name = "helper_ask")]
     [Description(
@@ -23,12 +24,23 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
         string? agent = null,
         [Description("True when you go on working and want the answer at your next step; otherwise it is your next turn.")]
         bool? urgent = null,
+        [Description("Team lead only: a plan part's id; a scout reads its repository and answers its pack, kept with the plan.")]
+        string? part = null,
         CancellationToken ct = default)
     {
         var box = helpers ?? HelperBox.FromEnvironment();
         var session = intake?.Session;
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
-        return box.Ask(record, session, question, agent, DateTimeOffset.UtcNow, urgent == true).Message;
+        HelperScout? scout = null;
+        if (!string.IsNullOrWhiteSpace(part))
+        {
+            if (teams is null) return "This host keeps no team plan, so there is no part to orient. Nothing was asked.";
+            var judged = await teams.Scouts.JudgeAsync(record, part, ct).ConfigureAwait(false);
+            if (judged.Scout is null) return $"{judged.Refusal} Nothing was asked.";
+            scout = judged.Scout;
+        }
+
+        return box.Ask(record, session, question, agent, DateTimeOffset.UtcNow, urgent == true, scout).Message;
     }
 
     [McpServerTool(Name = "helper_answer")]
@@ -43,6 +55,14 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
         var box = helpers ?? HelperBox.FromEnvironment();
         var session = intake?.Session;
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
-        return box.Answer(record, session, answer, DateTimeOffset.UtcNow).Message;
+        var now = DateTimeOffset.UtcNow;
+        var kept = box.Answer(record, session, answer, now);
+        // A scout's answer is a pack: it is kept with the plan, and the scout is recorded as a member of the team.
+        if (kept.Kept && teams is not null && record is not null && box.ScoutOf(record) is { } scout)
+        {
+            await teams.Scouts.KeepAsync(scout, record.Id, answer!.Trim(), now, ct).ConfigureAwait(false);
+        }
+
+        return kept.Message;
     }
 }

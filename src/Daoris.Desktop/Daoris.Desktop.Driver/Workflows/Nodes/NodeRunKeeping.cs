@@ -72,6 +72,12 @@ internal sealed class NodeRunKeeping(
     public async Task EndAsync(GovernedUnit governed, RunScope scope, List<string> said, Func<string, CancellationToken, Task<bool?>> onLine, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
+        if (AskRunKey.Is(scope.Run.Binding))
+        {
+            AskRunEnds.End(records, clock, graphRuns, governed, scope, said);
+            return;
+        }
+
         if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
@@ -120,7 +126,7 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and no node of its graph able to move, its end or not.</summary>
-    private static bool Over(GovernedUnit governed, NodeRecord record) =>
+    internal static bool Over(GovernedUnit governed, NodeRecord record) =>
         !Waits(governed.Graph, record)
         && !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
             is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);

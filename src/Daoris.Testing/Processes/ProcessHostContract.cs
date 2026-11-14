@@ -70,6 +70,42 @@ public abstract class ProcessHostContract
     }
 
     [Fact]
+    public async Task A_stop_of_a_run_that_ends_answers_no_reason()
+    {
+        await using var run = await Host.StartAsync(Waits(), CancellationToken.None);
+
+        var reason = await run.StopAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
+
+        Assert.Null(reason);
+    }
+
+    [Fact]
+    public async Task A_run_asked_for_raw_output_answers_its_bytes_and_no_text()
+    {
+        await using var run = await Host.StartAsync(Says("contract-raw") with { RawOutput = true }, CancellationToken.None);
+
+        using var bound = new CancellationTokenSource(Patience);
+        var bytes = new MemoryStream();
+        await foreach (var piece in run.Bytes(bound.Token)) bytes.Write(piece.Span);
+        var text = await ReadAsync(run);
+        await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
+
+        Assert.Contains("contract-raw", Encoding.UTF8.GetString(bytes.ToArray()));
+        Assert.DoesNotContain("contract-raw", text);
+    }
+
+    [Fact]
+    public async Task A_run_whose_input_is_closed_ends_as_it_would()
+    {
+        await using var run = await Host.StartAsync(Says("contract-input") with { Input = true }, CancellationToken.None);
+
+        await run.CloseInputAsync();
+        var end = await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
+
+        Assert.Equal(0, end.Exit);
+    }
+
+    [Fact]
     public async Task A_process_of_the_id_made_at_another_time_is_not_the_run()
     {
         await using var run = await Host.StartAsync(Waits(), CancellationToken.None);

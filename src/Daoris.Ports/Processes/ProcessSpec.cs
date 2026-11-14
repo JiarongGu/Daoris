@@ -15,6 +15,8 @@ public sealed record ProcessSpec(string Program, IReadOnlyList<string> Arguments
 
     /// <summary>Whether its standard input stays open for <see cref="IChildRun.WriteAsync"/>.</summary>
     public bool Input { get; init; }
+
+    public bool RawOutput { get; init; }
 }
 
 /// <summary>Which of a process's two output streams a piece came from.</summary>

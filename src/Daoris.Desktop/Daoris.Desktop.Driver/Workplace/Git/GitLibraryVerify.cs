@@ -1,5 +1,3 @@
-using LibGit2Sharp;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -18,7 +16,6 @@ internal static class GitLibraryVerify
     /// <summary>The library's question for <paramref name="rest"/>, the arguments after <c>rev-parse</c>; null where it is git's.</summary>
     internal static (GitLibraryQuestion, Func<GitLibraryCall, GitLibraryAnswer?>)? Asked(List<string> rest)
     {
-        // Not quiet, a failure speaks on the error stream: only the id is the library's.
         if (rest is ["HEAD"] or ["--verify", "HEAD"])
         {
             return (GitLibraryQuestion.Revisions, call => Verified(call, "HEAD", peel: false) is { Code: 0 } found ? found : null);
@@ -47,23 +44,17 @@ internal static class GitLibraryVerify
 
         foreach (var rule in Rules)
         {
-            if (repository.Refs[string.Format(rule, name)] is { } reference) return Found(reference, peel);
+            if (repository.Refs[string.Format(rule, name)] is { } reference) return Found(call, reference.CanonicalName, peel);
         }
 
         return Absent;
     }
 
-    private static GitLibraryAnswer? Found(Reference reference, bool peel)
+    private static GitLibraryAnswer? Found(GitLibraryCall call, string name, bool peel)
     {
-        if (reference.ResolveToDirectReference() is not { } direct) return null;
+        if (call.Repository.Refs[name]?.ResolveToDirectReference() is not { } direct) return null;
         if (!peel) return new GitLibraryAnswer(0, direct.TargetIdentifier + "\n");
-        var found = direct.Target;
-        while (found is TagAnnotation tag) found = tag.Target;
-        return found switch
-        {
-            null => null,
-            Commit commit => new GitLibraryAnswer(0, commit.Sha + "\n"),
-            _ => Absent,
-        };
+        if (direct.Target is null) return null;
+        return GitLibraryRevisions.CommitOf(call, name) is { } commit ? new GitLibraryAnswer(0, commit.Sha + "\n") : Absent;
     }
 }

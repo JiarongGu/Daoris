@@ -95,7 +95,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 **Runs**
 
 15. A run is a chain's work in one repository, bound at its first start on this machine and written once. Its id is the chain's
-    first quest in that repository. (D157)
+    first quest in that repository. (D157) An ask's delivery run is the one other keyed run, bound to the ask's branch and not to a chain
+    (rule 39b).
 16. One engine: a run bound to a graph version is the node runtime's. A run bound to anything else is held, its problem said.
     (D190, D227, D232)
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests and carries the work on
@@ -270,7 +271,27 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     untouched. A part is landed when its member is promoted onto the ask's branch, never when its quest says Done. The `parts` node
     (`Workflows/Kinds/Parts`, observed from the integration record, no failure of its own) is reached once every part of the ask's own
     plan at its standing revision has landed (`PartsReports`, read by each pass for the asks the integration holds a part for); a part
-    a revision dropped is no longer required. (TEAMWORK1f)
+    a revision dropped is no longer required. A part's `integrate` start tags its own request: the quest's publish key
+    (`<ask>/<part>/<n>`) names the pair, and the ask's plan must give that part to that very quest (`TrainPartOf`, the plan's part
+    carrying its `Quest`), else the request is an ordinary landing's. Before each batch the line's tip is merged into the ask's branch
+    from objects alone (`TrainBases`: `merge-tree`, `commit-tree`, one verified `update-ref`; a conflict leaves the branch as it was
+    and the parts land on it unmerged; a missing branch is made at the line's tip), and each promoted batch is kept on
+    `refs/daoris/train/<ask>/<n>` (`TrainRefs`). The shipped `team-part` (work, checks, `integrate` with `request: done`, the line)
+    and `ask-delivery` (`parts`, a joint `check`, the one `review`, a `merge` landing, the line) presets are saved and chosen as any
+    other. (TEAMWORK1f)
+39b. An ask's delivery run is one run of the saved `ask-delivery` per repository on this machine the ask's plan gives a part to
+    (`AskRunKey`: `ask-<ask>-<digest of the repository>`, keyed by the ask, never a quest's chain). A whole look binds it
+    (`AskRunBinder`: the open asks that have quests, their plans read from the service; the home's saved copy of the shipped workflow,
+    saved from it where the home has none, its newest version, so a person's later version of it binds) and writes it once; an ask
+    whose plan is bound for its quests as they stand is not read again until they change. It is a run like any other on the one runtime
+    (`AskRunScopes`, hooked at `NodeGoverning`): its subject is `daoris/ask-<id>`, a branch unit no session made, whose tip each pass reads;
+    it has no quest, so it ends (`AskRunEnds`) when nothing waits and no node can move, naming the ask, and is never governed again.
+    Its `parts` waits for the plan's parts given to its repository (`PartsReport.For`, a part given to none waits everywhere); its
+    `check` verifies its repository at the tip it is bound to under the accepted declaration (`AskRunChecks`, beside a verification
+    run's send); its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
+    (`AskRunReads`: the merge base), its handbacks the quests the ask gave the repository; its `land` merges the branch at the accepted
+    tip into the line (`AskLanding`, through the integration the session merges use, with no session or tree) and is reached where the
+    line holds the tip. (TEAMWORK1f)
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
@@ -375,7 +396,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Which workflow work follows:** `WorkflowSelection`, held by `fixtures/workflow-selection.json`.
 - **A shipped workflow:** a JSON file under `Defaults/workflows/`; the presets derive.
 - **A landing:** `Workflows/Kinds/Land/`; the act in `Workplace/` (`LandPerformer`, `TreeLands`, the deliveries).
-- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`), hooked at `IntegrationReplayAsk.Train`; the `parts` kind in `Workflows/Kinds/Parts/`.
+- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainPartOf`, `TrainBases`, `TrainRefs`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the `parts` kind in `Workflows/Kinds/Parts/`.
+- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunChecks`, `AskRunContent`, `AskLanding`, `AskRunEnds`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
 - **A gate or hold:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, the page under `src/workflow/` or `src/agents/setup/`.
 - **Tests:** driver `Workflows/`, `Review/`, `Workplace/` (each landing through a run bound by `GraphLand`), `Setup/`; modules
@@ -399,9 +421,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Open
 
-- **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train's queue, the `parts` kind and the tagged landing are built; left are the
-  shipped `team-part` and ask delivery workflows, the ask-keyed run (rule 15) and a `check` in a development graph (rule 11), the `integrate`
-  node's start naming its part, the line's tip merged into the ask's branch before each batch, `refs/daoris/train/<ask>/<n>`, and the verdict store's replay.
+- **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
+  line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
+  for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and
+  the run view's `--ask` read does not list it), the verdict store's replay and the red's bisect read part by part.
 - **THROUGH1** (D277): a direct ask taken through to its pull request on the person's quoted words.
 - **APPROVE1y**: the work workspace's API token on its git identity, the person's act.
 - **CHATFLOW1**, **SETUPUX1x**, **NODEKIT1**, **FABRIC-SQUASHCHAIN1**, **FABRIC-MILESTONE1c**: the installed look.

@@ -52,9 +52,9 @@ public static class HelperChoice
         var fence = Candidates(ask, rule, adapters, askerAdapter);
         var named = ask.Agent is { Length: > 0 } && fence.Count == 1;
         var persons = !rule.SetUp && rule.Agents.Count > 0;
-        var found = catalogue?.RoleFor(ParticipantWork.Help, new RolePlace(workspace));
+        var found = catalogue?.RoleFor(ask.Scout is null ? ParticipantWork.Help : ParticipantWork.Orient, new RolePlace(workspace));
         if (found?.Held is { } held) throw new DriverException(held);
-        var role = found is null ? "helper" : found.Role?.Id;
+        var role = found is null ? (ask.Scout is null ? "helper" : "scout") : found.Role?.Id;
         if (role is null) return [];
         return !named && !persons && config.Actors.ContainsKey(role)
             ? ActorChoices.Effective(role, config)

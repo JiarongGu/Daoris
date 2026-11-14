@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Daoris.Adapters.DesktopStore.Sqlite;
+using Daoris.Adapters.Git;
 using Daoris.Adapters.Machine;
 using Daoris.Driver;
 using Daoris.Ports.Ambient;
@@ -14,14 +15,22 @@ namespace Daoris.Desktop.Driver.Rehearsals;
 internal static class RealPorts
 {
     [ModuleInitializer]
-    internal static void Choose() => AmbientPorts.Set(new PortSet
+    internal static void Choose()
     {
-        Clock = TimeProvider.System,
-        Store = SqliteDesktopStores.Engines,
-        Admission = StartPlaces.Shared,
-        Liveness = MachineLiveness.Shared,
-        StartPolicy = GitStartAdmission.Admit,
-        Seal = KeySeal.Port,
-        Git = new FlowGit(GitProcessRuns.Shared),
-    });
+        var processes = new MachineProcessHost(StartPlaces.Shared, GitStartAdmission.Admit, new ProcessOwner(OwnedProcesses.Own, OwnedProcesses.End))
+        {
+            Timed = ProcessStarts.Told,
+        };
+        AmbientPorts.Set(new PortSet
+        {
+            Clock = TimeProvider.System,
+            Store = SqliteDesktopStores.Engines,
+            Admission = StartPlaces.Shared,
+            Processes = processes,
+            Liveness = MachineLiveness.Shared,
+            StartPolicy = GitStartAdmission.Admit,
+            Seal = KeySeal.Port,
+            Git = new FlowGit(new GitProcessRuns(processes, GitRunPolicy.Shared)),
+        });
+    }
 }

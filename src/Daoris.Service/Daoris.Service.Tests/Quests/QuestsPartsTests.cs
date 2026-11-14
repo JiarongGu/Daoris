@@ -21,7 +21,7 @@ public sealed class QuestsPartsTests
         Assert.Equal(
             [
                 "accepted", "bound", "chosen", "conflict", "declined", "deleted", "dismissed", "done", "evidenced", "published", "rebound",
-                "reopened", "setup", "submitted", "taken", "verdict", "waited",
+                "reopened", "revised", "setup", "submitted", "taken", "verdict", "waited",
             ],
             operations.Order.Select(part => part.Name));
         Assert.All(operations.Order, part => Assert.Equal(QuestOperationPhase.Log, (QuestOperationPhase)part.Phase));

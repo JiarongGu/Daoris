@@ -116,7 +116,10 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding,
 
     /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) =>
-        wiring.Landing is { } landing ? new LandingDoor(landing, said => wiring.Say("landing.run", said), wiring.MayStart) : null;
+        wiring.Landing is { } landing
+            ? new LandingDoor(landing, said => wiring.Say("landing.run", said), wiring.MayStart,
+                wiring.Clock is { } clock ? start => new AskLanding(wiring.Home, clock).PerformAsync(start) : null)
+            : null;
 
     /// <summary>An attempt a lapse left unreconciled is settled by the deliveries its door lands through, before anything new starts on the unit.</summary>
     public Task<NodeRecord> SettleAsync(NodeRecordFiles records, GovernedUnit governed, NodeRecord record, CancellationToken ct) =>

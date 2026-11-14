@@ -18,4 +18,7 @@ public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDicti
 
     /// <summary>What each ask the integration holds a part's request for requires and has landed (<see cref="PartsReports"/>), by ask; null where none is read.</summary>
     public IReadOnlyDictionary<string, PartsReport>? Parts { get; init; }
+
+    /// <summary>Where each open delivery run's ask branch stands against the line (<see cref="AskRunReads"/>), by run; null where none is read.</summary>
+    public IReadOnlyDictionary<string, AskBranchRead>? AskBranches { get; init; }
 }

@@ -14,13 +14,11 @@ public sealed class GitEndingsCensusTests
 
     private static readonly Regex Ends = new(@"\bOwnedProcesses\.End\s*\(|\.Kill\s*\(|\bChildProcess\.EndAsync\s*\(|\bEnding\.Cancel\s*\(|\bPoolGit\.EndAsync\s*\(");
 
-    /// <summary>Each file that ends a process early, with what it may end.</summary>
     private static readonly Dictionary<string, string> Endings = new(StringComparer.Ordinal)
     {
         ["ActReconciler.cs"] = "an act's step found by its pid alone after its owner died, reconciled first: the Git job's end with Daoris",
         ["ChildProcess.cs"] = "a git past its kind's bound or its caller's token, its tree ended and its exit awaited",
         ["GitDoors.cs"] = "the door's own ssh, ended once its answer is read; no git of the scheduler's",
-        ["GitProcessRuns.cs"] = "the runners' own stop, an endable read alone: bytes past its asker's bound, a stream its reader is done with; and its askers' leaving",
         ["GitScheduler.cs"] = "an endable read whose askers all left, or inside a tree being removed",
         ["OwnedProcesses.cs"] = "the one management every end above goes through",
         ["PoolTakeovers.cs"] = "a dead run's pool claim, its job emptied before the claim is taken over",

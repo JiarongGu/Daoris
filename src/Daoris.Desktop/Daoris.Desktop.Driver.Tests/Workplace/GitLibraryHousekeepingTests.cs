@@ -47,7 +47,7 @@ public sealed class GitLibraryHousekeepingTests : LandedFixture
         var holders = Enumerable.Range(0, GitLibrary.AtOnce)
             .Select(_ => GitLibrary.AskAsync(root, GitLibraryQuestion.Refs, _ => { release.Wait(); return "held"; }, CancellationToken.None))
             .ToList();
-        while (GitLibrary.Open < GitLibrary.AtOnce) await Task.Delay(10);
+        while (GitLibrary.OpenIn(root) < GitLibrary.AtOnce) await Task.Delay(10);
 
         var queued = GitLibrary.AskAsync(root, GitLibraryQuestion.Refs, _ => "never", CancellationToken.None);
         await Task.Delay(200);

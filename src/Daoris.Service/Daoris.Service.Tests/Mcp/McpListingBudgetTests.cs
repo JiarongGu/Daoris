@@ -16,9 +16,9 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
     /// <summary>
     /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 41,776 of the other tools, with
-    /// the descriptions cut to what an agent needs to call them, plus <see cref="PlanBudget"/> for the plan door.
+    /// the descriptions cut to what an agent needs to call them, plus <see cref="PlanBudget"/> for the plan door and helper_ask's part (170).
     /// </summary>
-    internal const int ListingBudget = 48_700;
+    internal const int ListingBudget = 48_900;
 
     /// <summary>One tool's definition may not exceed this many characters.</summary>
     internal const int ToolBudget = 2_600;

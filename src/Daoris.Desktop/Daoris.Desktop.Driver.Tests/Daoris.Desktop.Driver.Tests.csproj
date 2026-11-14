@@ -26,6 +26,12 @@
     <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <!-- The machine's liveness the test root answers real processes by, until the Process classes leave the unit tier. -->
     <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessLiveness.cs" Link="Bridge\ProcessLiveness.cs" />
+    <!-- The git adapter over the machine's host, which the classes that still run real git here hand their roots, until the Process
+         classes leave the unit tier for the rehearsal tier, which references the adapters whole. -->
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineProcessHost.cs" Link="Bridge\MachineProcessHost.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\MachineRun.cs" Link="Bridge\MachineRun.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\ProcessOwner.cs" Link="Bridge\ProcessOwner.cs" />
+    <Compile Include="..\..\Daoris.Adapters\Daoris.Adapters.Git\GitProcessRuns.cs" Link="Bridge\GitProcessRuns.cs" />
     <Using Include="Daoris.Ports.Browser" />
     <Using Include="Daoris.Ports.Clocks" />
     <Using Include="Daoris.Ports.Git.GitWait" Alias="GitWait" />

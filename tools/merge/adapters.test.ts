@@ -70,6 +70,21 @@ test('a pin is read from the versions file the manifest names, through the prope
   assert.throws(() => fingerprintOf(NAME, unset), /the pin of nuget:Lyntai\.Core/, 'a property the file never sets is no version');
 });
 
+test('a tool pin is the versions the tools table of resources.json holds, and moves when one is added or changed', () => {
+  const manifest = JSON.stringify({ ...JSON.parse(MANIFEST), outside: ['tool:git'] });
+  const table = (...versions: string[]) =>
+    JSON.stringify({ tools: { git: { versions: Object.fromEntries(versions.map((version) => [version, { files: {} }])) }, node: { versions: { '24.21.0': {} } } } });
+  const resources = 'src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json';
+  const read = (...versions: string[]) =>
+    fingerprintOf(NAME, commit({ 'src/Daoris.Adapters/Daoris.Adapters.Store/adapter.json': manifest, [resources]: table(...versions) }));
+
+  assert.deepEqual(read('2.56.0').outside, { 'tool:git': '2.56.0' });
+  assert.notEqual(read('2.57.0').fingerprint, read('2.56.0').fingerprint, 'the git floor moved');
+  assert.notEqual(read('2.56.0', '2.57.0').fingerprint, read('2.56.0').fingerprint, 'a version added');
+  const none = commit({ 'src/Daoris.Adapters/Daoris.Adapters.Store/adapter.json': manifest, [resources]: JSON.stringify({ tools: { node: {} } }) });
+  assert.throws(() => fingerprintOf(NAME, none), /the pin of tool:git/, 'a tool the table does not hold is no version');
+});
+
 test('a port it does not implement, a pin it does not read and a file no input names move nothing', () => {
   const base = at();
   assert.equal(at({ 'src/Daoris.Ports/Git': 'edited' }), base);

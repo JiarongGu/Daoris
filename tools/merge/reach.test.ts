@@ -32,9 +32,8 @@ const DESK = [driver, modules, censuses];
 const DRIVER_PROCESS = [driverProcess, gitHalf, gitPinned];
 const DRIVER_LANE = [...DESK, ...DRIVER_PROCESS, driverRehearsals, modulesProcess, family, deployment];
 
-test('a merge runs the baseline and what each changed path can reach, but the long gates only in the full set', () => {
-  // Each case is what the lane table says can see the change; a merge runs it all but the long gates.
-  const cases: [string, string[], string[]][] = [
+// Each case is what the lane table says can see the change; a merge runs it all but the long gates.
+const cases: [string, string[], string[]][] = [
     // The service's suite scans this repository's own doctrine and decisions, so the docs reach it.
     ['docs only', ['docs/2026-09-30-parallel-development-design.md'], [...BASE, service]],
     ["the steward's records", ['TASKS.md', 'docs/task-archive.md'], [...BASE, service]],
@@ -170,8 +169,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the git-only classes' settings", ['src/Daoris.Desktop/git.process.runsettings'], [...BASE, gitHalf]],
     ['the declared gates', ['daoris.gates.json'], ALL],
     ['nothing at all', [], BASE],
-  ];
-  for (const [what, paths, listed] of cases) {
+];
+
+for (const [what, paths, listed] of cases) {
+  test(`a merge runs the baseline and what a changed path can reach: ${what}`, () => {
     // In the plan's order: the web's typecheck is a check, before the CLI's verify.
     const reachesUnits = paths.some((path) => /^(src|tools|examples|canon)\//.test(path) || ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json'].includes(path));
     const expected = ALL.filter((gate) => listed.includes(gate) || ALWAYS_REACHED.includes(gate) || (gate === reachedGate && reachesUnits));
@@ -179,7 +180,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     assert.deepEqual(runs(paths), expected.filter((gate) => !LONG.includes(gate)), `${what}: what a merge runs`);
     // The stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
     if (paths.length) assert.deepEqual(stalens(paths), expected, `${what}: the verdicts it makes stale`);
-  }
+  });
+}
+
+test('a merge runs the long gates only in the full set, and lanes add up', () => {
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
     inPlanOrder(BASE, [reachedGate], ALWAYS_REACHED, [service, driver, modules, censuses, rehearse]));

@@ -134,7 +134,7 @@ internal sealed record GitLibraryRead(string Question, long Ticks)
 }
 
 /// <summary>
-/// The one counting seam beneath every git the driver starts: <see cref="GitProcessRuns"/>' three runs and the held children each
+/// The one counting seam beneath every git the driver starts: the git adapter's three runs (through <see cref="GitRunPolicy"/>) and the held children each
 /// start through <see cref="LaunchAsync"/>, which keeps the start in every count its flow holds (<see cref="Count"/>), classifies it by
 /// kind and node, counts it in the budget its flow is in, and times the gate's wait, the creation and the run apart.
 /// </summary>

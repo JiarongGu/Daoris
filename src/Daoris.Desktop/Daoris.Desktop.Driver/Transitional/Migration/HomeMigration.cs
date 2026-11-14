@@ -65,6 +65,7 @@ public static class HomeMigration
         new PluginSwitchesStep(),
         new ConversationFactsStep(),
         new AccessDefaultsOffStep(),
+        new SessionEventHeadsStep(),
     ];
 
 

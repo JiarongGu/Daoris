@@ -25,10 +25,10 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
-        // The come-up's own reads (the conversion's census) are not the route's: settled, then forgotten.
+        // The come-up's own reads are not the route's: settled, then forgotten. A read told by event waits on its work, not a guess.
         await loop.Settling;
         standIn.Forget();
-        return (new DriverModule(Bus, loop), standIn);
+        return (new DriverModule(Bus, loop) { Patience = Poll.Patience }, standIn);
     }
 
     /// <summary>The read is the person's own, unless an entry is named, and moves no mark; each item is the page's shape.</summary>

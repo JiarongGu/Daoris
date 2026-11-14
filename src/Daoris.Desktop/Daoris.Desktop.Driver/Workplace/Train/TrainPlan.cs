@@ -5,7 +5,12 @@ namespace Daoris.Driver;
 /// <summary>One part of the standing revision as the train reads it: the parts it builds on and those that only land before it.</summary>
 /// <param name="After">Parts that must have landed first (a build dependency).</param>
 /// <param name="Orders">Parts that land before it when both are ready (an order, never a wait).</param>
-public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadOnlySet<string> Orders);
+public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadOnlySet<string> Orders)
+{
+    /// <summary>The quest the plan published for the part; null where it has none yet.</summary>
+    public string? Quest { get; init; }
+    public string? Repository { get; init; }
+}
 
 /// <summary>
 /// The ask's own plan at its newest revision, as the train reads it: every part it names is required, so a part a revision dropped is no
@@ -20,7 +25,7 @@ public sealed record TrainPlan(string Ask, int Revision, IReadOnlyList<TrainPlan
         var parts = own.Parts.Select(part => new TrainPlanPart(
             part.Id,
             Named(own.Edges, part.Id, "after"),
-            Named(own.Edges, part.Id, "orders"))).ToList();
+            Named(own.Edges, part.Id, "orders")) { Quest = part.Quest, Repository = part.Repository }).ToList();
         return new TrainPlan(answer.Ask, own.Revision, parts);
     }
 

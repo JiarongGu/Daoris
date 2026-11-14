@@ -65,6 +65,7 @@ namespace Daoris.Knowledge;
 /// older build reads every dismissal as.
 /// </param>
 /// <param name="Choice">For a <see cref="QuestOperationKind.Chosen"/>: the person's kind and workflow. Null on every other kind.</param>
+/// <param name="Revision">For a <see cref="QuestOperationKind.Revised"/>: the part's words and scope as the plan now says them. Null on every other kind.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -87,4 +88,5 @@ public sealed record QuestOperation(
     string? Session = null,
     bool LostToTheReopen = false,
     QuestOperationRef? Forward = null,
-    QuestWorkflowChoice? Choice = null);
+    QuestWorkflowChoice? Choice = null,
+    QuestRevision? Revision = null);

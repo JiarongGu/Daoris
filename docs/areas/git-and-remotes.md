@@ -211,11 +211,14 @@ the machine (`GitStartAdmission`), which refuses a git's image holding no place 
 place to it.
 
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
-memos first and asks the port for the rest, and the roots hand `GitProcessRuns`, which answers a read the library can give in process
-and launches every other git, counted, placed and bounded, as the machine's process. A unit test chooses its flow's git through the
+memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the
+machine's process host. It runs each git as a process through the host, which joins it to the git job, and asks the driver's
+`GitRunPolicy` (`IGitPolicy`) for everything that is Daoris's: the program and its variables, the read the library can give in
+process, the scheduler's place, and the count and timing the launch is kept in. A unit test chooses its flow's git through the
 test root's `FlowGit`: `ScriptedGit` answers or watches it, and nothing in the driver stands in for git. Starts and reads around the
 port (a git start composed by hand, git's own files, the library) are counted per file by the layers census (`git`), an allowance
-that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the rehearsal tier.
+that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the adapter's own suite,
+which a merge runs only when the adapter's fingerprint differs from its row of `daoris.adapters.lock`.
 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
@@ -246,11 +249,17 @@ that only falls, and the port's contract runs on `ScriptedGit` in the unit tier 
 
 The refs' one listing and a plain read's merge-bases, counts, changed names and `rev-parse --verify --quiet` of `HEAD` or a full ref
 name (with or without `^{commit}`; a short name, an operator or a dangling ref is git's), and a plain `rev-parse HEAD`, are
-answered in git's words by LibGit2Sharp where admitted (`GitLibraryReads`, `GitLibraryVerify`), starting nothing; everything else is
-git's. The look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
-are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; the rest of a look's starts are
-`worktree list --porcelain` (seven in a resume tick, each a judgement's own), the combined layout read, `--show-toplevel` and
-the object reads, which GITTICK2 takes.
+answered in git's words by LibGit2Sharp where admitted (`GitLibraryReads`, `GitLibraryVerify`), starting nothing; so are the layout
+and the settings read from the folder's own files: `--show-toplevel`, the combined layout `rev-parse` and its `--show-toplevel
+--abbrev-ref HEAD` part, `worktree list --porcelain` (the main tree, then each linked tree by path, its lock and reason), `config
+--bool core.ignorecase` and a branch's `@{upstream}` in its two forms (`GitLibraryLayout`, `GitLibraryWorktrees`,
+`GitLibraryUpstream`, the path as the file system spells it by `GitLibrarySpelling`). A read after a write asks the files again, so
+none is ever stale. What stays git's: a subfolder, a bare repository, `core.worktree`, an include, a tree git calls prunable, a
+head unborn or ambiguous, an upstream whose ref is gone, a path through a link or a short name. Everything else is git's. The
+look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
+are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; what a resume tick still
+starts is its writes (`switch`, `update-ref`, the rebase, a tree's lock and unlock), `status`, the file reads
+(`ls-files`, `ls-tree`, `log`) and the declarations' object reads, each of a different commit and asked by a different store.
 
 - `GitLibrary` opens a `Repository` per call, eight at once, libgit2's search paths emptied. `GitLibraryAdmission` refuses, at each
   question, any format but SHA-1 objects with files refs, any replacement, a pack rewrite under way (`GitLibraryHousekeeping`,
@@ -279,10 +288,15 @@ command asked again with no write between; *object* what one held `cat-file --ba
 | Review, a tree the line holds by content | 11 | 0 | 1 (0) |
 | A landed session's review | 3 | 0 | 2 (1) |
 | The Accept offer of a tree of work | 3 | 0 | 0 |
-| The look's tidy, six trees (two) | 5 (5) | 1 (`worktree list`) | 1 (0) |
+| The look's tidy, six trees (two) | 5 (5) | 0 | 1 (0) |
+| A tree's walk (`TreeReadPass`), a tree the line holds by content: first, then its kept read after an edit | 5 (1) | 0 | 1 (0) |
 | A session's start, to its spawn | 20 | 0 | 3 (0) |
 | A squash press's landing | 19 | 0 | 4 (1) |
 | A merge press's landing | 32 | 3 (the line's commit) | 9 (0) |
+
+A tree's walk takes its head and branch from the tree's own files and asks `status` once, where it learns which paths it needs: the
+default one, or for a tree the line holds by content the proof's (every untracked file named, ignored ones too), whose non-ignored paths
+are then its count. The declared output that proof read is kept with the read, not read again.
 
 A held reader per repository does not earn its place: a view asks at most three object questions, and a landing reads its line
 commit and head again because another process can move either. The measurements behind these figures are D147's note of

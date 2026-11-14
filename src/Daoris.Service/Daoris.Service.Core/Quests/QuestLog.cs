@@ -74,6 +74,8 @@ public static class QuestLog
         // The person's choice only before the quest starts: a run is bound at its first start, so a
         // choice that reaches a quest another machine took first is no move. Every choice applies, a second the same as the first.
         QuestOperationKind.Chosen => quest is { Status: QuestStatus.Open } && operation.Choice is not null,
+        // A plan's revision of the part reaches a quest still being done, open or taken, and no quest another machine closed first.
+        QuestOperationKind.Revised => quest is { Status: QuestStatus.Open or QuestStatus.Taken } && operation.Revision is not null,
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -384,6 +386,11 @@ public static class QuestLog
         {
             WorkflowChoices = [.. quest.WorkflowChoices, operation.Choice! with { At = operation.At }], Updated = operation.At,
         },
+        QuestOperationKind.Revised => quest! with
+        {
+            Title = operation.Revision!.Title, Body = operation.Revision.Body, Weight = operation.Revision.Weight,
+            Paths = operation.Revision.NormalizedPaths, Updated = operation.At,
+        },
         // The latest submission is the current one, judged again from the start: its answers are the
         // quest's, and a yes or an evidence verdict given on the one before is not given on it. It answers the last reopen, at
         // whatever commit: a submission is named by its machine and sequence, never by its commit.
@@ -452,12 +459,14 @@ public static class QuestLog
         // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
         // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed,
         // and a publication's once another machine's take reached the step first: the person's word lets that one go.
-        // A workflow choice once another machine's take started the quest first: its run is bound there, at that start.
+        // A workflow choice once another machine's take started the quest first: its run is bound there, at that start. A revision
+        // once another machine closed the quest first.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict
             or QuestOperationKind.Bound or QuestOperationKind.Submitted
-            or QuestOperationKind.Reopened or QuestOperationKind.Rebound or QuestOperationKind.Chosen => QuestLoss.Forgotten,
+            or QuestOperationKind.Reopened or QuestOperationKind.Rebound or QuestOperationKind.Chosen
+            or QuestOperationKind.Revised => QuestLoss.Forgotten,
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind), kind,
             "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),

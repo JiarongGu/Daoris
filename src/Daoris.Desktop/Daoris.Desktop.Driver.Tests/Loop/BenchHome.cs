@@ -132,12 +132,15 @@ internal sealed class BenchHome : IAsyncDisposable
     private static void Build(string folder, int files)
     {
         const int PerFolder = 500;
-        for (var at = 0; at < files; at++)
+        Parallel.For(0, (files + PerFolder - 1) / PerFolder, new ParallelOptions { MaxDegreeOfParallelism = 8 }, module =>
         {
-            var into = Path.Combine(folder, $"module-{at / PerFolder:D3}", "obj-free");
-            if (at % PerFolder == 0) Directory.CreateDirectory(into);
-            File.WriteAllText(Path.Combine(into, $"unit-{at:D5}.o"), "built\n");
-        }
+            var into = Path.Combine(folder, $"module-{module:D3}", "obj-free");
+            Directory.CreateDirectory(into);
+            for (var at = module * PerFolder; at < Math.Min(files, (module + 1) * PerFolder); at++)
+            {
+                File.WriteAllText(Path.Combine(into, $"unit-{at:D5}.o"), "built\n");
+            }
+        });
     }
 
     /// <summary>

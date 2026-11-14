@@ -49,13 +49,19 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         new[] { "entries_fts", "entries" }.Concat(Enumerable.Range(6, SchemaVersion - 5)
             .SelectMany(version => new[] { $"index_fts_{version}", $"index_entries_{version}", $"index_readings_{version}" }));
 
+    /// <summary>The ledger's connection: every other store's, shared by the registry, sessions, quests and the rest.</summary>
     private readonly SqliteConnection _connection;
+
+    /// <summary>The index's own connection, so a re-read's write transaction holds the index's gate and no store's.</summary>
+    private readonly SqliteConnection _index;
+
     private readonly ConnectionGate _db;
 
-    private SqliteKnowledgeStore(SqliteConnection connection)
+    private SqliteKnowledgeStore(SqliteConnection connection, SqliteConnection index)
     {
         _connection = connection;
-        _db = ConnectionGate.For(connection);
+        _index = index;
+        _db = ConnectionGate.For(index);
     }
 
     /// <summary>
@@ -79,10 +85,29 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         var connection = new SqliteConnection(ConnectionString(path));
 
         await connection.OpenAsync(ct).ConfigureAwait(false);
-        var store = new SqliteKnowledgeStore(connection);
+        // A store in memory is one database through one connection; a file has the index its own, so its writes queue
+        // behind no other store's reads and none behind its own.
+        var index = connection;
+        if (path != ":memory:")
+        {
+            index = new SqliteConnection(ConnectionString(path));
+            try
+            {
+                await index.OpenAsync(ct).ConfigureAwait(false);
+            }
+            catch
+            {
+                await connection.DisposeAsync().ConfigureAwait(false);
+                await index.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
+        }
+
+        var store = new SqliteKnowledgeStore(connection, index);
         try
         {
             await StoreJournal.SetAsync(connection, ct).ConfigureAwait(false);
+            if (!ReferenceEquals(index, connection)) await StoreJournal.SetAsync(index, ct).ConfigureAwait(false);
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             if (path != ":memory:") await StoreCompaction.RunAsync(connection, ct).ConfigureAwait(false);
         }
@@ -90,6 +115,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         {
             // A store that did not open is closed here, so the file is not held by a connection nothing will use.
             await connection.DisposeAsync().ConfigureAwait(false);
+            if (!ReferenceEquals(index, connection)) await index.DisposeAsync().ConfigureAwait(false);
             throw;
         }
 
@@ -177,21 +203,34 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     }, ct);
 
     /// <remarks>
-    /// The connection is every store's, and SQLite does not nest transactions: a publish arriving mid-refresh waits for
-    /// this one to end (<see cref="ConnectionGate"/>), as does every other request's command. Not the
-    /// caller's token once the transaction begins: a cancelled replace would roll back half a refresh.
+    /// The index has a connection of its own, so this write holds the index's gate and the file's write lock, and no
+    /// other store's reads or commands wait for it; another host's write waits out only the inserts, the text cut for
+    /// search being done before the transaction begins. Not the caller's token once the transaction begins: a cancelled
+    /// replace would roll back half a refresh.
     /// </remarks>
     public Task<bool> ReplaceRepositoryAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, ReadingWrite reading,
         Func<CancellationToken, Task>? alongside = null, CancellationToken ct = default) =>
-        Refused<bool>() ?? _db.InTransactionAsync(async (_, inside) =>
+        Refused<bool>() ?? ReplaceCutAsync(repository, Cut(entries), reading, alongside, ct);
+
+    /// <summary>Each entry with the text its search row holds, cut before the write lock is taken.</summary>
+    private static List<(KnowledgeEntry Entry, string Title, string Body)> Cut(IReadOnlyList<KnowledgeEntry> entries) =>
+        // 🔴 The FTS row is cut for search; the entries row keeps the text as written. An excerpt
+        // and the Reader read the original; only the index sees ideographs as bigrams — which is
+        // the only way `unicode61` finds a word inside a run of them (`Text.Segment`).
+        entries.Select(entry => (entry, Text.Segment(entry.Title), Text.Segment(entry.Body))).ToList();
+
+    private Task<bool> ReplaceCutAsync(
+        string repository, List<(KnowledgeEntry Entry, string Title, string Body)> cut, ReadingWrite reading,
+        Func<CancellationToken, Task>? alongside, CancellationToken ct) =>
+        _db.InTransactionAsync(async (_, inside) =>
         {
             // The generation is read inside the write, so another connector's write between this writer's read and this
             // one refuses it here, whatever process made it.
             var held = await GenerationInAsync(repository, inside).ConfigureAwait(false);
             if (reading.Expected is { } expected && expected != held) return false;
 
-            await ReplaceEntriesInAsync(repository, entries, inside).ConfigureAwait(false);
+            await ReplaceEntriesInAsync(repository, cut, inside).ConfigureAwait(false);
             await using (var write = _db.Command())
             {
                 write.CommandText =
@@ -350,7 +389,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             return counts;
         }, ct);
 
-    private async Task ReplaceEntriesInAsync(string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct)
+    private async Task ReplaceEntriesInAsync(
+        string repository, List<(KnowledgeEntry Entry, string Title, string Body)> cut, CancellationToken ct)
     {
         // Both tables, in one transaction: an FTS row whose entry is gone would return a hit that
         // cannot be resolved, which reads as data loss rather than as a stale index.
@@ -365,7 +405,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             await delete.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        foreach (var entry in entries)
+        foreach (var (entry, ftsTitle, ftsBody) in cut)
         {
             await using var insert = _db.Command();
             insert.CommandText =
@@ -380,11 +420,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Parameters.AddWithValue("$prov", (int)entry.Provenance);
             insert.Parameters.AddWithValue("$title", entry.Title);
             insert.Parameters.AddWithValue("$body", entry.Body);
-            // 🔴 The FTS row is cut for search; the entries row keeps the text as written. An excerpt
-            // and the Reader read the original; only the index sees ideographs as bigrams — which is
-            // the only way `unicode61` finds a word inside a run of them (`Text.Segment`).
-            insert.Parameters.AddWithValue("$ftsTitle", Text.Segment(entry.Title));
-            insert.Parameters.AddWithValue("$ftsBody", Text.Segment(entry.Body));
+            insert.Parameters.AddWithValue("$ftsTitle", ftsTitle);
+            insert.Parameters.AddWithValue("$ftsBody", ftsBody);
             insert.Parameters.AddWithValue("$path", entry.RelativePath);
             insert.Parameters.AddWithValue("$anchor", (object?)entry.Anchor ?? DBNull.Value);
             insert.Parameters.AddWithValue("$workspace", Workspaces.Normalize(entry.Workspace));
@@ -452,7 +489,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// </summary>
     internal SqliteConnection Connection => _connection;
 
-    /// <summary>The connection's gate, which every store over it and the search take for each command.</summary>
+    /// <summary>The index's gate, which the store and the search take for each command on the index's connection.</summary>
     internal ConnectionGate Gate => _db;
 
     internal static KnowledgeEntry Read(SqliteDataReader reader) => new(
@@ -491,10 +528,17 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// <summary>Closed once the work in flight has ended, never under it.</summary>
     public async ValueTask DisposeAsync()
     {
-        await _db.RunAsync(async () =>
+        await ConnectionGate.For(_connection).RunAsync(async () =>
         {
             await _connection.CloseAsync().ConfigureAwait(false);
             await _connection.DisposeAsync().ConfigureAwait(false);
+        }, CancellationToken.None).ConfigureAwait(false);
+        if (ReferenceEquals(_index, _connection)) return;
+
+        await _db.RunAsync(async () =>
+        {
+            await _index.CloseAsync().ConfigureAwait(false);
+            await _index.DisposeAsync().ConfigureAwait(false);
         }, CancellationToken.None).ConfigureAwait(false);
     }
 }

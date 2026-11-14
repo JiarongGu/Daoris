@@ -146,7 +146,10 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
     }
 }
 
-internal readonly record struct TreeReadStamp(string Tree, CountedRefs Refs, string GitDir, string Head);
+internal readonly record struct TreeReadStamp(string Tree, CountedRefs Refs, string GitDir, string Head)
+{
+    internal string? Branch { get; init; }
+}
 
 /// <summary>One read of some trees, sharing the repository and home stamps across its concurrent tree judgements.</summary>
 internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTimes? times = null, Func<string, TreeReadStamp?>? readStamp = null)
@@ -192,23 +195,33 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
             }
 
             // No file generation to trust, or files moved: ask git as before.
-            if (await trees.StatusCountAsync(full, ct).ConfigureAwait(false) is not { } uncommitted)
+            // One status: a held tree's own answer lists its paths.
+            TreeWork? work = kept.Work;
+            var declared = kept.Declared;
+            int? uncommitted = null;
+            if (kept.Work.Held is { } held)
+            {
+                var (again, found, paths) = await trees.HeldAgainAsync(full, stamp.Refs.CommonDir, held, declared, ct).ConfigureAwait(false);
+                work = again is null ? null : work with { Held = again };
+                declared = found;
+                uncommitted = paths;
+                times?.AddTree(full, "holds", watch.ElapsedMilliseconds);
+            }
+
+            if (work is not null && uncommitted is null)
+            {
+                watch.Restart();
+                uncommitted = await trees.StatusCountAsync(full, ct).ConfigureAwait(false);
+                times?.AddTree(full, "status", watch.ElapsedMilliseconds);
+            }
+
+            if (work is not null && uncommitted is null)
             {
                 memo.Forget(full);
                 return await trees.WorkAsync(tree, ct).ConfigureAwait(false);
             }
-            times?.AddTree(full, "status", watch.ElapsedMilliseconds);
-            TreeWork? work = kept.Work with { Uncommitted = uncommitted };
-            var declared = kept.Declared;
-            // A tree held by content keeps its proof (its refs are the same, exactly), and asks what it holds beyond its commits.
-            if (kept.Work.Held is { } held)
-            {
-                watch.Restart();
-                var (again, found) = await trees.HeldAgainAsync(full, stamp.Refs.CommonDir, held, declared, ct).ConfigureAwait(false);
-                work = again is null ? null : work with { Held = again };
-                declared = found;
-                times?.AddTree(full, "holds", watch.ElapsedMilliseconds);
-            }
+
+            if (work is not null) work = work with { Uncommitted = uncommitted };
 
             if (work is not null)
             {
@@ -218,16 +231,18 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
         }
 
         watch.Restart();
+        // Head and branch from the tree's files: the walk asks its one status last.
         var status = memo.TryLast(full, out kept) && kept.Tree == stamp.Tree && files is not null && kept.Files == files
             && kept.Work.Uncommitted is { } changed
                 ? new TreeStatus(changed, WorkingTree.IsCommitId(stamp.Head) ? stamp.Head : null, kept.Work.Branch)
-                : null;
-        var walked = await trees.WorkWithStatusAsync(tree, status, ct).ConfigureAwait(false);
+                : WorkingTree.IsCommitId(stamp.Head) ? TreeStatus.Unasked(stamp.Head, stamp.Branch) : null;
+        var back = new TreeWalkBack();
+        var walked = await trees.WorkWithStatusAsync(tree, status, back, ct).ConfigureAwait(false);
         times?.AddTree(full, "walk", watch.ElapsedMilliseconds);
         if (walked is { Commits: not null })
         {
             // Keep the declaration with the proof, so an edit need only judge what lies beyond its commits.
-            var declared = walked.Held is null ? null : await DeclaredOrNullAsync(full, stamp.Refs.CommonDir, ct).ConfigureAwait(false);
+            var declared = walked.Held is null ? null : back.Declared ?? await DeclaredOrNullAsync(full, stamp.Refs.CommonDir, ct).ConfigureAwait(false);
             memo.Keep(full, new TreeReadMemo.Kept(stamp.Tree, stamp.Refs.Version, home, walked)
             {
                 Declared = declared, Files = walked.Uncommitted is null ? null : Unmoved(full, stamp.GitDir, files),
@@ -271,15 +286,17 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
             var head = File.ReadAllText(Path.Combine(gitDir, "HEAD")).Trim();
             if (Repository(common) is not { } refs) return null;
             var at = head;
+            string? branch = null;
             if (head.StartsWith("ref:", StringComparison.Ordinal))
             {
                 var name = head["ref:".Length..].Trim();
+                if (name.StartsWith("refs/heads/", StringComparison.Ordinal)) branch = name["refs/heads/".Length..];
                 var loose = Path.Combine(common, name.Replace('/', Path.DirectorySeparatorChar));
                 at = File.Exists(loose) ? File.ReadAllText(loose).Trim() : refs.Packed.GetValueOrDefault(name, "none");
                 if (at.Length == 0) return null;
             }
 
-            return new TreeReadStamp(string.Join('\n', linkText, head, at), refs, gitDir, at);
+            return new TreeReadStamp(string.Join('\n', linkText, head, at), refs, gitDir, at) { Branch = branch };
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

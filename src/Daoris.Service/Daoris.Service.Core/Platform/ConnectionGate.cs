@@ -40,6 +40,24 @@ internal sealed class ConnectionGate
     public static ConnectionGate For(SqliteConnection connection) =>
         Gates.GetValue(connection, opened => new ConnectionGate(opened));
 
+    /// <summary>
+    /// The gate of the innermost unit of work this flow is running, or null outside any: a write handed to another store to run
+    /// inside it (the index's write and the provenance beside it) belongs to that gate's connection, since a second connection
+    /// to the file would wait out the first one's write lock.
+    /// </summary>
+    public static ConnectionGate? Running
+    {
+        get
+        {
+            for (var hold = Holding.Value; hold is not null; hold = hold.Outer)
+            {
+                if (hold.Live) return hold.Gate;
+            }
+
+            return null;
+        }
+    }
+
     /// <summary>Whether this flow of work holds the gate, so a command it makes is its own.</summary>
     public bool Held => HeldHere() is not null;
 

@@ -86,6 +86,8 @@ public sealed class OwnedProcesses
         }
     }
 
+    public static bool Own(Process process, string purpose) => Enum.TryParse<ProcessPurpose>(purpose, out var known) && Shared.Take(process, known);
+
     /// <summary>The purpose whose job holds <paramref name="process"/>, or null where none of this management's does.</summary>
     public ProcessPurpose? Holding(Process process)
     {

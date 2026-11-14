@@ -179,7 +179,7 @@ internal sealed class GitPlace
         var caller = new StackTrace(1, false).GetFrames()
             .Select(frame => frame.GetMethod()?.DeclaringType)
             .Select(type => type?.DeclaringType is { } outer && type.Name.Contains('<') ? outer : type)
-            .FirstOrDefault(type => type is not null && !gates.Contains(type) && type.Namespace != "Daoris.Ports.Processes")
+            .FirstOrDefault(type => type is not null && !gates.Contains(type) && type.Namespace != "Daoris.Ports.Processes" && type.Namespace?.StartsWith("Daoris.Adapters.", StringComparison.Ordinal) != true)
             ?.Name ?? "unknown";
         if (ProgramHome.Named is { } home)
         {

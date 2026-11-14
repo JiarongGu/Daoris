@@ -173,6 +173,11 @@ public sealed class ProcessStarts
 
     internal static IDisposable? Queued() => s_queue.Value?.Invoke();
 
+    /// <summary>A start made by the machine's host, told to this flow's timing as one the gate makes is.</summary>
+    public static void Told(long waited, long created) => s_timed.Value?.Invoke(waited, created);
+
+    internal static Func<ProcessStartInfo, Process?>? Standing => s_within.Value;
+
     /// <summary>
     /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>:
     /// called as a wait begins (<see cref="Queued"/>, the git scheduler's too), and what it returns disposed as the wait ends, handed its place or given

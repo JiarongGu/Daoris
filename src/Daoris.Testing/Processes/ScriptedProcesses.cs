@@ -70,7 +70,7 @@ public sealed class ScriptedProcesses : IMachineAdmission, IProcessHost, IProces
             _live[id] = (created, () => true);
         }
 
-        return new ScriptedRun(this, id, created, answer(specification));
+        return new ScriptedRun(this, id, created, answer(specification), specification.RawOutput);
     }
 
     /// <summary>Answers whether a process this script never made or marked runs by <paramref name="runs"/>, instead of no.</summary>

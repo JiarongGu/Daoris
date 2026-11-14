@@ -424,6 +424,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         }
 
         if (Seam is { } afterMove) await afterMove("after-move").ConfigureAwait(false);
+        await TrainRefs.KeepAsync(ask.Root, ask.Line, tip, ct).ConfigureAwait(false);
         return new IntegrationStepEnd(IntegrationStepOutcomes.Promoted)
         {
             Promoted = true,

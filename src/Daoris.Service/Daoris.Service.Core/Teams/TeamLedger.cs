@@ -41,6 +41,14 @@ public sealed class TeamLedger
               at       TEXT NOT NULL,
               PRIMARY KEY (ask, scope, revision, subject)
             );
+            CREATE TABLE IF NOT EXISTS team_scouted (
+              ask     TEXT NOT NULL,
+              part    TEXT NOT NULL,
+              session TEXT NOT NULL,
+              pack    TEXT NOT NULL,
+              at      TEXT NOT NULL,
+              PRIMARY KEY (ask, part, session)
+            );
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return this;
@@ -81,6 +89,35 @@ public sealed class TeamLedger
         command.Parameters.AddWithValue("$act", decision.Act);
         command.Parameters.AddWithValue("$at", decision.At.ToString("O", CultureInfo.InvariantCulture));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>Keeps what a scout answered for a part; a scout answers a part once, so the first answer stands.</summary>
+    public Task KeepAsync(TeamScouted scouted, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "INSERT INTO team_scouted (ask, part, session, pack, at) VALUES ($ask, $part, $session, $pack, $at) ON CONFLICT DO NOTHING";
+        command.Parameters.AddWithValue("$ask", scouted.Ask);
+        command.Parameters.AddWithValue("$part", scouted.Part);
+        command.Parameters.AddWithValue("$session", scouted.Session);
+        command.Parameters.AddWithValue("$pack", scouted.Pack);
+        command.Parameters.AddWithValue("$at", scouted.At.ToString("O", CultureInfo.InvariantCulture));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>What the ask's scouts answered, oldest first.</summary>
+    public Task<IReadOnlyList<TeamScouted>> ScoutedAsync(string ask, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<TeamScouted>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT part, session, pack, at FROM team_scouted WHERE ask = $ask ORDER BY rowid";
+        command.Parameters.AddWithValue("$ask", ask);
+        var rows = new List<TeamScouted>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            rows.Add(new(ask, reader.GetString(0), reader.GetString(1), reader.GetString(2), At(reader, 3)));
+        }
+
+        return rows;
     }, ct);
 
     /// <summary>The ask's team, oldest first.</summary>

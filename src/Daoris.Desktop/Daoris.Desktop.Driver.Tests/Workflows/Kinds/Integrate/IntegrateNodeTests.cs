@@ -55,7 +55,21 @@ public sealed class IntegrateNodeTests : IDisposable
 
     private NodeRecordFiles Files => new(_home, () => true);
 
-    private NodeRuntime Runtime(Door? door = null) => new(Files, _port, () => Then, () => true) { Doors = NodeDoors.None.With(NodeKinds.Integrate, door ?? _door) };
+    private NodeRuntime Runtime(Door? door = null) => new(Files, _port, () => Then, () => true) { Doors = NodeDoors.None.With(NodeKinds.Integrate, door ?? _door), Plans = _plans };
+
+    private ITrainPlans? _plans;
+
+    private sealed class Plans(TrainPlan? plan) : ITrainPlans
+    {
+        public Task<TrainPlan?> OfAsync(string ask, CancellationToken ct) => Task.FromResult(plan);
+    }
+
+    /// <summary>The run's quest as a worker's part of ask <c>a1</c>: published under <c>a1/p1/1</c>, and the plan says which quest is part <c>p1</c>'s.</summary>
+    private void AsPart(string? planned)
+    {
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done") with { Request = "a1/p1/1" }), RunHome.Branch(Unit, Session, Then.AddHours(-1), [RunId], Landed())];
+        _plans = new Plans(new TrainPlan("a1", 1, [new TrainPlanPart("p1", new HashSet<string>(), new HashSet<string>()) { Quest = planned }]));
+    }
 
     private NodeRecord Record(string unit = "") => Files.Read(unit.Length == 0 ? RunUnit : unit)!;
 
@@ -188,6 +202,30 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.Equal(NodeStates.Active, Status().State);
         Assert.NotEqual(NodeStates.Reached, Status("line").State);
         Assert.Empty(_port.Sent);
+    }
+
+    /// <summary>A part's quest carries its ask and part in its publish key, and the plan names that quest for the part: its request is tagged.</summary>
+    [Fact]
+    public async Task A_parts_integrate_names_its_ask_and_part_so_its_request_is_the_trains()
+    {
+        AsPart(planned: RunId);
+
+        await PassAsync(Runtime(), Config());
+
+        Assert.Equal(new TrainRef("a1", "p1"), Assert.Single(_door.Asked).Train);
+    }
+
+    /// <summary>A key alone names nothing: a plan that gives the part to another quest, or none read, leaves the request an ordinary landing's.</summary>
+    [Theory]
+    [InlineData("another-quest")]
+    [InlineData(null)]
+    public async Task A_request_is_tagged_only_where_the_plan_gives_the_part_to_this_quest(string? planned)
+    {
+        AsPart(planned);
+
+        await PassAsync(Runtime(), Config());
+
+        Assert.Null(Assert.Single(_door.Asked).Train);
     }
 
     /// <summary>A runtime nobody gave a door starts none and waits ready, as an install with no door does.</summary>

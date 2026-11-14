@@ -155,7 +155,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     whose role no longer lists that agent, which takes the role's first entry and that entry's model (`FailedCarryOn`). A session
     of the quest that asks for the take while the session here that took it ended failed or stopped is answered as the taker: the
     take passes to it (`QuestRetakes`), so a retry never stands down against a holder that is gone; a running holder or another
-    machine's take is still refused. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
+    machine's take is still refused. A newest stand-down of the quest here is read past at the open to that taker when the claim is
+    this machine's and the taker ended failed or interrupted (`StandDownTakers`), never past the person's own stop. *Try again* on such a quest says whose take it is and how that session ended, and that the loop
     carries it on. (D80, D83, D104)
 27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
     tree once that quest is answered. (D79)
@@ -211,7 +212,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
     left is `Unclosed`, a row of *What needs you* until the person's done closes it or their word goes on with the session, its
-    tree's work staying to review. (D46, D83)
+    tree's work staying to review. A park whose own quest is then closed reads ended, not waiting on the person. (D46, D83)
 38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on; on the protocol
     door the session keeps waiting on that work. (D83, D105)
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.
@@ -247,7 +248,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. Where
     the workspace has more than one repository it is the lead of the ask's team (`IntakeLead`): it starts as plan work on the Lead
     role's order, is told to decide one part or several and to write several through `team_plan`, and the plan door publishes as
-    the writing session, so its tier moves as its `quest_publish` moves it (TEAMWORK1d). A parked
+    the writing session, so its tier moves as its `quest_publish` moves it, and it may ask a scout to orient a part (`helper_ask` with `part`, the one helper start; its pack is kept with the plan, `team_plan` shows it) (TEAMWORK1d). A parked
     one ends in the ask's close's own step, with its reason (`AskIntakeClose`, `ledger.intake-closed`), whichever door closed it;
     at the look when the person publishes or deletes the ask, or when one running at the close parks. Where no declaration covers the work and no repository's own files fit it, the
     intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
@@ -369,7 +370,7 @@ are roots that wire and grow by a one-line door at most.
 | a part of the look | a pass of its own marked `[LookPass]`, reaching the driver on `ILookWiring`, sharing on `LookState` written by one pass | `DriverPartsTests` |
 | a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
 | a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
-| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs: a look's stages add up to it, a warm look under 2 s), `NodeWakesTests` |
+| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs: a look's stages add up to it, a warm look under half the cold one), `NodeWakesTests` |
 | what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |

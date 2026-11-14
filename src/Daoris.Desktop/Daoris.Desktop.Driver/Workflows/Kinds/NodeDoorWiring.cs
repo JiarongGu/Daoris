@@ -10,6 +10,9 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>The machine log a door tells what it did to, by its code.</summary>
     public Action<string, string>? Log { get; init; }
 
+    /// <summary>The clock a door that stamps what it moved reads; null where none is handed.</summary>
+    public Func<DateTimeOffset>? Clock { get; init; }
+
     /// <summary>The landing a run's <c>land</c> is performed through, landing as the review's Accept lands it.</summary>
     public Func<LandPerformer>? Landing { get; init; }
 
