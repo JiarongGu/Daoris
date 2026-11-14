@@ -80,7 +80,7 @@ internal static class TestDoors
         agent?.Home ?? new DoorHome(null, false, null),
         agent is null ? LentPart.None : new LentPart(agent.Pool, agent.Tables(withErrors: false), new UsagePart(agent.Usage)),
         Known<IDoorOffers>.Absent,
-        postures ?? new PosturesPart(null, null, null, null),
+        postures ?? new PosturesPart(null, null, null),
         Known<ISpawn>.Declared(spawn ?? new UnusedSpawn(), Evidence),
         dialect is null ? Known<IDialect>.Absent : Known<IDialect>.Declared(dialect, Evidence),
         new AbilitiesPart(

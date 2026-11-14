@@ -173,7 +173,7 @@ public sealed class AccessSwapTickTests : IDisposable
     }
 
     /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions"));
 
     /// <summary>
     /// The protocol door's stand-in: it resumes, and offers Claude's modes on each session, a mode set going to the log. Its first

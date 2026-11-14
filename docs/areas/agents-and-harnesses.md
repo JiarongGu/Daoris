@@ -118,7 +118,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (`ProposalSettlement.Settle`), marked `settling` before its save and never saved twice. Every writer of the rule file reads,
     decides and saves under its one lock (`PermissionChange.Change`), recording who made the change. (D74)
 21. A driven session runs in its harness's judged mode: `auto`, else `acceptEdits`, on Claude's protocol door, the posture held
-    (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex; `workspace-write` through dsh's environment.
+    (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex, a brainstorm's pass too (its `read-only` asks the driver
+    for every read on Windows, which answers no request, so no door declares a reading mode); `workspace-write` through dsh's
+    environment.
     (D81, D53, D253)
 22. Full access (`bypassPermissions`, `agent-full-access`) and the asking mode (`default`, `workspace-write`) come only from the
     person's setting: Ask Daoris's full access or a repository's access setup. A harness with no mapped mode refuses the start,
