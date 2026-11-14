@@ -302,7 +302,25 @@ export function tsReader(files, read) {
     }
     return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide };
   };
-  return { reachOf, factsOf };
+  /** The files within `depth` reads of `unit` with their fewest reads: its own file 0, what it imports or names 1, and so on (never a folder or a glob). */
+  const hopsFrom = (unit, depth) => {
+    const found = new Map([[unit, 0]]);
+    let frontier = [unit];
+    for (let hops = 1; hops <= depth; hops += 1) {
+      const next = [];
+      for (const file of frontier) {
+        if (!CODE.test(file)) continue;
+        const mine = ownOf(file);
+        for (const each of [...mine.imports, ...mine.files]) if (!found.has(each)) {
+          found.set(each, hops);
+          next.push(each);
+        }
+      }
+      frontier = next;
+    }
+    return found;
+  };
+  return { reachOf, factsOf, hopsFrom };
 }
 
 /** Whether a TypeScript unit's reach holds `path`. */
@@ -421,6 +439,19 @@ function reachedBy(result, path) {
   if (placed.none) return new Set();
   if (placed.classes) return new Set(placed.classes);
   return new Set(result.classes.filter((each) => classHitByAreas(each, placed, result)).map((each) => each.full));
+}
+
+/** The fewest reads between `unit` and `paths` within `depth`: a TypeScript unit's imports, a .NET class 1 from a file declaring a type it names. */
+export function unitHops(unit, paths, map, depth = 2) {
+  if (unit.kind === 'dotnet') {
+    const census = map.dotnet.find((each) => each.suite === unit.suite && each.project === unit.project)?.census;
+    const sourceFiles = census?.classes.find((each) => each.full === unit.unit)?.sourceFiles ?? [];
+    const counts = paths.map((path) => (path === unit.file ? 0 : sourceFiles.includes(path) ? 1 : undefined)).filter((each) => each !== undefined);
+    return counts.length ? Math.min(...counts) : undefined;
+  }
+  const within = map.ts.hopsFrom(unit.file, depth);
+  const counts = paths.map((path) => within.get(path)).filter((each) => each !== undefined);
+  return counts.length ? Math.min(...counts) : undefined;
 }
 
 /** The units of the census `paths` reach, each with the first path that reaches it. */

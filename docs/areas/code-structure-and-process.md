@@ -158,7 +158,7 @@ finishes first and the whole set runs once.
     tier alone, in under five minutes for a typical branch: the light gates, the CLI's checks (`cli`, `npm run verify:checks`,
     `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast` runs the
     unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
-    change first, bounded per suite by `tools/merge/reached.ts`, the rest counted), so a list, census or structure red never lands.
+    change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands.
     The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and the queue's promotion starts

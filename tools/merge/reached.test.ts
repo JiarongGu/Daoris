@@ -22,7 +22,7 @@ const dotnet = (suite: string, name: string, by: string, project = DRIVER): Reac
 });
 const web = (file: string, by: string): ReachedUnit => ({ suite: 'web-unit', kind: 'vitest', unit: file, name: file.split('/').pop()!, file, by });
 const node = (suite: string, file: string, by: string): ReachedUnit => ({ suite, kind: 'node', unit: file, name: file.split('/').pop()!, file, by });
-const plan = (units: ReachedUnit[], changed: string[], options: { bounds?: { dotnet?: number }; replayed?: Record<string, number> } = {}) =>
+const plan = (units: ReachedUnit[], changed: string[], options: { bounds?: { dotnet?: number; vitest?: number }; replayed?: Record<string, number> } = {}) =>
   reachedPlan(units, changed, { ...options, processSuites });
 
 test("the reached suites are the unit ones: the CLI's and the tools' tests are, the censuses, the Process halves, the browser suites and the rehearsals are not", () => {
@@ -64,6 +64,20 @@ test('past its bound a suite keeps first the units named for the change, then th
   const planned = plan(units, changed, { bounds: { dotnet: 2 } });
   // The class named for the changed file, then the first of the changed file's own folder, then the census's order.
   assert.deepEqual(planned.groups[0]!.units.map((unit) => unit.name), ['BacklogMergeTests', 'BTests']);
+});
+
+test('a unit within two hops of a changed file is never left out by the bound, however many the change reaches; the bound spends the rest nearest first', () => {
+  const near = (file: string, hops: number | undefined): ReachedUnit => ({ ...web(file, 'x'), ...(hops === undefined ? {} : { hops }) });
+  const wide = Array.from({ length: 6 }, (_, at) => near(`src/Daoris.Web/src/work/Wide${at}.test.tsx`, undefined));
+  const far = near('src/Daoris.Web/src/work/Far.test.tsx', 4);
+  const rail = near('src/Daoris.Web/src/work/rail/Zrail.test.tsx', 2);
+  const own = near('src/Daoris.Web/src/work/rail/Zrow.test.tsx', 1);
+  const units = [...wide, far, rail, own];
+  const kept = (bound: number) => plan(units, ['src/Daoris.Web/src/work/rail/Row.tsx'], { bounds: { vitest: bound } }).groups[0]!.units.map((unit) => unit.name);
+  assert.deepEqual(kept(2), ['Zrow.test.tsx', 'Zrail.test.tsx'], 'a bound of two keeps the two nearest, though six others sit first in the census and share the changed folder');
+  assert.deepEqual(kept(1), ['Zrow.test.tsx', 'Zrail.test.tsx'], 'a bound below the near units is no bound on them');
+  assert.deepEqual(kept(3), ['Zrow.test.tsx', 'Zrail.test.tsx', 'Far.test.tsx'], 'the room the near units leave goes to the next nearest');
+  assert.deepEqual(plan(units, ['x'], { bounds: { vitest: 1 } }).left, { 'web-unit': 7 });
 });
 
 test('a .NET suite runs as one filtered command per test project, its fast half only, and a page or tool suite by its own runner from its own folder', () => {
