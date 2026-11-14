@@ -68,7 +68,28 @@ public static class Notices
     /// <summary>A line of the look's that is news, by its code (<see cref="LookSaid"/>).</summary>
     public const string Look = "look";
 
+    /// <summary>A row of <i>What needs you</i> the person set aside, kept read: its kind in <see cref="Notice.Route"/>, its id in <see cref="Notice.Code"/>, its since in <see cref="Notice.Act"/>.</summary>
+    public const string Aside = "set-aside";
+
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+
+    /// <summary>The ids of kept notices of a kind this build no longer keeps.</summary>
+    public static IReadOnlyList<string> Spent(IEnumerable<Notice> notices) =>
+    [
+        .. notices
+            .Where(notice => (notice.Kind == Ended && Of(new AttentionEvent(AttentionKind.Ended, notice.Session ?? "", "", notice.State), notice.At) is null)
+                || (notice.Kind == PluginCommandNotices.Kind && notice.State == "reached"))
+            .Select(notice => notice.Id),
+    ];
+
+    public static Notice SetAsideOf(string kind, string id, string? since, string? workspace, DateTimeOffset at) =>
+        new($"{Aside}:{kind}:{id}", Aside, at, Read: true, Workspace: workspace, Route: kind, Code: id, Act: since);
+
+    public static string HiddenKey(string kind, string id, string? since) => $"{kind}\n{id}\n{since ?? ""}";
+
+    public static IReadOnlySet<string> Hidden(IEnumerable<Notice> notices) =>
+        notices.Where(notice => notice.Kind == Aside && notice.Route is not null && notice.Code is not null)
+            .Select(notice => HiddenKey(notice.Route!, notice.Code!, notice.Act)).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Where the record is: the home table's <c>notices</c> entry.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Notices);
@@ -105,6 +126,7 @@ public static class Notices
     /// </summary>
     public static Notice? Of(AttentionEvent item, DateTimeOffset at) => item.Kind switch
     {
+        AttentionKind.Ended when item.State?.Replace("-", "", StringComparison.Ordinal).ToLowerInvariant() is "completed" or "declined" or "stooddown" => null,
         AttentionKind.Ended => new($"ended-{item.Session}", Ended, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository, State: item.State),
         AttentionKind.Answered => new($"answered-{item.Session}", Answered, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository),
         _ => null,

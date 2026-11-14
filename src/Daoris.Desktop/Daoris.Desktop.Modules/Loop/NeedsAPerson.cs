@@ -295,7 +295,10 @@ public static class NeedsAPerson
 
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
-        return rows;
+
+        return facts.Hidden.Count == 0
+            ? rows
+            : [.. rows.Where(row => !facts.Hidden.Contains(Notices.HiddenKey(Text(row, "kind") ?? "", Text(row, "id") ?? "", Text(row, "since"))))];
     }
 
     /// <summary>

@@ -23,7 +23,7 @@ public static class RunOutcomeNotices
         foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
         {
             if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
-            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State is NodeStates.Reached or NodeStates.Failed))
+            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State == NodeStates.Failed))
             {
                 var at = step.Since ?? now;
                 if (now - at >= News.Horizon) continue;
@@ -34,5 +34,24 @@ public static class RunOutcomeNotices
         }
 
         return occurrences;
+    }
+
+    /// <summary>The ids of kept outcomes whose run is gone or whose step no longer fails that attempt.</summary>
+    public static IReadOnlyList<string> Moved(string home, IEnumerable<Notice> held)
+    {
+        var outcomes = held.Where(notice => notice.Kind == Kind).ToList();
+        if (outcomes.Count == 0) return [];
+        var records = new NodeRecordFiles(home, () => false);
+        var failing = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
+        {
+            if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
+            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State == NodeStates.Failed))
+            {
+                failing.Add($"outcome:{run.Run}/{step.Node}/{step.Attempt}");
+            }
+        }
+
+        return [.. outcomes.Where(notice => !failing.Contains(notice.Id)).Select(notice => notice.Id)];
     }
 }

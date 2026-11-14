@@ -259,6 +259,9 @@ public sealed class NoticesStateSlice
     /// <summary>The person's dismissal of <paramref name="ids"/>: written and pushed. Null where written; else why not, logged.</summary>
     public string? Dismiss(IReadOnlyCollection<string> ids) => Refusal(Notices.Dismiss(_home, ids, _clock.GetUtcNow()));
 
+    public string? SetAside(string kind, string id, string? since, string? workspace) =>
+        Refusal(Notices.Renew(_home, Notices.SetAsideOf(kind, id, since, workspace, _clock.GetUtcNow()), _clock.GetUtcNow()));
+
     /// <summary>The notices of <paramref name="workspace"/>'s window, its own and every machine-wide one, as last read; every one for none.</summary>
     public IReadOnlyList<string> Scoped(string? workspace) =>
         [.. (Notices.Read(_home, _clock.GetUtcNow()) ?? [])

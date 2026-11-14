@@ -152,7 +152,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 
 ## The desktop app
 
-- [ ] **NOTIFYDIET1 — Notifications show what needs the person, and every one can be dismissed** (modules, web; the owner, 2026-11-12, not urgent): in the games workspace the panel lists far more than the person acts on, and some rows offer only *Retry* (a failed pull-request step) or have gone stale. Wanted: the volume measured by kind and source (`tools/dev-metrics.mjs` can count them), each kind cut to what needs the person; every row dismissable with no act, kept in the history; a row whose subject ended or moved on clearing itself.
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
 - [ ] **SETTINGSUX1 — the Settings page made orderly** (driver, web): left the after shots and the installed window. → `docs/areas/desktop-app.md` rule 57

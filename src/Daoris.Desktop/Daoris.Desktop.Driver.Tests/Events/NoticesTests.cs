@@ -76,6 +76,50 @@ public sealed class NoticesTests : IDisposable
         Assert.Equal("answered", Written()["notices"]!["answered-c1"]!["kind"]!.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData("completed", false)]
+    [InlineData("declined", false)]
+    [InlineData("stood-down", false)]
+    [InlineData("failed", true)]
+    [InlineData("stopped", true)]
+    public void A_session_that_ended_well_is_no_notice(string state, bool kept)
+    {
+        var made = Notices.Of(new AttentionEvent(AttentionKind.Ended, "s1", "Engine", state) { Workspace = "games" }, Now);
+
+        Assert.Equal(kept, made is not null);
+    }
+
+    [Fact]
+    public void A_notice_of_a_kind_no_longer_kept_is_spent()
+    {
+        var kept = new[]
+        {
+            Ended("s1", Now) with { State = "completed" }, Ended("s2", Now), Ended("s3", Now) with { State = "stood-down" },
+            new Notice("plugin-command:p/c/1", "plugin-command", Now, State: "reached"), new Notice("plugin-command:p/c/2", "plugin-command", Now, State: "failed"),
+            Notices.SetAsideOf("parked", "x", null, null, Now),
+        };
+
+        Assert.Equal(["ended-s1", "ended-s3", "plugin-command:p/c/1"], Notices.Spent(kept));
+    }
+
+    [Fact]
+    public void A_row_set_aside_is_kept_read_in_the_history_and_hides_only_the_row_it_names_as_it_stood()
+    {
+        var aside = Notices.SetAsideOf("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z", "games", Now);
+        Assert.Equal(("set-aside", true, "games"), (aside.Kind, aside.Read, aside.Workspace));
+        Assert.Null(Notices.Renew(_home, aside, Now));
+
+        var kept = Notices.Read(_home, Now)!;
+        var hidden = Notices.Hidden(kept);
+        Assert.True(hidden.Contains(Notices.HiddenKey("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z")));
+        Assert.False(hidden.Contains(Notices.HiddenKey("go-ahead", "a1#2", "2026-10-22T08:30:00.000Z")));
+        Assert.False(hidden.Contains(Notices.HiddenKey("go-ahead", "a1#3", "2026-10-22T08:00:00.000Z")));
+        Assert.False(hidden.Contains(Notices.HiddenKey("parked", "a1#2", "2026-10-22T08:00:00.000Z")));
+
+        Assert.Null(Notices.Renew(_home, Notices.SetAsideOf("go-ahead", "a1#2", "2026-10-22T08:30:00.000Z", "games", Now.AddMinutes(1)), Now.AddMinutes(1)));
+        Assert.Single(Notices.Read(_home, Now.AddMinutes(1))!);
+    }
+
     /// <summary>§2.4: read moves only the notices named; dismiss removes them; an id not held is nothing.</summary>
     [Fact]
     public void A_read_moves_the_notices_named_and_a_dismiss_removes_them()

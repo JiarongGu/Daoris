@@ -339,6 +339,7 @@ public static class AttentionStateSlice
             Supervised = loop.Supervisor.Answering(),
             StoppedQuests = StoppedRuns.Quests(loop.Home),
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
+            Hidden = Notices.Hidden(Notices.Read(loop.Home, DateTimeOffset.UtcNow) ?? []),
         };
     }
 
@@ -445,7 +446,7 @@ public static class AttentionStateSlice
     {
         var stops = new List<Action>();
         // And the accounts', which the account rows read where it has judged.
-        foreach (var name in Inputs.Append(AccountsStateSlice.Name))
+        foreach (var name in Inputs.Append(AccountsStateSlice.Name).Append(NoticesStateSlice.Name))
         {
             if (slices.Find(name) is not { } slice) continue;
             var heard = name == SessionsStateSlice.Name ? OnMove(() => SessionsRead(Records(slice) ?? []), wake) : wake;

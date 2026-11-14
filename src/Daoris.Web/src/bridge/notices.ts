@@ -31,7 +31,7 @@ export type Notice = {
    * `ended`, a session that ended without the person asking; `expired`, a terminal's press refused by its time; `answered`, a
    * conversation that answered the person's words, one per conversation; `look`, a line of the driver's look that is news,
    * by its `code`; `withdrawn`, a terminal's press taken back once shown, and `closed`, one an earlier build's close ended;
-   * `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept.
+   * `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept; `set-aside`, a row set aside.
    */
   kind: string;
   at: string;
@@ -235,6 +235,12 @@ const writtenOf = (answer: unknown): boolean => keyed(answer)?.written === true;
 export const useMarkNoticesRead = () =>
   useMutation({
     mutationFn: async (ids: string[]): Promise<boolean> => writtenOf(await call('NOTICES_READ', { ids })),
+  });
+
+export const useSetAsideRow = () =>
+  useMutation({
+    mutationFn: async (row: { kind: string; id: string; since?: string | null; workspace?: string }): Promise<boolean> =>
+      writtenOf(await call('NOTICE_DISMISS', { rowKind: row.kind, rowId: row.id, ...(row.since ? { rowSince: row.since } : {}), ...(row.workspace ? { workspace: row.workspace } : {}) })),
   });
 
 /** The person's *Dismiss* of one notice (`NOTICE_DISMISS`): removed from every window by the slice's push. */

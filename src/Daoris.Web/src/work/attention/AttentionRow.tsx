@@ -267,6 +267,8 @@ export type AttentionActs = {
   passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | TaskAct) => void;
   /** An end the sweep wrote, which names no session, approved or declined by its operation, as a session's Memory section decides one. */
   memoryEnd?: (item: Attention, approve: boolean) => void;
+  /** The row set aside, kept in the history. */
+  setAside?: (item: Attention) => void;
 };
 
 /**
@@ -320,6 +322,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
   const onOpen = opensNothing(item) ? undefined : handed;
   const offered = attentionOffers(item).filter((offer) => acts[HANDLER[offer.act]] !== undefined);
   const doorOnly = DOOR_ONLY[item.kind];
+  const setAside = item.kind === 'confirmation' ? undefined : acts.setAside;
   const where = IN_A_CIRCLE.has(item.kind) || item.circle ? t('work.attention.circle', { circle: item.where }) : item.where;
   // An account's name as the row says it: the person's, from what the row names.
   const called = (account?: string) => (item.account?.named ?? []).find((one) => one.id === account)?.label ?? account ?? '';
@@ -506,7 +509,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
             <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
           )}
       </div>
-      {(offered.length > 0 || onOpen || onRun) && (
+      {(offered.length > 0 || onOpen || onRun || setAside) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 @3xl/main:justify-end">
           {offered.map((offer) => (
             <Button key={`${offer.act}:${offer.account ?? offer.option ?? ''}`} disabled={busy || asking !== null} onClick={() => press(offer)}>
@@ -516,6 +519,17 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
           {/* What the press does, said beside it: a retry starts a session, which spends an account. */}
           {offered.some((offer) => offer.act === 'retry') && (
             <span className="text-small text-ink-faint">{t('work.attention.act.retryDoes', { repository: item.where })}</span>
+          )}
+          {/* Setting aside is no act on the wait: a quiet press, kept in the history, which any row offers. */}
+          {setAside && (
+            <button
+              type="button"
+              onClick={() => setAside(item)}
+              aria-describedby={titleId}
+              className="inline-flex min-h-[1.75rem] items-center rounded-control px-1.5 text-small text-ink-soft hover:bg-raised hover:text-ink"
+            >
+              {t('work.attention.act.setAside')}
+            </button>
           )}
           {/* Where the step it waits at stands in its workflow: a door of its own, quieter than the row's. */}
           {onRun && (

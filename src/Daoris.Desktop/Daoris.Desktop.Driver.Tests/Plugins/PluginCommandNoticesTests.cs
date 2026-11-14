@@ -67,7 +67,7 @@ public sealed class PluginCommandNoticesTests : IDisposable
     }
 
     [Fact]
-    public async Task A_round_from_any_door_is_a_line_with_its_place_and_the_notices_are_the_unwatched_and_the_failed()
+    public async Task A_round_from_any_door_is_a_line_with_its_place_and_the_notices_are_the_failed_alone()
     {
         await Round(CommandWire.Window, """{ "said": ["ok"], "exit": 0 }""", new PluginPlace("engine"));
         await Round(CommandWire.Window, """{ "said": ["no"], "exit": 3 }""");
@@ -82,7 +82,7 @@ public sealed class PluginCommandNoticesTests : IDisposable
 
         var told = PluginCommandNotices.Occurrences(_home, DateTimeOffset.UtcNow).Select(each => each.Notice!).ToList();
         Assert.Equal(
-            [("failed", "window"), ("reached", "agent"), ("reached", "removal")],
+            [("failed", "window")],
             told.Select(notice => (notice.State!, notice.Route!)).Order());
         Assert.All(told, notice => Assert.Equal(("plugin-command", "acme-tickets", "status"), (notice.Kind, notice.Code, notice.Act)));
     }

@@ -6,8 +6,9 @@ import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
   useDeclineHandOver, useGitAnswer, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
-  useDecideSessionMemory,
+  useDecideSessionMemory, useSetAsideRow,
 } from '../../bridge/shell';
+import { useScope } from '../../data/scope';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
 import { useSay } from '../../bridge/sessions/conversation';
@@ -122,6 +123,8 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const quietLeave = useQuietLeave();
   const stopSession = useStopSession();
   const runNodeWord = useRunNodeWord();
+  const setAside = useSetAsideRow();
+  const { workspace } = useScope();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -250,6 +253,11 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       answered,
     ),
     acceptDeparture: (item) => run(item, () => accept.mutateAsync(item.id), (answer) => notify(answer.message)),
+    setAside: (item) => run(
+      item,
+      () => setAside.mutateAsync({ kind: item.kind, id: item.id, since: item.since ?? undefined, workspace }),
+      (written) => { if (!written) notify(t('work.attention.setAsideRefused'), 'error'); },
+    ),
     // A driver's verdicts, holds and rules reach only a shell, so in a browser these rows, and these acts, never appear.
     retry: (item) => run(item, () => retry.mutateAsync({ quest: item.id }), (state) => notify(t(...retryNotice(item.id, state)))),
     trust: (item, answered) => {

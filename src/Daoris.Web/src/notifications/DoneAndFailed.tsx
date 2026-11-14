@@ -48,6 +48,10 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     if (notice.state === 'failed') return t('notifications.done.pluginCommand.failed', words);
     return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
   }
+  if (notice.kind === 'set-aside') {
+    const kind = notice.route ? t(`work.attention.${notice.route}`, { defaultValue: notice.route }) : '';
+    return t('notifications.done.setAside', { kind, subject: notice.code ?? '' });
+  }
   if (notice.kind === 'look') {
     // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');

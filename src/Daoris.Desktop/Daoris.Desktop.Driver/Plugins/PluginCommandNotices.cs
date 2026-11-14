@@ -1,11 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <i>Done and failed</i>'s plugin commands: a round of a plugin's command the person did not watch (an agent's call, a removal's
-/// <c>forget</c>) or that failed wherever it ran, one notice by plugin, command and moment, read from the machine log's
+/// <i>Done and failed</i>'s plugin commands: a round of a plugin's command that failed wherever it ran, one notice by plugin, command and moment, read from the machine log's
 /// <c>plugin.command</c> lines, which hold names alone. Its fields: <see cref="Notice.Code"/> the plugin, <see cref="Notice.Act"/> the
-/// command, <see cref="Notice.Route"/> who asked (<see cref="CommandWire"/>), <see cref="Notice.State"/> <c>reached</c> or <c>failed</c>,
-/// <see cref="Notice.Session"/> the session an agent called from. A round that only asked, or that a person ran and ended well, is no notice.
+/// command, <see cref="Notice.Route"/> who asked (<see cref="CommandWire"/>), <see cref="Notice.State"/> <c>failed</c>,
+/// <see cref="Notice.Session"/> the session an agent called from. A round that ended well is no notice.
 /// </summary>
 public static class PluginCommandNotices
 {
@@ -40,9 +39,7 @@ public static class PluginCommandNotices
         if (plugin is null || command is null || from is null) return null;
         int? exit = line.Data.TryGetProperty("exit", out var code) && code.ValueKind == System.Text.Json.JsonValueKind.Number ? code.GetInt32() : null;
         var failed = exit is not null and not 0 || (exit is null && from == CommandWire.Agent);
-        var unwatched = from is CommandWire.Agent or CommandWire.Removal;
-        if (!failed && !unwatched) return null;
-        if (exit is null && !failed) return null;
+        if (!failed) return null;
         var id = $"{Kind}:{plugin}/{command}/{line.Stamp}";
         return new Notice(id, Kind, line.Time, State: failed ? "failed" : "reached", Route: from, Act: command, Code: plugin, Session: Text(line, "session"));
     }
