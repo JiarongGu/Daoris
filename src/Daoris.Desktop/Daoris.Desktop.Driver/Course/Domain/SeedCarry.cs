@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The Seed form asked where a limit's move cannot carry its conversation: the session written as the new door's agent's own conversation in
 /// the new account's home, which the new part resumes. The brief stays the floor where a seed cannot help: a context past the bound (a
-/// written one is as large), a home Daoris does not own, a door whose provider binds no seeding, or a seed that was refused or failed.
+/// written one is as large), a home Daoris does not own, a door whose provider binds no seeding, or a refused or failed seed.
 /// </summary>
 internal static class SeedCarry
 {
@@ -27,7 +27,7 @@ internal static class SeedCarry
         return placed.Refused is null ? new CarryPlan.Seeded(placed.Conversation, placed) : plan;
     }
 
-    /// <summary>Takes a seed out of the home it was written in, where the door would not resume it.</summary>
+    /// <summary>Takes a seed out of its home, where the door would not resume it.</summary>
     public static void Withdrawn(IConversationSeeding? seeding, string home, CarryPlan.Seeded seeded)
     {
         try

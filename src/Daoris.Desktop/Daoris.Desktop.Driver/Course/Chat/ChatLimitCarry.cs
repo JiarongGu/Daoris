@@ -31,7 +31,6 @@ internal sealed class ChatLimitCarry(
     /// How the move takes the conversation, asked once the part it leaves has ended so its files are whole: carried, its copy made in the
     /// new account's home, or briefed by the carry's code.
     /// </summary>
-    /// <param name="record">Daoris's brief of the line, which a seed tells after the session's events where the conversation cannot be copied.</param>
     public static CarryPlan Planned(ChatContext context, AgentDoor door, PriorSession prior, HarnessSelection selection, string tree, string record)
     {
         var registry = context.Harnesses.Adapters;

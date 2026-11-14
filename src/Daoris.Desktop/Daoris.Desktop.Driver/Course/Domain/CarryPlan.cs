@@ -15,10 +15,6 @@ internal abstract record CarryPlan
     internal sealed record Compacted(string Conversation, long? Tokens, long Bound, IReadOnlyDictionary<string, string> Variables)
         : Carried(Conversation, Tokens);
 
-    /// <summary>
-    /// Not copied but written: the session's events and Daoris's record as the new door's agent's own conversation in the new account's
-    /// home (<see cref="SeedCarry"/>), resumed under its id as a carry is.
-    /// </summary>
     internal sealed record Seeded(string Conversation, SeedPlacement Placed) : Carried(Conversation, null);
 
     /// <summary>Not carried: the new part is handed Daoris's brief, <paramref name="Why"/> by a <see cref="LimitCarry"/> code.</summary>

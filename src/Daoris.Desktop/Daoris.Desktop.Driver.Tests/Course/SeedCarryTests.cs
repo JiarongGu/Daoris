@@ -56,7 +56,7 @@ public sealed class SeedCarryTests
         Assert.Equal(new CarryPlan.Briefed(LimitCarry.Unable), SeedCarry.Seeded(new CarryPlan.Briefed(LimitCarry.Unable), new Seeding(SeedPlacement.Failed), Ask));
     }
 
-    /// <summary>The new part says it continues from a written conversation, never that one was carried whole.</summary>
+    /// <summary>The new part says it continues from a written conversation, never that one is carried whole.</summary>
     [Fact]
     public void A_seeded_part_says_its_conversation_was_written_for_it()
     {

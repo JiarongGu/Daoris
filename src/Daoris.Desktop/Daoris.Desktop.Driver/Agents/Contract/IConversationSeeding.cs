@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IConversationSeeding
 {
-    /// <summary>Whether <paramref name="door"/>'s agent resumes a conversation written in its format; false until one was measured to load.</summary>
+    /// <summary>Whether <paramref name="door"/>'s agent resumes a conversation written in its format; false until one is measured to load.</summary>
     bool Seeds(string door);
 
     /// <summary>Writes the conversation in the door's format under <see cref="SeedAsk.Home"/>; what it placed, or why it placed nothing.</summary>
@@ -29,13 +29,13 @@ public interface IConversationSeeding
 public sealed record SeedAsk(
     string Door, string Home, string Tree, string Conversation, IReadOnlyList<SessionEvent> History, string Record, DateTimeOffset At);
 
-/// <summary>What a seed placed: the conversation's id and its files under the home, or why nothing was placed.</summary>
+/// <summary>What a seed placed: the conversation's id and its files under the home, or why nothing is placed.</summary>
 /// <param name="Conversation">The id the agent resumes it under.</param>
 /// <param name="Files">The files written, relative to the home.</param>
 /// <param name="Refused">Null where placed, else one of <see cref="SeedPlacement"/>'s codes.</param>
 public sealed record SeedPlacement(string Conversation, IReadOnlyList<string> Files, string? Refused)
 {
-    /// <summary>The door's agent states no seed (its format takes no conversation in, or none was measured to load).</summary>
+    /// <summary>The door's agent states no seed (its format takes no conversation in, or none is measured to load).</summary>
     public const string Unseeded = "unseeded";
 
     /// <summary>The session holds nothing to write.</summary>
