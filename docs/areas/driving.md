@@ -125,7 +125,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     the machine-local files the `reach: copy` rules name. A `reach: read` or `write` path naming one place that git ignores is
     linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
     while it reads as its link (`TreeShares`). In a worked tree the stage only keeps. The hand, an open, a go-on and a terminal's
-    visit take the mark off first. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
+    visit take the mark off first. A folder is placed under a name beside its place and renamed into it, asked again up to twelve
+    times while a program (a scanner, an indexer, a git reading the tree) holds a file in it open, and a refusal that outlasts them
+    is said once, as `started.files-failed`, with that cause. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
     (D51, D214, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare rooms (lanes carrying `builds`,
     joined by a `room`), which `RoomCheck` checks. Every path git does not manage has an effective rule from four layers, a later
