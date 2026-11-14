@@ -202,5 +202,11 @@
   "work.attention.gitHeld.liftedNone": "Daoris 已不在等 {{host}}：下次需要时会尝试它。",
   "work.attention.secondCheck.title": "复核标记了 Ask Daoris 的一次操作",
   "work.attention.secondCheck.detail": "{{says}}（{{certainty}}，调用 {{call}}）。这是判断，不是事实：请在对话中回应。",
-  "work.attention.secondCheck.seen": "已看到"
+  "work.attention.secondCheck.seen": "已看到",
+  "work.attention.check-failed": "检查失败",
+  "work.attention.checkFailed.title": "{{name}} 失败",
+  "work.attention.checkFailed.stopped": "{{name}} 已停止",
+  "work.attention.checkFailed.detail": "提交 {{commit}}。委托已完成。请打开对应会话，决定后续处理。",
+  "work.attention.checkFailed.all": "重型检查",
+  "work.attention.checkFailed.unknown": "未记录"
 }

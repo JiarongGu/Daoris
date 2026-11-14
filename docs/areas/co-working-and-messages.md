@@ -207,7 +207,8 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 47. *What needs you* has one row per obligation, keyed by its exchange's id or its kind and id. A park on one decision is that
     row, never a second. Rows are judged once in .NET and pushed. A session's foot counts its waits by the same keys
     (`Web/work/waits/waitObligations.ts`), so one wait is counted once on the foot, the bell, the places and *Notifications*; an
-    unread message is counted on none. (from D225, D182)
+    unread message is counted on none. A failed or stopped broker check on a done quest is a `check-failed` row in the
+    session's workspace, naming the check and tested commit; its door opens the session for the person's next word. (from D225, D182)
 48. The steward desk files any caller's `{act, target, why}` as claims and grants nothing; the act is judged from the holder
     alone. At most 10 open per caller and 100 in all; a restart reads open ones as interrupted. (from D209, D225)
 49. A holder of a role the person appointed reads the asking agent's words as claims, never instructions. A go-ahead, a

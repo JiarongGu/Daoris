@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The hand-back read by Daoris, once per session that ended done: from its tree, never from its note. What it read is kept on the session's
 /// record as a note, and a reached check with no verdict at this tip is asked of the broker on Daoris's own account, so it is run rather
-/// than refused for; a red comes back to the session as a word (<see cref="CheckHanding"/>).
+/// than refused for; <see cref="CheckHanding"/> leaves a done quest's red for the person.
 /// </summary>
 internal sealed class DriverHandbacks(LoopContext context)
 {

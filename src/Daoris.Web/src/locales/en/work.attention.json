@@ -202,5 +202,11 @@
   "work.attention.gitHeld.liftedNone": "Daoris was no longer waiting on {{host}}: it tries it the next time it needs it.",
   "work.attention.secondCheck.title": "Second check flagged an act of Ask Daoris's",
   "work.attention.secondCheck.detail": "{{says}} ({{certainty}}, call {{call}}). A claim, not a fact: answer it in the conversation.",
-  "work.attention.secondCheck.seen": "Seen"
+  "work.attention.secondCheck.seen": "Seen",
+  "work.attention.check-failed": "check failed",
+  "work.attention.checkFailed.title": "{{name}} failed",
+  "work.attention.checkFailed.stopped": "{{name}} stopped",
+  "work.attention.checkFailed.detail": "Commit {{commit}}. The quest is done. Open its session to decide what follows.",
+  "work.attention.checkFailed.all": "Heavy gates",
+  "work.attention.checkFailed.unknown": "not recorded"
 }

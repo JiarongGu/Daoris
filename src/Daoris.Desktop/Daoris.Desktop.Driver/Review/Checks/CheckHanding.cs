@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How a verdict goes back to the session that asked: as Daoris's own word, kept under the check's key, which reopens the session that
-/// ended waiting (<see cref="EndNoteCodes.EndedAwaitsCheck"/>) with the verdict. A check Daoris ran on its own reading of a hand-back
-/// says nothing where it is green, so a pass the session never asked about reopens nothing.
+/// ended waiting (<see cref="EndNoteCodes.EndedAwaitsCheck"/>) with the verdict. A done quest's verdict stays for the person; a green
+/// check on a done quest, or one Daoris asked itself, owes no word.
 /// </summary>
 public static class CheckHanding
 {
@@ -14,7 +14,8 @@ public static class CheckHanding
     /// Hand every finished verdict not handed yet. <paramref name="say"/> answers the kept word's id, or null where the host refused or
     /// lost it, which leaves the verdict for the next look. The ids handed, in order.
     /// </summary>
-    public static async Task<IReadOnlyList<string>> HandAsync(CheckFiles files, CheckSay say, CancellationToken ct)
+    public static async Task<IReadOnlyList<string>> HandAsync(
+        CheckFiles files, CheckSay say, CancellationToken ct, Func<string, CancellationToken, Task<string?>> questStatus)
     {
         var handed = new List<string>();
         foreach (var ask in files.Asks())
@@ -23,6 +24,12 @@ public static class CheckHanding
             if (ask.By == CheckAsk.ByDaoris && state.State == CheckStates.Reached)
             {
                 files.WriteState(state with { Handed = Quiet });
+                continue;
+            }
+
+            if (await questStatus(ask.Session, ct).ConfigureAwait(false) == "Done")
+            {
+                if (state.State == CheckStates.Reached) files.WriteState(state with { Handed = Quiet });
                 continue;
             }
 
