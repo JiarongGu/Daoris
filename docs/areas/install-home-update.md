@@ -180,7 +180,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 43. The launcher swaps only while nothing runs from `app/` and under the home's lease; held, it replaces nothing and says
     who held it. It checks the build again, moves `app/`, `Daoris.exe` and `INSTALLED.md` into `update/previous/`, then the
     staged three into place, journalling each move in `update/swap.json` before making it. (from D139, D171)
-44. A held move is retried for up to two minutes, and the hold is journalled with what held it. (from D139)
+44. A held move is retried for up to two minutes, and the hold is journalled with what held it. A build refused `busy` (something
+    still ran from `app/`, or the home was held) is set aside in `update/failed/`, and the launcher stages it again by itself at
+    the next start that finds nothing running from `app/` (`StagedRestage`). `tools/desktop.mjs run` and `restart` with
+    `--install` wait, up to six minutes and said, while the install's journal reads `swapping`, `started` or `confirmed` or a
+    launcher waits with `--update`, and refuse to start past that. (from D139)
 45. The new application must confirm within 60 seconds of starting. One that exits or stays silent goes to `update/failed/`,
     and `previous/` comes back. A failed move undoes the journal in reverse; a launcher that died mid-swap is undone at the next
     start. Confirmed, `previous/` is removed. A build that failed is not tried again. (from D139)

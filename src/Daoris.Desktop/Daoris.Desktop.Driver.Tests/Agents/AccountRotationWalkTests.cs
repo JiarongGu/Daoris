@@ -123,7 +123,7 @@ public sealed class AccountRotationWalkTests
 
     private static string[] Names(RotationScope scope) => [.. scope.List];
 
-    private static string Order(string scope, string facts, StartKind kind = StartKind.Driven, string? absent = null)
+    internal static string Order(string scope, string facts, StartKind kind = StartKind.Driven, string? absent = null)
     {
         var read = Scope(scope);
         var present = Names(read).Where(name => name != absent).ToList();
@@ -173,8 +173,8 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-1:r1", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-1:r2 account-2:r1 account-3:r1", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-2:r1 account-3:r1", "account-1 account-2 account-3")]
-    // It outranks a week lapsing where their room is alike.
-    [InlineData("account-1 account-2 account-3", "account-3:r1,W97@+12h", "account-1 account-2 account-3")]
+    // A week lapsing outranks it.
+    [InlineData("account-1 account-2 account-3", "account-3:r1,W97@+12h", "account-3 account-1 account-2")]
     // Six accounts, one free: nothing counts them.
     [InlineData("account-1 account-2 account-3 account-4 account-5 account-6",
         "account-1:r1 account-2:r1 account-3:r1 account-4:r1 account-5:r1", "account-6 account-1 account-2 account-3 account-4 account-5")]
@@ -216,19 +216,19 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-3:S89,W40@+3h", "account-3 account-1 account-2")]
     [InlineData("account-1 account-2 account-3", "account-3:S91,W40@+3h", "account-1 account-2 account-3")]
     // The five-hour window's own reset earns nothing as a lapse; its room ranks.
-    [InlineData("account-1 account-2 account-3", "account-2:S10 account-3:W40@+20h", "account-2 account-3 account-1")]
+    [InlineData("account-1 account-2 account-3", "account-2:S10 account-3:W40@+2d", "account-2 account-3 account-1")]
     public void The_five_hour_window_beside_a_week_about_to_reset(string scope, string facts, string order)
     {
         Assert.Equal(order, Order(scope, facts));
     }
 
     // The week's tail spends what would lapse, and a week far from its reset is still never run into its limit while another
-    // has room: three days off, its curve stands at 77, so 85% is over it and goes last. Twelve hours off it stands at 98.6:
-    // 97% is spent on, where the old cap at 95 passed it, and 99% still goes last.
+    // has room: three days off, its curve stands at 77, so 85% is over it and goes last. Within the last day no curve holds:
+    // 97% and 99% twelve hours off are spent first.
     [Theory]
     [InlineData("account-1 account-2 account-3", "account-1:W85@+3d account-2:W20@+3d", "account-2 account-3 account-1")]
-    [InlineData("account-1 account-2 account-3", "account-1:W97@+12h account-2:W20@+3d", "account-2 account-1 account-3")]
-    [InlineData("account-1 account-2 account-3", "account-1:W99@+12h account-2:W20@+3d", "account-2 account-3 account-1")]
+    [InlineData("account-1 account-2 account-3", "account-1:W97@+12h account-2:W20@+3d", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W99@+12h account-2:W20@+3d", "account-1 account-2 account-3")]
     public void The_week_s_tail_spends_what_would_lapse_and_a_week_far_off_is_spared(string scope, string facts, string order)
     {
         Assert.Equal(order, Order(scope, facts));
@@ -379,7 +379,7 @@ public sealed class AccountRotationWalkTests
     // A person's curve ranks by its own line: the session flat at 60 leaves account-1 ten points where the smart 90 left forty.
     [InlineData("account-1 account-2", "account-1:S50,W10@+84h account-2:W40@+84h", "account-1 account-2")]
     [InlineData("account-1 account-2 switch=curve curve=session=60", "account-1:S50,W10@+84h account-2:W40@+84h", "account-2 account-1")]
-    [InlineData("account-1 account-2 account-3", "account-1:W89@+20h account-2:W10@+4d", "account-2 account-1 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W89@+2d account-2:W10@+4d", "account-2 account-1 account-3")]
     [InlineData("account-1 account-2", "account-1:W10@+4d,s-1m account-2:s-5h", "account-1 account-2")]
     // Above fewest running.
     [InlineData("account-1 account-2", "account-1:W5@+4d,r1 account-2:W60@+4d", "account-1 account-2")]

@@ -7,6 +7,7 @@ import { HOME, LAUNCHER, layOffers } from '../desktop-publish.mjs';
 import { applicationsAt, running, stopAll } from '../processes.mjs';
 import { DESKTOP_PROJECT, DRIVER_HOST_PROJECT, HTTP_PROJECT, MCP_PROJECT, RUN_FILE, WEB, ago, readRun, takeInstall } from './session.mjs';
 import { fail, run } from './run.mjs';
+import { awaitSwap } from './swap-wait.mjs';
 import { PAGE_IDENTITY, isShell } from './page.mjs';
 import { assemblyExe, awaitDebugPort, closedPortReport, engineLogOf, installedExe } from './executables.mjs';
 import { CLEARED, debugEnvironment, installEnvironment, scratchEnvironment, scratchPlan } from './environment.mjs';
@@ -106,6 +107,15 @@ export async function start(command, args) {
       + '  and `data/`), not at its parent.');
   }
   if (!exe) fail('the shell is not built — `node tools/desktop.mjs build`.');
+
+  // An update's swap replaces `app/` while nothing runs from it, and refuses a build it finds in use: a start waits it out.
+  if (install) {
+    try {
+      await awaitSwap(install);
+    } catch (error) {
+      fail(error.message, 1);
+    }
+  }
 
   const live = applicationsAt(exe);
   if (live.length && command === 'restart') {

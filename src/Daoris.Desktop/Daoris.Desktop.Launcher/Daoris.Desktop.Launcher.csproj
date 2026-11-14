@@ -22,6 +22,8 @@
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Install\StagedBuild.cs" Link="StagedBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Install\InstallSwap.cs" Link="InstallSwap.cs" />
+    <!-- A build refused busy, staged again once nothing holds it. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Install\StagedRestage.cs" Link="StagedRestage.cs" />
     <!-- What a move the swap was refused found held, and by which process (DEPLOYBUSY1). The base library and Windows'
          own calls alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Install\HeldFiles.cs" Link="HeldFiles.cs" />

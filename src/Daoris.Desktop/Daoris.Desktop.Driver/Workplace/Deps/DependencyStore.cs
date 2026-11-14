@@ -75,7 +75,7 @@ internal static class DependencyStore
             File.WriteAllText(Path.Combine(making, PlacedName), "");
             try
             {
-                Directory.Move(making, entry);
+                FolderRename.Into(making, entry, ct);
                 return true;
             }
             catch (IOException) when (Directory.Exists(entry))
@@ -134,7 +134,7 @@ internal static class DependencyStore
                 File.SetLastWriteTimeUtc(Path.Combine(making, each.Path), DateTime.UtcNow);
             }
 
-            Directory.Move(making, final);
+            FolderRename.Into(making, final, ct);
         }
         catch
         {
