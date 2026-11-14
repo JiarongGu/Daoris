@@ -141,20 +141,18 @@ internal static class IntegrationSettles
         string root, IntegrationCandidate candidate, IntegrationMember member, IntegrationRequest request, CancellationToken ct)
     {
         // A branch the landing's tidy removed holds nothing after its frozen tip.
-        var (branchCode, branchOut, branchErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{request.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-        if (branchCode is not (0 or 1)) return (null, $"git could not read `{request.Branch}` ({ContentHolds.Said(branchErr)}): nothing was written, and it is asked again at the next look.");
-        var branchTip = branchCode == 0 && branchOut.Trim().Length > 0 ? branchOut.Trim() : request.Tip;
+        var branchTip = await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{request.Branch}", ct).ConfigureAwait(false) ?? request.Tip;
 
         // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side.
-        var (forkCode, forkOut, forkErr) = await WorkingTree.GitAsync(root, ["merge-base", request.Tip, candidate.Base], ct).ConfigureAwait(false);
-        if (forkCode is not (0 or 1)) return (null, $"git could not find where `{request.Branch}` began ({ContentHolds.Said(forkErr)}): nothing was written, and it is asked again at the next look.");
-        var fork = forkCode == 0 && forkOut.Trim().Length > 0 ? forkOut.Trim() : candidate.Base;
+        var fork = await MachinePorts.Repository.MergeBaseAsync(root, request.Tip, candidate.Base, ct).ConfigureAwait(false) ?? candidate.Base;
 
-        // The unit's own landed work: its merge commit and the commits the merge brought in, which supersede nothing.
         var replayed = member.Replayed!;
-        var (ownCode, ownOut, ownErr) = await WorkingTree.GitAsync(root, ["rev-list", replayed, "--not", $"{replayed}^1"], ct).ConfigureAwait(false);
-        if (ownCode != 0) return (null, $"git could not list what the replay of `{request.Branch}` made ({ContentHolds.Said(ownErr)}): nothing was written, and it is asked again at the next look.");
-        var own = ownOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (await MachinePorts.Repository.RevListAsync(root, replayed, [$"{replayed}^1"], ct).ConfigureAwait(false) is not { } listed)
+        {
+            return (null, $"git could not list what the replay of `{request.Branch}` made: nothing was written, and it is asked again at the next look.");
+        }
+
+        var own = listed.ToHashSet(StringComparer.OrdinalIgnoreCase);
         return (new Read(branchTip, fork, own), null);
     }
 }

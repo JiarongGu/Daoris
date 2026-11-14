@@ -31,14 +31,12 @@ internal static class IntegrationPromoteReads
     /// <summary>The line's commit as git names it, or the words of git's refusal.</summary>
     internal static async Task<(string? Commit, string Why)> LineAsync(string root, string line, CancellationToken ct)
     {
-        var (code, output, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && output.Trim().Length > 0 ? (output.Trim(), "") : (null, ContentHolds.Said(err));
+        return await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false) is { } commit ? (commit, "") : (null, ContentHolds.Said(""));
     }
 
     /// <summary>
     /// The one word the port is handed for an unconfirmed failure: the owner's rule for a unit no member reaches and for one a member
-    /// reaches, which the port cannot tell apart before it runs. Where the two differ, the less permissive of them (<c>split</c>, <c>hold</c>,
-    /// <c>land</c>, in that order) stands, so <c>land</c> is only ever the rule saying it for both.
+    /// reaches, which the port cannot tell apart before it runs: the less permissive (<c>split</c>, <c>hold</c>, <c>land</c>) stands.
     /// </summary>
     internal static string Unconfirmed(LandingIntegrate policy)
     {

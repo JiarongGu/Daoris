@@ -11,8 +11,7 @@ internal sealed class LandingPress(
     TreeContext context, TreeWorkReads workReads, TreeLandSyncs syncs, TreeLandPlans plans, TreeMerges merges, TreeBranches branches)
 {
     /// <summary>
-    /// The commit a landing that waited would land: the tip its door judged, where the door pinned one, else the
-    /// tree's head as it stands. Read only after a wait; null where git cannot say, which lands nothing as `already`.
+    /// The commit a landing that waited would land: the tip its door judged or pinned, else the tree's head; null where git cannot say.
     /// </summary>
     /// <summary>
     /// <paramref name="delivery"/> entered for its landing into <paramref name="entry"/> (1b3, 1h): held in this process while it
@@ -55,8 +54,7 @@ internal sealed class LandingPress(
     internal static async Task<string?> JudgedAsync(string path, string? pinned, CancellationToken ct)
     {
         if (pinned is not null) return pinned;
-        var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
-        return code == 0 ? head.Trim() : null;
+        return await MachinePorts.Repository.HeadAsync(Path.GetFullPath(path), ct).ConfigureAwait(false);
     }
 
     /// <summary>

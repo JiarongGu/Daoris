@@ -237,8 +237,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         var verdict = await port.JudgeAsync(asked).ConfigureAwait(false);
 
         // A verdict is acted on only for this tip: the tree stands there still, and the candidate is the one asked about.
-        var (head, headOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        if (store.Candidate(candidate.Id) is not { Stands: true } now || now.Tip != tip || head != 0 || headOut.Trim() != tip)
+        var head = await MachinePorts.Repository.HeadAsync(tree, ct).ConfigureAwait(false);
+        if (store.Candidate(candidate.Id) is not { Stands: true } now || now.Tip != tip || head != tip)
         {
             return (null, await AnswerAsync(
                 IntegrationPromoteRuns.Waiting,

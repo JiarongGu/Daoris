@@ -25,7 +25,6 @@ public sealed class IntegrationSteps(IntegrationStore store)
     /// Run one step: its start written, then <paramref name="effect"/>, then its end as the effect answers it. An effect that throws leaves the
     /// start with no end, as a crash would: the claim's holder resumes it (<see cref="ResumeAsync"/>) at its next look, a taker at its come-up.
     /// </summary>
-    /// <param name="request">The member a member's step is of.</param>
     /// <param name="lineCommit">The line's commit the step read at its start, which its effect goes from.</param>
     public async Task<IntegrationStep> RunAsync(
         IntegrationClaim claim, string step, Func<IntegrationStep, CancellationToken, Task<IntegrationStepEnd>> effect, string? request = null,
@@ -120,12 +119,11 @@ public sealed class IntegrationSteps(IntegrationStore store)
     /// <summary>Whether the line holds <paramref name="tip"/>, asked of git: yes, no, or git's words where it could not say.</summary>
     private static async Task<(bool Held, string? Unread)> HoldsAsync(string root, string line, string tip, CancellationToken ct)
     {
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, $"refs/heads/{line}"], ct).ConfigureAwait(false);
-        return code switch
+        return await MachinePorts.Repository.IsAncestorAsync(root, tip, $"refs/heads/{line}", ct).ConfigureAwait(false) switch
         {
-            0 => (true, null),
-            1 => (false, null),
-            _ => (false, ContentHolds.Said(err)),
+            true => (true, null),
+            false => (false, null),
+            null => (false, ContentHolds.Said("")),
         };
     }
 

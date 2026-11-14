@@ -48,8 +48,11 @@ internal sealed class MemoryHistory
                 var at = 1;
                 while (at < rest.Length && char.IsAsciiDigit(rest[at])) count = (count * 10) + (rest[at++] - '0');
                 var steps = at == 1 ? 1 : count;
+                var caret = rest[0] == '^';
                 rest = rest[at..];
-                for (var step = 0; step < steps && commit is not null; step++) commit = commit.Parents.Count > 0 ? Commit(commit.Parents[0]) : null;
+                // ^n names the nth parent (^0 the commit itself); ~n walks n first parents.
+                if (caret) commit = steps == 0 ? commit : commit.Parents.Count >= steps ? Commit(commit.Parents[steps - 1]) : null;
+                else for (var step = 0; step < steps && commit is not null; step++) commit = commit.Parents.Count > 0 ? Commit(commit.Parents[0]) : null;
             }
             else return null;
         }
