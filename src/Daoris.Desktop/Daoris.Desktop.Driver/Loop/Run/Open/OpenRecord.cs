@@ -183,6 +183,13 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
             context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = accessNote }, say: null);
         }
 
+        // A quest handed over shows starting at once, not after its tree's files; every other start says it at the hand.
+        if (carryingOn && state.HandedFrom)
+        {
+            var sentence = StartSentence.Of(state, quest, elsewhere: false);
+            await service.AdvanceAsync(sessionId, "starting", note: sentence?.Note, ct: ct, parts: sentence?.Parts).ConfigureAwait(false);
+        }
+
         state.Opened = new RecordOpened(sessionId, keyed, fenced, continues, before, openedAt, locksTree);
         return null;
     }

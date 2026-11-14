@@ -232,7 +232,7 @@ I-18 HandOverAtTurnEndTests.A_cooling_build_hands_over_only_on_the_persons_press
 I-19 HandOverAtTurnEndTests.A_cooling_build_hands_over_only_on_the_persons_press_under_ask_and_on_alike:pressed => Move when=Now where=Settled@dsh(build/1) how=Brief why=Limit by=Person words=w1
 I-20 HandOverAskTickTests.An_agents_ask_under_on_is_taken_at_its_turns_end_and_the_next_agent_is_told_its_note => Move when=TurnEnd where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
 I-21 HandOverQuestTickTests.A_running_quest_session_handed_to_stub_is_stopped_and_the_quest_goes_on_in_the_same_tree_on_stub => Move when=Now where=Settled@stub(build/1) how=Brief why=Press by=Person words=w1
-I-22 HandOverLookTests.A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
+I-22 HandOverLookTests.A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_same_look => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
 I-23 HandOverLookTests.A_move_whose_quest_closed_meanwhile_stops_nothing_and_says_why => Hold why=Refused doors=- repair=None code=quest-closed
 
 ## C go on in a new session; start a conversation with these words

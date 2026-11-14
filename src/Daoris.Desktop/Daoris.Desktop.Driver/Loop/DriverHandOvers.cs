@@ -57,11 +57,12 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         // took up dead loops' moves; a box an older build writes later is found here). Never faults: a store that will not answer is read again.
         if (new HandOverBox(_context.Home).Pending().Count > 0) await Moves.LookAsync(ct).ConfigureAwait(false);
 
+        var stopped = false;
         foreach (var waiting in Moves.HandOversWaiting(MoveExecutors.Driven))
         {
             try
             {
-                await TakeHandOverAsync(waiting, handed, events, ct).ConfigureAwait(false);
+                stopped |= await TakeHandOverAsync(waiting, handed, events, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
@@ -70,6 +71,8 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                 events.Add(_context.Said.Retry("hand-over", $"hand-over  the hand-over of session `{waiting.Left}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
+
+        if (stopped) snapshot = await AfterStopAsync(snapshot, ct).ConfigureAwait(false);
 
         var standing = handed.All();
         if (standing.Count == 0) return snapshot;
@@ -95,23 +98,23 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
 
     /// <summary>
     /// A quest's hand-over taken from the store: judged again, then the session stopped, written
-    /// <c>quiescing</c> while it runs, the quest held on the agent named, and the move left at <c>old-ended</c> for the carry-on the next
-    /// look starts to go on from. A move this look cannot take, refused at the judge or run in another Daoris process, is ended by its phase on
+    /// <c>quiescing</c> while it runs, the quest held on the agent named, and the move left at <c>old-ended</c> for the carry-on the same
+    /// look starts to go on from (<see cref="AfterStopAsync"/> reads the stop into the snapshot it plans from). A move this look cannot take, refused at the judge or run in another Daoris process, is ended by its phase on
     /// the old part, so it is not judged again at every look: the asker is told, and asks again.
     /// </summary>
-    private async Task TakeHandOverAsync(MoveRecord waiting, HandedQuests handed, List<string> events, CancellationToken ct)
+    private async Task<bool> TakeHandOverAsync(MoveRecord waiting, HandedQuests handed, List<string> events, CancellationToken ct)
     {
         var id = waiting.Left;
         var service = _context.Service;
         var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         // A record that is not here is read again at the next look, or its delete takes the move with it.
-        if (record is null) return;
-        if (Moves.Claimed(waiting) is not { } move || ConversationMoves.AskOf(waiting) is not { } ask) return;
+        if (record is null) return false;
+        if (Moves.Claimed(waiting) is not { } move || ConversationMoves.AskOf(waiting) is not { } ask) return false;
         if (!QuestHandOver.IsQuestSession(record))
         {
             await move.EndAsync().ConfigureAwait(false);
-            return;
+            return false;
         }
 
         var quest = record.Quest!;
@@ -125,7 +128,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             events.Add(_context.Said.News(
                 "hand-over", new LookNews(LookSaid.HandOverRefused, id, id, quest, record.Workspace), $"hand-over  session `{id}` (#{quest}): {refused.Message}"));
             NotTaken(id, ask.Agent, refused.Why, agentAsk);
-            return;
+            return false;
         }
 
         // A driven session works its quest in one turn, so there is no turn's end to wait for: it is stopped at once, as the
@@ -161,7 +164,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                 events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverElsewhere, id, id, quest, record.Workspace),
                     $"hand-over  session `{id}` (#{quest}) runs in another Daoris process on this machine: hand it over there, or stop it first."));
                 NotTaken(id, ask.Agent, HandOverAskWhy.Running, agentAsk);
-                return;
+                return false;
             }
         }
 
@@ -173,6 +176,30 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         // take leaves the move standing, taken again at the next look, which makes no second stop.
         move.OldEnded();
         events.Add(_context.Said.Progress("hand-over", $"hand-over  session `{id}` (#{quest}): stopped, and `#{quest}` goes on with {ask.Agent}."));
+        return true;
+    }
+
+    /// <summary>
+    /// The snapshot after a hand-over this look took: the session records, the active list and what the planner derives from them read
+    /// again, so the same look's start plans from the stop that released the quest, not from the old part still running. A read that fails
+    /// leaves the snapshot, and the next look plans from the stop.
+    /// </summary>
+    private async Task<Snapshot> AfterStopAsync(Snapshot snapshot, CancellationToken ct)
+    {
+        try
+        {
+            var fresh = await _context.Service.SnapshotAsync(ct).ConfigureAwait(false);
+            return snapshot with
+            {
+                Active = fresh.Active, LastRun = fresh.LastRun, StoodDown = fresh.StoodDown, FailedRuns = fresh.FailedRuns,
+                NamedByReopen = fresh.NamedByReopen, Started = fresh.Started, Takes = fresh.Takes, Entries = fresh.Entries,
+            };
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return snapshot;
+        }
     }
 
     /// <summary>

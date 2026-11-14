@@ -291,6 +291,14 @@ public sealed class AskAndWaitTickTests : IDisposable
 
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
+        private readonly List<(string Id, string State)> _moves = [];
+
+        /// <summary>The states the driver moved a session to, in order.</summary>
+        public IReadOnlyList<string> MovesOf(string id)
+        {
+            lock (_moves) return [.. _moves.Where(move => move.Id == id).Select(move => move.State)];
+        }
+
         public JsonObject Session(string id)
         {
             lock (_sessions) return (JsonObject)_sessions.Single(s => s["id"]!.GetValue<string>() == id).DeepClone();
@@ -436,6 +444,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                         var body = Body();
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
+                        lock (_moves) _moves.Add((id, session["state"]!.GetValue<string>()));
                         if (body["note"] is { } note)
                         {
                             session["note"] = note.GetValue<string>();

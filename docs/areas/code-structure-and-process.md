@@ -38,7 +38,7 @@ finishes first and the whole set runs once.
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
 | The settings list | the driver's `Settings/List/MachineSettings.cs`; the page's `SETTINGS` | every machine setting declared once, with the one key each of its doors spells; the modules' `MachineSettingsCensusTests` and the page's `settings/everySetting.test.tsx` hold the doors to it |
 | The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
-| The quick checks | `npm run quick` | what a builder runs: the index written, the page's generated types written and checked, typecheck, `daoris check`, the ratchet, partials, optional locks |
+| The quick checks | `npm run quick` | what a builder runs before it hands back: the index and the page's generated types written, then every check of the merge's `cli` gate (`npm run verify:checks`: typecheck, `daoris check`, the documents' checks, the ratchets, partials, optional locks, the comment gate in change and whole-tree modes, the universal gates on the built-in patterns) and the layers' census; a dogfood test holds `quick` to every step of that gate, so the work is merged as handed back |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
 | The merge tool | `tools/merge-branch.mjs`, `tools/merge/`, `tools/merge-branch/`, `tools/merge-queue.mjs` | a branch previewed, queued, merged and its checks run (rule 19); the runner imports its modules and re-exports what other tools read: the typed ones in `tools/merge/` with their Vitest tests beside them, the scripts in `tools/merge-branch/` with theirs under `tool-test/merge-branch/` |
@@ -158,7 +158,7 @@ finishes first and the whole set runs once.
     tier alone, in under five minutes for a typical branch: the light gates, the CLI's checks (`cli`, `npm run verify:checks`,
     `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast` runs the
     unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
-    change first, bounded per suite by `tools/merge/reached.ts`, the rest counted), so a list, census or structure red never lands.
+    change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands.
     The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and the queue's promotion starts

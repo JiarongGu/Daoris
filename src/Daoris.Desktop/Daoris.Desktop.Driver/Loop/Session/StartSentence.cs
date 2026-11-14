@@ -7,6 +7,18 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class StartSentence
 {
+    /// <summary>The sentence of the start a run's state is at, read from what its tree and continuation stages found.</summary>
+    public static Noted? Of(RunState state, QuestView quest, bool elsewhere)
+    {
+        var (start, tree) = (state.GoneOn.Start, state.Tree);
+        var handedOver = tree.CarryingOn && state.HandedFrom;
+        return Of(
+            tree.Opened, quest, tree.Answered, tree.ResumedIn, tree.CarryingOn, start.Resumes, state.GoneOn.Written, elsewhere, state.GoneOn.FellBack,
+            handedOver: handedOver, walked: handedOver && state.PassedAccount is not null,
+            joinedSession: tree.JoinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null,
+            carriesWork: tree.CarryingOn && start.CarriesWork is > 0);
+    }
+
     /// <summary>Null where a start in the root says nothing.</summary>
     /// <param name="resumes">The record it carries on or resumes after, or null.</param>
     /// <param name="written">The record the person's words were written to, as the look read it, or null.</param>
