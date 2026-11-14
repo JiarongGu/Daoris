@@ -209,6 +209,20 @@ public sealed class AccountRotationWalkTests
         Assert.Equal(order, Order(scope, facts));
     }
 
+    // Within the last day nothing is under a curve: the week's whole remaining room is spent, and the start takes it before another
+    // account's wider room or fewer running sessions. 81% with four hours left was passed for the account with the most room.
+    [Theory]
+    [InlineData("account-1 account-2 account-3", "account-3:W81@+4h account-2:W20@+3d", "account-3 account-2 account-1")]
+    [InlineData("account-1 account-2 account-3", "account-3:W81@+4h,r2 account-2:W20@+3d", "account-3 account-2 account-1")]
+    // A curve the person set does not hold the last day either: 81% is over a flat 10 but is room a day from the reset.
+    [InlineData("account-1 account-2 account-3 switch=curve curve=weekly=0:10,100:10", "account-3:W81@+4h account-2:W5@+3d", "account-3 account-2 account-1")]
+    // Beyond the last day the curve still holds: the same week a day and a half off is over it and goes last.
+    [InlineData("account-1 account-2 account-3 switch=curve curve=weekly=0:10,100:10", "account-3:W81@+36h account-2:W5@+3d", "account-2 account-1 account-3")]
+    public void The_last_day_of_a_week_is_under_no_curve_and_its_room_is_spent_first(string scope, string facts, string order)
+    {
+        Assert.Equal(order, Order(scope, facts));
+    }
+
     // The five-hour window beside a week about to reset: it stays at its curve's 90 and is not ranked by its reset. Under it,
     // the week's lapse puts the account first; over it, the account goes last whatever would lapse.
     [Theory]

@@ -46,10 +46,10 @@ public static class AccountRotation
     /// place.</para>
     /// <para>Under <c>goal</c> each step after keep is stable, so the order handed on stands where a step has no reason to
     /// change it: an account near (its limit reached, credits, or over its curve) goes last, the least over
-    /// first; then fewest of Daoris's sessions running, within a week's <see cref="LastDay"/> the most of it that would lapse
-    /// per hour to its reset (<see cref="UsageCurves.Lapsing"/>), the most
-    /// room under its curve on its tightest window (one that said no number between those with room and those over; under
-    /// <c>switch: off</c> furthest behind its week's pace), least recently started (never first, a
+    /// first; then within a week's <see cref="LastDay"/> the most of it that would lapse per hour to its reset
+    /// (<see cref="UsageCurves.Lapsing"/>; the last day is under no curve); then the band of most room under its curve on
+    /// its tightest window, fewest of Daoris's sessions running, the most room itself (one that said no number between those
+    /// with room and those over; under <c>switch: off</c> furthest behind its week's pace), least recently started (never first, a
     /// start this look chose last), then the sequence. Under <c>order</c> the sequence is the walk, with a
     /// near account last, and a conversation's kept account in its place. Near is read under every switch: <c>off</c> reads
     /// the smart curve, since a start still passes an account over it.</para>
@@ -284,6 +284,12 @@ public static class AccountRotation
 
         if (use.Use != "goal") return (WalkStep.List, 0);
 
+        // What would lapse, before any room or session count: within its week's last day, the most room per hour to its
+        // reset first, since another account's wider room is there tomorrow and this one's is lost at the reset;
+        // nothing that is not known earns any.
+        var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
+        if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
+
         // Room before sessions run: a session started near the end of a window meets its limit within minutes. Not under `off`, which ranks by pace.
         if (use.Switch != "off" && RoomLeft.BandOf(use, x.Said, now) is var bandX && RoomLeft.BandOf(use, y.Said, now) is var bandY && bandX != bandY)
         {
@@ -291,11 +297,6 @@ public static class AccountRotation
         }
 
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
-
-        // Step 4, what would lapse: within its week's last day, the most room under its curve per hour to its
-        // reset first; nothing that is not known earns any, and a tie goes on to step 5's tightest room.
-        var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
-        if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 
         // Step 5. An account that says no number ranks as one on its curve, between those with room and those over, and as
         // on pace under `off` (absent is never zero).

@@ -102,10 +102,14 @@ public static class UsageCurves
 
     /// <summary>
     /// The scope's curve on a window now: the most of it, in percent, an account should have used by <paramref name="now"/>
-    /// in a window resetting at <paramref name="reset"/>; null for a window this build does not know.
+    /// in a window resetting at <paramref name="reset"/>; null for a window this build does not know. Within the <see cref="LastDay"/>
+    /// of a window longer than it no curve holds, whoever set it: what is left lapses at the reset, so all of it may be used.
     /// </summary>
-    public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
-        For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
+    public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now)
+    {
+        if (Length(window) is { } length && length > LastDay && reset - now is var left && left > TimeSpan.Zero && left <= LastDay) return 100;
+        return For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
+    }
 
     /// <summary>The points of room a window's reading leaves under the curve now, or null where it is not measured (no used, or an unknown window).</summary>
     public static double? Room(RotationUse use, WindowReading reading, DateTimeOffset now) =>
