@@ -225,7 +225,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     under the key `check/<id>`, which reopens it in the same conversation, so the wait spends no tokens. The broker runs one
     check at a time on this machine, a hand-back's own checks before a worker's, each class first come, first served. (TEAMWORK1a)
 41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
-    tree and records the same. Both are carried on. (D104)
+    tree and records the same. Both are carried on. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
+    job still holds, so nothing its agent started outlives it, a launcher still running included; the machine log's
+    `session.reaped` says how many.
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)
 
 ### Asks and intakes

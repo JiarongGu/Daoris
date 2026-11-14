@@ -7,6 +7,13 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
+
+> **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).
+>
+> **PROCLEAK1** (driver): Outcome: a session's tracking ending while its launcher still ran left the launcher's job, and the grandchildren in it, alive; the end now opens and ends the job (`SessionTreeReap`) and the machine log's `session.reaped` carries the count, one way for the launcher and the direct start; proved by `SessionTreeEndProcessTests` (a detached grandchild after exit, untracking and stop, with and without the launcher).
+
+---
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
 
 > **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.
