@@ -334,8 +334,7 @@ test('every declared gate is actually run by the release workflow', () => {
   // `npm run verify`. Full-line comments go; a step's own text stays.
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
     .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
-  // A gate `npm run verify:checks` runs is run wherever it is — the universal gates' one home;
-  // a step of their own would run the same command twice.
+  // A gate `verify:checks` runs is run wherever it is: a step of its own would run it twice.
   const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
     scripts: { 'verify:checks': string };
   }).scripts['verify:checks'];
