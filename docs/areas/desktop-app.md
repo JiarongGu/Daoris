@@ -155,8 +155,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     session's end that failed, was stopped or ran out (never one that completed, was declined or stood down), none for a part whose
     line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), a failed run step after the review, one line by run, node
     and attempt (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once), a failed plugin round, and the set-asides. A notice whose
-    subject moved on (a step that went on, a run gone, a kind no longer kept) is cleared by the same pass (`Notices.Spent`,
-    `RunOutcomeNotices.Moved`). Beside the presses waiting, counting toward no
+    subject moved on (a step that went on, a run gone) is cleared by the same pass (`RunOutcomesRead.Moved`), from the one read of the runs
+    that look makes. A notice ages out after a week and at 200; a set-aside does neither (it stays while the row stands as it did, kept to
+    1,000 of its own, `Notices.Kept`). Beside the presses waiting, counting toward no
     group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run, the latter
     a compact line drawn only for a press newer than the person's last *Got it* (`HelpPressLine`, behind *Show*: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a press that opened a place says what it made under its row, as the
