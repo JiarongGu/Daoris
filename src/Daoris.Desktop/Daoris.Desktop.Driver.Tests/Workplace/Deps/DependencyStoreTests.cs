@@ -371,6 +371,73 @@ public sealed class DependencyStorePiecesTests : IDisposable
         Assert.Equal(["new"], DependencyStore.Entries(Home).Select(each => each.Key));
     }
 
+    /// <summary>The placement's last copy is about to run, so the files before it stand in the making folder: one is held open as a scanner holds it.</summary>
+    private FileStream HoldMaking(string from)
+    {
+        if (!from.EndsWith("top.json", StringComparison.Ordinal)) return null!;
+        var making = Assert.Single(Directory.EnumerateDirectories(Tree, DependencyStore.MakingPrefix + "*"));
+        return new FileStream(Path.Combine(making, "sub", "a.bin"), FileMode.Open, FileAccess.Read, FileShare.Read);
+    }
+
+    [Fact]
+    public void A_placement_whose_folder_a_program_holds_open_for_a_moment_is_renamed_once_it_lets_go()
+    {
+        Write("deps/sub/a.bin", "a");
+        Write("deps/top.json", "{}");
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
+        FileStream? held = null;
+        var waits = 0;
+        DependencyStore.Copying.Value = from => held ??= HoldMaking(from);
+        FolderRename.Waiting.Value = _ =>
+        {
+            waits++;
+            held?.Dispose();
+        };
+        try
+        {
+            Assert.NotNull(DependencyStore.Place(Home, "key", Tree, "placed", CancellationToken.None));
+        }
+        finally
+        {
+            DependencyStore.Copying.Value = null;
+            FolderRename.Waiting.Value = null;
+            held?.Dispose();
+        }
+
+        Assert.Equal(1, waits);
+        Assert.True(File.Exists(Path.Combine(Tree, "placed", "sub", "a.bin")));
+        Assert.Equal(["deps", "placed"], Directory.EnumerateDirectories(Tree).Select(Path.GetFileName).Order());
+    }
+
+    [Fact]
+    public void A_placement_whose_folder_stays_held_says_once_what_held_it_and_what_it_could_not_do()
+    {
+        Write("deps/sub/a.bin", "a");
+        Write("deps/top.json", "{}");
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
+        FileStream? held = null;
+        var waits = 0;
+        DependencyStore.Copying.Value = from => held ??= HoldMaking(from);
+        FolderRename.Waiting.Value = _ => waits++;
+        try
+        {
+            var failure = Assert.Throws<IOException>(() => DependencyStore.Place(Home, "key", Tree, "placed", CancellationToken.None));
+            Assert.Contains("could not be renamed to `placed`", failure.Message);
+            Assert.Contains("kept a file in it open", failure.Message);
+        }
+        finally
+        {
+            DependencyStore.Copying.Value = null;
+            FolderRename.Waiting.Value = null;
+            held?.Dispose();
+        }
+
+        Assert.Equal(FolderRename.Tries - 1, waits);
+        Assert.False(Directory.Exists(Path.Combine(Tree, "placed")));
+    }
+
     [Fact]
     public void A_seal_that_cannot_copy_a_file_says_so_and_leaves_no_half_folder_in_the_store()
     {

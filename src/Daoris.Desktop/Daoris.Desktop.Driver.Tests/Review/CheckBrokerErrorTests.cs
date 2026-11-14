@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class CheckBrokerErrorTests : IDisposable
 {
+    private static Task<string?> Taken(string _, CancellationToken ct) => Task.FromResult<string?>("Taken");
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-12T10:00:00Z");
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "check-error-" + Guid.NewGuid().ToString("N")[..8]);
@@ -46,7 +47,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
         Assert.False(string.IsNullOrEmpty(state.Error));
         Assert.Null(state.Tail);
         var words = new List<string>();
-        Assert.Empty(await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None));
+        Assert.Empty(await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None, Taken));
         Assert.Empty(words);
         Assert.Empty(CheckWaits.Open("s1", files.Asks(), files.ReadState).Where(ask => files.ReadState(ask.Id)?.Handed is not null));
     }
@@ -64,7 +65,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
 
         Assert.Equal(CheckStates.Failed, (await broker.RunNextAsync(CancellationToken.None))!.State);
         var words = new List<string>();
-        Assert.Equal(["a1"], await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None));
+        Assert.Equal(["a1"], await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None, Taken));
         Assert.Contains("it failed (exit 1)", Assert.Single(words));
     }
 

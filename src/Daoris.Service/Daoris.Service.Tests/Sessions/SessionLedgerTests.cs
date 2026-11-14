@@ -988,7 +988,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal($"Session `{ended.Id}` is working again: it goes on from {ending} with the person's words.", reopened.Message);
         var record = (await _sessions.FindAsync(ended.Id))!;
         Assert.Equal(SessionState.Working, record.State);
-        Assert.Equal("it ended so.\n\nWent on with your words at 2026-09-19 10:30 UTC.", record.Note);
+        Assert.Equal("Went on with your words at 2026-09-19 10:30 UTC.\n\nit ended so.", record.Note);
         Assert.Equal("abc123 landed", record.Evidence);
         Assert.Equal((false, false), (record.Interrupted, record.Limit));
         Assert.Equal(["Also add the changelog line."], record.Said.Select(word => word.Text));
@@ -1022,9 +1022,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionAdvanceRefusal.None, reopened.Refusal);
         Assert.Equal($"Session `{ended.Id}` is working again: it goes on from completed with {with}.", reopened.Message);
         var record = (await _sessions.FindAsync(ended.Id))!;
-        Assert.Equal($"landed.\n\n{line}", record.Note);
+        Assert.Equal($"{line}\n\nlanded.", record.Note);
         using var parts = System.Text.Json.JsonDocument.Parse(record.NoteParts!);
-        var went = parts.RootElement[1];
+        var went = parts.RootElement[0];
         Assert.Equal(2, parts.RootElement.GetArrayLength());
         Assert.Equal((code, line), (went.GetProperty("code").GetString(), went.GetProperty("text").GetString()));
         Assert.Equal("2026-09-19T10:30:00Z", went.GetProperty("values").GetProperty("at").GetString());
@@ -1049,9 +1049,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         Assert.Equal($"Session `{ended.Id}` is working again: it goes on from completed with {with}.", reopened.Message);
         var record = (await _sessions.FindAsync(ended.Id))!;
-        Assert.Equal($"landed.\n\n{line}", record.Note);
+        Assert.Equal($"{line}\n\nlanded.", record.Note);
         using var parts = System.Text.Json.JsonDocument.Parse(record.NoteParts!);
-        Assert.Equal(code, parts.RootElement[1].GetProperty("code").GetString());
+        Assert.Equal(code, parts.RootElement[0].GetProperty("code").GetString());
     }
 
     /// <summary>A note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>
@@ -1063,7 +1063,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         var reopened = await _ledger.AdvanceAsync(ended.Id, "working", "resumes its own conversation.", null, null, Now.AddMinutes(30));
 
-        Assert.Equal("landed.\n\nWent on with your words at 2026-09-19 10:30 UTC.\n\nresumes its own conversation.", reopened.Session!.Note);
+        Assert.Equal("Went on with your words at 2026-09-19 10:30 UTC.\n\nresumes its own conversation.\n\nlanded.", reopened.Session!.Note);
     }
 
     /// <summary>
@@ -1441,9 +1441,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var reopened = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(30));
 
         Assert.Equal($"Session `{ended.Id}` is working again: it goes on from completed with Daoris's words.", reopened.Message);
-        Assert.Equal("landed.\n\nWent on with Daoris's words at 2026-09-19 10:30 UTC.", reopened.Session!.Note);
+        Assert.Equal("Went on with Daoris's words at 2026-09-19 10:30 UTC.\n\nlanded.", reopened.Session!.Note);
         using var parts = System.Text.Json.JsonDocument.Parse(reopened.Session.NoteParts!);
-        Assert.Equal("ledger.went-on-daoris", parts.RootElement[1].GetProperty("code").GetString());
+        Assert.Equal("ledger.went-on-daoris", parts.RootElement[0].GetProperty("code").GetString());
     }
 
     /// <summary>

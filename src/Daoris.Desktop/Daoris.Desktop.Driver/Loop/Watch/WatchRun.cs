@@ -333,15 +333,16 @@ internal sealed class WatchRun(
         // A home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
         _staffing?.Check(StaffingCheckAt.Look);
 
+        var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct, held: Running.Holds)).ConfigureAwait(false);
+        // An end nobody pressed and nobody must answer: news.
+        foreach (var ended in orphans)
+        {
+            _carried.Add(Lines.News(
+                "sweep", new LookNews(LookSaid.Swept, ended.Id, ended.Id), $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
+        }
+
         if (!_swept)
         {
-            var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct)).ConfigureAwait(false);
-            // An end nobody pressed and nobody must answer: news.
-            foreach (var ended in orphans)
-            {
-                _carried.Add(Lines.News(
-                    "sweep", new LookNews(LookSaid.Swept, ended.Id, ended.Id), $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
-            }
             _swept = true;
             // The decisions an earlier run left closed before this first look's carry-ons, held
             // and released ones stale and admitted ones interrupted; their waiting words the look takes back.

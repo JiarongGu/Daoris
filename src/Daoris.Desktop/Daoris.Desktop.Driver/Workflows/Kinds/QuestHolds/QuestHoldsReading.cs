@@ -27,6 +27,7 @@ internal static class QuestHoldsReading
     public static NodeObservation Observe(NodeReading reading)
     {
         if (HoldReading.Settled(reading) is { } settled) return settled;
+        if (BranchOnLine.Observe(reading) is { } onLine) return onLine;
         var (unit, node) = (reading.Unit, reading.Node);
         if (unit.Kind != WorkUnitKind.Quest) return HoldReading.Seen(reading, null, "its door judges the quest's holds where it lands");
         return Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence)) is { } why

@@ -120,6 +120,8 @@ public sealed record PluginManifest(
     string? Icon = null,
     string? IconProblem = null)
 {
+    public string? Brief { get; init; }
+
     /// <summary>
     /// The tools its process runs, each read or saying its first problem.
     /// None for a refused plugin. <see cref="PluginToolChecks"/> finds and checks them, only at a trial or a press.

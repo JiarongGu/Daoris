@@ -222,6 +222,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // moves nothing; a released one's word is named in `expect` with the record required still parked, and the move draws a
         // single-use ticket; every other move names none, so a supervisor's word the look did not admit refuses it (`words-changed`).
         SupervisorTicket? ticket;
+        _context.Processes.MarkOpening(sessionId);
         try
         {
             var (moved, admitted) = await _context.Supervisor.AdmitAsync(

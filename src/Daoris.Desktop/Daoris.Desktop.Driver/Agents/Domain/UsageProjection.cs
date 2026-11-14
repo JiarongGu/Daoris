@@ -212,7 +212,7 @@ public static class UsageProjection
         double? least = null;
         foreach (var window in projection?.Windows ?? [])
         {
-            if (UsageCurves.Value(use, window.Window, window.Reset, now) is not { } curve) continue;
+            if (UsageCurves.Allowed(use, window.Window, window.Reset, now) is not { } curve) continue;
             var room = curve - window.Projected * 100;
             if (least is null || room < least) least = room;
         }

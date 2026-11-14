@@ -175,6 +175,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // is spawned: it holds the tree again, and refuses where another session holds it.
         try
         {
+            _context.Processes.MarkOpening(sessionId);
             await _context.Service.AdvanceAsync(sessionId, "working", GoingOnNote(record.Waiting), ct: ct).ConfigureAwait(false);
         }
         catch (DriverException refused)
@@ -282,6 +283,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // any other, holds nothing of it.
         try
         {
+            _context.Processes.MarkOpening(sessionId);
             await _context.Service.AdvanceAsync(sessionId, "working", Continuations.GoingOnNoted, ct: ct).ConfigureAwait(false);
         }
         catch (DriverException refused)

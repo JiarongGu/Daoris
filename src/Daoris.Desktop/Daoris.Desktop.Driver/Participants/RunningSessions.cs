@@ -60,6 +60,13 @@ public sealed class RunningSessions
         lock (_gate) return _goingOn.Add(session);
     }
 
+    /// <summary>Whether a run of this loop holds the session: it concludes the record itself, so the sweep never takes it.</summary>
+    internal bool Holds(string session)
+    {
+        if (Live.Values.Contains(session, StringComparer.Ordinal)) return true;
+        lock (_gate) return _goingOn.Contains(session);
+    }
+
     /// <summary>The run that took the record up has ended, however it ended: words said to it later go on in a run of their own.</summary>
     internal void WentOn(string session)
     {

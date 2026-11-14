@@ -54,7 +54,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
 7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
-    line and how far the line moved past it, the paths touched, the gates those paths reach (the landing's own selection, never a
+    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule), the gates those paths reach (the landing's own selection, never a
     list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
     this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
     selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is
@@ -126,10 +126,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). It
     seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
-    the machine-local files the `reach: copy` rules name. A `reach: read` or `write` path naming one place that git ignores is
+    the machine-local files the `reach: copy` rules name and the checkout's declared `localInputs` and sensitive-patterns file (`TreeLocalInputs`, read-only, copied after the dependencies and still copied where a dependency step fails on the disk, so a tree's checks read what the merge's read). A `reach: read` or `write` path naming one place that git ignores is
     linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
     while it reads as its link (`TreeShares`). In a worked tree the stage only keeps. The hand, an open, a go-on and a terminal's
-    visit take the mark off first. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
+    visit take the mark off first. A folder is placed under a name beside its place and renamed into it, asked again up to twelve
+    times while a program (a scanner, an indexer, a git reading the tree) holds a file in it open, and a refusal that outlasts them
+    is said once, as `started.files-failed`, with that cause. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
     (D51, D214, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare rooms (lanes carrying `builds`,
     joined by a `room`), which `RoomCheck` checks. Every path git does not manage has an effective rule from four layers, a later
@@ -232,12 +234,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
     holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a tool error) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
-    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A failed verdict still
-    reopens a session whose quest is `Done`: the word names the work's failure, and no rule yet tells the person instead. (CHECKLOCK1)
-41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
-    tree and records the same. Both are carried on. A `queued` or `starting` record is taken only where its opener's mark
-    names a process that went, or where no mark was ever kept and the record has stood untouched past two minutes; the opener
-    marks the record the moment it exists. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
+    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A verdict on a quest
+    already `Done` sends no session word: a green is quiet, and a failed or stopped check stays on file for the person in
+    *What needs you*, naming the check and its tested commit, with a door to its session. (CHECKLOCK1)
+41. The sweep, at every look, stops a record that says it runs with nothing running it, as interrupted, so one left `working`
+    mid-run reads stopped within a look. A go-on or a resume marks its record before the ledger moves it to `working` ahead of its
+    spawn, and the sweep leaves it while that opener runs, as it leaves a record a run of its own loop holds. A `queued` or
+    `starting` record is taken only where its opener's mark names a process that went, or where no mark was ever kept and the
+    record has stood untouched past two minutes; the opener marks the record the moment it exists. A shutdown kills each
+    session's process tree and records the same. Both are carried on. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
     job still holds, so nothing its agent started outlives it, a launcher still running included; the machine log's
     `session.reaped` says how many.
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)
@@ -274,7 +279,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     repositories through `team_plan` (a part each, the declared deployables, the cited release orders, the questions) and chains
     no quest for it; a `then` step stays for a check that follows work in one repository (DELIVERY1b). Until an intake
     has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
-    never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
+    never is. A publish names the session that made it and says when it carries no requirement. A parked intake's page offers a box beside its
+    card's door to the ask: the session takes no words, so what the person writes there is posted on the ask's channel as theirs,
+    and a proposed ask's page draws *Close ask* and *Delete…* in its header, both any caller's (D284). (D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here; a quest held by a pause not its own (a quest its work published)
     is named with that pause by *Try again* and by its own resume, which changes nothing and names the resume that carries it on
     (`PauseHolder`). Work is abandoned by a listed second press that discards only what
@@ -313,8 +320,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     keeping pass purges it. (D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
     `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
-    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`). Uncommitted or untracked work
-    keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
+    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`); and every path the repository's own
+    `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
+    the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
+    counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
+    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's

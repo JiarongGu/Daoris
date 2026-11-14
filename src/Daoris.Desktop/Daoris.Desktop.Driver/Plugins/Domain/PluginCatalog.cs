@@ -296,7 +296,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             // sentence is about, never something the plugin contributes.
             if (problem is not null)
             {
-                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Systems = [], Tools = [], ToolsProblem = null, Interfaces = PluginInterfacesDeclared.None };
+                manifest = manifest with { Brief = null, Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Systems = [], Tools = [], ToolsProblem = null, Interfaces = PluginInterfacesDeclared.None };
             }
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
@@ -582,6 +582,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 icon,
                 iconProblem)
             {
+                Brief = PluginBriefs.Read(root),
                 Skills = skills,
                 Steps = declaredSteps.Steps,
                 Resources = declaredSteps.Resources,

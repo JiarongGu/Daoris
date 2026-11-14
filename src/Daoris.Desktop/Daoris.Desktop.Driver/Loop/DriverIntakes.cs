@@ -285,7 +285,11 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 Prompt = IntakePrompt.Compose(
                     ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake, lead),
                 // In no repository, its standing block is its workspace's part alone.
-                Block = new StandingFacts { Workspace = ask.Workspace },
+                Block = new StandingFacts
+                {
+                    Workspace = ask.Workspace,
+                    PluginBriefs = PluginBriefs.At(home, new PluginPlace(null, ask.Workspace), servers),
+                },
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
 

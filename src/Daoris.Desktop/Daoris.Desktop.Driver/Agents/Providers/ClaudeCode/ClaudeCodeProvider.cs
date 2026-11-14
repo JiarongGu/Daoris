@@ -72,7 +72,7 @@ internal static class ClaudeCodeProvider
         var native = new AgentDoor(
             new DoorId("claude-code"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ToolSpec>.Absent, home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: true), Evidence),
-            new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
+            new PosturesPart(null, Asking: "default", Full: "bypassPermissions"),
             Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
             Known<IDialect>.Declared(new ClaudeNativeDialect(), Evidence),
             new AbilitiesPart(
@@ -91,7 +91,7 @@ internal static class ClaudeCodeProvider
                     "@agentclientprotocol/claude-agent-acp", null, null, ProbeByPresence: false),
                 Evidence),
             home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: false), Evidence),
-            new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions", Reading: null),
+            new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions"),
             Known<ISpawn>.Declared(new ClaudeAcpSpawn(), Evidence),
             Known<IDialect>.Declared(new ClaudeProtocolDialect(), Evidence),
             new AbilitiesPart(

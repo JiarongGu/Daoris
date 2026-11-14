@@ -118,7 +118,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (`ProposalSettlement.Settle`), marked `settling` before its save and never saved twice. Every writer of the rule file reads,
     decides and saves under its one lock (`PermissionChange.Change`), recording who made the change. (D74)
 21. A driven session runs in its harness's judged mode: `auto`, else `acceptEdits`, on Claude's protocol door, the posture held
-    (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex; `workspace-write` through dsh's environment.
+    (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex, a brainstorm's pass too (its `read-only` asks the driver
+    for every read on Windows, which answers no request, so no door declares a reading mode); `workspace-write` through dsh's
+    environment.
     (D81, D53, D253)
 22. Full access (`bypassPermissions`, `agent-full-access`) and the asking mode (`default`, `workspace-write`) come only from the
     person's setting: Ask Daoris's full access or a repository's access setup. A harness with no mapped mode refuses the start,
@@ -151,9 +153,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
     (D197, D175)
-29. The walk, under `goal` (the default): a near account last, then most room in the tightest window the provider reported
+29. The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
+    curve holds, the person's included, so all its remaining room is spendable, and the most per hour to its reset goes first
+    ahead of any other account's room), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,
-    then a week about to lapse, then most room under the curve, then least recently started, then the order. Under `order` the
+    then most room under the curve, then least recently started, then the order. Under `order` the
     list is the walk, a near account last. The cap is one number per machine. (D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model names
     that family (`opus` in `claude-opus-4-5`) or runs at account default, and passes one naming another (`held.cooling-model`);

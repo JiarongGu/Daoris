@@ -54,7 +54,8 @@ export function useAttendedBox({ t, attended, here, intake, oneTurn, conversatio
 
   // What the person is typing to this session, kept per session and across a reload: one draft for whichever
   // box its page offers, so words typed as it ends are still there in the box that goes on with them.
-  const [draft, setDraft] = useDraft(attended && here && !oneTurn ? attended.id : null);
+  const asking = Boolean(attended && here && intake && attended.state === 'awaiting-person');
+  const [draft, setDraft] = useDraft(attended && here && (!oneTurn || asking) ? attended.id : null);
   // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
   // queue follow it, not the record, which learns a turn began only when its first event lands;
   // and the rail and the head read a chat between turns as idle.

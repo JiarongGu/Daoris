@@ -35,7 +35,7 @@ internal static class CodexProvider
             // by reference, while one joined to `codex` reads neither.
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(UsageReads.Of(CodexUsage.Question))),
             Known<IDoorOffers>.Absent,
-            new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
+            new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access"),
             Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(

@@ -134,7 +134,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 22. A sample frame names no repository: an empty scratch root and a `GIT_DIR` that is not there. (D101)
 23. A tool is found and checked only at a trial or on a press, never at a load or on a timer. A check's `fix` (such as `az login`)
     runs only on the person's press, in a console they see. Daoris never signs in or downloads. (D150)
-24. A server goes to sessions by default. One handed to Ask Daoris in restricted mode reaches it only once the person approved its
+24. A manifest's optional `brief` is one authored line, trimmed, at most 1,000 characters with no control characters; an unusable
+    value contributes nothing. `PluginBriefs` hands it once in the session's standing block only where the plugin contributes,
+    its `tools` switch is on at that place and its tools are handed: a declared server or an eligible command on `daoris-plugins`
+    (also subject to `commands`, and to a step's one-plugin restriction). An update plan shows a changed brief.
+    A server goes to sessions by default. One handed to Ask Daoris in restricted mode reaches it only once the person approved its
     exact tools; a write only as an accepted write; a generic execution tool never. In full access Ask Daoris is handed every server
     whole and asks nothing, and the plugin's page and `plugin show` follow its mode: no server waits for an approval. A server run through `npx` names its package and version, and
     a session is handed node and that package's script, installed once into the toolchain, never `npx` itself; one driving Daoris's
@@ -157,7 +161,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     at the machine, asking `PLUGINS` only while open, a row opening the plugin's page at its card. *Remove…* where `storage.forget`
     names a command offers to ask it to sign out first, ticked; a disabled `forget` says why. A failed step's `needs: "<command>"` (on `work/perform`'s completion, a reconcile or `step_answer`) is kept on its record and, where its plugin declares that command, drawn on the run's step as a door to its round card; any other name is ignored and said (`RunNeeds`). (D274)
 28. A plugin's presses and its command line are open to every caller, a session's terminal included. With Daoris running a verb
-    takes the route, else it acts alone under the home's lease. (D194)
+    takes the route, else it acts alone under the home's lease. (D194) The command tree hands `daoris plugin`'s own verbs
+    (`PluginCommand.Verbs`: list, add, update, remove, enable, disable, try-again, switch) to `plugin`, and the kit's `new` and `try`,
+    `install`, `show`, `activity`, `approve`, `withdraw`, `tools` and a bare `plugin` to the host's `plugins` door (`CommandTree`).
 29. A manifest's `interfaces` names what Daoris reaches the plugin through besides its points: `commands` (each `{ name, title,
     about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each `{ id, title,
     icon, where, places, context, body }`), every word authored (D222). `args` are `{ name, type: text | number | boolean | choice,

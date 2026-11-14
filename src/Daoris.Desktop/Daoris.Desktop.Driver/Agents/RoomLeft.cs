@@ -25,7 +25,7 @@ public static class RoomLeft
         foreach (var window in said?.Windows ?? [])
         {
             if (window.Used is not { } used) continue;
-            var room = (UsageCurves.Value(use, window.Window, window.Reset, now) ?? 100) - used * 100;
+            var room = (UsageCurves.Allowed(use, window.Window, window.Reset, now) ?? 100) - used * 100;
             if (least is null || room < least.Value.Room) least = (window, room);
         }
 

@@ -44,13 +44,14 @@ internal static class TreeScratch
         return text is null ? [] : ParseDeclared(text);
     }
 
-    /// <summary>The output a removal takes with a tree: the accepted <see cref="AcceptedAsync"/> and the declared <see cref="GeneratedIndex"/>, at the line's tip.</summary>
+    /// <summary>The output a removal takes with a tree, at the line's tip: <see cref="AcceptedAsync"/>, <see cref="GeneratedIndex"/> and <see cref="FileOutputs"/>.</summary>
     internal static async Task<IReadOnlyList<Regex>> DeclaredAsync(
         DriverConfig config, string root, string repository, string? line, CancellationToken ct)
     {
         if (line is null || !BranchName.IsValid(line)) return [];
         var accepted = await AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
-        return await GeneratedIndex.AtAsync(root, line, ct).ConfigureAwait(false) is { } index ? [.. accepted, .. Globs([index])] : accepted;
+        var remade = await FileOutputs.AtAsync(root, line, ct).ConfigureAwait(false);
+        return await GeneratedIndex.AtAsync(root, line, ct).ConfigureAwait(false) is { } index ? [.. accepted, .. Globs([index]), .. remade] : [.. accepted, .. remade];
     }
 
     /// <summary>

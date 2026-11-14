@@ -292,10 +292,14 @@ public static class NeedsAPerson
 ﻿        rows.AddRange(AttentionSessionRows.Rows(facts, sessions, SessionScope));
         rows.AddRange(AttentionMachineRows.Rows(facts, UnitScope));
         rows.AddRange(AttentionSecondCheckRows.Rows(facts));
+        rows.AddRange(AttentionCheckRows.Rows(facts, sessions, quests));
 
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
-        return rows;
+
+        return facts.Hidden.Count == 0
+            ? rows
+            : [.. rows.Where(row => !facts.Hidden.Contains(Notices.HiddenKey(Text(row, "kind") ?? "", Text(row, "id") ?? "", Text(row, "since"))))];
     }
 
     /// <summary>

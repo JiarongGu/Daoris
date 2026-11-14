@@ -99,6 +99,16 @@ function logEvents(logs, inRange) {
   return filesOf(logs, (f) => /\.jsonl$/.test(f)).flatMap((f) => readLines(join(logs, f))).filter((e) => inRange(e.time));
 }
 
+function resultText(row) {
+  if (Array.isArray(row.content)) return row.content.map((p) => p.text ?? '').join('\n');
+  if (typeof row.output !== 'string') return '';
+  try {
+    const wrapped = JSON.parse(row.output);
+    if (wrapped?.error) return String(wrapped.error?.message ?? wrapped.error);
+    return (wrapped?.result?.content ?? []).map((p) => p.text ?? '').join('\n');
+  } catch { return row.output; }
+}
+
 /** Memory calls from the session event streams: a call is its in-progress row, its input row and its completed row, joined by id. */
 function memoryCalls(events, inRange) {
   const calls = [];
@@ -109,7 +119,7 @@ function memoryCalls(events, inRange) {
       const c = byId.get(r.id) ?? { session, id: r.id };
       c.title ??= r.title;
       c.startedAt ??= r.at;
-      if (r.status === 'completed' || r.status === 'failed') { c.endedAt = r.at; c.result = (r.content ?? []).map((p) => p.text ?? '').join('\n'); }
+      if (r.status === 'completed' || r.status === 'failed') { c.endedAt = r.at; c.failed = r.status === 'failed'; c.result = resultText(r); }
       byId.set(r.id, c);
     }
     for (const c of byId.values()) {
@@ -123,36 +133,53 @@ function memoryCalls(events, inRange) {
 function lyntaiOf(calls) {
   const by = (k) => calls.filter((c) => c.kind === k);
   const searches = by('search');
-  const hit = (c) => c.endedAt && !/^No memory entry/.test(c.result ?? '');
+  const hit = (c) => c.endedAt && !c.failed && !/^(No memory entry|Refused:|Memory is not on)/.test(c.result ?? '') && (c.result ?? '') !== '';
   const hits = searches.filter(hit);
+  const reads = [...searches, ...by('get')];
   const fetched = hits.filter((s) => calls.some((c) => c.kind === 'get' && c.session === s.session && c.startedAt >= s.startedAt));
+  const kept = (c) => c.endedAt && !c.failed && /^Kept as operation /.test(c.result ?? '');
   const latency = calls.filter((c) => c.endedAt).map((c) => Date.parse(c.endedAt) - Date.parse(c.startedAt));
   return {
     searches: searches.length,
     searchesWithHits: hits.length,
+    reads: reads.length,
+    readsWithHits: reads.filter(hit).length,
     hitsFetchedSameSession: fetched.length,
     cited: missing('the handback or session log of memory entry ids cited by a result'),
     gets: by('get').length,
     writes: by('write').length,
+    writesKept: by('write').filter(kept).length,
     proposes: by('propose').length,
     latencyMs: spread(latency),
     latencyNote: 'a call\'s first and last event in the session stream: includes any permission wait; the connector\'s own log (the mcp log) records only app.started and app.stopped',
   };
 }
 
-/** The Lyntai store's own row counts, read-only, through node:sqlite where this Node has it. */
+/** The memory's own row counts, read-only through node:sqlite, so a write's way (staged, released, applied) is seen where it stops. */
 async function storeCounts(home) {
-  const file = homeEntry(home, 'memory');
-  if (!existsSync(file)) return 'not recorded: no memory.db in the home';
-  try {
-    const { DatabaseSync } = await import('node:sqlite');
-    const db = new DatabaseSync(file, { readOnly: true });
-    const count = (t) => db.prepare(`select count(*) c from ${t}`).get().c;
-    const out = { entries: count('lyntai_memory_entry') };
-    try { out.nodes = count('lyntai_memory_node'); } catch { /* an older schema */ }
-    db.close();
-    return out;
-  } catch { return missing('memory.db readable Lyntai tables through node:sqlite'); }
+  const out = { entries: missing('no memory.db in the home'), operations: missing('no knowledge.db memory_ops in the home') };
+  let sqlite;
+  try { sqlite = await import('node:sqlite'); } catch { return { entries: missing('node:sqlite'), operations: missing('node:sqlite') }; }
+  const open = (file) => { const db = new sqlite.DatabaseSync(file, { readOnly: true }); return db; };
+  const memory = homeEntry(home, 'memory');
+  if (existsSync(memory)) {
+    try {
+      const db = open(memory);
+      const count = (t) => db.prepare(`select count(*) c from ${t}`).get().c;
+      out.entries = count('lyntai_memory_entry');
+      try { out.nodes = count('lyntai_memory_node'); } catch { /* an older schema */ }
+      db.close();
+    } catch { out.entries = missing('memory.db readable Lyntai tables through node:sqlite'); }
+  }
+  const knowledge = homeEntry(home, 'knowledge');
+  if (existsSync(knowledge)) {
+    try {
+      const db = open(knowledge);
+      out.operations = Object.fromEntries(db.prepare('select state, count(*) c from memory_ops group by state order by state').all().map((r) => [r.state, r.c]));
+      db.close();
+    } catch { out.operations = missing('knowledge.db memory_ops readable through node:sqlite'); }
+  }
+  return out;
 }
 
 /** Merge commits on the repository's main in the range, less the ones that only bring main into a branch. */
@@ -308,7 +335,7 @@ export async function collect(options) {
   for (const key of ['filedToDone', 'doneToLine']) if (!report.leadTime[key].n) report.leadTime[key] = missing(key === 'filedToDone' ? 'quests.filed and done timestamp pairs' : 'quest done and landing line removal timestamp pairs');
   if (!questSource || typeof report.leftovers.landedBranchesPresent === 'string') report.leadTime.doneNotOnLine = missing('quest done and readable landing line-removal records');
   if (!events.size) {
-    for (const key of ['searches', 'searchesWithHits', 'hitsFetchedSameSession', 'gets', 'writes', 'proposes', 'latencyMs']) report.lyntai[key] = missing('session events memory tool calls');
+    for (const key of ['searches', 'searchesWithHits', 'reads', 'readsWithHits', 'hitsFetchedSameSession', 'gets', 'writes', 'writesKept', 'proposes', 'latencyMs']) report.lyntai[key] = missing('session events memory tool calls');
   }
   if (typeof report.lyntai.latencyMs !== 'string' && !report.lyntai.latencyMs.n) report.lyntai.latencyMs = missing('memory tool call start and completion timestamp pairs');
   if (!askTurns.length) for (const key of ['turns', 'conversations']) report.askDaoris[key] = missing('usage-history Ask Daoris turns in range');
@@ -374,10 +401,11 @@ export function render(r) {
   put('acts in full access / cards asked', `${r.askDaoris.actsInFullAccess} / ${r.askDaoris.cardsAsked}`);
   const y = r.lyntai;
   L.push('Lyntai (memory through the connector)');
+  put('memory reads (searches and gets) / with hits', `${y.reads} / ${y.readsWithHits}`);
   put('searches / with hits', `${y.searches} / ${y.searchesWithHits}`);
   put('hits fetched in the same session', `${y.hitsFetchedSameSession} of ${y.searchesWithHits}`);
   put('hits cited', y.cited);
-  put('gets / writes / proposes', `${y.gets} / ${y.writes} / ${y.proposes}`);
+  put('gets / writes (kept) / proposes', `${y.gets} / ${y.writes} (${y.writesKept}) / ${y.proposes}`);
   put('latency per call', typeof y.latencyMs === 'string' ? y.latencyMs : `${stat(y.latencyMs, ' ms')}, max ${y.latencyMs.max ?? missing('memory tool call completion timestamps')}`);
   put('latency note', y.latencyNote);
   put('store row counts', y.store);

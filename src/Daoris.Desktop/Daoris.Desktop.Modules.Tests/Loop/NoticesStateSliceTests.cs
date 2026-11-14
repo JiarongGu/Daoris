@@ -271,6 +271,21 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Equal(StateScopes.Notices, DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = "NOTICE_DISMISS" })!.Scopes);
     }
 
+    /// <summary>A row named to <c>NOTICE_DISMISS</c> is kept read in the history.</summary>
+    [Fact]
+    public async Task A_row_of_what_needs_you_is_set_aside_through_the_dismissal_and_kept_read_in_the_history()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+
+        var set = await AnswerAsync(module, "NOTICE_DISMISS", new { rowKind = "go-ahead", rowId = "a1#2", rowSince = "2026-10-22T08:00:00.000Z", workspace = "games" });
+        Assert.True(set.GetProperty("written").GetBoolean());
+
+        var kept = Assert.Single(Daoris.Driver.Notices.Read(Home, Now)!);
+        Assert.Equal((Daoris.Driver.Notices.Aside, true, "games", "go-ahead", "a1#2"), (kept.Kind, kept.Read, kept.Workspace, kept.Route, kept.Code));
+        Assert.Contains(Daoris.Driver.Notices.HiddenKey("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z"), Daoris.Driver.Notices.Hidden([kept]));
+    }
+
     /// <summary>
     /// A terminal's press its terminal took back after a window
     /// showed it, and one lost as Daoris closed (a press carrying a key), are kept as notices, every window's, the route as the page's

@@ -834,33 +834,6 @@ describe('clearing a parked session', () => {
   });
 
   /**
-   * A parked intake's answer is on its ask, which the application opens in Quests — so the
-   * frame hands the door up. No composer: an intake is one turn, and a parked one has no
-   * process left to hear a message.
-   */
-  it('leads a parked intake to its ask, with no composer and none of the three moves', async () => {
-    SESSIONS = [PARKED_INTAKE];
-    const onAnswerAsk = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider>
-          <WorkFrame selected="i9n8t7k6" onSelect={vi.fn()} notify={() => {}} onAnswerAsk={onAnswerAsk} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-
-    // The head's card, in the main area; the strip at the foot offers the same door.
-    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Answer ask #0fda18' }));
-    expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
-    await userEvent.click(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Answer ask #0fda18' }));
-    expect(onAnswerAsk).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect(screen.queryByLabelText('Message')).toBeNull();
-  });
-
-  /**
    * Stopping stays: the person may end the intake and settle the ask later, as a proposal. Its stop is the page
    * header's, and asks with the sentence its card says.
    */

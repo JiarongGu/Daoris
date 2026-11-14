@@ -54,4 +54,23 @@ public sealed class HandbackReaderTests : IDisposable
         Assert.False(behind.Ready);
         Assert.Null(await HandbackReader.ReadAsync(_tree, "no-such-line", gates, [], [], CancellationToken.None));
     }
+
+    [Fact]
+    public void A_commit_without_its_makers_trailer_is_read_and_said_as_the_merge_check_refuses_it()
+    {
+        const string log =
+            "a1\u001fp0\u001fsigned by Claude\u001fClaude Sonnet 5.5 <noreply@anthropic.com>\n\u001e\n"
+            + "a2\u001fa1\u001fsigned by nobody\u001f\u001e\n"
+            + "a3\u001fa2\u001fsigned by a person\u001fA Person <person@example.invalid>\n\u001e\n"
+            + "a4\u001fa3 b9\u001fMerge branch 'line' into work\u001f\u001e\n";
+
+        var seen = HandbackObservation.Judge("a4", "p0", 0, [], [], [], [], CommitAttribution.Unsigned(log));
+
+        Assert.Equal(["signed by nobody", "signed by a person"], seen.Unsigned.Select(commit => commit.Subject));
+        Assert.Contains("signed by nobody", seen.Words());
+        Assert.Contains("Co-Authored-By", seen.Words());
+        Assert.False(seen.Ready);
+        Assert.Null(seen.Unsigned[0].Trailer);
+        Assert.Equal("A Person <person@example.invalid>", seen.Unsigned[1].Trailer);
+    }
 }

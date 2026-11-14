@@ -128,7 +128,8 @@ of everything it handed, section by section.
 
 12. Words said to a parked or ended record are kept on its `said` before anything holds them. They come off by id once on
     the wire. A word a gone shell attempted is settled and never sent twice. (from D137, D188)
-13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`. Then its
+13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`, its note leading
+    with the went-on line and keeping what ended it beneath. Then its
     own conversation resumes, every waiting word in its first turn. A go-on gets no block and no brief. (from D137, D230)
     The shell's close, whoever closes it, keeps Daoris's restart word on each conversation it cut (a turn running, a start or go-on
     pending, words held, never one waiting on its limit, whose wake carries its words), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
@@ -237,7 +238,8 @@ of everything it handed, section by section.
 
 35. The driver composes the standing block with no model. It is handed once, at the start or at a move (with the memory the
     line read), and never at a go-on. It says where things are, the routing, the person's choices, and the repository's and
-    workspace's facts. (from D230)
+    workspace's facts, and the manifest briefs of the plugins whose tools it is handed and whose tools are on at its place, and tells
+    a work that may write its repository's memory (build, design, exact, chat) to `memory_write` what it confirms. (from D230)
 36. The whole first prompt fits the one value Windows allows (32,767 characters: the native door takes it on stdin, and
     `DAORIS_TARGET` carries it as an environment variable). Over 30,000, the block goes to
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)

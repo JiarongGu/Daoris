@@ -102,11 +102,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(handed.Deny.Distinct(StringComparer.Ordinal).Count(), handed.Deny.Count);
     }
 
-    // ——— Both real doors under the posture. Claude Code takes the rules above on either door; Codex takes none, so its
-    // ——— posture is its own mode that changes nothing, required. Nothing here starts a process.
-
-    private static SessionTarget Pass(string turn = "g1") =>
-        new(QuestId: "", "Brainstorm", "", "Daoris", "", "room", "") { Brainstorm = "b1", BrainstormTurn = turn };
+    // ——— Both real doors: Claude Code takes the rules above on either door, Codex none. Nothing here starts a process.
 
     /// <summary>
     /// 🔴 Claude Code's protocol door is handed the posture's rules as its pipe door is, through the file its session takes on `session/new`,
@@ -132,17 +128,12 @@ public sealed class BrainstormPostureTests : IDisposable
         var room = PermissionRules.ReadRule(Room(turn));
         Assert.Equal(Strings(expected["allow"]), Strings(handed["permissions"]!["allow"]).Select(rule => rule == room ? "Read(<room>)" : rule));
         Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
-        Assert.Null(BrainstormPermissions.Posture(adapter));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(turn), adapter));
         Assert.Equal("auto|acceptEdits", adapter.Postures.Ordinary);
     }
 
-    /// <summary>
-    /// 🔴 Codex takes no rules, so none is written and no `_meta` rides its open; its pass asks its mode that changes nothing, required, in
-    /// place of `agent`, whose sandbox writes the folder it runs in, and never `agent-full-access`.
-    /// </summary>
+    /// <summary>🔴 Codex takes no rules and keeps its ordinary mode, `agent`, where its room's reads run unasked; never full access.</summary>
     [Fact]
-    public void Codex_is_handed_no_rules_and_asks_its_read_only_mode_required()
+    public void Codex_is_handed_no_rules_and_keeps_its_ordinary_mode_so_its_reads_run_unasked()
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
@@ -154,24 +145,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Null(file);
         Assert.Null(meta);
         Assert.Equal(HandedNones.Agent, handed.None);
-        var posture = Daoris.Driver.SessionRules.PassPosture(Pass(), adapter);
-        Assert.Equal(new PostureAsked("read-only", Required: true).Wire(), posture);
-        Assert.NotEqual(adapter.Postures.Ordinary, PostureAsked.Parse(posture).Modes);
-        Assert.NotEqual(adapter.Postures.Full, PostureAsked.Parse(posture).Modes);
-        Assert.Contains("`read-only`", BrainstormPermissions.Unoffered("read-only", "it offers `agent`"), StringComparison.Ordinal);
-    }
-
-    /// <summary>The posture is a brainstorm pass's alone: a quest's session on Codex keeps `agent`, and a harness with no mode maps none.</summary>
-    [Fact]
-    public void Only_a_brainstorm_pass_asks_the_reading_mode_and_a_harness_with_none_keeps_its_own()
-    {
-        var adapters = ProviderRegistry.Built();
-        var quest = new SessionTarget("q1", "Quest", "", "Daoris", "", "tree", "");
-
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(quest, adapters.Door("codex-acp")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("dsh")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("acp-stub")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("claude-code")));
+        Assert.Equal("agent", adapter.Postures.Ordinary);
     }
 
     [Theory]

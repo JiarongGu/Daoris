@@ -486,6 +486,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_HUNKS", "", null)]
     // A person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
     [InlineData("FILES", "", null)]
+    [InlineData("TREE_POOL", "", null)]
     [InlineData("FILES_READ", "files", null)]
     [InlineData("FILES_SET", "files", null)]
     [InlineData("FILES_REMOVE", "files", null)]

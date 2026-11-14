@@ -40,6 +40,26 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
     internal async Task<TreeFilesOutcome> RunAsync(CancellationToken ct)
     {
+        try
+        {
+            return await StagesAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            _said.Add(Failed(error));
+            await CopyLocalAsync(ct).ConfigureAwait(false);
+            return new([.. _said], false, null);
+        }
+    }
+
+    internal static Noted Failed(Exception error)
+    {
+        var why = error.Message.Trim();
+        return Noted.Of(StartNoteCodes.StartedFilesFailed, $"Daoris could not prepare this tree's dependencies ({why}), so the session starts as a fresh tree does, installing its own.", ("why", why));
+    }
+
+    private async Task<TreeFilesOutcome> StagesAsync(CancellationToken ct)
+    {
         var head = await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false);
         if (head is null) return TreeFilesOutcome.None;
         using var watch = TreeVisit.Watch(tree);
@@ -93,13 +113,21 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.AddRange(shared.Said);
         var based = TreeBaseWords.Say(home, tree, deps.Rules, deps.Floor);
         _said.AddRange(based.Said);
-        var copied = await TreeLocalInputs.CopyAsync(root, tree, path => TreeCopyPermit.Judge(home, repository, _rules!, path), ct).ConfigureAwait(false);
-        if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
-        if (copied.Line() is { } line) _said.Add(line);
-        foreach (var each in copied.Declined) _said.Add(each.Line());
+        await CopyLocalAsync(ct).ConfigureAwait(false);
         var outcome = Outcome();
         var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told }.OfType<string>());
         return told.Length == 0 ? outcome : outcome with { Told = told };
+    }
+
+    /// <summary>The declared local inputs copied and said; nothing where the file rules were never read, since the person's permissions cannot be judged.</summary>
+    private async Task<LocalCopy> CopyLocalAsync(CancellationToken ct)
+    {
+        if (_rules is null) return LocalCopy.None;
+        var copied = await TreeLocalInputs.CopyAsync(root, tree, path => TreeCopyPermit.Judge(home, repository, _rules, path), ct).ConfigureAwait(false);
+        if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
+        if (copied.Line() is { } line) _said.Add(line);
+        foreach (var each in copied.Declined) _said.Add(each.Line());
+        return copied;
     }
 
     private void RecordCopies(IReadOnlyList<string> copied) => TreeFilesRecord.Change(home, tree, state => state with

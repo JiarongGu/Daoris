@@ -278,9 +278,9 @@ public static class BranchPatterns
     }
 
     /// <summary>
-    /// What a landing is named for: the session, and the chain's first quest with its title, walking up each step's parent, since a
-    /// chain lands from its last step; a chat with no quest has its opening line. The walk stops where the service no longer answers for
-    /// a parent, and after twenty steps.
+    /// What a landing is named for: the session, and the chain's first quest in this repository with its title, walking up each step's
+    /// parent, since a chain lands from its last step; a chat with no quest has its opening line. The walk stops where the service no
+    /// longer answers for a parent, at a parent of another repository, and after twenty steps.
     /// </summary>
     public static async Task<LandingSubject> SubjectAsync(
         string session, string? quest, Func<string, Task<QuestView?>> find, string? opening)
@@ -292,6 +292,7 @@ public static class BranchPatterns
         for (var steps = 0; steps < 20 && current.Parent is { Length: > 0 } parent; steps++)
         {
             if (await find(parent).ConfigureAwait(false) is not { } above) break;
+            if (!string.Equals(above.To, current.To, StringComparison.OrdinalIgnoreCase)) break;
             current = above;
         }
 

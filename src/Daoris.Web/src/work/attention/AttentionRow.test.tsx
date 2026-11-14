@@ -818,7 +818,7 @@ const OPINION: Attention = {
  */
 describe('an ask under the row answers inside itself', () => {
   type Case = {
-    name: string; item: Attention; open: string; move: string; handler: keyof AttentionActs;
+    name: string; item: Attention; open: string; move: string; handler: Exclude<keyof AttentionActs, 'setAside'>;
     prepare?: (ask: HTMLElement) => Promise<void>;
   };
   const cases: Case[] = [
@@ -856,7 +856,7 @@ describe('an ask under the row answers inside itself', () => {
       await one.prepare?.(ask);
       await userEvent.click(within(screen.getByRole('group', { name: one.open })).getByRole('button', { name: one.move }));
 
-      // It stays open and says it waits while the act runs; the act hears how to answer.
+      // It stays open and says it waits while the act runs.
       expect(handler).toHaveBeenCalledTimes(1);
       const answered = handler.mock.calls[0]!.at(-1) as { done: () => void; refused: (sentence: string) => void };
       expect(typeof answered.done).toBe('function');

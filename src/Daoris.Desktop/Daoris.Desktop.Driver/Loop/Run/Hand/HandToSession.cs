@@ -153,6 +153,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                     apart: start.Isolate is not null) with
                 {
                     Checkouts = across.Reads.Count > 0,
+                    PluginBriefs = PluginBriefs.At(home, new PluginPlace(quest.To, start.Workspace), servers),
                     Memory = brief?.Memory ?? [],
                     File = StandingBlocks.FileOf(home, sessionId),
                 },

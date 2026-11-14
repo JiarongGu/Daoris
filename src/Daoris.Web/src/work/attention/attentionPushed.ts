@@ -9,6 +9,7 @@ import type { OpinionWait } from '../gates/opinion';
 import type { PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
 import type { NoteRecord } from '../noteLines';
+import type { CheckFailure } from './checkFailure';
 
 /**
  * A stale go-ahead's mark, as .NET judges it: since when nothing on its ask could still use its answer, the last thing on
@@ -118,6 +119,7 @@ export type PushedAttention = {
   /** A git go-ahead a door holds while its act waits: its repository, remote, host, class and session, and whether its door has gone. */
   gitAsk?: GitAskWait;
   secondCheck?: SecondCheckFlag;
+  check?: CheckFailure;
   /** A session the watcher brings to the person: its watch, which its words and its presses read. */
   quiet?: QuietWait;
   /** A run held at a declined request: its `work.requests` node, the quest declined and where it went. */

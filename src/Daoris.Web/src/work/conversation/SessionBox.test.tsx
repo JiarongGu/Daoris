@@ -105,6 +105,19 @@ describe('SessionBox', () => {
     expect(onSend).toHaveBeenCalledWith('go ahead with the PUT');
   });
 
+  /** A parked intake's box: the words go to its ask, which the field says, and *Send* says it sends. */
+  it('offers a parked intake the box whose words go to its ask', async () => {
+    const onSend = vi.fn();
+    show({ box: { kind: 'ask' }, onSend });
+
+    const field = screen.getByLabelText('Message');
+    expect(field).toHaveAttribute('placeholder', 'your answer — it is posted on the ask’s channel');
+    expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
+    await userEvent.type(field, 'it is the engine’s');
+    await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));
+    expect(onSend).toHaveBeenCalledWith('it is the engine’s');
+  });
+
   /**
    * What the park asks stands in its answer's box above the field, every answer a row to select, and the field
    * says its words go with the answer chosen. With one selected the box's *Send* sends with the field empty too, and the field names it;

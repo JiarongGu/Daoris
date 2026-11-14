@@ -2,6 +2,7 @@
   "id": "daoris-dev-report",
   "apiVersion": 1,
   "name": "Development report",
+  "brief": "File a report with daoris-dev-report_report when you find a defect in Daoris itself or something the person's development agent should know, with its evidence.",
   "version": "1.0.0",
   "changes": "First version: report files a titled report from a session, and inbox lists, reads and marks the reports, for the person's own development agent to read.",
   "description": "A place for Daoris's sessions to report to the person's own development agent: a session files a titled report with its evidence, and the agent reads the inbox from a terminal. Nothing leaves the machine.",

@@ -647,9 +647,9 @@ public sealed class SessionProcesses(string? markers = null)
     /// </summary>
     /// <remarks>
     /// An opener's mark is no process of the session's: <see cref="AliveOnThisMachine"/> reads it as none, as a build before it
-    /// does (its third field), so a word, a stop and the history's clearing judge the record as before. A start that comes to nothing
-    /// ends its record itself, and the sweep reads a mark only for a record still <c>queued</c> or <c>starting</c>, so a mark left by
-    /// one is read by nothing until the history's clearing removes it with the session.
+    /// does (its third field). A go-on or a resume marks its record before the ledger moves it to <c>working</c>, which the sweep then
+    /// leaves while its opener runs (<see cref="OpenerRuns"/>). A start that comes to nothing ends its record itself, and its mark goes
+    /// with the session's history, or with the dead markers once its opener has gone.
     /// </remarks>
     public void MarkOpening(string sessionId)
     {
@@ -690,23 +690,37 @@ public sealed class SessionProcesses(string? markers = null)
             if (_running.ContainsKey(sessionId)) return false;
         }
 
-        if (MarkerOf(sessionId) is not { } marker || !File.Exists(marker)) return false;
+        return MarkerOf(sessionId) is { } marker && OpenerOf(marker) is { } opener && Gone(opener.Pid, opener.Started);
+    }
 
+    /// <summary>Whether the process that marked this record as going on with it, before its spawn, still runs.</summary>
+    public bool OpenerRuns(string sessionId) =>
+        MarkerOf(sessionId) is { } marker && OpenerOf(marker) is { } opener && !Gone(opener.Pid, opener.Started);
+
+    /// <summary>Whether <paramref name="marker"/> is an opener's mark whose opener still runs: the dead markers' sweep keeps it.</summary>
+    internal static bool OpenerAlive(string marker) => OpenerOf(marker) is { } opener && !Gone(opener.Pid, opener.Started);
+
+    /// <summary>The opener a mark names, or null where the file is none, cannot be read, or is no opener's mark.</summary>
+    private static (int Pid, long Started)? OpenerOf(string marker)
+    {
         string[] fields;
         try
         {
+            if (!File.Exists(marker)) return null;
             fields = AtomicFile.ReadText(marker).Trim().Split(' ');
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return false;
+            return null;
         }
 
-        if (fields.Length != 3 || fields[2] != OpeningWord || !int.TryParse(fields[0], out var pid) || !long.TryParse(fields[1], out var started))
-        {
-            return false;
-        }
+        return fields.Length == 3 && fields[2] == OpeningWord && int.TryParse(fields[0], out var pid) && long.TryParse(fields[1], out var started)
+            ? (pid, started)
+            : null;
+    }
 
+    private static bool Gone(int pid, long started)
+    {
         try
         {
             using var process = Process.GetProcessById(pid);

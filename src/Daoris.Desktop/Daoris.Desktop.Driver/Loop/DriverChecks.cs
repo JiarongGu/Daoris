@@ -2,11 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The check broker as the loop holds it: each look starts the broker's next check beside the look, never in it, so a session's turn has
-/// ended while its check waits, and hands every verdict to the session that asked as Daoris's own word, which reopens it.
+/// ended while its check waits. Verdicts reach an unfinished quest's session as Daoris's word; a done quest's reds wait for the person.
 /// </summary>
 /// <remarks>
 /// A session that asks <c>check_run</c> ends its turn <see cref="EndNoteCodes.EndedAwaitsCheck"/> (<see cref="WaitsOnOwnCheckAsync"/>);
-/// nothing is said to the person, since the verdict always comes: a check ends reached, failed or stopped, and a stopped one is a verdict too.
+/// a check ends reached, failed or stopped, and a stopped one is a verdict too.
 /// </remarks>
 internal sealed class DriverChecks
 {
@@ -58,7 +58,7 @@ internal sealed class DriverChecks
             if (_running.IsCompleted) _running = Task.Run(RunAllAsync, CancellationToken.None);
         }
 
-        await CheckHanding.HandAsync(files, SayAsync, ct).ConfigureAwait(false);
+        await CheckHanding.HandAsync(files, SayAsync, ct, QuestStatusAsync).ConfigureAwait(false);
     }
 
     private async Task RunAllAsync()
@@ -90,5 +90,13 @@ internal sealed class DriverChecks
         {
             return null;
         }
+    }
+
+    private async Task<string?> QuestStatusAsync(string session, CancellationToken ct)
+    {
+        var record = await _context.Service.RecordAsync(session, ct).ConfigureAwait(false);
+        return (record?.Quest ?? record?.TookQuest) is { } quest
+            ? (await _context.Service.FindQuestAsync(quest, ct).ConfigureAwait(false))?.Status
+            : null;
     }
 }

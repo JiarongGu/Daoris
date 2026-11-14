@@ -59,6 +59,27 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
+    /// Across repositories each one's branch is named for its own first quest of the chain, never another repository's.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_across_repositories_names_each_repositorys_branch_for_its_own_first_quest()
+    {
+        var quests = new Dictionary<string, QuestView>
+        {
+            ["q1"] = new("q1", "ask #a1", "engine", "Fix the gap", "", "Done"),
+            ["q2"] = new("q2", "ask #a1", "portal-ui", "Show the fixed gap", "", "Done") { Parent = "q1" },
+            ["q3"] = new("q3", "ask #a1", "portal-ui", "Verify the shown gap", "", "Done") { Parent = "q2" },
+            ["q4"] = new("q4", "ask #a1", "ENGINE", "Back to the engine", "", "Done") { Parent = "q3" },
+        };
+        Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
+
+        Assert.Equal(new LandingSubject("s2", "q2", "Show the fixed gap"), await BranchPatterns.SubjectAsync("s2", "q2", Find, opening: null));
+        Assert.Equal(new LandingSubject("s3", "q2", "Show the fixed gap"), await BranchPatterns.SubjectAsync("s3", "q3", Find, opening: null));
+        Assert.Equal(new LandingSubject("s4", "q4", "Back to the engine"), await BranchPatterns.SubjectAsync("s4", "q4", Find, opening: null));
+        Assert.Equal(new LandingSubject("s1", "q1", "Fix the gap"), await BranchPatterns.SubjectAsync("s1", "q1", Find, opening: null));
+    }
+
+    /// <summary>
     /// A chain's step is told at its start the branch its done will move on, named for the chain's first quest; a quest that
     /// follows nothing is told its own, and a service that cannot walk the chain leaves the step its own, since a start never
     /// waits on a sentence.

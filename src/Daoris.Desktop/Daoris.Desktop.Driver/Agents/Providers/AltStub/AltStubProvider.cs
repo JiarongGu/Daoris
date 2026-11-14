@@ -46,7 +46,7 @@ internal static class AltStubProvider
             new DoorId("alt-stub"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ToolSpec>.Absent,
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
-            LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
+            LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("alt-stub", "agent.mjs", protocol: false), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -60,7 +60,7 @@ internal static class AltStubProvider
             Known<ToolSpec>.Declared(new ToolSpec([], [], null, null, null, null, null, ProbeByPresence: true), Evidence),
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
-            Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
+            Known<IDoorOffers>.Absent, new PosturesPart(null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("alt-acp-stub", "agent.mjs", protocol: true), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(

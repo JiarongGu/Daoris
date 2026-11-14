@@ -193,7 +193,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         // share is over it, its room below zero on the exact value (on it is not over).
         Measured = scope.List
             .SelectMany(account => (said.GetValueOrDefault(account)?.Windows ?? [])
-                .Select(window => (Account: account, Window: window, Curve: window.Used is null ? null : UsageCurves.Value(scope.Use, window.Window, window.Reset, now)))
+                .Select(window => (Account: account, Window: window, Curve: window.Used is null ? null : UsageCurves.Allowed(scope.Use, window.Window, window.Reset, now)))
                 .Where(each => each.Curve is not null)
                 .Select(each => new
                 {
@@ -230,7 +230,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
             said.Seen,
             Windows = said.Windows.Select(window =>
             {
-                var curve = use is null || window.Used is null ? null : UsageCurves.Value(use, window.Window, window.Reset, now);
+                var curve = use is null || window.Used is null ? null : UsageCurves.Allowed(use, window.Window, window.Reset, now);
                 return new
                 {
                     // Where its reading came from: `read` from the agent's own answer, `said` by a session's frame.

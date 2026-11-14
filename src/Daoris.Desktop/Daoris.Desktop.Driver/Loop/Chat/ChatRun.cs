@@ -111,10 +111,6 @@ internal sealed class ChatRun(
             var info = agent.Prepare(request, selection);
             if (goOn?.Carried is { } carriedOn) LimitCarried.Compact(info, carriedOn.Plan);
 
-            // Its standing block, on its harness, told with a new conversation's first message and never at a go-on, which resumes the same
-            // conversation; a hand-over's adds the memory its brief hands on.
-            if (place.Block is { } block && goOn is null) told.HoldBlock(sessionId, agent.OnHarness(block, workTree));
-
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record, a
             // go-on as a first start, and its process's lineage token issued, a go-on's the one issued at its move, its retry's its own.
             start = new TransportStart(info, StartClass.Person) { Moved = goOn?.Proc };
@@ -175,7 +171,7 @@ internal sealed class ChatRun(
                             home,
                             place.ServersTo == PluginServerTo.Help
                                 ? new PluginToolsAt(sessionId, new PluginPlace(null, place.Circle), "en")
-                                : PluginToolsAt.OfQuest(sessionId, config, place.Name, null),
+                                : PluginToolsAt.OfQuest(sessionId, config, place.Name, place.Block?.Workspace),
                             PluginToolsHand.Program(home))).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException error) when (opening.PastBound(error, ct))
@@ -197,6 +193,12 @@ internal sealed class ChatRun(
             // The servers the plugins hand every session, on this door too. The protocol door carries them on `session/new`; a driven or
             // intake session on the pipe is handed a file, and a conversation on the pipe is handed nothing at all. A room has no `.mcp.json`
             // of its own, so its connector goes in the same file.
+            if (place.Block is { } block && goOn is null)
+            {
+                var pluginPlace = new PluginPlace(place.ServersTo == PluginServerTo.Help ? null : place.Name, block.Workspace ?? place.Circle);
+                told.HoldBlock(sessionId, agent.OnHarness(block with { PluginBriefs = PluginBriefs.At(home, pluginPlace, pluginServers) }, workTree));
+            }
+
             var onWire = agent.Abilities.ServersOnWire;
             offered = onWire || place.ConnectorOnPipe
                 ? chatServers.For(sessionId, place.Circle, pluginServers, onWire ? proc : null)

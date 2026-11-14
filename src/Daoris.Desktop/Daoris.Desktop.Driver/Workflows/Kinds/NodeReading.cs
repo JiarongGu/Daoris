@@ -24,6 +24,12 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
     /// <summary>The quests the work published.</summary>
     public IReadOnlyList<QuestView>? Requests { get; init; }
 
+    /// <summary>The run's own branch, which a node on another subject (the quest's holds) reads the line's hold of; null where the run has none.</summary>
+    public WorkUnit? RunBranch { get; init; }
+
+    /// <summary>The tip <see cref="RunBranch"/> stands at in the run's pass; null where not read.</summary>
+    public string? RunBranchTip { get; init; }
+
     /// <summary>The nodes wired straight into its node by <c>after</c>: the step a <c>monitor</c> watches.</summary>
     public IReadOnlyList<NodeDeclaration> Follows { get; init; } = [];
 
@@ -36,6 +42,8 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
     {
         Follows = follows,
         Git = run.Git,
+        RunBranch = run.RunBranch,
+        RunBranchTip = run.RunBranch is { } branch ? run.Revisions.GetValueOrDefault(branch.Id) : null,
         Opinion = run.Opinions.GetValueOrDefault(subject),
         Review = run.Reviews.GetValueOrDefault(subject),
         GoAheads = run.GoAheads.GetValueOrDefault(subject),
