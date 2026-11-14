@@ -18,10 +18,7 @@ public sealed class CheckFiles(string home)
     /// <summary>The log a run writes to.</summary>
     public string LogOf(string id) => PathOf(id, "log");
 
-    /// <summary>
-    /// The machine's one broker seat, held while a check runs: a second Daoris process on this home gets null and runs nothing, so it
-    /// never queues again a run the first holds nor opens the log the first writes.
-    /// </summary>
+    /// <summary>The home's one broker seat, null where another process holds it.</summary>
     public IDisposable? TakeSeat()
     {
         try
@@ -35,7 +32,7 @@ public sealed class CheckFiles(string home)
         }
     }
 
-    /// <summary>The one place a log is opened to write: a reader may read it, and it may be removed, while the run writes.</summary>
+    /// <summary>Opens a log to write, shared with a reader.</summary>
     public StreamWriter OpenLogWriter(string id)
     {
         Directory.CreateDirectory(Folder);
@@ -43,10 +40,8 @@ public sealed class CheckFiles(string home)
         return new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
     }
 
-    /// <summary>The one place a log is opened to read: a run may be writing it.</summary>
     public FileStream OpenLogReader(string id) => new(LogOf(id), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
 
-    /// <summary>The log's text, or null where there is none or it cannot be read.</summary>
     public string? ReadLog(string id)
     {
         try
