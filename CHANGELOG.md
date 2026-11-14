@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris tree clean --yes` removes the landed trees it listed: a branch delete waits for a session's start instead of giving up, a stale copy of a machine-local file Daoris made no longer keeps a tree, a workflow run's tree is released once the line holds its branch, and a read git said nothing of says so.
 - A driven session that may change its repository's memory (a build, a design or a chat) is now told in its first brief that `memory_write` keeps a fact it confirmed for later sessions; until now none was, so the memory stayed empty. `tools/dev-metrics.mjs` counts memory reads, hits and writes beside the other figures.
 - A repository's Details page shows this machine's tree pool slots and explains in English or Chinese when a slot is waiting to be restored.
 - A self-update keeps the window's start arguments, including its debug port, so desktop tools can reconnect after the restart.

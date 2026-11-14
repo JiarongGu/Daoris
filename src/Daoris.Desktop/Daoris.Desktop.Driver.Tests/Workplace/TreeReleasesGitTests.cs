@@ -129,6 +129,28 @@ public sealed class TreeReleasesGitTests : LandedFixture
         Assert.True(Directory.Exists(openTree));
     }
 
+    [Fact]
+    public async Task The_sweep_ends_the_tree_of_a_live_run_whose_branch_the_line_holds_and_leaves_one_it_does_not()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (heldTree, held) = await OwnedAsync(trees, root, "q1", "a.txt");
+        var (waitingTree, waiting) = await OwnedAsync(trees, root, "q2", "b.txt");
+        await MergeAsync(root, held);
+        await MergeAsync(root, waiting);
+        Record("q1", ended: false);
+        Record("q2", ended: false);
+        var tip = (await GitAsync(root, "rev-parse", held)).Trim();
+        Grown.Hold("engine", held, new HeldFact(LandedAt, LandedAt, EndBy.OnLine, tip, "main", "main", tip, "engine"));
+
+        var swept = await new TreeReleases(Home).SweepAsync(root, "engine", null);
+
+        var gone = Assert.Single(swept);
+        Assert.Equal((held, true), (gone.Branch, gone.Gone));
+        Assert.False(Directory.Exists(heldTree));
+        Assert.True(Directory.Exists(waitingTree));
+    }
+
     private async Task LandedAsync(string root, string run, string part, bool tidy)
     {
         var tip = (await GitAsync(root, "rev-parse", part)).Trim();
