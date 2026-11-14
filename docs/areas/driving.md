@@ -54,7 +54,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
 7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
-    line and how far the line moved past it, the paths touched, the gates those paths reach (the landing's own selection, never a
+    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule), the gates those paths reach (the landing's own selection, never a
     list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
     this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
     selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is
@@ -122,7 +122,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). It
     seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
-    the machine-local files the `reach: copy` rules name. A `reach: read` or `write` path naming one place that git ignores is
+    the machine-local files the `reach: copy` rules name and the checkout's declared `localInputs` and sensitive-patterns file (`TreeLocalInputs`, read-only, copied after the dependencies and still copied where a dependency step fails on the disk, so a tree's checks read what the merge's read). A `reach: read` or `write` path naming one place that git ignores is
     linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
     while it reads as its link (`TreeShares`). In a worked tree the stage only keeps. The hand, an open, a go-on and a terminal's
     visit take the mark off first. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
