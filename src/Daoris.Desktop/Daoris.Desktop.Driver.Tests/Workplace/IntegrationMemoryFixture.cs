@@ -33,7 +33,7 @@ internal sealed class IntegrationMemoryFixture : IDisposable
     internal MemoryRepository Repo { get; }
 
     /// <summary>Where the integration trees of a run are made.</summary>
-    internal string Trees => Path.Combine(Home, "trees");
+    internal string Trees => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     internal string Head => Repo.HeadAsync(Root, Ct).GetAwaiter().GetResult()!;
 

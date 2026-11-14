@@ -12,6 +12,6 @@ public static class EndedLine
 
     /// <summary>What both verbs say of an ended record whose line goes on.</summary>
     public static string Said(string session, string state) =>
-        $"{session} ended ({SessionsListing.Word(state)}) and its line goes on at the next look: nothing here runs it, so there is "
+        $"{session} ended ({state}) and its line goes on at the next look: nothing here runs it, so there is "
         + "nothing to stop, and it is archived once that line ends.";
 }
