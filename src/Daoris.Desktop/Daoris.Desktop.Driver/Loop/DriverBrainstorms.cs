@@ -628,7 +628,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         {
                             return stop.IsCancellationRequested
                                 ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns)
-                                : Ended(BrainstormPassRecord.Unavailable, [StartPasses.Cooling, CapFull], turns, why: ran.Why);
+                                : Ended(BrainstormPassRecord.Unavailable, [StartPasses.Cooling, CapFull], turns);
                         }
 
                         again = true;

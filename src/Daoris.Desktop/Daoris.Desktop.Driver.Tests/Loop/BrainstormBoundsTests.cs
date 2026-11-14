@@ -389,6 +389,30 @@ public sealed class BrainstormBoundsTests : IDisposable
         Assert.Equal(("unavailable", "cap-full"), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Codes));
         Assert.DoesNotContain("g2", script.Started);
         Assert.Equal((BrainstormStates.Ended, BrainstormStates.ShortHanded), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        var text = Files.DocumentText(id)!;
+        Assert.Contains("found no free slot under the machine's cap", text, StringComparison.Ordinal);
+        Assert.Contains("ask the brainstorm again once the cap has a free slot", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>A pass that cooled, waited, then found no slot before the deadline is said by its last cause: the cap, not the cool-off that lifted.</summary>
+    [Fact]
+    public async Task A_pass_that_cooled_then_found_no_slot_is_said_as_the_cap()
+    {
+        var (driver, script) = Start(cap: 1, rule: Rule(pass: 10, synthesis: 2, challenge: 2, request: 6));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        var asked = 0;
+        script.Behaviours["g1"] = (_, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(100))
+            : throw new InvalidOperationException("g1 must not start again"));
+        script.Behaviours["g2"] = Hang;
+
+        await LookAsync(driver);
+
+        Assert.Equal(("unavailable", "cooling,cap-full"), (Of(Pass(id, "g1")).State, Of(Pass(id, "g1")).Codes));
+        var text = Files.DocumentText(id)!;
+        Assert.Contains("found no free slot under the machine's cap", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("is cooling", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("once its account lifts", text, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -526,7 +550,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         Assert.True(Document(id)["ranked"]!.GetValue<bool>());
     }
 
-    /// <summary>🔴 The person's stop during a cooling wait ends the pass stopped and the brainstorm stopped, with nothing synthesized.</summary>
+    /// <summary>🔴 The person's stop during a cooling wait ends the pass and the brainstorm stopped, synthesizes nothing and leaves no slot held.</summary>
     [Fact]
     public async Task The_person_s_stop_during_a_cooling_wait_ends_the_pass_stopped()
     {
@@ -544,6 +568,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         Assert.Equal("stopped", Of(Pass(id, "g2")).State);
         Assert.DoesNotContain("s1", script.Started);
         Assert.Equal((BrainstormStates.Ended, BrainstormStates.Stopped), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        Assert.Equal(0, await driver.BrainstormsAsync(new Snapshot([], [], []), 0, [], CancellationToken.None));
     }
 
     /// <summary>

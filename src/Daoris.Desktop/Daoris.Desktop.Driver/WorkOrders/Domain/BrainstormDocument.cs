@@ -91,7 +91,7 @@ public static class BrainstormDocuments
     public static string ShortOfMakers(IReadOnlyList<BrainstormPassRecord> unavailable, int answered)
     {
         static string Cause(BrainstormPassRecord pass) =>
-            pass.Codes.Contains(StartPasses.Cooling) ? StartPasses.Cooling : pass.Codes.Contains("limit") ? "limit" : "cap-full";
+            pass.Codes.LastOrDefault(code => code is StartPasses.Cooling or "limit" or "cap-full") ?? "cap-full";
 
         var said = string.Join("; ", unavailable.Select(pass =>
             $"`{pass.By.Adapter}` (maker {pass.By.Maker}) "
@@ -267,7 +267,7 @@ public static class BrainstormDocuments
         }
         else if (document.Makers.Count < 2)
         {
-            text.Append("One maker answered: this is no cross-maker brainstorm.\n");
+            text.Append(document.Makers.Count == 0 ? "No maker answered.\n" : "One maker answered: this is no cross-maker brainstorm.\n");
         }
 
         foreach (var pass in document.Passes)
