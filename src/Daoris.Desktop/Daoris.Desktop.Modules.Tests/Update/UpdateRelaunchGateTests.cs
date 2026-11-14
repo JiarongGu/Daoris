@@ -49,13 +49,16 @@ public sealed class UpdateRelaunchGateTests : Bridge
     /// The application's own relaunch, <see cref="UpdateLauncher"/>, its start made by the gate's stand-in
     /// (<see cref="ProcessStarts.Within"/>), which answers with a process never started: nothing starts.
     /// </summary>
-    [Fact]
-    public async Task Update_now_relaunches_off_the_callers_thread()
+    [Theory]
+    [InlineData()]
+    [InlineData("--remote-debugging-port=9333")]
+    [InlineData("--app-root", "an install folder", "--remote-debugging-port=9444", "--other", "say \"hello\"", "")]
+    public async Task Update_now_relaunches_off_the_callers_thread_with_the_shells_arguments(params string[] arguments)
     {
         Stage("b1");
         using var updater = new InstallUpdater(
             _install, DataHome, MachineLog.None, () => new UpdateWork(1, 0),
-            relaunch: ct => UpdateLauncher.StartAsync(_install, 4242, ct),
+            relaunch: ct => UpdateLauncher.StartAsync(_install, 4242, arguments, ct),
             close: () => _closed++, bus: Bus, pid: 1);
         using var within = ProcessStarts.Within(info =>
         {
@@ -69,7 +72,7 @@ public sealed class UpdateRelaunchGateTests : Bridge
         var (start, onCaller) = Assert.Single(_seen);
         Assert.False(onCaller, "the launcher was started on the caller's thread");
         Assert.Equal(Path.Combine(_install, StagedBuild.Launcher), start.FileName);
-        Assert.Equal(["--update", "--after", "4242"], start.ArgumentList);
+        Assert.Equal(["--update", "--after", "4242", .. arguments], start.ArgumentList);
         Assert.True(start.UseShellExecute);
         Assert.Equal(UpdateStates.Applying, updater.State.State);
         Assert.Equal(1, _closed);

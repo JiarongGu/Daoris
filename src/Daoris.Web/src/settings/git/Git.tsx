@@ -69,6 +69,7 @@ export type GitAddInput = {
   email?: string;
   /** SSH: a key file the person names, imported; absent generates a new key. */
   importFile?: string;
+  passphrase?: string;
   rsa?: boolean;
   /** HTTPS: the account and its token. */
   user?: string;

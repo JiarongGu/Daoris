@@ -118,7 +118,9 @@ finishes first and the whole set runs once.
     caller's) asks the running Daoris, which runs it as its own child and the verb only waits; where none takes it the verb says
     so in one line and runs it itself. Every other verb that can start a process asks the running Daoris first or is listed in
     `TerminalStartsCensusTests` with why it may not, and `node tools/process-tree.mjs` lists what still runs outside the tree,
-    under what started it. (from PROCTREE1)
+    under what started it. (from PROCTREE1) The service host a driver test starts (`RealServiceHost`) is held in a job that ends it
+    with the run's process however the run ends, and is recorded beside its build output (`ServiceHostRecords`), so the next
+    run of the checkout ends one whose run is dead before it builds.
 19. A branch is previewed (`--preview`) and queued with its message (`--message`); the queue's runner merges the queued branches
     into a candidate in `local/scope-tree` and promotes it to main by fast-forward once it is green. A merge runs the blocking checks
     (the universal gates, the code map, the census of test units) and the path checks its paths reach (the page's `tsc`, design and
@@ -216,7 +218,9 @@ finishes first and the whole set runs once.
     second fails the census, named, unless it is on its list of slower tests, which only shrinks; it reads the duration records
     of rule 22. The store's engine types (`SqliteConnection`, `SqliteCommand`, `SqliteDataReader`) are banned by symbol in the driver
     (`src/BannedSymbols.Store.txt`, taken by `DaorisBannedStore`, apart from the effects so a project takes the list its uses allow);
-    each adapter row takes its own symbols to zero for the code it moved. (from D286)
+    each adapter row takes its own symbols to zero for the code it moved. SSH import's `SshKeyConverter` is a delegate port:
+    `Daoris.Adapters.SshKeys` owns its cryptography dependency and format tests; `ScriptedSshKeys` scripts the driver's and
+    bridge's conversion answers, and both pass `SshKeyFormatContract`. (from D286)
 22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
     whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
     root `Directory.Build.props` (the kill bound: 60 seconds for a half with no run-settings file, two minutes for a Process half, which ends the

@@ -147,6 +147,7 @@
   "notifications.steward.reverse.hold": "暂停",
   "notifications.steward.reverse.retry": "重试",
   "notifications.steward.allowed": "由主管允许",
+  "notifications.standing.seen": "知道了",
   "notifications.helpPressed.label": "为你代按的操作",
   "notifications.helpPressed.line": "自 Daoris 启动以来，Ask Daoris 已在完全访问下为你直接执行 {{count}} 项操作，未经确认卡",
   "notifications.helpPressed.line_other": "自 Daoris 启动以来，Ask Daoris 已在完全访问下为你直接执行 {{count}} 项操作，未经确认卡",

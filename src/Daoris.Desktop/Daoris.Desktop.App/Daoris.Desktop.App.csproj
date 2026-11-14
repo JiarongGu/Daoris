@@ -57,6 +57,7 @@
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.DesktopStore.Sqlite\Daoris.Adapters.DesktopStore.Sqlite.csproj" />
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Git\Daoris.Adapters.Git.csproj" />
     <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.Machine\Daoris.Adapters.Machine.csproj" />
+    <ProjectReference Include="..\..\Daoris.Adapters\Daoris.Adapters.SshKeys\Daoris.Adapters.SshKeys.csproj" />
     <Using Include="Daoris.Ports.Browser" />
   </ItemGroup>
 

@@ -16,6 +16,25 @@ repository.
 - **Verification:** `desktop-publish-bin-order.test.ts` lays the doctrine tool and then the programs over a fixture install and finds
   the command, the three doors and the launcher; it failed (no `layBinPrograms`, the order living only in `main()`) and passes.
   The rehearsal's `cliProblems` already holds a publish's `app/bin/` to the command.
+## 2026-11-14 - The repository Workflow tab disappeared when Setup moved to Agents
+
+- **Root cause:** 6c58e81176 gated the repository's Workflow body and read on `setupLives`, coupling the workflow view to the
+  setting editor's move into Agents. 8e64299229 made that removal unconditional and replaced its page regression tests with an
+  assertion that no tab existed; 55993f37fe removed the page props, and 452795fc70 removed the tab from remembered choices.
+  The workspace tab remained wired, but its own-rules door went to Agents instead of the repository's Workflow tab.
+- **Fix:** restore the repository tab with the shared `WorkflowTab` and `useWorkflowTab`, its remembered choice, and the workspace's
+  repository-workflow door. Settings still open their place in Agents → Setup.
+- **Verification:** `ProjectsView.workflow.test.tsx` failed four cases before the fix, covering the repository read, refusal,
+  settings door and workspace-to-repository navigation; `ProjectPage.test.tsx` failed on the missing tab. The page tests also
+  cover reopening the remembered tab and keeping Current unread until Workflow opens. A disposable published install of
+  2c58aeb470 rendered both tabs with real driver answers; `tools/desktop.mjs` captured `wftab1-workspace.png` and
+  `wftab1-repository.png` under `_fixtures/desktop/screenshots/`.
+## 2026-11-14 - An update dropped the shell's start arguments and debug port
+
+- **Root cause:** ca177119be started the update launcher with only `--update --after <pid>`, discarding the shell's own start arguments before the launcher and swap could forward them.
+- **Fix:** the shell hands its `Main` arguments to `UpdateLauncher`, which appends each whole argument after the update controls.
+- **Verification:** `UpdateRelaunchGateTests` failed for two debug ports before forwarding was added; it also covers spaces, quotes, an empty argument and a start with no arguments.
+
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
 - **Symptom:** `daoris session say <id> "<several lines>"` delivered the first line and said nothing of the rest (a go for a production

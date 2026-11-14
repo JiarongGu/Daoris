@@ -140,7 +140,8 @@ public static class WorkflowOperations
     /// </summary>
     /// <exception cref="ChoiceWords">Naming why the source cannot be used.</exception>
     public static async Task<WorkflowVersionSource> SourceAsync(
-        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null)
+        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null,
+        string? plugin = null, string? pattern = null)
     {
         // Converting Current has one door, and it is not a copy made by hand.
         if (from.StartsWith("current:", StringComparison.Ordinal))
@@ -151,7 +152,7 @@ public static class WorkflowOperations
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
         {
             var name = $"{graphPreset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
-            return new($"the default `{shipped.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset)
+            return new($"the default `{shipped.Id}`", name, null, WorkflowDefaults.Variant(shipped, opinion, look, plugin, pattern), graphPreset)
             {
                 From = shipped.From,
             };
@@ -165,9 +166,26 @@ public static class WorkflowOperations
                 + $"{string.Join(", ", WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`"))}.");
         }
 
+        var (version, index) = CopiedVersion(found, wanted);
         // A copy of a list of steps would save one, and a list of steps is not saved.
-        _ = VersionOf(found, wanted);
-        throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
+        if (version.Graph is null) throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
+        var graph = (JsonObject)RawOf(found, index).DeepClone();
+        graph = opinion || look ? WorkflowPresets.WithGraphGates(graph, opinion, look) : graph;
+        var gates = $"{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
+        return new($"`{found.Id}` v{version.Version}", $"{found.Read.Name}{gates}", null, graph, null);
+    }
+
+    /// <summary>The version of a saved workflow a copy is made from (the newest where none is named) and its place among the file's versions.</summary>
+    /// <exception cref="ChoiceWords">Where the workflow or the version does not read, or the version is not kept.</exception>
+    private static (NamedVersion Version, int Index) CopiedVersion(WorkflowFileFound found, int? wanted)
+    {
+        if (found.Read.Problem is not null) throw new ChoiceWords($"`{found.Id}` cannot be read: {found.Read.Problem}", 1);
+        var versions = found.Read.Versions;
+        var index = wanted is null ? versions.Count - 1 : versions.ToList().FindIndex(each => each.Version == wanted);
+        if (index < 0) throw new ChoiceWords($"`{found.Id}` keeps no v{wanted} — it keeps {string.Join(", ", versions.Select(each => $"v{each.Version}"))}.");
+        var version = versions[index];
+        if (version.Steps is null && version.Graph is null) throw new ChoiceWords($"`{found.Id}` v{version.Version} cannot be read here: {version.Unrun}", 1);
+        return (version, index);
     }
 
     /// <summary>What <c>new --from current:&lt;repository&gt;</c> is told: the conversion is the one door for what a place follows under Current.</summary>
@@ -302,7 +320,7 @@ public static class WorkflowOperations
     public static async Task<WorkflowSaved> SaveAsync(
         DriverConfig choices, string home, RegistryRead registry, string id, string? from, JsonNode? steps, JsonNode? graph,
         bool opinion, bool look, string? name, string? @base, IReadOnlyCollection<string>? authorized, bool plan, string at, CancellationToken ct,
-        string? updates = null)
+        string? updates = null, string? plugin = null, string? pattern = null)
     {
         WorkflowSaved Refuse(string code, string message, IReadOnlyList<WorkflowScope>? scopes = null, IReadOnlyList<WorkflowReach>? reach = null, bool appended = false) =>
             new(id, false, code, message, null, false, appended, scopes ?? [], reach ?? []);
@@ -322,7 +340,7 @@ public static class WorkflowOperations
                 string made;
                 if (from is not null)
                 {
-                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct, id).ConfigureAwait(false);
+                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct, id, plugin, pattern).ConfigureAwait(false);
                     planned = PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph, source.From);
                     made = source.Description;
                 }

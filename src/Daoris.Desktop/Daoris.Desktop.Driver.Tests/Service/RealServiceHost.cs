@@ -22,12 +22,25 @@ internal sealed class RealServiceHost : IDisposable
     private readonly Process _process;
     private readonly Queue<string> _heard = new();
 
-    private RealServiceHost(Process process, string url, string home)
+    private readonly ProcessJob _job;
+    private readonly string _records;
+    private readonly int _id;
+
+    private RealServiceHost(Process process, string url, string home, ProcessJob job, string records)
     {
         _process = process;
+        _job = job;
+        _records = records;
+        _id = process.Id;
         Url = url;
         Home = home;
     }
+
+    /// <summary>Whether the host is held in a job that ends it with this process: false where the system made none.</summary>
+    internal bool Held => _job.Holds;
+
+    /// <summary>The host's process id.</summary>
+    internal int Id => _id;
 
     public string Url { get; }
 
@@ -36,6 +49,7 @@ internal sealed class RealServiceHost : IDisposable
 
     private static readonly SemaphoreSlim Building = new(1, 1);
     private static string? _built;
+    private static string? _recordsFolder;
 
     /// <summary>
     /// This suite's own copy of the host, built on first use and kept for the run (KEEPSIZE1b3). The test project does not reference the
@@ -57,6 +71,9 @@ internal sealed class RealServiceHost : IDisposable
             var tests = build.Parent.Parent!.Parent!;
             var project = Path.Combine(tests.Parent!.Parent!.FullName, "Daoris.Service", "Daoris.Service.Http", "Daoris.Service.Http.csproj");
             var artifacts = Path.Combine(tests.FullName, "obj", "service-host");
+
+            ServiceHostRecords.Reap(ServiceHostRecords.FolderOf(artifacts));
+            _recordsFolder = ServiceHostRecords.FolderOf(artifacts);
             await BuildAsync(project, configuration, artifacts);
 
             var bin = Path.Combine(artifacts, "bin");
@@ -167,7 +184,10 @@ internal sealed class RealServiceHost : IDisposable
         info.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         info.Environment["ASPNETCORE_URLS"] = url;
 
-        var host = new RealServiceHost(Process.Start(info)!, url, home);
+        var child = Process.Start(info)!;
+        var job = ProcessJob.Hold(child);
+        ServiceHostRecords.Record(_recordsFolder!, child);
+        var host = new RealServiceHost(child, url, home, job, _recordsFolder!);
         host._process.OutputDataReceived += (_, line) => host.Hear("out", line.Data);
         host._process.ErrorDataReceived += (_, line) => host.Hear("err", line.Data);
         host._process.BeginOutputReadLine();
@@ -233,5 +253,7 @@ internal sealed class RealServiceHost : IDisposable
         }
 
         _process.Dispose();
+        _job.Dispose();
+        ServiceHostRecords.Forget(_records, _id);
     }
 }

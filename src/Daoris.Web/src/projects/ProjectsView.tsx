@@ -9,6 +9,8 @@ import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './Pro
 import { projectsItem, workspaceItem } from '../app/opener';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
+import { WorkflowTab } from '../workflow/WorkflowTab';
+import { useWorkflowTab } from './useWorkflowTab';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import { RepositoryFiles } from './files/RepositoryFiles';
@@ -44,8 +46,7 @@ export const unguardedSystems = (plugins: readonly PluginEntry[]): ReadonlySet<s
  * while it is in front. Every query it holds the frame already holds, so holding it everywhere asks nothing more.
  *
  * **What it remembers is its list's** (`listPanes.ts`): the chosen repository, by name, which a door into the view
- * names through the opener; and its page's tab, Details, Branches, History, Workflow or Setup, one for the view,
- * which its holder keeps so a door can open a repository at Setup.
+ * names through the opener; and its page's tab, one for the view, which its holder keeps so a door can open a repository at Workflow.
  *
  * **Git is inside Repositories**: a repository's Branches and History are parts of their own
  * (`RepositoryGitView`), handed to its page and drawn only while their tab shows, so Git's reads are asked only then. A
@@ -172,6 +173,12 @@ export function useProjectsView({
   useErrorNotify(active ? registry.error ?? repositories.error ?? driver.error : null, notify);
 
   const attached = driver.data !== undefined;
+  const workflowOf = useWorkflowTab({
+    repository: chosenRepository,
+    enabled: active && attached && tab === 'workflow' && chosenRepository !== null,
+    ready: attached,
+    notify,
+  });
   // An open drawer, and the workspace a go filled it with; the list's own doors fill none.
   const [adding, setAdding] = useState<{ workspace?: string } | null>(null);
   useEffect(() => {
@@ -248,9 +255,7 @@ export function useProjectsView({
           asked={workspaceSection}
           notify={notify}
           onOpenRepository={onChoose}
-          // A repository that sets rules of its own opens at its own workflow.
-          // That is the repository's place: the application opens it, as it does for a Setup door.
-          onOpenRepositoryWorkflow={(repository) => onOpenSetup?.(repository)}
+          onOpenRepositoryWorkflow={(repository) => { choose(repository); onTab?.('workflow'); }}
           // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches.
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
@@ -302,6 +307,16 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
+          workflow={attached ? (
+            <WorkflowTab
+              page="repository"
+              name={shown.repository}
+              {...workflowOf(shown, (workspace) => ({
+                setup: onOpenSetup ? () => onOpenSetup(shown.repository) : undefined,
+                workspaceSetup: onOpenWorkspaceSetup ? () => onOpenWorkspaceSetup(workspace, 'defaults') : undefined,
+              }))}
+            />
+          ) : undefined}
           excludes={attached && isFolder(shown) ? (
             <FolderExcludesSection
               registration={shown}

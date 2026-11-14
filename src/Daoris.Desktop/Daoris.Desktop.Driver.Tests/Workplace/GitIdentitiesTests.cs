@@ -193,8 +193,8 @@ public sealed class GitIdentitiesTests : IDisposable
     public static TheoryData<string, string> Refused => new()
     {
         { OpenSshKey(Ed25519, "aes256-ctr"), "import-passphrase" },
-        { Pem("RSA PRIVATE KEY", "Proc-Type: 4,ENCRYPTED\nAAAA"), "import-passphrase" },
-        { Pem("ENCRYPTED PRIVATE KEY", "AAAA"), "import-passphrase" },
+        { Pem("RSA PRIVATE KEY", "Proc-Type: 4,ENCRYPTED\nAAAA"), "import-format" },
+        { Pem("ENCRYPTED PRIVATE KEY", "AAAA"), "import-format" },
         { Pem("RSA PRIVATE KEY", "AAAA"), "import-format" },
         { "PuTTY-User-Key-File-3: ssh-ed25519\n", "import-format" },
         { "hello", "import-format" },
@@ -203,7 +203,7 @@ public sealed class GitIdentitiesTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Refused))]
-    public void An_import_refuses_a_key_with_a_passphrase_or_in_another_format(string text, string code)
+    public void The_OpenSSH_envelope_reader_refuses_encryption_and_other_formats(string text, string code)
     {
         var (blob, problem) = GitKeys.ReadPrivate(text);
 
@@ -217,7 +217,7 @@ public sealed class GitIdentitiesTests : IDisposable
         var file = Path.Combine(_root, "mine");
         File.WriteAllText(file, OpenSshKey(Ed25519));
 
-        var read = GitKeys.ReadImport(file, "Work");
+        var read = GitKeyImport.Read(file, "Work");
 
         Assert.Equal(("ed25519", Ed25519Print), (read.Type, read.Fingerprint));
         Assert.Equal(Ed25519.Replace(" fixture", " Work"), read.PublicLine);
@@ -227,8 +227,8 @@ public sealed class GitIdentitiesTests : IDisposable
     [Fact]
     public void An_import_names_its_file_by_a_whole_path_that_is_there()
     {
-        Assert.Contains("import-path", Assert.Throws<DriverException>(() => GitKeys.ReadImport("key", "W")).Message);
-        Assert.Contains("import-missing", Assert.Throws<DriverException>(() => GitKeys.ReadImport(Path.Combine(_root, "none"), "W")).Message);
+        Assert.Contains("import-path", Assert.Throws<DriverException>(() => GitKeyImport.Read("key", "W")).Message);
+        Assert.Contains("import-missing", Assert.Throws<DriverException>(() => GitKeyImport.Read(Path.Combine(_root, "none"), "W")).Message);
     }
 
     [Fact]

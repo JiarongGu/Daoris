@@ -1,10 +1,11 @@
-import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
 import { clockOf } from '../locales/format';
 import { routeKey } from '../person/Confirmations';
 import { TERMINAL_TARGET_SCOPES, type TerminalActsNow, type TerminalPress, tierSetWords } from '../person/terminalActs';
 import type { TerminalTier } from '../settings/machine/TerminalTierSetting';
+import { StandingNote } from './StandingNote';
+import { isNewSince, markOf, newestOf } from './standingSeen';
 
 /** One press's line: its act in the window's words, what it named as a door to it, the command it is, its admission and its end. */
 function PressLine({ press, onOpen }: { press: TerminalPress; onOpen: (press: TerminalPress) => void }) {
@@ -28,53 +29,52 @@ function PressLine({ press, onOpen }: { press: TerminalPress; onOpen: (press: Te
 }
 
 /**
- * The terminal's tier in *Notifications*, beside what Ask Daoris pressed: while a press from a terminal on this machine runs at once as
- * the person's with no card (`act`), it says so, who turned it on and when (from the tier's record; a tier no change of the record set
- * is said as set outside Daoris), and offers *Back to ask* in one press. Under it, each press a terminal made under act, newest first,
- * kept across a restart: its act, what it named as a door to it, the command it is, its admission and its end (not done
- * with its code, its end not known, or interrupted by a stop). Under `ask` the line stays while the record holds presses, saying who
- * set it back. A line, not a row: it counts toward no group and never the bell.
+ * The terminal's tier as one compact line beside what Ask Daoris pressed: under `act` it says a terminal's press runs as the
+ * person's with no card, counts what a terminal pressed and offers *Back to ask* and *Got it*. *Show* opens who turned the tier on
+ * and when (a tier no change set is said as set outside Daoris) and each press newest first, kept across a restart. Under `ask` the
+ * line stays while the record holds presses. Drawn only for a change or press newer than `since`, the person's last *Got it*.
+ * A line, not a row: it counts toward no group and never the bell.
  *
- * A molecule: drawn from props; the application holds the tier and the record.
+ * A molecule: drawn from props; the application holds the tier, the record and the mark.
  */
-export function TerminalTierLine({ tier, acts, busy = false, onBackToAsk, onOpen, defaultOpen = false }: {
+export function TerminalTierLine({ tier, acts, since = null, busy = false, onBackToAsk, onSeen, onOpen, defaultOpen = false }: {
   tier: TerminalTier | null;
   acts: TerminalActsNow;
+  since?: string | null;
   busy?: boolean;
   /** The person's press setting the tier back to ask. */
   onBackToAsk: () => void;
+  onSeen?: (mark: string) => void;
   /** Opens what the press named. */
   onOpen: (press: TerminalPress) => void;
   defaultOpen?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(defaultOpen);
-  const id = useId();
   const acting = tier === 'act';
   if (!acting && acts.presses.length === 0) return null;
+  const newest = newestOf([...acts.changes.map((each) => each.at), ...acts.presses.map((each) => each.at)]);
+  if (!isNewSince(newest, since)) return null;
   const set = tierSetWords(t, i18n.language, acting, acts.changes);
   return (
-    <section data-terminal-tier-line="" aria-label={t('notifications.terminalTier.label')} className="grid gap-2 rounded-control border border-line border-l-[3px] border-l-warn bg-sunken px-3 py-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="grid min-w-0 gap-0.5">
-          <p className="m-0 min-w-0 text-small text-ink">{t(acting ? 'notifications.terminalTier.act' : 'notifications.terminalTier.ask')}</p>
-          {set && <p className="m-0 min-w-0 text-small text-ink-soft">{set}</p>}
-          {acts.presses.length > 0 && <p className="m-0 min-w-0 text-small text-ink-soft">{t('notifications.terminalTier.count', { count: acts.presses.length })}</p>}
-        </div>
-        <span className="flex flex-wrap items-center gap-1">
-          {acting && <Button disabled={busy} onClick={onBackToAsk}>{t('notifications.terminalTier.back')}</Button>}
-          {acts.presses.length > 0 && (
-            <Button variant="ghost" aria-expanded={open} aria-controls={`${id}-presses`} onClick={() => setOpen((was) => !was)}>
-              {t(open ? 'notifications.terminalTier.hide' : 'notifications.terminalTier.show')}
-            </Button>
-          )}
-        </span>
-      </div>
-      {open && acts.presses.length > 0 && (
-        <ul id={`${id}-presses`} aria-label={t('notifications.terminalTier.list')} className="m-0 grid list-none gap-1 p-0">
+    <StandingNote
+      dataAttribute="data-terminal-tier-line"
+      label={t('notifications.terminalTier.label')}
+      words={[
+        t(acting ? 'notifications.terminalTier.act' : 'notifications.terminalTier.ask'),
+        ...(acts.presses.length > 0 ? [t('notifications.terminalTier.count', { count: acts.presses.length })] : []),
+      ]}
+      actions={acting ? <Button disabled={busy} onClick={onBackToAsk}>{t('notifications.terminalTier.back')}</Button> : null}
+      show={t('notifications.terminalTier.show')}
+      hide={t('notifications.terminalTier.hide')}
+      {...(onSeen ? { onSeen: () => onSeen(markOf(newest)) } : {})}
+      defaultOpen={defaultOpen}
+    >
+      {set && <p className="m-0 min-w-0 text-small text-ink-soft">{set}</p>}
+      {acts.presses.length > 0 && (
+        <ul aria-label={t('notifications.terminalTier.list')} className="m-0 grid list-none gap-1 p-0">
           {acts.presses.map((each) => <PressLine key={each.id} press={each} onOpen={onOpen} />)}
         </ul>
       )}
-    </section>
+    </StandingNote>
   );
 }

@@ -87,6 +87,19 @@ public sealed class SetupPresetsTests
     }
 
     [Fact]
+    public void A_copy_updated_to_a_newer_default_keeps_the_plugin_its_place_named()
+    {
+        var shipped = WorkflowDefaults.Of("pull-request")!;
+        var copy = NodeGraphs.Read(WorkflowDefaults.Variant(shipped, opinion: false, look: false, Plugin, "work/{ticket}").ToJsonString()).Graph!;
+
+        var newer = WorkflowDefaults.NewerThan(new WorkflowFrom(shipped.Id, "an-older-digest"), copy)!;
+
+        var kinds = newer.Graph["nodes"]!.AsArray().Select(node => (string?)node!["kind"]).ToList();
+        Assert.Contains($"{Plugin}/pull-request", kinds);
+        Assert.DoesNotContain("daoris-github/pull-request", kinds);
+    }
+
+    [Fact]
     public void A_land_left_open_resolves_from_derived_defaults_and_never_from_a_rule()
     {
         var land = NodeGraphs.Read(WorkflowDefaults.Of("pull-request")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land);

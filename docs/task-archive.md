@@ -3,11 +3,38 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
+
 ---
 
+## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
+
+> **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).
+>
+> **PROCLEAK1** (driver): Outcome: a session's tracking ending while its launcher still ran left the launcher's job, and the grandchildren in it, alive; the end now opens and ends the job (`SessionTreeReap`) and the machine log's `session.reaped` carries the count, one way for the launcher and the direct start; proved by `SessionTreeEndProcessTests` (a detached grandchild after exit, untracking and stop, with and without the launcher).
+
+---
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
 
 > **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.
+## WFTAB1 — workspace and repository Workflow tabs (2026-11-14)
+
+> Outcome: both pages show Workflow, the workspace's own-rules door opens the repository tab, and settings stay in Agents → Setup; failing-first page tests and disposable installed-window proof cover the restoration in 2c58aeb470 (`docs/FIX-LOG.md`).
+## KEYPICK1 — the SSH key import opens a key picker (2026-11-14)
+
+> **KEYPICK1** (app, modules, web): Outcome: `PickFile` takes a `PickKind` (program, key, file) and `PickDialogs` is the one place that says each kind's title and filters: a program opens on *Programs* then all files, a key on its usual names (`*.pem`, `*.ppk`, `*.key`, `id_ed25519`, `id_ecdsa`, `id_rsa`, `id_dsa`) then all files, a file on all files; `TOOLS_PICK` carries `kind` (none is a program), the key import's *Browse…* asks for a key and a tool's for a program, and a test holds each kind's dialog, the route's kind and the page's press.
+## WFNEW1 — `workflow new <id> --from <id>@<v>` saves the copy (2026-11-14)
+
+> **WFNEW1** (driver): Outcome: `WorkflowOperations.SourceAsync` read a saved source only to refuse it (a graph version got the "holds no steps" words that point at `export`); a saved graph version, the newest where none is named, is now copied whole into the new workflow (`--with-opinion`, `--with-look` and `--name` apply, `--plan` saves nothing), while a version of steps, an unkept version and an id already saved are still named and write nothing. Tests: `WorkflowCopyOfSavedTests`.
+## RELAUNCHPORT1 — update relaunch keeps its debug port (2026-11-14)
+
+> **RELAUNCHPORT1**: Outcome: self-update carries the shell's start arguments through the launcher; `UpdateRelaunchGateTests` covers configured debug ports and a start without one (install-home-update.md, rule 42).
+## BANNERS1 — the standing banners take one compact line (2026-11-14)
+
+> **BANNERS1** (web): Outcome: *the terminal's presses run as yours* and *Ask Daoris pressed N acts for you in full access* are each one compact line (`StandingNote`: the words, *Back to ask*, *Show*, *Got it*) in English and 中文, with who turned the tier on and the presses behind *Show*; a line is drawn only for a change or press newer than the person's last *Got it*, kept in this browser (`standingSeen`), and `StandingNotes.test.tsx` holds the page tests.
+## INSTALLCHECK1 — the check node runs the repository's reached runner (2026-11-14)
+
+> **INSTALLCHECK1** (driver, tools): Outcome: a declaration's `reached` entry (`daoris.gates.json`: command with `{base}`, `clock`, outcome marker) makes a verification check with a base run `node tools/reached-checks.mjs --base <base>` in its tree instead of the whole gates, reading pass, red classes and flakes into the result's why under the step's one admission place; a declaration with none runs its gates.
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
@@ -24616,3 +24643,5 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **WALKGIT1 — the tree walks start git once for what they read once** (driver; found by STARTPERF1 2026-11-14): 2026-11-14 a tree the line holds by content is walked in 5 starts, not 8 (its kept read after an edit asks 1 `status`, not 2): the walk takes head and branch from the tree's files, asks `status` once (the proof's, where the tree is held) and keeps the declared output its proof read instead of reading it again (`TreeWalkStartsTests`); its `rev-parse` of the recovery ref is `GitLibraryVerify`'s, in process; left out: the walk's remaining object read, one `cat-file --batch` for the declaration. → `docs/areas/git-and-remotes.md`
 - [x] **FLAKY1 — four classes that fail under load and pass alone** (driver, modules): 2026-11-14 each fixed at its cause: `DriverModuleChannelTests` counted requests while a held read (100 ms patience, answered pending on a loaded pool) was still making them, so its module waits on the work; `ChatRoutingProcessTests` read the stand-in agent's file with a lock that denied the agent's append, losing its note or throwing, so the read shares for writing; `LookAccountTests` bound a look in milliseconds, now in shares of the look and of the first look; `GitLibraryRefsTests` asserted the process-wide open count, now `GitLibrary.OpenIn(folder)`, the repositories a folder's asker owns.
 - [x] **SERVICEWAIT1 — the service's index read beside its re-read** (service): 2026-11-14 the knowledge index lives on its own SQLite connection and gate, so reads no longer wait behind its re-read (`IndexWriteBesideReadsTests`).
+- [x] **PRPRESET1 — the pull-request preset saves the platform plugin's step** (driver): 2026-11-14 the saved copy of the `pull-request` default names the plugin `SetupPresets.PluginFor` found (any platform), keeps the branch pattern the place's followed workflow writes, and a plan of several repositories reads one set of workflows so one copy is saved per distinct plugin and pattern; `WorkflowDefaults.Variant` is the one graph a copy is made, looked up and updated by, tested per platform (github, gitlab, azure, bitbucket).
+- [x] **CHECKLOCK1 — a check Daoris could not run is never the session's failure** (driver): 2026-11-14 a second Daoris process re-queued the running check of the first and opened its log (`FileShare.Read` refused it), failing every gate in seconds, and each was said to the finished session as a red; now one broker seat per home (`CheckFiles.TakeSeat`) holds the run, logs open only through `CheckFiles`, and a check Daoris could not run ends `errored`, is said in the run's log, never to the session, and is asked again after a minute (`CheckBrokerErrorTests`). Not covered: a failed verdict reopening a session whose quest is `Done` tells the person nothing. → `docs/areas/driving.md` rule 40a

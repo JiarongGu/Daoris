@@ -174,8 +174,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     for its build until the person's next word, from the banner, Settings or the terminal, which checks again. (from D139, D215)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the
     next start. (from D139)
-42. The application starts `Daoris.exe --update --after <pid>` and closes. The launcher waits up to three minutes for it and
-    for everything running from `app/`. (from D139)
+42. The application starts `Daoris.exe --update --after <pid>` followed by its own start arguments, keeping any debug port
+    through the swap and restart, and closes. The launcher waits up to three minutes for it and for everything running
+    from `app/`. (from D139)
 43. The launcher swaps only while nothing runs from `app/` and under the home's lease; held, it replaces nothing and says
     who held it. It checks the build again, moves `app/`, `Daoris.exe` and `INSTALLED.md` into `update/previous/`, then the
     staged three into place, journalling each move in `update/swap.json` before making it. (from D139, D171)

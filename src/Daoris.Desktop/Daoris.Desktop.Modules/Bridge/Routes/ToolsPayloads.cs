@@ -27,7 +27,7 @@ public sealed record ToolsGitSetPress(string Key, string? Value);
 /// </summary>
 public sealed record GitIdentityPress(
     string Action, string? Identity, string? Host, string? Label, string? Name, string? Email, string? Import, string? User, string? Token,
-    string? Repository, string? Trust, bool Rsa = false, bool Clear = false, bool On = false, string? Kind = null);
+    string? Repository, string? Trust, bool Rsa = false, bool Clear = false, bool On = false, string? Kind = null, string? Passphrase = null);
 
 /// <summary>One pointer written into the choices of a repository's remote, a workspace's host or the machine's host.</summary>
 public sealed record GitUsePress(string Scope, string? Repository, string? Workspace, string? Remote, string? Host, string? Value);
@@ -38,5 +38,5 @@ public sealed record GitAnswerPress(string? Ask, string? Answer);
 /// <summary>Which git a tool is set to: <c>Way</c> is system, managed or file, and each reads the fields it names.</summary>
 public sealed record ToolsGitPress(string Way, string? Version, string? File);
 
-/// <summary>The file picker; <c>Title</c> is what it is shown with.</summary>
-public sealed record ToolsPickRead(string? Title);
+/// <summary>The file picker; <c>Title</c> is what it is shown with, <c>Kind</c> is <c>program</c>, <c>key</c> or <c>file</c> (none is a program).</summary>
+public sealed record ToolsPickRead(string? Title, string? Kind = null);

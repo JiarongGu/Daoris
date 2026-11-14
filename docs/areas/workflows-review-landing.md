@@ -64,12 +64,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a
    pull request's Daoris half) run in a repository alone, `isolate` in a repository or a folder, `return` in a folder, `apply` in a
    system, the rest anywhere. *Work in place* (`in-place`) holds no git kind, and the window's add chooses it for a folder, a
-   system and a repository the person ticks (`daoris place <department> --preset in-place --apply`). (D221, D227, D264, D265)
+   system and a repository the person ticks (`daoris place <department> --preset in-place --apply`). The *A pull request* preset's
+   saved copy names the plugin `SetupPresets.PluginFor` finds for the remote's platform in place of the default's own step, and keeps
+   the branch pattern the place's followed workflow writes; one plan reads one set of workflows, so repositories that want the same
+   copy share the one saved and each that differs gets its own id. (D221, D227, D264, D265)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (D157)
 7. Only graphs are saved, and only a graph version binds and runs. The one save judge refuses steps (`steps-refused`), a `land`
    with no method (`land-method`), an `accept` option (`accept`), and a kind, port or outcome declared arriving
-   (`arriving-kind`). (D227, D232)
+   (`arriving-kind`). (D227, D232) `workflow new <id> --from <default>|<id>[@<version>]` saves a copy: a saved graph version
+   (the newest where none is named) is copied whole under the new id, and a version of steps, an unkept version or an id already
+   saved is named and writes nothing.
 8. A graph holds at most 24 authored nodes, 96 wires and one `land`. The steps writing the work (`land`, `return`, `apply`) come
    after the `review` where there is one, on every way (`review-order`), each fed the last review's record on its way
    (`review-ambiguous` where two feed one). A graph ends at any node no such step lies past (`effect-past-end`); a development
@@ -301,7 +306,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a hand-back's checks are chosen by `GateReach`,
-    the declared gates' reach, as a landing's are. (D192)
+    the declared gates' reach, as a landing's are. (D192) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
+    gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
+    under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
+    exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`).
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
@@ -386,7 +396,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.
-59. Setup is the Agents place's default. A workspace's page has Details, Branches and Workflow tabs; its setup is its place's
+59. Setup is the Agents place's default. Workspace and repository pages in Repositories each have a Workflow tab, reading Current
+    only while open; a workspace's own-rules door opens the repository's Workflow tab. Settings doors open the place in Agents → Setup
     (defaults under Workflow, access and Reach under Sessions).
 
 ## Where a change goes

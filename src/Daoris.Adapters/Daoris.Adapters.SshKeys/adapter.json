@@ -1,0 +1,7 @@
+{
+  "suite": "adapters-ssh-keys",
+  "tests": "src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests",
+  "contract": ["src/Daoris.Testing/Git"],
+  "ports": ["Git"],
+  "outside": []
+}

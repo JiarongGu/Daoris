@@ -127,7 +127,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
         var first = run.Stdout.Trim().Split('\n')[0].Trim();
         return run.ExitCode == 0 && first.Length > 0
-            ? (first, null)
+            ? (VersionWord(first), null)
             : (null, first.Length > 0 ? first : run.Stderr.Trim().Split('\n')[0].Trim());
     }
+
+    internal static string VersionWord(string first) => first.Split(' ', 2)[0];
 }

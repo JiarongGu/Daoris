@@ -119,6 +119,11 @@ greeting and a host key is trusted only at your press; `git use <repository> <id
 are left out until their measurements pass on an install; until then a remote keeps your own git as it was.
 `docs/archive/2026-09-22-toolchain-design.md` is the contract.
 
+`git identity add-ssh <host> --label <label> --import <file>` also reads PuTTY v2/v3 and PEM RSA, EC and PKCS#8 keys.
+For an encrypted PuTTY or PEM key, supply its passphrase once on standard input with `--passphrase-stdin`, or enter it in
+Settings → Git. The import says before writing that it saves an unencrypted OpenSSH copy in Daoris's private folder, leaves
+your original unchanged and saves no passphrase.
+
 **`repository connect`, `repository retire` and `repository import` are management commands** — opt-in, they talk to a
 service, and no gate ever runs them; `brainstorm` too, to this machine's own service only. Every group the desktop's program
 runs is management (`remote`, `agent`, `place`, `settings`, `plugin`, `browser` and `tool` among them); they edit files under

@@ -389,6 +389,16 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains(said, Find(plan, SetupRefusals.NoTool).Sentence);
     }
 
+    [Theory]
+    [InlineData("0.0.1 (build 20261114T021120Z-1ba234ed, commit ff9e465b21)", "0.0.1")]
+    [InlineData("0.0.1", "0.0.1")]
+    [InlineData("v24.19.0", "v24.19.0")]
+    public void A_version_said_with_its_build_stamp_is_read_as_its_version(string first, string version)
+    {
+        Assert.Equal(version, SetupWorld.VersionWord(first));
+        Assert.True(SetupPressRules.IsVersion(SetupWorld.VersionWord("0.0.1 (build x, commit y)")));
+    }
+
     [Fact]
     public async Task No_node_refuses_once_and_the_bundle_is_not_judged_by_an_unasked_version()
     {

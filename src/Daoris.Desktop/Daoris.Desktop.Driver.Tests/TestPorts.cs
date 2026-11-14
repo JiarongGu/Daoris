@@ -35,6 +35,7 @@ internal static class TestPorts
         StartPolicy = GitStartAdmission.Admit,
         Seal = ScriptedSeal.Port,
         Git = Git,
+        SshKeys = SshKeys.Convert,
     });
 
     /// <summary>The machine's host over the scripted places, whose starts are made by the stand-in a flow chose (<see cref="ProcessStarts.Within"/>) and else by the runtime.</summary>
@@ -47,6 +48,7 @@ internal static class TestPorts
         }) { Timed = ProcessStarts.Told };
 
     internal static FlowGit Git { get; } = new(new Daoris.Adapters.Git.GitProcessRuns(Host, GitRunPolicy.Shared));
+    internal static ScriptedSshKeys SshKeys { get; } = new();
 
     private static DateTimeOffset Created()
     {

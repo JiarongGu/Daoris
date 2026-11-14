@@ -37,4 +37,5 @@ public sealed record PortSet
     public StartPolicy? StartPolicy { get; init; }
 
     public SecretSeal? Seal { get; init; }
+    public SshKeyConverter? SshKeys { get; init; }
 }

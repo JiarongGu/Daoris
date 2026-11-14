@@ -275,7 +275,7 @@ public sealed class ToolsRoutes(DriverContext context)
             case "add-ssh":
             {
                 var identity = await GitIdentityActs.AddSshAsync(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.Name,
-                    press.Email, press.Import, press.Rsa, cancellationToken).ConfigureAwait(false);
+                    press.Email, press.Import, press.Rsa, cancellationToken, press.Passphrase).ConfigureAwait(false);
                 GitHolds.LiftAll(home);
                 return GitAdded(home, identity);
             }
@@ -503,7 +503,7 @@ public sealed class ToolsRoutes(DriverContext context)
     private async Task<object?> ToolsPickAsync(ToolsPickRead press, CancellationToken cancellationToken) =>
         _pickFile is null
             ? new { Can = false, File = (string?)null }
-            : new { Can = true, File = await _pickFile(press.Title) };
+            : new { Can = true, File = await _pickFile(PickDialogs.Kind(press.Kind), press.Title) };
 
     /// <summary>
     /// A download or a use, started through the driver's actions and answered once it has started; a version

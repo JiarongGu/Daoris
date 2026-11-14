@@ -66,6 +66,17 @@
       "suite": "adapters-memory-lyntai",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
       "passed": "2026-11-13T01:01:03.665Z"
+    },
+    "Daoris.Adapters.SshKeys": {
+      "fingerprint": "ec01ae12e26869b854c5f86d14eabb4a663ab656ca3b5f98fb6c082648759794",
+      "tree": "e9128e8c47e1dbac37ef48c3ad7d4eaaf5de1480",
+      "ports": {
+        "Git": "0268908d7e7b322ccc60f58f03b2efe1078ae924"
+      },
+      "outside": {},
+      "suite": "adapters-ssh-keys",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-14T02:06:20.643Z"
     }
   }
 }

@@ -62,6 +62,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchHome.cs" Link="BenchHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchDoors.cs" Link="BenchDoors.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\RealServiceHost.cs" Link="RealServiceHost.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\ServiceHostRecords.cs" Link="ServiceHostRecords.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\WorkspaceRoot.cs" Link="WorkspaceRoot.cs" />
     <!-- The scan of every console start's window (CONSOLEWINDOWS1), with the named exemptions, held once. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\NoConsoleStarts.cs" Link="NoConsoleStarts.cs" />

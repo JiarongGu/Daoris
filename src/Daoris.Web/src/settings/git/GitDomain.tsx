@@ -41,6 +41,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
           action: 'add-ssh', host: input.host, label: input.label,
           ...(input.name ? { name: input.name, email: input.email } : {}),
           ...(input.importFile ? { import: input.importFile } : {}),
+          ...(input.passphrase ? { passphrase: input.passphrase } : {}),
           ...(input.rsa ? { rsa: true } : {}),
         })
         : await identity.mutateAsync({
@@ -74,7 +75,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
   if (!page) return null;
 
   const wayToday = page.identities.at(-1)?.way ?? 'ssh';
-  const browse = () => pick.mutateAsync(t('settings.git.pickTitle'), { onError: failed }).then((answer) => {
+  const browse = () => pick.mutateAsync({ title: t('settings.git.pickTitle'), kind: 'key' }, { onError: failed }).then((answer) => {
     if (!answer.can) {
       notify(t('settings.git.noPicker'), 'error');
       return null;

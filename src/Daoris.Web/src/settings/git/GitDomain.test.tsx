@@ -25,6 +25,7 @@ const answers: Record<string, (payload: Payload) => unknown> = {
     ? { identity: 'gi-00000000000d', label: payload.label, host: payload.host, way: 'ssh', publicKey: 'ssh-ed25519 AAAAExample daoris' }
     : { identity: payload?.identity },
   GIT_USE: (payload) => ({ scope: payload?.scope }),
+  TOOLS_PICK: () => ({ can: true, file: 'C:/Users/me/.ssh/id_ed25519' }),
 };
 
 const calls = (type: string) => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === type);
@@ -68,6 +69,33 @@ describe('the git domain', () => {
     }));
     expect(await screen.findByText('Side is added')).toBeInTheDocument();
     expect(screen.getByText('ssh-ed25519 AAAAExample daoris')).toBeInTheDocument();
+  });
+
+  it('browses for the key to import as a key file, and fills the path it answers', async () => {
+    show(<SettingsView notify={() => {}} section="git" />);
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Add a git identity…' }))[0]!);
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Import a key…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Browse…' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose the key file', kind: 'key' }, timeoutMs: Infinity }));
+    expect(await screen.findByDisplayValue('C:/Users/me/.ssh/id_ed25519')).toBeInTheDocument();
+  });
+
+  it('hands an import passphrase to the local bridge only after confirmation', async () => {
+    show(<SettingsView notify={() => {}} section="git" gitHost="github.com" />);
+    await userEvent.type(await screen.findByLabelText('A name for this identity'), 'Import');
+    await userEvent.click(screen.getByRole('radio', { name: 'Import a key…' }));
+    await userEvent.type(screen.getByLabelText('The key file to import'), 'X:/keys/source.ppk');
+    await userEvent.type(screen.getByLabelText('Key passphrase (if encrypted)'), 'one passphrase');
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(calls('GIT_IDENTITY')).toHaveLength(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Import this key' }));
+    await waitFor(() => expect(calls('GIT_IDENTITY')[0]?.[2]).toEqual({ payload: {
+      action: 'add-ssh', host: 'github.com', label: 'Import', import: 'X:/keys/source.ppk', passphrase: 'one passphrase',
+    } }));
+    expect(serviceCalls()).toEqual([]);
   });
 
   // A held remote's door opens Settings → Git with its add form on the remote's host, and tells the door when it closes.

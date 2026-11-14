@@ -218,7 +218,7 @@ public static class GitHosts
 /// An SSH identity's key folder: <c>profiles/git/keys/&lt;id&gt;/</c>, made with
 /// its access limited to the person's Windows account (inherited entries removed; SYSTEM and Administrators keep their implicit
 /// reach) <b>before</b> a key byte is written into it, by generation or import. The public key read and its fingerprint computed
-/// here; the private key is never read but by <see cref="Import"/>, from the one file the person names.
+/// here; an import reads only the one file the person names.
 /// </summary>
 public static class GitKeys
 {
@@ -313,50 +313,17 @@ public static class GitKeys
         return bits;
     }
 
-    /// <summary>What an import read from the file the person named: the key's bytes, its public line, type and fingerprint.</summary>
-    public sealed record ImportRead(byte[] Bytes, string PublicLine, string Type, string Fingerprint);
-
-    /// <summary>
-    /// Read the one key file the person named for an import, the one read of the person's own: an OpenSSH private key with
-    /// no passphrase. Refused with one line naming why: no such file, too large, encrypted, another format.
-    /// </summary>
-    /// <exception cref="DriverException">The file is not a key Daoris can use.</exception>
-    public static ImportRead ReadImport(string file, string label)
-    {
-        if (!Path.IsPathFullyQualified(file)) throw new DriverException($"git: name the key file by its whole path (import-path)");
-        var info = new FileInfo(file);
-        if (!info.Exists) throw new DriverException($"git: no file at {file} (import-missing)");
-        if (info.Length > ImportLimit) throw new DriverException($"git: {file} is larger than a private key (import-format)");
-        var bytes = File.ReadAllBytes(file); // read-shares: the key file the person names to import, never one Daoris moves into place
-        var (publicBlob, problem) = ReadPrivate(Encoding.ASCII.GetString(bytes));
-        if (problem is not null) throw new DriverException($"git: {problem}");
-        var described = Describe(publicBlob!) ?? throw new DriverException("git: the key's type is not one ssh hosts take: ed25519, RSA or ECDSA (import-format)");
-        var comment = new string(label.Where(ch => !char.IsControl(ch)).ToArray()).Trim();
-        var line = $"{Encoding.ASCII.GetString(new SshReader(publicBlob!).String()!)} {Convert.ToBase64String(publicBlob!)}"
-            + (comment.Length > 0 ? " " + comment : "");
-        return new ImportRead(bytes, line, described.Type, described.Fingerprint);
-    }
-
-    /// <summary>
-    /// The public key blob of an OpenSSH private key's text, or the reason it is not one Daoris takes (a passphrase, PEM, PuTTY).
-    /// Reads the file's head and its public part alone: the private part is never decoded.
-    /// </summary>
+    /// <summary>Reads an unencrypted OpenSSH envelope's public blob without decoding its private part.</summary>
     public static (byte[]? PublicBlob, string? Problem) ReadPrivate(string text)
     {
         // Joined at run time: the sensitive scan refuses a key block's two lines standing together in a source.
         var opening = string.Concat("-----", "BEGIN OPENSSH PRIVATE KEY-----");
         var closing = string.Concat("-----", "END OPENSSH PRIVATE KEY-----");
-        if (text.StartsWith("PuTTY-User-Key-File", StringComparison.Ordinal))
-            return (null, "this is a PuTTY key: export it from PuTTYgen as an OpenSSH key, without a passphrase, and import that (import-format)");
-        if (text.Contains("Proc-Type: 4,ENCRYPTED", StringComparison.Ordinal) || text.Contains("-----BEGIN ENCRYPTED", StringComparison.Ordinal))
-            return (null, "this key has a passphrase, which nobody is there to type at a background fetch: import a key without one (import-passphrase)");
         var start = text.IndexOf(opening, StringComparison.Ordinal);
         var end = text.IndexOf(closing, StringComparison.Ordinal);
         if (start < 0 || end < start)
         {
-            return (null, text.Contains("-----BEGIN", StringComparison.Ordinal)
-                ? "this key is not in OpenSSH's own format: export it as an OpenSSH private key and import that (import-format)"
-                : "this file is not a private key (import-format)");
+            return (null, "this file is not an OpenSSH private key (import-format)");
         }
 
         try

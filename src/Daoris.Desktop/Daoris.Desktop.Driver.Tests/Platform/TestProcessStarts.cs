@@ -88,7 +88,8 @@ internal static class TestProcessStarts
         ]),
         (TestStartKind.Host,
         [
-            "Daoris.Desktop.Driver.Tests/Service/RealServiceHost.cs", "Daoris.Desktop.Driver.Tests/Workplace/GitHttpBackendHost.cs",
+            "Daoris.Desktop.Driver.Tests/Service/RealServiceHost.cs", "Daoris.Desktop.Driver.Tests/Service/ServiceHostEndProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/GitHttpBackendHost.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/GitSshHost.cs", "Daoris.Desktop.Driver.Tests/Workplace/GitTlsHost.cs",
         ]),
         (TestStartKind.AgentCommand,

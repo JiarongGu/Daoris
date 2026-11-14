@@ -37,6 +37,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
   const [label, setLabel] = useState('');
   const [mode, setMode] = useState<'generate' | 'import'>('generate');
   const [file, setFile] = useState('');
+  const [passphrase, setPassphrase] = useState('');
   const [user, setUser] = useState('');
   const [token, setToken] = useState('');
   const [who, setWho] = useState({ name: '', email: '' });
@@ -58,7 +59,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
     way, host: bare, label: label.trim(),
     ...(author ? author : {}),
     ...(ssh
-      ? { ...(importing ? { importFile: file.trim() } : {}), ...(rsa && !importing ? { rsa: true } : {}) }
+      ? { ...(importing ? { importFile: file.trim(), ...(passphrase ? { passphrase } : {}) } : {}), ...(rsa && !importing ? { rsa: true } : {}) }
       : { user: user.trim(), token }),
   });
 
@@ -73,6 +74,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
       setRefusal(sentence(error));
       setAsking(false);
     } finally {
+      setPassphrase('');
       setBusy(false);
     }
   };
@@ -180,6 +182,16 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
                     </Button>
                   )}
                   <p className="m-0 basis-full text-small text-ink-faint"><Inline text={t('settings.git.importWhy')} /></p>
+                  <label className="flex basis-full flex-col gap-1 text-small text-ink-soft">
+                    {t('settings.git.importPassphrase')}
+                    <input
+                      type="password"
+                      value={passphrase}
+                      onChange={(event) => setPassphrase(event.target.value)}
+                      autoComplete="off"
+                      className={FIELD}
+                    />
+                  </label>
                 </div>
               )}
             </SettingRow>

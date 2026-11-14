@@ -229,6 +229,23 @@ describe('the add form', () => {
     expect(add).toHaveBeenCalledWith({ way: 'ssh', host: 'github.com', label: 'Mine', importFile: 'X:/keys/id' });
   });
 
+  it('asks for the import passphrase once and explains conversion before sending it', async () => {
+    const add = vi.fn().mockRejectedValue(new Error('The key did not read.'));
+    draw(<GitAdd acts={acts({ add })} knownHosts={PAGE.hosts} host="github.com" onClose={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText('A name for this identity'), 'Mine');
+    await userEvent.click(screen.getByRole('radio', { name: 'Import a key…' }));
+    await userEvent.type(screen.getByLabelText('The key file to import'), 'X:/keys/mine.ppk');
+    const passphrase = screen.getByLabelText('Key passphrase (if encrypted)');
+    expect(passphrase).toHaveAttribute('type', 'password');
+    await userEvent.type(passphrase, 'one secret');
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByText(/saves an unencrypted OpenSSH copy/)).toBeInTheDocument();
+    expect(add).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Import this key' }));
+    expect(add).toHaveBeenCalledExactlyOnceWith({ way: 'ssh', host: 'github.com', label: 'Mine', importFile: 'X:/keys/mine.ppk', passphrase: 'one secret' });
+    expect(passphrase).toHaveValue('');
+  });
+
   it('takes a token in a password field that is cleared once sent, and offers no browser sign-in', async () => {
     const add = vi.fn(ACTS.add);
     draw(<GitAdd acts={acts({ add })} knownHosts={PAGE.hosts} host="github.com" wayToday="https" onClose={vi.fn()} />);

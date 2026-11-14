@@ -105,7 +105,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person included (`SESSION_INPUT` too). The verb alone, with no
     Daoris running, writes `ask` and refuses `act`. `data/terminal-acts.json` keeps the newest 20 tier changes with the door
     each came by and the newest 100 presses under `act` with their ends; while the tier is `act` or a press is kept,
-    *Notifications* heads the presses' group with who turned it on and when, and *Back to ask*. (from D201, D209, D271)
+    *Notifications* heads the presses' group with a compact line (the words, a count, *Back to ask*, *Show* for who turned it
+    on and when and each press, *Got it*), drawn only for a change or press newer than the person's last *Got it*. (from D201, D209, D271)
 
 **The windows**
 
@@ -152,8 +153,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     session's end, none for a part whose line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), and each
     watched step after a run's review once reached or failed, one line by run, node and attempt
     (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once). Beside the presses waiting, counting toward no
-    group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run
-    (`HelpPressLine`: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
+    group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run, the latter
+    a compact line drawn only for a press newer than the person's last *Got it* (`HelpPressLine`, behind *Show*: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a press that opened a place says what it made under its row, as the
     conversation does (`PressReceiptLine`); a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
@@ -270,8 +271,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     counts the places to look at. The chosen place is kept across searches and pages. (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
-60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration and Files
-    (the files git does not manage there, with the person's rules and permissions); a workspace's are Details, Branches and
+60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Files
+    (the files git does not manage there, with the person's rules and permissions) and Workflow; a workspace's are Details, Branches and
     Workflow. Their setup and rules are the place's, in Agents → Setup, where each place's sessions fold holds one
     row, *New repositories and rooms* (`settings/repository/Growth.tsx`, `SET_GROWTH`, `driver.json`'s `growth` and `workspaceGrowth`): whether an agent's
     press that opens a repository or a room runs as the access mode says, waits for the person's Confirm even in full access, or is refused. A
@@ -290,8 +291,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     joined, as it returns, to that purpose's kill-on-close job, held for the process's life; a process ended early is ended by
     `OwnedProcesses.End`; the census reads each job by process id and stops nothing. (from D249)
 64. A system file or folder picker is the kit's `IFileDialogs`, owned by the window that asked and shown on a thread of its
-    own; a census holds that no source shows one itself. A window thread's exception reaches the machine log and the pump goes
-    on. The executable is built with its context validation relaxed, since a shell extension's handled exception under a
+    own; `PickFile` is the one file dialog and takes its kind (`PickKind`: a program under *Programs* first, a key under its
+    usual names first, any file), each kind's title and filters written once in `PickDialogs`; a census holds that no source shows one itself. A window
+    thread's exception reaches the machine log and the pump goes on. The executable is built with its context validation relaxed, since a shell extension's handled exception under a
     picker's right-click menu otherwise fail-fasts it (`0xc0000409`). Every caller posts to a window's thread through one
     guarded `WindowPost`.
 

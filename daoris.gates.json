@@ -12,6 +12,8 @@
     }
   },
 
+  "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
+
   "gates": [
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify", "clock": true, "regenerate": "node tools/contracts.mjs --if-stale" },
@@ -80,6 +82,12 @@
         "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
         "src/Daoris.Adapters/Daoris.Adapters.Clock/", "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests/",
         "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Clocks/", "src/Daoris.Testing/Clocks/"
+      ] },
+    { "name": "adapters-ssh-keys", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests --filter \"FullyQualifiedName~SshKeyFormatsTests|FullyQualifiedName~NativeSshKeyContractTests\"",
+      "paths": [
+        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
+        "src/Daoris.Adapters/Daoris.Adapters.SshKeys/", "src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests/",
+        "src/Daoris.Ports/Git/", "src/Daoris.Testing/Git/"
       ] },
     { "name": "adapters-desktopstore-sqlite", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests",
       "paths": [

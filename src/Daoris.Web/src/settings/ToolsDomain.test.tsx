@@ -133,7 +133,7 @@ describe('the tools domain', () => {
       await userEvent.click(within(shell).getByRole('radio', { name: 'Custom' }));
       await userEvent.click(within(shell).getByRole('button', { name: 'Browse…' }));
       await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-        'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose PowerShell' }, timeoutMs: Infinity }));
+        'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose PowerShell', kind: 'program' }, timeoutMs: Infinity }));
       expect(await within(shell).findByDisplayValue('C:/tools/pwsh.exe')).toBeInTheDocument();
 
       await userEvent.click(within(shell).getByRole('button', { name: 'Use this file' }));

@@ -19,6 +19,7 @@
     "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests/Daoris.Adapters.Clock.Tests.csproj": "the clock adapter's dependency tests' project file",
     "src/Daoris.Adapters/Daoris.Adapters.Git.Tests/Daoris.Adapters.Git.Tests.csproj": "the git adapter's dependency tests' project file",
     "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj": "the machine adapter's dependency tests' project file",
+    "src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests/Daoris.Adapters.SshKeys.Tests.csproj": "the SSH key format adapter's dependency tests' project file",
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TestPorts.cs": "the driver's and the modules' tests' module initializer: every test's root chooses the fakes, the desktop store's engine and the machine's places and seal among them, every half",
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Git/GitCommandsStrict.cs": "the driver's tests' module initializer: every test runs the git gate strict, so a start with no row fails the test that starts it, every half",
     "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/GlobalUsings.cs": "a global using of the modules' tests, both halves",
