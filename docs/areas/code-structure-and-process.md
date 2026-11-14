@@ -152,10 +152,20 @@ finishes first and the whole set runs once.
     first (the main checkout's `local/*.props` copied as files, never linked; dependencies from the lockfiles through
     `tools/merge-branch/dependencies.mjs`, shared with the gate tree; the merge drivers, the index, the contracts and the restore
     primed); a branch lands through the merge tool, never a plain `git merge`. A merge whose `package-lock.json` moved runs `npm
-    ci` in that folder once before its first gate, and every gate waits for it (`tools/merge/lock-install.ts`). The merge also runs the CLI's verify (`MERGE_SUITES`:
-    the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs` runs the test units the census says
-    the paths reach in the driver's, modules', service's, page's and tools' suites, nearest the change first, bounded per suite by
-    `tools/merge/reached.ts`, the rest counted), so a list, census or structure red never lands. `reached` reuses a pass
+    ci` in that folder once before its first gate, and every gate waits for it (`tools/merge/lock-install.ts`). A merge runs the fast
+    tier alone, in under five minutes for a typical branch: the light gates, the CLI's checks (`cli`, `npm run verify:checks`,
+    `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast` runs the
+    unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
+    change first, bounded per suite by `tools/merge/reached.ts`, the rest counted), so a list, census or structure red never lands.
+    The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
+    (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
+    run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and the queue's promotion starts
+    `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`). It runs them through `reached-checks --tier heavy`
+    in `local/heavy-tree` (a worktree of its own, under the machine's admission), records each pass for the next merge to replay,
+    appends its verdict to `local/heavy-runs.jsonl` and says one line beginning `heavy tier:` (the log `local/scratch/heavy-<sha>.log`,
+    which the steward's monitor reads). A red is filed in `local/ci-findings.json` naming the merge commit and the class, so the next
+    merge reads it as main's red and `--plan` says it; a start or a run that fails is an `ERROR` line and a record, its classes owed
+    to the CI beside. It never holds a merge. `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source files that declare what
     its files name, the areas its program or a `[Reaches]` names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global
@@ -175,8 +185,8 @@ finishes first and the whole set runs once.
     (`reached-classes:`), which the merge record keeps per gate (`classes`: run, replayed, flaked, main's, red) because the gate's
     `replayed` flag says only that a whole gate was replayed. A unit class runs when a changed path reaches it; a Process class (a suite whose
     gate runs with the Process settings, the rehearsals project's among them), which
-    names its real dependency with a `Needs` trait, runs only where a changed path is that dependency's code (`tiers.needs` in
-    `daoris.gates.json`), and the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
+    names its real dependency with a `Needs` trait, is reached only where a changed path is that dependency's code (`tiers.needs` in
+    `daoris.gates.json`) and then belongs to the heavy tier; the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
     passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
     after, and the full stage (`--ci --stage`) remains the one that owes every gate. The full set (`--full`, `--full --beside`, and
