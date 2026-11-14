@@ -85,6 +85,8 @@ public static class Launcher
             };
             swap.Recover(running);
             if (swap.HeldBy is { } holding) return Refuse(Unrecovered(holding));
+            // A build set aside only because something held `app/` or the home is staged again once nothing does.
+            if (!running) StagedRestage.Again(root);
             if (updating && running)
             {
                 // Asked for, and still held once the wait is over: refused, so the build before it, started below, does not
