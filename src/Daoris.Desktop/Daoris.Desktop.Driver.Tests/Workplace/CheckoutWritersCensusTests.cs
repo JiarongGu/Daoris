@@ -10,9 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// other write is in a tree of Daoris's own, or moves a ref no checkout has out. A new call is a failing line until it is named.
 /// </summary>
 /// <remarks>
-/// A conversation's agent or a driven session's agent writing files itself starts no git of Daoris's and cannot take the lock: it is named
-/// in <see cref="Fenced"/> with how it is fenced instead. Read from the sources by name wherever they lie, as
-/// <see cref="SettledReadersCensusTests"/> is.
+/// An agent writing files itself starts no git of Daoris's and cannot take the lock: it is named in <see cref="Fenced"/> with how it is
+/// fenced instead. Read from the sources by name, as <see cref="SettledReadersCensusTests"/> is.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class CheckoutWritersCensusTests

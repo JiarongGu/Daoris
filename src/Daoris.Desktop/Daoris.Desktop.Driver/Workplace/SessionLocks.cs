@@ -3,15 +3,11 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// A session's tree locked while the session holds it: git's own lock (<c>git worktree lock</c>), its reason
-/// naming the session, so no tool that prunes merged branches or removes clean trees takes the tree from under it.
-/// </summary>
+/// <summary>A session's tree locked while the session holds it, its reason naming the session, so no tool that prunes or removes clean trees takes it.</summary>
 /// <remarks>
 /// <para><b>Why.</b> A session's tree opens on a branch at its line's tip and has no commit until the session has work, so its branch
-/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session.
-/// git refuses a locked tree to <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice,
-/// whoever asks.</para>
+/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session. git refuses a locked tree to
+/// <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice, whoever asks.</para>
 ///
 /// <para><b>Held from the record's open to its end.</b> A driven start locks its tree once its record is open, while it still holds the
 /// repository's trees for starting (<see cref="TreeLock"/>), and lets it go when the run ends, unless the record waits on the person

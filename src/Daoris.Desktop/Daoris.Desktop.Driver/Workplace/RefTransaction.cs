@@ -4,17 +4,10 @@ using Daoris.Ports.Repositories;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One typed transaction for a set of ref acts: exactly one <c>git update-ref --stdin</c> operation per ref, each with its
-/// expectation (create: the ref absent; update and delete: its old value), and a <c>verify</c> for each dependency that is only read.
-/// Identical expectations are named once; two values for one ref, two names for one ref (a case alias, a symbolic ref) and a name that is
-/// no full ref are refused before git runs, so git's own "multiple updates" never decides what a caller meant.
+/// One typed transaction for a set of ref acts, each with its expectation (create: absent; update and delete: the old value) and a verify
+/// for each dependency only read. Two values or two names for one ref, and a name that is no full ref, are refused before git runs. Each
+/// rollback is a conditional transaction too. The run is the repository port's (<see cref="IGitRepository.TransactAsync"/>).
 /// </summary>
-/// <remarks>
-/// Git checks every line under its locks and moves nothing unless all hold, so a refusal means nothing moved. The rollbacks are
-/// transactions too, each conditional: a deleted ref is restored only where the name is absent, a rewritten one only from the tip the
-/// rewrite produced, a rename reversed checking both names at once. The run is the repository port's
-/// (<see cref="IGitRepository.TransactAsync"/>); this builds and judges the transaction.
-/// </remarks>
 internal sealed class RefTransaction
 {
     private enum Act { Create, Update, Delete }
@@ -39,7 +32,6 @@ internal sealed class RefTransaction
     /// <summary>A dependency read, not moved: it must stand at <paramref name="value"/>, or be absent where that is null.</summary>
     public RefTransaction Verify(string reference, string? value) { _verifies.Add((reference, value)); return this; }
 
-    /// <summary>The same dependencies as <c>(Ref, Commit)</c> pairs, as a proof returns them.</summary>
     public RefTransaction Verify(IEnumerable<(string Ref, string Commit)> held)
     {
         foreach (var (reference, commit) in held) Verify(reference, commit);
@@ -49,7 +41,6 @@ internal sealed class RefTransaction
     /// <summary>A branch or ref moved from one name to another at <paramref name="tip"/>: the old name deleted, the new one made, both checked at once.</summary>
     public static RefTransaction Rename(string from, string to, string tip) => new RefTransaction().Delete(from, tip).Create(to, tip);
 
-    /// <summary>The rollback of <see cref="Rename"/>: the new name deleted only at <paramref name="tip"/>, the old made only where it is absent.</summary>
     public static RefTransaction ReverseRename(string from, string to, string tip) => new RefTransaction().Delete(to, tip).Create(from, tip);
 
     /// <summary>The rollback of a delete: the ref made again at <paramref name="value"/>, only where the name is absent.</summary>
@@ -59,7 +50,6 @@ internal sealed class RefTransaction
     public static RefTransaction RestoreRewritten(string reference, string produced, string original) =>
         new RefTransaction().Update(reference, produced, original);
 
-    /// <summary>Every ref the transaction names, as given.</summary>
     public IEnumerable<string> Names => _steps.Select(step => step.Ref).Concat(_verifies.Select(each => each.Ref)).Distinct(StringComparer.Ordinal);
 
     /// <summary>The input for <c>update-ref --stdin</c>: dependencies first, then each act; or why the transaction is refused, git not yet run.</summary>

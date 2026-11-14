@@ -267,7 +267,7 @@ public sealed class MemoryRepository : IGitRepository
         return Task.FromResult(GitDone.Done);
     }
 
-    /// <summary>The hooks run, in order, as (folder, hook, arguments): the fake runs none, and says each was asked.</summary>
+    /// <summary>The hooks run, in order, as (folder, hook, arguments): the fake runs none and records each ask.</summary>
     public List<(string Folder, string Hook, IReadOnlyList<string> Arguments)> HooksRun { get; } = [];
 
     public Task<GitDone> RunHookAsync(string folder, string hook, IReadOnlyList<string> arguments, CancellationToken ct)

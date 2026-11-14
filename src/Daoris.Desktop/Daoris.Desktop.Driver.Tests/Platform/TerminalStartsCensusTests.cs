@@ -4,8 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every terminal verb whose own process can start one asks the running Daoris first, or is named with why it may not: so what a
-/// session runs is the application's child, under it in the system's tree, unless this list says why not.
+/// Every terminal verb whose own process can start one asks the running Daoris first, or is named with why it may not.
 /// </summary>
 /// <remarks>
 /// <para><b>Read from the built program.</b> Each console of the driver's host (a type named <c>…Console</c> or <c>…Verb</c>) is

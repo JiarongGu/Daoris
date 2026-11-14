@@ -4,9 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A take or a return refused after its switch, put back as it found the slot, over real git and at different tips: a held output at the
-/// clearing, the previous line's branch out in another checkout or moved on meanwhile, a return cut off before and after its clearing, a
-/// refused switch, and the clearing's move-back. Each case has a scratch home and repository of its own.
+/// A take or a return refused after its switch, put back as it found the slot, over real git and at different tips: a held output, the
+/// previous line's branch out elsewhere or moved on, a return cut off, a refused switch, and the clearing's move-back.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

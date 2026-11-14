@@ -120,13 +120,10 @@ internal sealed class TreeOpening(TreeContext context)
         var refusedBound = false;
         try
         {
-            // 🔴 Long paths: a tree's prefix is longer than the root's, so a repository whose
-            // deepest file fits under its root can cross Windows' 260 characters here. The first real
-            // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
-            // `core.longpaths` on every call, removal and status included.
-            // Locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
-            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded. Its hooks are
-            // held, so its `post-checkout` runs at the files stage, after its dependencies.
+            // A tree's prefix is longer than the root's, so a repository whose deepest file fits under its root can cross Windows'
+            // 260 characters here; the funnel says `core.longpaths` on every call.
+            // Locked while it opens, the reason naming this process, so a later look tells an open a kill cut off from a person's
+            // lock (TreeStrays); let go of below. Its hooks are held: `post-checkout` runs at the files stage, after its dependencies.
             var added = await git.AddWorktreeAsync(
                 root, new GitWorktreeAdd(path, start, branch, TreeOpenings.LockReason(Environment.ProcessId), TreeOpenings.HooksPath(context.Home)), ct).ConfigureAwait(false);
             if (!added.Ok)
@@ -135,9 +132,8 @@ internal sealed class TreeOpening(TreeContext context)
                     $"could not open a session tree for `{repository}` — git said: {added.Error}");
             }
 
-            // A tree git binds to another checkout (a shared `core.worktree` under worktree-specific
-            // configuration) is let go of, unused, before a record, a copy or a session is told of it: its agent's own git would act
-            // on that checkout. One start of the tree's own, asked once; the undo below takes the folder and the branch.
+            // A tree git binds to another checkout (a shared `core.worktree`) is let go of, unused, before a record, a copy or a
+            // session is told of it: its agent's own git would act on that checkout. The undo below takes the folder and the branch.
             if (await TreeBinding.RefusalAsync(path, ct).ConfigureAwait(false) is { } bound)
             {
                 refusedBound = true;

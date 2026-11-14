@@ -581,16 +581,24 @@ roots hand it in the `PortSet`; it is the implementation of `IGit`'s ring becaus
 commits, refs, working trees with their files and locks, `.gitignore`'s names, directories and extensions, and refuses a switch that
 would overwrite work as git does; `FlowRepository` lets one flow choose it. `RepositoryContract` has 14 cases, run on the fake in the
 testing project (0.2 s) and on real git as `GitRepositoryContractTests`, a Process class of the driver tests (14 cases, 106 s), and it
-held on the first real run. The Pool is on the port end to end but for the slot's making (`TreeOpening`), the take's undo (it deletes
-the branch through the journaled ref transaction) and the sessions' lock: the pool's reads, locks, switches, listings, tree reads and
-prune ask it, and so do `FileGit`'s tracked, ignored, case, worktree and text reads and the working tree's head, branch and tip. Its
-takes, refusals and lock reading run as `TreePoolMemoryTests` (8 cases) with a git that fails any ask no port answered, which is how each
-leaked git was found. **Figures:** real git in the driver tests 261 → 262 `Needs=Git` classes and 1,199 → 1,213 cases (the contract's
-real half is the cost of the twin; the `Parallel=Git` half 127 → 128 classes and 678 → 692 cases); in the rehearsals 72 classes and 661 →
-654 cases, the seven that left `TreePoolGitTests` (five refusal rows, the lock reading and the visit) being, at the sample's 12.4 s a
-case, about 87 case-seconds of real git, whose behaviour the 8 memory cases now run in 2 s for the whole class. The contract's twin-proof
-held; the pool's Process classes were green after the move (the driver tests' 32 cases, the rehearsals' 60 cases, the four rehearsal
-classes run four at once having crashed the host once, the one flake, and each green run alone).
+held on the first real run. The Pool is on the port end to end but for the journaled ref act behind a take's undo and a finish's branch
+delete, whose git is a held, process-owned start the act's journal proves (a process-ring matter, left where it is): the slot's making
+(`TreeOpening`: the working root, the branch's reads, the add on its branch with hooks held, the unlock, the undo's remove and branch
+delete), the sessions' locks, `FileGit`'s tracked, ignored, case, worktree, text, changed-names and search reads, the files stage's
+restore and hook, the ref transaction's run (`RefTransaction` judges and the port runs it, with its symbolic-ref and case-alias
+refusals), the default branch, and a line pull's and a promotion's fast-forward and the resolver's hard reset all ask the port. The
+contract grew to 22 cases (on the fake 0.2 s; on real git 64 s, green on the first real run). The pool's takes, returns, line ends, waiting
+claim, refusals and lock reading run as `TreePoolMemoryTests` (14 cases, about 3 s for the class) with a git that fails any ask no port
+answered, which is how each leaked git was found (the line's guess, `symbolic-ref` of origin's HEAD, was the last). **Figures:** real git
+in the driver tests `Needs=Git` 274 classes and 1,401 listed cases (`--list-tests`), of which 797 in the `Parallel=Git` half, the
+contract's real half having grown by 8 cases; in the rehearsals 74 classes and 747 listed cases, six fewer than before (a return, the
+four line ends and the waiting claim, now memory cases: at the sample's 12.4 s a case about 75 case-seconds of real git). What the move
+did not reach, and why: a take's undo and a finish's delete go through the journaled act, so the slot cases that end in one, and the
+ones that hold an output open or set tops aside on the disk, stay real; and the Integration family (merge, reset, rebase in the
+replays, promotions and the landing) is 14 to 25 git sites a file over a dozen files, so only the fast-forward and the hard reset are
+on the port, each held to the contract on both sides; the three-way merge, the rebase and the `merge --abort` and clean the replays
+need are left in that order. The pool's Process classes were green after the move (the rehearsals' 54 cases in five minutes with no
+crash of the host).
 
 ## 9. Measurement (decision 8)
 

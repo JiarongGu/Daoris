@@ -4,9 +4,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while
-/// a session ran, and where in the repository's history this checkout stands. Asked
-/// of git itself, because git's answer is the one that matters.
+/// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while a session ran, and where in the
+/// repository's history this checkout stands, asked of git itself.
 /// </summary>
 /// <remarks>
 /// <para>A session spawns only onto a clean tree: uncommitted changes are somebody's work in
@@ -60,17 +59,8 @@ public static class WorkingTree
     internal static readonly string[] OriginHeadAsk = ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
     /// <summary>
-    /// Which line this repository treats as canonical, as far as this checkout knows.
+    /// Which line this repository treats as canonical, as far as this checkout knows (<see cref="GitDefaultBranch"/>).
     /// </summary>
-    /// <remarks>
-    /// <para>Asked of the remote's own HEAD first, which is what a clone records and therefore the
-    /// repository's own answer rather than this machine's guess. A checkout made with
-    /// `git remote add` has no such ref, so the conventional names are tried in turn.</para>
-    ///
-    /// <para>Null when none of them exists — and null is PERMISSIVE at the deployment: a repository
-    /// that never said which line is canonical has not asked for its branches to be judged, and
-    /// refusing every feed from it would silence a real repository over a missing ref.</para>
-    /// </remarks>
     public static Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.DefaultBranchAsync(root, ct);
 
     /// <summary>

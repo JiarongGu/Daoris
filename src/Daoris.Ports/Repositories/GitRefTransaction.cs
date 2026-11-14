@@ -55,7 +55,7 @@ public sealed record GitRefTransaction(IReadOnlyList<GitRefAct> Acts, IReadOnlyL
 }
 
 /// <summary>What a ref transaction came to.</summary>
-/// <param name="Done">Whether every act was made.</param>
-/// <param name="Said">Why nothing moved where it was refused; where git did not answer, the refs as they stand after a read of each.</param>
+/// <param name="Done">Whether every act took effect.</param>
+/// <param name="Said">Why nothing moved where git refused; where git did not answer, the refs as they stand after a read of each.</param>
 /// <param name="Unanswered">Whether git never started or ended without an exit, so only the refs themselves say whether anything moved.</param>
 public sealed record GitRefRun(bool Done, string Said, bool Unanswered = false);

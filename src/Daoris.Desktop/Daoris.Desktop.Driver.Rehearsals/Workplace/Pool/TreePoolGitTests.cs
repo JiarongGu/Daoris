@@ -3,9 +3,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The pool's acts over real git and files: what only the disk or git shows; the rest runs in <c>TreePoolMemoryTests</c>.
-/// </summary>
+/// <summary>The pool's acts over real git and files: what only the disk or git shows; the rest runs in <c>TreePoolMemoryTests</c>.</summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
