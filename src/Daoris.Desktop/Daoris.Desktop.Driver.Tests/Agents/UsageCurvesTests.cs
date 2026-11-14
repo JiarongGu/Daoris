@@ -183,9 +183,8 @@ public sealed class UsageCurvesTests
             ? (lapse.Window.Window, Math.Round(lapse.Room, 6), Math.Round(lapse.Rate, 6))
             : null;
 
-    /// <summary>The smart week's room with <paramref name="hours"/> left and <paramref name="used"/> of it used: 95 at
-    /// three-quarters gone, rising evenly to 100 at its reset.</summary>
-    private static double SmartRoom(double hours, double used) => 95 + 5 * ((1 - hours / 168) * 100 - 75) / 25 - used * 100;
+    /// <summary>A week's room within its last day: no curve holds there, so it is all that is unused.</summary>
+    private static double SmartRoom(double hours, double used) => hours <= 24 ? 100 - used * 100 : 95 + 5 * ((1 - hours / 168) * 100 - 75) / 25 - used * 100;
 
     [Fact]
     public void Within_its_last_day_a_week_s_room_over_the_hours_to_its_reset_is_what_would_lapse()
@@ -260,7 +259,9 @@ public sealed class UsageCurvesTests
     public void A_week_on_or_over_its_curve_earns_nothing()
     {
         Assert.Null(Lapsing(Use("smart"), Seen("weekly", 1.0, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
-        Assert.Null(Lapsing(Use("curve", UseCurve.Flat("weekly", 40)), Seen("weekly", 0.40, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
+        // Beyond the last day the person's curve still measures; within it nothing does.
+        Assert.Null(Lapsing(Use("curve", UseCurve.Flat("weekly", 40)), Seen("weekly", 0.40, TimeSpan.FromDays(2), TimeSpan.FromMinutes(5))));
+        Assert.Equal(("weekly", 60.0, 7.5), Lapsing(Use("curve", UseCurve.Flat("weekly", 40)), Seen("weekly", 0.40, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5))));
     }
 
     [Fact]
@@ -303,7 +304,10 @@ public sealed class UsageCurvesTests
     [Fact]
     public void A_person_s_curve_measures_the_room()
     {
-        var own = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)))!.Value;
-        Assert.Equal(("weekly", 20.0, 2.0), own);
+        // Within the last day the person's curve is not read: the week's whole remaining 70 is room.
+        var last = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)))!.Value;
+        Assert.Equal(("weekly", 70.0, 7.0), last);
+        var own = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(24), TimeSpan.FromMinutes(5)));
+        Assert.Equal(("weekly", 70.0, Math.Round(70.0 / 24, 6)), own);
     }
 }

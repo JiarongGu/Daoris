@@ -102,18 +102,24 @@ public static class UsageCurves
 
     /// <summary>
     /// The scope's curve on a window now: the most of it, in percent, an account should have used by <paramref name="now"/>
-    /// in a window resetting at <paramref name="reset"/>; null for a window this build does not know. Within the <see cref="LastDay"/>
-    /// of a window longer than it no curve holds, whoever set it: what is left lapses at the reset, so all of it may be used.
+    /// in a window resetting at <paramref name="reset"/>; null for a window this build does not know.
     /// </summary>
-    public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now)
-    {
-        if (Length(window) is { } length && length > LastDay && reset - now is var left && left > TimeSpan.Zero && left <= LastDay) return 100;
-        return For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
-    }
+    public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
+        For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
+
+    /// <summary>
+    /// What an account may have used of a window by <paramref name="now"/>, as the walk and the screens judge it: the curve, except
+    /// within the <see cref="LastDay"/> of a window longer than it, where no curve holds, whoever set it, since what is left lapses
+    /// at the reset and all of it may be used. Null for a window this build does not know.
+    /// </summary>
+    public static double? Allowed(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
+        Length(window) is { } length && length > LastDay && reset - now is var left && left > TimeSpan.Zero && left <= LastDay
+            ? 100
+            : Value(use, window, reset, now);
 
     /// <summary>The points of room a window's reading leaves under the curve now, or null where it is not measured (no used, or an unknown window).</summary>
     public static double? Room(RotationUse use, WindowReading reading, DateTimeOffset now) =>
-        reading.Used is { } used && Value(use, reading.Window, reading.Reset, now) is { } curve ? curve - used * 100 : null;
+        reading.Used is { } used && Allowed(use, reading.Window, reading.Reset, now) is { } curve ? curve - used * 100 : null;
 
     /// <summary>The least room over the windows with a reading, or null where none is measured.</summary>
     public static double? Tightest(RotationUse use, IEnumerable<WindowReading> readings, DateTimeOffset now)
@@ -140,7 +146,7 @@ public static class UsageCurves
         (WindowSaid Window, double Curve, double Room)? least = null;
         foreach (var window in said?.Windows ?? [])
         {
-            if (window.Used is not { } used || Value(use, window.Window, window.Reset, now) is not { } curve) continue;
+            if (window.Used is not { } used || Allowed(use, window.Window, window.Reset, now) is not { } curve) continue;
             var room = curve - used * 100;
             if (least is null || room < least.Value.Room) least = (window, curve, room);
         }
@@ -150,8 +156,9 @@ public static class UsageCurves
 
     /// <summary>
     /// What would lapse of an account's week at its reset, as the walk's step 4 weighs it: within
-    /// its <see cref="LastDay"/>, the week's room under the curve now and that room over the hours left to its reset, an hour
-    /// at the least, so a sliver resetting in minutes does not outrank a large room a day off. Null where none is known.
+    /// its <see cref="LastDay"/>, the week's room now (all that is unused: <see cref="Allowed"/> reads no curve there) and that
+    /// room over the hours left to its reset, an hour at the least, so a sliver resetting in minutes does not outrank a large
+    /// room a day off. Null where none is known.
     /// </summary>
     /// <remarks>
     /// <para><b>Only the whole plan's week</b>, <c>weekly</c>: the five-hour window recovers in hours, so its reset never
@@ -169,7 +176,7 @@ public static class UsageCurves
         var left = week.Reset - now;
         if (left <= TimeSpan.Zero || left > LastDay || week.Seen < said.Seen) return null;
         if (ResetMadeUp(week.Window, used, week.Reset, week.Seen)) return null;
-        if (Value(use, week.Window, week.Reset, now) is not { } curve) return null;
+        if (Allowed(use, week.Window, week.Reset, now) is not { } curve) return null;
         var room = curve - used * 100;
 
         return room > 0 ? (week, room, room / Math.Max(left.TotalHours, 1)) : null;
