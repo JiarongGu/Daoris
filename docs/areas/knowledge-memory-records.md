@@ -144,6 +144,7 @@ one job each, checked by `verify`.
 
 **Memory**
 
+22a. A session is told `memory_write` exists only through its standing block: a build, design, exact or chat session with a repository is told in one sentence to keep a fact it confirmed that a later session would find out again (`StandingFacts.Writes`, set by `StandingBlocks.OnMachine`); a review, help, partner, intake, Ask Daoris and brainstorm are not, as the connector refuses them. Nothing else carries the tool to a session, and a tool no session is told of is never called. `tools/dev-metrics.mjs` counts memory reads (searches and gets) with hits, writes with those the connector kept, and the coordinator's `memory_ops` by state beside Lyntai's entries, reading both a Claude Code result (`content`) and a Codex one (`output`).
 23. Each registered repository has one memory, which it owns. The engine is per repository over `memory.db`, opened with
     reinforcement off, so a read changes nothing. (from D220)
 24. Only a session of a registered repository writes or ends that repository's memory. Ask Daoris, an intake, a helper, a partner

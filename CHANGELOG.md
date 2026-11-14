@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session that may change its repository's memory (a build, a design or a chat) is now told in its first brief that `memory_write` keeps a fact it confirmed for later sessions; until now none was, so the memory stayed empty. `tools/dev-metrics.mjs` counts memory reads, hits and writes beside the other figures.
 - A self-update keeps the window's start arguments, including its debug port, so desktop tools can reconnect after the restart.
 - SSH key import reads PuTTY v2/v3 and PEM RSA, EC and PKCS#8 keys, taking an encrypted key's passphrase once and explaining before it writes the unencrypted OpenSSH copy Daoris keeps. The original key stays unchanged.
 

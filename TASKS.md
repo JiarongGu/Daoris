@@ -36,7 +36,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 ## Knowledge, memory and records
 
 - [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): left **2i**, the installed measurement, which also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
-- [ ] **LYNTAIMEM1 — Daoris's sessions write and read Lyntai's memory** (service, driver; with KNOWCENTRAL2; found 2026-11-12): on the install six memory searches found nothing and no session wrote, the store empty though the coordinator is built. Find where the writes stop and fix it; count memory reads, hits and writes in `tools/dev-metrics.mjs` beside Daoris's other figures.
 
 ## Install, home and update
 

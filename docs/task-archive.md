@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **LYNTAIMEM1 (2026-11-14):** no session wrote because none was told `memory_write` exists (the standing block named only `memory_search`), though the connector's staging, the commit-point release and the coordinator all worked; a build, design, exact or chat session with a repository is now told to keep what it confirms (`StandingFacts.Writes`), and `tools/dev-metrics.mjs` counts memory reads, hits, writes kept and `memory_ops` by state, reading Codex's `output` result shape too (it counted every Codex read a hit); `StandingBlockTests`, `dev-metrics.test.mjs` and `docs/areas/knowledge-memory-records.md` 22a.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---
