@@ -323,6 +323,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 46. The records of one line share their `line`, and the lines of one ask or quest in one repository share an entry key,
     `<origin>/<repository>`, which an Accept lands together (`LandingEntries`); an entry's slice partition is its leading session. A line's
     head is found by walking `from` forward, at most 256 hops; a cycle or the bound reads as no head. (D167, D212)
+46a. Each agent conversation is a numbered turn of its session (D293 point 5). A record keeps the turns it ran (`turns`, this
+    machine's own and answered on loopback only): its open writes the first, with its cause read from its `from` link (`start`
+    where it continues none, `limit` for a limit or a near one, `curve`, `agent`, `person` for a press, else `daoris`), and each
+    wake by the go-on adds one, `person` where any word waiting is the person's or their supervisor's, else `step` with the node
+    and attempt its word's key names (`check_run` for a broker check). The list answers each record its line's turns oldest first,
+    numbered from one, each with the record it ran in, its agent, account, adapter and conversation (`SessionTurnLines`), so a
+    limit or a curve move is the line's next turn and the session's id stays its first record's. A record from before turns reads
+    its `from` link as its one turn (`SessionTurns.Own`), a read that goes once no such record is kept. The moves still open a
+    record of their own for each move's turn.
 
 ### The tidy
 

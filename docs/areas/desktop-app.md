@@ -187,7 +187,14 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     presses the quest, the ask, the session a hand-over or go-on continues, a conversation's repository or Ask Daoris's room
     (`work/head/startedFrom.tsx`). *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start
-    was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162)
+    was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162) A rail row is the
+    session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`): the steps of its run's bound workflow version marked
+    passed, now, to come or failed (`SESSION_GROUPS`' `passage`, read in .NET by `RunPassageReader` on the run's newest session), one
+    sentence of whom it waits on (you only where *needs you* placed it, which a check never does; its step while `awaiting-step`;
+    its agent; its start), and, for a session of more than one turn, each turn beneath it with what woke it, its agent, its account
+    by the person's name for it and what its record spent on that record's last turn. An ask's at-work view counts its quests by
+    where they stand: landed (Done), waiting on you, in checks or opinion (`awaiting-step`), being worked, not started
+    (`work/atWork/askStanding.ts`), a declined quest in none. (D293)
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it

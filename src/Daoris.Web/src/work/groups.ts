@@ -34,6 +34,11 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['needs-you', 'working',
 export type SessionGrouping = {
   session: string;
   group: SessionGroupName;
+  /**
+   * Where the run it stands for is in its bound workflow version, read in .NET: each authored step in the graph's order, marked
+   * `passed`, `current`, `next` or `failed`. Absent or null where it stands for no run.
+   */
+  passage?: { run: string; workflow: string; version?: number | null; steps: { node: string; kind: string; mark: string }[] } | null;
   state?: SessionStateName;
   reason?: string;
   shown: string;
