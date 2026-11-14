@@ -263,11 +263,12 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                     if (gone is not null) return new ChatStart(null, gone);
 
                     // Once the start's walk settles the door and the account, a conversation going on with another agent is written there as
-                    // that agent's own, and the new part resumes it; else it is handed the brief.
+                    // that agent's own, and on its own agent carried or seeded in the new account's home; the new part resumes it. Else it is
+                    // handed the brief.
                     var fence = new MoveFence(record);
                     ChatCarry? carrier = null;
                     ChatCarries? carries = keyed is not null && await _context.Service.Opens.MovesAsync(token).ConfigureAwait(false)
-                        ? (door, chosen) => carrier = prior.Adapter is { Length: > 0 } ran && !new AgentOfDoor(_context.Harnesses.Adapters).Same(ran, door.Id.Value)
+                        ? (door, chosen) => carrier = prior.Adapter is { Length: > 0 }
                                                        && ChatCarry.Planned(_context, door, prior, chosen, prior.Tree ?? "", brief) is CarryPlan.Carried plan
                             ? new ChatCarry(wiring, door, prior, chosen, plan, request.Why, brief, [], [], record, fence, wrote)
                             : null
