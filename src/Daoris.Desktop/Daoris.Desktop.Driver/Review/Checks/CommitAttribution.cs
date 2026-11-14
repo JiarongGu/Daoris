@@ -6,14 +6,10 @@ namespace Daoris.Driver;
 /// <summary>A commit of the handed-back work with no <c>Co-Authored-By</c> line naming a maker: its short id, subject, and the trailer it does carry, if any.</summary>
 internal sealed record UnsignedCommit(string Sha, string Subject, string? Trailer);
 
-/// <summary>
-/// The merge tool's commit check (<c>tools/merge/attribution.ts</c>) read at the hand-back: every commit the work adds, a merge of the line
-/// into it aside, carries a <c>Co-Authored-By</c> line whose name is a maker this repository allows. A session's brief asks for the line
-/// (<see cref="CommitTrailers"/>) and a harness may not write it, so Daoris says what the tree holds before the merge refuses it.
-/// </summary>
+/// <summary>The merge tool's commit check (<c>tools/merge/attribution.ts</c>) at the hand-back: every commit the work adds, a merge aside, carries a <c>Co-Authored-By</c>
+/// line naming a maker this repository allows; a harness may not write the line (<see cref="CommitTrailers"/>), so Daoris says so before the merge refuses it.</summary>
 internal static partial class CommitAttribution
 {
-    /// <summary>The trailer the check reads, as <see cref="IGitRepository.LogAsync"/> is asked for it.</summary>
     internal const string Trailer = "Co-Authored-By";
 
     // The makers of the built-in agents, and Daoris for the commits its driver writes: the same words the merge check accepts.

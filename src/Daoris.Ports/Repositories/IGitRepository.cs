@@ -51,16 +51,11 @@ public sealed record GitWorktreeAdd(string Path, string Start, string? Branch = 
 /// <param name="Line">The line's text.</param>
 public sealed record GitMatch(string Path, string Line);
 
-/// <summary>One commit as a log reads it.</summary>
-/// <param name="Id">Its full id.</param>
-/// <param name="Parents">Its parents' full ids, two or more for a merge.</param>
-/// <param name="Subject">Its message's first paragraph on one line.</param>
-/// <param name="Trailers">The values of the trailer asked, as its message's trailer block gives them; none where it carries none.</param>
+/// <summary>One commit as a log reads it: its full id, its parents' (two or more for a merge), its first paragraph on one line, and the
+/// values of the trailer asked as its message's trailer block gives them.</summary>
 public sealed record GitLogEntry(string Id, IReadOnlyList<string> Parents, string Subject, IReadOnlyList<string> Trailers);
 
-/// <summary>What a log came to: its commits, or git's words for why it could not say.</summary>
-/// <param name="Commits">The commits, oldest first; null where git could not say.</param>
-/// <param name="Error">Git's words where it could not, empty where it could.</param>
+/// <summary>What a log came to: its commits oldest first, or null with git's words for why it could not say.</summary>
 public sealed record GitLogged(IReadOnlyList<GitLogEntry>? Commits, string Error);
 
 /// <summary>

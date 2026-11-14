@@ -18,10 +18,8 @@ public sealed record ObservedCheck(string Gate, string Verdict);
 
 /// <summary>
 /// A hand-back as Daoris reads it, never as the session says it: the base, how far the line moved past it, the paths touched, the gates
-/// those paths reach with the verdict each has at this tip, the processes left running, and the commits without their maker's line, or git's
-/// words where it could not read them (<see cref="UnsignedUnread"/>). The checks are the landing's own selection (<see cref="GateReach"/>),
-/// never a list of the worker's.
-/// </summary>
+/// those paths reach with the verdict each has at this tip (the landing's own selection, <see cref="GateReach"/>, never the worker's list),
+/// the processes left running, and the commits without their maker's line, or git's words where it could not read them.</summary>
 internal sealed record HandbackObservation(
     string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<ObservedCheck> Checks, IReadOnlyList<LeftProcess> Left,
     IReadOnlyList<UnsignedCommit> Unsigned, string? UnsignedUnread = null)
