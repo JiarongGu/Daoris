@@ -223,8 +223,8 @@ finishes first and the whole set runs once.
     bridge's conversion answers, and both pass `SshKeyFormatContract`. (from D286)
 22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
     whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
-    root `Directory.Build.props` (the kill bound: 60 seconds for a half with no run-settings file, two minutes for a Process half, which ends the
-    run and names the test; the 30-second unit budget is held by the time ratchet, not by this bound), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (ten seconds), the tool tests'
+    root `Directory.Build.props` (the kill bound: 60 seconds for a half with no run-settings file, five minutes for a Process half, which ends the
+    run and names the test; the 30-second unit budget and the Process case's two minutes are held by the time ratchet, not by this bound, which sits above them because a kill ends the whole half and a few-start case took over two minutes with the machine's cores held by other builds), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (ten seconds), the tool tests'
     `--test-timeout` in `src/Daoris.Cli/package.json`, and each merge tool project's in `tools/vitest.config.ts` (ten seconds a unit
     test, two minutes an end-to-end case). Those are the backstop for a hang; `tools/time-ratchet.mjs` holds each test to
     its own limit (30 s, 2 min for a Process half, 10 s for the page and a merge tool unit test, 2 min for a tool test) from the durations the gates record, and
