@@ -601,9 +601,8 @@ public sealed class DriverRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         var service = _loop.Service;
         if (_loop.Look.Latest is null && service is null) throw NotReady();
-        // The verdict's switch is the library's operation, which `daoris quest retry` acting alone calls too; a
-        // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping. A
-        // refusal from the last look is read again over the records, which a stop since holds.
+        // The library's operation, which `daoris quest retry` calls too; a refusal (ChoiceCodes) of the last look is read again
+        // over the records, which a stop since holds.
         var decision = await QuestRetryReading.DecideAsync(
             quest, _loop.Look.Latest,
             service is null ? null : token => SessionGroups.VerdictsAsync(service, config, _context.Unadopted(config), lastLook: null, token, _loop.Home),

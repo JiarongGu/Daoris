@@ -738,7 +738,6 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
-    /// <summary>Whether any marker, an opener's or a spawn's, is kept for the record: false for one opened and never marked.</summary>
     public bool HasMarker(string sessionId) => MarkerOf(sessionId) is { } marker && File.Exists(marker);
 
     /// <summary>The marker's path, or null where this registry keeps none or the id could not be a file name.</summary>

@@ -65,8 +65,6 @@ internal sealed class PlanRound
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        // A quest whose last start could not go (an account cooling, a hold) is weighed after every other, so its start never holds
-        // the repository's turn or a place under the cap from one that can; the sort is stable, so each group keeps its order.
         foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest)))
                      .OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
         {
