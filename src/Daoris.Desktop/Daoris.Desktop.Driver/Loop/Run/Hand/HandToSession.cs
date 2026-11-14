@@ -245,14 +245,12 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 ? null
                 : LimitCarried.Ask(conversation, CarriedNotes.From(prior.Session, prior.Adapter ?? agent, prior.Profile, continues.Why, conversation), movedOn);
 
-            // The creating sentence, on the record while the session runs: where it grew from and what a fresh tree does not hold. The
-            // conclusion's note replaces it.
-            var startingNote = StartSentence.Of(
-                opened, quest, answered, tree.ResumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
-                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && state.PassedAccount is not null,
-                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null,
-                carriesWork: carryingOn && start.CarriesWork is > 0);
-            await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
+            // The creating sentence, on the record while the session runs; the conclusion's note replaces it.
+            if (!(carryingOn && handedFrom))
+            {
+                var startingNote = StartSentence.Of(state, quest, elsewhere);
+                await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
+            }
 
             // The answer beneath the question it answers: the session that asked ends with the person's words in its own record, where
             // they read the question. A resume tried already put them there; words to a session that had ended are in its

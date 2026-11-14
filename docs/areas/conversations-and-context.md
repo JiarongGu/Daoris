@@ -189,7 +189,8 @@ of everything it handed, section by section.
     the old part's job is taken from its tracking, and once its process has gone what the job still holds (a command left in the
     background) is ended and waited for, up to 30 seconds (`PartLeftovers`; a quest's part through `QuestPartStop`); the old
     record says so, `chat.left-ended`, or `chat.left-running` past the bound. A quest's move is written old-ended only after that
-    wait, so its carry-on starts at a later look. (from D163, D188)
+    wait, and the look that took it reads the session records again, so its carry-on starts in that same look; the successor's
+    record is shown `starting` as it opens, before its tree's files, and the files stage says its own waits on it. (from D163, D188)
 29. A hand-over is refused for Ask Daoris, for the same agent and account, for a closed quest, for a tree that is gone, and
     for a session the person parked. (from D163, D212)
     *Go on in a new session*, the words a cooling account holds on a driven record, is the same press naming no agent:

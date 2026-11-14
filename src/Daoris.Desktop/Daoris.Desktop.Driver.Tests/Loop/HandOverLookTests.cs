@@ -87,10 +87,10 @@ public sealed class HandOverLookTests : IDisposable
     /// <summary>
     /// 🔴 A running quest session with a move decided is stopped at once with its own coded line, the quest is held on the named agent, and the
     /// move goes on to <c>old-ended</c> for the carry-on to continue, written <c>quiescing</c> while the session ran and
-    /// never as a box; the next look reads that stop as released and carries the quest on, with a sentence that says it is handed over.
+    /// never as a box; the same look reads that stop as released and carries the quest on, with a sentence that says it is handed over.
     /// </summary>
     [Fact]
-    public async Task A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look()
+    public async Task A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_same_look()
     {
         await Ask("s1");
         Assert.Equal("decided", MoveFrom("s1")!.PhaseWord);
@@ -109,10 +109,7 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Contains(first.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with codex-acp.");
         Assert.Equal("stopped", State("s1"));
 
-        // The person's stop that handed it over: no strike, no hold, the quest carried on in the tree it worked in.
-        var next = await Driver().TickAsync().WaitAsync(Bound);
-
-        var carry = Assert.Single(next.Considerations, each => each.Quest.Id == "q1");
+        var carry = Assert.Single(first.Considerations, each => each.Quest.Id == "q1");
         Assert.Equal(StartVerdict.Start, carry.Verdict);
         Assert.Equal("s1", carry.Resumes!.Session);
         Assert.Equal("carrying on in `engine` — session `s1` was handed over to codex-acp.", carry.Reason);

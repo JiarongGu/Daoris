@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// Through REAL ticks: a quest's session working on the machine's agent
 /// (the protocol stub, which took its quest and holds its turn) is handed to <c>stub</c>. The look takes the box, stops the session
-/// as the person's, and the next look carries the quest on in the same tree on the named agent, told it is handed over, with the
+/// as the person's, and the same look carries the quest on in the same tree on the named agent, told it is handed over, with the
 /// note that says so; the quest closes done. A real process (node) and the stand-in service <see cref="AskAndWaitTickTests.StandIn"/>,
 /// as <see cref="StopHoldTickTests"/> uses them; no model and no account.
 /// </summary>
@@ -74,15 +74,12 @@ public sealed class HandOverQuestTickTests : IDisposable
         await UntilAsync(() => service.Session("s1")["state"]!.GetValue<string>() == "stopped");
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.Contains("Handed over to stub", service.Session("s1")["note"]!.GetValue<string>());
-        Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("stub", new HandedQuests(_home).Read("q1")!.Agent);
         Assert.Null(new HandOverBox(_home).Read("s1"));
-        Assert.Equal("old-ended", Move().PhaseWord);
 
-        // 3. The next look reads that stop as released: the quest is carried on in the same tree, on `stub`, and closes. The carry-on goes on
-        // from the hand-over's own move, the one row from ask to the end, naming the new part. This door's prompt goes on its arguments, so no
-        // write of it is told and the record ends by its phase, as any carry-on's does there; the ACP door's delivered is part b's proof.
-        await driver.TickAsync().WaitAsync(Poll.Patience);
+        // 3. The same look reads that stop as released and carries the quest on in the same tree, on `stub`, from the hand-over's own move,
+        // the one row from ask to the end; this door's prompt goes on its arguments, so the record ends by its phase.
+        Assert.Equal(2, service.SessionCount);
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         await Poll.Until(() => !Move().Stands, () => $"the hand-over's move at {Move().PhaseWord}");
         var moves = new MoveStore(_home).Of("s1");
@@ -90,6 +87,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         Assert.Equal(("s2", "stub", "press", "person", "driven"), (moves[0].Destination, moves[0].Agent, moves[0].Why, moves[0].By, moves[0].Executor));
 
         var carried = service.Session("s2");
+        Assert.Single(service.MovesOf("s2"), "starting");
         Assert.Equal("stub", carried["door"]!.GetValue<string>());
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
         // Its record names the session it is handed over from, with the hand-over's why and asker.
