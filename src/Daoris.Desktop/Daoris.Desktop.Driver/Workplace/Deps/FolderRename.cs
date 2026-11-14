@@ -14,7 +14,7 @@ internal static class FolderRename
     internal static readonly AsyncLocal<Action<int>?> Waiting = new();
 
     /// <summary><paramref name="from"/> renamed to <paramref name="to"/>, an absent folder; an existing one is the caller's to judge and is never retried.</summary>
-    /// <exception cref="IOException">The rename was refused on every try, said with the program-held cause; or <paramref name="to"/> exists.</exception>
+    /// <exception cref="IOException">Every try refused, said with the program-held cause; or <paramref name="to"/> exists.</exception>
     internal static void Into(string from, string to, CancellationToken ct)
     {
         for (var attempt = 1; ; attempt++)

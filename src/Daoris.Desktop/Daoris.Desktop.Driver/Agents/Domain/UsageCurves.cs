@@ -107,11 +107,7 @@ public static class UsageCurves
     public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
         For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
 
-    /// <summary>
-    /// What an account may have used of a window by <paramref name="now"/>, as the walk and the screens judge it: the curve, except
-    /// within the <see cref="LastDay"/> of a window longer than it, where no curve holds, whoever set it, since what is left lapses
-    /// at the reset and all of it may be used. Null for a window this build does not know.
-    /// </summary>
+    /// <summary>The curve, except within the <see cref="LastDay"/> of a longer window, where none holds: what is left lapses at the reset.</summary>
     public static double? Allowed(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
         Length(window) is { } length && length > LastDay && reset - now is var left && left > TimeSpan.Zero && left <= LastDay
             ? 100
@@ -156,9 +152,8 @@ public static class UsageCurves
 
     /// <summary>
     /// What would lapse of an account's week at its reset, as the walk's step 4 weighs it: within
-    /// its <see cref="LastDay"/>, the week's room now (all that is unused: <see cref="Allowed"/> reads no curve there) and that
-    /// room over the hours left to its reset, an hour at the least, so a sliver resetting in minutes does not outrank a large
-    /// room a day off. Null where none is known.
+    /// its <see cref="LastDay"/>, the week's room now (<see cref="Allowed"/>) and that room over the hours left to its reset, an
+    /// hour at the least, so a sliver resetting in minutes does not outrank a large room a day off. Null where none is known.
     /// </summary>
     /// <remarks>
     /// <para><b>Only the whole plan's week</b>, <c>weekly</c>: the five-hour window recovers in hours, so its reset never

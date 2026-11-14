@@ -304,7 +304,6 @@ public sealed class UsageCurvesTests
     [Fact]
     public void A_person_s_curve_measures_the_room()
     {
-        // Within the last day the person's curve is not read: the week's whole remaining 70 is room.
         var last = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)))!.Value;
         Assert.Equal(("weekly", 70.0, 7.0), last);
         var own = Lapsing(Use("curve", UseCurve.Flat("weekly", 50)), Seen("weekly", 0.30, TimeSpan.FromHours(24), TimeSpan.FromMinutes(5)));

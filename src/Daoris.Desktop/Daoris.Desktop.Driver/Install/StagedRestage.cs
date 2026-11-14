@@ -3,14 +3,13 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A build the swap refused <c>busy</c>, set aside in <c>update/failed/</c> because something still ran from <c>app/</c> or the
-/// home was held, staged again once it is not: the build is sound, only the moment was wrong, so nothing is left for a person to
-/// run. Compiled into the launcher beside <see cref="StagedBuild"/>, so it uses the base library and that alone.
+/// A build the swap refused <c>busy</c> (something still ran from <c>app/</c> or the home is held) sits in <c>update/failed/</c>;
+/// it is staged again once nothing holds, since the build is sound and only the moment is wrong, so no person has to run anything. Compiled into the launcher beside <see cref="StagedBuild"/>, so it uses the base library and that alone.
 /// </summary>
 public static class StagedRestage
 {
     /// <summary>
-    /// Whether the build the journal says was refused <c>busy</c> is staged again: only where nothing is staged and no swap is under way,
+    /// Whether the build the journal says is refused <c>busy</c> is staged again: only where nothing is staged and no swap is under way,
     /// and the build aside is that same one (its manifest's id is the journal's). A move that fails leaves what is left aside
     /// for the next start, which moves the rest, the manifest last so a half-staged build never reads as staged.
     /// </summary>

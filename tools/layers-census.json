@@ -651,6 +651,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/DeliveryStore.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Deps/DependencyStore.cs": 1,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Deps/FolderRename.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Deps/TreeCopyPermit.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Deps/TreeFilesStage.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Deps/TreeSharing.cs": 1,

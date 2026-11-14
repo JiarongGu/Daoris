@@ -284,9 +284,7 @@ public static class AccountRotation
 
         if (use.Use != "goal") return (WalkStep.List, 0);
 
-        // What would lapse, before any room or session count: within its week's last day, the most room per hour to its
-        // reset first, since another account's wider room is there tomorrow and this one's is lost at the reset;
-        // nothing that is not known earns any.
+        // What would lapse, before room or sessions: another account's room is there tomorrow, this one's is lost at its reset.
         var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
         if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 

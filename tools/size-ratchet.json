@@ -8,7 +8,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationFormGitTests.cs": 51656,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationPromoteGitTests.cs": 55354,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationGoalTests.cs": 42726,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationWalkTests.cs": 42893,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationWalkTests.cs": 42835,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs": 143413,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs": 60233,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs": 181209,
