@@ -108,7 +108,7 @@ public static class WorkflowPresets
             said.Add("Each piece of work is done in its department's own place, and you accept it there: nothing lands.");
         }
 
-        said.Add("Its agent's done closes the quest; the flow's end is the work's.");
+        said.Add("Its agent's done submits the work; the quest is done at the flow's end.");
         return string.Join(' ', said);
     }
 

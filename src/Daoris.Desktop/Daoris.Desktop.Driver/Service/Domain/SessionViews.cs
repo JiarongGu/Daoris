@@ -404,6 +404,9 @@ public static class SessionStates
 {
     public const string AwaitingPerson = "awaiting-person";
 
+    /// <summary>The state of a session whose agent's turn ended and which waits on its workflow's step (<c>StepWait</c>).</summary>
+    public const string AwaitingStep = "awaiting-step";
+
     public static bool IsParked(string? state) =>
         string.Equals(state, AwaitingPerson, StringComparison.OrdinalIgnoreCase);
 

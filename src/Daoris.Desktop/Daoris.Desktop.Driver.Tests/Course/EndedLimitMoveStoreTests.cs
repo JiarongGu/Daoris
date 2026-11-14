@@ -87,7 +87,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
             string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, string? profile = null,
             bool? ownTree = null, CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null,
             IReadOnlyList<ActorEffective>? order = null, EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false,
-            bool ownFirst = false, MoveWords? moves = null, ChatLimitCarry? carries = null)
+            bool ownFirst = false, MoveWords? moves = null, ChatCarries? carries = null)
         {
             if (Refuses) return new ChatStart(null, "the agent would not start");
             var opened = await client.OpenChatMovingAsync(repository, adapter, null, profile, tree, null, from, moves!, "default", ct);

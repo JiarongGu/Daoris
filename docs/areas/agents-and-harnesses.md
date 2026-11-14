@@ -16,8 +16,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 
 | Where | Its job |
 |---|---|
-| `Contract/` | The provider record (identity, doors, account pool, word tables, usage question, reach, each part known or stated absent), `DoorAbilities`, `AbilityReading`, `AgentRun`, the `SpawnRequest` a start makes and the `ProcessRecipe` a spawn answers, the ports a provider fills (`Ports.cs`), a plugin's `DeclaredDoor` |
-| `Registry/` | The one registry, of providers alone: `Providers.cs`'s built list, the plugins' doors joined, names resolved by kind, whose accounts a door runs as (`OwnerOfAgent`, `AgentNamed`), which agent a door is (`AgentOfDoor`), where it may work (`ProviderReach`) |
+| `Contract/` | The provider record (identity, doors, account pool, word tables, usage question, reach, each part known or stated absent), `DoorAbilities`, `AbilityReading`, `AgentRun`, the `SpawnRequest` a start makes and the `ProcessRecipe` a spawn answers, the ports a provider fills (`Ports.cs`, `IConversationCarry`, `IConversationSeeding`), a plugin's `DeclaredDoor` |
+| `Registry/` | The one registry, of providers alone: `Providers.cs`'s built list, the plugins' doors joined, names resolved by kind, whose accounts a door runs as (`OwnerOfAgent`, `AgentNamed`; `RunAs`, a door onto an account key such as a plugin's `acme`), which agent a door is (`AgentOfDoor`), where it may work (`ProviderReach`) |
 | `Providers/<Name>/` | Each provider's facts, spawns, word tables, usage question and own-home reads: `ClaudeCode`, `Codex`, `Dsh`, `Stub` (`stub`, `acp-stub`), `AltStub` (`alt-stub`, `alt-acp-stub`, with words and a home variable of their own) |
 | `Transports/` | `Shell`, which completes every session's process from a recipe, and the session's git port |
 | The root | The run (`TransportRun`, `DoorInput`, `ProtocolWords`, `HarnessCapture`, `NativeFrame`; `SessionProcesses`, never sent to the service); the protocol door (`Acp.cs`, a root wiring `Acp*` units); the roster (`HarnessRoster` and its `Roster*`, `Account*`, `Usage*` and `Binary*` units, `AgentErrors`, `HarnessSettings`, `AgentOffers`); what a session is handed (`ConnectorPlans`, `SessionServers`, `ServerKeeper`, `PermissionRules`, `RuleProposals`, `SpawnSkills`, `TargetPrompt`, `Spawning`); the terminal's `daoris agent …` verbs (`AgentsCommand`), each refusing a flag it does not take (`AgentVerbFlags`) |
@@ -30,7 +30,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 **Agents and doors**
 
 1. An adapter is added deliberately. An unknown agent or door name is an error naming what exists (`UnknownDoorException`),
-   never a fallback to another harness. (D23, D213)
+   never a fallback to another harness. (D23, D213) A cooling line prints its account's owner key, so `agent account ready` and the
+   account route take that key (`codex`, `acme`) as a door onto those accounts; every verb that works on an agent's toolchain
+   takes only an agent.
 2. The built set is `claude-code` (pipe), `claude-code-acp`, `codex-acp` and `dsh` (protocol), and the stand-ins; the machine's
    default is `claude-code`. A plugin may add harnesses, never replace a built name: its door is a `DeclaredDoor`, a protocol door
    with its own identity, home and program and no rules, placed by its `accountOf`; a manifest naming steering, resume, rules,
@@ -196,9 +198,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 38. A limited line resumes by itself at the look: its own conversation on its own account when ready. Else a driven line, and a
     repository's chat at its limit move, goes on on another account of the same agent in a new part carrying its conversation
     (`LimitCarry`), its files copied once the part it leaves has ended: whole at or under the provider's `WholeBound`, compacted
-    first past it where the harness can be asked, else briefed. It is briefed on another agent, from or to the tool's own home,
-    where the door declares no carry, the copy fails or the door refuses the copy's resume (the copy taken out,
-    `IConversationCarry.Remove`); `session.moved` says which. A restart cutting a carried move off before its new part runs leaves
+    first past it where the harness can be asked, else briefed. Where the copy cannot be made (the door declares no carry, no
+    conversation is kept, its file is missing or the copy fails) the move asks the Seed form (`SeedCarry`): the new door's provider
+    writes the part's events and the line's context entries as its agent's own conversation in the new account's home, resumed as a
+    carry is, with no brief. A limit move to another agent, and a hand-over to another agent, are seeded the same way: the start's
+    walk settles the door and the account, so the move hands a hook (`ChatCarries`) its start asks once the record is open, and
+    `ChatCarry` plans, places and runs the resume, its word (`CarryWords`) and notes told by the move's reason (`moved.seeded-on` on
+    the part it left, `moved.seeded-from` on the new one). It is briefed, the floor, from or to the tool's own home, past the bound
+    with no compaction, where the door's provider binds no seeding, or the door refuses the resume (the copy or seed taken out,
+    `IConversationCarry.Remove`, `IConversationSeeding.Remove`); `session.moved` says which. A hand-over to the same agent is
+    briefed. A restart cutting a carried move off before its new part runs leaves
     it in the same conversation. With no account to move to it waits, showing the earliest reset. A driven line whose limits rule
     refers holds as an ask for the limit supervisor (roles rule 48). The bound is D206's measurement. (D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries rule:
@@ -243,7 +252,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     a `NormalizedFailure` (`LayerFailures`), answered by `AgentErrors.OfNormalized` with no table read, which only tests call yet: its
     access readings stay apart (a field's and the words'), a limit's window, scope and stated reset reach D125's bounds as stated
     (`LayerStatedReset`), and an allowance report is put in the rate-limit frame's shape for the one reader of an agent's windows
-    (`LayerAllowance`). `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
+    (`LayerAllowance`). A provider's seeding (`IConversationSeeding`, the Seed form of a session's context, D293 point 5) is bound
+    from its `Layer/` (`ConversationSeedings`) over Lyntai's Seed rendering (`LayerSeeding`, the events mapped by `SeedHistory`, the
+    line's context entries, `SeedContext` from the brief's line, as Lyntai's `SessionContext`, an agent's note as its claim):
+    Claude Code's writer puts chained conversation lines in the tree's project folder for both its doors, Codex's a rollout under
+    its day for `codex-acp`, each held by Lyntai's `SeedWriterConformance`; dsh states its seed unmeasured, so it takes the brief.
+    `SeedResumeProcessTests` resumes a written conversation on the real `claude` and `codex-acp` behind the suite's real-model switch.
+    Without the layer no seeding is bound. `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
     person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
     The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
 48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`

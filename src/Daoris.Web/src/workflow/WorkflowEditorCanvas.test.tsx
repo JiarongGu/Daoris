@@ -126,10 +126,7 @@ describe('the editor\'s chart in the viewport', () => {
 
     await user.keyboard('{ArrowDown}');
     expect(focused()).toBe(step('Daoris makes sure · 3'));
-    await user.keyboard('+');
-    await pickByKeys('checks', 'The checks');
-
-    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowDown}{ArrowDown}');
     expect(focused()).toBe(step('Your review'));
     await user.keyboard('{Enter}');
     await screen.findByRole('dialog', { name: 'Your review' });
@@ -167,21 +164,17 @@ describe('the editor\'s chart in the viewport', () => {
   it('composes it by pointer: the steps pressed, the ◎\'s ＋, the inspector\'s rows', async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
-    // The holds opened, their last step chosen, and a step added after it from the head.
-    await user.click(within(step('Daoris makes sure · 3')).getAllByRole('button')[0]!);
-    await user.click(step('What the line holds'));
-    await user.click(screen.getByRole('button', { name: 'Close' }));
-    await user.click(screen.getByRole('button', { name: 'Add a step…' }));
-    await user.click(await screen.findByRole('option', { name: /^The checks/ }));
-
     await user.click(step('Your review'));
     await screen.findByRole('dialog', { name: 'Your review' });
     await user.click(screen.getByRole('combobox', { name: 'Where If you ask for changes goes from Your review' }));
     await user.click(await screen.findByRole('option', { name: 'Back to The work' }));
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
+    await user.click(within(step('Daoris makes sure · 3')).getAllByRole('button')[0]!);
+    expect(step('What the line holds')).toBeInTheDocument();
     await user.click(step('On the line'));
-    await user.click(await screen.findByRole('button', { name: 'Add a new step where Once done goes from On the line' }));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    await user.click(screen.getByRole('button', { name: 'Add a step…' }));
     await user.click(await screen.findByRole('option', { name: /^find by local-release/ }));
     await user.click(await screen.findByRole('button', { name: 'Add a step when find by local-release comes to release' }));
     await user.click(await screen.findByRole('option', { name: /^release by local-release/ }));

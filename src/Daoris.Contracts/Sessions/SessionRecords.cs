@@ -10,7 +10,7 @@ namespace Daoris.Contracts.Sessions;
 public static class SessionPageTypes
 {
     public const string State =
-        "'queued' | 'starting' | 'working' | 'awaiting-person' | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped'";
+        "'queued' | 'starting' | 'working' | 'awaiting-person' | 'awaiting-step' | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped'";
 
     public const string Kind = "'driven' | 'chat'";
 
@@ -76,7 +76,12 @@ public sealed record SessionResponse(
     [property: PageType(SessionPageTypes.Ran)] JsonElement? Ran = null,
     [property: PageType(SessionPageTypes.Chosen)] JsonElement? Chosen = null,
     string? Work = null, string? Head = null, string? Decides = null, IReadOnlyList<string>? HoldsPlace = null, string? Performs = null,
-    string? Line = null);
+    string? Line = null, IReadOnlyList<SessionTurnResponse>? Turns = null);
+
+/// <summary>One agent conversation's turn inside the session, answered on this machine only, since it names the account.</summary>
+public sealed record SessionTurnResponse(
+    int Number, string Cause, DateTimeOffset At, string? Node, int? Attempt, string? Part, string? Agent, string? Account, string? Adapter,
+    string? Conversation, DateTimeOffset? Ended);
 
 /// <summary>
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer

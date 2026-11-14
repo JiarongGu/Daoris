@@ -11,7 +11,7 @@ export const RELEASE_GRAPH = {
     { id: 'requests', kind: 'work.requests', version: 1, reach: 'observed' },
     { id: 'holds', kind: 'quest.holds', version: 1, reach: 'observed' },
     { id: 'content', kind: 'content.holds', version: 1, reach: 'observed' },
-    { id: 'check', kind: 'check', version: 1, reach: 'performed' },
+    { id: 'check', kind: 'check', version: 1, reach: 'performed', options: { gates: 'reached' } },
     { id: 'review', kind: 'review', version: 1, reach: 'pressed' },
     { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
     { id: 'line', kind: 'line', version: 1, reach: 'observed' },
@@ -45,6 +45,7 @@ export const RELEASE_GRAPH = {
     { id: 'e', kind: 'after', from: 'landing', to: 'line' },
     { id: 'r', kind: 'after', from: 'line', to: 'tree' },
     { id: 'f', kind: 'back', from: 'review', on: 'rejected', to: 'work' },
+    { id: 'cb', kind: 'back', from: 'check', on: 'failed', to: 'work' },
     { id: 'g', kind: 'after', from: 'line', to: 'find' },
     { id: 'h', kind: 'when', from: 'find', outcome: 'release', to: 'release' },
     { id: 'i', kind: 'data', from: 'find.release', to: 'release.release' },
@@ -81,7 +82,7 @@ export const TWO_OUTCOMES_GRAPH = {
   ],
 };
 
-/** `merge-after-accept.json`: the work, its holds, your review, the landing and the line. */
+/** `merge-after-accept.json`: the work, its holds, the checks (red goes back), your review, the landing and the line. */
 export const MERGE_GRAPH = {
   schemaVersion: 2,
   entries: ['work'],
@@ -91,6 +92,7 @@ export const MERGE_GRAPH = {
     { id: 'requests', kind: 'work.requests', version: 1, reach: 'observed' },
     { id: 'holds', kind: 'quest.holds', version: 1, reach: 'observed' },
     { id: 'content', kind: 'content.holds', version: 1, reach: 'observed' },
+    { id: 'check', kind: 'check', version: 1, reach: 'performed', options: { gates: 'reached' } },
     { id: 'review', kind: 'review', version: 1, reach: 'pressed' },
     { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
     { id: 'line', kind: 'line', version: 1, reach: 'observed' },
@@ -100,7 +102,9 @@ export const MERGE_GRAPH = {
     { id: 'a', kind: 'after', from: 'work', to: 'requests' },
     { id: 'h', kind: 'after', from: 'requests', to: 'holds' },
     { id: 'i', kind: 'after', from: 'holds', to: 'content' },
-    { id: 'b', kind: 'after', from: 'content', to: 'review' },
+    { id: 'ck', kind: 'after', from: 'content', to: 'check' },
+    { id: 'b', kind: 'after', from: 'check', to: 'review' },
+    { id: 'cb', kind: 'back', from: 'check', on: 'failed', to: 'work' },
     { id: 'e', kind: 'after', from: 'review', to: 'landing' },
     { id: 'c', kind: 'after', from: 'landing', to: 'line' },
     { id: 'r', kind: 'after', from: 'line', to: 'tree' },

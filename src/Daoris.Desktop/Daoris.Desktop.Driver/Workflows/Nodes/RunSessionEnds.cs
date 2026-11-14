@@ -1,0 +1,74 @@
+using Daoris.Contracts.Quests;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// What a run's end writes in one step: the Done of each of its quests standing at a submission, where the run came to its graph's end, and
+/// the end of the sessions waiting on it.
+/// </summary>
+/// <param name="Quests">The run's quests here closed Done, in its chain's order; none where it ended any other way.</param>
+public sealed record RunFinish(string Run, IReadOnlyList<RunEndQuest> Quests, IReadOnlyList<string> Sessions, string State, string Note);
+
+/// <summary>
+/// A run's end ends the sessions that wait on its steps, and writes its quests' Done: a session is the work's passage through its workflow,
+/// so only the workflow's end ends it, and the agent's done is its submission. A run that came to its graph's end closes its submitted
+/// quests and ends its sessions completed; one that ended any other way (failed at a step, stopped) leaves its work abandoned, its quests
+/// taken, and ends them stopped. The service moves only a session still awaiting a step, so one working again is never moved.
+/// </summary>
+public static class RunSessionEnds
+{
+    /// <summary>The state a run's end moves its waiting sessions to.</summary>
+    public static string StateOf(RunEnd ended) => ended.Outcome == RunOutcomes.Completed ? "completed" : "stopped";
+
+    /// <summary>The note it moves them with: the run's end, in the run's words.</summary>
+    public static string NoteOf(string run, RunEnd ended) =>
+        ended.Outcome == RunOutcomes.Completed
+            ? $"Its workflow's run `{run}` came to its end, and the session with it."
+            : $"Its workflow's run `{run}` ended {ended.Outcome}{(ended.Node is { } node ? $" at `{node}`" : "")}, so the session ended with it.";
+
+    /// <summary>The quests a completed run's end closes: each of <paramref name="quests"/> standing at its submission, in order.</summary>
+    public static IReadOnlyList<RunEndQuest> QuestsOf(RunEnd ended, IEnumerable<QuestView> quests) =>
+        ended.Outcome != RunOutcomes.Completed
+            ? []
+            : [.. quests.Where(quest => QuestResults.Submitted(quest)).Select(quest => new RunEndQuest(quest.Id, quest.Submission!.Machine, quest.Submission.Sequence))];
+
+    /// <summary>
+    /// Sends the run's end through <paramref name="finish"/>, saying what it wrote or why it wrote nothing. One the service could not take
+    /// is kept in <paramref name="owed"/>, and asked again at each look until it is (<see cref="AgainAsync"/>).
+    /// </summary>
+    public static async Task FinishAsync(
+        Func<RunFinish, CancellationToken, Task<RunEndResponse?>>? finish, string run, RunEnd ended, IEnumerable<QuestView> quests,
+        IEnumerable<string> sessions, List<string> said, CancellationToken ct, OwedRunEnds? owed = null)
+    {
+        if (finish is null) return;
+        var end = new RunFinish(run, QuestsOf(ended, quests), [.. sessions.Distinct(StringComparer.Ordinal)], StateOf(ended), NoteOf(run, ended));
+        if (end.Quests.Count == 0 && end.Sessions.Count == 0) return;
+        await SendAsync(finish, end, owed, said, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Each run's end the service could not take, sent again; one it takes now is owed no more, one it cannot stays owed.</summary>
+    public static async Task AgainAsync(
+        Func<RunFinish, CancellationToken, Task<RunEndResponse?>>? finish, OwedRunEnds owed, List<string> said, CancellationToken ct)
+    {
+        if (finish is null) return;
+        foreach (var end in owed.Read()) await SendAsync(finish, end, owed, said, ct, again: true).ConfigureAwait(false);
+    }
+
+    private static async Task SendAsync(
+        Func<RunFinish, CancellationToken, Task<RunEndResponse?>> finish, RunFinish end, OwedRunEnds? owed, List<string> said,
+        CancellationToken ct, bool again = false)
+    {
+        var answer = await finish(end, ct).ConfigureAwait(false);
+        if (answer is null)
+        {
+            owed?.Owe(end);
+            if (!again) said.Add($"run   {end.Run}: its end was not taken, so its quests stay taken and its sessions wait; it is asked again at the next look.");
+            return;
+        }
+
+        owed?.Paid(end.Run);
+        said.Add(answer.Refused is { } refused
+            ? $"run   {end.Run}: its quests were not closed ({refused}), so its sessions wait: {answer.Message}"
+            : $"run   {end.Run}: {answer.Message}");
+    }
+}

@@ -4,9 +4,9 @@ import { SESSION_ACTIVE, SESSION_TONE, type ShownState, shownKey, shownState } f
 import { list } from '../../locales/format';
 import { sessionOrigin } from '../identity';
 
-/** The record's nine states, in the service's order (`SessionState`), held to its enum by `sessionLife.test.ts`. */
+/** The record's ten states, in the service's order (`SessionState`), held to its enum by `sessionLife.test.ts`. */
 export const SESSION_STATES: readonly SessionState[] = [
-  'queued', 'starting', 'working', 'awaiting-person', 'completed', 'declined', 'stood-down', 'failed', 'stopped',
+  'queued', 'starting', 'working', 'awaiting-person', 'completed', 'declined', 'stood-down', 'failed', 'stopped', 'awaiting-step',
 ];
 
 /** The states that still hold their repository, and the five a session ends in (`Session.Active`). */
@@ -22,9 +22,11 @@ export const ENDED_STATES: readonly SessionState[] = SESSION_STATES.filter((stat
 export const SESSION_MOVES: readonly (readonly [SessionState, SessionState])[] = [
   ['queued', 'starting'], ['queued', 'stood-down'], ['queued', 'failed'], ['queued', 'stopped'],
   ['starting', 'working'], ['starting', 'stood-down'], ['starting', 'failed'], ['starting', 'stopped'],
-  ['working', 'awaiting-person'], ['working', 'completed'], ['working', 'declined'], ['working', 'stood-down'],
+  ['working', 'awaiting-person'], ['working', 'awaiting-step'], ['working', 'completed'], ['working', 'declined'], ['working', 'stood-down'],
   ['working', 'failed'], ['working', 'stopped'],
   ['awaiting-person', 'working'], ['awaiting-person', 'completed'], ['awaiting-person', 'declined'], ['awaiting-person', 'stopped'],
+  ['awaiting-step', 'working'], ['awaiting-step', 'awaiting-person'], ['awaiting-step', 'completed'], ['awaiting-step', 'declined'],
+  ['awaiting-step', 'stopped'],
 ];
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;

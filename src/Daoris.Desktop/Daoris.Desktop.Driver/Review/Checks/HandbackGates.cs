@@ -25,7 +25,7 @@ internal static class HandbackGates
     {
         var gates = OfFolder(root);
         return gates.Count == 0 ? null
-            : "Before done or ready, run every required hand-back check from this tree, and fix what your change reddens: "
+            : "Before done, run every required hand-back check from this tree, and fix what your change reddens: "
               + string.Join("; ", gates.Select(gate => $"`{gate.Run}`" + (gate.Cwd is { } cwd ? $" in `{cwd}`" : "")))
               + ". All must finish green. These commands select the checks the change reaches; a list of classes you chose does not replace them. "
               + "Use `check_run` to keep a verdict at your tip; the workflow's check step verifies the same commands at your tip while you are open, "

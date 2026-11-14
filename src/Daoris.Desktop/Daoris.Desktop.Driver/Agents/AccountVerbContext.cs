@@ -18,13 +18,15 @@ internal sealed record AccountVerbContext(
 
     /// <summary>
     /// The agent whose accounts this verb touches: a door's are its owner's, and the verb says so rather than quietly landing
-    /// somewhere else than typed.
+    /// somewhere else than typed. <paramref name="key"/> also takes the account key a cooling line prints.
     /// </summary>
-    public string Owner()
+    public string Owner(bool key = false)
     {
         var given = Operand(2);
         var named = AgentsCommand.Named(World, Path);
         if (given is not { Length: > 0 }) throw new AgentWords($"`agent {Verb}` needs an agent — one of: {string.Join(", ", named)}");
+        var set = World.Adapters(HarnessSettings.HomeOf(Path));
+        if (key && set.RunAs(given) is var door && door != given) return set.OwnerOfAgent(door).Value;
         var (name, _, _, roster) = AgentsCommand.Agent(Args, Verb, "<agent>", World, Path, at: 2);
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");

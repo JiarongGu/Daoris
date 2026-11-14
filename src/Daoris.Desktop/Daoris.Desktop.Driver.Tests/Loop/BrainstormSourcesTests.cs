@@ -100,6 +100,34 @@ public sealed class BrainstormSourcesTests : IDisposable
         Assert.Contains("in as a source the asker named", BrainstormCommand.Packet("x", packet), StringComparison.Ordinal);
     }
 
+    /// <summary>🔴 A named source reaches the passes whole, not cut at a searched source's 12,000 characters.</summary>
+    [Fact]
+    public async Task A_long_named_source_is_not_cut_at_twelve_thousand_characters()
+    {
+        var whole = string.Concat(Enumerable.Range(0, 5_200).Select(line => $"line {line:D5}\n"));
+        Assert.True(whole.Length > 50_000);
+        await File.WriteAllTextAsync(Path.Combine(Checkout, "docs", "long-design.md"), whole);
+
+        var packet = await FreezeAsync("docs/long-design.md");
+
+        var named = packet.Sources[0];
+        Assert.Equal(("docs/long-design.md", whole.Length, whole.Length), (named.Path, named.Kept, named.Of));
+        Assert.Equal(whole, named.Text);
+        Assert.DoesNotContain(packet.LeftOut, left => left.Path == "docs/long-design.md");
+        Assert.All(packet.Sources.Where(each => each.Tier != "named"), each => Assert.True(each.Kept <= BrainstormBounds.First.Each));
+    }
+
+    [Fact]
+    public void A_named_source_past_its_bound_says_how_much_was_kept()
+    {
+        var bounds = BrainstormBounds.First;
+        var huge = new string('x', bounds.NamedEach + 5_000);
+        var packet = BrainstormPackets.Freeze(
+            "Why?", "daoris", null, null, [new BrainstormFound("code", "src/Big.cs", null, null, huge, "src/Big.cs", BrainstormPackets.NamedTier)], bounds);
+
+        Assert.Equal((bounds.NamedEach, huge.Length), (packet.Sources[0].Kept, packet.Sources[0].Of));
+    }
+
     /// <summary>The request the desk writes with its sources is read back as they were named, in order (the desk's own rules are the service suite's).</summary>
     [Fact]
     public void A_request_with_named_sources_reads_back_each_in_order()

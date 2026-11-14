@@ -51,13 +51,13 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
     /// which sends them only to a host whose <c>opens</c> mark is 2. What moved comes back on <see cref="ChatStart.Moved"/>. Null for every
     /// other start, which opens as before.
     /// </param>
-    /// <param name="carries">A limit's carry: the part runs as its conversation's resume (<see cref="ChatLimitCarry.RunAsync"/>); null for every other start.</param>
+    /// <param name="carries">A move's carry, asked with the walked door and account once the record is open (<see cref="ChatCarries"/>); null for every other start.</param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
         EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null,
-        ChatLimitCarry? carries = null) =>
+        ChatCarries? carries = null) =>
         StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked, ownFirst: ownFirst, moves: moves, carries: carries);
 
     /// <param name="pending">
@@ -69,7 +69,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order,
         EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null, bool picked = false,
-        bool ownFirst = false, MoveWords? moves = null, ChatLimitCarry? carries = null)
+        bool ownFirst = false, MoveWords? moves = null, ChatCarries? carries = null)
     {
         var context = wiring.Context;
         if (context.Closing) return new(null, "Daoris is closing.");
@@ -98,7 +98,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        ChatPending? pending, HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatLimitCarry? carries)
+        ChatPending? pending, HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatCarries? carries)
     {
         var context = wiring.Context;
         var home = context.Home;
@@ -250,6 +250,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
         ChatAgent agent;
         bool ours;
         var answers = false;
+        ChatCarry? carrier = null;
         IReadOnlyList<string> continued;
         // Everything from the record's open to the run is one stretch: a failure or a cancel in it concludes the record, which the run's own
         // failure does for what comes after, so no record is left queued with only this process going to end it.
@@ -257,7 +258,8 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
         {
             // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
             context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
-            carries?.Bound(sessionId);
+            carrier = carries?.Invoke(resolved, selection);
+            carrier?.Bound(sessionId);
             // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it
             // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
             if (picked) context.Conversations.Pick(sessionId, selection.Profile);
@@ -369,13 +371,14 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
             // The conversation's own step before its first turn: the tree's unworked mark off.
             if (ours) TreeFilesStep.Hand(home, workTree);
             var placed = wiring.RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers);
-            started = carries is not null
-                ? await carries.RunAsync(sessionId, message, agent, config, placed, onEnded, keyed?.Moved ?? [], ct).ConfigureAwait(false)
+            started = carrier is not null
+                ? await carrier.RunAsync(sessionId, message, agent, config, placed, onEnded, keyed?.Moved ?? [], ct).ConfigureAwait(false)
                 : await wiring.RunAsync(
                     "chat", sessionId, message, agent, selection, config, placed, onEnded, ct, chosen: chosen, pending: context.Pending.For(sessionId))
                     .ConfigureAwait(false);
             // What the open moved, for the move that asked it to hand the new part.
-            return started = keyed is null ? started : started with { Moves = keyed.Moves, Moved = keyed.Moved };
+            started = keyed is null ? started : started with { Moves = keyed.Moves, Moved = keyed.Moved };
+            return started = carrier is { Resumed: true } ? started with { Carried = true } : started;
         }
         finally
         {

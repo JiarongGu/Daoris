@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A quest's handback: the note a session gave through its connector as it closed the quest done, said it ready or
+/// A quest's handback: the note a session gave through its connector as it closed the quest done, submitted it or
 /// declined it, as the operation that made that act keeps it, with how it answered each of the person's requirements, when, on which
 /// machine, and the session that wrote it. Written once, at that act, in the same write as the move; read back from the quest's
 /// history, never from a session's event log. It travels with the quest, as every operation does.
@@ -20,10 +20,10 @@ namespace Daoris.Knowledge;
 public sealed record QuestHandback(
     string Quest, QuestOperationKind Act, string? Note, IReadOnlyList<QuestAnswer> Answers, DateTimeOffset At, string Machine, string Session)
 {
-    /// <summary>The act as the wire spells it: <c>done</c>, <c>ready</c> or <c>declined</c>.</summary>
+    /// <summary>The act as the wire spells it: <c>done</c>, <c>submitted</c> (a done its graph or its run closes) or <c>declined</c>.</summary>
     public string Spelled => Act switch
     {
-        QuestOperationKind.Submitted => "ready",
+        QuestOperationKind.Submitted => "submitted",
         QuestOperationKind.Declined => "declined",
         _ => "done",
     };
@@ -46,7 +46,7 @@ public static class QuestHandbacks
             : null;
 
     /// <summary>
-    /// The quest's latest close in <paramref name="history"/>: the latest done, ready or decline the replay applied, whoever made it, so
+    /// The quest's latest close in <paramref name="history"/>: the latest done, submission or decline the replay applied, whoever made it, so
     /// no later close through another door is answered by an older note. A done the graph's close wrote is passed
     /// over: its note is a copy of the submission it closed on, which stays the answer. Null where the quest has none yet.
     /// </summary>
@@ -180,7 +180,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
 
     private static string Act(QuestOperationKind act) => act switch
     {
-        QuestOperationKind.Submitted => "said it ready",
+        QuestOperationKind.Submitted => "submitted it",
         QuestOperationKind.Declined => "declined it",
         _ => "closed it done",
     };

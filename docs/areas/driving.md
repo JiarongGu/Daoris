@@ -43,8 +43,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 
 1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, its body says why
    with evidence, never the change, and it is kept under its receiver's registered spelling. (D32, D34, D70)
-2. The driver never writes quest state. The session it starts takes, finishes or declines its own quest through its own
-   connector, so driven and outside work look the same at the quest layer. (D46)
+2. The driver never writes quest state but at a workflow run's end. The session it starts takes, submits or declines its own quest
+   through its own connector, so driven and outside work look the same at the quest layer. (D46) The one exception (D293): a quest worked
+   in a run bound to a graph version is bound to that run at its session's first start (`RunQuestBinding`, `POST /api/quests/{id}/run`,
+   its closure `run:<run>`), so its agent's done is a submission that leaves it `Taken`; the run's end writes the Done of each of its
+   quests standing at a submission and ends the sessions waiting on it, in one service write (`RunEnds`, `POST /api/runs/{run}/end`,
+   through the close door under a key of that end), where the run came to its graph's end. A run that ended any other way closes nothing.
+   An end the service did not take is kept under the home (`OwedRunEnds`) and sent again at each look until it is taken. The agent's
+   `done` is the one verb of a submission, on a quest a closure graph or a run closes alike; its prompt says so (`SessionTarget.Submits`),
+   and its ask's channel reads the quest `submitted`, not `taken`, until its Done.
 3. A take on a quest shared through a remote claims by push before work starts. It is held, lost (the session stands down), or
    unconfirmed (work goes on until a sync decides). (D68, D69)
 4. Each whole look asks the host where every running session's claim stands. A session whose take lost is stopped, and the record
@@ -54,7 +61,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
 7. Daoris checks a session's work only in a workflow's `check` step, never outside its workflow (D293): no look reads a done session's tree
-    or asks it a check. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move,
+    or asks it a check. A session's handback is the note it gave at done or decline, written once in the same write as the move,
     kept with the session that wrote it, and read whole. (D219) A `check` whose `gates` is `reached` reads the hand-back from git at the tip it
     is bound to (`HandbackReading`, inside the check's executor): the base against the line, how far the line moved past it, the paths touched
     and the commits that carry no `Co-Authored-By` line naming a maker (`CommitAttribution` over the repository port's log, the merge check's rule, held equal to
@@ -65,7 +72,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     reads one at a hand-back. Else it runs the declaration's required hand-back commands the paths reach: a gate marked `"handback"` in
     `daoris.gates.json` (`true` for its `run`, or the command to run in its place), except one a broker check finished green at this very commit
     (`HandbackGates.Verified`: its whole command, or its name where its own run is the requirement), which is named kept. Every driven brief lists
-    the required commands for the agent to run before done or ready (`HandbackGates.Told`) and tells it to write its own `Co-Authored-By` line
+    the required commands for the agent to run before done (`HandbackGates.Told`) and tells it to write its own `Co-Authored-By` line
     whatever its harness (`CommitTrailers`), since a shell commit through `claude-code-acp` gets none.
 
 ### Planning a look
@@ -218,10 +225,23 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 
 ### States and the end
 
-36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson`, then `Completed`, `Declined`,
-    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
-    newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83)
-37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its own quest
+36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson` or `AwaitingStep`, then `Completed`,
+    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
+    newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83) `AwaitingStep` (`awaiting-step`)
+    is a session whose agent's turn ended while its work goes through its workflow (D293): open, holding its tree, running no process, its
+    note's `waits.step` part naming the run it waits on and, where known, the step, its attempt and the tip (`StepWait`; `waits.check`
+    for its own broker check). A word kept on it wakes
+    it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
+    parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
+    (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
+    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it ended any other way. A run not ended
+    whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
+    its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
+    `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person
+    stays as it is, and a run already ended asks nothing.
+37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
+    where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, a later
+    turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
     left is `Unclosed`, a row of *What needs you* until the person's done closes it or their word goes on with the session, its
@@ -231,12 +251,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.
     (D83, D208, D229)
 40. Each end gets one class from its record: completed, failed, limited, transient-bound, access, stopped by the person, a role or
-    Daoris, refused-choice, awaits-helper, awaits-check, stood-down, or unknown. A limit outranks a good end or one Daoris made.
+    Daoris, refused-choice, awaits-helper, awaits-check (a journal row from before `awaiting-step`), stood-down, or unknown. A limit outranks a good end or one Daoris made.
     (D173, D206, D210)
 40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
-    `daoris gate run` makes) and ends its turn on it with no question to the person ends `completed` by `ended.awaits-check`,
-    holding its tree as a wait on its helper does; the verdict (reached, failed or stopped, a red's log tail) is Daoris's word
-    under the key `check/<id>`, which reopens it in the same conversation, so the wait spends no tokens. The broker runs one
+    `daoris gate run` makes) and ends its turn on it with no question to the person waits as `awaiting-step` on that check
+    (`StepWait.Check`, its note `waits.check`), holding its tree; the verdict (reached, failed or stopped, a red's log tail)
+    is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker runs one
     check at a time on this machine, the oldest ask first. One broker
     seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
     holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
@@ -315,6 +335,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 46. The records of one line share their `line`, and the lines of one ask or quest in one repository share an entry key,
     `<origin>/<repository>`, which an Accept lands together (`LandingEntries`); an entry's slice partition is its leading session. A line's
     head is found by walking `from` forward, at most 256 hops; a cycle or the bound reads as no head. (D167, D212)
+46a. Each agent conversation is a numbered turn of its session (D293 point 5). A record keeps the turns it ran (`turns`, this
+    machine's own and answered on loopback only): its open writes the first, with its cause read from its `from` link (`start`
+    where it continues none, `limit` for a limit or a near one, `curve`, `agent`, `person` for a press, else `daoris`), and each
+    wake by the go-on adds one, `person` where any word waiting is the person's or their supervisor's, else `step` with the node
+    and attempt its word's key names (`check_run` for a broker check). The list answers each record its line's turns oldest first,
+    numbered from one, each with the record it ran in, its agent, account, adapter and conversation (`SessionTurnLines`), so a
+    limit or a curve move is the line's next turn and the session's id stays its first record's. A record from before turns reads
+    its `from` link as its one turn (`SessionTurns.Own`), a read that goes once no such record is kept. The moves still open a
+    record of their own for each move's turn.
 
 ### The tidy
 

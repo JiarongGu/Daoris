@@ -96,6 +96,7 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/Agents/NativePromptProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceLive.cs",
             "Daoris.Desktop.Driver.Tests/Agents/StandInShimProcessTests.cs", "Daoris.Desktop.Driver.Tests/Participants/PacketOnlyReaderProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Agents/Layer/SeedResumeProcessTests.cs",
         ]),
         (TestStartKind.Probe,
         [

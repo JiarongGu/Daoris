@@ -142,7 +142,9 @@ public sealed class PartEndedTests
         var named = PartEnds.Decided.Keys.Concat(PartEnds.ByState).ToList();
 
         Assert.Equal(named.Count, named.Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(written.Order(StringComparer.Ordinal), named.Where(code => code.StartsWith("ended.", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+        Assert.Equal(written.Order(StringComparer.Ordinal),
+            named.Where(code => code.StartsWith("ended.", StringComparison.Ordinal) && !PartEnds.Older.Contains(code)).Order(StringComparer.Ordinal));
+        Assert.All(PartEnds.Older, code => Assert.True(PartEnds.Decided.ContainsKey(code) && !written.Contains(code), code));
         Assert.All(PartEnds.Decided.Values, cls => Assert.Contains(cls, PartEnds.Classes));
         Assert.All(PartEnds.Classes, cls => Assert.Contains(cls, PartEnds.Causes.Keys));
     }

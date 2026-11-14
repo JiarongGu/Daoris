@@ -121,4 +121,10 @@ public sealed record PostQuestEvidence(
 [JsonSerializable(typeof(PostQuestEvidence))]
 [JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(QuestEvidenceVerdictResponse))]
+[JsonSerializable(typeof(BindQuestToRun))]
+[JsonSerializable(typeof(RunBindResponse))]
+[JsonSerializable(typeof(EndRun))]
+[JsonSerializable(typeof(RunEndResponse))]
+[JsonSerializable(typeof(ReopenRunSessions))]
+[JsonSerializable(typeof(RunReopenResponse))]
 internal sealed partial class QuestJson : JsonSerializerContext;

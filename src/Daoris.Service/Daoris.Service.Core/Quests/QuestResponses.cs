@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Answering a quest: take, done, ready, decline or wait.</summary>
+/// <summary>Answering a quest: take, done, decline or wait.</summary>
 internal sealed class QuestResponses(
-    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestReadies readies, QuestRemoteClaims claims)
+    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestSubmissions submissions, QuestRemoteClaims claims)
 {
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal
@@ -16,8 +16,7 @@ internal sealed class QuestResponses(
         IReadOnlyList<QuestAnswer>? answers,
         // A decline that applies only while the quest is open: an abandon's.
         bool whileOpen,
-        // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a ready's
-        // submission does: which session wrote the handback.
+        // The session answering, as its connector's intake names it, kept on its operation: which session wrote the handback.
         string? session,
         // The note is a session's handback: the connector's `quest_respond`, so a close whose note only points
         // elsewhere is refused. Every other door, the person's among them, keeps its words as given.
@@ -51,14 +50,9 @@ internal sealed class QuestResponses(
 
         // A session's closing note is its handback, the one record of its work whoever reads the quest later reads.
         // One that only points at another message, a commit or a file is refused before anything is read or written.
-        if (handback && action.ToLowerInvariant() is "done" or "ready" or "decline" && HandbackNotes.PointsElsewhere(reason) is { } pointer)
+        if (handback && action.ToLowerInvariant() is "done" or "decline" && HandbackNotes.PointsElsewhere(reason) is { } pointer)
         {
             return new(QuestRespondRefusal.PointsElsewhere, HandbackNotes.Refusal(pointer), Quest: null);
-        }
-
-        if (string.Equals(action, "ready", StringComparison.OrdinalIgnoreCase))
-        {
-            return await readies.ReadyAsync(id.TrimStart('#'), reason, answers ?? [], now, ct, session).ConfigureAwait(false);
         }
 
         var status = action.ToLowerInvariant() switch
@@ -73,7 +67,7 @@ internal sealed class QuestResponses(
         {
             return new(
                 QuestRespondRefusal.UnknownAction,
-                $"Unknown action '{action}' — one of: take, done, ready, decline, wait.",
+                $"Unknown action '{action}' — one of: take, done, decline, wait.",
                 Quest: null);
         }
 
@@ -122,15 +116,7 @@ internal sealed class QuestResponses(
             return new(QuestRespondRefusal.SourceReopened, QuestWords.SourceReopenedWords(move.Quest), Quest: null);
         }
 
-        // A done where the quest's graph closes it: the result is a submission, said as the action to take.
-        if (move.ClosedByGraph)
-        {
-            return new(
-                QuestRespondRefusal.ClosedByGraph,
-                $"Quest `#{move.Quest.Id}` closes through its graph: say `ready` with the same note and answers, and the graph "
-                + "writes its Done at the work's end, once its holds and gates are through. Nothing moved.",
-                Quest: null);
-        }
+        if (move.ClosedByGraph) return await submissions.SubmitAsync(move.Quest.Id, reason, answers ?? [], now, ct, session).ConfigureAwait(false);
 
         if (move.Moved && status == QuestStatus.Taken
             && await claims.ClaimByPushAsync(move.Quest, ct).ConfigureAwait(false) is { } claimed)
@@ -140,8 +126,7 @@ internal sealed class QuestResponses(
 
         if (move.Moved)
         {
-            // The chain moved on with the close — said here, because the next step is now
-            // somebody's open quest and whoever closed this one should know whose.
+            // The chain moved on with the close: the next step is somebody's open quest now, and its closer is told whose.
             return new(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await answering.AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"

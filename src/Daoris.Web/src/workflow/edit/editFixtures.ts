@@ -117,6 +117,12 @@ export const RELEASE_GRAPH = {
   ],
 };
 
+export const CHAIN_GRAPH = {
+  ...MERGE_GRAPH,
+  nodes: MERGE_GRAPH.nodes.filter((node) => node.id !== 'check'),
+  wires: [...MERGE_GRAPH.wires.filter((wire) => !['ck', 'b', 'cb'].includes(wire.id)), { id: 'b', kind: 'after', from: 'content', to: 'review' }],
+};
+
 /** The release default with the work naming a role that only reviews, and a way back from the review into the landing, which goes forward. */
 export const REFUSED_GRAPH = {
   ...RELEASE_GRAPH,

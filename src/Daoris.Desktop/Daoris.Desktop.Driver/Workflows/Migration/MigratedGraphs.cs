@@ -54,8 +54,9 @@ public static class MigratedGraphs
         if (place.Checks is { } checks) work["checks"] = checks;
         var nodes = new JsonArray(
             Node("work", NodeKinds.Claimed, "observed", work), Node("requests", NodeKinds.WorkRequests, "observed"),
-            Node("holds", NodeKinds.QuestHolds, "observed"), Node("content", NodeKinds.ContentHolds, "observed"));
-        var chain = new List<string> { "work", "requests", "holds", "content" };
+            Node("holds", NodeKinds.QuestHolds, "observed"), Node("content", NodeKinds.ContentHolds, "observed"),
+            Node("check", NodeKinds.Check, "performed", new JsonObject { ["gates"] = "reached" }));
+        var chain = new List<string> { "work", "requests", "holds", "content", "check" };
         if (reviewed)
         {
             nodes.Add(Node("review", NodeKinds.Review, "pressed"));
@@ -97,6 +98,7 @@ public static class MigratedGraphs
 
         var wires = new JsonArray();
         for (var at = 1; at < chain.Count; at++) wires.Add(new JsonObject { ["id"] = $"w{at}", ["kind"] = "after", ["from"] = chain[at - 1], ["to"] = chain[at] });
+        wires.Add(new JsonObject { ["id"] = "cb", ["kind"] = "back", ["from"] = "check", ["on"] = "failed", ["to"] = "work" });
         var graph = new JsonObject { ["schemaVersion"] = 2, ["entries"] = new JsonArray("work"), ["end"] = end, ["nodes"] = nodes, ["wires"] = wires };
         if (place.Opinion || place.Look) graph = WorkflowPresets.WithGraphGates(graph, place.Opinion, place.Look);
         return rule?.Cycle is { } cycle ? Folded(graph, cycle) : graph;

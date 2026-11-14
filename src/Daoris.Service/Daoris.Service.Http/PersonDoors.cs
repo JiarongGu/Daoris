@@ -247,6 +247,9 @@ public static class PersonDoors
         // The graph is the workspace's and its close runs under the unit's lock, which only the driver holds.
         new("POST", "/api/quests/{id}/close", DoorClass.Driver, "a graph's close of its quests"),
         new("POST", "/api/quests/{id}/close/outcome", DoorClass.Driver, "what became of a graph's close, by its key"),
+        new("POST", "/api/quests/{id}/run", DoorClass.Driver, "a run's bind of its quest"),
+        new("POST", "/api/runs/{run}/end", DoorClass.Driver, "a run's end"),
+        new("POST", "/api/runs/{run}/reopen", DoorClass.Driver, "a run's older records carried on"),
         new("POST", "/api/sessions", DoorClass.Driver, "a driven session's record"),
         new("POST", "/api/sessions/chat", DoorClass.Driver, "a conversation's record"),
         new("POST", "/api/sessions/intake", DoorClass.Driver, "an intake's record"),

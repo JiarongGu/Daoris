@@ -3,7 +3,17 @@ namespace Daoris.Driver;
 /// <summary>The lines a limit's move says where it carries the conversation to the new account, or why it hands the brief instead.</summary>
 internal static class CarriedNotes
 {
-    /// <summary>On the part it left: where its conversation went on.</summary>
+    /// <summary>On the part it left: where its conversation went on, carried there or written there as the new agent's own.</summary>
+    public static Noted On(string session, string agent, string? account, string why, CarryPlan.Carried carried) =>
+        carried is CarryPlan.Seeded
+            ? Noted.Of(
+                StartNoteCodes.MovedSeededOn,
+                $"Went on as a new part of this session, {session}, with {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+                + "Daoris wrote what it kept of this part as that agent's own conversation, which goes on there.",
+                ("session", session), ("agent", agent), ("account", account), ("why", why))
+            : On(session, agent, account, why, carried.Tokens);
+
+    /// <summary>On the part it left: its own conversation, carried to the new account.</summary>
     public static Noted On(string session, string agent, string? account, string why, long? tokens) =>
         Noted.Of(
             StartNoteCodes.MovedCarriedOn,
@@ -13,7 +23,13 @@ internal static class CarriedNotes
 
     /// <summary>On the new part: the conversation it goes on with, whole or compacted first.</summary>
     public static Noted From(string session, string agent, string? account, string why, CarryPlan.Carried carried) =>
-        carried is CarryPlan.Compacted compacted
+        carried is CarryPlan.Seeded
+            ? Noted.Of(
+                StartNoteCodes.MovedSeededFrom,
+                $"Continues the part before it, {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+                + "its conversation could not be carried, so Daoris wrote what it kept of it as this agent's own conversation, which goes on, with no brief.",
+                ("session", session), ("agent", agent), ("account", account), ("why", why))
+            : carried is CarryPlan.Compacted compacted
             ? Noted.Of(
                 StartNoteCodes.MovedCompactedFrom,
                 $"Continues the part before it, {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "

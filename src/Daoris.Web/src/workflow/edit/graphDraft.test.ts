@@ -236,7 +236,8 @@ describe('What happens next: the rows of a step, and the kind of way the row and
     };
     expect(kindOf('review', 'changes', 'work', shipped('merge-after-accept'))).toBe('back@rejected');
     expect(kindOf('review', 'changes', 'line')).toBe('rejected');
-    expect(kindOf('check', 'fails', 'work')).toBe('back@failed');
+    expect(kindOf('check', 'fails', 'work', removeWire(release, 'cb'))).toBe('back@failed');
+    expect(kindOf('check', 'fails', 'work')).toBeNull();
     expect(kindOf('check', 'fails', 'publish')).toBe('failed');
     expect(kindOf('find', 'outcome:none', 'work')).toBe('back@none');
     expect(kindOf('find', 'outcome:none', 'publish')).toBe('when?none');
@@ -284,10 +285,10 @@ describe('What happens next: the rows of a step, and the kind of way the row and
 describe('the editing operations', () => {
   it('inserts a step on a way, A → new → B: the way keeps its id and kind into the new step, which goes on to B once done', () => {
     const merge = shipped('merge-after-accept');
-    const { draft, id } = insertStep(PALETTE, merge, choice('check'), { on: 'b' });
-    expect(id).toBe('check');
-    expect(said(wire(draft, 'b'))).toBe('after:content>check');
-    expect(draft.wires.filter((each) => each.from === 'check').map(said)).toEqual(['after:check>review']);
+    const { draft, id } = insertStep(PALETTE, merge, choice('check'), { on: 'e' });
+    expect(id).toBe('check-2');
+    expect(said(wire(draft, 'e'))).toBe('after:review>check-2');
+    expect(draft.wires.filter((each) => each.from === 'check-2').map(said)).toEqual(['after:check-2>landing']);
     // On a decision's route the outcome stays on the way into the new step; a data wire is never carried over.
     const release = shipped('release');
     const onRoute = insertStep(PALETTE, release, choice('check'), { on: 'h' });
@@ -320,7 +321,7 @@ describe('the editing operations', () => {
     expect(copy.draft.nodes.find((node) => node.id === 'land')!.node).toMatchObject({ kind: 'land', options: { method: 'merge' } });
     expect(said(wire(copy.draft, 'e'))).toBe('after:landing>land');
 
-    const back = connect(PALETTE, release, 'check', 'fails', 'work')!;
+    const back = connect(PALETTE, removeWire(release, 'cb'), 'check', 'fails', 'work')!;
     expect(said(wire(back.draft, back.wire))).toBe('back:check>work@failed');
     expect(connect(PALETTE, release, 'landing', 'done', 'work')).toBeNull();
     // Retargeted, a way keeps its id and takes the kind its new target gives; another target is an *also to*, removable alone.
@@ -333,12 +334,13 @@ describe('the editing operations', () => {
 
   it('moves a step within a plain chain and back, naming the steps around it, and not where its ways are more than a chain', () => {
     const merge = shipped('merge-after-accept');
-    expect(movePlan(merge, 'review', 'earlier')).toEqual({ before: 'holds', first: 'review', second: 'content', after: 'landing' });
-    const moved = moveInChain(merge, 'review', 'earlier')!;
-    expect(['i', 'b', 'e'].map((each) => said(wire(moved, each)))).toEqual(['after:holds>review', 'after:review>content', 'after:content>landing']);
-    expect(graphOf(moveInChain(moved, 'review', 'later')!)).toEqual(graphOf(merge));
-    // The release's review also goes back to the work, and its find goes on by its outcomes, so each is more than a chain's link; the
-    // work has nothing before it.
+    expect(movePlan(merge, 'content', 'earlier')).toEqual({ before: 'requests', first: 'content', second: 'holds', after: 'check' });
+    const moved = moveInChain(merge, 'content', 'earlier')!;
+    expect(['h', 'i', 'ck'].map((each) => said(wire(moved, each)))).toEqual(['after:requests>content', 'after:content>holds', 'after:holds>check']);
+    expect(graphOf(moveInChain(moved, 'content', 'later')!)).toEqual(graphOf(merge));
+    // The check goes back to the work, the release's review too, and its find goes on by its outcomes, so each is more than a chain's
+    // link; the work has nothing before it.
+    expect(movePlan(merge, 'review', 'earlier')).toBeNull();
     expect(movePlan(shipped('release'), 'review', 'earlier')).toBeNull();
     expect(movePlan(shipped('release'), 'find', 'earlier')).toBeNull();
     expect(movePlan(merge, 'work', 'earlier')).toBeNull();
@@ -346,9 +348,9 @@ describe('the editing operations', () => {
 
   it('removes a step alone, or joins its one plain way in to its one plain way on; removing the end asks where the end goes', () => {
     const merge = shipped('merge-after-accept');
-    expect(joinOf(merge, 'review')).toEqual({ from: 'content', to: 'landing', in: 'b', out: 'e' });
+    expect(joinOf(merge, 'review')).toEqual({ from: 'check', to: 'landing', in: 'b', out: 'e' });
     const joined = removeStep(merge, 'review', { join: true });
-    expect(said(wire(joined, 'b'))).toBe('after:content>landing');
+    expect(said(wire(joined, 'b'))).toBe('after:check>landing');
     expect(joined.wires.some((each) => each.id === 'e')).toBe(false);
     expect(removeStep(merge, 'review').wires.some((each) => each.id === 'b')).toBe(false);
     // The end removed takes the end the person chose, else none; a step with a way back is no plain chain's link.

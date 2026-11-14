@@ -118,5 +118,15 @@
   "work.atWork.ask.parts_one": "{{count}} 段 · {{working}} 段在工作",
   "work.atWork.ask.parts_other": "{{count}} 段 · {{working}} 段在工作",
   "work.atWork.ask.moreEntries_one": "另有 {{count}} 条工作线未列出",
-  "work.atWork.ask.moreEntries_other": "另有 {{count}} 条工作线未列出"
+  "work.atWork.ask.moreEntries_other": "另有 {{count}} 条工作线未列出",
+  "work.atWork.standing.landed_one": "{{count}} 个已落地",
+  "work.atWork.standing.landed_other": "{{count}} 个已落地",
+  "work.atWork.standing.you_one": "{{count}} 个等你",
+  "work.atWork.standing.you_other": "{{count}} 个等你",
+  "work.atWork.standing.checks_one": "{{count}} 个在检查或第二意见中",
+  "work.atWork.standing.checks_other": "{{count}} 个在检查或第二意见中",
+  "work.atWork.standing.working_one": "{{count}} 个进行中",
+  "work.atWork.standing.working_other": "{{count}} 个进行中",
+  "work.atWork.standing.notStarted_one": "{{count}} 个未开始",
+  "work.atWork.standing.notStarted_other": "{{count}} 个未开始"
 }

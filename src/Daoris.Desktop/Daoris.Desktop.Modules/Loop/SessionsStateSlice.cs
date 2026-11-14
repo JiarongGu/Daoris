@@ -51,7 +51,7 @@ public static class SessionsStateSlice
         // host answers none for, and then the page reads today's predicates.
         "work",
         // The quest a chat took through its own connector, which the at-work view reads a chat's wait by.
-        "tookQuest", "line",
+        "tookQuest", "line", "turns",
     ];
 
     /// <summary>

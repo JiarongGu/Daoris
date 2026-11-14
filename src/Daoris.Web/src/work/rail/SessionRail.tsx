@@ -239,7 +239,11 @@ export function SessionRail({
     now: new Date(),
   })?.[0] ?? null;
   // What each helper and each part that continues another spent, on its own row; a browser asks nothing.
-  const spent = useSessionSpent(listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id), 1);
+  // A session that went on draws what each of its turns' records spent beneath it.
+  const spent = useSessionSpent([...new Set([
+    ...listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id),
+    ...listed.flatMap((session) => ((session.turns?.length ?? 0) > 1 ? session.turns!.flatMap((turn) => (turn.part ? [turn.part] : [])) : [])),
+  ])], 1);
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
     // A line of work an ask began is named by its ask, whose page names it the same way; an intake
@@ -256,6 +260,7 @@ export function SessionRail({
     continues: continues[session.id],
     helps: helps[session.id],
     spent: isHelper(session) || session.from ? spent[session.id] ?? null : null,
+    turnsSpent: spent,
     ...heavyOf(session),
     limitWait: live ? null : limitWaitOf(session),
   }));

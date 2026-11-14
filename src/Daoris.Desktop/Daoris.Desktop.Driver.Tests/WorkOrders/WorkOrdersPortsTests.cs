@@ -178,6 +178,8 @@ public sealed class WorkOrdersPortsTests : IDisposable
 
         public IReadOnlyList<PersonWait> PersonWaits(string home) => [];
 
+        public IReadOnlyList<RunPassage> Passages(string home) => [];
+
         public string? Unusable(string home, string workflow)
         {
             Unusables.Add(home);

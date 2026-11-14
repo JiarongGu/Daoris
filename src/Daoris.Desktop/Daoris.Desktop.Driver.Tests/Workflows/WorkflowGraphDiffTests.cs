@@ -22,7 +22,7 @@ public sealed class WorkflowGraphDiffTests
         Assert.All(WorkflowDefaults.All, shipped => Assert.Empty(WorkflowGraphDiff.Of(Shipped(shipped.Id), Shipped(shipped.Id))));
     }
 
-    /// <summary>The release workflow from the Merge workflow: four steps added, their ways needing them, and each way renumbered shown.</summary>
+    /// <summary>The release workflow from the Merge workflow: three steps added, their ways needing them, and each way renumbered shown.</summary>
     [Fact]
     public void The_release_workflow_from_the_merge_workflow_is_its_steps_its_ways_and_each_id_that_moved()
     {
@@ -30,8 +30,8 @@ public sealed class WorkflowGraphDiffTests
         var by = changes.ToDictionary(change => change.Id);
 
         Assert.Equal(
-            ["step:+check", "step:+find", "step:+release", "step:+publish",
-             "way:~l", "way:~m", "way:~b", "way:+c", "way:~d", "way:~e", "way:+f", "way:+g", "way:+h", "way:+i", "way:+j", "way:+k"],
+            ["step:+find", "step:+release", "step:+publish",
+             "way:~l", "way:~m", "way:~b", "way:~c", "way:~d", "way:~e", "way:+f", "way:+g", "way:+h", "way:+i", "way:+j", "way:+k"],
             changes.Select(change => change.Id));
         Assert.DoesNotContain(changes, change => change.Change == GraphChanges.Removed);
 
@@ -39,13 +39,12 @@ public sealed class WorkflowGraphDiffTests
         Assert.Equal(["id"], by["way:~l"].Fields);
         Assert.Equal("h", by["way:~l"].Was);
         Assert.Equal("Change the way `l` (after): `requests` → `holds`; its id was `h`.", by["way:~l"].Said);
-        Assert.Equal(["to"], by["way:~b"].Fields);
-        Assert.Null(by["way:~b"].Was);
-        Assert.Equal("Change the way `b` (after): `content` → `check`; it was `content` → `review`.", by["way:~b"].Said);
+        Assert.Equal("ck", by["way:~b"].Was);
+        Assert.Equal("Change the way `b` (after): `content` → `check`; its id was `ck`.", by["way:~b"].Said);
 
         // Each way needs the steps it is added between, and an id it takes from a way renumbered away.
-        Assert.Equal(["step:+check"], by["way:~b"].Needs);
-        Assert.Equal(["step:+check", "way:~e"], by["way:+c"].Needs);
+        Assert.Equal(["way:~c"], by["way:~b"].Needs);
+        Assert.Equal(["way:~e"], by["way:~c"].Needs);
         Assert.Equal(["step:+find", "step:+release", "way:~l"], by["way:+h"].Needs);
         Assert.Equal(["step:+find", "step:+release", "way:~m"], by["way:+i"].Needs);
         Assert.Equal(["step:+release", "step:+publish"], by["way:+k"].Needs);
@@ -63,8 +62,9 @@ public sealed class WorkflowGraphDiffTests
         var changes = WorkflowGraphDiff.Of(Shipped("release"), Shipped("merge-after-accept"));
         var by = changes.ToDictionary(change => change.Id);
 
-        Assert.Equal(["step:-check", "step:-find", "step:-release", "step:-publish"], changes.Where(change => change.What == GraphChanges.Step).Select(change => change.Id));
-        Assert.Equal(["way:~b", "way:-c"], by["step:-check"].Needs);
+        Assert.Equal(["step:-find", "step:-release", "step:-publish"], changes.Where(change => change.What == GraphChanges.Step).Select(change => change.Id));
+        Assert.Equal(["way:-h"], by["way:~h"].Needs);
+        Assert.Equal("b", by["way:~ck"].Was);
         Assert.Equal(["way:-g", "way:-h", "way:-i"], by["step:-find"].Needs);
         Assert.Equal("Remove the way `g` (after): `line` → `find`.", by["way:-g"].Said);
         Assert.Equal("Remove the step `find` (`local-release/find`).", by["step:-find"].Said);

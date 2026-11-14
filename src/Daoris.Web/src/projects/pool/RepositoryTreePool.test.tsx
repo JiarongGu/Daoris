@@ -64,7 +64,7 @@ describe("a repository page's tree pool", () => {
     expect(within(pool).queryByText(reason)).toBeNull();
   });
 
-  it('reads an older shell with no pool answer as empty', async () => {
+  it('reads no pool answer as empty', async () => {
     invoke.mockResolvedValue(null);
     page();
     expect(await screen.findByText('There are no tree pool slots on this machine.')).toBeInTheDocument();

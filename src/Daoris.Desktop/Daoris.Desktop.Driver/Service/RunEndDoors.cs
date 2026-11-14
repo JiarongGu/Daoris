@@ -1,0 +1,41 @@
+using Daoris.Contracts.Quests;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The driver's doors on a workflow run's quests: the bind at a session's first start, which makes its agent's done a submission, and the
+/// run's end, which writes the quests' Done and ends the sessions waiting on the run in one write, and the reopen of its records ended done
+/// under the older meaning. What the end and the reopen moved is told to the client's <see cref="ServiceClient.Moved"/> watchers.
+/// </summary>
+public static class RunEndDoors
+{
+    /// <summary>Binds <paramref name="quest"/> to <paramref name="run"/>; a quest bound already, or closed, is answered not bound.</summary>
+    public static async Task<RunBindResponse> BindToRunAsync(this ServiceClient service, string quest, string run, CancellationToken ct) =>
+        (await service.SendAsync(new BindQuestToRun(quest.TrimStart('#'), run), ct).ConfigureAwait(false)).Answered();
+
+    /// <summary>Ends <paramref name="run"/>: its <paramref name="quests"/> Done where <paramref name="state"/> is <c>completed</c>, then its sessions.</summary>
+    public static async Task<RunEndResponse> EndRunAsync(
+        this ServiceClient service, string run, IReadOnlyList<RunEndQuest> quests, IReadOnlyList<string> sessions, string state, Noted noted,
+        CancellationToken ct)
+    {
+        var ended = (await service.SendAsync(
+            new EndRun(run, [.. quests], [.. sessions], state, noted.Note, noted.Parts is { Count: > 0 } parts ? SessionMoveDoors.PartsElement(parts) : null),
+            ct).ConfigureAwait(false)).Answered();
+        foreach (var session in ended.Ended) service.RecordMoved(new SessionMoved(session, state));
+        return ended;
+    }
+
+    /// <summary>
+    /// <paramref name="run"/>'s <paramref name="sessions"/> ended done under the older meaning, each that never waited on a step moved to
+    /// wait on its next one, with <paramref name="note"/>.
+    /// </summary>
+    public static async Task<RunReopenResponse> ReopenRunAsync(
+        this ServiceClient service, string run, IReadOnlyList<string> sessions, Noted note, CancellationToken ct)
+    {
+        var parts = note.Parts is { Count: > 0 } kept ? SessionMoveDoors.PartsElement(kept) : (System.Text.Json.JsonElement?)null;
+        var reopened = (await service.SendAsync(new ReopenRunSessions(run, [.. sessions], note.Note, parts), ct)
+            .ConfigureAwait(false)).Answered();
+        foreach (var session in reopened.Reopened) service.RecordMoved(new SessionMoved(session, SessionStates.AwaitingStep));
+        return reopened;
+    }
+}

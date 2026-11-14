@@ -84,11 +84,11 @@ describe('the states a session\'s Timeline view draws (§2.2)', () => {
     return flow.nodes.filter((node) => node.current);
   };
 
-  it('is entered at queued, and draws the four live states and one node for every way it ends', () => {
+  it('is entered at queued, and draws the five live states and one node for every way it ends', () => {
     const flow = sessionFlow(t, session('working'));
     expect(flow.entries).toEqual(['queued']);
-    expect(flow.nodes.map((node) => node.id)).toEqual(['queued', 'starting', 'working', 'awaiting-person', 'ended']);
-    expect(flow.nodes.map((node) => node.title)).toEqual(['queued', 'starting', 'working', 'waiting on you', 'ended']);
+    expect(flow.nodes.map((node) => node.id)).toEqual(['queued', 'starting', 'working', 'awaiting-person', 'awaiting-step', 'ended']);
+    expect(flow.nodes.map((node) => node.title)).toEqual(['queued', 'starting', 'working', 'waiting on you', 'awaiting a step', 'ended']);
     expect(flow.label).toBe('How session s1a2b3c4 moves');
   });
 
@@ -151,8 +151,9 @@ describe('the states a session\'s Timeline view draws (§2.2)', () => {
     const edges = sessionFlow(t, session('working')).edges;
     expect(edges.filter((edge) => edge.from === 'ended').map((edge) => edge.id)).toEqual(['ended>working']);
     expect(edges.map((edge) => edge.id)).toEqual([
-      'queued>starting', 'starting>working', 'working>awaiting-person', 'awaiting-person>working',
-      'queued>ended', 'starting>ended', 'working>ended', 'awaiting-person>ended', 'ended>working',
+      'queued>starting', 'starting>working', 'working>awaiting-person', 'working>awaiting-step', 'awaiting-person>working',
+      'awaiting-step>working', 'awaiting-step>awaiting-person',
+      'queued>ended', 'starting>ended', 'working>ended', 'awaiting-person>ended', 'awaiting-step>ended', 'ended>working',
     ]);
     // Every edge into the outcomes comes from a state `Allowed` lets reach one.
     const reaching = new Set(SESSION_MOVES.filter(([, to]) => !SESSION_ACTIVE.has(to as SessionState)).map(([from]) => from));
@@ -205,7 +206,7 @@ describe('the states a session\'s Timeline view draws (§2.2)', () => {
     await i18n.changeLanguage('zh');
     const flow = sessionFlow(t, session('awaiting-person'));
     expect(flow.label).toBe('会话 s1a2b3c4 如何流转');
-    expect(flow.nodes.map((node) => node.title)).toEqual(['排队中', '启动中', '工作中', '等你处理', '已结束']);
+    expect(flow.nodes.map((node) => node.title)).toEqual(['排队中', '启动中', '工作中', '等你处理', '等下一步', '已结束']);
     expect(flow.nodes.find((node) => node.current)!.state!.word).toBe('当前所在');
     expect(flow.edges.find((edge) => edge.id === 'awaiting-person>working')!.says).toBe('当你回答它时');
     expect(flow.edges.find((edge) => edge.id === 'working>ended')!.says).toBe('当智能体完成它、智能体谢绝它、驱动让它让位、它失败或你停止它时');

@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish, () => Reopen))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans))!;
@@ -123,6 +123,10 @@ public sealed class NodeRuntime(
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
+    public Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>? Finish { get; set; }
+
+    public Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>? Reopen { get; set; }
+
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;
 
@@ -146,6 +150,9 @@ public sealed class NodeRuntime(
     public IReadOnlyList<HumanTask> HumanTasks() => _governed is { } governed ? Daoris.Driver.HumanTasks.Of(governed.Values, records.Read) : [];
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
+
+    /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
+    public IReadOnlyList<RunPassage> Passages() => RunPassageReader.Of(_graphRuns.Read(), records.Read);
 
     /// <summary>What a step's session works from (<see cref="StepAsks"/>): the frame its plugin would be told for the attempt, from the runs this pass governs.</summary>
     public Task<StepAgentAsk?> StepAskAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
@@ -243,7 +250,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
     {
-        if (KeepsClosures || ArmsRuns || OwesCleanup) return false;
+        if (KeepsClosures || ArmsRuns || OwesCleanup || new OwedRunEnds(records.Home).Any) return false;
         if (!Telling.Holding && _governed is null) return true;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -410,6 +417,9 @@ public sealed class NodeRuntime(
                 said.AddRange(_closer.TakeSaid());
             }
 
+            // A run's end the service could not take is asked again at each look, before anything new starts, until it is taken.
+            if (fresh) await Keeping.OwedEndsAsync(said, ct).ConfigureAwait(false);
+
             // A unit's request is asked after, by its key, before any new start.
             if (Doors.Door<IIntegrationDoor>() is not null)
             {
@@ -486,6 +496,7 @@ public sealed class NodeRuntime(
         {
             tip = scope.Branch is not null ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             Keeping.Reopen(governed, scope);
+            await Keeping.ReopenSessionsAsync(governed, scope, said, ct).ConfigureAwait(false);
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
         }
 

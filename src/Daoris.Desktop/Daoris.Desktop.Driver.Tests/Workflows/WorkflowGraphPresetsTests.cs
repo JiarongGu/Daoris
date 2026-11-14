@@ -125,7 +125,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Empty(NodeGraphs.Problems(graph!));
         Assert.Equal(shipped.Digest, NodeGraphs.Digest(graph!));
         Assert.Equal(shipped.Delivery, SetupPresets.LandOf(Involvement.StepsOf(graph!)));
-        Assert.Equal($"{landing} Its agent's done closes the quest; the flow's end is the work's.", WorkflowPresets.GraphLine(shipped.Graph()));
+        Assert.Equal($"{landing} Its agent's done submits the work; the quest is done at the flow's end.", WorkflowPresets.GraphLine(shipped.Graph()));
     }
 
     private static NodeGraph ReleaseGraph() => NodeGraphs.Read(WorkflowDefaults.Of("release")!.GraphJson, onSave: true).Graph!;

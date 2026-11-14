@@ -8,8 +8,26 @@ namespace Daoris.Driver;
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
-    Func<ILandingWords?> landings)
+    Func<ILandingWords?> landings, Func<Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>?>? finish = null,
+    Func<Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>?>? reopen = null)
 {
+    private readonly HashSet<string> _reopenAsked = new(StringComparer.Ordinal);
+
+    /// <summary>A run's older records ended done asked once to wait on its first step active or ready (<see cref="RunSessionReopens"/>).</summary>
+    public async Task ReopenSessionsAsync(GovernedUnit governed, RunScope scope, List<string> said, CancellationToken ct)
+    {
+        if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
+        var next = governed.Graph.Nodes.FirstOrDefault(node => WorkPerformer.StatusOf(record, node.Id).State is NodeStates.Active or NodeStates.Ready)?.Id;
+        await RunSessionReopens.AskAsync(reopen?.Invoke(), _reopenAsked, scope.Run.Run, record.Ended, scope.Quests,
+            [.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []], next, said, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The run ends the service could not take, asked again (<see cref="RunSessionEnds.AgainAsync"/>).</summary>
+    public async Task OwedEndsAsync(List<string> said, CancellationToken ct)
+    {
+        if (holdsLease()) await RunSessionEnds.AgainAsync(finish?.Invoke(), new OwedRunEnds(records.Home), said, ct).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
     /// <c>land</c>, and the steps past it Daoris performs. Each door is idempotent by node and tip, so a node kept again starts nothing twice.
@@ -98,6 +116,8 @@ internal sealed class NodeRunKeeping(
                 ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
+        await RunSessionEnds.FinishAsync(finish?.Invoke(), scope.Run.Run, ended, scope.Quests,
+            [.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []], said, ct, new OwedRunEnds(records.Home)).ConfigureAwait(false);
         var outcome = $"{ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}";
         said.Add(why is null
             ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "

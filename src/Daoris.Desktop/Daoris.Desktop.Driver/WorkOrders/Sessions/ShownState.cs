@@ -30,8 +30,8 @@ public static class ShownState
     /// </summary>
     public const string AwaitingHelper = "awaiting-helper";
 
-    /// <summary>A session that ended its turn on its own check: the check waits its turn on the machine and the verdict goes on with it.</summary>
-    public const string AwaitingCheck = "awaiting-check";
+    /// <summary>A session whose turn ended waiting on its workflow's step or its own check: the step's word goes on with it.</summary>
+    public const string AwaitingStep = "awaiting-step";
 
     /// <summary>An open conversation whose turn ended: its record stays <c>working</c> while it waits for the person's next word.</summary>
     public const string Idle = "idle";

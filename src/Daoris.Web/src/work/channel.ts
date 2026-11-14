@@ -240,7 +240,7 @@ export function sinceMark(items: readonly ChannelItem[], mark: string | null | u
 export const unreadSum = (counts: Readonly<Record<string, number>>): number => Object.values(counts).reduce((sum, n) => sum + n, 0);
 
 /** The codes Daoris's lines carry that this page has words for (the service's `ChannelLine.Code`). */
-const LINE_CODES = new Set(['published', 'taken', 'done', 'declined', 'awaiting']);
+const LINE_CODES = new Set(['published', 'taken', 'submitted', 'done', 'declined', 'awaiting']);
 
 /**
  * One of Daoris's lines in the reader's language, from its code: the quest by the name the list gives it, else by its

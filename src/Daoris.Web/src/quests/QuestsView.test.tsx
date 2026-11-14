@@ -712,9 +712,7 @@ describe('QuestsView', () => {
       const notify = view();
 
       const page = await chooseRow('Cap the hydration per frame.');
-      within(page).getByRole('button', { name: 'More actions' }).focus();
-      await userEvent.keyboard('{Enter}');
-      await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
       await userEvent.click(within(page).getByRole('button', { name: 'Delete ask' }));
       const confirm = within(page).getByRole('group', { name: 'delete this ask' });
       expect(await within(confirm).findByRole('alert')).toHaveTextContent(refusal.replaceAll('`', ''));
@@ -726,7 +724,6 @@ describe('QuestsView', () => {
       expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
     });
 
-    /** An ask may be published to any repository its circle can ask — adopted or not. */
     it('offers a registered repository that has not adopted as a receiver of the ask', async () => {
       ASKS = [PROPOSED];
       const before = globalThis.fetch;

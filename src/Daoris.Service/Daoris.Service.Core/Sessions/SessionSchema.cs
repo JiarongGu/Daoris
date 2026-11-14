@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal static class SessionSchema
 {
     /// <summary>The states that hold a repository: a parked session counts, since the person is the flow control.</summary>
-    internal const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson'";
+    internal const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson', 'AwaitingStep'";
 
     /// <summary>
     /// The next revision, as one statement's subquery — so under SQLite's write lock no two writes can
@@ -118,6 +118,7 @@ internal static class SessionSchema
         // as kept: nothing re-reads the English, and nothing rewrites it.
         await SchemaColumns.EnsureAsync(db, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
         await NotePartNames.RenameAsync(db, ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(db, "sessions", "turns", "turns TEXT NULL", ct).ConfigureAwait(false);
 
         // What a set-up step's session asked Daoris to serve and said it showed, until its driver
         // posts each with the commit it read. This machine's own, like the person's words beside it: no wire names it, and

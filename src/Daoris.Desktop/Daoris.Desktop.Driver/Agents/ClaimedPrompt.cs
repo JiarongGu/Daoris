@@ -19,17 +19,17 @@ internal static class ClaimedPrompt
         .. TargetPrompt.Tail(target, target.Retried is not null
             ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then finish its work from there rather\n"
               + "than starting again, inside this repository under its own doctrine and gates, then "
-              + (target.Ready
-                  ? "say it is ready:\n`ready` when its work is done, with your note and an answer for each requirement. "
-                    + $"{TargetPrompt.ReadyWords} Or `decline` with the reason — the\nreason is the part the asker can act on. If the quest is "
+              + (target.Submits
+                  ? "submit it:\n`done` when its work is done, with your note and an answer for each requirement. "
+                    + $"{TargetPrompt.SubmitWords} Or `decline` with the reason — the\nreason is the part the asker can act on. If the quest is "
                     + "already taken or closed, stand down and\nfinish without changing anything."
                   : "close it:\n`done` when it has landed, or `decline` with the reason — the reason is the part the asker can act\n"
                     + "on. If the quest is already taken or closed, stand down and finish without changing anything.")
               + " Commit as you go, so a\nsecond cut-off loses less."
-            : target.Ready
+            : target.Submits
             ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
-              + "repository under its own doctrine and gates, then say it is ready: `ready` when its work is done,\n"
-              + $"with your note and an answer for each requirement. {TargetPrompt.ReadyWords} Or `decline` with the reason — the\n"
+              + "repository under its own doctrine and gates, then submit it: `done` when its work is done,\n"
+              + $"with your note and an answer for each requirement. {TargetPrompt.SubmitWords} Or `decline` with the reason — the\n"
               + "reason is the part the asker can act on. If the quest is already taken or closed, stand down and\n"
               + "finish without changing anything."
             : $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"

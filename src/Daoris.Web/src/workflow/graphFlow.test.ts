@@ -38,7 +38,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
       'merge-automatic', 'plan-review-apply', 'pull-request', 'release', 'team-part',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
-    expect([release.nodes.length, release.wires.length, release.end]).toEqual([12, 14, 'line']);
+    expect([release.nodes.length, release.wires.length, release.end]).toEqual([12, 15, 'line']);
   });
 
   it('are what the stories draw: their fixtures equal the files', () => {
@@ -89,9 +89,10 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     expect(WORKFLOW_TRACK).toEqual({ least: 14, most: 36 });
   });
 
-  it('draws a single chain, without a branch, top to bottom from the 14rem track and nowhere across', () => {
+  it('draws a single chain, without a branch, top to bottom from the 14rem track, and one with its way back from 25rem', () => {
+    const chain = { ...MERGE_GRAPH, wires: MERGE_GRAPH.wires.filter((wire) => wire.kind !== 'back') };
+    expect(placedAt(chain, 14).placement).toBe('down');
     expect(placedAt(shipped('merge-after-accept').graph, 25).placement).toBe('down');
-    expect(placedAt(shipped('merge-after-accept').graph, 14).placement).toBe('down');
   });
 
   it('flags the configured end where the work is done, and says steps after it still run only where some do', () => {

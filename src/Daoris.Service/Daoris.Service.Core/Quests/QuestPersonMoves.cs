@@ -90,7 +90,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             QuestReopenRefusal.None => new(
                 QuestRespondRefusal.None,
                 $"Reopened quest `#{quest}`'s submission: it stays Taken with none current, so its graph closes nothing on it, and its "
-                + "agent's next `ready` is judged from the start."
+                + "agent's next `done` is judged from the start."
                 + (step is { Status: QuestStatus.Taken }
                     ? $" Its next step, `#{step!.Id}`, was already taken: it is held, its session goes no further, and you choose to go "
                       + "on with it once the new work is ready, or to abandon it."
@@ -111,7 +111,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             QuestReopenRefusal.NotCurrent => new(
                 QuestRespondRefusal.NotSealed,
                 standing!.Submission is null
-                    ? $"Quest `#{quest}` has no current submission to reopen: its agent's next `ready` makes one. Nothing moved."
+                    ? $"Quest `#{quest}` has no current submission to reopen: its agent's next `done` makes one. Nothing moved."
                     : $"Quest `#{quest}`'s current submission is not the one named: only the current one is reopened. Nothing moved.",
                 null),
             QuestReopenRefusal.StepClosed => new(
@@ -121,7 +121,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
                 null),
             _ => new(
                 QuestRespondRefusal.NotSealed,
-                $"Quest `#{quest}`'s submission published no step that stands on it, so nothing seals it: its agent's next `ready` "
+                $"Quest `#{quest}`'s submission published no step that stands on it, so nothing seals it: its agent's next `done` "
                 + "replaces it. Nothing moved.",
                 null),
         };

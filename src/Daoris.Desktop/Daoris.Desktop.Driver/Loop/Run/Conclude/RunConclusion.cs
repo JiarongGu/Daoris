@@ -80,7 +80,7 @@ internal sealed class RunConclusion(
                     awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, so it failed, and never parks on the person.
                     providerRefused: ended.ProviderRefused,
-                    departed: QuestLeft.Departed(after).Count)
+                    departed: QuestLeft.Departed(after).Count, waits: state.BoundIfAny?.Waits)
                 // A done this run reached outranks the timeout, as it outranks a messy exit. The watcher's end (a headless --quiet-end)
                 // reads as its own cause, never as a bound's.
                 : wiring.Watch.EndedMinutes(sessionId) is { } quietMinutes
@@ -175,8 +175,8 @@ internal sealed class RunConclusion(
         var where = state.Tree.Opened is not null ? $" [own tree: {state.Tree.Opened.Path}]"
             : state.Tree.ResumedIn is not null ? $" [own tree, resumed: {state.Tree.ResumedIn}]"
             : "";
-        // A session waiting on its own helper goes on in this tree with the answer, so it keeps it, as a park does.
-        var waitsOnHelper = HelperWaits.Ended(conclusion.Parts) || CheckWaits.Ended(conclusion.Parts);
+        // A session waiting on its own helper or on a step goes on in this tree with the answer, so it keeps it, as a park does.
+        var waitsOnHelper = HelperWaits.Ended(conclusion.Parts) || conclusion.State == SessionStates.AwaitingStep;
         endings.HoldsTree = SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper;
         return new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",

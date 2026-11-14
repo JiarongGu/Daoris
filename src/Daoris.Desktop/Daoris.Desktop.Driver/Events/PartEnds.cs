@@ -74,6 +74,8 @@ public static class PartEnds
         ["ended.declined"] = "completed",
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
+    public static readonly FrozenSet<string> Older = new[] { "ended.awaits-check" }.ToFrozenSet(StringComparer.Ordinal);
+
     /// <summary>The <c>ended.*</c> codes that say how it ended and not who or what ended it: their class is the state's (completed or failed).</summary>
     public static readonly IReadOnlyList<string> ByState =
     [

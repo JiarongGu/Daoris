@@ -3,6 +3,7 @@
   "sessionState.starting": "starting",
   "sessionState.working": "working",
   "sessionState.awaiting-person": "waiting on you",
+  "sessionState.awaiting-step": "awaiting a step",
   "sessionState.completed": "completed",
   "sessionState.declined": "declined",
   "sessionState.stood-down": "stood down",

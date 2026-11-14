@@ -5,7 +5,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// In a graph that closes its quest itself, the agent's
-/// result is a submission, never a done. The driver binds the taken quest to the graph; the agent says <c>ready</c>, which keeps
+/// result is a submission, never a done. The driver binds the taken quest to the graph; the agent says <c>done</c>, which keeps
 /// the quest taken and hangs a done's holds on the submission; an unheld submission publishes the chain's next step and is
 /// sealed by it; and the graph's close door writes every quest's Done in one transaction, fenced by the submissions it names
 /// and by its key, so a stale close writes nothing and the same close twice writes once.
@@ -105,7 +105,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         new(1, null, Departed: "It went into the wiki instead.", Quote: "write the bridge report into docs/report-bridge.md");
 
     private Task<QuestRespondOutcome> Ready(Quest quest, params QuestAnswer[] answers) =>
-        _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: answers.Length > 0 ? answers : [Met(1), Met(2)]);
+        _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: answers.Length > 0 ? answers : [Met(1), Met(2)]);
 
     /// <summary>The report found, read for the quest's current submission, as the driver asks it.</summary>
     private async Task<QuestRespondOutcome> Found(Quest quest) =>
@@ -125,7 +125,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
 
-    // ——— Bind and ready.
 
     [Fact]
     public async Task Ready_keeps_the_quest_taken_with_its_submission_and_holds_it_as_a_done_would_be()
@@ -143,21 +142,18 @@ public sealed class QuestClosureTests : IAsyncLifetime
         // Its met requirement names evidence nobody read yet: held, as a done would be, and nothing follows it.
         Assert.Equal(QuestHold.EvidenceUnread, submitted.Hold);
         Assert.True(submitted.AwaitsEvidence);
-        Assert.Contains("ready", ready.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("submitted", ready.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(await _quests.ListAsync(), q => q.Parent == quest.Id);
         Assert.Equal(QuestOperationKind.Submitted, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
     }
 
-    /// <summary>
-    /// FABRIC-CLOSE1c4: a submission names the session that said its ready, the one a reopen of it is told to, in its operation and
-    /// on the quest; a ready through a door that names no session names none, and the earlier submission's session goes with it.
-    /// </summary>
+    /// <summary>A submission names the session whose done made it, on its operation and the quest; one no session made names none.</summary>
     [Fact]
-    public async Task A_submission_names_the_session_that_said_ready_and_none_where_no_session_said_it()
+    public async Task A_submission_names_the_session_whose_done_made_it_and_none_where_no_session_said_it()
     {
         var quest = await Bound();
 
-        var said = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
+        var said = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
 
         Assert.Equal(QuestRespondRefusal.None, said.Refusal);
         Assert.Equal("s0a1b2c3", said.Quest!.Submission!.Session);
@@ -170,36 +166,20 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task An_agents_done_on_a_bound_quest_is_refused_naming_ready_and_the_persons_done_stays_theirs()
+    public async Task An_agents_done_on_a_bound_quest_is_its_submission_and_the_persons_done_stays_theirs()
     {
         var quest = await Bound();
 
-        var done = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
+        var done = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
 
-        Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
-        Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
-        Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
+        Assert.Equal(QuestRespondRefusal.None, done.Refusal);
+        Assert.Equal((QuestStatus.Taken, "s0a1b2c3"), ((await Find(quest.Id)).Status, (await Find(quest.Id)).Submission!.Session));
 
-        // The person's override (§E5): their done at any time, closed as theirs.
         await Ready(quest);
         var theirs = await _exchange.PersonDoneAsync(quest.Id, "I checked it myself.", Now);
         Assert.Equal(QuestRespondRefusal.None, theirs.Refusal);
         Assert.Equal(QuestStatus.Done, theirs.Quest!.Status);
         Assert.StartsWith("The person marked this done", theirs.Quest.Note, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task Ready_where_no_closure_graph_holds_the_quest_is_refused_and_moves_nothing()
-    {
-        var quest = await Taken();
-
-        var ready = await Ready(quest);
-
-        Assert.Equal(QuestRespondRefusal.NotInGraph, ready.Refusal);
-        var standing = await Find(quest.Id);
-        Assert.Null(standing.Submission);
-        Assert.Empty(standing.Answers);
-        Assert.Equal(QuestOperationKind.Taken, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
     }
 
     [Fact]
@@ -221,14 +201,14 @@ public sealed class QuestClosureTests : IAsyncLifetime
         draft: new AskDraft("Write the bridge report", "Through the bridge.") { Requirements = [Report, Bridge] })).Quest!;
 
     [Fact]
-    public async Task A_bound_quests_done_is_refused_naming_ready()
+    public async Task A_bound_quests_done_leaves_it_taken_with_its_submission()
     {
         var bound = await Bound(chain: false);
 
         var done = await _exchange.RespondAsync(bound.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
 
-        Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
-        Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
+        Assert.Equal((QuestRespondRefusal.None, QuestStatus.Taken), (done.Refusal, done.Quest!.Status));
+        Assert.NotNull(done.Quest.Submission);
     }
 
     [Fact]

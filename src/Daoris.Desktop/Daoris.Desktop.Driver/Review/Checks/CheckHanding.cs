@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>How a verdict goes back to its asker: Daoris's own word under the check's key, which reopens the session that ended waiting (<see cref="EndNoteCodes.EndedAwaitsCheck"/>); every verdict is the asker's, none is owed to anyone else.</summary>
+/// <summary>How a verdict goes back to its asker: Daoris's own word under the check's key, which wakes the session waiting on it (<see cref="EndNoteCodes.WaitsCheck"/>); every verdict is the asker's, none is owed to anyone else.</summary>
 public static class CheckHanding
 {
     /// <summary>Hand every finished verdict not handed yet: <paramref name="say"/> answers the kept word's id, or null where the host refused it, which leaves the verdict for the next look. The ids handed, in order.</summary>

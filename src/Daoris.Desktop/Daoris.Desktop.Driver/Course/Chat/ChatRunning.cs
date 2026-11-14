@@ -7,13 +7,13 @@ namespace Daoris.Driver;
 /// </summary>
 internal interface IChatRunning
 {
-    /// <summary>Open a conversation in a repository and put a harness behind it; a limit's carry runs it as its carried conversation's resume.</summary>
+    /// <summary>Open a conversation in a repository and put a harness behind it; a move's carry runs it as its carried or seeded conversation's resume.</summary>
     Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
         EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null,
-        ChatLimitCarry? carries = null);
+        ChatCarries? carries = null);
 
     /// <summary>Place Ask Daoris's conversation in its workspace's room: its record open, its agent and account chosen, nothing spawned.</summary>
     Task<HelpPlaced> PlaceHelpAsync(

@@ -52,6 +52,8 @@ public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string
 {
     /// <summary>Whether the start holds on it: its run is not bound, so no take may go on under a graph it is not bound to.</summary>
     public bool Holds => Came is WorkflowBindCame.Unread or WorkflowBindCame.Failed;
+
+    public StepWait? Waits => this is { Run: { Length: > 0 } run, Binding: { IsCurrent: false } } ? new StepWait(run) : null;
 }
 
 /// <summary>

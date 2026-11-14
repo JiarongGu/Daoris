@@ -8,7 +8,7 @@ import { openDraftNow } from '../../help/openDraft';
 import i18n from '../../locales/i18n';
 import { EDIT_EVENT } from '../../menus/editing';
 import { RELEASE_GRAPH as SHIPPED_RELEASE } from '../graphFixtures';
-import { LIST, PALETTE, REFUSED_GRAPH } from './editFixtures';
+import { CHAIN_GRAPH, LIST, PALETTE, REFUSED_GRAPH } from './editFixtures';
 
 // The editor composes a workflow on its chart, through a stubbed bridge. The release
 // workflow is composed from the Merge workflow by keyboard alone and by pointer, both data wires included: a step put between two, a way back
@@ -145,7 +145,7 @@ async function pickByKeys(search: string, title: string) {
 }
 
 describe('the release workflow composed from the Merge workflow', () => {
-  it('by keyboard alone: a step between two, a way back on changes, a decision\'s outcome and a step after it, and what each carries', async () => {
+  it('by keyboard alone: a way back on changes, a decision\'s outcome and a step after it, and what each carries', async () => {
     render(wrap(<Editor />));
 
     await tabTo(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
@@ -153,16 +153,10 @@ describe('the release workflow composed from the Merge workflow', () => {
     await waitFor(() => expect(focused()).toBe(step('The work')));
     expect(live()).toHaveTextContent('Began from Merge workflow.');
 
-    // The checks, between the holds and your review: the way's ＋ is the step's + key.
+    // Your review's changes go back to the work, past the holds and the checks: chosen as a target, the kind is never named.
     await user.keyboard('{ArrowDown}');
     expect(focused()).toBe(step('Daoris makes sure · 3'));
-    await user.keyboard('+');
-    expect(await screen.findByText('Between What the line holds and Your review: What the line holds goes on to the new step, and it to Your review.')).toBeInTheDocument();
-    await pickByKeys('checks', 'The checks');
-    expect(live()).toHaveTextContent('Added The checks.');
-
-    // Your review's changes go back to the work: chosen as a target, the kind is never named.
-    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowDown}{ArrowDown}');
     expect(focused()).toBe(step('Your review'));
     await user.keyboard('{Enter}');
     const drawer = await screen.findByRole('dialog', { name: 'Your review' });
@@ -217,13 +211,10 @@ describe('the release workflow composed from the Merge workflow', () => {
     expect(graph.wires.some((wire) => wire.from === 'content' && wire.to === 'review')).toBe(false);
   });
 
-  it('by pointer: the ＋ on a way and in a ◎, a row\'s target and new step, and each carry', async () => {
+  it('by pointer: the ＋ in a ◎, a row\'s target and new step, and each carry', async () => {
     render(wrap(<Editor />));
 
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
-    await user.click(await screen.findByRole('button', { name: 'Add a step between What the line holds and Your review' }));
-    await user.click(await screen.findByRole('option', { name: /^The checks/ }));
-
     await user.click(step('Your review'));
     await screen.findByRole('dialog', { name: 'Your review' });
     await chooseByPointer('Where If you ask for changes goes from Your review', 'Back to The work');
@@ -304,14 +295,14 @@ describe('removing, moving, and every change undone', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(focused()).toBe(step('Your review')));
     await user.keyboard('{Delete}');
-    await user.click(await screen.findByRole('button', { name: 'Remove and join What the line holds to The landing' }));
-    expect(live()).toHaveTextContent('Removed Your review; What the line holds goes on to The landing.');
+    await user.click(await screen.findByRole('button', { name: 'Remove and join The checks to The landing' }));
+    expect(live()).toHaveTextContent('Removed Your review; The checks goes on to The landing.');
     expect(screen.queryByRole('listitem', { name: 'Your review' })).toBeNull();
 
     step('The landing').focus();
     await user.keyboard('{Control>}z{/Control}');
     expect(step('Your review')).toBeInTheDocument();
-    expect(live()).toHaveTextContent('Undone: Removed Your review; What the line holds goes on to The landing.');
+    expect(live()).toHaveTextContent('Undone: Removed Your review; The checks goes on to The landing.');
     await user.keyboard('{Control>}y{/Control}');
     expect(screen.queryByRole('listitem', { name: 'Your review' })).toBeNull();
     await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}');
@@ -328,9 +319,8 @@ describe('removing, moving, and every change undone', () => {
   });
 
   it('asks where the end goes when the end step is removed, and moves a step within its chain from the preview', async () => {
-    render(wrap(<Editor />));
-    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
-    await user.click(step('On the line'));
+    render(wrap(<Editor startFrom={{ graph: CHAIN_GRAPH, name: 'Merge workflow' }} />));
+    await user.click(await screen.findByRole('listitem', { name: 'On the line' }));
     await user.click(await screen.findByRole('button', { name: 'Remove…' }));
     await chooseByPointer('Where the work is done instead', 'The landing');
     await user.click(screen.getByRole('button', { name: 'Remove' }));
@@ -351,10 +341,8 @@ describe('removing, moving, and every change undone', () => {
   });
 
   it('moves a step by Alt+↑ and its preview, duplicates one, and starts a step each time another is reached, by keyboard alone', async () => {
-    render(wrap(<Editor />));
-    await tabTo(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
-    await user.keyboard('{Enter}');
-    await waitFor(() => expect(focused()).toBe(step('The work')));
+    render(wrap(<Editor startFrom={{ graph: CHAIN_GRAPH, name: 'Merge workflow' }} />));
+    await tabTo(await screen.findByRole('listitem', { name: 'The work' }));
     for (let presses = 0; presses < 4 && focused() !== step('Your review'); presses += 1) await user.keyboard('{ArrowDown}');
 
     await user.keyboard('{Alt>}{ArrowUp}{/Alt}');
@@ -390,7 +378,7 @@ describe('removing, moving, and every change undone', () => {
     await user.keyboard('{Control>}c{/Control}');
     expect(live()).toHaveTextContent('Copied The work.');
     await user.keyboard('{Control>}v{/Control}');
-    expect(live()).toHaveTextContent('Pasted The work; ways to steps not copied left out: 1.');
+    expect(live()).toHaveTextContent('Pasted The work; ways to steps not copied left out: 2.');
     expect(within(screen.getByRole('list', { name: 'How the steps go on' })).getAllByRole('listitem', { name: 'The work' })).toHaveLength(2);
   });
 });
@@ -401,12 +389,12 @@ describe('the draft Ask Daoris is told', () => {
     const { unmount } = render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
     expect(openDraftNow()).toMatchObject({ place: 'engine', source: 'preset:merge-after-accept', workflow: 'merge-after-accept-2', base: null, selected: null });
-    expect(openDraftNow()!.graph.nodes).toHaveLength(8);
+    expect(openDraftNow()!.graph.nodes).toHaveLength(9);
 
-    await user.click(await screen.findByRole('button', { name: 'Add a step between What the line holds and Your review' }));
+    await user.click(await screen.findByRole('button', { name: 'Add a step between The checks and Your review' }));
     await user.click(await screen.findByRole('option', { name: /^The checks/ }));
-    await waitFor(() => expect(openDraftNow()!.graph.nodes).toHaveLength(9));
-    expect(openDraftNow()).toMatchObject({ selected: 'check' });
+    await waitFor(() => expect(openDraftNow()!.graph.nodes).toHaveLength(10));
+    expect(openDraftNow()).toMatchObject({ selected: 'check-2' });
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Checked');
     expect(openDraftNow()).toMatchObject({ workflow: 'checked' });
 

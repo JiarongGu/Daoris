@@ -35,4 +35,7 @@ public enum SessionState
     /// sweep or the driver's shutdown ended it.
     /// </summary>
     Stopped,
+
+    /// <summary>Its turn ended; it waits on its workflow's step with no process, holding its tree, until a word wakes it.</summary>
+    AwaitingStep,
 }

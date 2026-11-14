@@ -20,6 +20,7 @@
   "asks.channel.questionOpen": "待回答的提问",
   "asks.channel.line.published": "{{quest}} 已发布给 {{to}}",
   "asks.channel.line.taken": "{{to}} 已接下 {{quest}}",
+  "asks.channel.line.submitted": "{{to}} 已交付 {{quest}}：工作流结束时关闭",
   "asks.channel.line.done": "{{to}} 已完成 {{quest}}",
   "asks.channel.line.declined": "{{to}} 已谢绝 {{quest}}",
   "asks.channel.line.awaiting": "{{quest}} 已完成，等你确认",

@@ -59,6 +59,32 @@ internal sealed class WatchNodes
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
+        // A run's end writes its quests' Done and ends the sessions still waiting on its steps, in one write.
+        nodes.Finish = async (end, ct) =>
+        {
+            try
+            {
+                return await service.EndRunAsync(end.Run, end.Quests, end.Sessions, end.State, new Noted(end.Note, []), ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException)
+            {
+                return null;
+            }
+        };
+
+        // A run's records ended done under the older meaning wait on its next step, asked once at its first look.
+        nodes.Reopen = async (reopen, ct) =>
+        {
+            try
+            {
+                return await service.ReopenRunAsync(reopen.Run, reopen.Sessions, reopen.Note, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException)
+            {
+                return null;
+            }
+        };
+
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 
