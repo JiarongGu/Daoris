@@ -36,7 +36,7 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
             });
         }
 
-        _units = [.. runs.Select(run => RunHome.QuestUnit(RunHome.Quest(run, "Done") with { From = "ask #a1" }) with { Executors = ["s-" + run] })];
+        _units = [.. runs.Select(run => RunHome.QuestUnit(RunHome.Quest(run, "Done") with { Held = true, Hold = "failed" }) with { Executors = ["s-" + run] })];
         var finished = new List<RunFinish>();
         var reopened = new List<RunReopen>();
         var runtime = Runtime();

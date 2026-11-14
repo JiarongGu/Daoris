@@ -12,13 +12,19 @@ internal static class QuestHoldsReading
     /// <summary>Its options, in the order an editor lists them; each is <c>true</c> or <c>false</c>, and true where it is not written.</summary>
     public static readonly IReadOnlyList<string> Options = [Yes, Evidence];
 
+    private const string HeldForYes = "its done is held for your yes";
+
+    /// <summary>Whether a hold's reason kept on its node is one the person's pass lets go: their yes, or a done nothing compared with what they asked.</summary>
+    public static bool PersonLifts(string? holds) =>
+        holds is not null && (holds.Contains(HeldForYes, StringComparison.Ordinal) || UncheckedDones.Says(holds));
+
     /// <summary>Why the quest's own holds hold the work, or null where they let it go (the look's own <c>unreviewed</c> is the look's).</summary>
     public static string? Held(QuestView? quest, bool yes = true, bool evidence = true) => quest switch
     {
         null => "its quest was not read",
         { Status: "Declined" } => "its quest was declined",
         _ when !QuestResults.Judged(quest) => "its quest's done is not in, or was taken back",
-        { Held: true, Hold: null } when yes => "its done is held for your yes",
+        { Held: true, Hold: null } when yes => HeldForYes,
         { Held: true, Hold: { } code } when evidence && code != EvidenceCodes.Unreviewed => "its done is held for its evidence's verdict",
         _ when yes => UncheckedDones.Of(quest),
         _ => null,

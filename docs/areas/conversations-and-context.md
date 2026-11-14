@@ -428,8 +428,9 @@ of everything it handed, section by section.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatCarry.cs`);
-  a hand-over to another agent goes on in the session written as that agent's own conversation, placed at its start's hook
-  (`ChatCarries`), and the curve's move and a hand-over to the same agent carry nothing; a carried resume the agent refuses after the
+  a hand-over (another agent's, or the curve's move onto another account of its own agent) goes on in a conversation placed at its
+  start's hook (`ChatCarries`): the agent's own carried to the new account's home, else the session written as that agent's own; the
+  brief only where nothing can be placed. A carried resume the agent refuses after the
   copy is briefed on the same part, the copy removed.
   A carried move cut off by a restart before its new part ran goes on in the carried conversation: a chat's new part is bound to
   it as its record opens (`ChatCarry.Bound`), so its go-on resumes it, and a driven start continuing a limit part that never

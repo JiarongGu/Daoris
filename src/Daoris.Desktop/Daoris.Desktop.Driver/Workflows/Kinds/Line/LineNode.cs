@@ -4,7 +4,6 @@ namespace Daoris.Driver;
 [NodeKind(NodeKinds.Line, NodeGroup.Git, NodeKinds.Tidy)]
 internal sealed class LineNode : BuiltInNode, IObserves, IAsksReads
 {
-    /// <summary>What the line holds of the branch at its tip: a landing that found the work already there made no landing record to read.</summary>
     public PassRead Asks => PassRead.Content;
 
     public override NodeAuthority Row { get; } = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true);

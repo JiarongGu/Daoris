@@ -10,7 +10,7 @@ public static class UnrunChecks
     /// <summary>The asks a check takes on one binding where Daoris keeps being unable to run it, before the person hears.</summary>
     public const int Bound = 3;
 
-    /// <summary>Whether <paramref name="code"/> is the reason a check was not run.</summary>
+    /// <summary>Whether <paramref name="code"/> says Daoris could not run the check.</summary>
     public static bool Is(string? code) => code == VerifyResult.Unrun;
 
     /// <summary>

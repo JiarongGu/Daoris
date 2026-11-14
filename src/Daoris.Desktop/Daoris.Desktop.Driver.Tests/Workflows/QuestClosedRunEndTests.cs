@@ -40,6 +40,15 @@ public sealed class QuestClosedRunEndTests
     }
 
     [Fact]
+    public void A_holds_step_waiting_on_a_word_the_person_can_give_keeps_the_run()
+    {
+        var record = Record(NodeStates.Reached, NodeStates.Active);
+        var held = record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses) { ["holds"] = record.Statuses["holds"] with { Holds = "its done is held for your yes" } } };
+
+        Assert.Null(ClosedRunEnds.Why(Graph, held, false, false, new HashSet<string>()));
+    }
+
+    [Fact]
     public void The_end_is_a_stop_by_daoris_at_the_standing_step()
     {
         var ended = RunOutcomes.OfClosedQuest(Graph, Record(NodeStates.Reached, NodeStates.Active), "q1", DateTimeOffset.UnixEpoch);

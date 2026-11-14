@@ -3,7 +3,6 @@ namespace Daoris.Driver;
 /// <summary>A <c>line</c>'s reading: the unit's end, as the end judgement's keeper holds it.</summary>
 internal static class LineEndReading
 {
-    /// <summary>The line's holding of the whole work at the branch's tip this pass read, where git says it holds every commit; else null.</summary>
     private static LineHolding? OnTheLine(NodeReading reading) =>
         (reading.RunBranchTip ?? reading.Binding.SubjectRevision) is { } tip
         && reading.Git?.Content?.Invoke(reading.Unit.Id, tip)?.Line is { HoldsAll: true } held
