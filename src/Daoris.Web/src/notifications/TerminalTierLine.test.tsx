@@ -73,21 +73,21 @@ describe("Notifications' line of the terminal's tier", () => {
     ['session', 'Turned on by the session s9, as its own'],
     ['terminal', 'Turned on by a terminal, with no card'],
   ] as const)('names who turned it on: %s', (by, said) => {
-    render(<TerminalTierLine tier="act" acts={{ changes: [{ tier: 'act', at: '2026-11-11T09:00:00Z', by, session: by === 'session' ? 's9' : null }], presses: [] }} onBackToAsk={vi.fn()} onOpen={vi.fn()} />);
+    render(<TerminalTierLine tier="act" acts={{ changes: [{ tier: 'act', at: '2026-11-11T09:00:00Z', by, session: by === 'session' ? 's9' : null }], presses: [] }} onBackToAsk={vi.fn()} onOpen={vi.fn()} defaultOpen />);
     expect(screen.getByText(new RegExp(said))).toBeInTheDocument();
     expect(screen.queryByRole('list')).toBeNull();
   });
 
   it('says act was set outside the record where its newest change is not act, and under ask says who set it back', async () => {
-    const { unmount } = render(<TerminalTierLine tier="act" acts={{ changes: [{ tier: 'ask', at: '2026-11-11T09:00:00Z', by: 'window', session: null }], presses: [] }} onBackToAsk={vi.fn()} onOpen={vi.fn()} />);
+    const { unmount } = render(<TerminalTierLine tier="act" acts={{ changes: [{ tier: 'ask', at: '2026-11-11T09:00:00Z', by: 'window', session: null }], presses: [] }} onBackToAsk={vi.fn()} onOpen={vi.fn()} defaultOpen />);
     expect(screen.getByText(/Turned on outside Daoris: no change to it is recorded/)).toBeInTheDocument();
     unmount();
 
     render(<TerminalTierLine tier="ask" acts={{ changes: [{ tier: 'ask', at: '2026-11-11T11:00:00Z', by: 'alone', session: null }], presses: ACTS.presses }} onBackToAsk={vi.fn()} onOpen={vi.fn()} />);
     expect(screen.getByText('A press from a terminal on this machine waits for your Confirm.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show what a terminal pressed' }));
     expect(screen.getByText(/Back to ask by a terminal, while Daoris was not running/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Back to ask' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Show what a terminal pressed' }));
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 });

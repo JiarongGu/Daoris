@@ -10,6 +10,10 @@ import { terminalTierOf } from '../settings/machine/TerminalTierSetting';
 import { failure, type Notify } from '../design/ui';
 import { type HelpPressNow, type StewardActNow, helpReverse, stewardReverse } from '../person/standing';
 import { StewardLine } from './StewardLine';
+import { useSeenMark } from './standingSeen';
+
+const TERMINAL_SEEN = 'daoris.notifications.terminalSeen';
+const HELP_SEEN = 'daoris.notifications.helpPressSeen';
 
 /**
  * The steward's line as *Notifications* holds it: each act's reverse press sent as the window sends
@@ -26,6 +30,8 @@ export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
   const { t } = useTranslation();
   const driver = useDriver().data;
   const standing = standingOf(driver?.standingConfirmation);
+  const [terminalSince, seeTerminal] = useSeenMark(TERMINAL_SEEN);
+  const [helpSince, seeHelp] = useSeenMark(HELP_SEEN);
   const setTerminal = useSetTerminal();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
@@ -56,6 +62,8 @@ export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
       <TerminalTierLine
         tier={terminalTierOf(driver?.terminal)}
         acts={terminalActsOf(driver?.terminalActs)}
+        since={terminalSince}
+        onSeen={seeTerminal}
         busy={setTerminal.isPending}
         onBackToAsk={() => setTerminal.mutate({ tier: 'ask' }, {
           onSuccess: () => notify(t('settings.terminal.set.ask')),
@@ -65,6 +73,8 @@ export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
       />
       <HelpPressLine
         standing={standing}
+        since={helpSince}
+        onSeen={seeHelp}
         busy={resumeWork.isPending}
         onOpen={() => onOpenHelp()}
         onReverse={reverseHelp}

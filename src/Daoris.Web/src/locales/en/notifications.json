@@ -147,6 +147,7 @@
   "notifications.steward.reverse.hold": "Hold",
   "notifications.steward.reverse.retry": "Try again",
   "notifications.steward.allowed": "A supervisor allowed it",
+  "notifications.standing.seen": "Got it",
   "notifications.helpPressed.label": "What was pressed for you",
   "notifications.helpPressed.line": "Ask Daoris pressed {{count}} act for you in full access, with no card, since Daoris started",
   "notifications.helpPressed.line_other": "Ask Daoris pressed {{count}} acts for you in full access, with no card, since Daoris started",
