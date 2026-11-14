@@ -15,7 +15,10 @@ public static class CoolingWhy
     /// <summary>The agent named a date more than 8 days off: Daoris's default.</summary>
     public const string NotBelieved = "notBelieved";
 
+    /// <summary>A spend cap: Daoris offers the account again when it reopened before.</summary>
+    public const string Learned = "learned";
+
     /// <summary>The code for an entry, read as <see cref="CoolingWords"/> reads it for its sentence.</summary>
     public static string Of(CoolingEntry entry) =>
-        entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
+        entry.Window == SpendCaps.Window ? Learned : entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
 }

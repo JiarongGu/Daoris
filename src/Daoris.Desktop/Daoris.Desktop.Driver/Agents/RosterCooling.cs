@@ -199,6 +199,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
         var now = roster.Clock();
         var read = AccountLimits.Read(LimitsOf(resolved.Id.Value), failure, now, roster.Zone, coolOff ?? AccountLimits.DefaultCoolOff)
                    ?? (byCode is { Stated: false } coded ? coded with { Until = now + (coolOff ?? AccountLimits.DefaultCoolOff) } : null);
+        if (read is { } cap && SpendCaps.Is(cap)) read = SpendCaps.Learn(roster.Home, agent, profile, cap, now);
         return read is { } seen ? Cool(agent, profile, seen, now, session, resolved.Id.Value) : null;
     }
 

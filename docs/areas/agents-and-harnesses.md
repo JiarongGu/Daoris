@@ -191,7 +191,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (D210, D125)
 37. A limit cools that account until the reset the agent named plus 2 minutes, with 15 minutes' grace for a dated reset alone
     and nothing believed past 8 days, else the machine's `cooloff` (60 minutes); `ResetBounds` holds these bounds. A limit is never
-    a strike. A limit naming a model family the agent offers, or a reading putting that family's week at 100% with its
+    a strike. A spend cap (Codex's *You hit your spend cap set by the owner of your workspace*) names no time and is no hour's guess:
+    its window is `cap`, kept in `caps.json` beside the usage history, and the account is offered again after the wait the ledger
+    shows it needed before (the median from a refusal to the account's next turn, `SpendCaps.WaitAfter`; three hours where none is
+    known, doubling for each refusal since its last turn, within 10 minutes and a day), its cool-off saying *learned*. The line it
+    cut goes on elsewhere by rule 34 of Driving, and no one is asked to raise a cap. A limit naming a model family the agent offers, or a reading putting that family's week at 100% with its
     reset ahead, cools that family alone (a family is a word that tells one offered model from another, read from the agent's opens
     and its settings aliases, `ModelFamilies`; no list of Daoris's names one) (`models` in `cooling.json`); every other limit cools the whole account. *Try now* and a
     sign-in end both. (D125, D205)

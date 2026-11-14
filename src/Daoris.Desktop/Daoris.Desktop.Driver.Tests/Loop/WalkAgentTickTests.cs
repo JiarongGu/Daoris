@@ -192,10 +192,7 @@ public sealed class WalkAgentTickTests : IDisposable
         Assert.Contains(others, line => line["prompt"]?.GetValue<string>().Contains("carrying on quest", StringComparison.Ordinal) == true);
     }
 
-    /// <summary>
-    /// The same cut-off line with the person's words waiting on its record goes on the same way: every account of the first agent cooling,
-    /// it moves to the role's next agent and the words go with it, never waiting an hour for the agent that refused it.
-    /// </summary>
+    /// <summary>The same cut-off line with the person's words waiting moves to the role's next agent, the words with it.</summary>
     [Fact]
     public async Task A_limited_line_with_words_waiting_moves_to_the_role_s_next_agent_with_its_words_as_one_without_them_does()
     {
