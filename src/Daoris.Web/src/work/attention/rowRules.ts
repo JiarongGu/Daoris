@@ -96,6 +96,7 @@ export const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [
   left: () => ['work.attention.door.left'],
   // A refused move back to the person is looked at on its session's page, where its tree and its helper's card are.
   'helper-ended': () => ['work.attention.door.open'],
+  'check-failed': () => ['work.attention.door.open'],
   // The decisions are made on the session's page, in its Memory section, where each row's words are read first.
   memory: () => ['work.attention.door.open'],
   // A decide, an answer and a request are pressed on the repository's Integration tab, beside the candidate and its steps.

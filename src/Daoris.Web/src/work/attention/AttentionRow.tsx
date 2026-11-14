@@ -1,6 +1,7 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SetUpRef } from '../../data/api';
+import type { CheckFailure } from './checkFailure';
 import { clockOf, elapsed } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import type { TrustHold } from '../../data/signals';
@@ -29,7 +30,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'unclosed' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'left' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check' | 'plan-question';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check' | 'plan-question' | 'check-failed';
 
 /** A second check's flag not yet seen, as a `second-check` row carries it: the reader's claim about one of Ask Daoris's acts. */
 export type SecondCheckFlag = {
@@ -184,6 +185,7 @@ export type Attention = {
   gitAsk?: GitAskWait;
   /** A `second-check` row's flag, which its *Seen* acknowledges. */
   secondCheck?: SecondCheckFlag;
+  check?: CheckFailure;
   /** The workspace a `git-held` row is judged in, which its *Try again* names; absent where .NET scoped it to none. */
   workspace?: string;
   /**

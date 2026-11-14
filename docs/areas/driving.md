@@ -228,8 +228,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
     holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a tool error) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
-    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A failed verdict still
-    reopens a session whose quest is `Done`: the word names the work's failure, and no rule yet tells the person instead. (CHECKLOCK1)
+    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A verdict on a quest
+    already `Done` sends no session word: a green is quiet, and a failed or stopped check stays on file for the person in
+    *What needs you*, naming the check and its tested commit, with a door to its session. (CHECKLOCK1)
 41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
     tree and records the same. Both are carried on. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
     job still holds, so nothing its agent started outlives it, a launcher still running included; the machine log's

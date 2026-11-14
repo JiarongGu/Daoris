@@ -5,6 +5,12 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-14 - A failed check reopened work whose quest was done
+
+- **Root cause:** 8ccdbdab0f handed every failed broker verdict to its asking session through the say door, without reading whether its quest was already `Done`.
+- **Fix:** read the quest before handing a verdict; a done quest's failure stays on the check record and becomes a scoped *What needs you* row naming its check and tested commit.
+- **Verification:** `CheckHandingTests` covers Done without a word and Taken with one keyed delivery; `AttentionCheckTests` reads the row from the check files, and `attentionCheck.test.ts` checks both languages and the count.
+
 ## 2026-11-14 - A published install had no `daoris.exe`, so a repository's set-up could not run
 
 - **Symptom:** on the installed app a repository's set-up was not asked: "the doctrine tool cannot run here: no `daoris` on the PATH

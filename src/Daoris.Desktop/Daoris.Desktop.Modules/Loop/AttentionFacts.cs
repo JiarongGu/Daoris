@@ -129,4 +129,6 @@ public sealed record AttentionFacts
 
     /// <summary>Each second-check flag not yet seen, as <see cref="AttentionSecondCheckRows.Unseen"/> reads it.</summary>
     public IReadOnlyList<JsonObject> SecondCheck { get; init; } = [];
+
+    public IReadOnlyList<Daoris.Driver.CheckVerdict> Checks { get; init; } = [];
 }
