@@ -91,7 +91,7 @@ check, the size, partial and optional-lock censuses and the comment gate's chang
 
 | Change | Additional verification |
 |---|---|
-| Driver, modules, service, page or tool classes | `node tools/reached-checks.mjs --base main` in the worktree runs the classes the branch's changes reach (`--plan` says which, `--classes <name>[,<name>]` runs named ones) and records each pass under the key the merge computes, so the merge replays what you proved on the same inputs; a class that fails is run again alone once and a pass alone is said as a flake |
+| Driver, modules, service, page or tool classes | `node tools/reached-checks.mjs --base main` in the worktree runs the classes the branch's changes reach (`--plan` says which, `--classes <name>[,<name>]` runs named ones) and records each pass under the key the merge computes, so the merge replays what you proved on the same inputs; a class that fails is run again alone once and a pass alone is said as a flake; a heavy group (Process tier, a rehearsal, a whole suite) also waits its turn in the machine's admission, the one the merge's gates share. A raw `dotnet test` of a Process class takes no place and is what the merge refuses to replay |
 | CLI/package/install story | `npm run rehearse` exercises the packed consumer artifact |
 | Service, driver, sync, toolchain or canon shape | `dotnet test src/Daoris.Service`, driver/modules checks as reached, and `npm run rehearse:family` |
 | Devkit | `dotnet test src/Daoris.Devkit` |
