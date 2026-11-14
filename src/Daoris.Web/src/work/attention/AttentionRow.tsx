@@ -83,10 +83,7 @@ export type SecondCheckFlag = {
  * Nothing connects for it until a change lifts it or the person's *Try again*, its one act, on the row itself.
  */
 export type Attention = {
-  /**
-   * The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for
-   * a `go-ahead`, its ask and its number, since one ask holds several.
-   */
+  /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for a `go-ahead`, its ask and its number, since one ask holds several. */
   id: string;
   kind: AttentionKind;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */

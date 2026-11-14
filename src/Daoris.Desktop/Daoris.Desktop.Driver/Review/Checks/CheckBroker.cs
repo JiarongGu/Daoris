@@ -3,11 +3,7 @@ namespace Daoris.Driver;
 /// <summary>How a check is run: the heavy run's own door, <see cref="HeavyRun.RunAsync"/>, which a test stands in for.</summary>
 public delegate Task<int> BrokeredRun(HeavyRunAsk ask, HeavyRunWorld world, TextWriter output, CancellationToken ct);
 
-/// <summary>
-/// The check broker: takes the next ask under the machine's admission and runs it as a heavy run in its session's tree, one at a time,
-/// writing the verdict with the end of its log. A worker's turn ends while its check waits here (<see cref="EndNoteCodes.EndedAwaitsCheck"/>),
-/// so the wait spends no tokens; <see cref="CheckHanding"/> carries the verdict back.
-/// </summary>
+/// <summary>The check broker: runs the next ask under the machine's admission as a heavy run in its session's tree, one at a time, and writes its verdict (<see cref="EndNoteCodes.EndedAwaitsCheck"/>: the worker's turn ends meanwhile; <see cref="CheckHanding"/> carries it back).</summary>
 /// <remarks>
 /// <b>One at a time is this broker's own queue</b>, set at one so a build or a test is never doubled on this machine; the admission's capacity
 /// (<see cref="MachineAdmission.CapacityVariable"/>) is the machine's and still holds the terminal's and the merge tool's runs beside it.

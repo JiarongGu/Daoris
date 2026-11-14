@@ -230,7 +230,6 @@ internal sealed class NodeRunKeeping(
         }
     }
 
-    /// <summary>What a failed step sends the work back with: its code, and where it is a check, what its newest result found.</summary>
     internal static string FailedWords(string node, string? code, string? found) =>
         $"Daoris: `{node}` failed{(code is { } named ? $" (`{named}`)" : "")}, so your work goes back to you: "
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")

@@ -85,10 +85,7 @@ export const INTEGRATION_LABEL: Readonly<Record<IntegrationWait['wait'], string>
 /** The kinds whose door is an agent's page, named by the agent rather than *Open*: the door says where it goes. */
 export const AT_AN_AGENT: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
-/**
- * The kinds whose door is their one control, since their answer needs reading first: a park's question in
- * Sessions, an intake's on its ask, a review in Sessions with its review open. Each is a button naming that.
- */
+/** The kinds whose door is their one control, since their answer needs reading first: a park's question in Sessions, an intake's on its ask, a review in Sessions with its review open. Each is a button naming that. */
 export const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string, Record<string, unknown>?]>> = {
   parked: () => ['work.attention.door.answer'],
   intake: (item) => ['work.attention.door.intake', { id: item.id }],

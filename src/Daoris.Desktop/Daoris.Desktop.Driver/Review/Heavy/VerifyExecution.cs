@@ -86,10 +86,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
     }
 
-    /// <summary>
-    /// The <c>reached</c> choice: the hand-back read from git against the line, a fault there the verdict and no gate run; else the declaration's required hand-back commands the
-    /// change reaches (<see cref="HandbackGates"/>). No line to read against, or git unable to say, is unrun and never failed.
-    /// </summary>
+    /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) the change reaches. No line, or git unable to say, is unrun and never failed.</summary>
     private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
     {
         if (await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is not { } line)
@@ -110,7 +107,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             }, false);
         }
 
-        // The declaration's required commands the change reaches; one a check of the home finished green at this very commit is not run again.
         var files = new CheckFiles(home);
         var required = declared.Where(gate => gate.Handback && GateReach.Reaches(gate, seen.Touched)).ToList();
         var verified = required.Where(gate => HandbackGates.Verified(files, gate, send.Commit)).ToList();

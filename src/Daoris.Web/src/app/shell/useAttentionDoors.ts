@@ -57,8 +57,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     departure: (item) => openQuest(item.id),
     // A set-up shown for review opens its step's page, where every set-up it said and the review's presses are.
     'set-up': (item) => openQuest(item.id),
-    // A folder waiting on the person's trust opens what it holds: the quest's page, or the ask whose intake it is.
-    // The row asks the trust question itself. Only a shell has one.
+    // A folder waiting on the person's trust opens what it holds (the quest's page, or its intake's ask), and asks the trust question itself: a shell's alone.
     ...(attached ? {
       trust: (item: Attention) => {
         if (item.quest) openQuest(item.quest);

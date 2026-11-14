@@ -6,11 +6,7 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// Who needs the person, as every window holds it: <i>What needs you</i>'s rows and the Sessions
-/// badge's count, judged once per wake in .NET (<see cref="NeedsAPerson"/>) from what the other slices and the driver's look already
-/// hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.
-/// </summary>
+/// <summary>Who needs the person, as every window holds it: <i>What needs you</i>'s rows and the Sessions badge's count, judged once per wake in .NET (<see cref="NeedsAPerson"/>) from what the other slices and the driver's look already hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.</summary>
 /// <remarks>
 /// <para><b>Three keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values
 /// the page words it from, which the bell and each place of the activity bar count; <see cref="Sessions"/>, each session parked

@@ -24,9 +24,7 @@ public static class CheckStates
     public static bool Finished(string state) => state is Reached or Failed or Stopped;
 }
 
-/// <summary>
-/// A check's state, <c>&lt;id&gt;.state.json</c>: written by the driver alone.
-/// </summary>
+/// <summary>A check's state, <c>&lt;id&gt;.state.json</c>: written by the driver alone.</summary>
 /// <param name="Exit">The heavy run's exit code, where it ran.</param>
 /// <param name="Tail">The end of the run's log, bounded, for a red the asker reads.</param>
 /// <param name="Tip">The commit of the asker's tree when the run began: the inputs the verdict is for.</param>

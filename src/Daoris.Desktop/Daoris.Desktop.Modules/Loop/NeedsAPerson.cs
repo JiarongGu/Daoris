@@ -5,11 +5,7 @@ using static Daoris.Desktop.AttentionJson;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// Who needs the person: <i>What needs you</i>'s rows, the parks and the sessions the driver runs, judged once for every
-/// window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is called, its
-/// sentences and the order the band draws are the page's.
-/// </summary>
+/// <summary>Who needs the person: <i>What needs you</i>'s rows, the parks and the sessions the driver runs, judged once for every window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is called, its sentences and the order the band draws are the page's.</summary>
 /// <remarks>
 /// <para><b>No row starts anything to find out</b>: every input is a record a slice already holds or the look already
 /// kept. A row whose wait no record says has a <c>since</c> of null, never the clock's now, which would move at every judgement.</para>

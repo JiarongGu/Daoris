@@ -20,10 +20,7 @@ import { workCutFor } from './attentionCounts';
 import { planQuestionDetail } from './planQuestionDetail';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
-/**
- * *What needs you*'s three groups, in the order a person acts on them: what holds work up until they
- * act, what waits for their word, and what is ready for them to look at.
- */
+/** *What needs you*'s three groups, in the order a person acts on them: what holds work up until they act, what waits for their word, and what is ready for them to look at. */
 export type AttentionGroup = 'holding' | 'word' | 'ready';
 
 /** The groups in the order the band shows them. */

@@ -2,10 +2,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// What <i>What needs you</i> is judged from: each input in the page's shapes, as the other slices and the routes
-/// already write them, so the judge and its tests read one shape.
-/// </summary>
+/// <summary>What <i>What needs you</i> is judged from: each input in the page's shapes, as the other slices and the routes already write them, so the judge and its tests read one shape.</summary>
 /// <remarks>Every list defaults to empty: an input that holds nothing judges no row, as the page's defaults did.</remarks>
 public sealed record AttentionFacts
 {
@@ -132,5 +129,4 @@ public sealed record AttentionFacts
 
     /// <summary>The rows set aside, by <see cref="Daoris.Driver.Notices.HiddenKey"/>.</summary>
     public IReadOnlySet<string> Hidden { get; init; } = new HashSet<string>(StringComparer.Ordinal);
-
 }

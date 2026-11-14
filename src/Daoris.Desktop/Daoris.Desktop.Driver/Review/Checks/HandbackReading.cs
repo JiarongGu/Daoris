@@ -10,7 +10,7 @@ internal sealed record HandbackReading(string Tip, string? Base, int Behind, IRe
     /// <summary>The name the step's failed verdict gives the reading, where a gate would be named.</summary>
     internal const string Gate = "hand-back";
 
-    /// <summary>The line the reading was made against, in the words of <see cref="Words"/>.</summary>
+    /// <summary>The line the reading is made against, named in <see cref="Words"/>.</summary>
     internal string Line { get; init; } = "the line";
 
     public bool Faulty => Behind > 0 || Unsigned.Count > 0;

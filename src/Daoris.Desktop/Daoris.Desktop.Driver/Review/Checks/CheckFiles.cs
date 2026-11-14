@@ -54,11 +54,7 @@ public sealed class CheckFiles(string home)
         }
     }
 
-    /// <summary>
-    /// Every ask on file, oldest first; one unreadable or of another shape is not an ask here. An ask Daoris itself wrote for a hand-back
-    /// (<c>"by": "daoris"</c>, written by a build before the workflow's check step was the only way Daoris checks work) is deleted with its
-    /// state and log as found: nothing runs it now.
-    /// </summary>
+    /// <summary>Every ask on file, oldest first; one unreadable or of another shape is not an ask here. One Daoris wrote itself (<c>"by": "daoris"</c>) is deleted with its state and log as found.</summary>
     public IReadOnlyList<CheckAsk> Asks()
     {
         if (!Directory.Exists(Folder)) return [];
@@ -100,7 +96,6 @@ public sealed class CheckFiles(string home)
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Left for the next look.
             }
         }
     }

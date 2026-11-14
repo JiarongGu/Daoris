@@ -10,10 +10,7 @@ import type { PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
 import type { NoteRecord } from '../noteLines';
 
-/**
- * A stale go-ahead's mark, as .NET judges it: since when nothing on its ask could still use its answer, the last thing on
- * its ask moving; null where no moment reads.
- */
+/** A stale go-ahead's mark, as .NET judges it: since when nothing on its ask could still use its answer, the last thing on its ask moving; null where no moment reads. */
 export type StaleSince = { since: string | null };
 
 /**

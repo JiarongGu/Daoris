@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What a <c>check</c> of a graph run verifies, an ask's delivery run or a chain's: its repository at the branch tip the attempt is bound to,
-/// under the declaration accepted there. The check's <c>reached</c> choice is carried with it.
-/// </summary>
+/// <summary>What a <c>check</c> of a graph run, an ask's or a chain's, verifies: its repository at the branch tip the attempt is bound to, with the check's <c>reached</c> choice.</summary>
 public static class RunChecks
 {
     /// <summary>The send for <paramref name="attempt"/> of the run <paramref name="unit"/> names; null where the run is not bound here or its repository has no checkout here.</summary>

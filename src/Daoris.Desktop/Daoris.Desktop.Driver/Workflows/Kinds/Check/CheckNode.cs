@@ -59,10 +59,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
         }
     }
 
-    /// <summary>
-    /// Whether the check's <c>gates</c> is the word <c>reached</c> alone: it reads the hand-back, then runs the declaration's required hand-back
-    /// commands (<c>"handback"</c> on a gate) its change reaches, but any a check finished green at this commit. A gate of that name is asked in a list, <c>["reached"]</c>.
-    /// </summary>
+    /// <summary>Whether the check's <c>gates</c> is the word <c>reached</c> alone: the hand-back, then the required commands its change reaches. A gate of that name is asked in a list, <c>["reached"]</c>.</summary>
     public static bool ReachedChoice(NodeDeclaration node)
     {
         if (!node.Options.TryGetValue("gates", out var text)) return false;

@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The check broker as the loop holds it: each look starts the broker's next check beside the look, never in it, so a session's turn has
-/// ended while its check waits. Verdicts reach the asking session as Daoris's word.
-/// </summary>
+/// <summary>The check broker as the loop holds it: each look starts its next check beside the look, so a session's turn has ended while its check waits; verdicts reach the asker as Daoris's word.</summary>
 /// <remarks>
 /// A session that asks <c>check_run</c> ends its turn <see cref="EndNoteCodes.EndedAwaitsCheck"/> (<see cref="WaitsOnOwnCheckAsync"/>);
 /// a check ends reached, failed or stopped, and a stopped one is a verdict too.
