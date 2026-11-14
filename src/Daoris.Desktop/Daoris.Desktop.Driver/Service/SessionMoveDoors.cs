@@ -156,7 +156,7 @@ public sealed class SessionMoveDoors
     }
 
     /// <summary>The note's parts as the record's JSON spells them, for a route that carries them beside the note.</summary>
-    private static JsonElement PartsElement(IReadOnlyList<NotePart> parts)
+    internal static JsonElement PartsElement(IReadOnlyList<NotePart> parts)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream))

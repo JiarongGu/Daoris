@@ -13,7 +13,7 @@
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
       { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
-      { "id": "check", "kind": "check", "version": 1, "reach": "performed" },
+      { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "integrate" } },
       { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited", "options": { "request": "done", "conflicts": "session" } },
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
@@ -24,6 +24,7 @@
       { "id": "i", "kind": "after", "from": "holds", "to": "content" },
       { "id": "b", "kind": "after", "from": "content", "to": "check" },
       { "id": "e", "kind": "after", "from": "check", "to": "landing" },
+      { "id": "cb", "kind": "back", "from": "check", "on": "failed", "to": "work" },
       { "id": "c", "kind": "after", "from": "landing", "to": "integrate" },
       { "id": "d", "kind": "after", "from": "integrate", "to": "line" }
     ]

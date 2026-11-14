@@ -59,17 +59,16 @@ internal sealed class WatchNodes
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
-        // A run's end ends the sessions waiting on its steps, only those still waiting.
-        nodes.Finish = async (session, state, note, ct) =>
+        // A run's end writes its quests' Done and ends the sessions still waiting on its steps, in one write.
+        nodes.Finish = async (end, ct) =>
         {
             try
             {
-                await service.AdvanceAsync(session, state, note, ct: ct, expected: StepWait.State).ConfigureAwait(false);
-                return true;
+                return await service.EndRunAsync(end.Run, end.Quests, end.Sessions, end.State, new Noted(end.Note, []), ct).ConfigureAwait(false);
             }
             catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException)
             {
-                return false;
+                return null;
             }
         };
 

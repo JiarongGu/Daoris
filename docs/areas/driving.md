@@ -43,8 +43,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 
 1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, its body says why
    with evidence, never the change, and it is kept under its receiver's registered spelling. (D32, D34, D70)
-2. The driver never writes quest state. The session it starts takes, finishes or declines its own quest through its own
-   connector, so driven and outside work look the same at the quest layer. (D46)
+2. The driver never writes quest state but at a workflow run's end. The session it starts takes, submits or declines its own quest
+   through its own connector, so driven and outside work look the same at the quest layer. (D46) The one exception (D293): a quest worked
+   in a run bound to a graph version is bound to that run at its session's first start (`RunQuestBinding`, `POST /api/quests/{id}/run`,
+   its closure `run:<run>`), so its agent's done is a submission that leaves it `Taken`; the run's end writes the Done of each of its
+   quests standing at a submission and ends the sessions waiting on it, in one service write (`RunEnds`, `POST /api/runs/{run}/end`,
+   through the close door under a key of that end), where the run came to its graph's end. A run that ended any other way closes nothing.
 3. A take on a quest shared through a remote claims by push before work starts. It is held, lost (the session stands down), or
    unconfirmed (work goes on until a sync decides). (D68, D69)
 4. Each whole look asks the host where every running session's claim stands. A session whose take lost is stopped, and the record
@@ -222,11 +226,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
     newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83) `AwaitingStep` (`awaiting-step`)
     is a session whose agent's turn ended while its work goes through its workflow (D293): open, holding its tree, running no process, its
-    note's `waits.step` part naming the run it waits on (`waits.check` for its own broker check). A word kept on it wakes
+    note's `waits.step` part naming the run it waits on and, where known, the step, its attempt and the tip (`StepWait`; `waits.check`
+    for its own broker check). A word kept on it wakes
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
-    (`RunSessionEnds`, through the runtime's `Finish` door, expecting `awaiting-step`): `completed` where the run came to its graph's end,
-    `stopped` where it ended any other way.
+    (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
+    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it ended any other way.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
     where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, a later
     turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest

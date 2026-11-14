@@ -43,7 +43,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.parked-cut': { values: ['call'] },
   'ended.parked-cancelled': { values: [] },
   // It ended its turn on its own helper's ask, and waits on that helper, not on the person.
-  'waits.step': { values: ['run'] },
+  'waits.step': { values: ['run', 'node', 'attempt', 'tip'] },
   'waits.check': { values: [] },
   'ended.awaits-helper': { values: [] },
   'ended.answered-unfinished': { values: ['awaits', 'exit'] },

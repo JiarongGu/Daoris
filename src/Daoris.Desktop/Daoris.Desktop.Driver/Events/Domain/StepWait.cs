@@ -24,7 +24,9 @@ public sealed record StepWait(string? Run, string? Node = null, int? Attempt = n
         ? Noted.Of(EndNoteCodes.WaitsCheck,
             "It asked for a check and its turn ended while the check waits its turn: it goes on in the same conversation with the verdict.")
         : Noted.Of(EndNoteCodes.WaitsStep,
-            $"Its turn ended and it waits on its workflow's next step (run `{Run}`): it goes on in the same conversation where a step sends its "
-            + "work back, and ends with its workflow.",
-            ("run", Run));
+            $"Its turn ended and it waits on its workflow's next step (run `{Run}`{(Node is null ? "" : $", after `{Node}`")}"
+            + $"{(Attempt is null ? "" : $" attempt {Attempt}")}{(Tip is null ? "" : $" at `{Tip}`")}): it goes on in the same conversation where a "
+            + "step sends its work back, and ends with its workflow.",
+            [("run", Run), .. Node is null ? [] : new (string, object?)[] { ("node", Node) },
+             .. Attempt is null ? [] : new (string, object?)[] { ("attempt", Attempt) }, .. Tip is null ? [] : new (string, object?)[] { ("tip", Tip) }]);
 }
