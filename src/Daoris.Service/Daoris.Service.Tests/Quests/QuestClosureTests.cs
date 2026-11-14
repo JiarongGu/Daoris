@@ -125,7 +125,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
 
-    // ——— Bind and ready.
 
     [Fact]
     public async Task Ready_keeps_the_quest_taken_with_its_submission_and_holds_it_as_a_done_would_be()
@@ -148,12 +147,9 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestOperationKind.Submitted, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
     }
 
-    /// <summary>
-    /// FABRIC-CLOSE1c4: a submission names the session that said its ready, the one a reopen of it is told to, in its operation and
-    /// on the quest; a ready through a door that names no session names none, and the earlier submission's session goes with it.
-    /// </summary>
+    /// <summary>A submission names the session whose done made it, on its operation and the quest; one no session made names none.</summary>
     [Fact]
-    public async Task A_submission_names_the_session_that_said_ready_and_none_where_no_session_said_it()
+    public async Task A_submission_names_the_session_whose_done_made_it_and_none_where_no_session_said_it()
     {
         var quest = await Bound();
 
@@ -213,19 +209,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
         Assert.Equal((QuestRespondRefusal.None, QuestStatus.Taken), (done.Refusal, done.Quest!.Status));
         Assert.NotNull(done.Quest.Submission);
-    }
-
-    [Fact]
-    public async Task The_agents_done_is_the_one_verb_of_a_submission_and_ready_is_no_verb()
-    {
-        var quest = await Bound();
-
-        var ready = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)]);
-
-        Assert.Equal(QuestRespondRefusal.UnknownAction, ready.Refusal);
-        Assert.Equal("Unknown action 'ready' — one of: take, done, decline, wait.", ready.Message);
-        Assert.Null((await Find(quest.Id)).Submission);
-        Assert.Equal(QuestStatus.Taken, (await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)])).Quest!.Status);
     }
 
     [Fact]

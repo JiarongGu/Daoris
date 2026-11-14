@@ -53,6 +53,21 @@ public sealed class RunReplayTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_agents_done_is_the_one_verb_of_a_submission_and_ready_is_no_verb()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Mend the bridge", "It drops a frame.", Now);
+        await _exchange.RespondAsync(quest.Id, "take", null, Now);
+        Assert.True((await _quests.BindAsync(quest.Id, "q-run", Now)).Moved);
+
+        var ready = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now);
+
+        Assert.Equal(QuestRespondRefusal.UnknownAction, ready.Refusal);
+        Assert.Equal("Unknown action 'ready' — one of: take, done, decline, wait.", ready.Message);
+        Assert.Null((await _quests.FindAsync(quest.Id))!.Submission);
+        Assert.Equal(QuestStatus.Taken, (await _exchange.RespondAsync(quest.Id, "done", "Built.", Now)).Quest!.Status);
+    }
+
+    [Fact]
     public async Task A_quest_worked_in_a_run_is_submitted_sent_back_by_a_red_check_and_done_only_at_the_runs_end()
     {
         var quest = await _quests.PublishAsync("Asker", "Owner", "Mend the bridge", "It drops a frame.", Now);
