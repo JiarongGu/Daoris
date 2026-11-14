@@ -80,7 +80,7 @@ internal sealed class RunConclusion(
                     awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, so it failed, and never parks on the person.
                     providerRefused: ended.ProviderRefused,
-                    departed: QuestLeft.Departed(after).Count, waits: state.BoundIfAny?.Waits)
+                    departed: QuestLeft.Departed(after).Count, waits: state.BoundIfAny?.WaitsAfter(after))
                 // A done this run reached outranks the timeout, as it outranks a messy exit. The watcher's end (a headless --quiet-end)
                 // reads as its own cause, never as a bound's.
                 : wiring.Watch.EndedMinutes(sessionId) is { } quietMinutes

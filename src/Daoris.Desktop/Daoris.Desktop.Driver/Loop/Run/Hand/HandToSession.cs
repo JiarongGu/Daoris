@@ -168,7 +168,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did.
                 Session = sessionId,
-                Submits = closure?.Bound == true || runBound.Waits is not null,
+                Submits = closure?.Bound == true || runBound.WaitsAfter(null) is not null,
                 Answered = answered,
                 // What cut the last session off, and what it left uncommitted, read by the driver, because the session may not run
                 // `git status` itself. An open quest's start, handed the words its session could not go on with, takes it as any first

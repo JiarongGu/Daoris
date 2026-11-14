@@ -118,6 +118,36 @@ public sealed class SessionTurnsTests : IAsyncLifetime
             line.Select(turn => (turn.Number, turn.Cause, turn.Agent!)));
     }
 
+    [Fact]
+    public async Task A_turn_s_end_keeps_what_its_door_reported_since_the_turns_before_it()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, tree: "/trees/s-6")).Session!;
+        await Move(opened.Id, "starting", "working");
+
+        var first = (await _ledger.AdvanceAsync(opened.Id, "awaiting-step", null, null, null, Now.AddMinutes(1), spent: new TurnSpent(1000, 200))).Session!;
+        await _ledger.SayAsync(opened.Id, "Daoris: `check` failed.", null, Now.AddMinutes(3), from: SaidFrom.Daoris, key: "changes/r/check/1");
+        await _ledger.AdvanceAsync(opened.Id, "working", null, null, null, Now.AddMinutes(4));
+        var second = (await _ledger.AdvanceAsync(opened.Id, "awaiting-step", null, null, null, Now.AddMinutes(5), spent: new TurnSpent(1700, 260))).Session!;
+
+        Assert.Equal([(1000L, 200L)], SessionTurns.Own(first).Select(turn => (turn.Input!.Value, turn.Output!.Value)));
+        Assert.Equal([(1000L, 200L), (700L, 60L)], SessionTurns.Own(second).Select(turn => (turn.Input!.Value, turn.Output!.Value)));
+        var kept = SessionTurns.Own((await _sessions.FindAsync(opened.Id))!);
+        Assert.Equal((700L, 60L), (kept[1].Input!.Value, kept[1].Output!.Value));
+    }
+
+    [Fact]
+    public async Task A_turn_whose_door_reported_nothing_keeps_no_figure()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, tree: "/trees/s-7")).Session!;
+        await Move(opened.Id, "starting", "working");
+
+        var ended = (await _ledger.AdvanceAsync(opened.Id, "completed", null, null, null, Now.AddMinutes(1), spent: new TurnSpent(null, null))).Session!;
+
+        Assert.All(SessionTurns.Own(ended), turn => Assert.Equal((null, null), (turn.Input, turn.Output)));
+    }
+
     [Theory]
     [InlineData("check/a1b2", "check_run", null)]
     [InlineData("changes/r/opinion/3", "opinion", 3)]

@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
 import { cn } from '../../lib/cn';
-import type { PartSpent } from '../entries';
 import type { SessionGrouping } from '../groups';
 import { passageSteps, turnLines, workSentence } from './workFacts';
 
@@ -12,11 +11,9 @@ const SIGNS: Record<string, string> = { passed: '✓', current: '●', next: '�
  * A session's row as work: its run's steps passed, current and to come, one sentence of whom it waits on, and its turns beneath
  * it. A molecule: what it says is handed in, and it draws nothing where nothing is known.
  */
-export function SessionWork({ session, grouping, spent, accountName }: {
+export function SessionWork({ session, grouping, accountName }: {
   session: Session;
   grouping?: SessionGrouping | null;
-  /** What each record of its turns spent, by record, where this machine answered it. */
-  spent?: Readonly<Record<string, PartSpent | null | undefined>>;
   /** The name the person gave an account, where they gave one. */
   accountName?: (id: string) => string;
 }) {
@@ -24,7 +21,7 @@ export function SessionWork({ session, grouping, spent, accountName }: {
   const steps = passageSteps(grouping);
   const sentence = workSentence(t, session, grouping);
   // One turn says nothing a row does not already; a session that went on draws each beneath it.
-  const turns = (session.turns?.length ?? 0) > 1 ? turnLines(t, session.turns, spent, accountName) : [];
+  const turns = (session.turns?.length ?? 0) > 1 ? turnLines(t, session.turns, accountName) : [];
   if (steps.length === 0 && !sentence && turns.length === 0) return null;
 
   return (

@@ -107,7 +107,7 @@ public static class SessionTurns
 
     /// <summary>The turns as the record's column keeps them.</summary>
     public static string Write(IReadOnlyList<SessionTurn> turns) =>
-        JsonSerializer.Serialize(turns.Select(turn => new Kept(turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt)), Options);
+        JsonSerializer.Serialize(turns.Select(turn => new Kept(turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Input, turn.Output)), Options);
 
     /// <summary>The turns a record's column keeps; null for a record from before the column, or one that does not read.</summary>
     public static IReadOnlyList<SessionTurn>? Read(string? kept)
@@ -116,7 +116,7 @@ public static class SessionTurns
         try
         {
             return JsonSerializer.Deserialize<List<Kept>>(kept, Options)?
-                .Select(turn => new SessionTurn(turn.N, turn.Cause, turn.At) { Node = turn.Node, Attempt = turn.Attempt })
+                .Select(turn => new SessionTurn(turn.N, turn.Cause, turn.At) { Node = turn.Node, Attempt = turn.Attempt, Input = turn.Input, Output = turn.Output })
                 .ToList();
         }
         catch (JsonException)
@@ -125,5 +125,5 @@ public static class SessionTurns
         }
     }
 
-    private sealed record Kept(int N, string Cause, DateTimeOffset At, string? Node, int? Attempt);
+    private sealed record Kept(int N, string Cause, DateTimeOffset At, string? Node, int? Attempt, long? Input, long? Output);
 }

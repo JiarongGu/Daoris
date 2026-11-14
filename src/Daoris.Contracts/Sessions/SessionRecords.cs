@@ -81,7 +81,7 @@ public sealed record SessionResponse(
 /// <summary>One agent conversation's turn inside the session, answered on this machine only, since it names the account.</summary>
 public sealed record SessionTurnResponse(
     int Number, string Cause, DateTimeOffset At, string? Node, int? Attempt, string? Part, string? Agent, string? Account, string? Adapter,
-    string? Conversation, DateTimeOffset? Ended);
+    string? Conversation, DateTimeOffset? Ended, long? Input = null, long? Output = null);
 
 /// <summary>
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer

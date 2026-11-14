@@ -31,6 +31,11 @@ internal sealed class LoopRun(
         using var service = new ServiceClient(serviceUrl, key, personKey: person)
         {
             TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)),
+            TurnSpent = id =>
+            {
+                var spent = loop.Events.Spent(id);
+                return (spent.Input, spent.Output);
+            },
             PlaceEnds = (id, ct) => PlaceTurns.EndAsync(homeDirectory, id, ct),
         };
         // The service's doors for the one read the client does not carry: the repositories' index sizes.

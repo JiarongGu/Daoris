@@ -55,6 +55,7 @@ public sealed class SessionMoveDoors
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
         // A move out of a running state reads its turn's end in its place; the ledger writes the mark only out of a running state.
         var holdsPlace = Running.Contains(state) || _service.PlaceEnds is not { } ends ? null : await PlaceEndAsync(ends, id, ct).ConfigureAwait(false);
+        var spent = Running.Contains(state) ? null : _service.TurnSpent?.Invoke(id);
         var request = new AdvanceSession(
             id, state, note, evidence, transcript, interrupted ? true : null, limit ? true : null,
             note is not null && parts is { Count: > 0 } ? PartsElement(parts) : null,
@@ -64,7 +65,8 @@ public sealed class SessionMoveDoors
                 pair => new MemoryTurnsRequest(
                     [.. pair.Value.Select(line => new MemoryTurnLine(line.Seq, line.Started, line.Ended, line.Model))], []),
                 StringComparer.Ordinal),
-            holdsPlace is null ? null : [.. holdsPlace]);
+            holdsPlace is null ? null : [.. holdsPlace],
+            spent is { } told ? new TurnSpentRequest(told.Input, told.Output) : null);
 
         var sent = await _service.SendAsync(request, ct).ConfigureAwait(false);
 

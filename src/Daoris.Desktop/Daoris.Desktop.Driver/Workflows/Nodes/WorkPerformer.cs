@@ -183,6 +183,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
     public WorkPerformed Begin(NodeDeclaration node, WireStart start, NodeStatus evaluated) => Keeping.Begin(node, start, evaluated);
 
+    public NodeRecord? RecordOf(string unit) => records.Read(unit);
+
     public IReadOnlyList<WorkPerformed> Hear(
         IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched) =>
         Hearing.Hear(heard, declared, watched);

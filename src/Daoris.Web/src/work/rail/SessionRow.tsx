@@ -95,10 +95,8 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, line = null, place, archived = false,
-  selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait, turnsSpent, accountName,
+  selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait, accountName,
 }: {
-  /** What each record of its turns spent, by record, drawn on each record's last turn; absent where none answered. */
-  turnsSpent?: Readonly<Record<string, PartSpent | null | undefined>>;
   /** The name the person gave an account its turns ran on, where they gave one. */
   accountName?: (id: string) => string;
   /** Its line's state where another part or a co-worker decides it (`lineSaid`): its mark is that, said first on its line. */
@@ -298,7 +296,7 @@ export function SessionRow({
         >
           {meta}
         </span>
-        <SessionWork session={session} grouping={grouping} spent={turnsSpent} accountName={accountName} />
+        <SessionWork session={session} grouping={grouping} accountName={accountName} />
       </ListRowDoor>
 
       {/* Beside the row, never inside it: a button inside a button is not a thing a page may hold. */}

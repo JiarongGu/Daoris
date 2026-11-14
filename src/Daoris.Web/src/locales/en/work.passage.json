@@ -22,6 +22,6 @@
   "work.passage.cause.curve": "account curve",
   "work.passage.cause.agent": "agent's ask",
   "work.passage.cause.daoris": "carried on by Daoris",
-  "work.passage.tokens_one": "{{tokens}} token",
-  "work.passage.tokens_other": "{{tokens}} tokens"
+  "work.passage.tokensIn": "{{tokens}} in",
+  "work.passage.tokensOut": "{{tokens}} out"
 }

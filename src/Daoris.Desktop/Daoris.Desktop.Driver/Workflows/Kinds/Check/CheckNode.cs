@@ -36,9 +36,13 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
     /// stays ready.
     /// </summary>
     public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) =>
-        !starting.Governed.Dispatchable.Contains(starting.Node.Id) || starting.Performer.PortOf(starting.Node.Kind) is null
+        !starting.Governed.Dispatchable.Contains(starting.Node.Id) || starting.Performer.PortOf(starting.Node.Kind) is null || AwaitsNewCommit(starting)
             ? null
             : await starting.Performer.StartAsync(starting.Node, starting.Start, ct).ConfigureAwait(false);
+
+    private static bool AwaitsNewCommit(NodeStarting starting) =>
+        starting.Status.By != NodeCause.Person && starting.Start.Move.Binding is { } binding
+        && CheckRounds.RedAt(starting.Performer.RecordOf(binding.Unit), starting.Node.Id, binding.SubjectRevision);
 
     /// <summary>Its kind's perform, and 7200 seconds where it declares no <c>timeoutSeconds</c>.</summary>
     public NodeDeclaration Performed(NodeDeclaration node) =>
