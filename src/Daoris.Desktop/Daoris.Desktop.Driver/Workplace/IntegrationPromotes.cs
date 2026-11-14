@@ -407,8 +407,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             // A checkout that has the line out is moved by a fast-forward in it, where it is clean; never by a ref moved under it.
             var (clean, detail) = await WorkingTree.CleanAsync(checkout.Path, ct).ConfigureAwait(false);
             if (!clean) return Held($"the checkout that has `{ask.Line}` out is not clean ({detail}): nothing was moved, and it is tried again at the next look.");
-            var (merged, _, mergeErr) = await WorkingTree.GitAsync(checkout.Path, ["merge", "--ff-only", "--quiet", tip], ct).ConfigureAwait(false);
-            if (merged != 0) return Held($"the checkout that has `{ask.Line}` out would not fast-forward to the candidate's tip ({ContentHolds.Said(mergeErr)}): it is tried again at the next look.");
+            var merged = await MachinePorts.Repository.FastForwardAsync(checkout.Path, tip, ct).ConfigureAwait(false);
+            if (!merged.Ok) return Held($"the checkout that has `{ask.Line}` out would not fast-forward to the candidate's tip ({ContentHolds.Said(merged.Error)}): it is tried again at the next look.");
             how = "a fast-forward in the checkout that has it out";
         }
         else

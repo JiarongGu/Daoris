@@ -7,8 +7,7 @@ internal sealed record PoolFinish(PoolSite Site, string Holder, string Line, str
 /// <summary>
 /// A line's finish over a kept slot: the set-aside of the line's own ignored paths, the slot detached at the line's tip, the branch deleted
 /// through the journal, and the record posted from the manifest by the pass that posts every finished tree's. The manifest is written
-/// <c>judged</c> before anything moves, with the tip held on a recovery ref the delete makes in its own transaction. The slot keeps the
-/// tracked files, its dependencies, its intermediates and Daoris's own copies for the next line.
+/// <c>judged</c> before anything moves, with the tip held on a recovery ref the delete makes. The slot keeps the tracked files and copies.
 /// </summary>
 internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
 {
@@ -19,9 +18,8 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
         if (pool.LastEnd(site.Workspace, site.Repository, finish.Line) is not { } end) return PoolDone.Not("no let-go of the line is recorded, so its tip is not known");
         if (end.Kind != LineEndKinds.Output) return PoolDone.Not($"a {end.Kind} line has no finish: its branch stays");
 
-        var (stands, at, _) = await WorkingTree.GitAsync(site.Root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
-        if (stands != 0) return PoolDone.Not("its branch is gone, so there is nothing to finish");
-        if (at.Trim() != end.Tip) return PoolDone.Not("its branch moved since the line let it go");
+        if (await WorkingTree.TipAsync(site.Root, $"refs/heads/{branch}", ct).ConfigureAwait(false) is not { } at) return PoolDone.Not("its branch is gone, so there is nothing to finish");
+        if (at != end.Tip) return PoolDone.Not("its branch moved since the line let it go");
 
         var slot = pool.WhereIs(site.Workspace, site.Repository, finish.Line);
         if (await TreeWorktrees.EntriesAsync(site.Root, ct).ConfigureAwait(false) is not { } trees) return PoolDone.Not("git could not list the repository's working trees");
@@ -107,13 +105,12 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
                 return PoolDone.Not("the slot changed as its own paths were set aside, so they were put back and the branch is kept");
             }
 
-            var hooks = TreeOpenings.HooksHeld(site.Home);
-            var (detached, _, said) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", end.Tip], ct).ConfigureAwait(false);
-            if (detached != 0)
+            var detached = await git.Repository.SwitchAsync(slot.Path, new GitSwitch(null, end.Tip, HooksPath: TreeOpenings.HooksPath(site.Home)), ct).ConfigureAwait(false);
+            if (!detached.Ok)
             {
                 PutBack(slot.Path, aside, own, manifest);
                 await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-                return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(said)}");
+                return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(detached.Error)}");
             }
 
             pool.Advance(fence, TreeClaimPhases.Detached);

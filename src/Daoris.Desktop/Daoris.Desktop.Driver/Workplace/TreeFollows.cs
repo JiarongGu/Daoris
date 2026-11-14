@@ -140,7 +140,7 @@ internal sealed class TreeFollows(TreeContext context)
     /// The branch a session branch's tree is on where the tree moved off it: git lists a tree at that folder, on a
     /// branch other than this one. Null where the tree is on this branch, detached, or not listed.
     /// </summary>
-    internal string? MovedOnTo(IReadOnlyList<WorktreeEntry> entries, string workspace, string repository, string branch)
+    internal string? MovedOnTo(IReadOnlyList<GitWorktree> entries, string workspace, string repository, string branch)
     {
         if (!branch.StartsWith(SessionPrefix, StringComparison.Ordinal)) return null;
         var folder = context.TreeAt(workspace, repository, branch[SessionPrefix.Length..]);

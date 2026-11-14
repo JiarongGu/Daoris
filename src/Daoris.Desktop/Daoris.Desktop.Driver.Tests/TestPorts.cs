@@ -36,7 +36,11 @@ internal static class TestPorts
         Seal = ScriptedSeal.Port,
         Git = Git,
         SshKeys = SshKeys.Convert,
+        Repository = Repository,
     });
+
+    /// <summary>The repository every test reaches unless its flow chose a memory one: the driver's own over the git a flow reaches.</summary>
+    internal static FlowRepository Repository { get; } = new(GitRepository.Shared);
 
     /// <summary>The machine's host over the scripted places, whose starts are made by the stand-in a flow chose (<see cref="ProcessStarts.Within"/>) and else by the runtime.</summary>
     internal static IProcessHost Host { get; } = new Daoris.Adapters.Machine.MachineProcessHost(

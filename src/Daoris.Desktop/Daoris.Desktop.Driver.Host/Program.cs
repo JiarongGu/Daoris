@@ -51,6 +51,7 @@ AmbientPorts.Set(new PortSet
     Seal = KeySeal.Port,
     Git = new GitProcessRuns(processes, GitRunPolicy.Shared),
     SshKeys = Daoris.Adapters.SshKeys.SshKeyFormats.Convert,
+    Repository = GitRepository.Shared,
 });
 
 if (OperatingSystem.IsWindows())

@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 /// The row a settling claim leaves its slot with, read from the slot's disk and never from a phase or the row before it: the claim's line
 /// where the slot is on the claim's branch and the claim has made it that line's, the line the slot served where it stands where the claim
 /// found it, and no line otherwise, so no reader takes the slot's folder for a line its files are not. A slot settled <c>stuck</c> is first
-/// detached where it stands, which writes no file, so no slot out of the pool keeps a branch checked out; only git's own lock file stops
-/// that, and the words then name the branch it holds.
+/// detached where it stands, which writes no file, so no slot out of the pool keeps a branch checked out but where git's own lock file stops it.
 /// </summary>
 internal sealed record SlotStanding(KeptTree Slot, TreeClaim Claim)
 {
@@ -41,9 +40,8 @@ internal sealed record SlotStanding(KeptTree Slot, TreeClaim Claim)
             }
             else
             {
-                var hooks = TreeOpenings.HooksHeld(site.Home);
-                var (code, _, err) = await git.GitAsync(Slot.Path, [.. hooks, "switch", "--detach"], ct).ConfigureAwait(false);
-                if (code != 0) said = $"{why}; git would not detach it, so it holds {branch} checked out: {TreeGit.FirstLine(err)}";
+                var detached = await git.Repository.SwitchAsync(Slot.Path, new GitSwitch(null, HooksPath: TreeOpenings.HooksPath(site.Home)), ct).ConfigureAwait(false);
+                if (!detached.Ok) said = $"{why}; git would not detach it, so it holds {branch} checked out: {TreeGit.FirstLine(detached.Error)}";
             }
         }
 

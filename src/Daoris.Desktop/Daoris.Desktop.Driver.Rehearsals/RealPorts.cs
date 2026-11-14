@@ -32,6 +32,7 @@ internal static class RealPorts
             Seal = KeySeal.Port,
             Git = new FlowGit(new GitProcessRuns(processes, GitRunPolicy.Shared)),
             SshKeys = Daoris.Adapters.SshKeys.SshKeyFormats.Convert,
+            Repository = GitRepository.Shared,
         });
     }
 }

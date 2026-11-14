@@ -3,15 +3,11 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// A session's tree locked while the session holds it: git's own lock (<c>git worktree lock</c>), its reason
-/// naming the session, so no tool that prunes merged branches or removes clean trees takes the tree from under it.
-/// </summary>
+/// <summary>A session's tree locked while the session holds it, its reason naming the session, so no tool that prunes or removes clean trees takes it.</summary>
 /// <remarks>
 /// <para><b>Why.</b> A session's tree opens on a branch at its line's tip and has no commit until the session has work, so its branch
-/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session.
-/// git refuses a locked tree to <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice,
-/// whoever asks.</para>
+/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session. git refuses a locked tree to
+/// <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice, whoever asks.</para>
 ///
 /// <para><b>Held from the record's open to its end.</b> A driven start locks its tree once its record is open, while it still holds the
 /// repository's trees for starting (<see cref="TreeLock"/>), and lets it go when the run ends, unless the record waits on the person
@@ -62,13 +58,12 @@ internal static class SessionLocks
         if (entry.Locked)
         {
             if (entry.LockReason == Reason(session) || (SessionOf(entry.LockReason) is null && !PoolLocks.IsOwn(entry.LockReason))) return null;
-            var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
-            if (unlocked != 0) return FirstLine(unlockErr);
+            var unlocked = await MachinePorts.Repository.UnlockAsync(tree, entry.Path, ct).ConfigureAwait(false);
+            if (!unlocked.Ok) return FirstLine(unlocked.Error);
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(tree, ["worktree", "lock", "--reason", Reason(session), entry.Path], ct)
-            .ConfigureAwait(false);
-        return code == 0 ? null : FirstLine(err);
+        var locked = await MachinePorts.Repository.LockAsync(tree, entry.Path, Reason(session), ct).ConfigureAwait(false);
+        return locked.Ok ? null : FirstLine(locked.Error);
     }
 
     /// <summary>
@@ -79,8 +74,7 @@ internal static class SessionLocks
     {
         if (!Directory.Exists(tree) || HolderOf(tree) != session) return false;
         if (await EntryAsync(tree, ct).ConfigureAwait(false) is not { Locked: true } entry || entry.LockReason != Reason(session)) return false;
-        var (code, _, _) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
-        return code == 0;
+        return (await MachinePorts.Repository.UnlockAsync(tree, entry.Path, ct).ConfigureAwait(false)).Ok;
     }
 
     /// <summary>A terminal record lets go of its own lock; a park, helper wait or setup continuation still holds it.</summary>
@@ -114,14 +108,13 @@ internal static class SessionLocks
         foreach (var entry in await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) ?? [])
         {
             if (busy.Contains(Normal(entry.Path))) continue;
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["worktree", "unlock", entry.Path], CancellationToken.None).ConfigureAwait(false);
-            if (code != 0) continue;
+            if (!(await MachinePorts.Repository.UnlockAsync(root, entry.Path, CancellationToken.None).ConfigureAwait(false)).Ok) continue;
             let.Add(entry.Path);
 
             // A kept slot goes back to the pool's free reason rather than to no lock at all.
             if (KeptTree.IsSlotFolder(entry.Path))
             {
-                await WorkingTree.GitAsync(root, ["worktree", "lock", "--reason", PoolLocks.Free, entry.Path], CancellationToken.None).ConfigureAwait(false);
+                await MachinePorts.Repository.LockAsync(root, entry.Path, PoolLocks.Free, CancellationToken.None).ConfigureAwait(false);
             }
         }
 
@@ -129,7 +122,7 @@ internal static class SessionLocks
     }
 
     /// <summary>This home's trees of the repository a session lock holds, as git lists them; null where git could not.</summary>
-    private static async Task<List<WorktreeEntry>?> LockedAsync(TreeContext context, string root, string workspace, string repository, CancellationToken ct)
+    private static async Task<List<GitWorktree>?> LockedAsync(TreeContext context, string root, string workspace, string repository, CancellationToken ct)
     {
         if (await TreeWorktrees.EntriesAsync(root, ct).ConfigureAwait(false) is not { } entries) return null;
         return [.. entries.Where(entry => entry.Locked && SessionOf(entry.LockReason) is not null
@@ -140,7 +133,7 @@ internal static class SessionLocks
     }
 
     /// <summary>The tree's own entry in git's list, asked in the tree; null where git lists none there.</summary>
-    private static async Task<WorktreeEntry?> EntryAsync(string tree, CancellationToken ct) =>
+    private static async Task<GitWorktree?> EntryAsync(string tree, CancellationToken ct) =>
         await TreeWorktrees.EntriesAsync(tree, ct).ConfigureAwait(false) is { } entries
             ? entries.FirstOrDefault(entry => SamePath(entry.Path, tree))
             : null;

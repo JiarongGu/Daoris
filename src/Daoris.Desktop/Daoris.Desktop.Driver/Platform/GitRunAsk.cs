@@ -1,4 +1,5 @@
 global using GitWait = Daoris.Ports.Git.GitWait;
+global using Daoris.Ports.Repositories;
 
 namespace Daoris.Driver;
 

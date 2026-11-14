@@ -557,6 +557,49 @@ layer-run; l after b to k; z last.
 | **l** the rest, and the driver deleted (driver, modules, tools; b to k) | what remains to `src/Daoris.Application/`; `Daoris.Desktop.Driver` deleted; the broad Process gates' hand reach removed | no forwarding type, no duplicate implementation, no `Needs` trait in a unit project | the whole build and the unit tier green; `daoris.gates.json` lists no `driver-process*` row | `Daoris.Desktop.Driver`; `CategoryTests`, `Alone.cs` and the run-settings files; `reached`'s .NET half once the unit tier runs whole under a minute |
 | **z** measured (the steward; all) | — | — | §9's figures before a and after l, and its three exercises | — |
 
+**Row f, measured before it moved anything (2026-11-14, this machine; the count is from the classes' own `Needs` traits, the time from a
+sample run).** The driver's unit half (`Category!=Process`) already starts no real git: no class there carries `Needs=Git`, and 20 classes
+script the git they ask (`GitFlow`, `ScriptedGit`), so the "mixed" classes are unit tests whose only real git is a scratch cleanup, or fault
+injection over a real repository. The real git is in the Process classes: `Daoris.Desktop.Driver.Tests` holds 261 `Needs=Git` classes with
+1,199 cases (127 classes and 678 cases in the `Parallel=Git` half), and the rehearsal project 72 classes with 661 cases (the landings', pool's,
+integrations', clean-up's, keep-size's and help trees' scenario classes, already moved there from the driver tests). A sample of 12 of the
+heaviest classes still in the driver tests, run four at once under `git.process.runsettings`, was 63 cases, 782 case-seconds and 259 s of
+wall: 12.4 s a case, which is a worktree opened and a few dozen git starts each. Those cases test the product over real worktrees, files and
+refs (a tree opened, a commit made, a landing judged), so a scripted answer table cannot hold their assertions; they need ring 2's typed
+repository port and its `MemoryRepository` first, which no family has yet. After `GitStreamEndsTests` left for the adapter's suite
+(`GitProcessRunsTreeEndTests`, 18 s with its two 5 s waits) the same sample is 61 cases, 753 case-seconds and 228 s of wall. A merge's
+plan reaches no real-git suite for a driver-only change: `driver-process-git`, `driver-rehearsals` and `adapters-git` run in the CI beside
+or in the full set before staging, never at the merge itself.
+
+**Row f, the repository port and the Pool (2026-11-14).** `IGitRepository` (`Daoris.Ports/Repositories`) is cut at the funnels the
+families call, read from their call sites: heads, branches, revisions to commits, merge bases, ancestry, counts, refs (by prefix, holding
+a commit, limited), tree entries (whole, top or under paths) and a file's text at a commit, working trees and their locks, status, its
+ignored tops and the hidden paths, `core.ignorecase`, a ref moved from an expected tip, a switch (new, existing or detached, never forced,
+hooks held), a commit, a tree added and removed, a prune, and `Held`, which hands the same repository whose every git runs in a claim's
+job. The driver's `GitRepository` implements it over `WorkingTree.GitAsync`, so the flow's memos and the library's answers hold, and the
+roots hand it in the `PortSet`; it is the implementation of `IGit`'s ring because the memos live in the driver. `MemoryRepository` holds
+commits, refs, working trees with their files and locks, `.gitignore`'s names, directories and extensions, and refuses a switch that
+would overwrite work as git does; `FlowRepository` lets one flow choose it. `RepositoryContract` has 14 cases, run on the fake in the
+testing project (0.2 s) and on real git as `GitRepositoryContractTests`, a Process class of the driver tests (14 cases, 106 s), and it
+held on the first real run. The Pool is on the port end to end but for the journaled ref act behind a take's undo and a finish's branch
+delete, whose git is a held, process-owned start the act's journal proves (a process-ring matter, left where it is): the slot's making
+(`TreeOpening`: the working root, the branch's reads, the add on its branch with hooks held, the unlock, the undo's remove and branch
+delete), the sessions' locks, `FileGit`'s tracked, ignored, case, worktree, text, changed-names and search reads, the files stage's
+restore and hook, the ref transaction's run (`RefTransaction` judges and the port runs it, with its symbolic-ref and case-alias
+refusals), the default branch, and a line pull's and a promotion's fast-forward and the resolver's hard reset all ask the port. The
+contract grew to 22 cases (on the fake 0.2 s; on real git 64 s, green on the first real run). The pool's takes, returns, line ends, waiting
+claim, refusals and lock reading run as `TreePoolMemoryTests` (14 cases, about 3 s for the class) with a git that fails any ask no port
+answered, which is how each leaked git was found (the line's guess, `symbolic-ref` of origin's HEAD, was the last). **Figures:** real git
+in the driver tests `Needs=Git` 274 classes and 1,401 listed cases (`--list-tests`), of which 797 in the `Parallel=Git` half, the
+contract's real half having grown by 8 cases; in the rehearsals 74 classes and 747 listed cases, six fewer than before (a return, the
+four line ends and the waiting claim, now memory cases: at the sample's 12.4 s a case about 75 case-seconds of real git). What the move
+did not reach, and why: a take's undo and a finish's delete go through the journaled act, so the slot cases that end in one, and the
+ones that hold an output open or set tops aside on the disk, stay real; and the Integration family (merge, reset, rebase in the
+replays, promotions and the landing) is 14 to 25 git sites a file over a dozen files, so only the fast-forward and the hard reset are
+on the port, each held to the contract on both sides; the three-way merge, the rebase and the `merge --abort` and clean the replays
+need are left in that order. The pool's Process classes were green after the move (the rehearsals' 54 cases in five minutes with no
+crash of the host).
+
 ## 9. Measurement (decision 8)
 
 | Measure | 2026-11-12 | Target |

@@ -385,14 +385,10 @@ public static class GitHistoryEdits
         return (parts[0], value, null);
     }
 
-    /// <summary>
-    /// The tree holding <paramref name="branch"/>, or that git could not list them: checked out in any tree, or named as the branch a tree is
-    /// rebasing or bisecting, which git keeps in the tree's own folder while its HEAD is detached.
-    /// </summary>
+    /// <summary>The tree holding <paramref name="branch"/> (checked out, or rebased or bisected on with a detached HEAD), or that git could not list them.</summary>
     private static async Task<(string? Tree, bool Unread)> OccupantAsync(string root, string branch, CancellationToken ct)
     {
-        if (await TreeWorktrees.PorcelainAsync(root, ct).ConfigureAwait(false) is not { } porcelain) return (null, true);
-        var entries = TreeWorktrees.Parse(porcelain);
+        if (await TreeWorktrees.EntriesAsync(root, ct).ConfigureAwait(false) is not { } entries) return (null, true);
         if (entries.FirstOrDefault(each => each.Branch == branch) is { } entry) return (entry.Path, false);
 
         var common = TreeLock.CommonDirOf(root);

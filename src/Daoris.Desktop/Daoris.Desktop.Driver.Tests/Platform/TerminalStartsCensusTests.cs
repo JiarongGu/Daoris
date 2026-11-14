@@ -4,8 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every terminal verb whose own process can start one asks the running Daoris first, or is named with why it may not: so what a
-/// session runs is the application's child, under it in the system's tree, unless this list says why not.
+/// Every terminal verb whose own process can start one asks the running Daoris first, or is named with why it may not.
 /// </summary>
 /// <remarks>
 /// <para><b>Read from the built program.</b> Each console of the driver's host (a type named <c>…Console</c> or <c>…Verb</c>) is
@@ -28,7 +27,6 @@ public sealed class TerminalStartsCensusTests
         ["BrainstormMeasureConsole"] = "a measurement the person starts on purpose, run in this process because it holds the loop's records for the run's length",
         ["DoctrineConsole"] = "the doctrine CLI, the program's other half: doctrine works with no Daoris running, and the verb waits on it at its console",
         ["DriveConsole"] = "the headless loop is a running Daoris of its own, started only where no window holds the home",
-        ["FilesConsole"] = Reads,
         ["GitConsole"] = null,
         ["HeavyConsole"] = null,
         ["HelpConsole"] = null,
