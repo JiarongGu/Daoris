@@ -9,11 +9,9 @@
  * and a batch of a "web only" branch skipped the .NET suites, so two C# tests that read the web's
  * catalogues broke on main unseen. So the plan is read from what the repository already declares.
  *
- * Every merge ran all of it, and that became the cost: the driver's real-process half
- * took 30, 48 and 126 minutes on one day's three integrations, and everything else about 25. So a merge
- * now runs the gates its changed paths can reach, by the lane table below (`REACH`), and never the long
- * ones (the real-process halves and the deployment rehearsal, which any driver change still
- * reached), which only the full set runs. Tests hold the table to what each suite reads and each rehearsal runs, and
+ * Every merge ran all of it, and that became the cost. So a merge runs the fast tier alone: the light gates and the unit
+ * classes its paths reach. The long gates and the reached Process and rehearsal classes run after the landing (the full set
+ * and the heavy tier's run). Tests hold the lane table (`REACH`) to what each suite reads, and
  * `publish:desktop` refuses a tree no full set passed (`--passed` below), so a wrong table is caught before the build.
  *
  * ## What it does
@@ -44,14 +42,12 @@
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  * beside and renamed when the gate ends, and one line per gate says its result and that file. The
  * first failing gate starts nothing more, in either lane (`--keep-going` runs the rest), and what did not run is named. A
- * Process gate also writes `<gate>.trx` there, each test's duration, and the ten slowest classes are
- * printed after its line, so where its time goes is measured at every merge that runs it.
+ * test gate also writes `<gate>.trx` there, and the ten slowest classes are printed after its line.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
  * `--rerun`, `--stale` and the stage read (below): the main checkout's, whichever worktree the run is in.
  * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
- * sources changed; one line says so, and a build that fails
- * is said and fails nothing.
- * 10. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ * sources changed; one line says so, and a build that fails is said and fails nothing.
+ * 10. Nothing is committed here: the queue's promotion lands it and starts the heavy tier's run on the new tip.
  *
  * ## A fixed gate re-runs alone
  *
@@ -381,6 +377,7 @@ import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
+import { heavyStanding, readHeavy, startAfterLanding } from './merge/heavy-after.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
 import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
@@ -3476,6 +3473,7 @@ const planSeams = {
   },
   prune: (root, hold) => printPrunePlan(root, planPrune(root, { hold, atMerge: true }), true),
   owed: owedLine,
+  heavy: (root) => heavyStanding(readHeavy(verdictsHome(root))),
 };
 
 function dropBatch(root) {
@@ -6194,6 +6192,7 @@ async function queueStep(home) {
       return 'wait';
     }
     withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'promoted' } } }));
+    startAfterLanding(home, candidate).forEach((line) => console.log(`${nowIso()} ${line}`));
     return 'next';
   }
   if (action === 'run') {

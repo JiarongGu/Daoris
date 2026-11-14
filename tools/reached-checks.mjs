@@ -15,7 +15,8 @@
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
  * left to the nightly run, and said.
  *
- *   node tools/reached-checks.mjs [--plan] [--unbounded] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
+ *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
+ * `--tier fast` is a merge's, `--tier heavy` the run after its landing's (`merge/heavy-tier.ts`); with none, both.
  *
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
  * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
@@ -38,7 +39,8 @@ import { CI_FINDINGS } from './ci-background.mjs';
 import { CLASS_VERDICTS_FILE, verdictsHome } from './merge-branch.mjs';
 import { keyContextOf, storeFile as storeIn } from './merge-branch/full-set.mjs';
 import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
-import { PassedClasses, classKey, splitByReuse } from './merge/class-reuse.ts';
+import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
+import { deferredLines, splitTier, tierNamed } from './merge/heavy-tier.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
 import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
@@ -83,8 +85,8 @@ export function changedPaths(root, base = null) {
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
-export function planFor(root, paths, store, { bounds = {}, classes = [] } = {}) {
-  if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0 };
+export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 'all' } = {}) {
+  if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0, deferred: [] };
   const { map, gates, gatesText, context } = keyContextOf(root);
   const processSuites = processSuitesOf(gates);
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
@@ -92,13 +94,15 @@ export function planFor(root, paths, store, { bounds = {}, classes = [] } = {}) 
   const reached = classes.length
     ? map.units.filter((unit) => classes.some((name) => unit.unit === name || unit.unit.endsWith(`.${name}`) || unit.unit.endsWith(`/${name}`)))
     : map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
-  const { units, night } = classes.length
+  const { units: considered, night } = classes.length
     ? { units: reached, night: {} }
     : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });
+  const { kept: units, deferred: heavy } = splitTier(considered, tier, processSuites);
   const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
+  const deferred = splitByReuse(heavy, (unit) => classKey(unit, context), store).run;
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
-  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length };
+  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
 }
 
 const readJson = (file) => {
@@ -124,10 +128,11 @@ async function main(argv) {
   // One store for every worktree, the main checkout's, so a builder's passes are the ones its merge replays.
   const store = new PassedClasses(storeFile(verdictsHome(root)));
   // A store is warmed by running every class the paths reach, which no merge does: its bound is the suite's size.
-  const everything = argv.includes('--unbounded') || classes.length > 0;
+  const tier = tierNamed(valueOf(argv, '--tier')) ?? 'all';
+  const everything = argv.includes('--unbounded') || classes.length > 0 || tier === 'heavy';
   const bounds = everything ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
-  const { plan, night, keys, replayed } = planFor(root, paths, store, { bounds, classes });
-  for (const line of [...reachedLines(plan), ...nightLines(night)]) console.log(line);
+  const { plan, night, keys, replayed, deferred } = planFor(root, paths, store, { bounds, classes, tier });
+  for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) console.log(line);
   if (argv.includes('--plan')) {
     for (const each of reachedCommands(plan)) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
     return 0;
@@ -138,7 +143,7 @@ async function main(argv) {
   const admission = builderAdmission();
   const processSuites = processSuitesOf(keyContextOf(root).gates);
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, say: (line) => console.log(line),
+    root, plan, keys, store, replayed, deferred: deferred.map((unit) => unitId(unit)), say: (line) => console.log(line),
     exec: execAsync,
     inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),

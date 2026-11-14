@@ -242,7 +242,7 @@ test("this repository's light gates run three at once, never two that build one 
     for (const shared of SHARED_PROJECTS.get(component) ?? []) for (const name of suites) assert.ok(building(shared).includes(name), `${name} builds ${shared}`);
   }
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
-  const cli = byRun(/^npm run verify$/);
+  const cli = byRun(/^npm run verify:checks$/);
   const web = byRun(/^npm run test:web:e2e$/);
   assert.ok(cli.length === 1 && web.length === 1);
   assert.ok(building('src/Daoris.Devkit').includes(cli[0]!.name));

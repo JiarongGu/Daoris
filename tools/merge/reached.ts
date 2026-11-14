@@ -29,12 +29,12 @@ export type ReachedPlan = { groups: ReachedGroup[]; left: Record<string, number>
 export type Command = { label: string; cwd: string; command: string; args: string[] };
 
 /**
- * The suites a merge runs units of, by the runner of each. The CLI's suite is not here (its verify runs whole at every
- * merge), nor the censuses (a path check of their own), nor the Process halves, the browser suites and the rehearsals,
- * which only the full set runs.
+ * The suites a merge runs units of, by the runner of each: the CLI's and the tools' unit tests are reached by the census like the
+ * rest (the merge's `cli` gate holds the checks, `cli-tests` the whole run). Not the censuses (a path check of their own) nor the
+ * browser suites. The Process halves and the rehearsals' classes are the heavy tier (`heavy-tier.ts`): the run after the landing.
  */
 const SUITES: Readonly<Record<string, Runner>> = Object.freeze({
-  driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node',
+  driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node', cli: 'node',
   'driver-process': 'dotnet', 'driver-process-git': 'dotnet', 'driver-process-git-pinned': 'dotnet', 'modules-process': 'dotnet', 'service-process': 'dotnet',
   'driver-rehearsals': 'dotnet',
 });

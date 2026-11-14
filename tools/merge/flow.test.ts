@@ -273,7 +273,7 @@ test('a full set never replays a red or a flake of the same key', async () => {
 });
 
 test('a reached run that ends with a class flaked reads FLAKE, and its class counts reach the gate record', async () => {
-  const outcome = { ran: 3, replayed: 9, flaked: ['driver|A.OneTests'], mainRed: [], red: [] };
+  const outcome = { ran: 3, replayed: 9, flaked: ['driver|A.OneTests'], mainRed: [], red: [], deferred: ['driver-process|B.TwoTests'] };
   const h = harness({
     runGate: async (_where, each, logs) => {
       const log = join(logs, `${each.name}.log`);
@@ -286,7 +286,8 @@ test('a reached run that ends with a class flaked reads FLAKE, and its class cou
     assert.equal(result.verdict, 'FLAKE');
     assert.deepEqual(result.flakes, ['driver|A.OneTests']);
     const { record } = settleMerge({ branch: 'b', at: '2026-11-14T00:00:00Z', wallMs: 1, results: [result], mains: [], previous: [] });
-    assert.deepEqual(record.gates[0]!.classes, { ran: 3, replayed: 9, flaked: 1, mainRed: 0, red: 0 });
+    assert.deepEqual(record.gates[0]!.classes, { ran: 3, replayed: 9, flaked: 1, mainRed: 0, red: 0, deferred: 1 });
+    assert.deepEqual(record.heavy, { deferred: ['driver-process|B.TwoTests'] });
   } finally {
     h.done();
   }
