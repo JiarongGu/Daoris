@@ -153,10 +153,7 @@ public static class NoteParts
         writer.WriteEndArray();
     });
 
-    /// <summary>
-    /// These lines, then a move's note, then the record's own parts beneath them: how a record that goes on reads, its present first
-    /// and what ended its last run after. Each note is carried as <see cref="After"/> carries one.
-    /// </summary>
+    /// <summary>These lines, then a move's note, then the record's own: a record going on reads its present first.</summary>
     public static string Before(
         IEnumerable<NoteLine> lines, string? thenParts, string? thenNote, string? parts, string? note) => Written(writer =>
     {

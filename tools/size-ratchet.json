@@ -69,7 +69,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs": 87001,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs": 41124,
   "src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs": 53119,
-  "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 168117,
+  "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 168106,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46620,
   "src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs": 51361,
   "src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs": 47605,

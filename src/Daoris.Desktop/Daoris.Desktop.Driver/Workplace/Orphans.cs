@@ -20,13 +20,12 @@ public sealed record OrphanEnded(string Id, string Repository)
 /// for it here — not in this driver's registry and not marked by any other driver sharing the home
 /// (<see cref="SessionProcesses.AliveOnThisMachine"/>).</para>
 ///
-/// <para><b>The sweep takes <c>working</c>, and a start whose opener went.</b> A record is <c>queued</c>, then
-/// <c>starting</c>, between its opening and its spawn, which another driver here may be in the middle of, and a
-/// parked one waits on the person by design. So the sweep takes a <c>queued</c> or <c>starting</c> record only
-/// where the process that opened it marked it and has gone (<see cref="SessionProcesses.OpenerWent"/>);
-/// one no opener marked is left as before. The person's own stop on one record takes <c>starting</c> and
-/// <c>queued</c> whatever marks it: they asked about that one, and a start that never spawned is exactly what
-/// would otherwise hold its repository, or Ask Daoris's room, forever.</para>
+/// <para><b>The loop sweeps at every look, and takes <c>working</c> and a start whose opener went.</b> A record is <c>queued</c>,
+/// then <c>starting</c>, between its open and its spawn, and a go-on or a resume is <c>working</c> before its spawn: each is marked
+/// by the process that opened it (<see cref="SessionProcesses.MarkOpening(string)"/>), and is taken only once that process has gone; a
+/// start no opener marked is left, and a parked one waits on the person by design. The person's own stop on one record takes it
+/// whatever marks it: they asked about that one, and a start that never spawned would otherwise hold its repository, or Ask
+/// Daoris's room, forever.</para>
 ///
 /// <para><b>One home per service is the assumption</b>, and it is the deployed shape: a driver drives
 /// its machine's local host (a shared host is reached through the sync, never driven directly),
@@ -52,15 +51,17 @@ public static class Orphans
     public static Noted Noted => Noted.Of(EndNoteCodes.StoppedOrphan, Note);
 
     /// <param name="only">One record the person asked to stop, or null for the sweep.</param>
+    /// <param name="held">Whether a run of the sweeping loop holds a record, which that run concludes itself.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>
     public static Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default) =>
-        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct);
+        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default, Func<string, bool>? held = null) =>
+        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct, held);
 
-    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken)"/>
+    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken, Func{string, bool}?)"/>
     /// <param name="git">How a lost done's tree is read: the review's seam, which a test stands git in at.</param>
     internal static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default)
+        ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default,
+        Func<string, bool>? held = null)
     {
         var ended = new List<OrphanEnded>();
         var listed = await service.ActiveSessionsAsync(ct).ConfigureAwait(false);
@@ -73,9 +74,9 @@ public static class Orphans
             // The person's stop takes a start that never spawned, `starting` or still `queued` (an Ask Daoris start left
             // `queued` by a driver that went held the room, and every later start is refused naming it). The sweep takes one only
             // where the process that opened it is proven gone: a live opener here is still starting it.
-            var claimsProcess = session.State == "working"
+            var claimsProcess = (session.State == "working" && (only is not null || !processes.OpenerRuns(session.Id)))
                 || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id)));
-            if (!claimsProcess || processes.AliveOnThisMachine(session.Id)) continue;
+            if (!claimsProcess || processes.AliveOnThisMachine(session.Id) || (only is null && held?.Invoke(session.Id) == true)) continue;
 
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
             try

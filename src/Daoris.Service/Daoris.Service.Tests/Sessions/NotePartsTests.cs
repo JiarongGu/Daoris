@@ -241,10 +241,6 @@ public sealed class NotePartsTests : IAsyncLifetime
         Assert.Equal("2026-10-03T10:30:00Z", Value(went.NoteParts!, 0, "at"));
     }
 
-    /// <summary>
-    /// ORPHANSTATE1: a chat the sweep stopped goes on with the person's words, and its working record leads with that, never with
-    /// "nothing on this machine was running it", which it keeps beneath as what ended its last run.
-    /// </summary>
     [Fact]
     public async Task A_record_the_sweep_stopped_goes_on_leading_with_its_went_on_line_never_its_orphan_note()
     {

@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **ORPHANSTATE1 (2026-11-14):** The orphan sweep runs at every look, so a record left `working` with nothing running it reads stopped in the list, the head and `/api/sessions` within a look, not at the next start. A go-on or resume now marks its record before moving it to `working`, so the sweep leaves it mid-start, and the dead-marker sweep keeps a live opener's mark. A record that goes on now leads its note with its went-on line, keeping what ended it beneath (`228e79018d`; `OrphanedSessionTests`, `NotePartsTests`; `docs/areas/driving.md` rule 41). Still to read on the next install.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---

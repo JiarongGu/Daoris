@@ -436,7 +436,6 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 ($"Went on with the supervisor's answer at {at}.", LedgerNoteCodes.WentOnSupervisor),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
-        // The record works now, so its note leads with that, and what ended its last run follows as history (ORPHANSTATE1).
         var went = string.Join("\n\n", new[] { line, note, session.Note }.Where(part => !string.IsNullOrWhiteSpace(part)));
         var parts = NoteParts.Before(
             [NoteLine.Coded(code, line, ("at", NoteParts.Moment(now)))],

@@ -75,7 +75,8 @@ internal sealed class ChatLimitCarry(
         PriorSession? record;
         try
         {
-            // A going-on's run finds its record working: the open left it queued.
+            // A going-on's run finds its record working, marked as its opener's: the open left it queued.
+            context.Processes.MarkOpening(to);
             await context.Service.AdvanceAsync(to, "starting", ct: ct).ConfigureAwait(false);
             await context.Service.AdvanceAsync(to, "working", transcript: DaorisHome.Entry(context.Home, HomeEntry.Sessions, $"{to}.log"), ct: ct)
                 .ConfigureAwait(false);
