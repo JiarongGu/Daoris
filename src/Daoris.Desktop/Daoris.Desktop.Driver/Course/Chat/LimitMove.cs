@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <see cref="CurveMove"/> and <see cref="BriefedMove"/> are.
 /// </summary>
 /// <remarks>
-/// <para><b>Onto another account of its own agent it carries its own conversation</b> where its door can (<see cref="ChatLimitCarry"/>),
+/// <para><b>Onto another account of its own agent it carries its own conversation</b> where its door can (<see cref="ChatCarry"/>),
 /// and is briefed where it cannot, saying why.</para>
 /// <para><b>Never mid-turn, never during a take.</b> Judged once per turn's end with nothing running, opening or queued, as the curve's
 /// move is; the turns are held while it moves, so a word said as it begins either runs its turn first or waits for the new part.</para>
@@ -302,15 +302,18 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 return new StartedFrom(null, false, null, unasked);
             }
 
-            // Onto another account of its own agent its conversation is carried there, its files whole now its old part has ended.
+            // Once the start's walk settles the door and the account, its conversation is carried there or written there as that agent's own,
+            // its files whole now its old part has ended.
             var fence = new MoveFence(move);
-            var plan = isHelp || elsewhere is not null || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
+            CarryPlan? plan = null;
+            ChatCarry? carrier = null;
+            ChatCarries? carries = isHelp || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
                 ? null
-                : ChatLimitCarry.Planned(context, agent, prior, selection, tree, brief.Text);
-            var carrier = plan is CarryPlan.Carried carried
-                ? new ChatLimitCarry(
-                    wiring, agent, prior, selection, carried, held.Words, [.. waited.Where(word => !word.Kept || word.Id is null)], held.Before, move, fence, read)
-                : null;
+                : (door, chosen) => carrier = (plan = ChatCarry.Planned(context, door, prior, chosen, tree, brief)) is CarryPlan.Carried carried
+                    ? new ChatCarry(
+                        wiring, door, prior, chosen, carried, HandOverWhy.Limit, brief, held.Words, [.. waited.Where(word => !word.Kept || word.Id is null)], move,
+                        fence, read)
+                    : null;
             var from = new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris);
             // The waiting words leave the old record by their ids once the new part's turn is on the wire, named as taken by it.
             List<string> waitedIds = [.. waited.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
@@ -324,11 +327,11 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
-                            leftBy: LeftBy(context.Harnesses.Adapters, prior, agent), moves: moves)
+                            leftBy: LeftBy(context.Harnesses.Adapters, prior, agent), moves: moves, carries: carries)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
-                            moves: moves, carries: carrier)
+                            moves: moves, carries: carries)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -350,7 +353,9 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             {
                 toWire = true;
                 carriedRecord = record;
-                return new StartedFrom(to, true, null, $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` on the next account with your words.");
+                return new StartedFrom(to, true, null, carrier.Plan is CarryPlan.Seeded
+                    ? $"`{sessionId}` went on in conversation `{to}`, written as its new agent's own conversation, with your words."
+                    : $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` on the next account with your words.");
             }
 
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
@@ -423,9 +428,9 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
             // Said once where the person wrote, naming the agent it moved to, and in the machine log, accounts by profile name.
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, HandOverWhy.Limit, high, brief.Text.Length));
-            if (ChatLimitCarry.NotCarried(plan) is { } notCarried) context.Note(to, CarriedNotes.NotCarried(notCarried));
+            if (ChatCarry.NotCarried(plan) is { } notCarried) context.Note(to, CarriedNotes.NotCarried(notCarried));
             context.Service.AccountSaid(
-                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, HandOverWhy.Limit, briefed: true, carry: ChatLimitCarry.NotCarried(plan)));
+                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, HandOverWhy.Limit, briefed: true, carry: ChatCarry.NotCarried(plan)));
             if (!taken)
             {
                 context.Note(to, HandOverNotes.Unsaid());

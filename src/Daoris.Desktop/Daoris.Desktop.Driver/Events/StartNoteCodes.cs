@@ -105,6 +105,7 @@ public static class StartNoteCodes
     public static readonly NoteCode MovedCarriedOn = new("moved.carried-on", ["session", "agent", "account", "why", "tokens"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode MovedCarriedFrom = new("moved.carried-from", ["session", "agent", "account", "why", "tokens"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode MovedCompactedFrom = new("moved.compacted-from", ["session", "agent", "account", "why", "tokens", "bound"]) { Why = NoteCodes.Handed };
+    public static readonly NoteCode MovedSeededOn = new("moved.seeded-on", ["session", "agent", "account", "why"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode MovedSeededFrom = new("moved.seeded-from", ["session", "agent", "account", "why"]) { Why = NoteCodes.Handed };
     public static readonly NoteCode MovedNotCarried = new("moved.not-carried", ["reason"]);
 

@@ -20,7 +20,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ChatGoOnTests.cs": 78038,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ContinuationTests.cs": 47748,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/DrivenInboxTests.cs": 44146,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/HandOverTests.cs": 58532,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/HandOverTests.cs": 58526,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs": 80020,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs": 59941,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs": 44784,

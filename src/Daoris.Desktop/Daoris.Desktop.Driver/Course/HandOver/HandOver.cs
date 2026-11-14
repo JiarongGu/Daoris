@@ -328,7 +328,7 @@ public static class HandOverTake
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
-        Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
+        Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, ComposedBrief, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
         CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null, string? opens = null)
     {
         var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct, home).ConfigureAwait(false);
@@ -349,13 +349,15 @@ public static class HandOverTake
         // The open is keyed with nothing named and nothing read, as the curve's is, so the host moves every
         // word of the person's kept on the old part meanwhile and the new part's own go-on says it after the brief, never before.
         var moves = opens is null ? null : MovedWords.Asked(id, [], []) with { Opens = opens };
-        var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, ct).ConfigureAwait(false);
+        var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, brief, ct).ConfigureAwait(false);
         if (started.SessionId is not { } to)
         {
             return new HandedOver(
                 null, false, null,
                 $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
         }
+
+        if (started.Carried) return new HandedOver(to, true, null, $"conversation `{to}` goes on from `{id}` with {ask.Agent}, in its own conversation.");
 
         // A move by the usage curve names the account it left and the one it went to: the record that says so stays
         // on this machine. Only where the decision is the move's own, on the account the record ran on.

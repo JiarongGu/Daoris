@@ -160,7 +160,7 @@ public static class ContextBrief
             var pieces = Pieces(line, read, opening, state, course.Text, note, others, othersLeft, stateLeft, planLeft, clipped);
             if (Weight(string.Concat(pieces.Select(piece => piece.Text))) <= Bound || !DropOldest(read))
             {
-                return Accounted(line, read, pieces, clipped, stateLeft, planLeft, othersLeft, course);
+                return Accounted(line, read, pieces, clipped, stateLeft, planLeft, othersLeft, course) with { Context = SeedContext.Of(line) };
             }
         }
     }

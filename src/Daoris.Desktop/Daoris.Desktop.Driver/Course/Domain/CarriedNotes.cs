@@ -3,7 +3,17 @@ namespace Daoris.Driver;
 /// <summary>The lines a limit's move says where it carries the conversation to the new account, or why it hands the brief instead.</summary>
 internal static class CarriedNotes
 {
-    /// <summary>On the part it left: where its conversation went on.</summary>
+    /// <summary>On the part it left: where its conversation went on, carried there or written there as the new agent's own.</summary>
+    public static Noted On(string session, string agent, string? account, string why, CarryPlan.Carried carried) =>
+        carried is CarryPlan.Seeded
+            ? Noted.Of(
+                StartNoteCodes.MovedSeededOn,
+                $"Went on as a new part of this session, {session}, with {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+                + "Daoris wrote what it kept of this part as that agent's own conversation, which goes on there.",
+                ("session", session), ("agent", agent), ("account", account), ("why", why))
+            : On(session, agent, account, why, carried.Tokens);
+
+    /// <summary>On the part it left: its own conversation, carried to the new account.</summary>
     public static Noted On(string session, string agent, string? account, string why, long? tokens) =>
         Noted.Of(
             StartNoteCodes.MovedCarriedOn,

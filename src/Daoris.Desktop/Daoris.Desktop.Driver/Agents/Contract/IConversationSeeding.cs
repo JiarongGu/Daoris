@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How a provider hands a session's context to its agent as the agent's own conversation (the context's Seed form): the session's turns,
-/// tool calls and results, and Daoris's record of it as the host's words, written in the agent's format under an account's home so the
+/// tool calls and results, and its context entries as the host's record, written in the agent's format under an account's home so the
 /// agent resumes it under its own resume and goes on, even from turns another agent made. A provider whose agent takes no conversation in
 /// binds none (<see cref="ConversationSeedings"/>), and its moves are handed Daoris's brief, the floor every door can take.
 /// </summary>
@@ -24,10 +24,10 @@ public interface IConversationSeeding
 /// <param name="Tree">The working directory the conversation runs in, which an agent filing conversations by directory names its folder after.</param>
 /// <param name="Conversation">The id the agent resumes it under, which Daoris chooses.</param>
 /// <param name="History">The session's recorded events, oldest first: the person's and Daoris's words, the agent's words and its tool calls.</param>
-/// <param name="Record">Daoris's record of the session, told after the history as the host's words; blank where there is none.</param>
+/// <param name="Context">The session's context entries, told after the history as the host's record (an agent's as its claim); none where there are none.</param>
 /// <param name="At">When it is written, which an agent dating its conversations files it under.</param>
 public sealed record SeedAsk(
-    string Door, string Home, string Tree, string Conversation, IReadOnlyList<SessionEvent> History, string Record, DateTimeOffset At);
+    string Door, string Home, string Tree, string Conversation, IReadOnlyList<SessionEvent> History, IReadOnlyList<ContextEntry> Context, DateTimeOffset At);
 
 /// <summary>What a seed placed: the conversation's id and its files under the home, or why nothing is placed.</summary>
 /// <param name="Conversation">The id the agent resumes it under.</param>

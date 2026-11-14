@@ -15,4 +15,7 @@ public sealed record ChatStart(string? SessionId, string Message)
     /// says, since a host below the mark replaying a newer host's receipt answers what that host moved. Empty for every other start.
     /// </summary>
     public IReadOnlyList<MovedWord> Moved { get; init; } = [];
+
+    /// <summary>That the part runs as the resume of its move's carried or seeded conversation, so no brief is handed to it.</summary>
+    public bool Carried { get; init; }
 }

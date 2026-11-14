@@ -212,6 +212,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         string? unasked = null;
         string? fenced = null;
         var wired = false;
+        var carried = false;
         var waits = false;
         var wrote = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Wire() => wrote.TrySetResult(Wired(record));
@@ -253,7 +254,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                 // The person's press with an account named is their pick of it, which the new conversation waits for; an
                 // agent's ask or the curve's move names an account that is not a pick. The keyed open moves
                 // every word of the person's kept on the old part meanwhile, none named (HandOverTake asks it under the move's key).
-                async (prior, request, from, keyed, token) =>
+                async (prior, request, from, keyed, brief, token) =>
                 {
                     if (unasked is not null) return new ChatStart(null, unasked);
 
@@ -261,18 +262,33 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                     var approved = HandedChoice(sessionId, prior, request, config, out var gone);
                     if (gone is not null) return new ChatStart(null, gone);
 
+                    // Once the start's walk settles the door and the account, a conversation going on with another agent is written there as
+                    // that agent's own, and the new part resumes it; else it is handed the brief.
+                    var fence = new MoveFence(record);
+                    ChatCarry? carrier = null;
+                    ChatCarries? carries = keyed is not null && await _context.Service.Opens.MovesAsync(token).ConfigureAwait(false)
+                        ? (door, chosen) => carrier = prior.Adapter is { Length: > 0 } ran && !new AgentOfDoor(_context.Harnesses.Adapters).Same(ran, door.Id.Value)
+                                                       && ChatCarry.Planned(_context, door, prior, chosen, prior.Tree ?? "", brief) is CarryPlan.Carried plan
+                            ? new ChatCarry(wiring, door, prior, chosen, plan, request.Why, brief, [], [], record, fence, wrote)
+                            : null
+                        : null;
                     var started = await _runner.StartAsync(
                             prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from,
-                            order: approved, picked: keeps && request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account), moves: keyed)
+                            order: approved, picked: keeps && request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account), moves: keyed,
+                            carries: carries)
                         .ConfigureAwait(false);
-                    if (started.SessionId is not { } to) return started;
+                    if (started.SessionId is not { } to)
+                    {
+                        carrier?.Withdraw();
+                        return started;
+                    }
 
-                    // The open's answer, then `delivering` and the prompt's mark, before any hand is made. Where the
-                    // line's head has gone on past the new part (an older build), nothing is handed there.
+                    // The open's answer, then `delivering` and the prompt's mark, before any hand is made. Where the line's head has gone on
+                    // past the new part (an older build), nothing is handed there. A carried part's run asked it before its spawn, and its
+                    // prompt's write is told by its run.
                     record.Answered();
-                    fenced = record.Opened(to, started.Moved);
-                    if (fenced is null && await record.SupersededAsync().ConfigureAwait(false)) fenced = "the line went on past its new part";
-                    fenced ??= record.Delivering();
+                    fenced = await fence.AskAsync(to, started.Moved).ConfigureAwait(false);
+                    wired = carried = started.Carried;
                     return started;
                 },
                 async (id, message) =>
@@ -297,6 +313,8 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
             // The move's own reading ends it in the store before the take is told over, so a word the person said meanwhile and
             // held waits no longer. A turned door tells that it wrote as its turn does, which a door that never writes does not: bounded.
             if (wired && await Task.WhenAny(wrote.Task, Task.Delay(WireWait)).ConfigureAwait(false) == wrote.Task) await (await wrote.Task).ConfigureAwait(false);
+            // A carried part's prompt not written within the bound leaves its move to be ended by its phase.
+            else if (carried) await record.EndAsync().ConfigureAwait(false);
 
             // Ended, nothing listens to them now; refused before its end, the conversation takes words again.
             held?.Release();

@@ -27,7 +27,7 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
     /// </summary>
     public string? Proc { get; init; }
 
-    public ChatLimitCarry? Carried { get; init; }
+    public ChatCarry? Carried { get; init; }
 
     /// <summary>The words are on the wire. True once, where they went now: at once, or where the harness already named it.</summary>
     /// <param name="named">Whether they went only once the harness has named its conversation too (the native door).</param>

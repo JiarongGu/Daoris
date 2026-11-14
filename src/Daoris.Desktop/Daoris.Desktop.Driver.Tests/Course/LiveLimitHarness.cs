@@ -521,7 +521,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, string? profile = null,
             bool? ownTree = null, CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null,
             IReadOnlyList<ActorEffective>? order = null, EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false,
-            bool ownFirst = false, MoveWords? moves = null, ChatLimitCarry? carries = null)
+            bool ownFirst = false, MoveWords? moves = null, ChatCarries? carries = null)
         {
             var opened = await client.OpenChatMovingAsync(repository, adapter, null, profile, tree, null, from, moves!, "default", ct);
             if (opened.SessionId is { } id) Opened = Talking(context, id, shows: true, wire);
