@@ -14,6 +14,7 @@ import { useWorkflowTab } from './useWorkflowTab';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import { RepositoryFiles } from './files/RepositoryFiles';
+import { RepositoryTreePool } from './pool/RepositoryTreePool';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
 import { useQuests, useRegistry, useRepositories, useSessions } from '../data/queries';
@@ -356,6 +357,8 @@ export function useProjectsView({
             ? <FolderNoGit />
             : attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           files={attached && Boolean(shown.root) ? <RepositoryFiles repository={shown.repository} /> : undefined}
+          treePool={attached && Boolean(shown.root) && !isFolder(shown)
+            ? <RepositoryTreePool workspace={workspaceOf(shown)} repository={shown.repository} /> : undefined}
           tab={tab}
           onTab={onTab}
           // Adoption's own acts are an adopter's: managing writes its declaration into it.
