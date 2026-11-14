@@ -145,7 +145,7 @@ public static class PlaceApplies
         operations.AddRange(plan.Saves.Select(save => new PlaceOperation(
             PlaceOperations.WorkflowSaveOf(save.Id), PlaceOperations.WorkflowSave, null, $"a saved copy of `{save.Default}` as `{save.Id}`", PlaceOutcomes.Pending)
         {
-            Workflow = save.Id, Default = save.Default, Opinion = save.Opinion, Look = save.Look,
+            Workflow = save.Id, Default = save.Default, Opinion = save.Opinion, Look = save.Look, Plugin = save.Plugin, Pattern = save.Pattern,
         }));
         var configured = plan.Changes
             .Where(each => Written(each.Change)).Select(each => each.Change.Said).Distinct().ToList();
@@ -276,7 +276,7 @@ public static class PlaceApplies
         WorkflowDefaults.Of(save.Default) is { } shipped
         && WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] } }
         && from.Default == save.Default
-        && digest == NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), save.Opinion, save.Look).ToJsonString()).Graph!);
+        && digest == NodeGraphs.Digest(NodeGraphs.Read(WorkflowDefaults.Variant(shipped, save.Opinion, save.Look, save.Plugin, save.Pattern).ToJsonString()).Graph!);
 
     /// <summary>
     /// The first operation of an apply, one copy of a shipped default saved (<c>WORKFLOW_SAVE</c>) through the window's own save. <c>uncertain</c>
@@ -299,7 +299,7 @@ public static class PlaceApplies
         {
             var saved = await WorkflowOperations.SaveAsync(
                 doors.Config(), doors.Home, _ => Task.FromResult(new ChoicesRegistry([], null)), save.Workflow!, save.Default, null, null, save.Opinion, save.Look,
-                null, null, null, plan: false, PlannedWorkflows.At, ct).ConfigureAwait(false);
+                null, null, null, plan: false, PlannedWorkflows.At, ct, plugin: save.Plugin, pattern: save.Pattern).ConfigureAwait(false);
             return Write(receipts, receipt.With(save.Id, each => saved.Done
                 ? each with { Outcome = PlaceOutcomes.Done, Note = null }
                 : each with { Outcome = PlaceOutcomes.Failed, Note = saved.Message }));

@@ -361,6 +361,21 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     [Fact]
+    public async Task An_apply_saves_the_pull_request_copy_with_the_plugin_the_plan_found()
+    {
+        var stand = Make();
+        var ask = new PlaceAsk(["web"], SetupPresets.PullRequest);
+        var digest = await DigestOf(stand, ask);
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done, result.Message);
+        var saved = WorkflowPorts.Store(_home).Load("pull-request")!.Read.Versions[^1].Graph!;
+        Assert.Equal(["example.github-pull-request/pull-request"], saved.Nodes.Select(node => node.Kind).Where(kind => kind.EndsWith("/pull-request", StringComparison.Ordinal)));
+        Assert.Equal("example.github-pull-request", new PlaceReceipts(_home).Read(digest)!.Of(PlaceOperations.WorkflowSaveOf("pull-request"))!.Plugin);
+    }
+
+    [Fact]
     public async Task The_verb_applying_a_refused_plan_says_why_exits_1_and_writes_nothing()
     {
         var stand = Make();

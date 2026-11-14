@@ -64,7 +64,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a
    pull request's Daoris half) run in a repository alone, `isolate` in a repository or a folder, `return` in a folder, `apply` in a
    system, the rest anywhere. *Work in place* (`in-place`) holds no git kind, and the window's add chooses it for a folder, a
-   system and a repository the person ticks (`daoris place <department> --preset in-place --apply`). (D221, D227, D264, D265)
+   system and a repository the person ticks (`daoris place <department> --preset in-place --apply`). The *A pull request* preset's
+   saved copy names the plugin `SetupPresets.PluginFor` finds for the remote's platform in place of the default's own step, and keeps
+   the branch pattern the place's followed workflow writes; one plan reads one set of workflows, so repositories that want the same
+   copy share the one saved and each that differs gets its own id. (D221, D227, D264, D265)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (D157)
 7. Only graphs are saved, and only a graph version binds and runs. The one save judge refuses steps (`steps-refused`), a `land`

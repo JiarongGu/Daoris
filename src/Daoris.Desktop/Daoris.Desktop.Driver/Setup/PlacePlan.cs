@@ -101,8 +101,8 @@ public sealed record PlaceApplied(DriverConfig After, IReadOnlyList<PlaceChange>
     internal IWorkflowStore? Store { get; init; }
 }
 
-/// <summary>A copy of a shipped default to save: its id, the default it copies, and the gates its variant adds.</summary>
-public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Look);
+/// <summary>A copy of a shipped default to save: its id, the default it copies, its gates, its pull-request plugin and its branch pattern.</summary>
+public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Look, string? Plugin = null, string? Pattern = null);
 
 /// <summary>
 /// A place's plan (<c>PLACE_PLAN</c> and <c>daoris place … --plan</c>): the parts applied to a
@@ -214,7 +214,12 @@ public static class PlacePlans
     /// </summary>
     public static PlaceApplied Apply(
         DriverConfig config, RepoView row, PlaceAsk ask, PlaceTip tip, IWorkplacePluginCatalog plugins, bool unadopted, IReadOnlyList<QuestView> quests,
-        string? home = null)
+        string? home = null) => Apply(config, row, ask, tip, plugins, unadopted, quests, home, shared: null);
+
+    /// <summary>The same over the workflows <paramref name="shared"/> reads, which a plan of several repositories keeps one of.</summary>
+    internal static PlaceApplied Apply(
+        DriverConfig config, RepoView row, PlaceAsk ask, PlaceTip tip, IWorkplacePluginCatalog plugins, bool unadopted, IReadOnlyList<QuestView> quests,
+        string? home, PlannedWorkflows? shared)
     {
         var name = row.Repository;
         var workspace = RemoteTarget.Workspace(row.Workspace);
@@ -225,7 +230,7 @@ public static class PlacePlans
         bool Driven(DriverConfig each) => each.Drivable.Contains(name, StringComparer.OrdinalIgnoreCase);
 
         var preset = SetupPresets.Of(ask.Preset);
-        var planned = home is null ? null : new PlannedWorkflows(home);
+        var planned = shared ?? (home is null ? null : new PlannedWorkflows(home));
         var saves = new List<PlaceSave>();
         if (ask.Preset == SetupPresets.Keep)
         {
@@ -331,20 +336,30 @@ public static class PlacePlans
         var shipped = WorkflowDefaults.Of(SetupPresets.Of(ask.Preset)!.Id);
         if (refused || shipped is null || planned is null) return config;
 
+        var chosen = WorkflowSelection.Resolve(config, name, workspace, task: null).Workflow;
+
+        // The pull request is its platform's plugin's step, on the branch pattern the place already follows.
+        string? plugin = null, pattern = null;
+        if (land.Method == SetupLand.PullRequest)
+        {
+            plugin = SetupPresets.PluginFor(tip.Host, plugins);
+            if (plugin == WorkflowDefaults.PullRequestPluginOf(shipped)) plugin = null;
+            pattern = planned.Load(chosen)?.Read.Versions is [.., { Graph: { } followed }] ? LandNodes.WrittenLanding(followed).Pattern : null;
+        }
+
         // The copy of the default in the variant the ticks choose: the home's own where it has one, else one saved now.
-        var copy = planned.CopyOf(shipped, ask.Opinion, ask.Look);
+        var copy = planned.CopyOf(shipped, ask.Opinion, ask.Look, plugin, pattern);
         if (copy is null)
         {
             bool Taken(string id) => planned.Load(id) is not null;
-            var made = WorkflowDefaults.Copy(shipped, ask.Opinion, ask.Look, Taken);
+            var made = WorkflowDefaults.Copy(shipped, ask.Opinion, ask.Look, Taken, plugin, pattern);
             planned.Write(made.Id, WorkflowOperations.PlanGraph(planned.Home, null, made.Id, null, made.Name, "screen", PlannedWorkflows.At, made.Graph, made.From).Plan.Result!);
-            var save = new PlaceSave(made.Id, shipped.Id, ask.Opinion, ask.Look);
+            var save = new PlaceSave(made.Id, shipped.Id, ask.Opinion, ask.Look, plugin, pattern);
             if (!saves.Contains(save)) saves.Add(save);
             changes.Add(new("WORKFLOW_SAVE", Delivery, "a saved copy of the workflow Daoris ships", "none", $"`{made.Id}`"));
             copy = made.Id;
         }
 
-        var chosen = WorkflowSelection.Resolve(config, name, workspace, task: null).Workflow;
         if (chosen != copy)
         {
             try
@@ -386,6 +401,7 @@ public static class PlacePlans
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
         IReadOnlyList<QuestView> quests = ask.Drive || ask.Adoption ? await world.QuestsAsync(ct).ConfigureAwait(false) : [];
         var store = WorkflowPorts.Store(home);
+        var shared = new PlannedWorkflows(home);
         WorkflowOperations.RegistryRead read = _ =>
             Task.FromResult(ChoicesRegistry.Of(registry));
 
@@ -403,7 +419,7 @@ public static class PlacePlans
 
             var workspace = RemoteTarget.Workspace(row.Workspace);
             var tip = await world.TipAsync(row, config, ct).ConfigureAwait(false);
-            var applied = planned ? Apply(config, row, ask, tip, plugins, unadopted, quests, home) : new PlaceApplied(config, [], []);
+            var applied = planned ? Apply(config, row, ask, tip, plugins, unadopted, quests, home, shared) : new PlaceApplied(config, [], []);
             refusals.AddRange(applied.Refusals);
             saves.AddRange(applied.Saves.Where(save => !saves.Contains(save)));
             var before = SideOf(config, row.Repository, workspace, store);
