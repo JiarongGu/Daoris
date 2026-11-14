@@ -65,7 +65,8 @@ internal sealed class PlanRound
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest))))
+        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest)))
+                     .OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
         {
             // A step whose source the person reopened: withdrawn while open and held while taken, until they go on with it on the
             // new work or abandon it. Before every other reason, a pause and the person's stop included, since neither Resume nor

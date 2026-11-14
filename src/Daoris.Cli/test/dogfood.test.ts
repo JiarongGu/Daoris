@@ -334,12 +334,11 @@ test('every declared gate is actually run by the release workflow', () => {
   // `npm run verify`. Full-line comments go; a step's own text stays.
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
     .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
-  // A gate `npm run verify` runs is run wherever verify is — the universal gates' one home;
-  // a step of their own would run the same command twice.
+  // A gate `verify:checks` runs is run wherever it is: a step of its own would run it twice.
   const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
-    scripts: { verify: string };
-  }).scripts.verify;
-  const runsVerify = /run:\s*npm run verify\s*$/m.test(workflow);
+    scripts: { 'verify:checks': string };
+  }).scripts['verify:checks'];
+  const runsVerify = /run:\s*npm run verify:checks\s*$/m.test(workflow);
   // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
   // Process. Each of its commands is judged so, never the gate's text as a whole.
   // A gate's per-test timing reporter is the gate's own record, not a different command the release must repeat.
@@ -489,14 +488,14 @@ test('the universal gates run in verify, not only at release', () => {
   };
   const universal = gates.gates.find((gate) => gate.name === 'universal');
   const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
-    scripts: { verify: string };
-  }).scripts.verify;
+    scripts: { 'verify:checks': string };
+  }).scripts['verify:checks'];
 
   assert.ok(universal, 'the universal gate is no longer declared — that is not a pass');
   // verify runs it with the built-in patterns alone (a checkout holds no private list); the merge gate runs the full set.
   // verify writes the index once at its head, so the gate's own index step is not repeated.
   const command = universal.run.replace(/^node tools\/orient-index\.mjs && /, '');
-  assert.ok(verify.includes(`${command} --allow-builtins-only`),`npm run verify never runs the universal gates: ${universal.run}`);
+  assert.ok(verify.includes(`${command} --allow-builtins-only`),`npm run verify:checks never runs the universal gates: ${universal.run}`);
 });
 
 /**

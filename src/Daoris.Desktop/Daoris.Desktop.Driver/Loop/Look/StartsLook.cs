@@ -67,6 +67,7 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
         // What the starts an earlier look let go of came to since, said first; this look's own outcome for the same quest is said after
         // it, and stands.
         IReadOnlyList<StartCame> outcomes = [.. wiring.Runs.TakeCame(), .. begun];
+        wiring.Runs.HeldStarts.Settle(outcomes);
         var said = Fold(outcomes, events, state.Concluded);
         state.Outcome = said with { Waits = AccountWaits.Of(outcomes, wiring.Context.Harnesses, wiring.Service) };
     }

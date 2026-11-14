@@ -7,6 +7,16 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## STARTBLOCK1, QUEUEDIE1 and STOPRETRY1 — the install starts its own work (2026-11-14)
+
+> **STARTBLOCK1** (driver): Outcome: a start that came to a hold or a cooling account is kept (`HeldStarts`) and planned after every quest that can start, so it no longer holds a repository's turn or a place under the cap.
+>
+> **QUEUEDIE1** (driver): Outcome: the opener marks its record the moment it exists, and the sweep ends a `queued` or `starting` record no process ever marked once it stood untouched for two minutes, so its quest starts again.
+>
+> **STOPRETRY1** (driver): Outcome: `quest retry` reads the records again where the last look refuses it (`QuestRetryReading`), and `session stop` and `session archive` say an ended record whose line goes on in one sentence (`EndedLine`).
+
+---
+
 ## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
 
 > **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).
@@ -14,6 +24,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PROCLEAK1** (driver): Outcome: a session's tracking ending while its launcher still ran left the launcher's job, and the grandchildren in it, alive; the end now opens and ends the job (`SessionTreeReap`) and the machine log's `session.reaped` carries the count, one way for the launcher and the direct start; proved by `SessionTreeEndProcessTests` (a detached grandchild after exit, untracking and stop, with and without the launcher).
 
 ---
+## MERGEFAST1 — the merge runs the fast tier; the heavy tier runs after the landing (2026-11-14)
+
+> **MERGEFAST1** (tools; the owner, 2026-11-14, after merges still ran heavy gates): Outcome: a merge runs the light gates, the CLI's checks (`cli` is `npm run verify:checks`) and the reached unit classes (the CLI's and the tools' tests among them), never a Process, git or rehearsal class; the queue's promotion starts `tools/heavy-run.mjs` on the new tip, which runs those classes in `local/heavy-tree` and files a red as a finding naming the merge commit, and the whole CLI and tool tests are the CI's `cli-tests`; a driver `Platform/` change that ran about 100 Process classes in the merge now defers 334 to the landing's run.
+
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
 
 > **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.

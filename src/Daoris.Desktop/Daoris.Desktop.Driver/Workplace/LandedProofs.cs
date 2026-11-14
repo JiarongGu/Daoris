@@ -121,27 +121,27 @@ internal static class LandedProofs
 
         // Each form is asked at the commit it is read at (Rev), never by its live name, and the proof names
         // that form and commit as what a removal by it rests on.
+        var repository = MachinePorts.Repository;
         foreach (var form in forms)
         {
-            var (merged, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Rev], ct).ConfigureAwait(false);
-            if (merged == 0) return new(LandedKind.Merged, form.Name, [], null, 0, false) { Rests = RestsOn(form) };
+            if (await repository.IsAncestorAsync(root, tip, form.Rev, ct).ConfigureAwait(false) == true)
+            {
+                return new(LandedKind.Merged, form.Name, [], null, 0, false) { Rests = RestsOn(form) };
+            }
         }
 
-        var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", .. forms.Select(form => form.Rev)], ct)
-            .ConfigureAwait(false);
-        var commits = int.TryParse(count.Trim(), out var n) ? n : 0;
+        var commits = await repository.CountAsync(root, tip, [.. forms.Select(form => form.Rev)], ct).ConfigureAwait(false) ?? 0;
         Proof? closest = null;
         string? failed = null;
         foreach (var form in forms)
         {
-            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, form.Rev], ct).ConfigureAwait(false);
-            if (baseCode != 0)
+            if (await repository.MergeBaseAsync(root, tip, form.Rev, ct).ConfigureAwait(false) is not { } shared)
             {
-                failed = $"git found no point where it left `{form}`: {FirstLine(baseErr)}";
+                failed = $"git found no point where it left `{form}`";
                 continue;
             }
 
-            var changed = await NamesAsync(root, baseOut.Trim(), tip, ct).ConfigureAwait(false);
+            var changed = await NamesAsync(root, shared, tip, ct).ConfigureAwait(false);
             var differing = await NamesAsync(root, tip, form.Rev, ct).ConfigureAwait(false);
             if (changed is null || differing is null)
             {
@@ -168,24 +168,15 @@ internal static class LandedProofs
         return closest ?? new(LandedKind.Unknown, null, [], failed, commits, false);
     }
 
-    /// <summary>The paths that differ between two commits, as git names them with renames split into their two paths; null where git could not say.</summary>
-    /// <remarks>
-    /// <c>--ignore-submodules=none</c>: <c>diff.ignoreSubmodules</c>, or a submodule's own <c>ignore</c> in its
-    /// configuration, hides a gitlink's change from porcelain <c>git diff</c>, and a proof that cannot see a path calls it the same.
-    /// </remarks>
-    internal static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
-    {
-        var (code, output, _) = await WorkingTree.GitAsync(
-            root, ["--no-optional-locks", "diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
-        return code != 0 ? null : output.Split('\0', StringSplitOptions.RemoveEmptyEntries);
-    }
+    /// <summary>The paths that differ between two commits, a rename as its two paths and a submodule's change included; null where git could not say.</summary>
+    internal static Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct) =>
+        MachinePorts.Repository.ChangedAsync(root, from, to, ct);
 
     /// <summary>The landed branch's tip where it stands holding the commit the landing recorded, else null.</summary>
     /// <param name="refs">The judgement's refs, where it holds them; null asks git.</param>
     internal static async Task<string?> StandingTipAsync(string root, LandedBranch entry, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) return null;
-        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
-        return ours == 0 ? tip : null;
+        return await MachinePorts.Repository.IsAncestorAsync(root, entry.Tip, tip, ct).ConfigureAwait(false) == true ? tip : null;
     }
 }

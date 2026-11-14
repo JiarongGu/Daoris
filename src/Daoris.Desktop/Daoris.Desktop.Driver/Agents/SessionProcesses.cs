@@ -724,6 +724,8 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
+    public bool HasMarker(string sessionId) => MarkerOf(sessionId) is { } marker && File.Exists(marker);
+
     /// <summary>The marker's path, or null where this registry keeps none or the id could not be a file name.</summary>
     private string? MarkerOf(string sessionId) =>
         markers is null || !SafeNames.IsFolderId(sessionId)

@@ -168,7 +168,7 @@ export function verdictExtras(result: GateResult): { key?: VerdictKey; signature
 const gateRecord = (result: GateResult): GateRecord => ({
   name: result.gate.name, verdict: result.verdict, ms: result.ms ?? 0, replayed: result.replayed !== undefined, mainRed: result.mainRed === true,
   abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [], flakes: result.flakes ?? [],
-  ...(result.classes ? { classes: { ran: result.classes.ran, replayed: result.classes.replayed, flaked: result.classes.flaked.length, mainRed: result.classes.mainRed.length, red: result.classes.red.length } } : {}),
+  ...(result.classes ? { classes: { ran: result.classes.ran, replayed: result.classes.replayed, flaked: result.classes.flaked.length, mainRed: result.classes.mainRed.length, red: result.classes.red.length, deferred: result.classes.deferred.length } } : {}),
 });
 
 /**
@@ -191,6 +191,7 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
   const records = results.map(gateRecord);
   const record = buildRecord({
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
+    deferred: results.flatMap((result) => result.classes?.deferred ?? []),
   });
   const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [] }));
   const failed = results.filter((result) => result.verdict === 'FAIL' && !result.mainRed);

@@ -25,7 +25,7 @@ internal sealed class RefSnapshot
     private readonly Func<CancellationToken, Task<string?>>? _list;
     private readonly object _gate = new();
     private Task<Refs?>? _refs;
-    private Task<IReadOnlyList<WorktreeEntry>?>? _trees;
+    private Task<IReadOnlyList<GitWorktree>?>? _trees;
 
     private RefSnapshot(Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list) =>
         (_read, _list) = (read, list);
@@ -141,8 +141,9 @@ internal sealed class RefSnapshot
 
     internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
     {
-        var (code, output, _) = await WorkingTree.GitAsync(root, ["for-each-ref", .. GitLibraryRefs.Listed], ct).ConfigureAwait(false);
-        return code == 0 ? output : null;
+        return await MachinePorts.Repository.RefFactsAsync(root, ct).ConfigureAwait(false) is { } facts
+            ? string.Join('\n', facts.Select(each => $"{each.Name} {each.Object} {each.Type} {each.Upstream} {each.UpstreamShort} {each.Tree}"))
+            : null;
     }
 
     /// <summary>The read's refs; null where a line is not the five fields asked for, so nothing is answered from a read half understood.</summary>
@@ -297,7 +298,7 @@ internal sealed class RefSnapshot
     /// asked before: a list never read is never an empty one. Null for the task itself where this snapshot has no
     /// list to read, and the caller asks git.
     /// </summary>
-    internal Task<IReadOnlyList<WorktreeEntry>?>? WorktreesAsync(CancellationToken ct)
+    internal Task<IReadOnlyList<GitWorktree>?>? WorktreesAsync(CancellationToken ct)
     {
         if (_list is not { } list) return null;
         lock (_gate)
@@ -306,8 +307,8 @@ internal sealed class RefSnapshot
             return _trees = ListAsync(list, ct);
         }
 
-        static async Task<IReadOnlyList<WorktreeEntry>?> ListAsync(Func<CancellationToken, Task<string?>> list, CancellationToken ct) =>
-            await list(ct).ConfigureAwait(false) is { } porcelain ? TreeWorktrees.Parse(porcelain) : null;
+        static async Task<IReadOnlyList<GitWorktree>?> ListAsync(Func<CancellationToken, Task<string?>> list, CancellationToken ct) =>
+            await list(ct).ConfigureAwait(false) is { } porcelain ? GitRepository.Worktrees(porcelain) : null;
     }
 
     private async Task<(bool Known, Entry? Entry)> LookAsync(string reference, CancellationToken ct)

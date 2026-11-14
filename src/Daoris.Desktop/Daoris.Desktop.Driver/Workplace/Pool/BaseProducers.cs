@@ -10,10 +10,9 @@ internal sealed record BaseProducer(string? Project, IReadOnlyList<string> Confi
 }
 
 /// <summary>
-/// What the take's plan reads of a <c>base</c> top's producer from git's objects at the new start (the tree-pool design §37.3, 2, §38.2,
-/// 1): the project file beside the top, and its declared <c>Configurations</c>, read from the project file and else from the nearest
-/// <c>Directory.Build.props</c> above it, as MSBuild imports that one alone; Debug and Release where neither names any. A
-/// configuration named only under a condition or through a property reads as undeclared, so its folder is set aside, costing a build.
+/// What the take's plan reads of a <c>base</c> top's producer from git's objects at the new start: the project file beside the top and
+/// its declared <c>Configurations</c>, from the project file else the nearest <c>Directory.Build.props</c> above it, as MSBuild imports
+/// that one alone; Debug and Release where neither names any. A configuration named only under a condition reads as undeclared.
 /// </summary>
 internal static class BaseProducers
 {
@@ -22,10 +21,8 @@ internal static class BaseProducers
     internal static async Task<BaseProducer> ReadAsync(PoolGit git, string slot, string commit, string top, CancellationToken ct)
     {
         var folder = FolderOf(top);
-        var (code, listed, _) = await git.GitAsync(slot, folder.Length == 0 ? ["ls-tree", "--name-only", "-z", commit] : ["ls-tree", "--name-only", "-z", commit, "--", folder], ct)
-            .ConfigureAwait(false);
-        if (code != 0) return new(null, [], $"git could not list {Shown(folder)} at the start");
-        var projects = listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)
+        if (await git.Repository.EntriesAsync(slot, commit, folder.Length == 0 ? [] : [folder], false, ct).ConfigureAwait(false) is not { } listed) return new(null, [], $"git could not list {Shown(folder)} at the start");
+        var projects = listed.Select(entry => entry.Path)
             .Where(path => ProjectExtensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))).ToList();
         if (projects.Count != 1)
         {
@@ -34,10 +31,10 @@ internal static class BaseProducers
                 : $"{top} is beside {projects.Count} project files, so it has no one producer");
         }
 
-        var declared = Declared(await ShowAsync(slot, commit, projects[0], ct).ConfigureAwait(false));
+        var declared = Declared(await FileGit.ShowAsync(slot, commit, projects[0], ct).ConfigureAwait(false));
         for (var above = folder; declared is null; above = FolderOf(above))
         {
-            if (await ShowAsync(slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
+            if (await FileGit.ShowAsync(slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
             {
                 declared = Declared(props);
                 break;
@@ -67,11 +64,6 @@ internal static class BaseProducers
         }
     }
 
-    private static async Task<string?> ShowAsync(string slot, string commit, string path, CancellationToken ct)
-    {
-        var name = GitObjectName.At(commit, path);
-        return await GitObjectReads.TextAsync(slot, name, ct).ConfigureAwait(false);
-    }
 
     /// <summary>The folder holding <paramref name="path"/>, repository-relative and ending <c>/</c>; empty for the top.</summary>
     private static string FolderOf(string path)

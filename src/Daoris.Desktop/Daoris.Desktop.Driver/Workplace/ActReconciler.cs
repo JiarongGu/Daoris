@@ -39,8 +39,7 @@ public sealed class ActReconciler(ActJournal journal)
         new ActReconciler(new ActJournal(home)).UnderLockAsync(checkout, ct);
 
     /// <summary>
-    /// Every act not closed in the checkout reconciled, its caller holding the checkout's lock alone: null where none is left open, or the hold
-    /// that refuses the writer for this look.
+    /// Every act not closed in the checkout reconciled, its caller holding the lock alone: null where none is left open, else the hold refusing the writer.
     /// </summary>
     public async Task<ActHold?> UnderLockAsync(string checkout, CancellationToken ct)
     {
@@ -306,9 +305,8 @@ public sealed class ActReconciler(ActJournal journal)
 
     private static async Task<string?> StandsAsync(string root, string reference, CancellationToken ct)
     {
-        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", reference], environment: null, GitBounds.Question, ct)
-            .ConfigureAwait(false);
-        return code != 0 ? null : string.Join(",", listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Where(each => each.Trim() == reference));
+        var listed = await MachinePorts.Repository.RefsAsync(root, [reference], null, null, ct).ConfigureAwait(false);
+        return listed is null ? null : string.Join(",", listed.Where(each => each.Name == reference).Select(each => each.Name));
     }
 
     private DateTimeOffset Moment() => Now?.Invoke() ?? journal.Clock.GetUtcNow();

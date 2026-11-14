@@ -9,10 +9,9 @@ namespace Daoris.Driver;
 public sealed record VerifyReach(string Base, IReadOnlyList<string> Passed);
 
 /// <summary>
-/// The gates a batch's changed paths reach, for any repository: read from the accepted declaration's own
-/// <c>paths</c> on each gate, as the merge tool's lane table places this repository's. A gate with no <c>paths</c> is reached by every change,
-/// as a path no rule places reaches every gate there; a gate that is owed (its newest evidence on the line is not a pass) runs whatever the
-/// batch changed, since the batch's base moves past a failed verdict.
+/// The gates a batch's changed paths reach, read from the accepted declaration's own <c>paths</c> on each gate. A gate with no <c>paths</c>
+/// is reached by every change, as a path no rule places reaches every gate there; a gate that is owed (its newest evidence on the line is
+/// not a pass) runs whatever the batch changed, since the batch's base moves past a failed verdict.
 /// </summary>
 internal static class GateReach
 {
@@ -23,7 +22,6 @@ internal static class GateReach
     internal static bool Reaches(DeclaredGate gate, IReadOnlyCollection<string> changed) =>
         gate.Paths is not { Count: > 0 } paths || changed.Any(path => paths.Any(entry => Covers(entry, path)));
 
-    /// <summary>Which of <paramref name="chosen"/> run, given the batch's <paramref name="changed"/> paths and the gates passed on the line.</summary>
     internal static Plan Of(IReadOnlyList<DeclaredGate> chosen, IReadOnlyCollection<string> changed, IReadOnlyCollection<string> passed)
     {
         var run = new List<DeclaredGate>();
@@ -35,13 +33,6 @@ internal static class GateReach
         }
 
         return new Plan(run, kept);
-    }
-
-    /// <summary>The paths changed from <paramref name="from"/> to <paramref name="commit"/> in <paramref name="checkout"/>, or null where git could not say.</summary>
-    internal static async Task<IReadOnlyList<string>?> ChangedAsync(string checkout, string from, string commit, CancellationToken ct)
-    {
-        var (code, names, _) = await WorkingTree.GitAsync(checkout, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, commit], ct).ConfigureAwait(false);
-        return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
     private static bool Covers(string entry, string path)

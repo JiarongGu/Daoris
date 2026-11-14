@@ -3,16 +3,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The census of every git write the driver, its host and the modules make: each file that starts a git
-/// which changes a HEAD, an index, a working tree, a branch or git's record of its trees is named here with what it writes and where, by
-/// each call's verb and the folder it runs in. A writer of a repository's checkout (its HEAD, index, working tree or the branch it has out)
+/// The census of every git write the driver, its host and the modules make: each file that starts a git which changes a HEAD, an index, a
+/// working tree, a branch or git's record of its trees is named here with what it writes and where, by each call's verb and folder. A writer of a repository's checkout (its HEAD, index, working tree or the branch it has out)
 /// holds the repository alone through <c>TreeLock.TryWriting</c>, from its fresh judgement through its write and its read after it; every
 /// other write is in a tree of Daoris's own, or moves a ref no checkout has out. A new call is a failing line until it is named.
 /// </summary>
 /// <remarks>
-/// A conversation's agent or a driven session's agent writing files itself starts no git of Daoris's and cannot take the lock: it is named
-/// in <see cref="Fenced"/> with how it is fenced instead. Read from the sources by name wherever they lie, as
-/// <see cref="SettledReadersCensusTests"/> is.
+/// An agent writing files itself starts no git of Daoris's and cannot take the lock: it is named in <see cref="Fenced"/> with how it is
+/// fenced instead. Read from the sources by name, as <see cref="SettledReadersCensusTests"/> is.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class CheckoutWritersCensusTests
@@ -25,14 +23,13 @@ public sealed partial class CheckoutWritersCensusTests
     private static readonly Dictionary<string, (string Kind, string How, string[] Calls)> Census = new(StringComparer.Ordinal)
     {
         // The checkout's writers: each holds the repository alone from its fresh judgement through its write and its read after it.
-        ["LinePulls.cs"] = (Checkout, "a line's pull (D109): `merge --ff-only` in the checkout that has the line out, read clean and on it under the hold; elsewhere the ref from the commit judged", ["merge@root", "update-ref@root"]),
-        ["IntegrationPromotes.cs"] = (Checkout, "a promotion's move, background or a merge rule's press: `merge --ff-only` in the checkout that has the line out, read clean under the hold; elsewhere one verified `update-ref`", ["merge@checkout.Path", "update-ref@ask.Root"]),
+        ["LinePulls.cs"] = (Checkout, "a line's pull (D109): a fast-forward in the checkout that has the line out (the repository port's), read clean and on it under the hold; elsewhere the ref from the commit judged", ["update-ref@root"]),
+        ["IntegrationPromotes.cs"] = (Checkout, "a promotion's move, background or a merge rule's press: a fast-forward (the repository port's) in the checkout that has the line out, read clean under the hold; elsewhere one verified `update-ref`", ["update-ref@ask.Root"]),
         ["ActSteps.cs"] = (Checkout, "a git act's effect steps (GITAPP2a, D204): one `update-ref --stdin` transaction, and an index's entries replaced under git's own `index.lock` from a copy `update-index` builds, each git held in the act's job; the act's open records reconciled first under the hold", ["update-index@launch.Root", "update-ref@launch.Root"]),
         ["StashDropSteps.cs"] = (Checkout, "a stash Drop (GITAPP2, D204): one `stash drop` of the shared `refs/stash`'s entry by the commit asked, found as it runs and read back from git's own words, and one `stash store` of the commit git dropped where the place moved under it, each in the act's job with its repository's hooks never skipped", ["stash@launch.Root"]),
         ["ActWorkSteps.cs"] = (Checkout, "a switch, a stash Save or a stash Apply (GITAPP2k, GITAPP2l, D204): one `switch --no-guess` of the checkout to a local branch, never forced, one `stash push` that writes the shared `refs/stash`, or one `stash apply <id>` that writes the tracked files and leaves the stash, each in the act's job with its repository's hooks never skipped", ["switch@launch.Root", "stash@?", "stash@launch.Root"]),
         ["ActCommits.cs"] = (Checkout,"a commit or an amend (GITAPP2i, D204): one `commit` of the act journal, its repository's hooks run and never skipped, in the act's job; the old tip kept first by a ref step, and the index only read on a private copy (`write-tree`)", ["commit@?"]),
 
-        // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
         ["BacklogHeld.cs"] = (OwnTree, "a made backlog's rows the rules take out, staged and, in a replay, committed in its own tree or the line's integration tree", ["checkout@place", "commit@place", "update-index@place"]),
         ["UnionOnce.cs"] = (OwnTree, "a heading union kept twice, kept once and committed in the replay's own tree", ["add@tree", "commit@tree"]),
@@ -40,16 +37,14 @@ public sealed partial class CheckoutWritersCensusTests
         ["UnionJoins.cs"] = (OwnTree, "what a union joined, set apart and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["VerifyExecution.cs"] =(OwnTree, "a heavy run's own detached tree, made, locked and checked out at the commit sent; git's record of it in the checkout", ["checkout@tree", "worktree@send.Checkout"]),
         ["IntegrationJudging.cs"] = (OwnTree, "the line's integration tree, put at the commit judged", ["checkout@ask.Tree"]),
-        ["IntegrationReplays.cs"] = (OwnTree, "the line's integration tree: made and removed through git's record of it, merged and committed in, put back at a commit by reset, clean and checkout", ["checkout@?", "clean@?", "commit@tree", "merge@tree", "reset@?", "worktree@ask.Root"]),
         ["IntegrationResolves.cs"] = (OwnTree, "a conflict resolved in the line's integration tree", ["add@tree", "checkout@tree", "rm@tree"]),
         ["OpinionTree.cs"] = (OwnTree, "a second opinion's own copy, detached at the tip judged", ["checkout@?"]),
-        ["CreateHistory.cs"] = (OwnTree, "a department's new folder, initialised and its head pointed at its line before its one empty commit; no checkout of a repository holds it", ["symbolic-ref@?"]),
         ["UntrackedPatches.cs"] = (OwnTree, "Review's read of a session's own tree: its untracked files added as intents to a private index (GIT_INDEX_FILE) beside the tree's own, never that index, removed with its lock after", ["add@_root"]),
 
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["rebase@tree", "switch@tree", "update-ref@root"]),
         ["ReplaySettles.cs"] = (OwnTree, "a work replayed and its stops settled in a tree made for it under the trees home and removed after; it moves no branch", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "worktree@root"]),
-        ["ResolveTree.cs"] = (Refs, "a session's tree a hand-off reserves, the replay stopped there on a detached head so its branch never moves, put back on its branch at its tip with the resolver's edits on the node's edits ref", ["add@hand.Tree", "checkout@hand.Tree", "clean@hand.Tree", "rebase@?", "rebase@hand.Tree", "reset@hand.Tree", "switch@hand.Tree", "symbolic-ref@hand.Tree", "update-ref@hand.Tree"]),
+        ["ResolveTree.cs"] = (Refs, "a session's tree a hand-off reserves, the replay stopped there on a detached head so its branch never moves, put back on its branch at its tip with the resolver's edits on the node's edits ref", ["add@hand.Tree", "checkout@hand.Tree", "clean@hand.Tree", "rebase@?", "rebase@hand.Tree", "switch@hand.Tree", "symbolic-ref@hand.Tree", "update-ref@hand.Tree"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached; a delivery's is TreeDeliveries' transaction instead", ["switch@full", "update-ref@sync.Root"]),
         ["TreeBranches.cs"] = (Refs,"a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
@@ -58,26 +53,14 @@ public sealed partial class CheckoutWritersCensusTests
         ["TrainRefs.cs"] = (Refs, "an ask's promoted batch kept on its own numbered ref under `refs/daoris/train/`, created once and never moved", ["update-ref@root"]),
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
-        ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
         ["PartnerActRunner.cs"] = (Refs, "a discarded piece's ref dropped verified at the commit it was frozen as, then its copy removed", ["update-ref@root"]),
         ["PieceKeeper.cs"] = (Refs, "a kept piece: read and staged in a private index (GIT_INDEX_FILE), its ref made only where absent; its copy checked out", ["checkout@copy", "read-tree@root", "update-index@root", "update-ref@root"]),
         ["OnlyHereProof.cs"] = (Refs, "git's record of gone trees pruned before its branch is deleted through the journal's act (JournaledDeletes)", ["worktree@root"]),
-        ["TreeOpenings.cs"] = (Refs, "an opening undone: its own tree removed and its new branch deleted", ["branch@root", "worktree@root"]),
-        ["TreeRemovals.cs"] = (Refs, "a session's tree removed; its branch deleted through the journal's act (JournaledDeletes)", ["worktree@?"]),
         ["TreeReturns.cs"] = (Refs, "a session's tree made again on its branch, through git's record of the trees", ["worktree@root"]),
         ["TreeSetAside.cs"] = (Refs, "a tree set aside, through git's record of the trees", ["worktree@root"]),
-        ["TreeFilesStage.cs"] = (Refs, "an unworked tree's files git tracks, which only Daoris's own install or hook changed, put back from its commit before anything is handed it", ["checkout@tree"]),
-        ["TreePoolTakes.cs"] = (OwnTree, "a kept slot's take or return: the slot switched in place to the line's branch, never forced and with the repository's hooks held, in the claim's job (R4-F7)", ["switch@slot.Path"]),
-        ["PoolUndo.cs"] = (OwnTree, "a take or a return put back where its claim found the kept slot: switched onto the branch it stood on, or detached at the commit, never forced, no ignored file overwritten and the hooks held, in the claim's job; a take's own branch is deleted through the journal's act", ["switch@slot.Path"]),
-        ["SlotStanding.cs"] = (OwnTree, "a kept slot settled stuck, detached where it stands, which writes no file, in the claim's job", ["switch@Slot.Path"]),
-        ["TreePoolFinishes.cs"] = (OwnTree, "a finished line's kept slot detached at the line's tip in place, never forced and with the repository's hooks held, in the claim's job", ["switch@slot.Path"]),
-        ["PoolFinishRecoveries.cs"] = (OwnTree, "a dead run's finish settled: the kept slot detached at the line's tip again, in the takeover's job", ["switch@slot.Path"]),
-        ["TreePoolRetires.cs"] = (Refs, "a retired slot's registration unlocked in the claim's job, and git's record of its vanished folder dropped", ["worktree@site.Root"]),
-        ["PoolLocks.cs"] = (Refs, "a kept slot's lock changed between the pool's free and claimed reasons, in the claim's job", ["worktree@slot"]),
+        ["GitRepository.cs"] = (Refs, "the repository port's real writes, each the one git a family asked and none forced: a kept slot's switch (take, return, put back, detach at the line's tip, settled stuck) with the repository's hooks held, its lock and unlock, git's record of a vanished folder dropped, a ref moved from the tip asked, a tree added on a branch or detached and removed, a branch deleted, a commit, a fast-forward, a hard reset, an unworked tree's tracked files put back from its commit; the pool's are run in the claim's job. A session's tree removed as `worktree remove` does, forced or not, its branch through the journal's act (JournaledDeletes). In an integration tree of Daoris's own: a merge made or left staged, abandoned, committed, and the tree put back at a commit by reset, clean and a forced detach. A department's new folder, initialised and its head pointed at its line before its one empty commit, which no checkout of a repository holds", ["add@folder", "branch@folder", "checkout@?", "checkout@folder", "clean@?", "commit@folder", "merge@?", "merge@folder", "reset@?", "reset@folder", "switch@?", "symbolic-ref@folder", "update-ref@folder", "worktree@?", "worktree@folder"]),
         ["TreeSweeps.cs"] = (Refs, "a pressed tree removed, through git's record of the trees", ["worktree@root"]),
         ["TreeStrays.cs"] = (Refs, "a stray tree's git lock let go and taken again", ["worktree@root"]),
-        ["SessionLocks.cs"] = (Refs, "a session's tree locked and unlocked in git's record of the trees", ["worktree@root", "worktree@tree"]),
-        ["TreeOpening.cs"] = (Refs,"a session's tree opened on a new branch, through git's record of the trees", ["worktree@root"]),
         ["StageActs.cs"] = (Refs, "stage and unstage (GITAPP2h, D204): what an act leaves is found by `add`, `reset`, `rm --cached` or `apply --cached` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`", ["add@?", "apply@?", "reset@?", "rm@?"]),
         ["ResolveActs.cs"] = (Refs, "mark resolved (GITAPP2j, D204): what the index would hold once the file is added is found by `add` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`; a resolve's file step is `ActFiles`, in the same hold", ["add@root"]),
         ["PassLeftovers.cs"] = (Refs,"a pass's tree's git lock let go and taken again", ["worktree@root"]),

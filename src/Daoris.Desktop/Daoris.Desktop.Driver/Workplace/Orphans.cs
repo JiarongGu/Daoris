@@ -74,7 +74,7 @@ public static class Orphans
             // `queued` by a driver that went held the room, and every later start is refused naming it). The sweep takes one only
             // where the process that opened it is proven gone: a live opener here is still starting it.
             var claimsProcess = session.State == "working"
-                || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id)));
+                || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id) || NeverMarked(session, processes)));
             if (!claimsProcess || processes.AliveOnThisMachine(session.Id)) continue;
 
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
@@ -91,6 +91,12 @@ public static class Orphans
 
         return ended;
     }
+
+    internal static readonly TimeSpan UnmarkedGrace = TimeSpan.FromMinutes(2);
+
+    /// <summary>A <c>queued</c> or <c>starting</c> record no process marks, untouched past <see cref="UnmarkedGrace"/>: its opener went first.</summary>
+    private static bool NeverMarked(SessionView session, SessionProcesses processes) =>
+        session.Updated is { } updated && DateTimeOffset.UtcNow - updated > UnmarkedGrace && !processes.HasMarker(session.Id);
 
     /// <summary>
     /// What the record of a lost session gains as it ends: where its quest closed done and waits on its evidence, the

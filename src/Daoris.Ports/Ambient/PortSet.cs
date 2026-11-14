@@ -2,6 +2,7 @@ using Daoris.Ports.Agents;
 using Daoris.Ports.Browser;
 using Daoris.Ports.Git;
 using Daoris.Ports.Processes;
+using Daoris.Ports.Repositories;
 using Daoris.Ports.Store;
 
 namespace Daoris.Ports.Ambient;
@@ -17,6 +18,9 @@ public sealed record PortSet
 
     /// <summary>Git at the level of its arguments.</summary>
     public IGit? Git { get; init; }
+
+    /// <summary>A git repository's operations; null where the root chose none, which the application answers over its own git funnel.</summary>
+    public IGitRepository? Repository { get; init; }
 
     /// <summary>Starts processes.</summary>
     public IProcessHost? Processes { get; init; }

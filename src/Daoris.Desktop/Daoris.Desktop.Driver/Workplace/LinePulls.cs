@@ -63,10 +63,10 @@ internal static class LinePulls
                 return new(pull, false, $"the repository's own checkout is not clean ({detail}), so `{line}` stays where it is.");
             }
 
-            var (_, onOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-            if (!string.Equals(onOut.Trim(), line, StringComparison.Ordinal))
+            var on = await MachinePorts.Repository.BranchAsync(root, ct).ConfigureAwait(false);
+            if (!string.Equals(on, line, StringComparison.Ordinal))
             {
-                return new(pull, false, $"the repository's checkout moved to `{onOut.Trim()}` since the list, so `{line}` was left for another look.");
+                return new(pull, false, $"the repository's checkout moved to `{on ?? "HEAD"}` since the list, so `{line}` was left for another look.");
             }
 
             if (await CommitOfAsync(root, "HEAD", ct).ConfigureAwait(false) != pull.From)
@@ -74,10 +74,10 @@ internal static class LinePulls
                 return new(pull, false, $"`{line}` moved since the list, so it was left for another look.");
             }
 
-            var (code, _, err) = await WorkingTree.GitAsync(root, ["merge", "--ff-only", "--quiet", pull.To!], ct).ConfigureAwait(false);
-            return code == 0
+            var forwarded = await MachinePorts.Repository.FastForwardAsync(root, pull.To!, ct).ConfigureAwait(false);
+            return forwarded.Ok
                 ? new(pull, true, took)
-                : new(pull, false, $"git would not fast-forward `{line}`: {Failure(err)} The checkout is as it was.");
+                : new(pull, false, $"git would not fast-forward `{line}`: {Failure(forwarded.Error)} The checkout is as it was.");
         }
 
         // The ref alone, and only from the commit it is judged at: git refuses the move if it is elsewhere now.

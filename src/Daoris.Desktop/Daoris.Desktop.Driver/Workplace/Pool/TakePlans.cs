@@ -88,12 +88,10 @@ internal static class TakePlans
         }
     }
 
-    /// <summary>The paths the start tracks under the tops, one listing of git's objects.</summary>
     private static async Task<IReadOnlyList<string>> TrackedAsync(PoolGit git, string slot, string start, IReadOnlyList<string> tops, CancellationToken ct)
     {
-        var (code, listed, error) = await git.GitAsync(slot, ["ls-tree", "-r", "--name-only", "-z", start, "--", .. tops], ct).ConfigureAwait(false);
-        if (code != 0) throw new DriverException($"git could not list what the start tracks: {TreeGit.FirstLine(error)}");
-        return listed.Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        if (await git.Repository.EntriesAsync(slot, start, tops, true, ct).ConfigureAwait(false) is not { } listed) throw new DriverException("git could not list what the start tracks");
+        return [.. listed.Select(entry => entry.Path)];
     }
 }
 

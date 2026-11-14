@@ -62,7 +62,7 @@ internal static class PoolJudging
         IReadOnlyDictionary<string, string> status;
         try
         {
-            status = await FillJudgement.StatusAsync(path, ignored: true, ct).ConfigureAwait(false);
+            status = await MachinePorts.Repository.StatusAsync(path, ignored: true, ct).ConfigureAwait(false);
         }
         catch (DriverException)
         {
@@ -88,19 +88,12 @@ internal static class PoolJudging
     /// <summary>Whether a branch, a remote branch, a tag or a ref of the pool's own holds <paramref name="commit"/> in its history.</summary>
     internal static async Task<bool> HeldByRefAsync(string folder, string commit, CancellationToken ct)
     {
-        var (code, listed, _) = await WorkingTree.GitAsync(
-            folder, ["for-each-ref", "--count=1", "--contains", commit, "--format=%(refname)", "refs/heads", "refs/remotes", "refs/tags", "refs/daoris"], ct)
-            .ConfigureAwait(false);
-        return code == 0 && listed.Trim().Length > 0;
+        var holding = await MachinePorts.Repository.RefsAsync(folder, ["refs/heads", "refs/remotes", "refs/tags", "refs/daoris"], commit, 1, ct).ConfigureAwait(false);
+        return holding is { Count: > 0 };
     }
 
-    private static async Task<(List<string> Hidden, bool Read)> HiddenAsync(string path, CancellationToken ct)
-    {
-        var (code, listed, _) = await WorkingTree.GitAsync(path, ["ls-files", "-v", "-z"], ct).ConfigureAwait(false);
-        if (code != 0) return ([], false);
-        // `ls-files -v` tags an assume-unchanged entry in lower case and a skip-worktree one `S`.
-        return ([.. listed.Split('\0', StringSplitOptions.RemoveEmptyEntries).Where(entry => entry.Length > 2 && (char.IsLower(entry[0]) || entry[0] == 'S')).Select(entry => entry[2..])], true);
-    }
+    private static async Task<(IReadOnlyList<string> Hidden, bool Read)> HiddenAsync(string path, CancellationToken ct) =>
+        await MachinePorts.Repository.HiddenAsync(path, ct).ConfigureAwait(false) is { } hidden ? (hidden, true) : ([], false);
 
     private static bool HalfDone(string path) =>
         GitBranches.GitDirectory(path) is { } git && Operations.Any(name => File.Exists(Path.Combine(git, name)) || Directory.Exists(Path.Combine(git, name)));

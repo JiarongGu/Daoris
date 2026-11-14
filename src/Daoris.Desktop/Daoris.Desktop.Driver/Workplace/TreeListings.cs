@@ -7,23 +7,19 @@ namespace Daoris.Driver;
 internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
 {
     /// <summary>
-    /// How many commits a session tree's HEAD holds beyond its repository's line: zero is a done that made no commits,
-    /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
+    /// Commits a session tree's HEAD holds beyond its repository's line: zero lands nothing; null is git unable to say, and the landing then decides.
     /// </summary>
     public async Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default)
     {
         var full = Path.GetFullPath(tree);
         if (!context.Holds(full) || !Directory.Exists(full)) return null;
-        var (code, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        if (code != 0) return null;
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
+        if (await MachinePorts.Repository.LayoutAsync(full, ct).ConfigureAwait(false) is not { } layout) return null;
+        var root = Path.GetDirectoryName(layout.CommonDir)!;
         var (workspace, repository) = context.OwnerOf(full);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
-        var (countCode, count, _) = await WorkingTree.GitAsync(full, ["rev-list", "--count", $"{against}..HEAD"], ct).ConfigureAwait(false);
-        return countCode == 0 && int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var ahead) ? ahead : null;
+        return await MachinePorts.Repository.CountAsync(full, "HEAD", [against], ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -37,9 +33,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
-        // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, against], ct).ConfigureAwait(false);
-        return code switch { 0 => true, 1 => false, _ => null };
+        return await MachinePorts.Repository.IsAncestorAsync(root, commit, against, ct).ConfigureAwait(false);
     }
 
     /// <summary>The session trees and folders moved aside of the repositories <paramref name="only"/> holds (<see cref="ListAsync(CancellationToken)"/>).</summary>

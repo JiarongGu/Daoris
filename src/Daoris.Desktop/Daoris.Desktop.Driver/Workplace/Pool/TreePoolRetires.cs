@@ -88,7 +88,7 @@ internal sealed class TreePoolRetires(TreePool pool, PoolSeams seams)
     /// <summary>Git's record of the vanished folder dropped, the tree's files record forgotten, and the slot's row removed with the claim.</summary>
     internal async Task<PoolDone> DropAsync(PoolSite site, ClaimFence fence, string folder, CancellationToken ct)
     {
-        await WorkingTree.GitAsync(site.Root, ["worktree", "prune"], ct).ConfigureAwait(false);
+        await MachinePorts.Repository.PruneAsync(site.Root, ct).ConfigureAwait(false);
         TreeFilesRecord.Forget(site.Home, folder);
         pool.Advance(fence, TreeClaimPhases.Dropped);
         pool.Retired(fence);

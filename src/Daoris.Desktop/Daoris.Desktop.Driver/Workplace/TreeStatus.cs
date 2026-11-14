@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A tree's uncommitted paths, its head commit and its branch, from one <c>status --porcelain=v2 --branch</c> where each would take a start of its
-/// own (<c>status --porcelain</c>, <c>rev-parse HEAD^{commit}</c>, <c>symbolic-ref --short -q HEAD</c>). Read-only: the same question
-/// asked again in a flow that reads once is answered from the first.
+/// own. Read-only: the same question asked again in a flow that reads once is answered from the first.
 /// </summary>
 /// <param name="Changed">The paths git lists as changed, unmerged or untracked, as <c>status --porcelain</c> counts them.</param>
 /// <param name="Head">The head commit's id; null on an unborn branch.</param>
@@ -16,8 +15,7 @@ internal sealed record TreeStatus(int Changed, string? Head, string? Branch)
     /// <summary>The tree's status, or null where git could not give it or answered in a shape not understood: the caller asks as before.</summary>
     internal static async Task<TreeStatus?> ReadAsync(string tree, CancellationToken ct)
     {
-        var (code, stdout, _) = await WorkingTree.GitAsync(tree, Ask, ct).ConfigureAwait(false);
-        return code == 0 ? Parse(stdout) : null;
+        return await MachinePorts.Repository.TreeStatusAsync(tree, ct).ConfigureAwait(false) is { } read ? new TreeStatus(read.Changed, read.Head, read.Branch) : null;
     }
 
     /// <summary>What <paramref name="porcelain"/> says; null where it names no head and no branch, as an older git prints none.</summary>

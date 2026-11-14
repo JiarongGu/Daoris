@@ -3,11 +3,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The pool's acts over real git: a slot made and let go, taken by another line with its files, refused for each kind of work it holds, its
-/// lock read by the pool's own rules, the switch made with hooks held and the repository's own hook owed to the files stage, and a line
-/// found in the slot it let go. Each case has a scratch home and repository of its own.
-/// </summary>
+/// <summary>The pool's acts over real git and files: what only the disk or git shows; the rest runs in <c>TreePoolMemoryTests</c>.</summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
@@ -21,37 +17,25 @@ public sealed class TreePoolGitTests : IDisposable
     private async Task<PoolGitFixture> FixtureAsync() => _fixture = await PoolGitFixture.CreateAsync();
 
     [Fact]
-    public async Task A_line_lets_its_slot_go_and_another_line_takes_it_with_nothing_of_the_first_lines_files()
+    public async Task A_line_lets_its_slot_go_and_another_line_takes_it_over_real_files()
     {
         var fixture = await FixtureAsync();
         var pool = fixture.Pool();
         var first = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        Assert.Equal(("s-aaaa0001", KeptStates.Kept), (first.Line, first.State));
         Assert.Equal(LineEndKinds.Output, pool.LastEnd(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-aaaa0001")!.Kind);
         Assert.True(File.Exists(Path.Combine(first.Path, "work.txt")));
 
         var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
 
         Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
-        Assert.Equal("record-s-bbbb0001", taken.Record);
-        Assert.Equal(1, pool.WhereIs(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-bbbb0001")!.Number);
-        Assert.Null(pool.WhereIs(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-aaaa0001"));
         Assert.False(File.Exists(Path.Combine(first.Path, "work.txt")));
         Assert.Equal("daoris/s-bbbb0001", (await GitAsync(first.Path, "branch", "--show-current")).Trim());
-        Assert.Contains("daoris/s-aaaa0001", await fixture.BranchesAsync());
-        Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
         Assert.Equal(PoolLocks.Free, LockReasonAsync(first.Path));
-        Assert.True(TreeFilesRecord.Read(fixture.Home, first.Path)!.Unworked);
     }
 
     [Theory]
-    [InlineData("untracked", SlotJudgement.Changed)]
-    [InlineData("tracked", SlotJudgement.Changed)]
     [InlineData("scratch", SlotJudgement.LinesOwn)]
-    [InlineData("hidden", SlotJudgement.Linked)]
     [InlineData("repository", SlotJudgement.RepositoryInside)]
-    [InlineData("person-lock", SlotJudgement.Locked)]
-    [InlineData("moved-head", SlotJudgement.HeadMoved)]
     [InlineData("half-done", SlotJudgement.HalfDone)]
     public async Task A_slot_holding_work_is_never_taken_and_nothing_is_changed(string work, string code)
     {
@@ -73,25 +57,6 @@ public sealed class TreePoolGitTests : IDisposable
     }
 
     [Fact]
-    public async Task The_pools_own_reasons_and_no_lock_pass_and_a_persons_lock_does_not()
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        var slot = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        Assert.True((await pool.JudgeAsync(fixture.Site, 1)).Clean);
-
-        await GitAsync(slot.Path, "worktree", "unlock", slot.Path);
-        Assert.True((await pool.JudgeAsync(fixture.Site, 1)).Clean);
-
-        await GitAsync(slot.Path, "worktree", "lock", "--reason", "daoris session s-old", slot.Path);
-        Assert.True((await pool.JudgeAsync(fixture.Site, 1)).Clean);
-
-        await GitAsync(slot.Path, "worktree", "unlock", slot.Path);
-        await GitAsync(slot.Path, "worktree", "lock", "--reason", "the person's", slot.Path);
-        Assert.Equal(SlotJudgement.Locked, (await pool.JudgeAsync(fixture.Site, 1)).Code);
-    }
-
-    [Fact]
     public async Task A_sessions_lock_is_put_on_the_slot_and_never_on_the_lines_path()
     {
         var fixture = await FixtureAsync();
@@ -103,19 +68,6 @@ public sealed class TreePoolGitTests : IDisposable
         Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
         Assert.Equal("session-2", SessionLocks.HolderOf(slot.Path));
         Assert.False(Directory.Exists(Path.Combine(fixture.Site.Trees, "s-bbbb0001")));
-    }
-
-    [Fact]
-    public async Task A_visit_holds_a_take_back()
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        Assert.Null(await pool.VisitAsync(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, SlotVisitKinds.Terminal, "terminal-1"));
-
-        var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
-
-        Assert.Contains("terminal visit", taken.Refused);
     }
 
     [Fact]
@@ -163,68 +115,6 @@ public sealed class TreePoolGitTests : IDisposable
         Assert.Equal(PoolLocks.Free, LockReasonAsync(slot.Path));
     }
 
-    [Fact]
-    public async Task A_line_returns_to_its_own_slot_in_place_and_to_another_switched_to_its_branch()
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        var first = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        var tip = (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim();
-
-        var own = await pool.ReturnAsync(new PoolTake(fixture.Site, 1, "quest-1", "s-aaaa0001", tip, true, "main", null, ""));
-        Assert.True(own.Ok, own.Refused ?? own.Stuck);
-        Assert.Equal("s-aaaa0001", own.Slot!.Line);
-        Assert.Equal(tip, (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim());
-
-        await pool.EndAsync(new PoolEnd(fixture.Site, 1, "quest-1", "session-1"));
-        var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
-        Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
-        await pool.EndAsync(new PoolEnd(fixture.Site, 1, "quest-2", "session-2"));
-        await fixture.MadeAsync(pool, 2, "s-cccc0001");
-
-        var back = await pool.ReturnAsync(new PoolTake(fixture.Site, 1, "quest-1", "s-aaaa0001", tip, true, "main", null, ""));
-
-        Assert.True(back.Ok, back.Refused ?? back.Stuck);
-        Assert.Equal(1, pool.WhereIs(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-aaaa0001")!.Number);
-        Assert.Equal(tip, (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim());
-        Assert.True(File.Exists(Path.Combine(first.Path, "work.txt")));
-    }
-
-    [Theory]
-    [InlineData(LineEndKinds.Output)]
-    [InlineData(LineEndKinds.NoOutput)]
-    [InlineData(LineEndKinds.Uncommitted)]
-    [InlineData(LineEndKinds.Held)]
-    public async Task A_lines_end_is_recorded_by_what_the_slot_holds(string kind)
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        var slot = await fixture.MadeAsync(pool, 1, "s-aaaa0001");
-        switch (kind)
-        {
-            case LineEndKinds.Output:
-                await File.WriteAllTextAsync(Path.Combine(slot.Path, "out.txt"), "x\n");
-                await GitAsync(slot.Path, "add", "out.txt");
-                await GitAsync(slot.Path, "commit", "--quiet", "-m", "out");
-                break;
-            case LineEndKinds.Uncommitted:
-                await File.WriteAllTextAsync(Path.Combine(slot.Path, "loose.txt"), "x\n");
-                break;
-            case LineEndKinds.Held:
-                await GitAsync(slot.Path, "switch", "--quiet", "--detach");
-                break;
-        }
-
-        var ended = await pool.EndAsync(new PoolEnd(fixture.Site, 1, "quest-1", "session-1"));
-
-        Assert.True(ended.Ok, ended.Refused ?? ended.Stuck);
-        var end = pool.LastEnd(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-aaaa0001")!;
-        Assert.Equal(kind, end.Kind);
-        Assert.Equal((await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim(), end.Tip);
-        Assert.Equal(PoolLocks.Free, LockReasonAsync(slot.Path));
-        Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
-    }
-
     private static string? LockReasonAsync(string slot)
     {
         var git = GitBranches.GitDirectory(slot)!;
@@ -236,30 +126,13 @@ public sealed class TreePoolGitTests : IDisposable
     {
         switch (work)
         {
-            case "untracked":
-                await File.WriteAllTextAsync(Path.Combine(slot.Path, "loose.txt"), "x\n");
-                break;
-            case "tracked":
-                await File.WriteAllTextAsync(Path.Combine(slot.Path, "README.md"), "edited\n");
-                break;
             case "scratch":
                 Directory.CreateDirectory(Path.Combine(slot.Path, "_fixtures"));
                 await File.WriteAllTextAsync(Path.Combine(slot.Path, "_fixtures", "x.txt"), "x\n");
                 break;
-            case "hidden":
-                await GitAsync(slot.Path, "update-index", "--assume-unchanged", "README.md");
-                break;
             case "repository":
                 Directory.CreateDirectory(Path.Combine(slot.Path, "_fixtures", "inner"));
                 await GitAsync(Path.Combine(slot.Path, "_fixtures", "inner"), "init", "--quiet");
-                break;
-            case "person-lock":
-                await GitAsync(slot.Path, "worktree", "unlock", slot.Path);
-                await GitAsync(slot.Path, "worktree", "lock", "--reason", "the person's", slot.Path);
-                break;
-            case "moved-head":
-                await GitAsync(slot.Path, "switch", "--quiet", "--detach");
-                await GitAsync(slot.Path, "commit", "--quiet", "--allow-empty", "-m", "by hand");
                 break;
             case "half-done":
                 await File.WriteAllTextAsync(Path.Combine(GitBranches.GitDirectory(slot.Path)!, "MERGE_HEAD"), fixture.Start + "\n");

@@ -24,6 +24,8 @@ public sealed record ArchiveOutcome(string Session, ArchiveVerdict Verdict)
 {
     /// <summary>For <see cref="ArchiveVerdict.NeedsYou"/>: <see cref="SessionGroup.NeedsYou"/>.</summary>
     public string? Group { get; init; }
+
+    public string? Ended { get; init; }
 }
 
 /// <summary>An archive's outcomes, and the marks as they now stand.</summary>

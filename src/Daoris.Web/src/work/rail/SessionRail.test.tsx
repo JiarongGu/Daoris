@@ -396,7 +396,7 @@ describe('the session rail', () => {
     });
 
     /**
-     * A running driven session's row offers its acts where its row is, as the one rule offers them;
+     * A running driven session's row offers its acts as the one rule offers them;
      * what only the frame can do (ask to stop it, open a terminal in its tree) goes to the frame's door with the session.
      */
     it('offers a running session its acts on its row, and hands the frame what is the frame’s', async () => {
@@ -410,7 +410,7 @@ describe('the session rail', () => {
       screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
       await user.keyboard('{Enter}');
       expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-        'Stop…', 'Open outputs', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Copy session ID',
+        'Stop…', 'Open outputs', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Pin', 'Copy session ID',
       ]);
       await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
       expect(stop).toHaveBeenCalledWith('s1a2b3c4');
@@ -432,7 +432,7 @@ describe('the session rail', () => {
       screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
       await user.keyboard('{Enter}');
       expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
-        .toEqual(['Open folder', 'Open in its own window', 'Copy session ID']);
+        .toEqual(['Open folder', 'Open in its own window', 'Pin', 'Copy session ID']);
     });
   });
 

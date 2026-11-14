@@ -599,12 +599,14 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var quest = press.Quest.Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var considered = _loop.Look.Latest
-            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Unadopted(config), lastLook: null, cancellationToken, _loop.Home)
-                .ConfigureAwait(false);
-        // The verdict's switch is the library's operation, which `daoris quest retry` acting alone calls too; a
-        // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
-        var decision = QuestRetry.Decide(quest, considered);
+        var service = _loop.Service;
+        if (_loop.Look.Latest is null && service is null) throw NotReady();
+        // The library's operation, which `daoris quest retry` calls too; a refusal (ChoiceCodes) of the last look is read again
+        // over the records, which a stop since holds.
+        var decision = await QuestRetryReading.DecideAsync(
+            quest, _loop.Look.Latest,
+            service is null ? null : token => SessionGroups.VerdictsAsync(service, config, _context.Unadopted(config), lastLook: null, token, _loop.Home),
+            cancellationToken).ConfigureAwait(false);
         _context.Change(decision.Change);
         // The yes to a role policy's ask or bound is one approval beside the line's moves, which the next look reads.
         if (decision.Approve is { } role && !new StaffMoves(_loop.Home).Approve(quest, role))

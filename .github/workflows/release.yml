@@ -252,7 +252,7 @@ jobs:
       # The merge tool's reached gate: it runs the test units a change reaches, read from the checkout's difference against HEAD,
       # so on a clean checkout it reaches nothing and passes. It is declared in daoris.gates.json, so the workflow runs it too.
       - name: Reached checks gate
-        run: node tools/reached-checks.mjs --check
+        run: node tools/reached-checks.mjs --tier fast
 
       # Everything that protects a consumer, in the order a consumer meets it — ending with the devkit's
       # five universal gates over THIS repository (DEVKIT3, SEN1). They ran here as a step of their own
@@ -267,7 +267,10 @@ jobs:
       # (`install-hooks` is the owner's to run). CI gets the structural patterns, and says so rather
       # than discovering it silently.
       - name: Verify gate
-        run: npm run verify
+        run: npm run verify:checks
+
+      - name: CLI and tool unit tests gate
+        run: npm run verify:tests
 
       # The tests of the tools only the parent runs, which verify no longer runs (GATESLIM1).
       - name: Tool tests gate
@@ -310,6 +313,9 @@ jobs:
 
       - name: Memory adapter gate
         run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests --nologo
+
+      - name: SSH keys adapter gate
+        run: dotnet test src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests --filter "FullyQualifiedName~SshKeyFormatsTests|FullyQualifiedName~NativeSshKeyContractTests" --nologo
 
       - name: Service process gate
         run: dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings --nologo

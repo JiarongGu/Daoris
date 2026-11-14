@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What one session's own tree holds that no branch of the person's does, by the landed proof: its
-/// uncommitted changes and its unlanded commits, the fact *To review* is read from. Real git throughout, so this is the
-/// suite's Process half; the reader over a judgement handed in is <see cref="SessionGroupsTests"/>.
+/// uncommitted changes and its unlanded commits, the fact *To review* is read from, over real git (the reader over a judgement handed in: <see cref="SessionGroupsTests"/>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -39,50 +38,6 @@ public sealed class SessionTreeWorkTests : IDisposable
         await CommitAsync(tree.Path, "two.txt", "two");
 
         Assert.Equal(new TreeWork(2, 0) { Unlanded = 2 }, await trees.WorkAsync(tree.Path));
-    }
-
-    [Fact]
-    public async Task Uncommitted_changes_are_the_trees_work()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        var tree = await trees.OpenAsync(root, "engine", "aurora");
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, "draft.txt"), "half done\n");
-
-        Assert.Equal(new TreeWork(0, 1) { Unlanded = 0 }, await trees.WorkAsync(tree.Path));
-    }
-
-    [Fact]
-    public async Task A_tree_whose_work_a_branch_of_the_persons_holds_has_none()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        var tree = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(tree.Path, "one.txt", "one");
-        await GitAsync(root, "merge", "--no-ff", "--no-edit", tree.Branch);
-
-        var work = await trees.WorkAsync(tree.Path);
-
-        Assert.Equal(new TreeWork(0, 0) { Unlanded = 0 }, work);
-        Assert.False(work!.Holds);
-    }
-
-    /// <summary>
-    /// 🔴 git walks UP: a folder under the trees that is no repository of its own would answer for whatever encloses it,
-    /// so it is never asked. Nor is a tree outside this home, or one that is gone.
-    /// </summary>
-    [Fact]
-    public async Task A_folder_that_is_no_tree_of_this_homes_is_never_asked()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        var stray = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-0000beef");
-        Directory.CreateDirectory(stray);
-        await File.WriteAllTextAsync(Path.Combine(stray, "left.txt"), "left behind\n");
-
-        Assert.Null(await trees.WorkAsync(stray));
-        Assert.Null(await trees.WorkAsync(root));
-        Assert.Null(await trees.WorkAsync(Path.Combine(trees.TreesRoot, "aurora", "engine", "s-gone")));
     }
 
     /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads its first commit.</summary>

@@ -10,8 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The root of a unit test process: it chooses the ports the library reads, once, before any test runs, and chooses fakes. The desktop
 /// store's engine is <see cref="MemoryUnitOfWork"/> over the scratch files a test's home holds; the machine is <see cref="Processes"/>,
-/// four places and this test process the one that runs, and its seal <see cref="ScriptedSeal"/>, so the unit tier names no adapter; the
-/// admission of each start is the application's own git policy, which these tests prove.
+/// four places and this test process the one that runs, and its seal <see cref="ScriptedSeal"/>, so the unit tier names no adapter.
 /// </summary>
 internal static class TestPorts
 {
@@ -36,7 +35,11 @@ internal static class TestPorts
         Seal = ScriptedSeal.Port,
         Git = Git,
         SshKeys = SshKeys.Convert,
+        Repository = Repository,
     });
+
+    /// <summary>The repository every test reaches unless its flow chose a memory one: the driver's own over the git a flow reaches.</summary>
+    internal static FlowRepository Repository { get; } = new(GitRepository.Shared);
 
     /// <summary>The machine's host over the scripted places, whose starts are made by the stand-in a flow chose (<see cref="ProcessStarts.Within"/>) and else by the runtime.</summary>
     internal static IProcessHost Host { get; } = new Daoris.Adapters.Machine.MachineProcessHost(

@@ -125,8 +125,8 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         var tracked = changed.Where(each => each.Value != "??").Select(each => each.Key).ToList();
         if (tracked.Count > 0)
         {
-            var (code, _, error) = WorkingTree.GitAsync(tree, ["checkout", "HEAD", "--", .. tracked], CancellationToken.None).GetAwaiter().GetResult();
-            if (code != 0) throw new DriverException($"git could not put back what an install changed: {error.Trim()}");
+            var restored = MachinePorts.Repository.RestoreAsync(tree, tracked, CancellationToken.None).GetAwaiter().GetResult();
+            if (!restored.Ok) throw new DriverException($"git could not put back what an install changed: {restored.Error}");
         }
 
         foreach (var path in changed.Where(each => each.Value == "??").Select(each => Path.Combine(tree, each.Key)))
@@ -413,7 +413,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         using var visitable = CancellationTokenSource.CreateLinkedTokenSource(ct, _visited);
         try
         {
-            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", record.HookFrom ?? Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
+            await MachinePorts.Repository.RunHookAsync(tree, "post-checkout", [record.HookFrom ?? Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

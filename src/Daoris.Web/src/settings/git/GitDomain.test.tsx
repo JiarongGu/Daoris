@@ -25,7 +25,7 @@ const answers: Record<string, (payload: Payload) => unknown> = {
     ? { identity: 'gi-00000000000d', label: payload.label, host: payload.host, way: 'ssh', publicKey: 'ssh-ed25519 AAAAExample daoris' }
     : { identity: payload?.identity },
   GIT_USE: (payload) => ({ scope: payload?.scope }),
-  TOOLS_PICK: () => ({ can: true, file: 'C:/Users/me/.ssh/id_ed25519' }),
+  TOOLS_PICK: () => ({ can: true, file: 'X:/keys/id_ed25519' }),
 };
 
 const calls = (type: string) => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === type);
@@ -80,7 +80,7 @@ describe('the git domain', () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose the key file', kind: 'key' }, timeoutMs: Infinity }));
-    expect(await screen.findByDisplayValue('C:/Users/me/.ssh/id_ed25519')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('X:/keys/id_ed25519')).toBeInTheDocument();
   });
 
   it('hands an import passphrase to the local bridge only after confirmation', async () => {

@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What a run's <c>rebase</c> nodes read in the pass: the tip of each target their <c>onto</c> names, read once from the run's repository, which
-/// the step is bound to (<see cref="WireTargets"/>); and what its door wrote of each attempt (<see cref="RebaseRecords"/>), its reading's outcome.
-/// </summary>
+/// <summary>What a run's <c>rebase</c> nodes read in the pass: the tip of each target their <c>onto</c> names (<see cref="WireTargets"/>), and what its door wrote of each attempt (<see cref="RebaseRecords"/>).</summary>
 internal static class RebaseReads
 {
     public static async Task<NodeGitReads> ReadAsync(GovernedUnit governed, string home, NodeGitReads reads, CancellationToken ct)
@@ -31,11 +28,10 @@ internal static class RebaseReads
     {
         var tips = new Dictionary<string, string>(StringComparer.Ordinal);
         if (refs.Count == 0 || root.Length == 0 || !Directory.Exists(root)) return tips;
-        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)%09%(objectname)", .. refs], ct).ConfigureAwait(false);
-        if (code != 0) return tips;
-        foreach (var parts in listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(line => line.Split('\t')))
+        if (await MachinePorts.Repository.RefsAsync(root, refs, null, null, ct).ConfigureAwait(false) is not { } held) return tips;
+        foreach (var each in held)
         {
-            if (parts.Length == 2 && refs.Contains(parts[0], StringComparer.Ordinal)) tips[parts[0]] = parts[1];
+            if (refs.Contains(each.Name, StringComparer.Ordinal)) tips[each.Name] = each.Commit;
         }
 
         return tips;

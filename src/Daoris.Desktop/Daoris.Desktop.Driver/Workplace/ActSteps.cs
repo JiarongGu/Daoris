@@ -271,12 +271,9 @@ internal static class ActSteps
             {
                 var moves = plan["refs"]!.AsArray().Select(each => (Ref: Text(each!, "ref")!, Before: Text(each!, "before"), After: Text(each!, "after"))).ToList();
                 if (moves.Count == 0) return ActOutcomes.Done;
-                var (code, listed, _) = await WorkingTree.GitAsync(
-                    root, ["for-each-ref", "--format=%(refname)%09%(objectname)", "--", .. moves.Select(move => move.Ref)], environment: null, GitBounds.Question, ct)
-                    .ConfigureAwait(false);
-                if (code != 0) return null;
-                var stands = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(row => row.TrimEnd('\r').Split('\t'))
-                    .Where(parts => parts.Length == 2).ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal);
+                var listed = await MachinePorts.Repository.RefsAsync(root, [.. moves.Select(move => move.Ref)], null, null, ct).ConfigureAwait(false);
+                if (listed is null) return null;
+                var stands = listed.ToDictionary(each => each.Name, each => each.Commit, StringComparer.Ordinal);
                 // The list leaves a broken ref out, so where git did not make the transaction a ref it leaves out is gone only on git's own word.
                 if (step.ExitCode is not 0)
                 {
@@ -388,25 +385,32 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
     /// let go; then <paramref name="input"/> written and its exit awaited until the step's deadline. Past it, the job's processes are ended and
     /// awaited empty, else said unended. Counted at the one seam (<see cref="GitLaunch"/>).
     /// </summary>
-    public Task<Ran> HeldGitAsync(string cwd, int ordinal, IReadOnlyList<string> arguments, string? input, IReadOnlyDictionary<string, string>? environment) =>
-        GitLaunch.LaunchAsync(GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Held, async () =>
+    public async Task<Ran> HeldGitAsync(string cwd, int ordinal, IReadOnlyList<string> arguments, string? input, IReadOnlyDictionary<string, string>? environment)
+    {
+        var answer = await MachinePorts.Repository.RunHeldAsync(new GitHeldRun(cwd, ordinal, arguments, input, environment), StartAsync).ConfigureAwait(false);
+        return new Ran(answer.Exit, answer.Stdout, answer.Stderr, answer.Unended, answer.Said);
+    }
+
+    private Task<GitHeldAnswer> StartAsync(GitHeldRun run) =>
+        GitLaunch.LaunchAsync(GitLaunch.KindOf(run.Arguments), run.Arguments, GitLaunch.Budget, GitRunner.Held, async () =>
         {
-            var (info, refusal) = WorkingTree.GitStart(cwd, arguments, journal.Home);
-            if (info is null) return new Ran(null, "", "", false, $"git could not be started ({refusal}), so the step did not run");
+            var (info, refusal) = WorkingTree.GitStart(run.Folder, run.Arguments, journal.Home);
+            if (info is null) return new GitHeldAnswer(null, "", "", false, $"git could not be started ({refusal}), so the step did not run");
             info.RedirectStandardInput = true;
-            if (environment is not null)
+            if (run.Environment is not null)
             {
-                foreach (var (name, value) in environment) info.Environment[name] = value;
+                foreach (var (name, value) in run.Environment) info.Environment[name] = value;
             }
 
-            var ask = GitStartAsks.For(info, arguments, GitRunner.Held, TimeSpan.Zero, shares: false, input);
+            var ask = GitStartAsks.For(info, run.Arguments, GitRunner.Held, TimeSpan.Zero, shares: false, run.Input);
             try
             {
-                return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
+                var ran = await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, run.Ordinal, run.Arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
+                return new GitHeldAnswer(ran.Exit, ran.Stdout, ran.Stderr, ran.Unended, ran.Said);
             }
             catch (GitUnplacedException unplaced)
             {
-                return new Ran(null, "", "", false, $"{unplaced.Message}, so the step did not run");
+                return new GitHeldAnswer(null, "", "", false, $"{unplaced.Message}, so the step did not run");
             }
         });
 

@@ -2,10 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What an install changed in its tree, from git's status read before and after: <see cref="Tracked"/>, each tracked file it changed
-/// or path git does not ignore that it wrote, and <see cref="Beside"/>, each ignored path new outside its rule's paths.
-/// </summary>
+/// <summary>What an install changed in its tree, from git's status before and after: <see cref="Tracked"/> and <see cref="Beside"/>.</summary>
 internal sealed record FillChanges(IReadOnlyList<string> Tracked, IReadOnlyList<string> Beside);
 
 /// <summary>
@@ -15,28 +12,7 @@ internal sealed record FillChanges(IReadOnlyList<string> Tracked, IReadOnlyList<
 /// </summary>
 internal static class FillJudgement
 {
-    /// <summary>Every path git's status names in the tree, ignored ones at their tops, with its two-letter state.</summary>
-    internal static async Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct)
-    {
-        string[] ask = ignored
-            ? ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching"]
-            : ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
-        var (code, said, error) = await WorkingTree.GitAsync(tree, ask, ct).ConfigureAwait(false);
-        if (code != 0) throw new DriverException($"git could not read the tree's status: {error.Trim()}");
-        var paths = new Dictionary<string, string>(StringComparer.Ordinal);
-        var entries = said.Split('\0', StringSplitOptions.RemoveEmptyEntries);
-        for (var at = 0; at < entries.Length; at++)
-        {
-            var entry = entries[at];
-            if (entry.Length < 4) continue;
-            var state = entry[..2];
-            paths[entry[3..]] = state;
-            // A rename or a copy names its source in the entry after it.
-            if (state[0] is 'R' or 'C') at++;
-        }
-
-        return paths;
-    }
+    internal static Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct) => MachinePorts.Repository.StatusAsync(tree, ignored, ct);
 
     internal static FillChanges Changes(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after, StoreDependency dependency)
     {

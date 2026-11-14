@@ -466,6 +466,8 @@ export type PlanSeams = {
   prune: (root: string, hold: string[]) => void;
   /** The line that says the full set is still owed when `skipped` gates were left out, or null. */
   owed: (skipped: number) => string | null;
+  /** The lines that say where the heavy tier stands on main: a run going, a red it left. */
+  heavy: (root: string) => string[];
 };
 
 /** `--plan <branch>…`: what a merge of the branches would run, and what it would prune; nothing is merged. */
@@ -473,6 +475,7 @@ export function planOnly(root: string, options: Options, seams: PlanSeams): numb
   const plan = readPlan(root);
   const reachedAny = new Set<string>();
   console.log(`plan (nothing is merged; the current branch is ${treeState(root).branch || 'a detached HEAD'}):`);
+  for (const line of seams.heavy(root)) console.log(line);
   options.branches.forEach((branch, i) => {
     requireBranch(root, branch);
     const commits = parseCommits(git(root, ['log', COMMIT_FORMAT, `HEAD..${branch}`]).out);

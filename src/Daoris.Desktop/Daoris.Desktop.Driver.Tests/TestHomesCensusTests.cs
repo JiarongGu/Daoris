@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The repository keeps no work in the OS temp folder: a test's home or scratch tree lies under <c>_fixtures/</c>, rooted by
 /// <see cref="TestHomes"/>. This census reads both desktop test projects' sources and fails a file that asks the machine for its
-/// temporary folder or a temporary file (the .NET calls <c>GetTempPath</c> and <c>GetTempFileName</c>) unless the file is named below
-/// with the reason it must. Comments are not read.
+/// temporary folder or file (<c>GetTempPath</c>, <c>GetTempFileName</c>) unless named below with the reason. Comments are not read.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class TestHomesCensusTests
@@ -21,7 +20,6 @@ public sealed class TestHomesCensusTests
     private static readonly Dictionary<string, string> Kept = new(StringComparer.Ordinal)
     {
         ["Agents/ScratchSignInsTests.cs"] = "pins the product's own rule that the OS temp folder is scratch to a sign-in, from paths it never creates",
-        ["Workplace/SessionTreesTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Workplace/WorkingTreeProvenanceTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Loop/BackgroundWaitJudgementTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Service/ServiceHostLocatorTests.cs"] = "needs a folder no workspace lies above, which nothing under the checkout's _fixtures is: the locator walks up to the checkout's manifest",

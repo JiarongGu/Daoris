@@ -1,3 +1,5 @@
+using Daoris.Ports.Repositories;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -17,22 +19,14 @@ internal static class StepRefs
     public static string EditsOf(string run, string node) => $"{Prefix}{run}/{node}/edits";
 
     /// <summary>The attempt's commit kept on its ref in one transaction, made only where the ref is absent.</summary>
-    public static Task<RefRun> KeepAsync(string root, string run, string node, int attempt, string commit, CancellationToken ct) =>
+    public static Task<GitRefRun> KeepAsync(string root, string run, string node, int attempt, string commit, CancellationToken ct) =>
         new RefTransaction().Create(Of(run, node, attempt), commit).RunAsync(root, ct);
 
-    /// <summary>
-    /// Every step ref of <paramref name="run"/> with its commit, by name; read from git, so a restart finds them as they were. Null where git
-    /// did not answer, which releases nothing.
-    /// </summary>
+    /// <summary>Every step ref of <paramref name="run"/> with its commit, by name, as a restart finds them; null where git did not answer, which releases nothing.</summary>
     public static async Task<IReadOnlyList<(string Ref, string Commit)>?> OfRunAsync(string root, string run, CancellationToken ct)
     {
-        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)%09%(objectname)", $"{Prefix}{run}/"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        return [.. listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(line => line.Split('\t'))
-            .Where(parts => parts.Length == 2)
-            .Select(parts => (parts[0], parts[1]))
-            .Order()];
+        if (await MachinePorts.Repository.RefsAsync(root, [$"{Prefix}{run}/"], null, null, ct).ConfigureAwait(false) is not { } refs) return null;
+        return [.. refs.Select(each => (each.Name, each.Commit)).Order()];
     }
 
     /// <summary>Whether <paramref name="record"/>'s run is at its settled end: ended, with no attempt unsettled or waiting on a retry.</summary>
@@ -40,10 +34,10 @@ internal static class StepRefs
         record.Ended is not null && record.Attempts.All(attempt => attempt.State == AttemptStates.Settled && !record.RetryPending(attempt));
 
     /// <summary>Every step ref of <paramref name="run"/> deleted in one transaction, each at the commit it holds; done where it holds none.</summary>
-    public static async Task<RefRun> ReleaseAsync(string root, string run, CancellationToken ct)
+    public static async Task<GitRefRun> ReleaseAsync(string root, string run, CancellationToken ct)
     {
-        if (await OfRunAsync(root, run, ct).ConfigureAwait(false) is not { } held) return new RefRun(false, "the run's step refs are unread");
-        if (held.Count == 0) return new RefRun(true, "no step refs");
+        if (await OfRunAsync(root, run, ct).ConfigureAwait(false) is not { } held) return new GitRefRun(false, "the run's step refs are unread");
+        if (held.Count == 0) return new GitRefRun(true, "no step refs");
         var release = new RefTransaction();
         foreach (var (reference, commit) in held) release.Delete(reference, commit);
         return await release.RunAsync(root, ct).ConfigureAwait(false);

@@ -143,6 +143,24 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.True(service.Interrupted("q1"));
     }
 
+    /// <summary>Past the grace an unmarked `queued` record is the sweep's; a young one, or one a live driver marks, is left.</summary>
+    [Fact]
+    public async Task The_sweep_ends_a_queued_record_no_driver_ever_marked_once_it_is_old()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        service.Seed("old", "queued", updated: DateTimeOffset.UtcNow.AddMinutes(-10));
+        service.Seed("young", "queued", updated: DateTimeOffset.UtcNow.AddSeconds(-5));
+        service.Seed("held", "queued", updated: DateTimeOffset.UtcNow.AddMinutes(-10));
+        new SessionProcesses(Markers).MarkOpening("held");
+
+        using var client = new ServiceClient(service.Url, null);
+        var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers));
+
+        Assert.Equal(["old"], ended.Select(e => e.Id));
+        Assert.Equal(("stopped", "queued", "queued"), (service.State("old"), service.State("young"), service.State("held")));
+        Assert.True(service.Interrupted("old"));
+    }
+
     /// <summary>
     /// An opener's mark is no running process to anything but the sweep's judgement of a start (a word, a stop, the
     /// history's clearing read none yet), and the spawn's own marker replaces it.
@@ -344,11 +362,12 @@ public sealed class OrphanedSessionTests : IDisposable
             return new StandInService(listener, url, root) { WriteDelay = writeDelay, Refuses = refuses };
         }
 
-        public void Seed(string id, string state, string? tree = null, string? baseCommit = null)
+        public void Seed(string id, string state, string? tree = null, string? baseCommit = null, DateTimeOffset? updated = null)
         {
             lock (_sessions)
             {
                 var session = new JsonObject { ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = "chat" };
+                if (updated is { } at) session["updated"] = at.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
                 if (tree is not null) session["tree"] = tree;
                 if (baseCommit is not null) session["baseCommit"] = baseCommit;
                 _sessions.Add(session);

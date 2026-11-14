@@ -4,10 +4,8 @@ using static Daoris.Driver.TreeLeftovers;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session tree's removal: only a tree under the
-/// trees home, unforced only behind the clean-up's proof, its branch deleted only while it is the commit judged. Over the trees'
-/// context, the layout's answer of a tree's branch, the content proof's keep and delete, and the squash's record. The tidy, the
-/// landing's tidy and abandon's discard take it; the front keeps its public call.
+/// A session tree's removal: only a tree under the trees home, unforced only behind the clean-up's proof, its branch
+/// deleted only while it is the commit judged. The tidy, the landing's tidy and abandon's discard take it.
 /// </summary>
 internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, ContentHolds content, TreeSquashes squashes)
 {
@@ -43,11 +41,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"there is no tree at {path}.");
         }
 
-        // The main root, from git itself: the common dir is the main repository's .git, wherever the
-        // registered root is — nothing here guesses a layout it does not own.
-        // With its branch, in one start, and the working root git reports for the tree: read
-        // before anything is written, the session lock a forced removal lets go of below included, since a tree git binds to
-        // another checkout stays, said, forced or not.
+        // The main root, from git itself: the common dir is the main repository's .git, wherever the registered root is.
+        // Read with the branch and the working root before anything is written, the session lock a forced removal lets go of
+        // below included, since a tree git binds to another checkout stays, said, forced or not.
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code == 0 && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
@@ -143,16 +139,14 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             {
                 // The commit judged, read once: every question below is asked of it, and the branch goes only while
                 // it is still that commit.
-                var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
-                    .ConfigureAwait(false);
-                if (tipCode != 0)
+                judged = await MachinePorts.Repository.CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false);
+                if (judged is null)
                 {
                     return new(false,
-                        $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(tipErr)} "
+                        $"Daoris cannot tell whether the work on `{branch}` is landed: git names no commit at HEAD. "
                         + "The tree stays; say it again with --force to discard it.");
                 }
 
-                judged = tipOut.Trim();
                 var (workspace, repository) = context.OwnerOf(full);
                 var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
@@ -264,17 +258,14 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
         // without them git let go of the tree, then failed deleting its files (2026-09-28).
-        var removeArgs = force
-            ? new[] { "worktree", "remove", "--force", full }
-            : ["worktree", "remove", full];
-        var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, removeArgs, ct).ConfigureAwait(false);
+        var removed = await MachinePorts.Repository.RemoveTreeAsync(root, full, force, ct).ConfigureAwait(false);
         string? left = null;
-        if (removeCode != 0)
+        if (!removed.Ok)
         {
             // Git lets go of a tree before its folder, and a folder something holds open stays (the first real
             // post-merge run): then the tree is gone and only its folder is left, which is said plainly.
             var (letGo, why) = await LetGoAsync(root, full, ct).ConfigureAwait(false);
-            if (!letGo) return await KeptAsync($"git would not remove the tree: {FirstLine(removeErr)}").ConfigureAwait(false);
+            if (!letGo) return await KeptAsync($"git would not remove the tree: {FirstLine(removed.Error)}").ConfigureAwait(false);
 
             left = why;
         }

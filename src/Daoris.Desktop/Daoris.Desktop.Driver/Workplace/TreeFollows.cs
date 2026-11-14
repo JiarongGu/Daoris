@@ -58,13 +58,11 @@ internal sealed class TreeFollows(TreeContext context)
     }
 
     /// <summary>The commits <see cref="UnlandedAsync"/> counts, one line each, as git lists them.</summary>
-    internal static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
+    internal static async Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
         string cwd, string revision, CancellationToken ct, string? except = null) =>
-        WorkingTree.GitAsync(cwd,
-            except is null
-                ? ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"]
-                : ["log", "--oneline", revision, "--not", "--exclude=daoris/*", $"--exclude={except}", "--branches", "--exclude=*/daoris/*", "--remotes"],
-            ct);
+        await MachinePorts.Repository.UnlandedAsync(cwd, revision, except, ct).ConfigureAwait(false) is { } lines
+            ? (0, string.Join('\n', lines), "")
+            : (128, "", "git could not list the commits");
 
     /// <summary>
     /// The branch a session tree is on now, for whoever names it: the tree's own where its agent moved it, the ledger's memory of
@@ -95,7 +93,6 @@ internal sealed class TreeFollows(TreeContext context)
     /// </param>
     internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct, string? root = null, RefSnapshot? refs = null)
     {
-        // Both places of the trees: a tree opened before the home's layout moved stays at its first place.
         var folders = context.TreesRoots.Select(trees => Path.Combine(trees, workspace, repository)).Where(Directory.Exists).ToList();
         if (folders.Count == 0) return;
         var listed = root is null || refs is null ? null : await TreeWorktrees.EntriesAsync(root, ct, refs).ConfigureAwait(false);
@@ -113,7 +110,6 @@ internal sealed class TreeFollows(TreeContext context)
                 string? now;
                 try
                 {
-                    // Listed, its branch is the list's (none where detached), as its own HEAD names it.
                     now = listed?.FirstOrDefault(each => SamePath(each.Path, tree)) is { } listedTree
                         ? listedTree.Branch
                         : await WorkingTree.BranchAsync(tree, ct).ConfigureAwait(false);
@@ -140,7 +136,7 @@ internal sealed class TreeFollows(TreeContext context)
     /// The branch a session branch's tree is on where the tree moved off it: git lists a tree at that folder, on a
     /// branch other than this one. Null where the tree is on this branch, detached, or not listed.
     /// </summary>
-    internal string? MovedOnTo(IReadOnlyList<WorktreeEntry> entries, string workspace, string repository, string branch)
+    internal string? MovedOnTo(IReadOnlyList<GitWorktree> entries, string workspace, string repository, string branch)
     {
         if (!branch.StartsWith(SessionPrefix, StringComparison.Ordinal)) return null;
         var folder = context.TreeAt(workspace, repository, branch[SessionPrefix.Length..]);

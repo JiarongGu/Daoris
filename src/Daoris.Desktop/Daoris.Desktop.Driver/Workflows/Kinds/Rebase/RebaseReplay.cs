@@ -138,7 +138,7 @@ internal sealed class RebaseReplay(ReplaySettles settles)
     }
 
     private static async Task<bool> AncestorAsync(string root, string ancestor, string of, CancellationToken ct) =>
-        (await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", ancestor, of], ct).ConfigureAwait(false)).Code == 0;
+        await MachinePorts.Repository.IsAncestorAsync(root, ancestor, of, ct).ConfigureAwait(false) == true;
 
     private static async Task<string> SubjectAsync(string root, string commit, CancellationToken ct)
     {

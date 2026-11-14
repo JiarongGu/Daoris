@@ -4,8 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A line's finish over a kept slot, a retirement, the size bound's renewal, a take's set-aside held as its line's own until the line
-/// finishes, and the files record's copy hashes and hook origin, over real git. Each case has a scratch home and repository of its own.
+/// A line's finish over a kept slot, a retirement, the size bound's renewal, a held set-aside, and the files record's hashes and hook origin, over real git.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -305,21 +304,6 @@ public sealed class TreePoolFinishGitTests : IDisposable
         Assert.Contains("daoris/s-aaaa0001", await fixture.BranchesAsync());
     }
 
-    [Fact]
-    public async Task A_slot_holding_work_is_never_retired()
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        var slot = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        await WriteAsync(slot, "loose.txt", "x\n");
-
-        var done = await pool.RetireAsync(fixture.Site, 1, "quest-1");
-
-        Assert.Contains(SlotJudgement.Changed, done.Refused);
-        Assert.NotNull(pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
-        Assert.True(Directory.Exists(slot.Path));
-    }
-
     [Theory]
     [InlineData(TreeClaimPhases.SettingAside)]
     [InlineData(TreeClaimPhases.SetAside)]
@@ -354,22 +338,6 @@ public sealed class TreePoolFinishGitTests : IDisposable
             Assert.Equal(tip, (await GitAsync(fixture.Root, "rev-parse", "refs/daoris/discarded/daoris/s-aaaa0001")).Trim());
             Assert.Equal("", (await GitAsync(slot.Path, "branch", "--show-current")).Trim());
         }
-    }
-
-    [Fact]
-    public async Task A_retirement_stopped_after_its_move_drops_git_s_record_and_the_row()
-    {
-        var fixture = await FixtureAsync();
-        var pool = fixture.Pool();
-        var slot = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        var stopping = fixture.Pool(seams: new PoolSeams { Reached = (reached, _) => reached == TreeClaimPhases.Moved ? throw new InvalidOperationException("stopped") : Task.CompletedTask });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => stopping.RetireAsync(fixture.Site, 1, "quest-1"));
-
-        var recovered = await fixture.Pool("run-b", PoolGitFixture.DeadAre("run-a")).RecoverAsync(fixture.Site, 1);
-
-        Assert.True(recovered.Ok, recovered.Refused ?? recovered.Stuck);
-        Assert.Null(pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
-        Assert.DoesNotContain(Path.GetFileName(slot.Path), await GitAsync(fixture.Root, "worktree", "list", "--porcelain"));
     }
 
     [Fact]

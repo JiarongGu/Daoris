@@ -14,18 +14,19 @@ export type LeftProcess = { pid: number; created: string; stopped: boolean };
 export type GateRecord = {
   name: string; verdict: string; ms: number; replayed: boolean; mainRed: boolean; abnormal: boolean; slowest: Slow[]; over: boolean; left: LeftProcess[];
   flakes?: string[];
-  classes?: { ran: number; replayed: number; flaked: number; mainRed: number; red: number };
+  classes?: { ran: number; replayed: number; flaked: number; mainRed: number; red: number; deferred: number };
 };
 export type MainRedRecord = { gate: string; unit: string; key: string };
 export type MergeRecord = {
   schema: 1; branch: string; at: string; ms: number; wallMs?: number; flakes?: number; attempt: number; firstPass: boolean; passed: boolean;
   gates: GateRecord[]; mainReds: MainRedRecord[]; overBudget: { gates: string[]; merge: boolean };
+  heavy?: { deferred: string[] };
 };
 
 const passes = (gate: GateRecord): boolean => gate.verdict === 'PASS' || gate.verdict === 'FLAKE' || (gate.verdict === 'FAIL' && gate.mainRed);
 
-export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous }: {
-  branch: string; at: string; ms: number; wallMs: number; gates: GateRecord[]; mainReds: MainRedRecord[]; previous: MergeRecord[];
+export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous, deferred = [] }: {
+  branch: string; at: string; ms: number; wallMs: number; gates: GateRecord[]; mainReds: MainRedRecord[]; previous: MergeRecord[]; deferred?: string[];
 }): MergeRecord {
   const attempt = previous.filter((each) => each.branch === branch).length + 1;
   const passed = gates.every(passes);
@@ -33,7 +34,7 @@ export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous 
     schema: 1, branch, at, ms, wallMs, flakes: gates.reduce((n, gate) => n + (gate.flakes?.length ?? 0), 0), attempt, passed,
     firstPass: attempt === 1 && passed,
     gates: gates.map((gate) => ({ ...gate, over: gate.ms > GATE_BUDGET_MS })),
-    mainReds, overBudget: overBudget(gates, ms),
+    mainReds, overBudget: overBudget(gates, ms), ...(deferred.length ? { heavy: { deferred } } : {}),
   };
 }
 

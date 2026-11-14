@@ -4,9 +4,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while
-/// a session ran, and where in the repository's history this checkout stands. Asked
-/// of git itself, because git's answer is the one that matters.
+/// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while a session ran, and where in the
+/// repository's history this checkout stands, asked of git itself.
 /// </summary>
 /// <remarks>
 /// <para>A session spawns only onto a clean tree: uncommitted changes are somebody's work in
@@ -50,17 +49,8 @@ public static class WorkingTree
             branch is "" or "HEAD" ? "(detached)" : branch);
     }
 
-    /// <summary>
-    /// The branch this checkout stands on, by its short name: what the composer's tree chip says. Null where HEAD is
-    /// detached, which is no branch at all; a branch with no commit yet answers its name. A git that fails is thrown, because a
-    /// tree git cannot read has no head to name, and "detached" would be a claim about it.
-    /// </summary>
-    public static async Task<string?> BranchAsync(string root, CancellationToken ct = default)
-    {
-        // `-q` makes a detached HEAD exit 1 with nothing said, which is told apart from a real failure by its silence.
-        var (code, stdout, stderr) = await GitAsync(root, BranchAsk, ct).ConfigureAwait(false);
-        return ReviewChoices.Branch(code, stdout, stderr);
-    }
+    /// <summary>The branch this checkout stands on, by its short name; null where HEAD is detached; a tree git cannot read is thrown.</summary>
+    public static Task<string?> BranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.BranchAsync(root, ct);
 
     /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph.</summary>
     internal static readonly string[] BranchAsk = ["symbolic-ref", "--short", "-q", "HEAD"];
@@ -68,69 +58,8 @@ public static class WorkingTree
     /// <summary><see cref="DefaultBranchAsync"/>'s first question, origin's <c>HEAD</c>: G1, in Review's graph.</summary>
     internal static readonly string[] OriginHeadAsk = ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
-    /// <summary>
-    /// Which line this repository treats as canonical, as far as this checkout knows.
-    /// </summary>
-    /// <remarks>
-    /// <para>Asked of the remote's own HEAD first, which is what a clone records and therefore the
-    /// repository's own answer rather than this machine's guess. A checkout made with
-    /// `git remote add` has no such ref, so the conventional names are tried in turn.</para>
-    ///
-    /// <para>Null when none of them exists — and null is PERMISSIVE at the deployment: a repository
-    /// that never said which line is canonical has not asked for its branches to be judged, and
-    /// refusing every feed from it would silence a real repository over a missing ref.</para>
-    /// </remarks>
-    public static async Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default)
-    {
-        var (code, stdout) = OriginHeadFile(root) ?? await OriginHeadGitAsync(root, ct).ConfigureAwait(false);
-        if (ReviewChoices.Guess(code, stdout, null, null) is { } pointed) return pointed;
-
-        // The order is ReviewChoices.Guess's, which Review's graph asks all three together and chooses by.
-        int? main = null, master = null;
-        foreach (var candidate in ReviewChoices.Conventional)
-        {
-            // Spelled as every read of a branch's commit is, so one ref is one command wherever it is asked.
-            var (exists, _, _) = await GitAsync(root, ReviewChoices.ConventionalAsk(candidate), ct).ConfigureAwait(false);
-            if (candidate == "main") main = exists;
-            else master = exists;
-            if (ReviewChoices.Guess(code, stdout, main, master) is { } guessed) return guessed;
-        }
-
-        return null;
-    }
-
-    private static async Task<(int Code, string Stdout)> OriginHeadGitAsync(string root, CancellationToken ct)
-    {
-        var (code, stdout, _) = await GitAsync(root, OriginHeadAsk, ct).ConfigureAwait(false);
-        return (code, stdout);
-    }
-
-    /// <summary>
-    /// <c>symbolic-ref --short refs/remotes/origin/HEAD</c> as git's own files answer it, no process: <c>origin/main</c> where the ref is a
-    /// symbolic one, git's failure where the repository holds no such ref; null where the files cannot say (a reftable repository, a ref
-    /// that is no symbolic one), and git is asked.
-    /// </summary>
-    private static (int Code, string Stdout)? OriginHeadFile(string root)
-    {
-        const string Remotes = "refs/remotes/";
-        const string Symbolic = "ref: " + Remotes;
-        if (RefFiles.CommonDirOf(root) is not { } common) return null;
-        try
-        {
-            var file = Path.Combine(common, "refs", "remotes", "origin", "HEAD");
-            if (File.Exists(file))
-            {
-                var text = File.ReadAllText(file).Trim();
-                return text.StartsWith(Symbolic, StringComparison.Ordinal) ? (0, text[Symbolic.Length..] + "\n") : null;
-            }
-
-            return RefFiles.Absent(common, "refs/remotes/origin/HEAD") ? (128, "") : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
-        {
-            return null;
-        }
-    }
+    /// <summary>Which line this repository treats as canonical, as far as this checkout knows (<see cref="GitDefaultBranch"/>).</summary>
+    public static Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.DefaultBranchAsync(root, ct);
 
     /// <summary>
     /// How <paramref name="head"/> stands to <paramref name="held"/> — the question a deployment
@@ -226,23 +155,10 @@ public static class WorkingTree
     }
 
     /// <summary>Where HEAD is now — the "before" a session's evidence is measured from.</summary>
-    public static async Task<string?> HeadAsync(string root, CancellationToken ct = default)
-    {
-        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        return code == 0 ? stdout.Trim() : null;
-    }
+    public static Task<string?> HeadAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.HeadAsync(root, ct);
 
-    /// <summary>
-    /// The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names no commit there
-    /// (a press's <c>branch</c> ground, read at its ask and again at its Confirm).
-    /// </summary>
-    public static async Task<string?> TipAsync(string root, string name, CancellationToken ct = default)
-    {
-        // A name git would read as an option names no commit here.
-        if (name.Length == 0 || name.StartsWith('-')) return null;
-        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null;
-    }
+    /// <summary>The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names none.</summary>
+    public static Task<string?> TipAsync(string root, string name, CancellationToken ct = default) => MachinePorts.Repository.CommitOfAsync(root, name, ct);
 
     /// <summary>
     /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (a plan's branches bound by their full
@@ -426,7 +342,9 @@ public static class WorkingTree
     /// to BE this path also rejects a subdirectory, which the driver never passes and which would
     /// silently narrow the answer if it ever did.
     /// </remarks>
-    internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
+    internal static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct) =>
+        !string.IsNullOrWhiteSpace(root) && Directory.Exists(root)
+        && await MachinePorts.Repository.TopOfAsync(root, ct).ConfigureAwait(false) is { } top && SamePath(top, root);
 
     /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
     /// <param name="git">How git is read: the review's seam, so its tests count this start with the range's, and
@@ -446,15 +364,6 @@ public static class WorkingTree
             },
             ct).ConfigureAwait(false);
         return code == 0 && SamePath(stdout.ToString().Trim(), root);
-    }
-
-    /// <summary>git's whole answer handed on at once: how every caller but the review asks, through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> as before.</summary>
-    private static async Task<int> WholeAsync(
-        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
-    {
-        var (code, stdout, _) = await GitAsync(root, arguments, ct).ConfigureAwait(false);
-        take(stdout.AsMemory());
-        return code;
     }
 
     /// <summary>

@@ -178,7 +178,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// A tree git lists whose opening is cut off: a session tree's folder, locked by an opening no running process holds,
     /// on its own branch or none yet, whose branch holds no commit another ref does not. Null where it is any other tree.
     /// </summary>
-    private static async Task<Found?> OpeningAsync(string root, string folder, string name, WorktreeEntry entry, CancellationToken ct)
+    private static async Task<Found?> OpeningAsync(string root, string folder, string name, GitWorktree entry, CancellationToken ct)
     {
         if (!entry.Locked || !name.StartsWith("s-", StringComparison.Ordinal) || !TreeOpenings.CutOff(entry.LockReason, TreeOpenings.Running))
         {

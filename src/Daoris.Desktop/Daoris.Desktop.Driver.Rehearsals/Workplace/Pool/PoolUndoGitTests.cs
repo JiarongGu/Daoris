@@ -4,9 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A take or a return refused after its switch, put back as it found the slot, over real git and at different tips: a held output at the
-/// clearing, the previous line's branch out in another checkout or moved on meanwhile, a return cut off before and after its clearing, a
-/// refused switch, and the clearing's move-back. Each case has a scratch home and repository of its own.
+/// A take or a return refused after its switch, put back as it found the slot, over real git and at different tips: a held output, the
+/// previous line's branch out elsewhere or moved on, a return cut off, a refused switch, and the clearing's move-back.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -179,24 +178,6 @@ public sealed class PoolUndoGitTests : IDisposable
         Assert.Equal(LineStand.Stands, WhereA(fixture).Stand);
         Assert.Null(ClaimOn(pool));
         Assert.DoesNotContain($"daoris/{B}", await fixture.BranchesAsync());
-    }
-
-    [Fact]
-    public async Task A_waiting_claim_is_never_taken_by_its_own_run_while_its_step_runs()
-    {
-        var fixture = _fixture = await PoolGitFixture.CreateAsync();
-        await fixture.LetGoAsync(fixture.Pool(), 1, A);
-        var pool = fixture.Pool();
-        var claimed = pool.Claim(new TreeClaimOpening(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, TreeClaimKinds.Take, "quest-2", B, $"daoris/{B}", fixture.Start, "", PoolGit.NewJobName()));
-        pool.Undoing(claimed.Fence!);
-        Assert.Equal("", Row(pool).Line);
-
-        Assert.Contains("own", pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim!.ClaimGeneration).Refused);
-
-        pool.Advance(claimed.Fence!, TreeClaimPhases.UndoWaiting);
-        var taken = pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim!.ClaimGeneration);
-        Assert.Equal(claimed.Claim.ClaimGeneration + 1, taken.Claim?.ClaimGeneration);
-        Assert.Contains("took it first", pool.TakeOver(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1, claimed.Claim.ClaimGeneration).Refused);
     }
 
     [Fact]

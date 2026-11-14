@@ -64,11 +64,11 @@ internal static class GeneratedIndex
     {
         if (!BranchName.IsValid(line)) return null;
         var tip = $"refs/heads/{line}";
-        var manifest = await GitObjectReads.TextAsync(root, GitObjectName.At(tip, DeclarationNames.Manifest), 256 * 1024, ct).ConfigureAwait(false);
+        var manifest = await MachinePorts.Repository.TextAtAsync(root, tip, DeclarationNames.Manifest, ct).ConfigureAwait(false);
         if (Declared(manifest) is not { } index) return null;
         var slash = index.LastIndexOf('/');
         if (slash <= 0) return Output(index, folderCommitted: false);
-        if (await GitObjectReads.InfoAsync(root, GitObjectName.At(tip, index[..slash]), ct).ConfigureAwait(false) is not { } folder) return null;
-        return Output(index, folderCommitted: !folder.Missing);
+        if (await MachinePorts.Repository.EntriesAsync(root, tip, [index[..(slash + 1)]], false, ct).ConfigureAwait(false) is not { } folder) return null;
+        return Output(index, folderCommitted: folder.Count > 0);
     }
 }

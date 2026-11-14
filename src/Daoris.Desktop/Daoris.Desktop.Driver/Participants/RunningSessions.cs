@@ -145,6 +145,8 @@ public sealed class RunningSessions
     private readonly List<StartReservation> _reserved = [];
     private readonly List<StartCame> _came = [];
 
+    internal HeldStarts HeldStarts { get; } = new();
+
     /// <summary>The starts of this loop's reserved and not yet open, as a look hands them to the planner.</summary>
     internal IReadOnlyList<StartReservation> Reserved
     {
