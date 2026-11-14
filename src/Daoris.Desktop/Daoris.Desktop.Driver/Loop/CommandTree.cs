@@ -81,7 +81,7 @@ public static class CommandTree
             "gate" => [verb == "run" ? "run-heavy" : "verify", .. after],
             "place" when verb is "access" or "heavy" or "checks" => [verb, .. after],
             "place" when verb is not null && CommandWords.Group("place")!.Verbs.Contains(verb, StringComparer.Ordinal) => ["driver", .. rest],
-            "plugin" when verb is "list" or "add" or "update" or "remove" or "enable" or "disable" or "try-again" => ["plugin", .. rest],
+            "plugin" when verb is not null && PluginCommand.Verbs.Contains(verb, StringComparer.Ordinal) => ["plugin", .. rest],
             "plugin" => ["plugins", .. rest],
             "press" => [verb!, .. after],
             "quest" when verb == "retry" => ["driver", "retry", .. after],

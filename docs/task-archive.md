@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **PLUGINVERB1 (2026-11-14):** `daoris plugin switch …` printed the kit's usage because the command tree sent every `plugin` verb outside a hard-coded list of seven to the `plugins` door, `switch` included; the tree now routes by `PluginCommand.Verbs`, so each verb has a routing test in `CommandTreeTests` and `docs/areas/plugins.md` rule 28 says the split.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---
