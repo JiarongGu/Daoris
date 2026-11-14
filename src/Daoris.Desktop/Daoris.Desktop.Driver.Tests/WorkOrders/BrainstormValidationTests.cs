@@ -252,4 +252,17 @@ public sealed class BrainstormValidationTests
 
         Assert.Equal(expected, codes);
     }
+
+    [Fact]
+    public void A_document_with_no_answering_maker_says_none_answered_not_that_one_did()
+    {
+        var packet = BrainstormPackets.Freeze("Why?", null, null, null, [], BrainstormBounds.First);
+        var pass = new BrainstormPassRecord(
+            new BrainstormBy("g1", "openai", "codex-acp", null), BrainstormPassRecord.Generate, BrainstormPassRecord.Unavailable, [StartPasses.Cooling], 0);
+
+        var printed = BrainstormDocuments.Markdown(BrainstormDocuments.Unranked("x", packet, [pass], [], [], "short of makers"));
+
+        Assert.Contains("No maker answered.", printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("One maker answered", printed, StringComparison.Ordinal);
+    }
 }

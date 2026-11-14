@@ -87,6 +87,31 @@ public static class BrainstormDocuments
     /// <summary>Why a document the person stopped is unranked.</summary>
     public const string StoppedByPerson = "stopped by the person: what answered is kept, and nothing ran after the stop";
 
+    /// <summary>Why a document is unranked where a maker's accounts cool, met their limit or the cap held it: who, and the offer by cause.</summary>
+    public static string ShortOfMakers(IReadOnlyList<BrainstormPassRecord> unavailable, int answered)
+    {
+        static string Cause(BrainstormPassRecord pass) =>
+            pass.Codes.LastOrDefault(code => code is StartPasses.Cooling or "limit" or "cap-full") ?? "cap-full";
+
+        var said = string.Join("; ", unavailable.Select(pass =>
+            $"`{pass.By.Adapter}` (maker {pass.By.Maker}) "
+            + Cause(pass) switch
+            {
+                StartPasses.Cooling => "is cooling",
+                "limit" => "met its account's limit",
+                _ => "found no free slot under the machine's cap",
+            }
+            + $" ({string.Join(", ", pass.Codes)})" + (pass.Why is { Length: > 0 } why ? $": {why}" : "")));
+        var offers = unavailable.Select(Cause).Distinct(StringComparer.Ordinal).Select(cause => cause switch
+        {
+            StartPasses.Cooling => "its account lifts (a pass waits for a cool-off that lifts within the generators' minutes)",
+            "limit" => "its account's limit resets",
+            _ => "the cap has a free slot",
+        });
+        return $"short of makers: {answered} answered, and {said}. Nothing was synthesized from fewer makers than were asked; "
+            + $"ask the brainstorm again once {string.Join(", and once ", offers)}";
+    }
+
     /// <summary>Why a document a restart found running is unranked.</summary>
     public const string Interrupted = "interrupted: Daoris stopped while it ran, and nothing runs again by itself";
 
@@ -242,7 +267,7 @@ public static class BrainstormDocuments
         }
         else if (document.Makers.Count < 2)
         {
-            text.Append("One maker answered: this is no cross-maker brainstorm.\n");
+            text.Append(document.Makers.Count == 0 ? "No maker answered.\n" : "One maker answered: this is no cross-maker brainstorm.\n");
         }
 
         foreach (var pass in document.Passes)
