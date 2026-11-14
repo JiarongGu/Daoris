@@ -25,7 +25,7 @@ const node = (suite: string, file: string, by: string): ReachedUnit => ({ suite,
 const plan = (units: ReachedUnit[], changed: string[], options: { bounds?: { dotnet?: number }; replayed?: Record<string, number> } = {}) =>
   reachedPlan(units, changed, { ...options, processSuites });
 
-test("the reached suites are the light ones a merge can run in minutes: the CLI's verify, the censuses, the Process halves and the rehearsals are not among them", () => {
+test("the reached suites are the unit ones: the CLI's and the tools' tests are, the censuses, the Process halves, the browser suites and the rehearsals are not", () => {
   const units = [
     dotnet('driver', 'BacklogMergeTests', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BacklogMerge.cs'),
     dotnet('censuses', 'SourceCensusTests', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BacklogMerge.cs'),
@@ -40,6 +40,7 @@ test("the reached suites are the light ones a merge can run in minutes: the CLI'
   assert.deepEqual(planned.groups.map((group) => [group.runner, group.units.map((unit) => unit.name)]), [
     ['dotnet', ['BacklogMergeTests']],
     ['vitest', ['WorkFrame.test.tsx']],
+    ['node', ['check.test.ts']],
     ['node', ['merge-queue.test.ts']],
   ]);
   assert.deepEqual(planned.left, {});

@@ -30,8 +30,8 @@ const withStore = async (body: (store: PassedClasses, root: string) => Promise<v
 test('a clean run records each class it ran and says how many ran and were replayed', () => withStore(async (store, root) => {
   const run = exits([0]);
   const lines: string[] = [];
-  const outcome = await runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false, replayed: 7 });
-  assert.deepEqual(outcome, { ran: 2, replayed: 7, flaked: [], mainRed: [], red: [] });
+  const outcome = await runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false, replayed: 7, deferred: ['driver-process|C'] });
+  assert.deepEqual(outcome, { ran: 2, replayed: 7, flaked: [], mainRed: [], red: [], deferred: ['driver-process|C'] });
   assert.equal(store.has(unitId(unit('a')), 'key-a'), true);
   assert.deepEqual(parseOutcome(lines.join('\n')), outcome);
 }));
@@ -57,7 +57,7 @@ test('the classification and the outcome line read back, and main stands red onl
   const failed = [{ suite: 's', unit: 'u1' }, { suite: 's', unit: 'u2' }, { suite: 's', unit: 'u3' }];
   assert.deepEqual(classify({ failed, passedAlone: new Set(['s|u1']), mainRedOf: (each) => each.unit === 'u2' }), { flaked: ['s|u1'], mainRed: ['s|u2'], red: ['s|u3'] });
   assert.equal(parseOutcome('no line here'), null);
-  assert.deepEqual(parseOutcome(`x\n${outcomeLine({ ran: 1, replayed: 2, flaked: [], mainRed: [], red: ['s|u'] })}\n`), { ran: 1, replayed: 2, flaked: [], mainRed: [], red: ['s|u'] });
+  assert.deepEqual(parseOutcome(`x\n${outcomeLine({ ran: 1, replayed: 2, flaked: [], mainRed: [], red: ['s|u'], deferred: [] })}\n`), { ran: 1, replayed: 2, flaked: [], mainRed: [], red: ['s|u'], deferred: [] });
   const findings = [{ state: 'red', unit: 'A.B.OneTests', test: 'A.B.OneTests.Does' }, { state: 'cleared', unit: 'A.B.TwoTests' }];
   assert.equal(mainStandsRed({ suite: 'driver', unit: 'A.B.OneTests' }, findings, {}), true);
   assert.equal(mainStandsRed({ suite: 'driver', unit: 'A.B.TwoTests' }, findings, {}), false);

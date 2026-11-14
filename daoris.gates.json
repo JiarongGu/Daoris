@@ -14,7 +14,8 @@
 
   "gates": [
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
-    { "name": "cli", "run": "npm run verify", "clock": true, "regenerate": "node tools/contracts.mjs --if-stale" },
+    { "name": "cli", "run": "npm run verify:checks", "clock": true, "regenerate": "node tools/contracts.mjs --if-stale" },
+    { "name": "cli-tests", "run": "npm run verify:tests", "clock": true },
     { "name": "tool-tests", "run": "npm run tooltests", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
@@ -121,7 +122,7 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "run": "node tools/reached-checks.mjs --check", "memoryGb": 6, "reuse": "inputs+diff",
+    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"

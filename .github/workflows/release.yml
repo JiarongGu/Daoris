@@ -267,7 +267,10 @@ jobs:
       # (`install-hooks` is the owner's to run). CI gets the structural patterns, and says so rather
       # than discovering it silently.
       - name: Verify gate
-        run: npm run verify
+        run: npm run verify:checks
+
+      - name: CLI and tool unit tests gate
+        run: npm run verify:tests
 
       # The tests of the tools only the parent runs, which verify no longer runs (GATESLIM1).
       - name: Tool tests gate
