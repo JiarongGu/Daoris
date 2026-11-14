@@ -24,6 +24,7 @@ const tool = await import(
   dotnetSubject: (project: string, file: string, text?: string) => { subject: string; atRoot: boolean; declared: string | null };
   checks: (files: string[], read: (file: string) => string, map: Map, options: Record<string, unknown>) => string[];
   trxSkipped: (trx: string) => string[];
+  unitHops: (unit: unknown, paths: string[], map: unknown, depth?: number) => number | undefined;
 };
 
 const TREE: Record<string, string> = {
@@ -85,6 +86,31 @@ test('every edge kind reaches its unit, and a member added to a glob or a scanne
   assert.ok(reaches('src/Daoris.Cli/test/computed.test.ts', 'anything/at/all.txt'), 'a computed import reaches its whole suite');
   assert.ok(!reaches('src/Daoris.Cli/test/table.test.ts', 'docs/decisions/D1.md'), 'a table named as data is not read');
   assert.ok(!reaches('src/Daoris.Cli/test/text.test.ts', 'src/Daoris.Service/Daoris.Service.Core/Thing.cs'), 'and nothing else');
+});
+
+test("a unit says how many reads lie between it and a changed file, so a bound can keep the change's own tests", () => {
+  const work = 'src/Daoris.Web/src/work';
+  const { files, read } = treeOf({
+    [`${work}/rail/Row.tsx`]: 'export const Row = 1;\n',
+    [`${work}/rail/Rail.tsx`]: "import { Row } from './Row';\nexport const Rail = Row;\n",
+    [`${work}/rail/Rail.test.tsx`]: "import { Rail } from './Rail';\n",
+    [`${work}/Frame.tsx`]: "import { Rail } from './rail/Rail';\nexport const Frame = Rail;\n",
+    [`${work}/Page.tsx`]: "import { Frame } from './Frame';\nexport const Page = Frame;\n",
+    [`${work}/Page.test.tsx`]: "import { Page } from './Page';\n",
+  });
+  const map = tool.census(files, read);
+  const hops = (unit: string, path: string) => tool.unitHops(unitOf(map, unit), [path], map);
+  assert.equal(hops(`${work}/rail/Rail.test.tsx`, `${work}/rail/Rail.test.tsx`), 0, 'its own file');
+  assert.equal(hops(`${work}/rail/Rail.test.tsx`, `${work}/rail/Rail.tsx`), 1, 'what it imports');
+  assert.equal(hops(`${work}/rail/Rail.test.tsx`, `${work}/rail/Row.tsx`), 2, 'what that imports');
+  assert.equal(hops(`${work}/Page.test.tsx`, `${work}/rail/Row.tsx`), undefined, 'a unit further off is reached, not near');
+  assert.equal(tool.unitHops(unitOf(map, `${work}/rail/Rail.test.tsx`), [`${work}/Page.tsx`, `${work}/rail/Row.tsx`], map), 2, 'the nearest of the changed paths');
+  // A .NET class is one read from the source file that declares a type its files name, and no nearer to an area's other files.
+  const dotnet = { dotnet: [{ suite: 'driver', project: 'T', census: { classes: [{ full: 'N.ATests', sourceFiles: ['S/A.cs'], reach: ['S'] }] } }] };
+  const cls = { kind: 'dotnet', suite: 'driver', project: 'T', unit: 'N.ATests', file: 'T/ATests.cs' };
+  assert.equal(tool.unitHops(cls, ['S/A.cs'], dotnet), 1);
+  assert.equal(tool.unitHops(cls, ['S/B.cs'], dotnet), undefined);
+  assert.equal(tool.unitHops(cls, ['T/ATests.cs'], dotnet), 0);
 });
 
 test("a unit's subject is the module its own file sits in", () => {

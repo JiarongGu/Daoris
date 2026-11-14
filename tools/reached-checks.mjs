@@ -38,6 +38,7 @@ import { isMain } from './fsx.mjs';
 import { CI_FINDINGS } from './ci-background.mjs';
 import { CLASS_VERDICTS_FILE, verdictsHome } from './merge-branch.mjs';
 import { keyContextOf, storeFile as storeIn } from './merge-branch/full-set.mjs';
+import { unitHops } from './test-map.mjs';
 import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './merge/reached.ts';
 import { PassedClasses, classKey, splitByReuse, unitId } from './merge/class-reuse.ts';
 import { deferredLines, splitTier, tierNamed } from './merge/heavy-tier.ts';
@@ -102,7 +103,8 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
   const deferred = splitByReuse(heavy, (unit) => classKey(unit, context), store).run;
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
-  return { plan: reachedPlan(run, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
+  const counted = run.map((unit) => ({ ...unit, hops: unitHops(unit, paths, map) }));
+  return { plan: reachedPlan(counted, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
 }
 
 const readJson = (file) => {

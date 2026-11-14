@@ -302,7 +302,28 @@ export function tsReader(files, read) {
     }
     return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide };
   };
-  return { reachOf, factsOf };
+  /**
+   * The files within `depth` reads of `unit`, each with its fewest reads: the unit's own file 0, a file it imports or names 1, and so on
+   * through the imports. Only the files, never a folder or a glob, so a unit reached by a scan of its folder has no near file.
+   */
+  const hopsFrom = (unit, depth) => {
+    const found = new Map([[unit, 0]]);
+    let frontier = [unit];
+    for (let hops = 1; hops <= depth; hops += 1) {
+      const next = [];
+      for (const file of frontier) {
+        if (!CODE.test(file)) continue;
+        const mine = ownOf(file);
+        for (const each of [...mine.imports, ...mine.files]) if (!found.has(each)) {
+          found.set(each, hops);
+          next.push(each);
+        }
+      }
+      frontier = next;
+    }
+    return found;
+  };
+  return { reachOf, factsOf, hopsFrom };
 }
 
 /** Whether a TypeScript unit's reach holds `path`. */
@@ -421,6 +442,23 @@ function reachedBy(result, path) {
   if (placed.none) return new Set();
   if (placed.classes) return new Set(placed.classes);
   return new Set(result.classes.filter((each) => classHitByAreas(each, placed, result)).map((each) => each.full));
+}
+
+/**
+ * How many reads lie between `unit` and the nearest of `paths`, or undefined where none is within `depth`: a TypeScript unit counts the
+ * imports from its own file, a .NET class is 1 from a source file that declares a type its files name. A merge's bound keeps the units
+ * with a count, since they read what changed, before the units that reach it only through an area.
+ */
+export function unitHops(unit, paths, map, depth = 2) {
+  if (unit.kind === 'dotnet') {
+    const census = map.dotnet.find((each) => each.suite === unit.suite && each.project === unit.project)?.census;
+    const sourceFiles = census?.classes.find((each) => each.full === unit.unit)?.sourceFiles ?? [];
+    const counts = paths.map((path) => (path === unit.file ? 0 : sourceFiles.includes(path) ? 1 : undefined)).filter((each) => each !== undefined);
+    return counts.length ? Math.min(...counts) : undefined;
+  }
+  const within = map.ts.hopsFrom(unit.file, depth);
+  const counts = paths.map((path) => within.get(path)).filter((each) => each !== undefined);
+  return counts.length ? Math.min(...counts) : undefined;
 }
 
 /** The units of the census `paths` reach, each with the first path that reaches it. */
