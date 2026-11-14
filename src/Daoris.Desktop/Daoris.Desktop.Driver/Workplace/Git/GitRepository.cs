@@ -222,7 +222,7 @@ public sealed class GitRepository : IGitRepository
 
     public async Task<IReadOnlyList<string>?> ChangedAsync(string folder, string from, string to, CancellationToken ct)
     {
-        var (code, stdout, _) = await RunGitAsync(folder, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, to, "--"], ct).ConfigureAwait(false);
+        var (code, stdout, _) = await RunGitAsync(folder, ["--no-optional-locks", "diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
         return code == 0 ? [.. stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
