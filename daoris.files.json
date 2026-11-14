@@ -5,7 +5,7 @@
     { "kind": "local", "paths": ["/local/"] },
     { "kind": "local", "paths": ["/local/lyntai-local.props", "!/local/lyntai-local.props/"], "reach": "copy" },
     { "kind": "local", "paths": ["/local/shenora-local.props", "!/local/shenora-local.props/"], "reach": "copy" },
-    { "kind": "scratch", "paths": ["/_fixtures/", "/**/_fixtures/"] },
+    { "kind": "scratch", "paths": ["/_fixtures/", "/**/_fixtures/", "/local/scratch/", "/**/TestResults/"] },
     { "kind": "dependency", "paths": ["/src/Daoris.Web/node_modules/"],
       "key": ["src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/.npmrc"],
       "caches": [".cache/", ".vite/", ".vite-temp/"] },
