@@ -35,8 +35,11 @@ against the person's aim of one continued context).
    kept as that agent's claim at the head it was made. And a reading map from the wire with no model: per file, which turn read it,
    how often, at which head. At render, git says whether each cited path changed since, so a finding is said to still hold or to
    need reading again. This aims at the measured waste: a brief names the files a turn read, never what it learned.
-6. **A seeded native transcript is an experiment, never the floor.** Per provider, a minimal native conversation written from the
-   context is kept only where measured to load and cost less than Prompt.
+6. **A seeded native conversation is the main path** (decided below, against both makers' caution). Per provider, the session's
+   context is written as that agent's own resumable conversation: its turns, tool calls and results as the agent's format holds
+   them, Daoris's entries as the host's words, so the agent resumes and keeps going. Each provider's writer is held to its agent's
+   format by a test that resumes a written conversation, and is said absent where an agent's format will not take one; the open
+   DeepSeek harness's session plugins (`deepseek-ai/deepseek-harness`) are read for how a harness stores and resumes one.
 
 ## The migration, one way per job
 
@@ -56,7 +59,7 @@ real task moved Claude Code to Codex and back, measured before and after against
 | Choice | Decided |
 |---|---|
 | Where the context's model lives | **In Lyntai**, beside what it already has for this (`Lyntai.Core.Agents`: `AgentTranscript`'s turns, `AgentHandover`'s resume-or-brief judgement, `AgentBriefComposer`): the typed entries, the rendering port and the bounded head are provider-neutral and belong to the agent library; Daoris writes its sessions' workflow entries and keeps them with the session record on the service, so another machine can resume it |
-| Native transcript import | **Not now**: an experiment per provider, kept only where it measures cheaper |
+| How an agent picks up the session | **It resumes from the context** (the person, 2026-11-14): Daoris holds everything, so each provider writes the session's context out as its own agent's resumable conversation (the Seed form: a Claude Code conversation, a Codex thread, a DeepSeek harness session) and the agent continues it as its own, even turns it did not make. Resume of the agent's own conversation is that form's cheap case; the bounded head plus files is only the floor for a provider that cannot take a conversation in |
 | The `context_note` tool | **Yes**, beside the reading map that needs no agent's help |
 
 Lyntai's part is asked of Lyntai as its own quest (a change spanning two repositories is two changes and a request); Daoris's part
