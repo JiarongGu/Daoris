@@ -320,8 +320,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     keeping pass purges it. (D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
     `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
-    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`). Uncommitted or untracked work
-    keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
+    its folder where the line commits nothing there, else the file alone (`GeneratedIndex`); and every path the repository's own
+    `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
+    the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
+    counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
+    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's

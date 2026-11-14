@@ -58,6 +58,54 @@ public sealed class QuestHoldsNodeTests
         Assert.Equal(NodeStates.Reached, Observe(QuestUnit(asked), Hold(NodeKinds.QuestHolds, """{"yes":false}"""), "q-rev").Outcome);
     }
 
+    private static readonly DateTimeOffset Then = new(2026, 11, 13, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>The run's branch as its record keeps it, held by the line at <paramref name="held"/> where that is given.</summary>
+    private static WorkUnit BranchHeldAt(string? held, string by = EndBy.Merged) => Branch with
+    {
+        Records = new WorkUnitRecords(
+            new GrownBranch("engine", "default", "daoris/s1", "main", "f0", null, Then)
+            {
+                Held = held is null ? null : new HeldFact(Then, Then, by, held, "main", "origin/main", "m1", "engine"),
+            }, [], null),
+    };
+
+    private static NodeObservation ObserveWithBranch(WorkUnit branch, string tip) =>
+        NodeObserving.Observe(QuestUnit(Quest("Done") with { From = "ask #a1b2c3" }), Hold(NodeKinds.QuestHolds), Bound(QuestUnit(Quest("Done")), Hold(NodeKinds.QuestHolds), "q-rev"),
+            new NodeGitReads { Content = (_, _) => null }, branch, tip);
+
+    [Fact]
+    public void A_done_waiting_unchecked_is_passed_where_the_line_already_holds_the_runs_branch_tip()
+    {
+        var seen = ObserveWithBranch(BranchHeldAt("tip-1"), "tip-1");
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Holds), (seen.Outcome, seen.Source));
+        Assert.Contains("merged outside the run", seen.Said);
+        Assert.Contains("every commit of it is on `origin/main`", seen.Said);
+        Assert.Null(seen.Holds);
+    }
+
+    [Theory]
+    [InlineData(null, "tip-1")]
+    [InlineData("tip-0", "tip-1")]
+    [InlineData("tip-1", "tip-2")]
+    public void A_branch_the_line_does_not_hold_at_its_tip_leaves_the_done_waiting(string? heldAt, string tip)
+    {
+        var waits = ObserveWithBranch(BranchHeldAt(heldAt), tip);
+
+        Assert.Null(waits.Outcome);
+        Assert.Contains("unchecked", waits.Holds);
+    }
+
+    [Fact]
+    public void A_branch_that_never_moved_from_the_line_is_nothing_landed_and_leaves_the_done_waiting()
+    {
+        var waits = ObserveWithBranch(BranchHeldAt("tip-1", EndBy.Empty), "tip-1");
+
+        Assert.Null(waits.Outcome);
+        Assert.Contains("unchecked", waits.Holds);
+    }
+
     /// <summary>A version that no longer holds a done for your yes, by its `quest.holds` taken away or its `yes` off, asks less of you, and says so.</summary>
     [Fact]
     public void Taking_the_quests_holds_away_or_their_yes_off_lowers_your_part()

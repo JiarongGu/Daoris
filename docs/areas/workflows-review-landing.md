@@ -84,7 +84,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    has passed; the opinion need not precede the look (`ProtectedOrder`). Each hold (`quest.holds`, `content.holds`,
    `work.requests`) is judged once, on every way to a landing. `quest.holds` never reaches on a done checked against nothing: an
    ask's quest with no requirement waits *unchecked* until the person passes it with words, their through words on its ask pass it
-   (rule 23), or a version turns its `yes` off. (D157, D190, D247, D255, D277)
+   (rule 23), or a version turns its `yes` off. It reads the run's branch first: where the line holds that branch's tip (any proof but
+   *empty*), it reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, so the
+   run ends landed without waiting on an earlier hold (`BranchOnLine`). (D157, D190, D247, D255, D277)
 10. A `land` method brings a tail only for `integrate` (one `integrate`). A `push` stands after a `branch` landing, and a pull
     request is a plugin's step (`<plugin>/pull-request`) after it, composed by the place, never a method. A workflow that cannot
     bind or be drawn holds on a coded `BindingProblem`, worded from the catalogue. (D215, D227, D241)

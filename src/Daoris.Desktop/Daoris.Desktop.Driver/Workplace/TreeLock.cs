@@ -58,6 +58,9 @@ public sealed class TreeLock : IDisposable
     /// <inheritdoc cref="HeldBy.Landing"/>
     public const string Landing = HeldBy.Landing;
 
+    /// <inheritdoc cref="HeldBy.Writing"/>
+    public const string Writing = HeldBy.Writing;
+
     private readonly FileStream _file;
     private readonly string? _by;
     private readonly object? _outer;
@@ -203,6 +206,25 @@ public sealed class TreeLock : IDisposable
         }
     }
 
+    /// <summary>
+    /// What a refused tidy or removal reads of the repository's hold, for <see cref="Starting"/>: the writer that holds it alone
+    /// (<see cref="HolderOf"/>), <see cref="Writing"/> where an alone hold stands that says nothing, and null where only starts hold it
+    /// (the repository opens to a shared read exactly then, since an alone hold shares nothing).
+    /// </summary>
+    public static string? RefusedBy(string home, string checkout)
+    {
+        if (HolderOf(home, checkout) is { } named) return named;
+        try
+        {
+            using (new FileStream(PathOf(home, checkout), FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read)) { } // read-shares: the lock's own sharing is the answer
+            return null;
+        }
+        catch (IOException)
+        {
+            return Writing;
+        }
+    }
+
     /// <summary>What a start says when a replay holds its repository: held now, carried on at the next look.</summary>
     public static string Replaying(string repository) =>
         HeldWords.ReplayingWhy(repository);
@@ -227,6 +249,7 @@ public sealed class TreeLock : IDisposable
         Acting => $"a git act was changing `{repository}`'s checkout, or its record being reconciled (see the repository's page)",
         Landing => $"a landing was writing one of `{repository}`'s branches",
         HeldBy.Reserving => $"a step was reserving one of `{repository}`'s trees for its resolver",
+        Writing => $"another of Daoris's writes was holding `{repository}`",
         _ => $"a session was starting in `{repository}`, or another of Daoris's writes held it",
     };
 

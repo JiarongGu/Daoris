@@ -200,6 +200,24 @@ public sealed class TreeLockTests : IDisposable
         Assert.Equal("a session was starting in one of `engine`'s trees" + left, TreeLock.Starting("engine", null));
     }
 
+    [Fact]
+    public void A_refusal_names_a_start_only_where_one_holds_the_repository()
+    {
+        const string left = ", so its branches were left as they were for another look";
+        using (TreeLock.TryStarting(_home, _engine, StartIn.Fresh))
+        {
+            Assert.Null(TreeLock.RefusedBy(_home, _engine));
+        }
+
+        using (TreeLock.TryWriting(_home, _engine, "engine", TreeLock.Promoting))
+        {
+            Assert.Equal(TreeLock.Promoting, TreeLock.RefusedBy(_home, _engine));
+            File.Delete(Path.ChangeExtension(TreeLock.PathOf(_home, _engine), ".by"));
+            Assert.Equal(TreeLock.Writing, TreeLock.RefusedBy(_home, _engine));
+            Assert.Equal("another of Daoris's writes was holding `engine`" + left, TreeLock.Starting("engine", TreeLock.RefusedBy(_home, _engine)));
+        }
+    }
+
     /// <summary>🔴 The old key's lock files, one per workspace and repository, are removed once, and one a live process holds is kept.</summary>
     [Fact]
     public void The_old_keys_lock_files_are_removed_once_and_one_held_is_kept()

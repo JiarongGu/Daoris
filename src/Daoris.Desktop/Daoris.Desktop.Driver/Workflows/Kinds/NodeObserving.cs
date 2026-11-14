@@ -30,9 +30,10 @@ public static class NodeObserving
     /// <paramref name="git"/> the only read handed: its kind's reading (<see cref="IObserves"/>), or <see cref="NodeRefusal.NotObserved"/> for a
     /// kind that observes nothing.
     /// </summary>
-    public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, NodeGitReads? git = null)
+    public static NodeObservation Observe(
+        WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, NodeGitReads? git = null, WorkUnit? runBranch = null, string? runBranchTip = null)
     {
-        var reading = new NodeReading(unit, node, binding) { Git = git };
+        var reading = new NodeReading(unit, node, binding) { Git = git, RunBranch = runBranch, RunBranchTip = runBranchTip };
         return NodeKit.Of(node.Kind) is IObserves observes
             ? observes.Observe(reading)
             : Seen(reading, null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
