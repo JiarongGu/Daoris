@@ -221,11 +221,8 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>The checkout's git directory and common directory, read fresh; null where git could not say.</summary>
     private static async Task<(string GitDir, string CommonDir)?> LayoutAsync(string checkout)
     {
-        var (code, said, _) = await WorkingTree.GitAsync(
-            checkout, ["rev-parse", "--absolute-git-dir", "--git-common-dir"], environment: null, GitBounds.Question, CancellationToken.None).ConfigureAwait(false);
-        var lines = said.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (code != 0 || lines.Length < 2) return null;
-        return (Path.GetFullPath(lines[0]), Path.GetFullPath(Path.Combine(checkout, lines[1])));
+        var layout = await MachinePorts.Repository.LayoutAsync(checkout, CancellationToken.None).ConfigureAwait(false);
+        return layout is null ? null : (layout.GitDir, layout.CommonDir);
     }
 
     /// <summary>The refs a step moves, whose lock files are read before it.</summary>

@@ -25,8 +25,7 @@ internal static class TreeGit
             }
 
             // Spelled as the reads of its commit are, so one ref fact is one command.
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference + "^{commit}"], ct).ConfigureAwait(false);
-            if (code == 0) return reference;
+            if (await MachinePorts.Repository.CommitOfAsync(root, reference, ct).ConfigureAwait(false) is not null) return reference;
         }
 
         return null;
@@ -55,21 +54,8 @@ internal static class TreeGit
     /// </summary>
     internal static async Task<CommonDirAndBranch> CommonDirAndBranchAsync(string tree, CancellationToken ct)
     {
-        var (code, output, _) = await WorkingTree.GitAsync(
-            tree, ["rev-parse", "--path-format=absolute", "--git-common-dir", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var lines = output.Split('\n').Select(line => line.TrimEnd('\r')).Where(line => line.Length > 0).ToArray();
-        if (code == 0 && lines.Length == 3)
-        {
-            GitFacts.SameRepository(tree, lines[0]);
-            return new CommonDirAndBranch(0, lines[0], "", lines[2], Once: true) { TopLevel = lines[1] };
-        }
-
-        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
-            tree, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
-        if (rootCode != 0) return new CommonDirAndBranch(rootCode, commonDir, rootErr, "", Once: false);
-        GitFacts.SameRepository(tree, commonDir.Trim());
-        var (_, branch, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        return new CommonDirAndBranch(0, commonDir, rootErr, branch, Once: false);
+        var place = await MachinePorts.Repository.PlaceAsync(tree, ct).ConfigureAwait(false);
+        return new CommonDirAndBranch(place.Code, place.CommonDir, place.Err, place.Branch, place.Once) { TopLevel = place.TopLevel };
     }
 
     /// <summary>

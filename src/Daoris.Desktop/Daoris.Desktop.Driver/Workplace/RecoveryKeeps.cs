@@ -28,9 +28,9 @@ internal static class RecoveryKeeps
         for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
         {
             var reference = ContentHolds.DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
-            var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (code != 0) return (new(reference, true), null);
-            if (at.Trim() == commit) return (new(reference, false), null);
+            var at = await MachinePorts.Repository.CommitOfAsync(root, reference, ct).ConfigureAwait(false);
+            if (at is null) return (new(reference, true), null);
+            if (at == commit) return (new(reference, false), null);
         }
 
         return (null, "every name for its recovery ref is taken");

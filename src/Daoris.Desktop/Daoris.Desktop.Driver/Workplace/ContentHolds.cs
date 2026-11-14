@@ -224,9 +224,10 @@ internal sealed class ContentHolds(TreeContext context)
     /// <returns>Null where git could not read them, and then nothing is proven.</returns>
     internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> HoldersAsync(string root, string tip, string branch, CancellationToken ct)
     {
-        var (code, containing, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", tip, $"--format={UnaliasedFormat}"], ct).ConfigureAwait(false);
-        return code != 0 ? null
-            : [.. Unaliased(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal) && AnyRef(pair.Ref))];
+        var containing = await MachinePorts.Repository.HoldingRefsAsync(root, tip, ct).ConfigureAwait(false);
+        return containing is null ? null
+            : [.. containing.Select(each => (each.Name, each.Commit)).Where(pair => pair.Name != $"refs/heads/{branch}" && !pair.Name.EndsWith("/HEAD", StringComparison.Ordinal) && AnyRef(pair.Name))
+                .Select(pair => (Ref: pair.Name, Commit: pair.Commit))];
     }
 
     /// <summary>The listing <see cref="Unaliased"/> reads: each ref's commit, its name and, for a symbolic ref, the ref it points at, by tabs.</summary>
@@ -420,21 +421,25 @@ internal sealed class ContentHolds(TreeContext context)
     internal static async Task<TreeHolds?> HoldsAsync(
         string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct, KeptTree? slot = null)
     {
-        var (code, porcelain, _) = await WorkingTree.GitAsync(
-            tree, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
+        IReadOnlyDictionary<string, string> status;
+        try
+        {
+            status = await MachinePorts.Repository.StatusAsync(tree, ignored: true, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or InvalidOperationException)
+        {
+            return null;
+        }
+
         var uncommitted = new List<string>();
         var ignored = new List<string>();
         var shared = new List<string>();
         var written = new List<string>();
         var tooLarge = new List<string>();
         var opened = OpenedAt(tree, slot);
-        var entries = porcelain.Split('\0');
-        for (var at = 0; at < entries.Length; at++)
+        foreach (var (path, state) in status)
         {
-            var entry = entries[at];
-            if (entry.Length < 4) continue;
-            var path = entry[3..];
+            var entry = $"{state} {path}";
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
@@ -480,8 +485,6 @@ internal sealed class ContentHolds(TreeContext context)
             }
 
             uncommitted.Add(path);
-            // A rename's or a copy's source follows its entry, and is no path of its own.
-            if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
         }
 
         return new(uncommitted, ignored, shared, written, tooLarge);

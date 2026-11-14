@@ -16,8 +16,7 @@ internal sealed record TreeStatus(int Changed, string? Head, string? Branch)
     /// <summary>The tree's status, or null where git could not give it or answered in a shape not understood: the caller asks as before.</summary>
     internal static async Task<TreeStatus?> ReadAsync(string tree, CancellationToken ct)
     {
-        var (code, stdout, _) = await WorkingTree.GitAsync(tree, Ask, ct).ConfigureAwait(false);
-        return code == 0 ? Parse(stdout) : null;
+        return await MachinePorts.Repository.TreeStatusAsync(tree, ct).ConfigureAwait(false) is { } read ? new TreeStatus(read.Changed, read.Head, read.Branch) : null;
     }
 
     /// <summary>What <paramref name="porcelain"/> says; null where it names no head and no branch, as an older git prints none.</summary>

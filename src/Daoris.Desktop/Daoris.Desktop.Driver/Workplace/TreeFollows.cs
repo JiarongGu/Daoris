@@ -58,13 +58,11 @@ internal sealed class TreeFollows(TreeContext context)
     }
 
     /// <summary>The commits <see cref="UnlandedAsync"/> counts, one line each, as git lists them.</summary>
-    internal static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
+    internal static async Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
         string cwd, string revision, CancellationToken ct, string? except = null) =>
-        WorkingTree.GitAsync(cwd,
-            except is null
-                ? ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"]
-                : ["log", "--oneline", revision, "--not", "--exclude=daoris/*", $"--exclude={except}", "--branches", "--exclude=*/daoris/*", "--remotes"],
-            ct);
+        await MachinePorts.Repository.UnlandedAsync(cwd, revision, except, ct).ConfigureAwait(false) is { } lines
+            ? (0, string.Join('\n', lines), "")
+            : (128, "", "git could not list the commits");
 
     /// <summary>
     /// The branch a session tree is on now, for whoever names it: the tree's own where its agent moved it, the ledger's memory of

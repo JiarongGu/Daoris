@@ -21,7 +21,6 @@ public sealed class TestHomesCensusTests
     private static readonly Dictionary<string, string> Kept = new(StringComparer.Ordinal)
     {
         ["Agents/ScratchSignInsTests.cs"] = "pins the product's own rule that the OS temp folder is scratch to a sign-in, from paths it never creates",
-        ["Workplace/SessionTreesTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Workplace/WorkingTreeProvenanceTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Loop/BackgroundWaitJudgementTests.cs"] = "needs a folder no repository contains, which nothing under the checkout's _fixtures is: git walks up into the checkout's",
         ["Service/ServiceHostLocatorTests.cs"] = "needs a folder no workspace lies above, which nothing under the checkout's _fixtures is: the locator walks up to the checkout's manifest",

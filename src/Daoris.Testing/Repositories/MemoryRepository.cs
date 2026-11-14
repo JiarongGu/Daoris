@@ -188,6 +188,9 @@ public sealed partial class MemoryRepository : IGitRepository
     public Task<GitDone> UnlockAsync(string folder, string path, CancellationToken ct)
     {
         if (Linked(folder, path, out var why) is not { } tree) return Task.FromResult(GitDone.Not(why));
+        Unlocking?.Invoke(path, tree.Reason);
+        ct.ThrowIfCancellationRequested();
+        if (UnlockFault?.Invoke(path) is { } fault) return Task.FromResult(fault);
         if (!tree.Locked) return Task.FromResult(GitDone.Not($"'{path}' is not locked"));
         (tree.Locked, tree.Reason) = (false, null);
         return Task.FromResult(GitDone.Done);
@@ -210,6 +213,7 @@ public sealed partial class MemoryRepository : IGitRepository
         foreach (var (file, blob) in at.Tree) if (blob.Mode == MemoryBlob.File) added.Files[file] = blob.Content; else added.Submodules.Add(file);
         if (add.Branch is { } made) _history.Refs[$"refs/heads/{made}"] = at.Id;
         _trees.Add(added);
+        if (Materializes) Materialize(added);
         return Task.FromResult(GitDone.Done);
     }
 
@@ -280,7 +284,7 @@ public sealed partial class MemoryRepository : IGitRepository
     public Task<GitDone> RemoveWorktreeAsync(string folder, string path, CancellationToken ct)
     {
         if (Linked(folder, path, out var why) is not { } tree) return Task.FromResult(GitDone.Not(why));
-        _trees.Remove(tree);
+        Drop(tree);
         return Task.FromResult(GitDone.Done);
     }
 

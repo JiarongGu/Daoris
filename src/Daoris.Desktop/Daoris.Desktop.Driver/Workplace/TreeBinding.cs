@@ -24,15 +24,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class TreeBinding
 {
-    /// <summary>The ask: the working root git reports where it is started.</summary>
-    private static readonly string[] Root = ["rev-parse", "--show-toplevel"];
-
-    /// <summary>
-    /// An environment of the call's own, with nothing in it: the runner then asks git as written, never a fact a flow kept
-    /// (<see cref="WorkingTree"/>'s runner, for a call with variables of its own).
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, string> AsWritten = new Dictionary<string, string>();
-
     /// <summary>
     /// Why nothing may be written through <paramref name="tree"/>: the clause a door refuses with, with no closing stop, where git reports
     /// another folder as its working root or could not say; null where it reports the tree's own, or where the folder holds no
@@ -46,14 +37,14 @@ internal static class TreeBinding
         if (!Path.Exists(Path.Combine(folder, ".git"))) return null;
         if (string.IsNullOrWhiteSpace(reported))
         {
-            var (code, stdout, stderr) = await WorkingTree.GitAsync(folder, Root, AsWritten, timeout: null, ct).ConfigureAwait(false);
-            if (code != 0 || stdout.Trim().Length == 0)
+            var fresh = await MachinePorts.Repository.FreshTopAsync(folder, ct).ConfigureAwait(false);
+            if (!fresh.Done)
             {
-                return $"git could not say where the tree at {folder} has its working root ({FirstLine(stderr.Length > 0 ? stderr : "it said nothing")}), "
+                return $"git could not say where the tree at {folder} has its working root ({FirstLine(fresh.Error.Length > 0 ? fresh.Error : "it said nothing")}), "
                     + "so nothing was removed, reset or written through it; ask again";
             }
 
-            reported = stdout;
+            reported = fresh.Top;
         }
 
         var root = reported.Trim();

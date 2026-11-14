@@ -143,16 +143,14 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             {
                 // The commit judged, read once: every question below is asked of it, and the branch goes only while
                 // it is still that commit.
-                var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
-                    .ConfigureAwait(false);
-                if (tipCode != 0)
+                judged = await MachinePorts.Repository.CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false);
+                if (judged is null)
                 {
                     return new(false,
-                        $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(tipErr)} "
+                        $"Daoris cannot tell whether the work on `{branch}` is landed: git names no commit at HEAD. "
                         + "The tree stays; say it again with --force to discard it.");
                 }
 
-                judged = tipOut.Trim();
                 var (workspace, repository) = context.OwnerOf(full);
                 var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
@@ -264,17 +262,14 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
         // without them git let go of the tree, then failed deleting its files (2026-09-28).
-        var removeArgs = force
-            ? new[] { "worktree", "remove", "--force", full }
-            : ["worktree", "remove", full];
-        var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, removeArgs, ct).ConfigureAwait(false);
+        var removed = await MachinePorts.Repository.RemoveTreeAsync(root, full, force, ct).ConfigureAwait(false);
         string? left = null;
-        if (removeCode != 0)
+        if (!removed.Ok)
         {
             // Git lets go of a tree before its folder, and a folder something holds open stays (the first real
             // post-merge run): then the tree is gone and only its folder is left, which is said plainly.
             var (letGo, why) = await LetGoAsync(root, full, ct).ConfigureAwait(false);
-            if (!letGo) return await KeptAsync($"git would not remove the tree: {FirstLine(removeErr)}").ConfigureAwait(false);
+            if (!letGo) return await KeptAsync($"git would not remove the tree: {FirstLine(removed.Error)}").ConfigureAwait(false);
 
             left = why;
         }
