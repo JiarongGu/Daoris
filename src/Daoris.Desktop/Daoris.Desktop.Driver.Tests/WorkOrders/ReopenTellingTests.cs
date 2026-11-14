@@ -234,7 +234,7 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Contains("when its turn ends, as Daoris's words", Assert.Single(told), StringComparison.Ordinal);
         Assert.False(new ReopenMarks(_home).Told("s1", "q1", Source().Reopened!));
 
-        // Between the look and the turn's end the session said `ready` again, or did not.
+        // Between the look and the turn's end the session said `done` again, or did not.
         doors.Quests["q1"] = stands ? Source() : Source(sequence: null);
         var held = inbox.NextOrClose()!.Held!;
         Assert.Equal(stands, await DaorisWords.GoesAsync(held, _closing.Token));
@@ -590,7 +590,7 @@ public sealed class ReopenTellingTests : IDisposable
         var words = ReopenTelling.Words("q1", Source().Reopened!);
 
         Assert.StartsWith("Daoris: the person reopened submission `desk` 41 of quest `#q1`", words, StringComparison.Ordinal);
-        Assert.Contains("say `ready` on `#q1` again", words, StringComparison.Ordinal);
+        Assert.Contains("say `done` on `#q1` again", words, StringComparison.Ordinal);
         Assert.EndsWith("\n\n> The bridge is wrong.\n> Use the v3 one.", words, StringComparison.Ordinal);
     }
 
@@ -600,8 +600,8 @@ public sealed class ReopenTellingTests : IDisposable
         var words = ReopenTelling.Words("q1", Source(note: null).Reopened!);
 
         Assert.Equal(
-            "Daoris: the person reopened submission `desk` 41 of quest `#q1`, which your `ready` made, so the quest is not ready "
-            + "any more. Address what they reopened it for, then say `ready` on `#q1` again.",
+            "Daoris: the person reopened submission `desk` 41 of quest `#q1`, which your `done` made, so the quest is not submitted "
+            + "any more. Address what they reopened it for, then say `done` on `#q1` again.",
             words);
     }
 
@@ -673,7 +673,7 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Equal(
             "Daoris: the person reopened the work of `#q1` that quest `#q2` grew from, and went on with `#q2` on its new submission `desk` "
             + "43, so any result submitted on `#q2` was cleared. Bring your work up to date with that submission (what Daoris did with "
-            + "your branch follows, where it did anything), then say `ready` on `#q2` again.",
+            + "your branch follows, where it did anything), then say `done` on `#q2` again.",
             ReopenTelling.GoneOnWords("q2", "q1", Grew));
     }
 

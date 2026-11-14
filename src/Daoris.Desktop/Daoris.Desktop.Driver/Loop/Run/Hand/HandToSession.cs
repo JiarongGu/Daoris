@@ -109,7 +109,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var channelDoors = new ServiceChannelDoors(service);
             var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, sessionId, ct).ConfigureAwait(false) : null;
             // A quest whose work cycle holds `quest.close` names its graph for the take as its first session opens, so the take binds it
-            // in its own write, and a bound quest's session says `ready`, never `done`. Named for this session, whose take alone binds it,
+            // in its own write, and a bound quest's session's `done` is a submission. Named for this session, whose take alone binds it,
             // the service judging it again at the take: the graph its run is bound to, as the bind kept it.
             var closure = await ClosureBinding.AtStartAsync(
                 service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
@@ -168,7 +168,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did.
                 Session = sessionId,
-                Ready = closure?.Bound == true,
+                Submits = closure?.Bound == true || StepWaits.Of(runBound) is not null,
                 Answered = answered,
                 // What cut the last session off, and what it left uncommitted, read by the driver, because the session may not run
                 // `git status` itself. An open quest's start, handed the words its session could not go on with, takes it as any first

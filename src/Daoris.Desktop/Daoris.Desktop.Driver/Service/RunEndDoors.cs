@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The driver's doors on a workflow run's quests: the bind at a session's first start, which makes its agent's done a submission, and the
-/// run's end, which writes the quests' Done and ends the sessions waiting on the run in one write. What the end moved is told to the
-/// client's <see cref="ServiceClient.Moved"/> watchers.
+/// run's end, which writes the quests' Done and ends the sessions waiting on the run in one write, and the reopen of its records ended done
+/// under the older meaning. What the end and the reopen moved is told to the client's <see cref="ServiceClient.Moved"/> watchers.
 /// </summary>
 public static class RunEndDoors
 {
@@ -23,5 +23,15 @@ public static class RunEndDoors
             ct).ConfigureAwait(false)).Answered();
         foreach (var session in ended.Ended) service.RecordMoved(new SessionMoved(session, state));
         return ended;
+    }
+
+    /// <summary>The run's records ended done under the older meaning, each that never waited on a step moved to wait on its next one.</summary>
+    public static async Task<RunReopenResponse> ReopenRunAsync(this ServiceClient service, RunReopen reopen, CancellationToken ct)
+    {
+        var parts = reopen.Note.Parts is { Count: > 0 } kept ? SessionMoveDoors.PartsElement(kept) : (System.Text.Json.JsonElement?)null;
+        var reopened = (await service.SendAsync(new ReopenRunSessions(reopen.Run, [.. reopen.Sessions], reopen.Note.Note, parts), ct)
+            .ConfigureAwait(false)).Answered();
+        foreach (var session in reopened.Reopened) service.RecordMoved(new SessionMoved(session, StepWait.State));
+        return reopened;
     }
 }

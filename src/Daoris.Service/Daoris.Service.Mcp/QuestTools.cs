@@ -291,12 +291,12 @@ public sealed class QuestTools(
                         ? "  submitted " + submitted.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
                           + (submitted.Note is { Length: > 0 } said ? $": _{said}_" : "")
                           + ". It stays taken until its graph closes it at the work's end, after its holds and gates."
-                        // A reopened submission, with the person's words, until the next ready answers it.
+                        // A reopened submission, with the person's words, until the next done answers it.
                         : quest.Reopened is { } reopen
                         ? "  the person reopened its submission " + reopen.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
                           + (reopen.Note is { Length: > 0 } words ? $": _{words}_" : "")
-                          + ". Work on what they said, then say `ready` again, never `done`."
-                        : "  its graph closes it: its taker says `ready`, never `done`, when the work is done.");
+                          + ". Work on what they said, then say `done` again."
+                        : "  its graph closes it: its taker's `done` is a submission, and the quest stays taken until its graph's end.");
                 }
 
                 // How its done answered each, and whether a departure holds it for the person's yes.
@@ -371,14 +371,14 @@ public sealed class QuestTools(
         + "the handback, the record later readers see: one that only points elsewhere is refused.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
-        [Description("take, done, ready, decline, or wait.")] string action,
+        [Description("take, done, decline, or wait.")] string action,
         [Description(
             "Your handback, required to decline: what changed, where (the commits), what you proved, and what you did not, "
             + "in the note itself.")]
         string? reason = null,
         [Description("For wait: the id of the question you published.")] string? on = null,
         [Description(
-            "For done or ready on a quest with the person's requirements: one answer for each, by number: met with how, or "
+            "For done on a quest with the person's requirements: one answer for each, by number: met with how, or "
             + "departed with the reason and the person's words (quote). One left unanswered is refused. A met answer that names "
             + "evidence is read in your last commit when you end, so commit it before you finish.")]
         RequirementAnswer[]? answers = null,

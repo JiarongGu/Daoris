@@ -222,11 +222,11 @@ public sealed record SessionTarget(
     public bool NoGoAheads { get; init; }
 
     /// <summary>
-    /// Whether the quest closes through its closure graph: bound at its
-    /// take, or bound already. Its session closes its work with `ready`, never `done`, which the service refuses on such a quest, on a
-    /// first start, a resume and a carry-on alike. False for every other quest, and the instruction reads as it did.
+    /// Whether the quest closes through its closure graph or its run (bound at its take or its first start, or bound already): its
+    /// session's `done` is a submission the workflow closes at its end, on a first start, a resume and a carry-on alike. False for every
+    /// other quest, whose done closes it.
     /// </summary>
-    public bool Ready { get; init; }
+    public bool Submits { get; init; }
 
     /// <summary>
     /// Whether the session before is one the person stopped, and has since released the quest from that stop with *Try

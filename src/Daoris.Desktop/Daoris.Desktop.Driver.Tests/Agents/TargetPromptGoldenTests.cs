@@ -261,8 +261,8 @@ public sealed class TargetPromptGoldenTests
         "part" => Part,
         "part-alongside" => PartAlongside,
         "channel" => Channel,
-        // A quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
-        "ready" => Bare with { Ready = true },
+        // A quest its closure graph or its run closes, bound at its take or its first start: its session's `done` is a submission.
+        "ready" => Bare with { Submits = true },
         // A quest's session in a driven repository that declares lanes and opens trees of its own, told its routing standing
         // in its standing block.
         "routed" => Bare with { Browser = "Daoris has handed you its browser.", Block = Routed("open") },
@@ -278,20 +278,21 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// A bound quest's resume and carry-on say `ready` as its first start does, and every other quest's say `done`,
-    /// so an install with no closure graph hands no `ready`.
+    /// A bound quest's resume and carry-on say its done is a submission as its first start does, and every other quest's say it closes
+    /// it once landed; no start names a second verb.
     /// </summary>
     [Fact]
-    public void A_bound_quests_every_start_says_ready_and_every_other_quests_says_done()
+    public void A_bound_quests_every_start_says_its_done_is_a_submission_and_every_other_quests_says_done_closes_it()
     {
         var resumed = Bare with { Answered = new QuestView("q9", "console-ui", "console-api", "Which field?", "", "Done") { Note = "The note." } };
         var carried = CarryOn;
         foreach (var target in new[] { Bare, resumed, carried, Retried })
         {
-            var ready = TargetPrompt.Compose(target with { Ready = true });
-            Assert.Contains("`ready` when its work is done", ready, StringComparison.Ordinal);
-            Assert.Contains("Never `done`", ready, StringComparison.Ordinal);
-            Assert.DoesNotContain("`done` when it has landed", ready, StringComparison.Ordinal);
+            var submits = TargetPrompt.Compose(target with { Submits = true });
+            Assert.Contains("`done` when its work is done", submits, StringComparison.Ordinal);
+            Assert.Contains("Your `done` is its submission", submits, StringComparison.Ordinal);
+            Assert.DoesNotContain("`done` when it has landed", submits, StringComparison.Ordinal);
+            Assert.DoesNotContain("`ready`", submits, StringComparison.Ordinal);
 
             var today = TargetPrompt.Compose(target);
             Assert.Contains("`done` when it has landed", today, StringComparison.Ordinal);
@@ -355,7 +356,7 @@ public sealed class TargetPromptGoldenTests
         ["part"] = ("bare", [("carry-on", "You are in session `283ef343`'s tree, on its branch, so its work is here")]),
         ["part-alongside"] = ("bare", [("carry-on", "Session `62c005bc` is still at work in that tree, so you run beside it in a tree of your own")]),
         ["channel"] = ("bare", [("carry-on", "On the ask's channel (ask `#a1b2c3`) since this line of work last read it")]),
-        ["ready"] = ("bare", [("close", "then say it is ready: `ready` when its work is done")]),
+        ["ready"] = ("bare", [("close", "then submit it: `done` when its work is done")]),
         ["heavy"] = ("bare", [("close", "run this repository's heavy gates (`build`, `test`) through `daoris gate")]),
         ["light"] = ("bare", [("close", "`daoris gate run` refuses this tree, and your harness refuses each one's declared command.")]),
         ["light-said"] = ("bare", [("close", "Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.")]),

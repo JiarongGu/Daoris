@@ -48,6 +48,44 @@ public sealed class RunQuestEndsTests
     }
 
     [Fact]
+    public async Task A_run_s_end_the_service_could_not_take_is_asked_again_at_each_look_until_it_is_taken()
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-owed-end-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var owed = new OwedRunEnds(home);
+            var sent = new List<RunFinish>();
+            var takes = false;
+            Task<RunEndResponse?> Finish(RunFinish finish, CancellationToken _)
+            {
+                sent.Add(finish);
+                return Task.FromResult(takes ? new RunEndResponse(null, "Run `q1` ended.", ["q1"], ["s1"]) : null);
+            }
+
+            var said = new List<string>();
+            await RunSessionEnds.FinishAsync(
+                Finish, "q1", new RunEnd("q1", At) { Outcome = RunOutcomes.Completed }, [Quest("q1", "Taken", 3)], ["s1"], said, CancellationToken.None, owed);
+            Assert.Contains("asked again at the next look", Assert.Single(said), StringComparison.Ordinal);
+
+            await RunSessionEnds.AgainAsync(Finish, owed, said, CancellationToken.None);
+            Assert.True(owed.Any);
+
+            takes = true;
+            await RunSessionEnds.AgainAsync(Finish, owed, said, CancellationToken.None);
+            await RunSessionEnds.AgainAsync(Finish, owed, said, CancellationToken.None);
+
+            Assert.Equal(3, sent.Count);
+            Assert.All(sent, finish => Assert.Equal([new RunEndQuest("q1", "m1", 3)], finish.Quests));
+            Assert.False(owed.Any);
+            Assert.Contains("Run `q1` ended.", said[^1], StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
+    }
+
+    [Fact]
     public void A_session_s_wait_keeps_its_run_node_attempt_and_tip()
     {
         var waits = new StepWait("q1", "check", 2, "a1b2c3d");

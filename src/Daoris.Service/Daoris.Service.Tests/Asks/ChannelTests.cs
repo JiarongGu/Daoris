@@ -577,6 +577,20 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal(items.Select(i => i.At).Order(), items.Select(i => i.At));
     }
 
+    /// <summary>A quest its run will close stands at its agent's done as submitted, not taken: its Done comes with its run's end.</summary>
+    [Fact]
+    public async Task A_quest_at_its_agents_done_in_a_run_reads_submitted_on_the_asks_lines()
+    {
+        var (ask, quest, _) = await AskedAsync();
+        await _exchange.RespondAsync(quest.Id, "take", null, Now.AddMinutes(1));
+        Assert.True((await _quests.BindAsync(quest.Id, "q-run", Now.AddMinutes(1))).Moved);
+
+        await _exchange.RespondAsync(quest.Id, "done", "Built.", Now.AddMinutes(2));
+        var lines = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Lines;
+
+        Assert.Equal(["published", "submitted"], lines.Where(line => line.Quest == quest.Id).Select(line => line.Code));
+    }
+
     /// <summary>Forgetting an ask's channel removes its messages and its marks, and no other ask's.</summary>
     [Fact]
     public async Task An_asks_channel_is_forgotten_with_the_ask()

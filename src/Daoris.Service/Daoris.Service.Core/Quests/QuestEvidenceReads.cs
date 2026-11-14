@@ -69,7 +69,7 @@ internal sealed class QuestEvidenceReads(QuestStore quests, QuestReviews reviews
             + "known, and nothing more is kept.",
         { Status: QuestStatus.Taken, Submission: not null } => null,
         _ => $"Quest `#{quest.Id}` is {quest.Status} with no submission standing: a commit is read alone for a submission, at the end of the "
-             + "session that said its `ready`.",
+             + "session whose `done` made it.",
     };
 
     /// <summary>Why a commit read alone is not one in shape, or null: the verdict's own fields, the one judge's.</summary>
@@ -98,7 +98,7 @@ internal sealed class QuestEvidenceReads(QuestStore quests, QuestReviews reviews
         {
             ({ } current, { } asked) =>
                 $"This verdict was read for submission `{asked.Machine}` {asked.Sequence} of quest `#{quest.Id}`, and its current "
-                + $"submission is `{current.Machine}` {current.Sequence}: a later `ready` replaced the one read, so read the current "
+                + $"submission is `{current.Machine}` {current.Sequence}: a later `done` replaced the one read, so read the current "
                 + "one's evidence. Nothing was kept.",
             ({ } current, null) =>
                 $"Quest `#{quest.Id}` waits on its submission's evidence, and a verdict names the submission it read: "

@@ -451,7 +451,7 @@ public sealed class McpToolsTests : McpToolsFixture
         await owner.RespondToQuestAsync(quest.Id, "take");
         Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
 
-        await owner.RespondToQuestAsync(quest.Id, "ready", "Built.");
+        await owner.RespondToQuestAsync(quest.Id, "done", "Built.");
 
         var submitted = (await _quests.FindAsync(quest.Id))!.Submission!;
         Assert.Equal("s0a1b2c3", submitted.Session);
@@ -461,7 +461,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("the person reopened its submission", listed);
         Assert.Contains("_The bridge is wrong._", listed);
 
-        await owner.RespondToQuestAsync(quest.Id, "ready", "Built again.");
+        await owner.RespondToQuestAsync(quest.Id, "done", "Built again.");
         Assert.DoesNotContain("the person reopened its submission", await owner.ListQuestsAsync("Owner"));
     }
 
@@ -477,7 +477,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, "s0a1b2c3"));
         await owner.RespondToQuestAsync(quest.Id, "take");
         Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
-        await owner.RespondToQuestAsync(quest.Id, "ready", "Built.");
+        await owner.RespondToQuestAsync(quest.Id, "done", "Built.");
         var submitted = (await _quests.FindAsync(quest.Id))!.Submission!;
 
         Assert.Equal(QuestRespondRefusal.None, (await exchange.EvidenceAsync(quest.Id, new QuestEvidenceVerdict(
