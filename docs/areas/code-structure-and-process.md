@@ -167,7 +167,9 @@ finishes first and the whole set runs once.
     area reached through a program or a `[Reaches]`; the names are followed one level only, as before. A class reached by the merge's
     paths has by definition inputs that moved from main, so a class pass replays only where the same inputs were proved before:
     by a builder's own checks (`node tools/reached-checks.mjs --base main`, or `--classes <names>`, which record each pass under the
-    key the merge computes) or by an earlier attempt of the same merge. A reached class that fails is run again alone once: a pass
+    key the merge computes, and which take one place in the machine's heavy-run admission, said while they wait, for each heavy group:
+    a Process-tier or rehearsal run or a whole suite, `reached-admit.ts`; the merge's own `reached` gate runs inside the queue's place)
+    or by an earlier attempt of the same merge. A reached class that fails is run again alone once: a pass
     alone is a FLAKE (the gate reads FLAKE, the class is not recorded), a failure main's findings or class verdicts already stand
     is named main's red, any other fails the run; a page or merge-tool test failure names its test. The run ends with its counts
     (`reached-classes:`), which the merge record keeps per gate (`classes`: run, replayed, flaked, main's, red) because the gate's

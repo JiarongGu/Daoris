@@ -543,7 +543,7 @@ public sealed class SystemWiringTests : IDisposable
     public void The_versions_name_what_this_install_carries_and_what_only_the_window_or_the_tools_know()
     {
         var (install, home, driver) = Install();
-        var package = Path.Combine(install, "app", "cli", "node_modules", "daoris");
+        var package = Path.Combine(install, "app", "cli");
         Directory.CreateDirectory(package);
         File.WriteAllText(Path.Combine(package, "package.json"), """{ "name": "daoris", "version": "0.9.1" }""");
 

@@ -13,12 +13,12 @@ internal static class DoctrineConsole
     /// <summary>The doctrine half of <c>daoris help</c>: the carried CLI's own usage; nothing where no CLI is carried.</summary>
     public static async Task UsageAsync()
     {
-        if (CommandWords.CarriedCli(AppContext.BaseDirectory) is not null) await RunAsync(["--help"]).ConfigureAwait(false);
+        if (DoctrineTool.BesideProgram(AppContext.BaseDirectory) is not null) await RunAsync(["--help"]).ConfigureAwait(false);
     }
 
     public static async Task<int> RunAsync(IReadOnlyList<string> args)
     {
-        if (CommandWords.CarriedCli(AppContext.BaseDirectory) is not { } cli)
+        if (DoctrineTool.BesideProgram(AppContext.BaseDirectory) is not { } cli)
         {
             await Console.Error.WriteLineAsync($"daoris: {CommandWords.NoCli(args[0])}").ConfigureAwait(false);
             return 2;

@@ -18,28 +18,28 @@ const exits = (codes: number[]): { exec: Exec; calls: string[][] } => {
   return { calls, exec: (_command, args) => { calls.push(args); return codes.shift() ?? 0; } };
 };
 
-const withStore = (body: (store: PassedClasses, root: string) => void): void => {
+const withStore = async (body: (store: PassedClasses, root: string) => Promise<void>): Promise<void> => {
   const { dir, remove } = fixtureFolder('reached-run');
   try {
-    body(new PassedClasses(join(dir, 'store.json')), dir);
+    await body(new PassedClasses(join(dir, 'store.json')), dir);
   } finally {
     remove();
   }
 };
 
-test('a clean run records each class it ran and says how many ran and were replayed', () => withStore((store, root) => {
+test('a clean run records each class it ran and says how many ran and were replayed', () => withStore(async (store, root) => {
   const run = exits([0]);
   const lines: string[] = [];
-  const outcome = runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false, replayed: 7 });
+  const outcome = await runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false, replayed: 7 });
   assert.deepEqual(outcome, { ran: 2, replayed: 7, flaked: [], mainRed: [], red: [] });
   assert.equal(store.has(unitId(unit('a')), 'key-a'), true);
   assert.deepEqual(parseOutcome(lines.join('\n')), outcome);
 }));
 
-test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore((store, root) => {
+test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore(async (store, root) => {
   const run = exits([1, 0]);
   const lines: string[] = [];
-  const outcome = runPlan({ root, plan: planOf('a'), keys: keysOf('a'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false });
+  const outcome = await runPlan({ root, plan: planOf('a'), keys: keysOf('a'), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false });
   assert.equal(run.calls.length, 2, 'the failed class is run once more, alone');
   assert.deepEqual(outcome.flaked, [unitId(unit('a'))]);
   assert.equal(outcome.red.length, 0);
@@ -47,8 +47,8 @@ test('a class that fails and passes alone is a flake: said, counted, and not rec
   assert.ok(lines.some((line) => line.includes('FLAKE')));
 }));
 
-test('a class that fails again alone is main\'s red where main stands it red, and a new red otherwise', () => withStore((store, root) => {
-  const outcome = runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: exits([1, 1]).exec, say: () => undefined, mainRedOf: (each) => each.unit.includes('/a.') });
+test('a class that fails again alone is main\'s red where main stands it red, and a new red otherwise', () => withStore(async (store, root) => {
+  const outcome = await runPlan({ root, plan: planOf('a', 'b'), keys: keysOf('a', 'b'), store, exec: exits([1, 1]).exec, say: () => undefined, mainRedOf: (each) => each.unit.includes('/a.') });
   assert.deepEqual(outcome.mainRed, [unitId(unit('a'))]);
   assert.deepEqual(outcome.red, [unitId(unit('b'))]);
 }));

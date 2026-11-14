@@ -17,7 +17,7 @@ import {
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
+  CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run: one copy.
@@ -112,20 +112,17 @@ test('symbols and package doc files are strays, and the marker and the bundle ar
 });
 
 /**
- * The gate reads the install's doctrine tool back off the published folder, and each
- * thing the publish claims is a sentence when it is not so: a launcher missing, the package without its
- * entry, its dispatcher or its canon, the source tree where the packed artefact belongs, or a version that
- * is not the canon's.
+ * The gate reads the install's doctrine tool back off the published folder: a launcher, the bundle or its canon
+ * missing, an npm layout left in its folder, or a version that is not the canon's is a sentence.
  */
 test('the doctrine tool check names what an install lacks, and passes on a sound one', () => {
   const fx = makeFixture('deploy-cli');
-  const pkg = `install/${CLI_PACKAGE.join('/')}`;
+  const pkg = `install/${CLI_HOME.join('/')}`;
   const sound = () => {
     for (const name of CLI_LAUNCHERS) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
     fx.write(`install/${DRIVER_HOME.join('/')}/${DRIVER_EXE}`, 'host\n');
     fx.write(`install/${DRIVER_HOME.join('/')}/git2-5853918.dll`, 'native\n');
-    fx.write(`${pkg}/${CLI_ENTRY.join('/')}`, '// entry\n');
-    fx.write(`${pkg}/dist/cli.js`, '// built\n');
+    fx.write(`${pkg}/daoris.mjs`, '// bundle\n');
     fx.write(`${pkg}/package.json`, '{"name":"daoris","version":"0.4.2"}');
     fx.write(`${pkg}/canon/canon.json`, '{"version":"0.4.2"}');
   };
@@ -137,18 +134,18 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   sound();
 
   assert.deepEqual(cliProblems(install, '0.4.3'), [
-    `${CLI_PACKAGE.join('/')}/package.json says 0.4.2, not 0.4.3`,
-    `${CLI_PACKAGE.join('/')}/canon/canon.json says 0.4.2, not 0.4.3`,
+    `${CLI_HOME.join('/')}/package.json says 0.4.2, not 0.4.3`,
+    `${CLI_HOME.join('/')}/canon/canon.json says 0.4.2, not 0.4.3`,
   ]);
 
-  fx.write(`${pkg}/src/cli.ts`, 'export {};\n');
-  assert.match(cliProblems(install, '0.4.2').join('\n'), /src\/ is there: the source tree/);
+  fx.write(`${pkg}/node_modules/daoris/package.json`, '{}');
+  assert.match(cliProblems(install, '0.4.2').join('\n'), /node_modules\/ is there: an npm layout/);
 
   const bare = join(fx.root, 'bare');
   const problems: string[] = cliProblems(bare, '0.4.2');
   for (const name of CLI_LAUNCHERS) assert.ok(problems.includes(`${CLI_BIN.join('/')}/${name} is not there`), name);
-  assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/dist/cli.js is not there`));
-  assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/canon/canon.json is not there`));
+  assert.ok(problems.includes(`${CLI_HOME.join('/')}/daoris.mjs is not there`));
+  assert.ok(problems.includes(`${CLI_HOME.join('/')}/canon/canon.json is not there`));
   fx.cleanup();
 });
 

@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
+
+> **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.
+
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
 > **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.
@@ -15,6 +19,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## CREATESETUP1 — a repository just created is set up where its workspace works in place (2026-11-14)
 
 > **CREATESETUP1** (driver): Outcome: `SetupPress.PlanAsync` asks `ISetupWorld.NothingReadsItAsync` (one commit on every ref, no session record) and treats such a repository as set up apart, so a creation in a workspace working in place asks its set-up quest in the checkout and its plan's step says so; a repository with a second commit or a session keeps the `no-own-tree` refusal.
+
+---
 
 ## MERGEFLOW1b (part) and REACHREPLAY1 (part) — class-level reach, a builder's recorded passes, reached reds classified (2026-11-14)
 
@@ -24609,3 +24615,4 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **WALKGIT1 — the tree walks start git once for what they read once** (driver; found by STARTPERF1 2026-11-14): 2026-11-14 a tree the line holds by content is walked in 5 starts, not 8 (its kept read after an edit asks 1 `status`, not 2): the walk takes head and branch from the tree's files, asks `status` once (the proof's, where the tree is held) and keeps the declared output its proof read instead of reading it again (`TreeWalkStartsTests`); its `rev-parse` of the recovery ref is `GitLibraryVerify`'s, in process; left out: the walk's remaining object read, one `cat-file --batch` for the declaration. → `docs/areas/git-and-remotes.md`
 - [x] **FLAKY1 — four classes that fail under load and pass alone** (driver, modules): 2026-11-14 each fixed at its cause: `DriverModuleChannelTests` counted requests while a held read (100 ms patience, answered pending on a loaded pool) was still making them, so its module waits on the work; `ChatRoutingProcessTests` read the stand-in agent's file with a lock that denied the agent's append, losing its note or throwing, so the read shares for writing; `LookAccountTests` bound a look in milliseconds, now in shares of the look and of the first look; `GitLibraryRefsTests` asserted the process-wide open count, now `GitLibrary.OpenIn(folder)`, the repositories a folder's asker owns.
 - [x] **SERVICEWAIT1 — the service's index read beside its re-read** (service): 2026-11-14 the knowledge index lives on its own SQLite connection and gate, so reads no longer wait behind its re-read (`IndexWriteBesideReadsTests`).
+- [x] **ADMIT1 — a builder's heavy checks take the machine's admission** (tools): 2026-11-14 `tools/reached-checks.mjs` takes one place in the machine's admission (`createAdmission`, the capacity the merge queue's gates share) for each heavy group of its plan (`merge/reached-admit.ts`: Process settings or suite, a rehearsal, or eight classes and more), says what it waits for, runs the groups asynchronously so the hold's beat sounds, and lets the place go as the group ends or the process is interrupted; light groups run at once, and `docs/development.md` names the raw Process `dotnet test` as the run the merge refuses to replay.

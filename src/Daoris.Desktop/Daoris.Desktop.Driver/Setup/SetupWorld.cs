@@ -43,9 +43,8 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     }
 
     /// <summary>
-    /// The <c>node</c> Tools resolves and the <c>daoris</c> the <c>PATH</c> a child starts with finds (one
-    /// environment), each asked its version as a child would ask it. In an install that <c>PATH</c> begins
-    /// with the install's own launchers, so the <c>daoris</c> found is the install's.
+    /// The <c>node</c> Tools resolves and the doctrine tool the install carries (<see cref="DoctrineTool.OfHome"/>: its bundle
+    /// by its place in the install, no <c>PATH</c> lookup), each asked its version as a child would ask it; the bundle runs on that node.
     /// </summary>
     public async Task<SetupTools> ToolsAsync(CancellationToken ct)
     {
@@ -57,26 +56,27 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
             ? (null, node.Problem ?? "`node` is not on the PATH Daoris's children start with")
             : await VersionAsync(node.File, read, ct).ConfigureAwait(false);
 
-        var daoris = CommandPresence.Resolve("daoris", path, startable: true);
-        var (daorisVersion, daorisProblem) = daoris is null
+        var daoris = DoctrineTool.OfHome(home);
+        var (daorisVersion, daorisProblem) = daoris is null || node.File is null
             ? (null, (string?)null)
-            : await VersionAsync(daoris, read, ct).ConfigureAwait(false);
+            : await VersionAsync(node.File, read, ct, daoris).ConfigureAwait(false);
 
         return new SetupTools(node.File, nodeVersion, nodeProblem, daoris, daorisVersion, daorisProblem);
     }
 
     /// <summary>
-    /// The checkout's <c>daoris status --json</c>, asked of the <c>daoris</c> a child finds, as <see cref="ToolsAsync"/> finds it: in an install
-    /// the install's own launcher, whose program hands the doctrine commands to the CLI the install carries (ONEWAY1ai-i,
-    /// <see cref="CommandWords.CarriedCli"/>), so the answer is that CLI's own and no table of its is kept here.
+    /// The checkout's <c>daoris status --json</c>, asked of the CLI the install carries, run on the tools' node by the bundle's own
+    /// path (<see cref="DoctrineTool.OfHome"/>), so the answer is that CLI's own and no table of its is kept here.
     /// </summary>
     public async Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct)
     {
         if (repository.Root is null) return new(null, "it has no checkout here");
         var read = Tools.Read(home);
-        return CommandPresence.Resolve("daoris", ChildPath(read), startable: true) is { } daoris
-            ? await DoctrineStatusRead.ReadAsync(daoris, [], repository.Root, read, home, ct).ConfigureAwait(false)
-            : new(null, "no `daoris` on the PATH Daoris's children start with");
+        if (DoctrineTool.OfHome(home) is not { } bundle) return new(null, "the install carries no doctrine tool: a publish of Daoris that carries it lays it in place");
+        var node = Tools.Resolve(read, home, "node", ChildPath(read));
+        return node.File is null
+            ? new(null, node.Problem ?? "`node` is not on the PATH Daoris's children start with")
+            : await DoctrineStatusRead.ReadAsync(node.File, [bundle], repository.Root, read, home, ct).ConfigureAwait(false);
     }
 
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
@@ -97,8 +97,8 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         return Tools.ChildPath(read, home, inherited) ?? inherited;
     }
 
-    /// <summary>A program's first line to <c>--version</c>, or what it said in place of one.</summary>
-    private async Task<(string? Version, string? Problem)> VersionAsync(string file, ToolsRead read, CancellationToken ct)
+    /// <summary>A program's first line to <c>--version</c> (a script's, where it runs one), or what it said in place of one.</summary>
+    private async Task<(string? Version, string? Problem)> VersionAsync(string file, ToolsRead read, CancellationToken ct, string? script = null)
     {
         var info = new ProcessStartInfo
         {
@@ -110,8 +110,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        if (script is not null) info.ArgumentList.Add(script);
         info.ArgumentList.Add("--version");
-        // Asked as a child is started: the launcher runs on the node a child's PATH finds.
+        // Asked as a child is started, with the tools' environment.
         Tools.Hand(info, read, home);
 
         var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);

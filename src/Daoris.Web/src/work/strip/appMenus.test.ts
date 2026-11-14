@@ -41,7 +41,7 @@ describe('the menus, row by row', () => {
     const run = menuRows(entries(), 'run');
     // A new conversation is Workspace's new thing, so Run opens on This session.
     expect(labels(run)).toEqual([
-      'Answer…', 'Try again', 'Review', 'Stop…', 'Open in its own window',
+      'Answer…', 'Try again', 'Open outputs', 'Stop…', 'Open in its own window',
       'Take', 'Mark done…', 'Try again', 'Pause…', 'Resume', 'Decline…', 'Archive what ended…',
     ]);
     expect(run.map((row) => Boolean(row.separated))).toEqual([
