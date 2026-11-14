@@ -41,6 +41,14 @@ public static class StandingBlock
         "Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this "
         + "repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).";
 
+    /// <summary>
+    /// What a session that may change its repository's memory is told of it: nothing else in a session's start names <c>memory_write</c>,
+    /// and a tool no session is told of is never called (LYNTAIMEM1).
+    /// </summary>
+    internal const string WriteMemory =
+        "A fact you confirmed that a later session on this repository would otherwise have to find out again goes into its memory with "
+        + "`memory_write`: one fact in a sentence or two, citing the record that shows it. It applies when your work is accepted.";
+
     /// <summary>What a session whose harness takes no rules file is told: no deny of the person's reaches it, and what still refuses.</summary>
     internal const string NoDenies =
         "Your harness takes no rules file, so none of the person's deny rules reaches you: hold to what they asked in their words. "
@@ -176,6 +184,7 @@ public static class StandingBlock
         var text = new StringBuilder("Where things are. This repository's own documents, code and history: its log, and the commits that last ")
             .Append("changed what you are changing.");
         if (facts.Knowledge) text.Append(" The workspace's knowledge and its memory, through your connector's `knowledge_search` and `memory_search`.");
+        if (facts is { Knowledge: true, Writes: true }) text.Append(' ').Append(WriteMemory);
         if (facts.Checkouts) text.Append(" The other checkouts listed above, which you may read.");
         said.Add("where things are");
         if (facts.Indexes.Count > 0)
