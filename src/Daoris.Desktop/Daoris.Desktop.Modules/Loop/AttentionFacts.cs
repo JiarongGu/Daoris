@@ -129,4 +129,10 @@ public sealed record AttentionFacts
 
     /// <summary>Each second-check flag not yet seen, as <see cref="AttentionSecondCheckRows.Unseen"/> reads it.</summary>
     public IReadOnlyList<JsonObject> SecondCheck { get; init; } = [];
+
+    /// <summary>
+    /// The rows the person set aside with no act, each by <see cref="Daoris.Driver.Notices.HiddenKey"/> (its kind, its id and the moment it waited
+    /// since): none of them is judged while it stands as it did, so a row that moved on is shown again.
+    /// </summary>
+    public IReadOnlySet<string> Hidden { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 }

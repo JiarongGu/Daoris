@@ -34,14 +34,26 @@ public sealed class NoticesRoutes(DriverLoop loop)
 
     /// <summary>
     /// The notice <c>id</c> dismissed; or with <c>all</c>, every notice of the window's <c>workspace</c> and every machine-wide one,
-    /// every notice where it names none.
+    /// every notice where it names none; or with <c>rowKind</c>, <c>rowId</c> and <c>rowSince</c>, that row of <i>What needs you</i> set
+    /// aside with no act, kept in the history.
     /// </summary>
     [DriverRoute("NOTICE_DISMISS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("NOTICE_DISMISS", None = OwnerNone.ActsOnNothing)]
-    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", Quick = true)]
+    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", "rowKind", "rowId", "rowSince", Quick = true)]
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
     private Task<object?> NoticeDismissAsync(NoticeDismissPress press, CancellationToken cancellationToken)
     {
+        // A row of What needs you set aside with no act: one read entry in the history, which the judge hides the row by.
+        if (press.RowKind is not null || press.RowId is not null)
+        {
+            if (string.IsNullOrWhiteSpace(press.RowKind) || string.IsNullOrWhiteSpace(press.RowId))
+            {
+                throw new ArgumentException("NOTICE_DISMISS sets a row aside by its kind (rowKind) and its id (rowId).");
+            }
+
+            return Task.FromResult<object?>(new NoticesWritten(_loop.Notices.SetAside(press.RowKind, press.RowId, press.RowSince, press.Workspace) is null));
+        }
+
         IReadOnlyList<string> ids = press.All
             ? _loop.Notices.Scoped(press.Workspace)
             : [press.Id ?? throw new ArgumentException("NOTICE_DISMISS names the notice it dismisses (id), or all.")];
