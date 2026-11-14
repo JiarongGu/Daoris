@@ -280,7 +280,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a hand-back's checks are chosen by `GateReach`,
-    the declared gates' reach, as a landing's are. (D192)
+    the declared gates' reach, as a landing's are. (D192) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
+    gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
+    under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
+    exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`).
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**

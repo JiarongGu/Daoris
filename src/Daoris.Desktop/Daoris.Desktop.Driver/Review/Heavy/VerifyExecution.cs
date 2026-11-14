@@ -49,6 +49,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
+        if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from) is { } command) return (await ReachedAsync(reached, command, ct).ConfigureAwait(false), false);
+
         var runner = VerifyRunner.Of(text);
         if (send.Gates is null && runner is not null) return await RunnerAsync(runner, declared, ct).ConfigureAwait(false);
 
@@ -100,6 +102,30 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 [.. declared.Where(gate => gate.Heavy).Select(gate => gate.Name)], log)
             : VerifyJudge.Opaque(send.Invocation, send.Commit, exit.Value, log);
         return (judged.Result is { } result ? result with { Declaration = send.Accepted } : null, judged.Busy);
+    }
+
+    /// <summary>
+    /// The repository's reached runner in the verification tree at the commit, in place of the gates: it takes no place of its own in the
+    /// machine's admission, since the step's hold is the one its children inherit.
+    /// </summary>
+    private async Task<VerifyResult> ReachedAsync(ReachedRunner runner, string command, CancellationToken ct)
+    {
+        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", key);
+        await TreeAtAsync(tree, ct).ConfigureAwait(false);
+        try
+        {
+            var log = Path.Combine(_folder, "reached.log");
+            var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
+            keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, DateTimeOffset.UtcNow) });
+            var wall = Stopwatch.StartNew();
+            var exit = await StepAsync(command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
+            if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
+            return ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, ReadText(log) ?? "", log, runner.Outcome) with { Declaration = send.Accepted, WallSeconds = wall.Elapsed.TotalSeconds };
+        }
+        finally
+        {
+            await WorkingTree.GitAsync(send.Checkout, ["worktree", "unlock", tree], CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     /// <summary>The gates one after another in Daoris's verification tree at the commit, the first failure ending the sequence.</summary>

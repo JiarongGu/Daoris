@@ -87,6 +87,7 @@ public static class VerifyRuns
         {
             Gates = CheckNode.GatesOf(node),
             Reach = CheckNode.ReachesByPaths(node) && run is { Base: { } from, Line: not null } ? new VerifyReach(from, GatesPassed.Of(home, run)) : null,
+            Base = run.Base ?? run.Line,
             Bound = WorkPerformer.Timeout(node),
         };
     }
