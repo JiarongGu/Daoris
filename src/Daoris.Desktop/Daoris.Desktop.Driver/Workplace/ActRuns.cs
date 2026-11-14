@@ -36,6 +36,9 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     /// by its own rule whatever it stops for (a deleted branch a tree checked out meanwhile is made again), and runs under no cancellation.
     /// </summary>
     public Func<int, Task<string?>>? After { get; init; }
+
+    /// <summary>How long a refused hold of the checkout is tried again before the act is refused; zero refuses at once.</summary>
+    public TimeSpan Waits { get; init; } = TimeSpan.Zero;
 }
 
 /// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it is refused before anything is written, in words.</summary>
@@ -112,13 +115,39 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>The checkout held alone for an act or its reconciliation, or null where another holds it.</summary>
     internal static TreeLock? Hold(string home, string checkout, string repository) => TreeLock.TryWriting(home, checkout, repository, TreeLock.Acting);
 
+    private static readonly TimeSpan Polls = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>The checkout held alone for <paramref name="plan"/>, tried again while it is held for the plan's wait; null where it still is.</summary>
+    private static async Task<TreeLock?> HoldWaitingAsync(string home, ActPlan plan, CancellationToken ct)
+    {
+        var held = Hold(home, plan.Checkout, plan.Repository);
+        // No wait while this flow holds a checkout: a cycle of waits could begin there.
+        if (held is not null || plan.Waits <= TimeSpan.Zero || LockWaits.Holding is not null) return held;
+        var until = DateTimeOffset.UtcNow + plan.Waits;
+        while (held is null && DateTimeOffset.UtcNow < until && !ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(Polls, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            held = Hold(home, plan.Checkout, plan.Repository);
+        }
+
+        return held;
+    }
+
     /// <summary>Run <paramref name="plan"/> to its close, or refuse it before anything is written.</summary>
     /// <param name="ct">The watch: it cancels the act before its first effect step, and after that only the watch.</param>
     public async Task<ActRun> RunAsync(ActPlan plan, CancellationToken ct)
     {
         // A flow already holding the checkout (a tidy, a removal) runs its act under that hold: a second open in one process is refused.
         var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
-        using var taken = outer is null ? Hold(journal.Home, plan.Checkout, plan.Repository) : null;
+        using var taken = outer is null ? await HoldWaitingAsync(journal.Home, plan, ct).ConfigureAwait(false) : null;
         var held = outer ?? taken;
         if (held is null) return Refused($"{TreeLock.Held(plan.Repository, TreeLock.HolderOf(journal.Home, plan.Checkout))}: nothing was changed.");
 

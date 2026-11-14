@@ -22,6 +22,11 @@ internal static class JournaledDeletes
     /// <summary>Who pressed a delete Daoris judged, as the journal records it beside the person's <c>window</c> and <c>terminal</c>.</summary>
     public const string Press = "daoris";
 
+    /// <summary>How long a judged delete waits behind a start or a writer, whose holds are short, before it is kept and said.</summary>
+    internal static TimeSpan Waits => WaitSeam.Value ?? TimeSpan.FromSeconds(30);
+
+    internal static readonly AsyncLocal<TimeSpan?> WaitSeam = new();
+
     /// <summary>
     /// Delete <paramref name="branch"/> at <paramref name="judged"/>, verifying each of <paramref name="held"/> at its commit in the same
     /// transaction, and keeping its commits on <paramref name="keep"/> where given. <paramref name="late"/> is read once the ref went, with the
@@ -72,6 +77,7 @@ internal static class JournaledDeletes
         var runs = new ActRuns(new ActJournal(home));
         var run = await runs.RunAsync(new ActPlan(GitRefActs.DeleteKind, Press, repository, root, steps)
         {
+            Waits = Waits,
             Plan = plan.ToJsonString(),
             After = async ordinal => ordinal == 0 ? stopped = await late(keep is { Made: true } ? keep.Ref : null).ConfigureAwait(false) : null,
         }, none).ConfigureAwait(false);

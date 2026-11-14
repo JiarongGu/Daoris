@@ -164,7 +164,9 @@ internal sealed class TreeSweeps(
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
-                results.Add(new(now, false, "it changed since the list, and is kept"));
+                results.Add(new(now, false, judged is null && now.Unread && !string.IsNullOrWhiteSpace(now.Detail)
+                    ? $"{now.Detail}, so it is kept"
+                    : "it changed since the list, and is kept"));
                 continue;
             }
 
@@ -357,7 +359,8 @@ internal sealed class TreeSweeps(
             // The output the repository declares counts only as the owner accepted it for integration.
             var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
-                tree, root, declared, ct, new LinePlaces(context.Home).SlotAt(workspace, repository, tree)).ConfigureAwait(false);
+                tree, root, declared, ct, new LinePlaces(context.Home).SlotAt(workspace, repository, tree),
+                TreeFilesRecord.Read(context.Home, tree)).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             seen?.Add(holds);
             shared = holds.Shared.Count;
@@ -378,11 +381,11 @@ internal sealed class TreeSweeps(
             (atTip, tipErr) = (tipCode == 0 ? tipOut.Trim() : null, tipError);
         }
 
-        if (atTip is not { } tip) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}") with { Unread = true }, null);
+        if (atTip is not { } tip) return (Item(SweepKind.Unlanded, detail: TipUnread(tipErr)) with { Unread = true }, null);
         worked = context.Grown.Of(repository, branch) is { } grown && !string.Equals(grown.From, tip, StringComparison.OrdinalIgnoreCase);
 
         var (code, log, err) = await TreeFollows.UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
-        if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}") with { Unread = true }, null);
+        if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {ContentHolds.Said(err)}") with { Unread = true }, null);
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
         {
@@ -498,6 +501,10 @@ internal sealed class TreeSweeps(
         return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where)
             with { OnLine = onLine is not null, Hold = hold, LandingBranch = landingBranch }, tip);
     }
+
+    /// <summary>Why a branch's tip did not read, in git's words: <c>rev-parse --quiet</c> says nothing where no commit stands at the name.</summary>
+    internal static string TipUnread(string error) =>
+        "git could not tell: " + (string.IsNullOrWhiteSpace(error) ? "no commit stands at the branch's name, and git said nothing" : ContentHolds.Said(error));
 
     /// <summary>
     /// The form of the line that holds <paramref name="commit"/> by ancestry: the line's own branch, else origin's

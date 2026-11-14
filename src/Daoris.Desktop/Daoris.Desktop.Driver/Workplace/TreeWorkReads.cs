@@ -195,10 +195,10 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     }
 
     /// <summary>Why a discard would not go, and the paths no commit holds as the one status counted them (null where it could not say).</summary>
-    private static async Task<(string? Stays, int? Paths)> StaysOfAsync(
+    private async Task<(string? Stays, int? Paths)> StaysOfAsync(
         string full, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
-        var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
+        var holds = await ContentHolds.HoldsAsync(full, root, declared, ct, files: TreeFilesRecord.Read(context.Home, full)).ConfigureAwait(false);
         return holds is null ? ("Daoris cannot tell what it holds beyond its commits", null)
             : holds.Uncommitted.Count > 0 ? ($"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy", holds.Uncommitted.Count)
             : holds.OwnSaid is { } own ? ($"it holds {own}, which a discard would destroy", 0)

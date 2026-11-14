@@ -113,7 +113,7 @@ internal static class TreeScratch
     /// comparison is asked. Bounded as <see cref="WrittenSince"/> is, with the same answer past it.
     /// </summary>
     /// <param name="entry">The folder, relative to the tree, as git names it.</param>
-    internal static List<string> OwnFilesIn(string treeRoot, string entry, IReadOnlyList<Regex> declared, out bool tooLarge)
+    internal static List<string> OwnFilesIn(string treeRoot, string entry, IReadOnlyList<Regex> declared, out bool tooLarge, Func<string, bool>? daoris = null)
     {
         tooLarge = false;
         var found = new List<string>();
@@ -130,7 +130,7 @@ internal static class TreeScratch
             }
 
             var relative = Path.GetRelativePath(treeRoot, file).Replace('\\', '/');
-            if (!UnderMadeFolder(relative) && !IsDeclared(declared, relative)) found.Add(relative);
+            if (!UnderMadeFolder(relative) && !IsDeclared(declared, relative) && daoris?.Invoke(relative) != true) found.Add(relative);
         }
 
         return found;
@@ -157,7 +157,9 @@ internal static class TreeScratch
     /// </summary>
     /// <param name="entry">The folder, relative to both roots, as git names it.</param>
     /// <param name="opened">When the tree opened: a file written no later than this is not the session's.</param>
-    internal static List<string> WrittenSince(string treeRoot, string checkoutRoot, string entry, DateTime opened, out bool tooLarge, IReadOnlyList<Regex>? declared = null)
+    internal static List<string> WrittenSince(
+        string treeRoot, string checkoutRoot, string entry, DateTime opened, out bool tooLarge, IReadOnlyList<Regex>? declared = null,
+        Func<string, bool>? daoris = null)
     {
         tooLarge = false;
         var found = new List<string>();
@@ -177,6 +179,7 @@ internal static class TreeScratch
             var relative = Path.GetRelativePath(treeRoot, file).Replace('\\', '/');
             // A build's folder inside this folder, and a file the repository declares as output, are no session's own.
             if (UnderBuildFolder(relative) || (declared is not null && IsDeclared(declared, relative))) continue;
+            if (daoris?.Invoke(relative) == true) continue;
             if (!SameBytes(file, Path.Combine(checkoutRoot, relative))) found.Add(relative);
         }
 

@@ -324,12 +324,19 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
     the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
     counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
-    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). (D195, D218)
+    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). A copy of a machine-local file
+    Daoris made into the tree (the files record's `Copies`, by the hash it wrote) and the half-made copy a cut-off open left
+    (`.daoris-making-`) are never the session's work, whatever the checkout's file holds now: a stale copy keeps no tree, an edited one
+    does (`TreeCopies.IsOwn`, passed to `ContentHolds.HoldsAsync`). (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
-    again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
+    again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. A judged branch delete
+    that finds the repository held by a start or another writer waits for it, thirty seconds in a flow holding no checkout alone
+    (`ActPlan.Waits`, `JournaledDeletes.Waits`), and is then kept and said with the holder's words; a read git said nothing of says so
+    (`TreeSweeps.TipUnread`). (D88)
 51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's
     tree is ended by its graph's `release` (workflows rule 31b) or by the look's sweep (`TreeReleases.SweepAsync`, in the lease
-    holder's tidy of each repository, said once in its report): for a branch whose part the run's `tidy` ended once its pull request
+    holder's tidy of each repository, said once in its report): for a branch the line holds (the end judgement's `GrownBranch.Held`,
+    on a standing entry), for a branch whose part the run's `tidy` ended once its pull request
     merged (`TidiedParts`), whatever the run does after and whether or not its graph carries a `release`, and for a run that ended
     settled or whose record is gone. The sweep
     leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's

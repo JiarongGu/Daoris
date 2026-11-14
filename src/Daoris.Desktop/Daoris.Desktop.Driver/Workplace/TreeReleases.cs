@@ -30,8 +30,8 @@ public sealed class TreeReleases(string home)
     }
 
     /// <summary>
-    /// The branches of <paramref name="repository"/> a run owns that are over for their tree, each ended behind the proof: its <c>tidy</c> ended the part
-    /// (<see cref="TidiedParts"/>), or its run's record ended settled or is gone (<see cref="IWorkplaceRunTrees"/>); an unread record is unknown.
+    /// The branches of <paramref name="repository"/> a run owns that are over for their tree, each ended behind the proof: the line holds the branch
+    /// (<see cref="GrownBranch.Held"/>), its <c>tidy</c> ended the part (<see cref="TidiedParts"/>), or its run ended or is gone (<see cref="IWorkplaceRunTrees"/>).
     /// </summary>
     /// <param name="inUse">The trees sessions still run or wait in, which stay; null where none is known. Where it cannot be read nothing is ended.</param>
     public async Task<IReadOnlyList<TreeReleased>> SweepAsync(
@@ -43,7 +43,7 @@ public sealed class TreeReleases(string home)
         if (ownedHere.Count == 0) return [];
         var runs = WorkplaceRunTrees.Current;
         var landings = new LandedBranches(home).Entries();
-        var due = ownedHere.Where(entry => TidiedParts.Ended(landings, entry) || runs.Due(home, entry.Run!)).ToList();
+        var due = ownedHere.Where(entry => (entry.Held is not null && entry.GoneAt is null) || TidiedParts.Ended(landings, entry) || runs.Due(home, entry.Run!)).ToList();
 
         if (due.Count == 0) return [];
         IReadOnlySet<string> busy = new HashSet<string>();
