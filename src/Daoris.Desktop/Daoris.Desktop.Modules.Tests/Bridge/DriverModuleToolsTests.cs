@@ -484,17 +484,32 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     public async Task Browse_answers_the_pickers_choice_and_says_when_this_host_has_no_picker()
     {
         string? asked = null;
-        var picking = new DriverModule(Bus, Loop(), pickFile: title => { asked = title; return Task.FromResult<string?>(@"C:\Tools\git\cmd\git.exe"); });
+        var picking = new DriverModule(Bus, Loop(), pickFile: (_, title) => { asked = title; return Task.FromResult<string?>(@"C:\Tools\git\cmd\git.exe"); });
         var picked = await AnswerAsync(picking, "TOOLS_PICK", new { title = "Choose Git" });
         Assert.Equal(@"C:\Tools\git\cmd\git.exe", picked.GetProperty("file").GetString());
         Assert.True(picked.GetProperty("can").GetBoolean());
         Assert.Equal("Choose Git", asked);
 
-        var cancelled = await AnswerAsync(new DriverModule(Bus, Loop(), pickFile: _ => Task.FromResult<string?>(null)), "TOOLS_PICK", new { title = "Choose Git" });
+        var cancelled = await AnswerAsync(new DriverModule(Bus, Loop(), pickFile: (_, _) => Task.FromResult<string?>(null)), "TOOLS_PICK", new { title = "Choose Git" });
         Assert.True(cancelled.GetProperty("file").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
 
         var none = await AnswerAsync(Module(), "TOOLS_PICK", new { title = "Choose Git" });
         Assert.False(none.GetProperty("can").GetBoolean());
+    }
+
+    /// <summary>*Browse…* asks the picker for the kind the page named: a program when it names none, a key or a file when it says so.</summary>
+    [Theory]
+    [InlineData(null, PickKind.Program)]
+    [InlineData("program", PickKind.Program)]
+    [InlineData("key", PickKind.Key)]
+    [InlineData("file", PickKind.File)]
+    public async Task Browse_asks_the_picker_for_the_kind_the_page_named(string? kind, PickKind expected)
+    {
+        PickKind? asked = null;
+        var picking = new DriverModule(Bus, Loop(), pickFile: (each, _) => { asked = each; return Task.FromResult<string?>(@"C:\keys\id_ed25519"); });
+        var picked = await AnswerAsync(picking, "TOOLS_PICK", kind is null ? new { title = "Choose the key file" } : new { title = "Choose the key file", kind });
+        Assert.Equal(@"C:\keys\id_ed25519", picked.GetProperty("file").GetString());
+        Assert.Equal(expected, asked);
     }
 
     /// <summary>A version is read off whatever the program says, as each declared tool says it.</summary>

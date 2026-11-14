@@ -171,10 +171,14 @@ export const useToolGit = (target: GitTarget | null) => {
   });
 };
 
+/** The file a picker asks for: it settles the dialog's filters, a program's first *Programs*, a key's its usual names. */
+export type PickKind = 'program' | 'key' | 'file';
+
 /** *Browse…*: the system's file picker, owned by this page's window; `file` absent is the person cancelling, `can: false` a window with no picker. */
 export const useToolPick = () =>
   useMutation({
-    mutationFn: (title: string) => call('TOOLS_PICK', { title }, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>,
+    mutationFn: (ask: { title: string; kind: PickKind }) =>
+      call('TOOLS_PICK', ask, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>,
   });
 
 /** A tool's action ended (§3.6): the list is asked again, and the handler says how it ended. */

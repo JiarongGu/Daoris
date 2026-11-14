@@ -224,18 +224,13 @@ internal static class Program
             () => [sp.GetRequiredService<MainForm>(), .. sp.GetRequiredService<SecondaryWindowHost>().Reloadable()],
             window => log.Info(PageReloads.Event, ("window", window))));
         builder.Services.AddSingleton<MainForm>();
-        // A tool named as a file: the kit's file dialog, owned by the window whose page asked (the first main window is hidden
-        // while put away, and a dialog owned by it would open behind nobody).
-        builder.Services.AddSingleton<PickFile>(sp => async title =>
+        builder.Services.AddSingleton<PickFile>(sp => async (kind, title) =>
         {
+            var dialog = PickDialogs.For(kind, title);
             var picked = await sp.GetRequiredService<IFileDialogs>().OpenFileAsync(new OpenFileOptions
             {
-                Title = string.IsNullOrWhiteSpace(title) ? "Choose a program" : title,
-                Filters =
-                [
-                    new FileDialogFilter { Name = "Programs", Extensions = ["exe", "cmd", "bat"] },
-                    new FileDialogFilter { Name = "All files", Extensions = ["*"] },
-                ],
+                Title = dialog.Title,
+                Filters = dialog.Filters,
             });
             return picked.Success ? picked.FilePath : null;
         });
