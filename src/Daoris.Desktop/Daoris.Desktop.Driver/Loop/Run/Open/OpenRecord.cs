@@ -108,6 +108,9 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         }
 
         state.Begun = sessionId;
+        // Marked the moment its record exists, before the awaits below, so a driver that goes between the open and the spawn leaves a
+        // record the sweep proves is nobody's.
+        context.Processes.MarkOpening(sessionId);
 
         // The open's answer with every word it moved, by its id on the new session, then `delivering` and the prompt's mark before the
         // take. A write the store refuses stops the take of the moved words, which wait on the new session for its own go-on.
@@ -123,8 +126,6 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use.
         state.Starting.Dispose();
         restarting?.Dispose();
-        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this driver goes.
-        context.Processes.MarkOpening(sessionId);
         run.OnOpened();
         var openedAt = DateTimeOffset.UtcNow;
         // No question stands while a run of its record works; one the disk keeps is logged.

@@ -93,6 +93,7 @@ public sealed class ConversationArchive(string home)
             .. outcomes.Select(outcome => outcome.Verdict switch
             {
                 ArchiveVerdict.Archived => $"sessions: archived {outcome.Session}.",
+                ArchiveVerdict.Live when outcome.Ended is { } state => $"sessions: kept {EndedLine.Said(outcome.Session, state)}",
                 ArchiveVerdict.Live => $"sessions: kept {outcome.Session}: it is still running; stop it first.",
                 ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it needs you; archive never hides what needs you.",
                 _ => $"sessions: kept {outcome.Session}: no session here is {outcome.Session}.",
@@ -126,7 +127,7 @@ public sealed class ConversationArchive(string home)
             ? [asked]
             : records.Where(record => !record.Teammate && Of(record) == line).ToList();
         var rows = parts.Select(part => placed.GetValueOrDefault(part.Id)).OfType<IWorkplaceSessionRow>().ToList();
-        if (rows.Any(row => row.Group is SessionGroup.Working or SessionGroup.Pending)) return new(id, ArchiveVerdict.Live);
+        if (EndedLine.GoesOn(rows)) return new(id, ArchiveVerdict.Live) { Ended = asked.Live ? null : asked.State };
         return rows.FirstOrDefault(row => row.Group == SessionGroup.NeedsYou) is { } needs
             ? new(id, ArchiveVerdict.NeedsYou) { Group = needs.Group }
             : new(id, ArchiveVerdict.Archived);

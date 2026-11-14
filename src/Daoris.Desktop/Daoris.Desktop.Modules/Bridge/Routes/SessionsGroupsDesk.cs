@@ -187,6 +187,8 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
     /// <summary>The refusal for one session archive kept; its group travels as the catalogue's <c>context</c> too.</summary>
     private static Exception Kept(ArchiveOutcome outcome) => outcome.Verdict switch
     {
+        ArchiveVerdict.Live when outcome.Ended is { } state => Refusals.Because(
+            Refusals.SessionLive, EndedLine.Said(outcome.Session, state), ("session", outcome.Session)),
         ArchiveVerdict.Live => Refusals.Because(
             Refusals.SessionLive, $"{outcome.Session} is still running, so it was not archived. Stop it first.",
             ("session", outcome.Session)),

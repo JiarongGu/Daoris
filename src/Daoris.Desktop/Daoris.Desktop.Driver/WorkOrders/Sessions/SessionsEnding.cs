@@ -47,7 +47,12 @@ internal static class SessionsEnding
         if (record is null) return 1;
         if (!record.Live)
         {
-            output.WriteLine($"sessions: {id} has already ended ({SessionsListing.Word(record.State)}).");
+            // Read as archive reads it: an ended record whose line goes on is said so by both.
+            var parts = ConversationArchive.Parts([id], await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false));
+            var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, parts, ct: ct).ConfigureAwait(false);
+            output.WriteLine(EndedLine.GoesOn(SessionGroups.Read(look, parts))
+                ? $"sessions: {EndedLine.Said(id, record.State)}"
+                : $"sessions: {id} has already ended ({SessionsListing.Word(record.State)}).");
             return 1;
         }
 

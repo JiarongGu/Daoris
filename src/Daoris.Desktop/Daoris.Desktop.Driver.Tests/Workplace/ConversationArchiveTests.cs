@@ -51,6 +51,22 @@ public sealed class ConversationArchiveTests : IDisposable
         Assert.Empty(new ConversationArchive(_home).Marks());
     }
 
+    /// <summary>
+    /// A failed record whose line goes on is kept by archive, and said as stop says it: ended, its line going on; never "still running".
+    /// </summary>
+    [Fact]
+    public void An_ended_record_whose_line_goes_on_is_kept_in_the_words_stop_uses()
+    {
+        SessionRecord[] records = [Part("f1", state: "failed")];
+
+        var answer = new ConversationArchive(_home).Archive(["f1"], [In("f1", SessionGroup.Pending)], records, At);
+
+        var outcome = Assert.Single(answer.Outcomes);
+        Assert.Equal((ArchiveVerdict.Live, "failed"), (outcome.Verdict, outcome.Ended));
+        Assert.Equal(["sessions: kept " + EndedLine.Said("f1", "failed")], ConversationArchive.ArchiveSaid(answer.Outcomes).Out);
+        Assert.DoesNotContain("still running", EndedLine.Said("f1", "failed"));
+    }
+
     [Fact]
     public void The_parts_to_read_are_every_part_held_of_each_conversation_asked()
     {

@@ -7,6 +7,16 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## STARTBLOCK1, QUEUEDIE1 and STOPRETRY1 — the install starts its own work (2026-11-14)
+
+> **STARTBLOCK1** (driver): Outcome: a start that came to a hold or a cooling account is kept (`HeldStarts`) and planned after every quest that can start, so it no longer holds a repository's turn or a place under the cap.
+>
+> **QUEUEDIE1** (driver): Outcome: the opener marks its record the moment it exists, and the sweep ends a `queued` or `starting` record no process ever marked once it stood untouched for two minutes, so its quest starts again.
+>
+> **STOPRETRY1** (driver): Outcome: `quest retry` reads the records again where the last look refuses it (`QuestRetryReading`), and `session stop` and `session archive` say an ended record whose line goes on in one sentence (`EndedLine`).
+
+---
+
 ## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
 
 > **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).

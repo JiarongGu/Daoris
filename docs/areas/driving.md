@@ -91,7 +91,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     same run goes back into a tree, and a later quest of a line that is a run of its own gets a tree and branch of its own
     (`RoundJoining`, `QuestRuns`). (D51, D167, D254, D258, D260, D265)
 13. A quest held by a session in flight, working or still opening, does not start again. Each start is reserved (quest, tree,
-    place under the cap) before it begins. (D181)
+    place under the cap) before it begins. (D181) A start that came to a hold or a cooling account (`HeldStarts`, kept from look
+    to look) is weighed after every quest that can start, so it never holds a repository's turn or a place under the cap from
+    one; it is tried again at each look it is the only one left, and goes the moment it can.
 14. Under `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the repository, a done unit's open
     integration request included, waits until that work is integrated. A quest that goes back into a tree is no first start.
     (D215)
@@ -99,7 +101,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `failed` and a stop that was not the person's count. On a home whose role rules are reached, the count is a seeded rule.
     *Try again* marks where counting restarts. (D58, D125, D229)
 16. A person's stop holds the quest here until they release it; a pause holds an ask's or quest's work until *Resume*. Another
-    machine may still take an open one. Neither is a strike. (D126, D132)
+    machine may still take an open one. Neither is a strike. *Try again* on a quest its last look says holds nothing reads the
+    records again before it refuses, so a stop made since that look releases at once; an ended record whose line goes on is
+    said so by both *stop* and *archive* (`EndedLine`), never as ended by one and running by the other. (D126, D132)
 17. A taken quest whose take is not this machine's sits: nothing carries it on or resumes it here, and the ledger refuses the open
     as `TakenElsewhere`. (D80, D178)
 18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or signed out,
@@ -231,7 +235,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A failed verdict still
     reopens a session whose quest is `Done`: the word names the work's failure, and no rule yet tells the person instead. (CHECKLOCK1)
 41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
-    tree and records the same. Both are carried on. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
+    tree and records the same. Both are carried on. A `queued` or `starting` record is taken only where its opener's mark
+    names a process that went, or where no mark was ever kept and the record has stood untouched past two minutes; the opener
+    marks the record the moment it exists. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
     job still holds, so nothing its agent started outlives it, a launcher still running included; the machine log's
     `session.reaped` says how many.
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)

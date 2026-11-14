@@ -65,7 +65,10 @@ internal sealed class PlanRound
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest))))
+        // A quest whose last start could not go (an account cooling, a hold) is weighed after every other, so its start never holds
+        // the repository's turn or a place under the cap from one that can; the sort is stable, so each group keeps its order.
+        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest)))
+                     .OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
         {
             // A step whose source the person reopened: withdrawn while open and held while taken, until they go on with it on the
             // new work or abandon it. Before every other reason, a pause and the person's stop included, since neither Resume nor
