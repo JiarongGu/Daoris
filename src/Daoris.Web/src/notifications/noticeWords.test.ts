@@ -62,3 +62,15 @@ describe('the notices\' words (NOTIFY2d)', () => {
     }
   });
 });
+
+describe('the history line of a row set aside (NOTIFYDIET1)', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('names the row by its kind and its subject, in the reader’s language', async () => {
+    const aside = { id: 'set-aside:go-ahead:a1#2', kind: 'set-aside', at: '2026-10-22T08:00:00.000Z', read: true, route: 'go-ahead', code: 'a1#2' };
+    const { noticeWords: words } = await import('./DoneAndFailed');
+    expect(words(aside, i18n.t)).toBe('You set aside: needs your go-ahead (a1#2)');
+    await i18n.changeLanguage('zh');
+    expect(words(aside, i18n.t)).toBe('你搁置了：等你放行（a1#2）');
+  });
+});

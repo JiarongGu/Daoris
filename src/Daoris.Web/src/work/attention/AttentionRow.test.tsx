@@ -878,3 +878,42 @@ describe('an ask under the row answers inside itself', () => {
     });
   }
 });
+
+/**
+ * NOTIFYDIET1: every row of *What needs you* can be set aside with no act, whatever the kind of its wait, and the row hands the press to
+ * the band; a row offers it only where the band hands the means (a browser has no history to keep it in), and never a terminal's press,
+ * which is answered on its card.
+ */
+describe('setting a row aside', () => {
+  it.each([
+    ['a parked session', PARKED],
+    ['a go-ahead', GO_AHEAD],
+    ['a quest parked on its failed sessions', PARKED_QUEST],
+    ['work to review', REVIEW],
+  ])('is one press on %s, handing the row back', async (_name, item) => {
+    const setAside = vi.fn();
+    render(<AttentionRow item={item} acts={{ setAside }} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Set aside' }));
+    expect(setAside).toHaveBeenCalledWith(item);
+  });
+
+  it('is offered where the band hands it and nowhere else, and not on a terminal’s press', () => {
+    const { unmount } = render(<AttentionRow item={PARKED} acts={{}} />);
+    expect(screen.queryByRole('button', { name: 'Set aside' })).toBeNull();
+    unmount();
+
+    render(<AttentionRow item={{ ...PARKED, kind: 'confirmation' }} acts={{ setAside: vi.fn() }} />);
+    expect(screen.queryByRole('button', { name: 'Set aside' })).toBeNull();
+  });
+
+  it('is said in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={PARKED} acts={{ setAside: vi.fn() }} />);
+      expect(screen.getByRole('button', { name: '搁置' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

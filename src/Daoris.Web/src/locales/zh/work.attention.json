@@ -35,6 +35,8 @@
   "work.attention.act.chooseWhere": "选择发给谁…",
   "work.attention.act.retry": "重试",
   "work.attention.act.retryDoes": "会在 {{repository}} 启动一个会话",
+  "work.attention.act.setAside": "搁置",
+  "work.attention.setAsideRefused": "未能搁置，请再按一次。",
   "work.attention.act.approve": "放行…",
   "work.attention.act.refuse": "拒绝…",
   "work.attention.act.trust": "信任这个文件夹…",
