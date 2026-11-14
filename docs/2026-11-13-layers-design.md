@@ -600,6 +600,18 @@ on the port, each held to the contract on both sides; the three-way merge, the r
 need are left in that order. The pool's Process classes were green after the move (the rehearsals' 54 cases in five minutes with no
 crash of the host).
 
+**Row f, the session trees and the journaled act (2026-11-14).** The act's git is a typed run on the port: `RunHeldAsync` hands the
+real repository the act's own start (its job, its journal proving the pid) and lets `MemoryRepository` answer `update-ref --stdin` as a ref
+transaction and record it, so the take's undo and the finish's delete run the journal for real on memory (the layout, the refs read after
+a step and the recovery name ask the port too). The trees' reads moved as typed asks that keep the real git exactly (the status, count
+and place of one start, the working root read fresh, the unlanded commits, the snapshot's refs, the refs holding a commit, `worktree
+remove` forced or not). On memory: `TreePoolStopsMemoryTests` (8 cases, from the real stops class), `TreePoolFinishMemoryTests` (10),
+`SessionTreesMemoryTests` (11) and `SessionTreeWorkMemoryTests` (3), each case tens of milliseconds to two seconds. Left real, and why:
+the content proof's merge-base, tree log, diff and replay reads (`merge-base` conflates no-common-ancestor with failure, which the proof
+must tell apart), the set-aside of a line's own files, a hook, a filter, a long path, the open's undo while git is still adding, a
+held output file, the start trees' close (`StartTreeCloseGitTests` runs the whole driver and a node harness), the sync classes and the
+walk's start counts, which count real starts.
+
 ## 9. Measurement (decision 8)
 
 | Measure | 2026-11-12 | Target |
