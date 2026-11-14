@@ -658,6 +658,45 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, "work", null)).Cooling);
     }
 
+    /// <summary>
+    /// ACCOUNTREADY1: the line a cooling account is given names <c>agent account ready &lt;agent&gt; &lt;account&gt;</c>, and the terminal
+    /// sends the account's owner (<c>codex</c> for <c>codex-acp</c>, an agent no door carries); the screen sends a door. Every name the
+    /// verbs take, and its owner, ends its account's cool-off and its own sign-in's: none is refused as an unknown adapter.
+    /// </summary>
+    [Fact]
+    public void The_command_a_cooling_line_names_ends_the_cool_off_for_every_agent_the_verbs_take()
+    {
+        var adapters = ProviderRegistry.Built();
+        var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        var names = adapters.Operands();
+        Assert.Contains("codex", names);
+        Assert.Contains("codex-acp", names);
+
+        foreach (var name in names)
+        {
+            var owner = adapters.OwnerOfAgent(name).Value;
+            foreach (var asked in new[] { name, owner }.Distinct())
+            {
+                foreach (var account in new string?[] { "account-1", null })
+                {
+                    AccountCooling.Cool(_home, Entry(agent: owner, account: account), _now);
+
+                    Assert.True(roster.Ready(asked, account), $"`ready {asked} {account ?? "--own"}` did not end `{owner}`'s cool-off");
+                    Assert.Null(AccountCooling.Of(_home, owner, account, _now));
+                    Assert.False(roster.Ready(asked, account), $"`ready {asked} {account ?? "--own"}` ended it twice");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void A_ready_for_an_agent_nobody_declared_is_still_refused_naming_the_adapters()
+    {
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
+
+        Assert.Contains("unknown adapter 'nobody-knows'", Assert.Throws<DriverException>(() => roster.Ready("nobody-knows", null)).Message);
+    }
+
     [Fact]
     public async Task A_limit_on_the_protocol_stub_with_no_account_named_cools_the_stub_s_own_sign_in()
     {
