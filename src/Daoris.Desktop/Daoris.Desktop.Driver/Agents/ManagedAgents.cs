@@ -10,18 +10,15 @@ public static class ManagedAgents
     /// <exception cref="DriverException">The name is no agent this registry holds, or one whose toolchain Daoris does not manage.</exception>
     public static AccountAgent Of(HarnessRoster harnesses, string harness)
     {
-        var registry = harnesses.Adapters;
-        harness = registry.RunAs(harness);
         if (harnesses.AgentOf(harness) is { } agent) return agent;
+        var registry = harnesses.Adapters;
         if (!registry.Names.Contains(harness, StringComparer.Ordinal) && !registry.Providers.Any(provider => provider.Id.Value == harness))
         {
-            throw Unknown(registry, harness);
+            throw new DriverException(registry.UnknownAgentWords(harness));
         }
 
         throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
     }
 
-    /// <summary>The refusal of a name no door and no agent is, naming the agents a verb takes.</summary>
-    public static DriverException Unknown(ProviderRegistry registry, string name) =>
-        new($"unknown agent '{name}' — one of: {string.Join(", ", registry.Operands())}. An agent is added deliberately, never guessed.");
+    public static AccountAgent Owning(HarnessRoster harnesses, string harness) => Of(harnesses, harnesses.Adapters.RunAs(harness));
 }

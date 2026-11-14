@@ -257,7 +257,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     {
         var adapters = roster.Adapters;
         adapter = adapters.RunAs(adapter);
-        if (adapters.AgentNamed(adapter) is null && !adapters.Names.Contains(adapter, StringComparer.Ordinal)) throw ManagedAgents.Unknown(adapters, adapter);
+        if (adapters.AgentNamed(adapter) is null && !adapters.Names.Contains(adapter, StringComparer.Ordinal)) throw new DriverException(adapters.UnknownAgentWords(adapter));
         // A door with no toolchain has no accounts (null).
         var agent = adapters.AgentNamed(adapter) is not null ? adapters.OwnerOfAgent(adapter).Value : CoolingAgent(adapters.Door(adapter));
         return agent is not null && AccountCooling.End(roster.Home, agent, profile, roster.Clock());

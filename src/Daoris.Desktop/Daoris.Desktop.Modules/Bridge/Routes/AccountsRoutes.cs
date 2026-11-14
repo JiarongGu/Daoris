@@ -469,7 +469,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// </summary>
     internal static string OwnerOf(HarnessRoster harnesses, string harness)
     {
-        _ = ManagedAgents.Of(harnesses, harness);
+        _ = ManagedAgents.Owning(harnesses, harness);
         return harnesses.Adapters.OwnerOfAgent(harness).Value;
     }
 

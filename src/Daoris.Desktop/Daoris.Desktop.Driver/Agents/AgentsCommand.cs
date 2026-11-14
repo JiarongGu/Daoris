@@ -260,13 +260,12 @@ public static class AgentsCommand
         var roster = new HarnessRoster(set, path);
         AccountAgent? Of(string each) => set.AgentNamed(each);
         var named = Named(set);
-        var given = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
-        var name = set.RunAs(given);
+        var name = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
         {
             // Never a silent fallback: a machine that installed another agent than the person named is the same failure as a
             // repository that asked for one layout and received another.
-            throw new AgentWords($"unknown agent '{name}' — one of: {string.Join(", ", named)}. An agent is added deliberately, never guessed.");
+            throw new AgentWords(set.UnknownAgentWords(name));
         }
 
         // A door's accounts are its owner's, and so is the file they keep their settings in.
