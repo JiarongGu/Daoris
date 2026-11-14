@@ -85,7 +85,9 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
-during the task and the complete reached set before recording completion. `npm run quick` is a builder's
+during the task. Before done or ready, run `node tools/reached-checks.mjs --base main --tier fast` and
+`npm run verify:checks`, and fix what your change reddens: they are the commands `daoris.gates.json` marks `"handback"`, every brief
+names them, and a workflow's `check` step verifies them at your tip while you are open. `npm run quick` is a builder's
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns) and the layers' census, so a comment, partial or
 sensitive finding is read in the builder's tree and the work is merged as handed back.

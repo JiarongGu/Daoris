@@ -296,8 +296,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`AskRunScopes`, hooked at `NodeGoverning`): its subject is `daoris/ask-<id>`, a branch unit no session made, whose tip each pass reads;
     it has no quest, so it ends (`AskRunEnds`) when nothing waits and no node can move, naming the ask, and is never governed again.
     Its `parts` waits for the plan's parts given to its repository (`PartsReport.For`, a part given to none waits everywhere); its
-    `check` verifies its repository at the tip it is bound to under the accepted declaration (`AskRunChecks`, beside a verification
-    run's send); its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
+    `check` verifies its repository at the tip it is bound to under the accepted declaration (`RunChecks`, beside a verification
+    run's send, for a chain's run as for an ask's); its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
     (`AskRunReads`: the merge base), its handbacks the quests the ask gave the repository; its `land` merges the branch at the accepted
     tip into the line (`AskLanding`, through the integration the session merges use, with no session or tree) and is reached where the
     line holds the tip. (TEAMWORK1f)
@@ -309,8 +309,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `failed: ask`, only in a version the person saved, asks at each look, `wait` waits for the press, `stop` asks nothing.
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
-    (`check_run`, driving rule 40a), the same heavy run under the same admission; a hand-back's checks are chosen by `GateReach`,
-    the declared gates' reach, as a landing's are. (D192) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
+    the change reaches (driving rule 7); `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
@@ -412,7 +412,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **A shipped workflow:** a JSON file under `Defaults/workflows/`; the presets derive.
 - **A landing:** `Workflows/Kinds/Land/`; the act in `Workplace/` (`LandPerformer`, `TreeLands`, the deliveries).
 - **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainPartOf`, `TrainBases`, `TrainRefs`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the `parts` kind in `Workflows/Kinds/Parts/`.
-- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunChecks`, `AskRunContent`, `AskLanding`, `AskRunEnds`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
+- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunContent`, `AskLanding`, `AskRunEnds`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` (its send, `Kinds/Check/RunChecks`) and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
 - **A gate or hold:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, the page under `src/workflow/` or `src/agents/setup/`.
 - **Tests:** driver `Workflows/`, `Review/`, `Workplace/` (each landing through a run bound by `GraphLand`), `Setup/`; modules

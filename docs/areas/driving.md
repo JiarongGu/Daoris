@@ -53,13 +53,20 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
    take that its kept session goes on from. (D178)
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
-7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
-    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule), the gates those paths reach (the landing's own selection, never a
-    list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
-    this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
-    selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is
-    a note on the session's record. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
-   session that wrote it, and read whole. (D219)
+7. Daoris checks a session's work only in a workflow's `check` step, never outside its workflow (D293): no look reads a done session's tree
+    or asks it a check. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move,
+    kept with the session that wrote it, and read whole. (D219) A `check` whose `gates` is `reached` reads the hand-back from git at the tip it
+    is bound to (`HandbackReading`, inside the check's executor): the base against the line, how far the line moved past it, the paths touched
+    and the commits that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule, held equal to
+    `tools/merge/attribution.ts` by one fixture, `attribution-contract.json`). A line moved past the work, or a commit without a maker's trailer,
+    is the step's failed verdict, gate `hand-back`, with the reading's words, and holds the steps after it; where the graph draws a `back` wire
+    from the step to the work, those words go to the work's open session as Daoris's word under the step's key (`NodeRunKeeping`). No line to
+    read against, or git unable to say, is unknown with the code `unrun`, never failed. A process a session left running is not read: nothing
+    reads one at a hand-back. Else it runs the declaration's required hand-back commands the paths reach: a gate marked `"handback"` in
+    `daoris.gates.json` (`true` for its `run`, or the command to run in its place), except one a broker check finished green at this very commit
+    (`HandbackGates.Verified`: its whole command, or its name where its own run is the requirement), which is named kept. Every driven brief lists
+    the required commands for the agent to run before done or ready (`HandbackGates.Told`) and tells it to write its own `Co-Authored-By` line
+    whatever its harness (`CommitTrailers`), since a shell commit through `claude-code-acp` gets none.
 
 ### Planning a look
 
@@ -230,13 +237,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris gate run` makes) and ends its turn on it with no question to the person ends `completed` by `ended.awaits-check`,
     holding its tree as a wait on its helper does; the verdict (reached, failed or stopped, a red's log tail) is Daoris's word
     under the key `check/<id>`, which reopens it in the same conversation, so the wait spends no tokens. The broker runs one
-    check at a time on this machine, a hand-back's own checks before a worker's, each class first come, first served. One broker
+    check at a time on this machine, the oldest ask first. One broker
     seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
     holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a missing tree or a wrapper's tool-error exit) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
-    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. A verdict on a quest
-    already `Done` sends no session word: a green is quiet, and a failed or stopped check stays on file for the person in
-    *What needs you*, naming the check and its tested commit, with a door to its session. (CHECKLOCK1)
+    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
+    session that asked, whatever its quest's state: Daoris asks no check of its own, so no verdict is owed to the person. An ask Daoris wrote
+    for a hand-back before D293 ("by": "daoris") is deleted with its state and log when the files are read (`CheckFiles.Asks`). (CHECKLOCK1)
 41. The sweep, at every look, stops a record that says it runs with nothing running it, as interrupted, so one left `working`
     mid-run reads stopped within a look. A go-on or a resume marks its record before the ledger moves it to `working` ahead of its
     spawn, and the sweep leaves it while that opener runs, as it leaves a record a run of its own loop holds. A `queued` or
