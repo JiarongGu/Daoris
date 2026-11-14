@@ -320,7 +320,7 @@ internal static class AgentAccountsCommand
     /// </summary>
     private static AgentPress Ready(AccountVerbContext at)
     {
-        var owner = at.Owner();
+        var owner = at.Owner(key: true);
         var own = at.Args.Contains("--own");
         var account = at.Operand(3) is { } given ? at.Account(owner, given) : null;
         if (own && account is not null)

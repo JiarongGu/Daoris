@@ -17,7 +17,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 | Where | Its job |
 |---|---|
 | `Contract/` | The provider record (identity, doors, account pool, word tables, usage question, reach, each part known or stated absent), `DoorAbilities`, `AbilityReading`, `AgentRun`, the `SpawnRequest` a start makes and the `ProcessRecipe` a spawn answers, the ports a provider fills (`Ports.cs`), a plugin's `DeclaredDoor` |
-| `Registry/` | The one registry, of providers alone: `Providers.cs`'s built list, the plugins' doors joined, names resolved by kind, whose accounts a door runs as (`OwnerOfAgent`, `AgentNamed`), which agent a door is (`AgentOfDoor`), where it may work (`ProviderReach`) |
+| `Registry/` | The one registry, of providers alone: `Providers.cs`'s built list, the plugins' doors joined, names resolved by kind, whose accounts a door runs as (`OwnerOfAgent`, `AgentNamed`; `RunAs`, a door onto an account key such as a plugin's `acme`), which agent a door is (`AgentOfDoor`), where it may work (`ProviderReach`) |
 | `Providers/<Name>/` | Each provider's facts, spawns, word tables, usage question and own-home reads: `ClaudeCode`, `Codex`, `Dsh`, `Stub` (`stub`, `acp-stub`), `AltStub` (`alt-stub`, `alt-acp-stub`, with words and a home variable of their own) |
 | `Transports/` | `Shell`, which completes every session's process from a recipe, and the session's git port |
 | The root | The run (`TransportRun`, `DoorInput`, `ProtocolWords`, `HarnessCapture`, `NativeFrame`; `SessionProcesses`, never sent to the service); the protocol door (`Acp.cs`, a root wiring `Acp*` units); the roster (`HarnessRoster` and its `Roster*`, `Account*`, `Usage*` and `Binary*` units, `AgentErrors`, `HarnessSettings`, `AgentOffers`); what a session is handed (`ConnectorPlans`, `SessionServers`, `ServerKeeper`, `PermissionRules`, `RuleProposals`, `SpawnSkills`, `TargetPrompt`, `Spawning`); the terminal's `daoris agent …` verbs (`AgentsCommand`), each refusing a flag it does not take (`AgentVerbFlags`) |
@@ -30,7 +30,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 **Agents and doors**
 
 1. An adapter is added deliberately. An unknown agent or door name is an error naming what exists (`UnknownDoorException`),
-   never a fallback to another harness. (D23, D213)
+   never a fallback to another harness. (D23, D213) A cooling line prints its account's owner key, so `agent account ready` and the
+   account route take that key (`codex`, `acme`) as a door onto those accounts; every verb that works on an agent's toolchain
+   takes only an agent.
 2. The built set is `claude-code` (pipe), `claude-code-acp`, `codex-acp` and `dsh` (protocol), and the stand-ins; the machine's
    default is `claude-code`. A plugin may add harnesses, never replace a built name: its door is a `DeclaredDoor`, a protocol door
    with its own identity, home and program and no rules, placed by its `accountOf`; a manifest naming steering, resume, rules,

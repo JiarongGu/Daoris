@@ -249,10 +249,19 @@ internal sealed class RosterCooling(HarnessRoster roster)
 
     /// <summary>
     /// End an account's cool-off early: the person's <i>Try now</i>, since they may know the limit is raised.
-    /// True when it is cooling; one that is not is told so, and nothing changes.
+    /// True when it is cooling; one that is not is told so, and nothing changes. <paramref name="adapter"/> is a door or the agent a door
+    /// runs as (<c>codex</c>, which no door carries) or the account key of a plugin's doors (<c>acme</c>): the terminal names the account's
+    /// owner, the screen a door, and either ends the owner's cool-off; a name that is none of these is refused naming the agents that exist.
     /// </summary>
-    public bool Ready(string adapter, string? profile) =>
-        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent && AccountCooling.End(roster.Home, agent, profile, roster.Clock());
+    public bool Ready(string adapter, string? profile)
+    {
+        var adapters = roster.Adapters;
+        adapter = adapters.RunAs(adapter);
+        if (adapters.AgentNamed(adapter) is null && !adapters.Names.Contains(adapter, StringComparer.Ordinal)) throw new DriverException(adapters.UnknownAgentWords(adapter));
+        // A door with no toolchain has no accounts (null).
+        var agent = adapters.AgentNamed(adapter) is not null ? adapters.OwnerOfAgent(adapter).Value : CoolingAgent(adapters.Door(adapter));
+        return agent is not null && AccountCooling.End(roster.Home, agent, profile, roster.Clock());
+    }
 
     /// <summary>
     /// Whether this wait is new — an account, the cool-off it is waiting out (none where it waits for a person), and

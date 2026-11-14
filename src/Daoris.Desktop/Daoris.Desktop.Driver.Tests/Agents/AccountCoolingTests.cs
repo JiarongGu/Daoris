@@ -658,6 +658,44 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, "work", null)).Cooling);
     }
 
+    /// <summary>The terminal sends a cooling account's owner and the screen a door: both end its cool-off, <c>codex</c> included.</summary>
+    [Fact]
+    public void The_command_a_cooling_line_names_ends_the_cool_off_for_every_agent_the_verbs_take()
+    {
+        var adapters = ProviderRegistry.Built();
+        var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        var names = adapters.Operands();
+        Assert.Contains("codex", names);
+        Assert.Contains("codex-acp", names);
+
+        foreach (var name in names)
+        {
+            var owner = adapters.OwnerOfAgent(name).Value;
+            foreach (var asked in new[] { name, owner }.Distinct())
+            {
+                foreach (var account in new string?[] { "account-1", null })
+                {
+                    AccountCooling.Cool(_home, Entry(agent: owner, account: account), _now);
+
+                    Assert.True(roster.Ready(asked, account), $"`ready {asked} {account ?? "--own"}` did not end `{owner}`'s cool-off");
+                    Assert.Null(AccountCooling.Of(_home, owner, account, _now));
+                    Assert.False(roster.Ready(asked, account), $"`ready {asked} {account ?? "--own"}` ended it twice");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void A_ready_for_an_agent_nobody_declared_is_still_refused_naming_the_agents()
+    {
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
+
+        var said = Assert.Throws<DriverException>(() => roster.Ready("nobody-knows", null)).Message;
+
+        Assert.StartsWith("unknown agent 'nobody-knows' — one of: ", said);
+        Assert.Contains("codex,", said);
+    }
+
     [Fact]
     public async Task A_limit_on_the_protocol_stub_with_no_account_named_cools_the_stub_s_own_sign_in()
     {

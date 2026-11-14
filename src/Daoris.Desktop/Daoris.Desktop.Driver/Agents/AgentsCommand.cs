@@ -265,7 +265,7 @@ public static class AgentsCommand
         {
             // Never a silent fallback: a machine that installed another agent than the person named is the same failure as a
             // repository that asked for one layout and received another.
-            throw new AgentWords($"unknown agent '{name}' — one of: {string.Join(", ", named)}. An agent is added deliberately, never guessed.");
+            throw new AgentWords(set.UnknownAgentWords(name));
         }
 
         // A door's accounts are its owner's, and so is the file they keep their settings in.

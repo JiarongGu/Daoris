@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The agent whose toolchain and accounts Daoris manages, by the name a press or a verb gives it: a name the registry holds no door or
-/// agent of is refused naming the doors that exist, and a known agent Daoris manages nothing for is told its accounts are its own
+/// agent of is refused naming the agents that exist, and a known agent Daoris manages nothing for is told its accounts are its own
 /// tooling's. Every door that acts on an agent's toolchain or accounts asks here, so each refusal is said one way.
 /// </summary>
 public static class ManagedAgents
@@ -14,9 +14,11 @@ public static class ManagedAgents
         var registry = harnesses.Adapters;
         if (!registry.Names.Contains(harness, StringComparer.Ordinal) && !registry.Providers.Any(provider => provider.Id.Value == harness))
         {
-            _ = registry.Door(harness);
+            throw new DriverException(registry.UnknownAgentWords(harness));
         }
 
         throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
     }
+
+    public static AccountAgent Owning(HarnessRoster harnesses, string harness) => Of(harnesses, harnesses.Adapters.RunAs(harness));
 }
