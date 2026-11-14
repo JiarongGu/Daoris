@@ -19,7 +19,6 @@ const NONE = '*';
 /** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
 
-/** A post's refusal code said in the reader's language, or as the service wrote it where this page has no words for it. */
 export const channelRefusal = (t: (key: string, options?: Record<string, unknown>) => string, code: string): string =>
   REFUSALS.has(code) ? t(`asks.channel.refused.${code}`) : t('asks.channel.refused.other', { code });
 

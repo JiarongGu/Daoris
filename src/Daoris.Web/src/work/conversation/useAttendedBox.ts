@@ -54,7 +54,6 @@ export function useAttendedBox({ t, attended, here, intake, oneTurn, conversatio
 
   // What the person is typing to this session, kept per session and across a reload: one draft for whichever
   // box its page offers, so words typed as it ends are still there in the box that goes on with them.
-  // A parked intake keeps one too: its box is where the person answers, though the session itself takes no words.
   const asking = Boolean(attended && here && intake && attended.state === 'awaiting-person');
   const [draft, setDraft] = useDraft(attended && here && (!oneTurn || asking) ? attended.id : null);
   // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and

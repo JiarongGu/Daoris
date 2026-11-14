@@ -21,9 +21,8 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
   structured === true ? 'structured' : structured === false ? 'text' : undefined;
 
 /**
- * The box under the conversation: a chat's composer, or every other box (the running door, the park's answer, a parked
- * intake's answer, the box where the same session goes on, and the line where nothing takes words), each keyed by its
- * session so a draft's form starts fresh.
+ * The box under the conversation: a chat's composer, or every other box (the running door, the park's answer, a parked intake's
+ * answer, the box where the session goes on, and the line where nothing takes words), each keyed by its session.
  */
 export function AttendedBoxes({
   t, notify, session, boxState, words, boxWords, asks, waitsState, headState, refusal, roster, rootOf, attend,
@@ -43,7 +42,6 @@ export function AttendedBoxes({
   attend: (id: string) => void;
 }) {
   const { attended, live, sessions } = session;
-  // A parked intake takes no words, so its box posts them on its ask's channel: the person's own word, the door the ask's page posts through.
   const postChannel = usePostChannel();
   const {
     talking, box, draft, setDraft, turns, levels, editQueued, keepingStop, treeFiles, reading, offered, setOption, setMentioning, held,
@@ -58,7 +56,6 @@ export function AttendedBoxes({
   const onAskWord = (text: string) => {
     const ask = attended.ask;
     if (!ask || !text) return;
-    // Handed back to the box where the post did not land, so the words are not lost with the refusal.
     const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
     postChannel.mutate({ ask, post: { text } }, {
       onSuccess: (posted) => {

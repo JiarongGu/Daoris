@@ -44,10 +44,6 @@ describe('boxOf', () => {
       .toEqual({ kind: 'line', why: 'intake' });
   });
 
-  /**
-   * ASKANSWER1: a parked intake is waiting on the person, so its box takes the answer, and the words go to its ask's channel
-   * (the session itself takes none): the `ask` box. A teammate's still takes none.
-   */
   it('offers a parked intake the box whose words go to its ask', () => {
     const intake = { kind: 'chat' as const, quest: null, ask: '0fda18' };
     expect(boxOf(facts({ session: session({ ...intake, state: 'awaiting-person' }), intake: true }))).toEqual({ kind: 'ask' });

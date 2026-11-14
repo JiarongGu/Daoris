@@ -8,8 +8,8 @@ import i18n from '../locales/i18n';
 import { AskPage } from './AskPage';
 import { INTAKE_ASKED, PROPOSED, PUBLISHED } from './fixtures';
 
-// ASKANSWER1: a proposed ask is waiting on the person, and its answer is its page's. So *Close ask* and *Delete…*, which
-// are any caller's under D284, stand in its header as presses of their own rather than behind its ⋯; every other state keeps them there.
+// A proposed ask is waiting on the person, so *Close ask* and *Delete…* stand in its header as presses of their own
+// rather than behind its ⋯; every other state keeps them there.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -28,7 +28,7 @@ const menu = async () => {
   return (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
 };
 
-describe('a proposed ask’s page (ASKANSWER1)', () => {
+describe('a proposed ask’s page', () => {
   afterEach(async () => { cleanup(); await i18n.changeLanguage('en'); });
 
   it('draws Close ask and Delete… in its header, and none of them in its ⋯', async () => {
