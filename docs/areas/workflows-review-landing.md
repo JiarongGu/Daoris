@@ -109,7 +109,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     one its tree moved onto once the look learned it; a `go-ahead` binds the run's ask. Once its landing has reached, the steps bound to
     the landed branch keep it whatever branch stands as the run's after (an earlier attempt's once the landed one is tidied away), so only
     its chain coming back here or the person's word takes a landed run back (`LandedBranchKept`). A branch is the work of the quest its
-    session served, never of the chain's first quest a landing is named for, which may be another repository's. A branch several
+    session served, never of another repository's quest. A branch several
     runs made is each run's, one shared with Current's work held, said; a plugin's event on it goes to the runs awaiting it at that commit, else to those
     whose graph names the step. A node fed on a `data` wire binds that value, so a moved input rebinds only what it feeds; a
     target's tip, once read, rebinds only while nothing fed is active or reached. A node only a skipped producer feeds is skipped
@@ -252,7 +252,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 35. In a session tree the agent commits on the tree's branch as it goes, and never switches or pushes. The commit rule (`commits`)
     may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which
-    advances only while its pull request can take it. (D82, D149)
+    advances only while its pull request can take it. A landing's branch is named for the chain's first quest in that repository: the
+    walk up a step's parents stops where a parent was asked of another repository (`BranchPatterns.SubjectAsync`), so each
+    repository's branch is named for its own quest, never for another repository's. (D82, D149)
 37. Branches a landing made are kept in `<home>/landings.json`, traced once gone. A landing removes no tree and no other session
     branch; a session branch goes only by its own door, the look's tidy or, where a run owns its tree, that run's `release` or
     the sweep (rule 31b), behind D88's proof. A gone session branch stays traced

@@ -4,6 +4,7 @@ Completed work, with the date it closed and what shipped. `TASKS.md` holds only 
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
 - **SESSIONINPUTS1 (2026-11-14):** the files stage copies a tree's declared machine-local inputs (the sensitive patterns, the build props) even when its dependency step fails on the disk, which had skipped them and left the tree's checks unlike the merge's; the hand-back reading lists each commit lacking a maker's `Co-Authored-By` line, the merge check's own rule, and such a tree is not ready. The line is asked of the agent by its brief and read at the hand-back, not written by a hook; the quest-list finding is QUESTLIST1.
+- **CHAINBRANCH1 (2026-11-14):** the later repository's branch named for the first quest of the chain was a defect, not the design (a chain lands on one branch per repository): `BranchPatterns.SubjectAsync` stops its walk up a step's parents where a parent was asked of another repository, so each repository's branch is named for its own first quest; proved by `LandingChainTests.A_chain_across_repositories_names_each_repositorys_branch_for_its_own_first_quest` (seen failing first) and `docs/areas/workflows-review-landing.md` rule 36.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---
