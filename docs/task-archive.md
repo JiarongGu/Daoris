@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
+
+> **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.
+
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
 > **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.

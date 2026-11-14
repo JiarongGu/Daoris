@@ -1,13 +1,10 @@
 /**
- * Where the install carries its doctrine tool: the CLI package the release publishes, laid out as npm does, `<prefix>/node_modules/daoris`.
- * 🔴 The `node_modules` folder is load-bearing: the CLI reads the canon it ships only when its own folder sits under one
- * (`resolveCanonRoot`); anywhere else it takes itself for a development checkout. `desktop-publish.test.ts` holds the two together.
+ * Where the install carries its doctrine tool: one bundled file, `app/cli/daoris.mjs`, with its canon, its manifest (name and
+ * version) and its build stamp beside it. The CLI reads the canon beside its own bundle (`resolveCanonRoot`) and the install's
+ * programs run it by this path, never by a `PATH` lookup. `desktop-publish.test.ts` holds the twin in the driver (`CommandWords.CarriedCli`).
  */
 export const CLI_HOME = Object.freeze(['app', 'cli']);
-export const CLI_PACKAGE = Object.freeze([...CLI_HOME, 'node_modules', 'daoris']);
-
-/** The package's entry inside it, as its `package.json`'s `bin` names it. */
-export const CLI_ENTRY = Object.freeze(['bin', 'daoris.mjs']);
+export const CLI_BUNDLE = Object.freeze([...CLI_HOME, 'daoris.mjs']);
 
 /** The command's folder beside the application, and its program: never a batch file, whose arguments end at the first line break. */
 export const CLI_BIN = Object.freeze(['app', 'bin']);
