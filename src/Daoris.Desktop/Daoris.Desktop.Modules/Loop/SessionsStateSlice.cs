@@ -52,6 +52,8 @@ public static class SessionsStateSlice
         "work",
         // The quest a chat took through its own connector, which the at-work view reads a chat's wait by.
         "tookQuest", "line",
+        // Its turns across its line, which its row draws beneath it.
+        "turns",
     ];
 
     /// <summary>

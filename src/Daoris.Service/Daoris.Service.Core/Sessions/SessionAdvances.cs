@@ -327,7 +327,8 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts)
             .ConfigureAwait(false);
         await holders.MarkPlaceAsync(id, null, inside).ConfigureAwait(false);
-        moved = moved! with { HoldsPlace = null };
+        // The wake is the session's next turn: whose word woke it is read before that run takes the words.
+        moved = await SessionTurnKeep.AddAsync(sessions, moved! with { HoldsPlace = null }, SessionTurns.Woken(session, now), inside).ConfigureAwait(false);
 
         var with = WentOnWith(session) switch
         {

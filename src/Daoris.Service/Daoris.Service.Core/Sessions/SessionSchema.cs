@@ -119,6 +119,9 @@ internal static class SessionSchema
         await SchemaColumns.EnsureAsync(db, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
         await NotePartNames.RenameAsync(db, ct).ConfigureAwait(false);
 
+        // The turns a record ran. A record from before says none, and reads its from link as its one turn.
+        await SchemaColumns.EnsureAsync(db, "sessions", "turns", "turns TEXT NULL", ct).ConfigureAwait(false);
+
         // What a set-up step's session asked Daoris to serve and said it showed, until its driver
         // posts each with the commit it read. This machine's own, like the person's words beside it: no wire names it, and
         // a record from before says nothing.

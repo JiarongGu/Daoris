@@ -58,14 +58,16 @@ internal sealed class SessionWrites(SessionStore store)
         {
             HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null), Access = access is { Count: > 0 } ? access : null,
             Line = await SessionLines.OfNewAsync(_db, id, continues, quest, kind, ct).ConfigureAwait(false),
+            Turns = [SessionTurns.First(continues is null ? null : Blank(fromWhy), continues is null ? null : Blank(fromBy), now)],
         };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, performs, from_session, from_why, from_by, line, entry, help_mode, access, actor, revision)
-            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $performs, $from, $fromWhy, $fromBy, $line, $entry, $helpMode, $access, $actor, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, performs, from_session, from_why, from_by, line, entry, help_mode, access, actor, turns, revision)
+            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $performs, $from, $fromWhy, $fromBy, $line, $entry, $helpMode, $access, $actor, $turns, {NextRevision})
             """;
         command.Parameters.AddWithValue("$line", session.Line);
+        command.Parameters.AddWithValue("$turns", SessionTurns.Write(session.Turns));
         command.Parameters.AddWithValue("$decides", (object?)session.Decides ?? DBNull.Value);
         command.Parameters.AddWithValue("$performs", (object?)session.Performs ?? DBNull.Value);
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
