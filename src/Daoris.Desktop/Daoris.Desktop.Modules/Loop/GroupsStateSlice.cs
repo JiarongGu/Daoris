@@ -145,6 +145,7 @@ public static class GroupsStateSlice
         look = look with
         {
             Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions(), RunWaits = loop.PersonWaits,
+            Passages = loop.Passages,
         };
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;

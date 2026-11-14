@@ -37,6 +37,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["tookQuest"] = null,
         ["holdsPlace"] = new JsonArray("draft.md"),
         ["line"] = id,
+        ["turns"] = new JsonArray(new JsonObject { ["number"] = 1, ["cause"] = "start", ["at"] = "2026-11-15T09:00:00Z", ["part"] = id }),
     };
 
     private static string Records(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();

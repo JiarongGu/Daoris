@@ -20,6 +20,9 @@ internal interface IWorkOrdersWorkflows
 
     IReadOnlyList<PersonWait> PersonWaits(string home);
 
+    /// <summary>Where each run bound in <paramref name="home"/> and not ended stands in its workflow, read from its files now.</summary>
+    IReadOnlyList<RunPassage> Passages(string home);
+
     Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
 
     /// <summary>

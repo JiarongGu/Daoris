@@ -42,7 +42,10 @@ public static class SessionGroups
     public static IReadOnlyList<SessionGrouping> Read(SessionLook look, IReadOnlyCollection<string>? only = null)
     {
         var facts = new SessionStateReader(look);
-        var rows = LineStandings.With([.. look.Records.Select(facts.Place)], look.Records);
+        var passages = RunPassageSessions.Of(look);
+        var rows = LineStandings.With(
+            [.. look.Records.Select(facts.Place).Select(row => passages.TryGetValue(row.Session, out var passage) ? row with { Passage = passage } : row)],
+            look.Records);
         var placed = look.Records.Zip(rows, (record, row) => (Record: record, Row: row))
             .Where(each => only is null || only.Contains(each.Record.Id, StringComparer.Ordinal))
             .ToList();

@@ -62,6 +62,8 @@ public sealed class DriverWatch(
     /// <summary>The run steps waiting on the person, read through the evaluation runtime; none before it is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _doors.Nodes?.PersonWaits() ?? [];
 
+    public IReadOnlyList<RunPassage> Passages => _doors.Nodes?.Passages() ?? [];
+
     /// <summary>The landed branches whose integration waits for the owner's card, as the evaluation runtime last judged them; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _doors.Nodes?.CardWaits() ?? [];
 

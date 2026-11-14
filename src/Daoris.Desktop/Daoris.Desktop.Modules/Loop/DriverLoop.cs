@@ -342,6 +342,9 @@ public sealed class DriverLoop(
     /// <summary>The run steps waiting on the person, for Sessions' groups and so <i>What needs you</i>; none before the watch is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _state.Watch?.PersonWaits ?? [];
 
+    /// <summary>Where each run not ended stands in its workflow, which a session's row draws.</summary>
+    public IReadOnlyList<RunPassage> Passages => _state.Watch?.Passages ?? [];
+
     /// <summary>The landed branches whose integration waits for the owner's card, for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _state.Watch?.CardWaits ?? [];
 
