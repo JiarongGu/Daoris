@@ -24,6 +24,8 @@ public static class RunSessionEnds
     public static string NoteOf(string run, RunEnd ended) =>
         ended.Outcome == RunOutcomes.Completed
             ? $"Its workflow's run `{run}` came to its end, and the session with it."
+            : ended.By == NodeSource.Daoris
+                ? $"Daoris stopped its workflow's run `{run}`{(ended.Node is { } held ? $" at `{held}`" : "")}: its quest is closed, so what the step waits on can no longer come; the session ended with it."
             : $"Its workflow's run `{run}` ended {ended.Outcome}{(ended.Node is { } node ? $" at `{node}`" : "")}, so the session ended with it.";
 
     /// <summary>The quests a completed run's end closes: each of <paramref name="quests"/> standing at its submission, in order.</summary>

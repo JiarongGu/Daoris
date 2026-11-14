@@ -30,8 +30,8 @@ public sealed class RunSessionReopensTests
             return Task.FromResult<RunReopenResponse?>(new RunReopenResponse("Run `q1`: 1 session(s) ended done wait on its next step.", ["s1"]));
         }
 
-        await RunSessionReopens.AskAsync(Reopen, asked, "q1", null, [Quest("Done")], ["s1", "s1"], "check", said, CancellationToken.None);
-        await RunSessionReopens.AskAsync(Reopen, asked, "q1", null, [Quest("Done")], ["s1"], "check", said, CancellationToken.None);
+        await RunSessionReopens.AskAsync(Reopen, asked, "q1", null, [Quest("Done"), Quest("Taken", 4)], ["s1", "s1"], "check", said, CancellationToken.None);
+        await RunSessionReopens.AskAsync(Reopen, asked, "q1", null, [Quest("Done"), Quest("Taken", 4)], ["s1"], "check", said, CancellationToken.None);
 
         var reopen = Assert.Single(sent);
         Assert.Equal(["s1"], reopen.Sessions);
@@ -40,7 +40,7 @@ public sealed class RunSessionReopensTests
     }
 
     [Fact]
-    public async Task A_run_that_ended_or_whose_work_no_done_ended_asks_nothing()
+    public async Task A_run_that_ended_or_whose_quests_all_closed_or_none_done_asks_nothing()
     {
         var sent = new List<RunReopen>();
         Task<RunReopenResponse?> Reopen(RunReopen reopen, CancellationToken _)
@@ -50,6 +50,7 @@ public sealed class RunSessionReopensTests
         }
 
         await RunSessionReopens.AskAsync(Reopen, [], "q1", new RunEnd("q1", At), [Quest("Done")], ["s1"], null, [], CancellationToken.None);
+        await RunSessionReopens.AskAsync(Reopen, [], "q1", null, [Quest("Done"), Quest("Declined")], ["s1"], null, [], CancellationToken.None);
         await RunSessionReopens.AskAsync(Reopen, [], "q1", null, [Quest("Taken")], ["s1"], null, [], CancellationToken.None);
         await RunSessionReopens.AskAsync(Reopen, [], "q1", null, [Quest("Done")], [], null, [], CancellationToken.None);
         Assert.Empty(sent);

@@ -113,7 +113,8 @@ internal sealed class NodeRunKeeping(
         RunEnd? ended = null;
         var (refused, kept) = records.Edit<bool>(unit, current =>
             (why is null ? Over(governed, current) : ClosedRunEnds.Why(governed.Graph, current, Waits(governed.Graph, current), stands, held) == why)
-                ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
+                ? (current with { Ended = ended = why == ClosedRunEnds.QuestClosed ? RunOutcomes.OfClosedQuest(governed.Graph, current, newest.Id, at)
+                    : RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
         await RunSessionEnds.FinishAsync(finish?.Invoke(), scope.Run.Run, ended, scope.Quests,
@@ -123,7 +124,12 @@ internal sealed class NodeRunKeeping(
             ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "
               + "again; it is judged again once its chain comes back here."
             : $"work  {unit}: its run ended at #{newest.Id}, {outcome}, its quest closed: "
-              + (why == ClosedRunEnds.OnLine ? "the line holds the work its standing steps wait on" : "no branch of it stands for its standing steps to read")
+              + (why switch
+              {
+                  ClosedRunEnds.OnLine => "the line holds the work its standing steps wait on",
+                  ClosedRunEnds.QuestClosed => "its standing steps wait on a quest that is closed, so Daoris stopped the run and its sessions",
+                  _ => "no branch of it stands for its standing steps to read",
+              })
               + ", so they stay as they are; it is judged again once its chain comes back here.");
     }
 

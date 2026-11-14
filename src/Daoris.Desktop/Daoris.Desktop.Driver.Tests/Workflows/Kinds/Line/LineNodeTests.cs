@@ -35,6 +35,29 @@ public sealed class LineNodeTests
         Assert.Equal(NodeStates.Unknown, Applied(unowned, NodeKinds.Line).Status.State);
     }
 
+    /// <summary>A landing that found the work already on the line made no landing record, yet the line is reached: git's own read says it holds all.</summary>
+    [Fact]
+    public void Line_is_reached_where_the_landing_found_the_work_already_on_the_line()
+    {
+        var commits = new[] { new LandingCommit("c1", "The work") };
+        var held = new LineHeld("l1", "l0", commits, [], [new LeftOutCommit("c1", "The work", LeftOutWhy.Patch)]);
+        var content = new HoldContent(null, 0, 0) { Line = new LineHolding("main", held) };
+        var git = new NodeGitReads { Content = (_, _) => content };
+
+        var unit = Unit(Grown());
+
+        var seen = NodeObserving.Observe(unit, Node(NodeKinds.Line), Binding(unit, NodeKinds.Line), git);
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Git), (seen.Outcome, seen.Source));
+        Assert.Contains("already holds all 1 commit(s)", seen.Said, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Line_asks_the_pass_for_the_content_its_reading_uses()
+    {
+        Assert.Equal(PassRead.Content, Assert.IsAssignableFrom<IAsksReads>(NodeKit.Of(NodeKinds.Line)).Asks);
+    }
+
     /// <summary>A line reads only a branch unit.</summary>
     [Fact]
     public void A_line_on_a_quest_unit_is_refused()

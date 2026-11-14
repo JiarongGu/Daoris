@@ -15,6 +15,13 @@ public static class RunOutcomes
     /// <summary>A step failed and nothing went on from it.</summary>
     public const string Failed = "failed";
 
+    /// <summary>The end of a run whose quests closed under a step that waits on the quest alone: stopped by Daoris at its first standing step.</summary>
+    internal static RunEnd OfClosedQuest(NodeGraph graph, NodeRecord record, string quest, DateTimeOffset at) =>
+        new(quest, at)
+        {
+            Outcome = Stopped, Node = ClosedRunEnds.Standing(graph, record).FirstOrDefault()?.Id, By = NodeSource.Daoris, Why = ClosedRunEnds.QuestClosed,
+        };
+
     /// <summary>
     /// The end of a run over at its newest quest <paramref name="quest"/>: completed where its end node is reached; else failed at its first
     /// failed step in the graph's order; else stopped at its first stopped or rejected one; else completed, its routes taken leaving nothing.
