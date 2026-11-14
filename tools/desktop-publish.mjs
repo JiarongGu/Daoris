@@ -78,7 +78,7 @@ import { isMain } from './fsx.mjs';
 import { running } from './processes.mjs';
 import { publishHost } from './service-publish.mjs';
 import { STAGE, STAGED, buildId, promoteStage, recordedShellFiles, refusal, stageRefusal, unstage, writeManifest } from './desktop-publish/staging.mjs';
-import { appPublishCommand, artifactsOf, commandPublishCommand, driverPublishCommand, gitDoorPublishCommand, launcherPublishCommand, layCommand, layGitDoors, layPieceStart, pieceStartPublishCommand, publishStages } from './desktop-publish/publish-commands.mjs';
+import { appPublishCommand, artifactsOf, BIN_STAGES, commandPublishCommand, driverPublishCommand, gitDoorPublishCommand, launcherPublishCommand, layBinPrograms, pieceStartPublishCommand, publishStages } from './desktop-publish/publish-commands.mjs';
 import { GATE_TREE, childArgs, gatedSource, gitIn, mainCheckout, recordStage, recordStaged, samePath, stageReport, stagedAdvice } from './desktop-publish/gate-tree.mjs';
 import { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
 import { sessionRefusal } from './desktop-publish/session.mjs';
@@ -86,12 +86,14 @@ import { HOST_HOME, INSTALL_RID, LAUNCHER, MARKER, RETIRED_BROWSER_EXE, RETIRED_
 import { HOME, KEPT_LOCALES, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, layOffers, layResources } from './desktop-publish/lay.mjs';
 import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME } from './desktop-publish/launchers.mjs';
 import { layCli } from './desktop-publish/cli.mjs';
+import { bundleCli } from './desktop-publish/cli-bundle.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
 export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, RETIRED_LAUNCHERS, RETIRED_IN_APP, RETIRED_BROWSER_EXE, retiredPaths, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
-export { CLI_HOME, CLI_PACKAGE, CLI_ENTRY, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
-export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand } from './desktop-publish/publish-commands.mjs';
+export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
+export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand, BIN_STAGES, layBinPrograms } from './desktop-publish/publish-commands.mjs';
 export { layCli } from './desktop-publish/cli.mjs';
+export { bundleCli } from './desktop-publish/cli-bundle.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
 export { GATE_COMMAND, insideFixtures, askGates, ungatedRefusal } from './desktop-publish/gates.mjs';
@@ -236,54 +238,25 @@ async function main() {
   console.log('desktop-publish: building the platform bundle…');
   run(`npm --prefix ${WEB} run build`);
 
-  // 🔴 ONE executable at the root, and nothing else that looks like one.
-  //
-  // Published the default way, the root holds 24 entries, with the executable buried
-  // alphabetically among DLLs, `.pdb`s and stray `.xml` doc files; here it holds one
-  // small launcher, framework-dependent and single-file, wearing the application's icon, and
-  // everything it starts sits under `app/`.
+  // 🔴 ONE executable at the root: one small launcher, framework-dependent and single-file, wearing the
+  // application's icon; everything it starts sits under `app/`.
   const stages = publishStages(repoRoot, artifacts);
 
-  // The command, beside them: `daoris.exe`.
-  console.log(`desktop-publish: publishing the command into ${CLI_BIN.join('/')}/…`);
-  const commandStage = join(stages, 'command');
-  run(commandPublishCommand(commandStage, artifacts));
+  // The programs of `app/bin/`, published while the install is untouched and laid after `layCli` empties the folder.
+  console.log(`desktop-publish: publishing the command, the git doors and the partner's launcher for ${CLI_BIN.join('/')}/…`);
+  run(commandPublishCommand(join(stages, BIN_STAGES.command), artifacts));
+  run(gitDoorPublishCommand(join(stages, BIN_STAGES.doors), artifacts));
+  run(pieceStartPublishCommand(join(stages, BIN_STAGES.pieceStart), artifacts));
+
+  // The doctrine tool: `src/Daoris.Cli` bundled into one file with the canon beside it, in a stage of its own. Bundled before
+  // anything is published, so a tool that will not bundle stops the publish while the install is still untouched.
+  console.log('desktop-publish: bundling the doctrine tool…');
+  const cliStage = join(stages, 'cli');
   try {
-    layCommand(commandStage, root);
+    await bundleCli(repoRoot, cliStage);
   } catch (error) {
     console.error(error.message);
-    process.exit(1);
-  }
-  rmSync(stages, { recursive: true, force: true });
-
-  // The doctrine tool: `src/Daoris.Cli` packed as the release packs it, `npm pack` in
-  // its own folder, whose `prepack` builds `dist/` and stages the canon, the licence and the readme. The
-  // tarball is the artefact the release rehearsal installs and the release workflow publishes, never the
-  // source tree. Packed before anything is published, so a package that will not pack stops the publish
-  // while the install is still untouched.
-  console.log('desktop-publish: packing the doctrine tool…');
-  const cliStage = join(stages, 'cli');
-  mkdirSync(cliStage, { recursive: true });
-  // `postpack` removes what the pack staged, and this removes it again whatever happened, as the release
-  // rehearsal does: a `dist/` outliving a pack shadows the sources for every later bin-driven run (FIX-LOG
-  // 2026-09-20).
-  const unstagePackage = () => execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'ignore', windowsHide: true });
-  let cliTarball;
-  try {
-    // The tarball's name is the last line npm prints; the build `prepack` runs prints above it.
-    const packed = execSync(`npm pack --pack-destination "${cliStage}"`, {
-      cwd: join(repoRoot, 'src', 'Daoris.Cli'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
-    }).trim().split('\n').pop().trim();
-    cliTarball = join(cliStage, packed);
-  } catch (error) {
-    unstagePackage();
-    console.error(`${error.stdout ?? ''}${error.stderr ?? ''}`);
-    console.error('desktop-publish: `npm pack` of src/Daoris.Cli failed, so the install would carry no doctrine tool.');
-    process.exit(1);
-  }
-  unstagePackage();
-  if (!existsSync(cliTarball)) {
-    console.error(`desktop-publish: \`npm pack\` named ${cliTarball}, and there is no such file.`);
+    console.error('desktop-publish: bundling src/Daoris.Cli failed, so the install would carry no doctrine tool.');
     process.exit(1);
   }
 
@@ -330,7 +303,6 @@ async function main() {
       + 'keeps the doctrine tool (WSSETUP2).');
     process.exit(1);
   }
-  // A staging folder starts empty and is no install, so neither line below removes anything there.
   for (const name of recordedShellFiles(root)) rmSync(join(app, name), { recursive: true, force: true });
   for (const path of retiredPaths(root)) rmSync(path, { recursive: true, force: true });
   mkdirSync(app, { recursive: true });
@@ -338,11 +310,10 @@ async function main() {
   writeFileSync(join(root, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
   cpSync(join(launcherStage, LAUNCHER), join(root, LAUNCHER));
 
-  // The doctrine tool, beside the application: the package under `app/cli/`, as npm
-  // lays one out, and the folder `app/bin/` for the programs laid out in it below. Nothing goes on any PATH from here.
+  // The doctrine tool: the package under `app/cli/`, and `app/bin/` made empty for its programs, laid below.
   const build = { id: buildId(), commit: commitOf(repoRoot) };
   try {
-    const tool = await layCli(cliTarball, root, {}, build);
+    const tool = await layCli(cliStage, root, {}, build);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
       + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}, laid out below.`);
   } catch (error) {
@@ -350,7 +321,6 @@ async function main() {
     process.exit(1);
   }
 
-  // The driver's verbs: the Host in a folder of its own, REPLACED whole as the service hosts are.
   console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
   const driverFolder = join(root, ...DRIVER_HOME);
   rmSync(driverFolder, { recursive: true, force: true });
@@ -360,25 +330,8 @@ async function main() {
     process.exit(1);
   }
 
-  // The git doors, in `app/bin/` beside the launchers, laid after `layCli` replaces the folder: every
-  // process Daoris starts is routed through them from the next start (`GitWiring.Hand`), and an install with all three has moved
-  // (`GitMove.Moved`). Every publish lays all three.
-  console.log(`desktop-publish: publishing the git doors into ${CLI_BIN.join('/')}/…`);
-  const doorStage = join(stages, 'git-doors');
-  run(gitDoorPublishCommand(doorStage, artifacts));
   try {
-    layGitDoors(doorStage, root);
-  } catch (error) {
-    console.error(error.message);
-    process.exit(1);
-  }
-
-  // The partner's launcher, beside the doors: a partner's start goes through it alone.
-  console.log(`desktop-publish: publishing the partner's launcher into ${CLI_BIN.join('/')}/…`);
-  const pieceStartStage = join(stages, 'piece-start');
-  run(pieceStartPublishCommand(pieceStartStage, artifacts));
-  try {
-    layPieceStart(pieceStartStage, root);
+    layBinPrograms(stages, root);
   } catch (error) {
     console.error(error.message);
     process.exit(1);

@@ -1125,11 +1125,10 @@ under `app/daoris-knowledge-http/`, and **the knowledge connector** under `app/d
 which the driver hands every protocol-door session ahead of the home's `bin/` copy (CONNECTOR1: an
 install that carried none handed its sessions a `bin/` copy no republish refreshed, eight days old on
 the install that found it, and it rebuilt the shared store at its own older schema); **the doctrine tool** (WSSETUP2,
-D124 §1.2), the CLI package the release packs laid out as npm lays one out in
-`app/cli/node_modules/daoris/`, with the command in `app/bin/` (`daoris.exe`, one program for Command Prompt, PowerShell and
+D124 §1.2), the CLI bundled into one file, `app/cli/daoris.mjs`, with its `canon/` beside it, with the command in `app/bin/` (`daoris.exe`, one program for Command Prompt, PowerShell and
 Git Bash, which starts the desktop's own program in `app/daoris-driver/` with its arguments whole, words of several lines included:
 a batch file's arguments end at the first line break, D291), which hands the doctrine commands
-to that package, on the `node` a child's `PATH` finds; Daoris's example plugins in `app/plugin-offers/` and the list of where each tool's versions download from, `app/resources.json`; the
+to that file by its own path, on the tools' `node`; Daoris's example plugins in `app/plugin-offers/` and the list of where each tool's versions download from, `app/resources.json`; the
 install's own `data/` once it has run, and an `INSTALLED.md` saying so. A republish into an install that carries either host, without `--service`, is refused.
 `--stage` publishes beside a running install, into `update/staged/`, for the application to install when its work allows (`--from-gated <commit>` builds the commit the full set gated). **Every process the driver and
 the modules start finds that `daoris` first** (WSSETUP3, D124 §1.3): the tools' environment puts the
