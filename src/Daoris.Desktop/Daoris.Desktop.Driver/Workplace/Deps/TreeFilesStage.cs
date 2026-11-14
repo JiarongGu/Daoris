@@ -46,15 +46,12 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
-            // The disk or git failed under the dependencies: the tree starts as a fresh one does, but its checkout's private inputs are
-            // still copied, so its checks read what the merge's read.
             _said.Add(Failed(error));
             await CopyLocalAsync(ct).ConfigureAwait(false);
             return new([.. _said], false, null);
         }
     }
 
-    /// <summary>The line a stage the disk or git failed under says.</summary>
     internal static Noted Failed(Exception error)
     {
         var why = error.Message.Trim();
@@ -122,10 +119,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         return told.Length == 0 ? outcome : outcome with { Told = told };
     }
 
-    /// <summary>
-    /// The checkout's declared machine-local inputs copied, each line said, the copies recorded. Where the file rules were never read
-    /// the person's permissions cannot be judged, so nothing is copied.
-    /// </summary>
+    /// <summary>The declared local inputs copied and said; nothing where the file rules were never read, since the person's permissions cannot be judged.</summary>
     private async Task<LocalCopy> CopyLocalAsync(CancellationToken ct)
     {
         if (_rules is null) return LocalCopy.None;

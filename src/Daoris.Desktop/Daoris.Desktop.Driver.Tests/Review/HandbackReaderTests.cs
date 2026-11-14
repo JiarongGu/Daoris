@@ -56,10 +56,6 @@ public sealed class HandbackReaderTests : IDisposable
         Assert.Null(await HandbackReader.ReadAsync(_tree, "no-such-line", gates, [], [], CancellationToken.None));
     }
 
-    /// <summary>
-    /// A commit the work adds without a <c>Co-Authored-By</c> line naming a maker is read from the tree and said, as the merge's own commit
-    /// check would refuse it; a merge of the line into the work needs none.
-    /// </summary>
     [Fact]
     public async Task A_commit_without_its_makers_trailer_is_read_and_said_as_the_merge_check_refuses_it()
     {
