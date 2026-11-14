@@ -1592,7 +1592,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                                 return (409, $$"""{"error":"Session `{{id}}` is {{from}} — a finished session does not move."}""");
                             }
 
-                            session["note"] = string.Join("\n\n", new[] { session["note"]?.GetValue<string>(), "Went on with your words at 2026-10-03 09:00 UTC.", note }
+                            session["note"] = string.Join("\n\n", new[] { "Went on with your words at 2026-10-03 09:00 UTC.", note, session["note"]?.GetValue<string>() }
                                 .Where(part => !string.IsNullOrWhiteSpace(part)));
                         }
                         else if (!Allowed.TryGetValue(from, out var moves) || !moves.Contains(to))

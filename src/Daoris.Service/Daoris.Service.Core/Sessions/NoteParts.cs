@@ -153,6 +153,17 @@ public static class NoteParts
         writer.WriteEndArray();
     });
 
+    /// <summary>These lines, then a move's note, then the record's own: a record going on reads its present first.</summary>
+    public static string Before(
+        IEnumerable<NoteLine> lines, string? thenParts, string? thenNote, string? parts, string? note) => Written(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var line in lines) line.Write(writer);
+        Carried(writer, thenParts, thenNote);
+        Carried(writer, parts, note);
+        writer.WriteEndArray();
+    });
+
     /// <summary>A note's own parts where it has them, else the note whole as one <c>before</c> part, else nothing.</summary>
     private static void Carried(Utf8JsonWriter writer, string? parts, string? note)
     {

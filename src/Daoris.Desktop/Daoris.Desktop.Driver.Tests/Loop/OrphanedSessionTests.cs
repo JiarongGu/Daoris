@@ -143,6 +143,47 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.True(service.Interrupted("q1"));
     }
 
+    /// <summary>A go-on is working before its spawn: left while its opener runs or the loop's run holds it, ended once it went.</summary>
+    [Fact]
+    public async Task The_sweep_leaves_a_go_on_whose_opener_runs_and_ends_one_whose_opener_went()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        service.Seed("g1", "working");
+        service.Seed("g2", "working");
+        service.Seed("g3", "working");
+        var went = Holding();
+        var marks = new SessionProcesses(Markers);
+        marks.MarkOpening("g1");
+        marks.MarkOpening("g2", went);
+        went.Kill();
+        await went.WaitForExitAsync();
+
+        using var client = new ServiceClient(service.Url, null);
+        var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers), held: id => id == "g3");
+
+        Assert.Equal(["g2"], ended.Select(e => e.Id));
+        Assert.Equal(("working", "stopped", "working"), (service.State("g1"), service.State("g2"), service.State("g3")));
+
+        var stopped = await Orphans.EndAsync(client, new SessionProcesses(Markers), only: "g1");
+        Assert.Equal(["g1"], stopped.Select(e => e.Id));
+    }
+
+    /// <summary>A go-on marks its ended record before the ledger moves it, so a live opener's mark outlives the dead markers' sweep.</summary>
+    [Fact]
+    public void The_dead_markers_sweep_keeps_a_live_openers_mark_and_removes_one_whose_opener_went()
+    {
+        var went = Holding();
+        var processes = new SessionProcesses(Markers);
+        processes.MarkOpening("d1");
+        processes.MarkOpening("d2", went);
+        went.Kill();
+        went.WaitForExit();
+
+        Assert.Equal(1, processes.SweepDeadMarkers(new HashSet<string>(StringComparer.Ordinal)));
+
+        Assert.Equal(["d1.pid"], Directory.GetFiles(Markers).Select(Path.GetFileName));
+    }
+
     /// <summary>
     /// A start whose driver went before it marked its record leaves a `queued` one nothing starts: past the grace it is ended as
     /// the sweep's, so its quest starts again; a young unmarked one, or one a live driver marks, is left.
@@ -264,6 +305,48 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.Empty(errors);
         Assert.Equal("stopped", service.State("a1"));
         Assert.Contains(Assert.Single(reports).Events, line => line.Contains("a1") && line.Contains("nothing on this machine"));
+    }
+
+    /// <summary>A record left `working` with nothing running it mid-run is ended within a look, not at the next start.</summary>
+    [Fact]
+    public async Task The_loop_ends_a_record_left_working_mid_run_within_a_look()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        service.Seed("z0", "working");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), """{ "pollSeconds": 1 }""");
+
+        using var client = new ServiceClient(service.Url, null);
+        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var reports = new List<TickReport>();
+        var errors = new List<Exception>();
+        var seeded = -1;
+        var watch = new DriverWatch(
+            client, DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home, new SessionProcesses(Markers), sync: null,
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+
+        await watch.RunAsync(
+            (report, _) =>
+            {
+                reports.Add(report);
+                // Left working once the first look's sweep has ended z0.
+                if (seeded < 0 && report.Events.Any(line => line.Contains("z0")))
+                {
+                    service.Seed("a1", "working");
+                    seeded = reports.Count;
+                }
+
+                if (service.State("a1") == "stopped") stop.Cancel();
+                else watch.Nudge();
+                return Task.CompletedTask;
+            },
+            error => { errors.Add(error); stop.Cancel(); return Task.CompletedTask; },
+            stop.Token);
+
+        Assert.Empty(errors);
+        Assert.True(seeded > 0);
+        Assert.Equal("stopped", service.State("a1"));
+        Assert.True(service.Interrupted("a1"));
+        Assert.Contains(reports.Skip(seeded).SelectMany(report => report.Events), line => line.Contains("a1") && line.Contains("nothing on this machine"));
     }
 
     /// <summary>

@@ -224,7 +224,7 @@ public sealed class NotePartsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Going_on_says_when_as_a_moment_after_the_record_s_parts_and_before_the_driver_s()
+    public async Task Going_on_leads_with_when_as_a_moment_then_the_driver_s_note_then_what_ended_it()
     {
         var session = await WorkingSession();
         await _ledger.AdvanceAsync(session.Id, "completed", "the quest reached done.", null, null, Now,
@@ -236,9 +236,25 @@ public sealed class NotePartsTests : IAsyncLifetime
             session.Id, "working", GoingOn, null, null, Now.AddMinutes(30),
             noteParts: $$"""[{"code":"working.goes-on","values":{},"text":"{{GoingOn}}"}]""")).Session!;
 
-        Assert.Equal($"the quest reached done.\n\nWent on with your words at 2026-10-03 10:30 UTC.\n\n{GoingOn}", went.Note);
-        Assert.Equal(["ended.done", "ledger.went-on", "working.goes-on"], Parts(went.NoteParts).Select(part => part.Code));
-        Assert.Equal("2026-10-03T10:30:00Z", Value(went.NoteParts!, 1, "at"));
+        Assert.Equal($"Went on with your words at 2026-10-03 10:30 UTC.\n\n{GoingOn}\n\nthe quest reached done.", went.Note);
+        Assert.Equal(["ledger.went-on", "working.goes-on", "ended.done"], Parts(went.NoteParts).Select(part => part.Code));
+        Assert.Equal("2026-10-03T10:30:00Z", Value(went.NoteParts!, 0, "at"));
+    }
+
+    [Fact]
+    public async Task A_record_the_sweep_stopped_goes_on_leading_with_its_went_on_line_never_its_orphan_note()
+    {
+        const string Orphan = "nothing on this machine was running it any more.";
+        var session = await WorkingSession();
+        await _ledger.AdvanceAsync(session.Id, "stopped", Orphan, null, null, Now, interrupted: true,
+            noteParts: $$"""[{"code":"stopped.orphan","values":{},"text":"{{Orphan}}"}]""");
+        await _ledger.SayAsync(session.Id, "Go on, please.", null, Now.AddMinutes(5));
+
+        var went = (await _ledger.AdvanceAsync(session.Id, "working", null, null, null, Now.AddMinutes(6))).Session!;
+
+        Assert.Equal("working", Session.Spell(went.State));
+        Assert.StartsWith("Went on with your words at 2026-10-03 10:06 UTC.", went.Note);
+        Assert.Equal(["ledger.went-on", "stopped.orphan"], Parts(went.NoteParts).Select(part => part.Code));
     }
 
     [Fact]
@@ -248,9 +264,9 @@ public sealed class NotePartsTests : IAsyncLifetime
 
         var (note, parts) = SessionAdvances.WentOnNote(session, "an older driver's line.", null, Now);
 
-        Assert.Equal("an older note.\n\nWent on with your words at 2026-10-03 10:00 UTC.\n\nan older driver's line.", note);
+        Assert.Equal("Went on with your words at 2026-10-03 10:00 UTC.\n\nan older driver's line.\n\nan older note.", note);
         Assert.Equal(
-            [(null, "before"), ("ledger.went-on", null), (null, "before")],
+            [("ledger.went-on", null), (null, "before"), (null, "before")],
             Parts(parts).Select(part => (part.Code, part.By)));
         Holds(note, parts);
     }

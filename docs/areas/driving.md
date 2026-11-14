@@ -234,10 +234,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     process, a tool error) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
     the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A failed verdict still
     reopens a session whose quest is `Done`: the word names the work's failure, and no rule yet tells the person instead. (CHECKLOCK1)
-41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
-    tree and records the same. Both are carried on. A `queued` or `starting` record is taken only where its opener's mark
-    names a process that went, or where no mark was ever kept and the record has stood untouched past two minutes; the opener
-    marks the record the moment it exists. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
+41. The sweep, at every look, stops a record that says it runs with nothing running it, as interrupted, so one left `working`
+    mid-run reads stopped within a look. A go-on or a resume marks its record before the ledger moves it to `working` ahead of its
+    spawn, and the sweep leaves it while that opener runs, as it leaves a record a run of its own loop holds. A `queued` or
+    `starting` record is taken only where its opener's mark names a process that went, or where no mark was ever kept and the
+    record has stood untouched past two minutes; the opener marks the record the moment it exists. A shutdown kills each
+    session's process tree and records the same. Both are carried on. (D104) A session's tracking ending, by exit, stop or a run's end, ends what its
     job still holds, so nothing its agent started outlives it, a launcher still running included; the machine log's
     `session.reaped` says how many.
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)

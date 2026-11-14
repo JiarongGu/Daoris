@@ -128,7 +128,8 @@ of everything it handed, section by section.
 
 12. Words said to a parked or ended record are kept on its `said` before anything holds them. They come off by id once on
     the wire. A word a gone shell attempted is settled and never sent twice. (from D137, D188)
-13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`. Then its
+13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`, its note leading
+    with the went-on line and keeping what ended it beneath. Then its
     own conversation resumes, every waiting word in its first turn. A go-on gets no block and no brief. (from D137, D230)
     The shell's close, whoever closes it, keeps Daoris's restart word on each conversation it cut (a turn running, a start or go-on
     pending, words held, never one waiting on its limit, whose wake carries its words), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
