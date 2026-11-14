@@ -23,6 +23,9 @@ public static class CheckStates
     public const string Failed = "failed";
     public const string Stopped = "stopped";
 
+    /// <summary>Daoris could not run it: no verdict, never said to the asker.</summary>
+    public const string Errored = "errored";
+
     /// <summary>Whether the state is a verdict: the run is over.</summary>
     public static bool Finished(string state) => state is Reached or Failed or Stopped;
 }
@@ -43,4 +46,6 @@ public sealed record CheckState(string Id, string State, DateTimeOffset At)
     public string? Tip { get; init; }
 
     public string? Handed { get; init; }
+
+    public string? Error { get; init; }
 }
