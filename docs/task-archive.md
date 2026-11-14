@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **CHAINBRANCH1 (2026-11-14):** the later repository's branch named for the first quest of the chain was a defect, not the design (a chain lands on one branch per repository): `BranchPatterns.SubjectAsync` stops its walk up a step's parents where a parent was asked of another repository, so each repository's branch is named for its own first quest; proved by `LandingChainTests.A_chain_across_repositories_names_each_repositorys_branch_for_its_own_first_quest` (seen failing first) and `docs/areas/workflows-review-landing.md` rule 36.
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---
