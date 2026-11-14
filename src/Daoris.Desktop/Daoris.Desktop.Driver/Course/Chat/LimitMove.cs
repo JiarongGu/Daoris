@@ -306,7 +306,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             var fence = new MoveFence(move);
             var plan = isHelp || elsewhere is not null || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
                 ? null
-                : ChatLimitCarry.Planned(context, agent, prior, selection, tree);
+                : ChatLimitCarry.Planned(context, agent, prior, selection, tree, brief.Text);
             var carrier = plan is CarryPlan.Carried carried
                 ? new ChatLimitCarry(
                     wiring, agent, prior, selection, carried, held.Words, [.. waited.Where(word => !word.Kept || word.Id is null)], held.Before, move, fence, read)

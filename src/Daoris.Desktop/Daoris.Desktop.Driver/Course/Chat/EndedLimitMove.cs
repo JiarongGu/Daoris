@@ -195,7 +195,9 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             var plan = moveWhy != HandOverWhy.Limit || lost is not null || isHelp || elsewhere is not null
                        || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
                 ? null
-                : ChatLimitCarry.Planned(context, agent, prior, selection, tree);
+                : ChatLimitCarry.Planned(context, agent, prior, selection, tree, (await ContextBriefs.ComposeAsync(
+                        context.Service, context.Events, context.Home, sessionId, moveWhy, conversation: prior.Kind == "chat", ct: ct, before: before)
+                    .ConfigureAwait(false)).Text);
             var carrier = plan is CarryPlan.Carried carried
                 ? new ChatLimitCarry(wiring, agent, prior, selection, carried, held?.Words ?? [], [], before, move, fence, read)
                 : null;
