@@ -97,7 +97,7 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
     : map.units.filter((unit) => paths.some((path) => context.reaches(unit, path)));
   const { units: considered, night } = classes.length
     ? { units: reached, night: {} }
-    : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites });
+    : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites, everything: tier === 'heavy' });
   const { kept: units, deferred: heavy } = splitTier(considered, tier, processSuites);
   const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
   const deferred = splitByReuse(heavy, (unit) => classKey(unit, context), store).run;
@@ -145,7 +145,7 @@ async function main(argv) {
   const admission = builderAdmission();
   const processSuites = processSuitesOf(keyContextOf(root).gates);
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, deferred: deferred.map((unit) => unitId(unit)), say: (line) => console.log(line),
+    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say: (line) => console.log(line),
     exec: execAsync,
     inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),

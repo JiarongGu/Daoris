@@ -47,7 +47,10 @@
  * `--rerun`, `--stale` and the stage read (below): the main checkout's, whichever worktree the run is in.
  * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
  * sources changed; one line says so, and a build that fails is said and fails nothing.
- * 10. Nothing is committed here: the queue's promotion lands it and starts the heavy tier's run on the new tip.
+ * 10. The merge is left uncommitted. The queue's promotion lands it and starts the heavy tier's run on the new tip; a merge made
+ * here directly is landed by `--commit`: once every gate chosen for it has a standing pass (whatever way the gates ran, a
+ * `--rerun` or `--no-timeout` run included, which the commit message then says) the tool commits it, starts the heavy run on
+ * the new tip and prunes, so no landing is a hand-made commit that skips either.
  *
  * ## A fixed gate re-runs alone
  *
@@ -203,7 +206,8 @@
  * process is inside: none whose executable path or command line names the folder, read once per prune
  * (one CIM query on Windows, `ps` elsewhere) and only when a harness-locked worktree or a folder below
  * needs it. It also stays locked unless it has been idle: nothing in it written for
- * `HARNESS_IDLE_MINUTES` (two hours), read by `newestWrite` from the folder's top-level entries, their children but build
+ * `HARNESS_IDLE_MINUTES` (two hours), or for `ENDED_IDLE_MINUTES` where its agent has ended (the worktree made a commit of its
+ * own, which its merged branch holds, so main's tip is no sign of a fresh dispatch), read by `newestWrite` from the folder's top-level entries, their children but build
  * output, and the git folder's HEAD, index and HEAD log, never a full walk. A process's command line does not show a shell's
  * working folder, the lock is held for the agent's whole run, and the branch guard fails once main moves past a fresh
  * branch, so a worker that had not yet committed would lose its tree; the plan says "written N minutes ago, a worker
@@ -377,7 +381,12 @@ import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
-import { heavyStanding, readHeavy, startAfterLanding } from './merge/heavy-after.ts';
+import { appendHeavy, hasRunner, heavyStanding, readHeavy, startAfterLanding, startDetached } from './merge/heavy-after.ts';
+import { landMerge, notReadyLines, readiness } from './merge/land-merge.ts';
+import { madeCommit } from './merge/ended-agent.ts';
+import { disposableLocal, folderVerdict, harnessLock, listed, newestWrite, processSaid, pruneVerdict } from './merge/prune-verdict.ts';
+
+export { ENDED_IDLE_MINUTES, HARNESS_IDLE_MINUTES, disposableLocal, folderVerdict, harnessLock, newestWrite, pruneVerdict } from './merge/prune-verdict.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
 import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
@@ -1581,16 +1590,6 @@ export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
   });
 }
 
-const listed = (files, max = 3) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
-
-/**
- * Whether a lock is the agent harness's own, `claude agent <id> (pid N)`. The harness holds it for its
- * session's whole life, not only while the agent runs, so on a finished agent's worktree it says nothing of use.
- */
-export function harnessLock(reason) {
-  return /^claude agent \S+ \(pid \d+\)$/.test(reason ?? '');
-}
-
 /**
  * The running processes, read from the CIM query's JSON on Windows or `ps -A -o pid= -o args=` elsewhere: each one's
  * pid, its executable's path ('' when not given) and its command line, or its path when the command line is not given.
@@ -1635,117 +1634,6 @@ export function processesInside(folder, processes, platform = process.platform) 
     });
   };
   return processes.filter((one) => names(one.command) || (one.exe && names(one.exe)));
-}
-
-/** How long a harness-locked worktree must have had no write before the prune takes it. */
-export const HARNESS_IDLE_MINUTES = 120;
-
-// Folders whose children are not read: build output and dependencies, thousands of entries a worker's edits rarely reach first.
-const WRITE_SKIP = new Set(['.git', 'node_modules', 'bin', 'obj', 'dist', 'wwwroot']);
-
-/**
- * The newest write time, in ms, of a worktree's folder, 0 when nothing could be read. Read cheaply, never a
- * full walk (a tree is 300 MB): the times of the folder's top-level entries (a file or folder made or removed there moves
- * the folder's own time, and a worker's builds, logs and scratch land there), of the children of each top-level folder
- * but build output (`src/`, `local/`, `docs/`), and of the git folder the worktree keeps beside the repository: its HEAD,
- * its index and its HEAD log, which every commit, checkout and `git add` writes. A file edited in place deeper down, with
- * nothing made or committed, is not seen; the two hours the caller waits cover that.
- */
-export function newestWrite(path) {
-  let newest = 0;
-  const seen = (file) => {
-    try {
-      newest = Math.max(newest, lstatSync(file).mtimeMs);
-    } catch { /* gone between the listing and the stat: nothing to read */ }
-  };
-  const children = (folder) => {
-    try {
-      return readdirSync(folder, { withFileTypes: true });
-    } catch {
-      return [];
-    }
-  };
-  seen(path);
-  for (const entry of children(path)) {
-    const at = join(path, entry.name);
-    seen(at);
-    if (entry.isDirectory() && !WRITE_SKIP.has(entry.name)) for (const child of children(at)) seen(join(at, child.name));
-  }
-  try {
-    const pointer = /^gitdir: (.+)$/m.exec(readFileSync(join(path, '.git'), 'utf8'));
-    if (pointer) for (const name of ['HEAD', 'index', join('logs', 'HEAD')]) seen(join(resolve(path, pointer[1].trim()), name));
-  } catch { /* no .git file: the folder's own entries are all there is */ }
-  return newest;
-}
-
-/** One process, as a prune names it: its pid and its command line, cut short. */
-const processSaid = (one) => `pid ${one.pid}: ${one.command.length > 120 ? `${one.command.slice(0, 120)}…` : one.command}`;
-
-/**
- * Whether a path under `local/` (as `local/…`, `/`-separated) is an agent's disposable output: logs and scratch under
- * `local/scratch/`, and a `*.log` file anywhere under `local/`. Anything else there may be work, and keeps its worktree.
- */
-export function disposableLocal(path, directory = false) {
-  if (path === 'local/scratch' || path.startsWith('local/scratch/')) return true;
-  return !directory && path.endsWith('.log');
-}
-
-/**
- * Whether a folder under `.claude/worktrees/` that git does not list goes: what a `git worktree remove`
- * left when it could not finish. It goes when it is no link (a reparse point is never followed), holds no `.git` (then
- * it is no half-removed worktree), and no running process is inside it, which is never stopped here.
- */
-export function folderVerdict(folder) {
-  if (folder.link) return { remove: false, why: 'a link (a reparse point), never followed or removed here' };
-  if (folder.git) return { remove: false, why: 'a folder git does not list, but it holds a .git, so it is no half-removed worktree and is never touched here' };
-  if (!folder.processes) {
-    return { remove: false, why: `a folder git does not list, kept: whether a process runs inside it could not be read (${folder.processError ?? 'not looked into'})` };
-  }
-  if (folder.processes.length) {
-    return {
-      remove: false,
-      why: `a folder git does not list, kept: a running process is inside it (${folder.processes.map(processSaid).join('; ')}), and a process is never stopped here: end it, and the next prune removes the folder`,
-    };
-  }
-  return { remove: true, why: '' };
-}
-
-/**
- * Whether a candidate goes, and if it stays, why. `facts` is what is found in its worktree, and null
- * where nothing is looked into: a worktree locked for any reason but the agent harness's is in use, so
- * the lock decides and what it holds does not, and nothing runs in it. The harness's own lock
- * is lifted, `unlock`, when its branch is not at main's tip (a just-dispatched agent's is), it has no
- * change, nothing under `local/` but logs and scratch, and no running process inside it. Every reason to
- * keep is said, not only the first.
- */
-export function pruneVerdict(candidate, facts) {
-  if (candidate.held) return { remove: false, why: candidate.held };
-  const tree = candidate.worktree;
-  if (!tree) return { remove: true, why: '' };
-  const harness = tree.locked && harnessLock(tree.lockReason);
-  if (tree.locked && !harness) {
-    return { remove: false, why: `its worktree is locked, so in use${tree.lockReason ? ` (${tree.lockReason})` : ''}; it is never looked into or unlocked here` };
-  }
-  if (!facts) return { remove: false, why: 'its worktree was not looked into' };
-  const unlock = harness ? { unlock: true } : {};
-  if (facts.gone) return { remove: true, why: '', gone: true, ...unlock };
-  const has = [];
-  if (facts.error) has.push(`a state git could not read (${facts.error})`);
-  if (facts.tracked.length) has.push(`modified or staged tracked files (${listed(facts.tracked)})`);
-  if (facts.local) has.push(`private output under local/ (${facts.local}), which nothing else keeps`);
-  if (facts.untracked.length) has.push(`untracked files git removes only with --force (${listed(facts.untracked)})`);
-  if (!harness) return has.length ? { remove: false, why: `its worktree has ${has.join('; ')}` } : { remove: true, why: '' };
-
-  const kept = [];
-  if (facts.atTip) kept.push("its branch is at main's tip, as a just-dispatched agent's is");
-  kept.push(...has.map((one) => `it has ${one}`));
-  if (!facts.processes) kept.push(`whether a process runs inside it could not be read (${facts.processError ?? 'not looked into'})`);
-  else if (facts.processes.length) kept.push(`a running process is inside it (${facts.processes.map(processSaid).join('; ')})`);
-  // A shell's working folder is on no command line, so a quiet tree is the only sign a worker has left it.
-  if (facts.idleMinutes === undefined) kept.push('when it was last written could not be read');
-  else if (facts.idleMinutes < HARNESS_IDLE_MINUTES) kept.push(`written ${facts.idleMinutes} minute${facts.idleMinutes === 1 ? '' : 's'} ago, a worker may be in it`);
-  if (kept.length) return { remove: false, why: `its worktree is locked by the agent harness (${tree.lockReason}), and stays locked: ${kept.join('; ')}` };
-  return { remove: true, why: '', ...unlock };
 }
 
 /** The line of git's refusal worth printing: its `error:` or `fatal:` line, else its first. */
@@ -1896,7 +1784,8 @@ export function planPrune(root, { hold = [], atMerge = false } = {}) {
       facts = inspectWorktree(tree);
       if (tree.locked && !facts.gone) {
         const written = newestWrite(tree.path);
-        Object.assign(facts, { atTip: refs.find((ref) => ref.branch === candidate.branch)?.sha === tip }, inside(tree.path));
+        const reflog = git(tree.path, ['reflog', 'show', '--format=%gs', 'HEAD'], { allowFail: true });
+        Object.assign(facts, { atTip: refs.find((ref) => ref.branch === candidate.branch)?.sha === tip, ended: madeCommit(lines(reflog.out)) }, inside(tree.path));
         if (written > 0) facts.idleMinutes = Math.max(0, Math.floor((Date.now() - written) / 60_000));
       }
     }
@@ -2940,6 +2829,7 @@ async function gateMerge(root, state, plan) {
   clearLogs(dir);
   // `--continue` gates the merge again whole: the verdicts of an earlier run are dropped.
   state.results = { [branch]: {} };
+  state.unbudgeted = timeoutState.off;
   state.ratchetSince = started;
   writeState(root, state);
 
@@ -2982,10 +2872,72 @@ async function gateMerge(root, state, plan) {
   const owed = owedLine(skipped);
   if (owed) console.log(owed);
   if (last) {
-    console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
+    console.log('  Next: read the diff (git diff --cached), write the records, and node tools/merge-branch.mjs --commit (it commits, starts the heavy tier and prunes).');
   } else {
-    console.log(`  Next: read the diff (git diff --cached), write the records, commit the merge; then node tools/merge-branch.mjs --continue merges ${state.branches[state.at + 1]}.`);
+    console.log(`  Next: read the diff (git diff --cached), write the records, node tools/merge-branch.mjs --commit; then node tools/merge-branch.mjs --continue merges ${state.branches[state.at + 1]}.`);
   }
+  return 0;
+}
+
+/**
+ * The merge's chosen gates with their recorded results, and which of them a changed path reaches since: a verdict is kept
+ * only while none does; one a fix's path reaches runs again. A tree git cannot write judges none stale.
+ */
+function judgedResults(root, state, plan, branch) {
+  const { chosen } = chooseGates(root, state, plan);
+  const results = state.results?.[branch] ?? {};
+  const tree = contentTree(root);
+  const judging = standingFor(root, tree);
+  const standings = Object.fromEntries(chosen.filter((gate) => results[gate.name] && tree)
+    .map((gate) => [gate.name, verdictStanding({ ...judging, from: results[gate.name].tree, gate: gate.name })]));
+  const stale = Object.fromEntries(Object.entries(standings).filter(([, how]) => how.standing === 'stale').map(([name, how]) => [name, how.paths]));
+  return { chosen, results, standings, stale };
+}
+
+/**
+ * `--commit`: the open merge committed by the tool once every gate chosen for it passed and none is stale, then the heavy
+ * tier started on the new tip and the prune run, so no landing waits on a hand-made commit. Gates owed are named.
+ */
+function commitVerb(root, options) {
+  const state = readState(root);
+  if (!state || !mergeInProgress(root)) throw new Refusal('--commit: no merge this tool left is open here');
+  requireMain(root);
+  const branch = state.branches[state.at];
+  if (git(root, ['rev-parse', 'MERGE_HEAD']).out.trim() !== state.tips[branch]) throw new Refusal(`the merge in progress is not ${branch}'s, which is the one recorded`);
+  const { blocking, generated } = conflicts(root);
+  if (blocking.length) return reportConflict(branch, blocking, generated);
+  setApartJoins(root);
+  writeGenerated(root);
+  const { chosen, results, stale } = judgedResults(root, state, readPlan(root), branch);
+  const standing = readiness(chosen.map((gate) => gate.name), results, stale);
+  if (!standing.ready) {
+    for (const line of notReadyLines(branch, standing)) console.log(line);
+    return 1;
+  }
+  const home = verdictsHome(root);
+  const message = join(root, SCRATCH, `commit-${slug(branch)}.txt`);
+  const last = state.branches.length - 1 === state.at;
+  landMerge({
+    branch, gates: chosen.length, unbudgeted: state.unbudgeted === true, heavy: hasRunner(home), prune: options.autoPrune && state.autoPrune !== false,
+    trailer: /^Co-Authored-By:.*$/m.exec(git(root, ['log', '-1', '--format=%B', state.tips[branch]]).out)?.[0] ?? '',
+  }, {
+    commit: (text) => {
+      const base = git(root, ['rev-parse', 'HEAD']).out.trim();
+      mkdirSync(dirname(message), { recursive: true });
+      writeFileSync(message, `${text}\n`);
+      git(root, ['commit', '--quiet', '--all', '--file', message]);
+      return { tip: git(root, ['rev-parse', 'HEAD']).out.trim(), base };
+    },
+    prune: () => pruneAround(root, state.branches.slice(state.at + 1)),
+    start: (args, file) => startDetached(home, args, file),
+    append: (record) => appendHeavy(home, record),
+    now: nowIso,
+    log: `local/scratch/heavy-${branch.replace(/[^\w.-]+/g, '-')}.log`,
+    say: console.log,
+  });
+  rmSync(message, { force: true });
+  if (last) dropState(root);
+  else console.log(`  Next: node tools/merge-branch.mjs --continue merges ${state.branches[state.at + 1]}.`);
   return 0;
 }
 
@@ -3018,15 +2970,7 @@ async function rerunGates(root, options) {
     throw new Refusal(`--rerun: no gate ${unknown.map((name) => `'${name}'`).join(', ')} in the plan: ${plan.map((gate) => gate.name).join(', ')}`);
   }
 
-  const { chosen } = chooseGates(root, state, plan);
-  const results = state.results?.[branch] ?? {};
-  // A verdict is kept only while no path changed since it is given reaches its gate; one a fix's path reaches
-  // runs again, so every verdict kept is one the stage counts. A tree git cannot write judges none stale.
-  const tree = contentTree(root);
-  const judging = standingFor(root, tree);
-  const standings = Object.fromEntries(chosen.filter((gate) => results[gate.name] && tree)
-    .map((gate) => [gate.name, verdictStanding({ ...judging, from: results[gate.name].tree, gate: gate.name })]));
-  const stale = Object.fromEntries(Object.entries(standings).filter(([, how]) => how.standing === 'stale').map(([name, how]) => [name, how.paths]));
+  const { chosen, results, standings, stale } = judgedResults(root, state, plan, branch);
   const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, named, stale);
   const gates = plan.filter((gate) => planned.run.includes(gate.name));
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
@@ -3050,6 +2994,7 @@ async function rerunGates(root, options) {
     console.log(`  ${pad('kept', 8)} ${pad(kept.name, 16)} ${pad(kept.verdict, 8)} from ${when(kept.at)}  ${results[kept.name]?.log ?? ''}${note}`);
   }
   state.results = { [branch]: results };
+  state.unbudgeted ||= timeoutState.off;
   const ran = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || options.keepGoing,
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
@@ -3078,7 +3023,7 @@ async function rerunGates(root, options) {
   }
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length - 1, 'gate')} run and passed${flakeNote(ran.filter((r) => r.verdict === 'FLAKE'))}; ${keptNote}.`);
   refreshKnowledgeServer(root);
-  console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
+  console.log('  Next: read the diff (git diff --cached), write the records, and node tools/merge-branch.mjs --commit.');
   return 0;
 }
 
@@ -6613,11 +6558,10 @@ export async function main(argv) {
   if (options.preview) return previewVerb(root, options);
   if (options.messageFile !== null) return enqueueVerb(root, options);
   if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);
-  if (options.prune) return pruneOnly(root, options);
-  if (options.plan) return planOnly(root, options, planSeams);
+  if (options.prune) return pruneOnly(root, options);  if (options.plan) return planOnly(root, options, planSeams);
   if (options.passed) return passedOnly(root, { light: options.light });
   timeoutState.off = options.noTimeout === true;
-  const verb = options.stale ? 'stale' : options.rerun.length ? 'rerun' : options.resume ? 'continue' : !options.ci && !options.beside && !options.full && options.branches.length ? 'merge' : null;
+  const verb = options.commit ? 'commit' : options.stale ? 'stale' : options.rerun.length ? 'rerun' : options.resume ? 'continue' : !options.ci && !options.beside && !options.full && options.branches.length ? 'merge' : null;
   if (verb === null) return mergeVerb(root, options);
   // One run at a time on a checkout's open merge: a second says who holds it, and never collides.
   const me = { pid: process.pid, started: processStart(process.pid), at: nowIso(), verb };
@@ -6631,6 +6575,7 @@ async function mergeVerb(root, options) {
     return rerunCheckout(root, options);
   }
   if (options.rerun.length) return mergeInProgress(root) ? rerunGates(root, options) : rerunCheckout(root, options);
+  if (options.commit) return commitVerb(root, options);
   if (options.resume) return resume(root, options);
   // One run of the CI, its watch, or the stop asked of the watch.
   if (options.ci) return options.stop ? ciStopVerb(root) : options.watch ? ciWatchVerb(root, options) : gateCi(root, options);

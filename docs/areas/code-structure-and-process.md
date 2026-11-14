@@ -161,9 +161,13 @@ finishes first and the whole set runs once.
     change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands.
     The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
-    run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and the queue's promotion starts
-    `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`). It runs them through `reached-checks --tier heavy`
-    in `local/heavy-tree` (a worktree of its own, under the machine's admission), records each pass for the next merge to replay,
+    run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and every way a merge lands starts
+    `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`): the queue's promotion, and `--commit`, which
+    commits the merge left open once every gate chosen for it has a standing pass (a `--rerun` or `--no-timeout` run too, the
+    commit message saying so), starts the run and prunes (`merge/land-merge.ts`). It runs every class the landing's range reaches,
+    each dependency class included (`reached-checks --tier heavy` leaves none to the night), through that tier
+    in `local/heavy-tree` (a worktree of its own, under the machine's admission), and a run that left reached classes unrun is an
+    `ERROR`, never green. It records each pass for the next merge to replay,
     appends its verdict to `local/heavy-runs.jsonl` and says one line beginning `heavy tier:` (the log `local/scratch/heavy-<sha>.log`,
     which the steward's monitor reads). A red is filed in `local/ci-findings.json` naming the merge commit and the class, so the next
     merge reads it as main's red and `--plan` says it; a start or a run that fails is an `ERROR` line and a record, its classes owed
@@ -189,9 +193,9 @@ finishes first and the whole set runs once.
     gate runs with the Process settings, the rehearsals project's among them), which
     names its real dependency with a `Needs` trait, is reached only where a changed path is that dependency's code (`tiers.needs` in
     `daoris.gates.json`) and then belongs to the heavy tier; the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
-    main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
-    passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
-    after, and the full stage (`--ci --stage`) remains the one that owes every gate. The full set (`--full`, `--full --beside`, and
+    main's tip, its reds fixed as small commits; the install is staged from a commit its merge landed (`tools/desktop-publish/tier-evidence.mjs`
+    reads the fast tier's landing and `local/heavy-runs.jsonl`: a green heavy run, or a red whose every class is filed as main's red;
+    it names what is lacking), the CI's rehearsals running on the staged commit after (`--ci --stage`). The full set (`--full`, `--full --beside`, and
     a CI run's gates) replays what main already proved (`tools/merge/full-replay.ts`, `tools/merge-branch/full-set.mjs`): a gate whose
     verdict key (the declared inputs it reaches, its command, the toolchain) has a standing pass is not run and says from which
     tree and run; a Process half is run with every class a standing pass of its own key covers kept out of its run settings

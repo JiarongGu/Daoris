@@ -57,6 +57,7 @@ export interface Facts {
   atTip?: boolean; processes?: Proc[]; processError?: string;
   /** Minutes since the newest write read in the worktree. */
   idleMinutes?: number;
+  ended?: boolean;
 }
 export interface Proc { pid: number; exe: string; command: string }
 /** A folder under `.claude/worktrees/` that git does not list. */
@@ -195,6 +196,7 @@ export const tool = await import(
   pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean; unlock?: boolean };
   harnessLock: (reason: string) => boolean;
   HARNESS_IDLE_MINUTES: number;
+  ENDED_IDLE_MINUTES: number;
   newestWrite: (path: string) => number;
   parseProcesses: (text: string, platform?: string) => Proc[];
   processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];
@@ -380,7 +382,7 @@ export interface CiStatus {
 // The stage's own question: the publish asks the merge tool's `--passed` before it builds.
 export const publish = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam as the merge tool above
-  '../../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string) => { refusal: string | null; note: string | null } };
+  '../../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string, options?: { home?: string; commit?: string }) => { refusal: string | null; note: string | null } };
 
 export function refusal(fn: () => unknown): { exitCode: number; message: string } {
   try {

@@ -18,6 +18,7 @@ const FOLDER = '_fixtures/test-timing';
 export type RunOptions = {
   root: string; plan: ReachedPlan; keys: ReadonlyMap<string, string>; store: PassedClasses; exec: Exec; say: (line: string) => void;
   mainRedOf: (unit: FailedUnit) => boolean; now?: () => string; replayed?: number; deferred?: readonly string[];
+  night?: Readonly<Record<string, number>>;
   inPlace?: <T>(group: ReachedGroup, fn: () => Promise<T>) => Promise<T>;
 };
 
@@ -60,6 +61,8 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   }
   const split = classify({ failed: [...aloneUnits(plan, passedAlone), ...stillFailed], passedAlone, mainRedOf });
   const outcome: ClassOutcome = { ran, replayed: options.replayed ?? 0, ...split, deferred: [...(options.deferred ?? [])] };
+  const unrun = [...Object.values(plan.left), ...Object.values(options.night ?? {})].reduce((sum, count) => sum + count, 0);
+  if (unrun > 0) outcome.unrun = unrun;
   for (const id of outcome.flaked) say(`reached: FLAKE: ${id} failed, then passed alone; it is not recorded as a pass`);
   for (const id of outcome.mainRed) say(`reached: main's red: ${id} fails here and main already stands it red`);
   for (const id of outcome.red) say(`reached: RED: ${id} failed again alone`);

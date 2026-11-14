@@ -9,7 +9,10 @@
 export type FailedUnit = { suite: string; unit: string };
 
 /** What a reached run came to, by unit ids (`suite|unit`). */
-export type ClassOutcome = { ran: number; replayed: number; flaked: string[]; mainRed: string[]; red: string[]; deferred: string[] };
+export type ClassOutcome = { ran: number; replayed: number; flaked: string[]; mainRed: string[]; red: string[]; deferred: string[];
+  /** The classes the paths reach that this run did not run (left to the night or past a bound); absent for none. */
+  unrun?: number;
+};
 
 const MARK = 'reached-classes: ';
 
@@ -22,7 +25,11 @@ export function parseOutcome(log: string): ClassOutcome | null {
   try {
     const parsed = JSON.parse(line.slice(MARK.length)) as Partial<ClassOutcome>;
     const names = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
-    return { ran: Number(parsed.ran) || 0, replayed: Number(parsed.replayed) || 0, flaked: names(parsed.flaked), mainRed: names(parsed.mainRed), red: names(parsed.red), deferred: names(parsed.deferred) };
+    const unrun = Number(parsed.unrun) || 0;
+    return {
+      ran: Number(parsed.ran) || 0, replayed: Number(parsed.replayed) || 0, flaked: names(parsed.flaked), mainRed: names(parsed.mainRed), red: names(parsed.red), deferred: names(parsed.deferred),
+      ...(unrun > 0 ? { unrun } : {}),
+    };
   } catch {
     return null;
   }

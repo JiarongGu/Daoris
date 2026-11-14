@@ -99,6 +99,10 @@ export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: n
     const note = `the run ended with no class counts (exit ${code ?? 'none'})`;
     return { run: { ...run, state: 'error', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} ERROR ${where}: ${note}; the heavy classes are owed to the CI beside`] };
   }
+  if (outcome.red.length === 0 && outcome.unrun) {
+    const note = `the run left ${outcome.unrun} reached classes unrun (${outcome.ran} ran, ${outcome.replayed} replayed)`;
+    return { run: { ...run, state: 'error', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} ERROR ${where}: ${note}; they are owed to the CI beside`] };
+  }
   const classes = { ran: outcome.ran, replayed: outcome.replayed, flaked: outcome.flaked, red: outcome.red, mainRed: outcome.mainRed };
   if (outcome.red.length === 0) {
     const flaked = outcome.flaked.length ? `; ${outcome.flaked.length} failed and passed alone: ${outcome.flaked.join(', ')}` : '';

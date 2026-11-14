@@ -4,6 +4,7 @@
 export const USAGE = [
   'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune] [--no-timeout]',
   '       node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]',
+  '       node tools/merge-branch.mjs --commit [--no-prune]',
   '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time] [--no-timeout]',
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
@@ -38,7 +39,7 @@ export type Options = {
   autoPrune: boolean; full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
   beside: boolean; besideCommit: string | null; ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean; ciStage: boolean;
   ciNight: boolean; preview: boolean; messageFile: string | null; queue: boolean; recheck: boolean; queueRun: boolean; daorisVerify: boolean;
-  noTimeout?: boolean;
+  noTimeout?: boolean; commit?: boolean;
 };
 
 const usageError = (message: string): Refusal => new Refusal(message, 2, true);
@@ -118,6 +119,7 @@ export function parseArgs(argv: string[]): Options {
     else if (arg === '--passed') options.passed = true;
     else if (arg === '--light') options.light = true;
     else if (arg === '--stale') options.stale = true;
+    else if (arg === '--commit') options.commit = true;
     else if (arg === '--rerun') rerun = true;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
     else if (rerun) {
@@ -193,9 +195,14 @@ export function parseArgs(argv: string[]): Options {
   }
   // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
   const fullAlone = options.full && options.branches.length === 0 && !options.plan && !options.resume && !options.prune && !rerun && !options.stale;
-  const verbs = [options.resume, options.dropBatch, options.plan && !options.prune, options.prune, rerun, options.passed, options.stale, fullAlone];
+  const verbs = [options.resume, options.dropBatch, options.plan && !options.prune, options.prune, rerun, options.passed, options.stale, fullAlone, options.commit];
   if (verbs.filter(Boolean).length > 1) {
-    throw usageError('give one of --continue, --rerun, --stale, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
+    throw usageError('give one of --continue, --commit, --rerun, --stale, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
+  }
+  if (options.commit) {
+    if (options.branches.length) throw usageError('--commit takes no branch: it commits the merge open here');
+    if (flags.some((flag) => !['--commit', '--no-prune'].includes(flag))) throw usageError('--commit takes only --no-prune');
+    return options;
   }
   if (options.light && !options.passed) throw usageError('--light is for --passed: the light stage asks whether the gates before the rehearsals passed');
   if (options.full && options.gated) throw usageError('--full and --gated are alternatives: --full runs every gate, --gated the reached ones');

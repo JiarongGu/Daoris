@@ -67,10 +67,12 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     assert.equal(status.gates[2]!.log, `local/scratch/ci-${first.slice(0, 7)}/tool-tests.log`);
     assert.deepEqual([status.since.commit, status.since.paths], [first, 1]);
 
-    // The stage asks the gate tree, which holds what the CI gated: its verdicts pass it, the kept one among them.
+    // The gate tree's verdicts, the kept one among them, pass the full set there; the stage reads the commit's tiers from the main checkout's records instead.
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 0, result.out);
-    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), gateTree).refusal, null);
+    const held = git(gateTree, 'rev-parse', 'HEAD');
+    writeFileSync(join(repo.root, 'local', 'heavy-runs.jsonl'), `${JSON.stringify({ id: 'heavy-1', state: 'green', commit: held, base: held, branches: ['b'], at: '2026-11-14T10:00:00Z' })}\n`);
+    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), gateTree, { home: repo.root }).refusal, null);
     // Each run leaves its receipt, by tree, with its kind and each gate's verdict and the kind that gave it.
     const receipts = () => readFileSync(join(repo.root, 'local', 'ci-runs.jsonl'), 'utf8').split('\n').filter(Boolean)
       .map((line) => JSON.parse(line) as { commit: string; tree: string; kind: string; finished: boolean; state: string; gates: { name: string; state: string; verdict: string | null; kind: string | null }[] });

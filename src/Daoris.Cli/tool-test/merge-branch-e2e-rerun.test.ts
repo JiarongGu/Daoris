@@ -55,6 +55,29 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     repo.cleanup();
   });
 
+  test('--commit lands a merge whose gates all passed with no budget, prunes, and refuses one a gate failed or never ran', async () => {
+    const repo = scratch('commit', [{ name: 'first', run: 'node gate.mjs first' }, { name: 'second', run: 'node gate.mjs second 3 once' }]);
+    branch(repo.root, 'fix', { 'fix.txt': 'x\n' });
+    assert.equal((await repo.run(['--commit'])).status, 2, 'no merge is open');
+    let result = await repo.run(['fix', '--one-at-a-time', '--no-timeout']);
+    assert.equal(result.status, 1, result.out);
+    result = await repo.run(['--commit']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /not committed: failed: second/);
+    assert.equal(merging(repo.root), true);
+
+    result = await repo.run(['--rerun', 'second', '--no-timeout']);
+    assert.equal(result.status, 0, result.out);
+    result = await repo.run(['--commit']);
+    assert.equal(result.status, 0, result.out);
+    assert.equal(merging(repo.root), false, 'committed by the tool');
+    assert.match(result.out, /committed fix as [0-9a-f]{7} \(no gate had a time budget in this run\)/);
+    assert.match(git(repo.root, 'log', '-1', '--format=%B'), /2 gates passed on the merge with no time budget on a gate \(--no-timeout\)/);
+    assert.match(result.out, /prune:|branches merged into main|removed|kept/, 'the prune ran after the commit');
+    assert.match(git(repo.root, 'log', '-1', '--format=%B'), /Co-Authored-By:/);
+    repo.cleanup();
+  });
+
   // At --rerun the gates are named as this repository names them, so the tool's own lane table places
   // the paths (a scratch repository has no lanes file, and the table's path rules need none).
   test('--rerun keeps a verdict no fixed path reaches, and runs again each one a fixed path reaches, saying which path', async () => {

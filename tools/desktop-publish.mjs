@@ -15,7 +15,7 @@
  *                                                           (starts nothing new, holds the presses that would start
  *                                                           work) until every driven session ends;
  *                                                           `daoris update --cancel` stages it *not now*
- *   … --force-ungated                                       …a tree the full set of gates has not passed
+ *   … --force-ungated                                       …a commit whose tiers have not both passed
  *                                                           (see below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
  *                                                           …the commit the full set gated in its own worktree
@@ -28,10 +28,9 @@
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
  * same reason.
  *
- * 🔴 **It publishes only a tree the full set of gates passed**. A merge runs only the gates its
- * lanes reach (`tools/merge-branch.mjs`), so this is where the rest is owed: before anything is built it
- * asks `merge-branch --passed`, and refuses, naming each gate that has not passed and the smallest command
- * that would pass it: `--stale`, `--rerun <gate>…`, or `--full`, which runs them all.
+ * 🔴 **It publishes only a commit the merge tool's two tiers passed**: before anything is built it reads `local/heavy-runs.jsonl`
+ * for the commit (a merge lands only on a fast-tier pass, and the run after it is the heavy tier) and refuses, naming each thing
+ * it lacks and the command that supplies it. A green run, or a red whose every class is already filed as main's red, passes.
  * `--force-ungated` is the person's explicit override, and the publish says it is ungated. A folder under
  * the workspace's `_fixtures` is never asked: the deployment rehearsal publishes there, and it is one of the
  * gates being run.
@@ -40,9 +39,8 @@
  * in a worktree of their own, `local/gate-tree` under the main checkout, while merges move main on, and record their
  * verdicts in the main checkout's store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this
  * checkout: it refuses when no gate tree stands, when it holds another commit, or while a run holds it; holds the tree's
- * lock itself through its build, so no CI run moves it meanwhile; asks the gates of the gate tree's own tree, here
- * and again in the gate tree's own publish, which it runs there with the same arguments, a refusal naming
- * `--ci --stage <commit>` (the CI's run that pays the rehearsals a plain run owes); and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
+ * lock itself through its build, so no CI run moves it meanwhile; asks the tiers of the commit, here
+ * and again in the gate tree's own publish, which it runs there with the same arguments; and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium,
@@ -96,7 +94,8 @@ export { layCli } from './desktop-publish/cli.mjs';
 export { bundleCli } from './desktop-publish/cli-bundle.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
-export { GATE_COMMAND, insideFixtures, askGates, ungatedRefusal } from './desktop-publish/gates.mjs';
+export { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
+export { askTiers } from './desktop-publish/tier-evidence.mjs';
 export { SESSION_VARIABLE, sessionRefusal } from './desktop-publish/session.mjs';
 export { GATE_TREE, GATE_TREE_LOCK, GATE_TREE_RECORD, gatedSource, childArgs, recordStaged, stageReport, stagedAdvice, recordStage } from './desktop-publish/gate-tree.mjs';
 
@@ -149,11 +148,7 @@ async function main() {
     const sha = source.commit.slice(0, 7);
     let built;
     try {
-      const asked = ungatedRefusal(to, source.tree, {
-        force: flag('--force-ungated'),
-        light: flag('--light'),
-        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci${flag('--light') ? '' : ' --stage'} ${sha}` },
-      });
+      const asked = ungatedRefusal(to, source.tree, { force: flag('--force-ungated'), home: source.home, commit: source.commit });
       if (asked.refusal) {
         console.error(asked.refusal);
         process.exitCode = 2;
@@ -189,8 +184,7 @@ async function main() {
     console.error(refused);
     process.exit(2);
   }
-  // Only a tree the full set passed is built into an install, before anything is built.
-  const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated'), light: flag('--light') });
+  const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated'), home: mainCheckout(repoRoot) });
   if (gated.refusal) {
     console.error(gated.refusal);
     process.exit(2);
