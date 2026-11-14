@@ -392,6 +392,63 @@ public sealed class BrainstormBoundsTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 BRAINWAIT1: a maker whose accounts all cool, the first lifting within the deadline, is waited for: its pass starts again when
+    /// it lifts and answers, and the synthesis has both makers.
+    /// </summary>
+    [Fact]
+    public async Task A_maker_whose_accounts_cool_is_waited_for_when_the_first_lifts_within_the_deadline()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        var asked = 0;
+        script.Behaviours["g2"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(150))
+            : script.Answer(turn));
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["g2"] = Give("Cache the report");
+        script.Answers["s1"] = Synthesize("P1", "P2");
+
+        await LookAsync(driver);
+
+        Assert.Equal(2, asked);
+        Assert.Equal(("answered", 1), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Turns));
+        Assert.True(Document(id)["ranked"]!.GetValue<bool>());
+        Assert.Equal("answered", Of(Pass(id, "g1")).State);
+        Assert.Contains("s1", script.Started);
+        Assert.Equal(2, Document(id)["rows"]!.AsArray().Count);
+    }
+
+    /// <summary>
+    /// 🔴 BRAINWAIT1: a maker cooling past the deadline is not waited for, and the brainstorm says so before it synthesizes: no synthesis
+    /// runs on the one maker left, what answered is kept unranked, and the document names who is cooling and offers the wait.
+    /// </summary>
+    [Fact]
+    public async Task A_maker_cooling_past_the_deadline_is_said_before_a_synthesis_and_the_wait_is_offered()
+    {
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Behaviours["g2"] = (_, _) => Task.FromResult(
+            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its one account cools for an hour", DateTimeOffset.UtcNow + TimeSpan.FromHours(1)));
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["s1"] = Synthesize("P1");
+
+        await LookAsync(driver);
+
+        Assert.DoesNotContain("s1", script.Started);
+        Assert.Equal(1, script.Started.Count(turn => turn == "g2"));
+        Assert.Equal(("unavailable", "cooling"), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Codes));
+        Assert.Equal((BrainstormStates.Ended, BrainstormStates.ShortHanded), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
+        var document = Document(id);
+        Assert.False(document["ranked"]!.GetValue<bool>());
+        Assert.Equal("Make the window inclusive", Assert.Single(document["rows"]!.AsArray())!["idea"]!.GetValue<string>());
+        var text = Files.DocumentText(id)!;
+        Assert.Contains("short of makers: 1 answered", text, StringComparison.Ordinal);
+        Assert.Contains("`acp-stub`", text, StringComparison.Ordinal);
+        Assert.Contains("is cooling", text, StringComparison.Ordinal);
+        Assert.Contains("ask the brainstorm again once it lifts", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// 🔴 The person's stop ends every pass that runs and keeps what answered: no synthesis, and the document is the validated
     /// proposals, unranked, saying it is stopped.
     /// </summary>

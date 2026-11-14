@@ -45,6 +45,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>A turn whose account met its limit: the account cools, and the pass starts once more on the next one.</summary>
     internal const string Limit = "limit";
 
+    /// <summary>How many cool-offs one pass waits for within its deadline (BRAINWAIT1): a voice's accounts may cool again after the first lifts.</summary>
+    internal const int MostWaits = 3;
+
     /// <summary>A turn that ended by a failure of its own, with no answer.</summary>
     internal const string Crashed = "crashed";
 
@@ -376,6 +379,19 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             }
 
             var handed = BrainstormSyntheses.Number(answered);
+            // BRAINWAIT1: a maker whose accounts cool, or that the cap held, did not answer within its wait: the synthesis does not
+            // go on with the makers left as though the request had been theirs alone. The brainstorm says so, keeps what answered, and
+            // leaves the wait to the person.
+            var shortOf = passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Unavailable }
+                                             && pass.Codes.Any(code => code is StartPasses.Cooling or CapFull or Limit)).ToList();
+            if (shortOf.Count > 0)
+            {
+                var why = BrainstormDocuments.ShortOfMakers(shortOf, answered.Count);
+                files.WriteDocument(id, BrainstormDocuments.Unranked(id, packet, passes, handed, needs, why));
+                files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.ShortHanded, DateTimeOffset.UtcNow));
+                return Ran(LookClass.Progress, $"brainstorm `{id}` ended with no synthesis: {why}. Read what answered with `daoris brainstorm show {id}`.");
+            }
+
             BrainstormDocument document;
             if (handed.Count == 0)
             {
@@ -519,23 +535,33 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             return (record, valid);
         }
 
-        while (true)
+        // The slot is waited for until the deadline; false where the person's stop or the deadline came first, said by the caller.
+        async Task<bool> SlotAsync()
         {
-            ct.ThrowIfCancellationRequested();
-            if (stop.IsCancellationRequested) return Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], 0);
-            // The deadline first: a slot let go at the deadline starts nothing.
-            if (Clock.GetUtcNow() >= until) return Ended(BrainstormPassRecord.Unavailable, [CapFull], 0);
-            if (TrySlot()) break;
-            try
+            while (true)
             {
-                await Task.Delay(Tick, Clock, stop).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                // The person's stop: said at the loop's top.
+                ct.ThrowIfCancellationRequested();
+                if (stop.IsCancellationRequested) return false;
+                // The deadline first: a slot let go at the deadline starts nothing.
+                if (Clock.GetUtcNow() >= until) return false;
+                if (TrySlot()) return true;
+                try
+                {
+                    await Task.Delay(Tick, Clock, stop).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    // The person's stop: said at the loop's top.
+                }
             }
         }
 
+        if (!await SlotAsync().ConfigureAwait(false))
+        {
+            return stop.IsCancellationRequested ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], 0) : Ended(BrainstormPassRecord.Unavailable, [CapFull], 0);
+        }
+
+        var holding = true;
         try
         {
             var ownEnd = Clock.GetUtcNow() + own;
@@ -543,6 +569,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var cutCode = until < ownEnd ? Deadline : TimedOut;
             IReadOnlyList<string> codes = [];
             var restart = false;
+            var waits = 0;
             for (var turns = 1; turns <= 2; turns++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -579,6 +606,38 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 }
 
                 account = ran.Account ?? account;
+                if (!ran.Ran && ran.Code == StartPasses.Cooling && ran.Lifts is { } lifts && lifts < until && waits < MostWaits)
+                {
+                    // BRAINWAIT1: the voice's accounts all cool, and the first lifts before the deadline: the pass waits for it, its slot
+                    // let go meanwhile, and its own minutes start when it runs. A cool-off that outlasts the deadline is not waited for.
+                    waits++;
+                    FreeSlot();
+                    holding = false;
+                    try
+                    {
+                        var wait = lifts - Clock.GetUtcNow();
+                        if (wait > TimeSpan.Zero) await Task.Delay(wait, Clock, stop).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                    {
+                        // The person's stop: said at the loop's top.
+                    }
+
+                    if (!stop.IsCancellationRequested && !await SlotAsync().ConfigureAwait(false))
+                    {
+                        return stop.IsCancellationRequested
+                            ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns)
+                            : Ended(BrainstormPassRecord.Unavailable, [StartPasses.Cooling, CapFull], turns, why: ran.Why);
+                    }
+
+                    holding = !stop.IsCancellationRequested;
+                    ownEnd = Clock.GetUtcNow() + own;
+                    end = ownEnd < until ? ownEnd : until;
+                    cutCode = until < ownEnd ? Deadline : TimedOut;
+                    turns--;
+                    continue;
+                }
+
                 if (!ran.Ran)
                 {
                     // The walk's sentence is kept on the record and written to the machine log once, here, where the pass ends.
@@ -618,7 +677,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
         finally
         {
-            FreeSlot();
+            if (holding) FreeSlot();
         }
     }
 

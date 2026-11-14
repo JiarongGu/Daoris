@@ -87,6 +87,19 @@ public static class BrainstormDocuments
     /// <summary>Why a document the person stopped is unranked.</summary>
     public const string StoppedByPerson = "stopped by the person: what answered is kept, and nothing ran after the stop";
 
+    /// <summary>
+    /// Why a document is unranked where a maker never answered because its accounts cool or the cap held it (BRAINWAIT1): who, why by code
+    /// and by the walk's sentence, and the offer: ask again once it lifts, which waits for it within the request's minutes.
+    /// </summary>
+    public static string ShortOfMakers(IReadOnlyList<BrainstormPassRecord> unavailable, int answered)
+    {
+        var said = string.Join("; ", unavailable.Select(pass =>
+            $"`{pass.By.Adapter}` (maker {pass.By.Maker}) {(pass.Codes.Contains(StartPasses.Cooling) ? "is cooling" : "could not start")} ({string.Join(", ", pass.Codes)})"
+            + (pass.Why is { Length: > 0 } why ? $": {why}" : "")));
+        return $"short of makers: {answered} answered, and {said}. Nothing was synthesized from fewer makers than were asked; "
+            + "ask the brainstorm again once it lifts, and its pass waits for the first account to lift within the request's minutes";
+    }
+
     /// <summary>Why a document a restart found running is unranked.</summary>
     public const string Interrupted = "interrupted: Daoris stopped while it ran, and nothing runs again by itself";
 
