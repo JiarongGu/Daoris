@@ -149,6 +149,9 @@ public sealed class NodeRuntime(
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
 
+    /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
+    public IReadOnlyList<RunPassage> Passages() => RunPassageReader.Of(_graphRuns.Read(), records.Read);
+
     /// <summary>What a step's session works from (<see cref="StepAsks"/>): the frame its plugin would be told for the attempt, from the runs this pass governs.</summary>
     public Task<StepAgentAsk?> StepAskAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
     {

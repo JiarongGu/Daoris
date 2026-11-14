@@ -139,6 +139,8 @@ internal static class SessionsJson
                     writer.WriteNull("waits");
                 }
 
+                SessionPassageJson.Write(writer, row.Passage);
+
                 // Its line's state, and the part or co-worker it is read from.
                 if (row.Line is { } line)
                 {

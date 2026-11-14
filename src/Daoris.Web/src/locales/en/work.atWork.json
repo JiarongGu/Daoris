@@ -118,5 +118,15 @@
   "work.atWork.ask.parts_one": "{{count}} part · {{working}} working",
   "work.atWork.ask.parts_other": "{{count}} parts · {{working}} working",
   "work.atWork.ask.moreEntries_one": "{{count}} more line of work not drawn",
-  "work.atWork.ask.moreEntries_other": "{{count}} more lines of work not drawn"
+  "work.atWork.ask.moreEntries_other": "{{count}} more lines of work not drawn",
+  "work.atWork.standing.landed_one": "{{count}} landed",
+  "work.atWork.standing.landed_other": "{{count}} landed",
+  "work.atWork.standing.you_one": "{{count}} waiting on you",
+  "work.atWork.standing.you_other": "{{count}} waiting on you",
+  "work.atWork.standing.checks_one": "{{count}} in checks or opinion",
+  "work.atWork.standing.checks_other": "{{count}} in checks or opinion",
+  "work.atWork.standing.working_one": "{{count}} being worked",
+  "work.atWork.standing.working_other": "{{count}} being worked",
+  "work.atWork.standing.notStarted_one": "{{count}} not started",
+  "work.atWork.standing.notStarted_other": "{{count}} not started"
 }

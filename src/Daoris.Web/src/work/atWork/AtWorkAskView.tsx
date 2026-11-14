@@ -5,6 +5,7 @@ import type { Consideration } from '../../data/signals';
 import type { ChannelItem } from '../channel';
 import type { AtWorkAskA, AtWorkAskEntry, AtWorkHeld } from './types';
 import { type AtWorkChannel, Failed, QuestRows, Word } from './AtWorkView';
+import { askStanding, standingLine } from './askStanding';
 
 export type AtWorkAskViewProps = {
   /** What the ask's read holds; undefined before its first answer, which draws as reading. */
@@ -44,8 +45,10 @@ export function AtWorkAskView({ held, error, onOpenEntry, onOpenQuest, considere
 
   const stale = held.stale?.why ?? error ?? null;
   const answer = held.askAnswer;
+  const standing = standingLine(t, askStanding(answer.quests ?? []));
   return (
     <div className="grid min-w-0 gap-3">
+      {standing && <p className="m-0 text-small text-ink-soft">{standing}</p>}
       {stale !== null && (
         <p role="status" className="m-0 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
           {t('work.atWork.stale', { why: stale })}

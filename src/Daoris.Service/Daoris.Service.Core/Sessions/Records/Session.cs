@@ -262,6 +262,13 @@ public sealed record Session(
     /// <remarks>It travels with the note, every string in it cleaned as the note is (<see cref="Knowledge.NoteParts.ForAnotherMachine"/>).</remarks>
     public string? NoteParts { get; init; }
 
+    /// <summary>
+    /// The turns this record ran (<see cref="SessionTurns"/>): its first at the open, one more at each wake. Null for a record from before
+    /// records kept turns, which reads its <see cref="From"/> link as its one turn.
+    /// </summary>
+    /// <remarks><b>This machine's own, as <see cref="Opinion"/> is</b>: a turn names its account, and no wire carries it.</remarks>
+    public IReadOnlyList<SessionTurn>? Turns { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson or SessionState.AwaitingStep;

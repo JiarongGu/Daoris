@@ -34,6 +34,7 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['needs-you', 'working',
 export type SessionGrouping = {
   session: string;
   group: SessionGroupName;
+  passage?: { run: string; workflow: string; version?: number | null; steps: { node: string; kind: string; mark: string }[] } | null;
   state?: SessionStateName;
   reason?: string;
   shown: string;

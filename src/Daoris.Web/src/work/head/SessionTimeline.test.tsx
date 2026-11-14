@@ -267,7 +267,7 @@ describe('the states at the head of the timeline (FLOWCHART1b; the flowchart des
 
     expect(states().compareDocumentPosition(eventsOf()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(states()).getAllByRole('listitem').map((each) => each.getAttribute('data-flow-node')))
-      .toEqual(['queued', 'starting', 'working', 'awaiting-person', 'ended']);
+      .toEqual(['queued', 'starting', 'working', 'awaiting-step', 'awaiting-person', 'ended']);
     expect(node(/^waiting on you/)).toHaveAttribute('aria-current', 'step');
     expect(node(/^waiting on you/)).toHaveAccessibleName('waiting on you here now');
     expect(node(/^working/)).not.toHaveAttribute('aria-current');

@@ -59,11 +59,13 @@ public static class GroupsStateSlice
         ["row"] =
         [
             "session", "group", "state", "reason", "shown", "archived", "name", "pinned", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
-            "deletable", "lands", "discards", "waits", "line", "repository", "created", "updated",
+            "deletable", "lands", "discards", "waits", "passage", "line", "repository", "created", "updated",
         ],
         ["line"] = ["state", "group", "reason", "by", "role"],
         ["coworker"] = ["session", "role", "serves", "shown", "state"],
         ["waits"] = ["run", "node", "why", "since"],
+        ["passage"] = ["run", "workflow", "version", "steps"],
+        ["steps"] = ["node", "kind", "mark"],
         ["work"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
         ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
@@ -82,6 +84,8 @@ public static class GroupsStateSlice
         ["row.lands"] = "lands",
         ["row.discards"] = "discards",
         ["row.waits"] = "waits",
+        ["row.passage"] = "passage",
+        ["passage.steps"] = "steps",
         ["row.line"] = "line",
         ["entry.parts"] = "part",
         ["entry.coworkers"] = "coworker",
@@ -145,6 +149,7 @@ public static class GroupsStateSlice
         look = look with
         {
             Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions(), RunWaits = loop.PersonWaits,
+            Passages = loop.Passages,
         };
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;

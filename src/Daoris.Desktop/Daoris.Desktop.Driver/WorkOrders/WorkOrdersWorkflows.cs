@@ -20,6 +20,8 @@ internal interface IWorkOrdersWorkflows
 
     IReadOnlyList<PersonWait> PersonWaits(string home);
 
+    IReadOnlyList<RunPassage> Passages(string home);
+
     Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
 
     /// <summary>

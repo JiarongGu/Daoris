@@ -19,6 +19,7 @@ import { notStartedLine } from '../actors';
 import type { PartSpent } from '../entries';
 import { spentLine } from '../head/partsLife';
 import { type LineSaid, lineWords } from '../lineState';
+import { SessionWork } from './SessionWork';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention.
@@ -94,8 +95,12 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, line = null, place, archived = false,
-  selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait,
+  selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait, turnsSpent, accountName,
 }: {
+  /** What each record of its turns spent, by record, drawn on each record's last turn; absent where none answered. */
+  turnsSpent?: Readonly<Record<string, PartSpent | null | undefined>>;
+  /** The name the person gave an account its turns ran on, where they gave one. */
+  accountName?: (id: string) => string;
   /** Its line's state where another part or a co-worker decides it (`lineSaid`): its mark is that, said first on its line. */
   line?: LineSaid | null;
   /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
@@ -293,6 +298,7 @@ export function SessionRow({
         >
           {meta}
         </span>
+        <SessionWork session={session} grouping={grouping} spent={turnsSpent} accountName={accountName} />
       </ListRowDoor>
 
       {/* Beside the row, never inside it: a button inside a button is not a thing a page may hold. */}

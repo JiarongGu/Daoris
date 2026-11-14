@@ -50,6 +50,7 @@ internal static class SessionRowCodec
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
         Pushed = !reader.IsDBNull(reader.GetOrdinal("pushed")) && reader.GetInt64(reader.GetOrdinal("pushed")) != 0,
         NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
+        Turns = SessionTurns.Read(reader.IsDBNull(reader.GetOrdinal("turns")) ? null : reader.GetString(reader.GetOrdinal("turns"))),
         HelpMode = HelpModeRead(
             reader.GetString(reader.GetOrdinal("repository")),
             reader.IsDBNull(reader.GetOrdinal("help_mode")) ? null : reader.GetString(reader.GetOrdinal("help_mode"))),

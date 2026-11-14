@@ -46,7 +46,12 @@ public static class SessionAnswers
         Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
         Work: loopback ? ParticipantWork.Of(s) : null, Decides: loopback ? s.Decides : null, Performs: loopback ? s.Performs : null,
         HoldsPlace: loopback ? s.HoldsPlace : null,
-        Line: loopback ? s.Line : null);
+        Line: loopback ? s.Line : null,
+        Turns: loopback ? ToTurns(SessionTurns.OfLine([s])) : null);
+
+    public static IReadOnlyList<SessionTurnResponse> ToTurns(IReadOnlyList<SessionTurn> turns) =>
+        [.. turns.Select(turn => new SessionTurnResponse(
+            turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Part, turn.Agent, turn.Account, turn.Adapter, turn.Conversation, turn.Ended))];
 
     public static SaidWordResponse ToSaid(SaidWord word) =>
         new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt,

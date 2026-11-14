@@ -86,6 +86,9 @@ public sealed record SessionLook(
     /// <summary>The run steps waiting on the person (<see cref="PersonWaits"/>); none where nothing read them.</summary>
     public IReadOnlyList<PersonWait> RunWaits { get; init; } = [];
 
+    /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>); none where nothing read them.</summary>
+    public IReadOnlyList<RunPassage> Passages { get; init; } = [];
+
     /// <summary>Whether a held decision holds <paramref name="record"/>: one is held, and no word of the owner's waits (the planner's own rule).</summary>
     public bool SupervisorHolds(PriorSession record) =>
         SupervisorHeld.Contains(record.Session) && !record.Waiting.Any(word => word.Persons);

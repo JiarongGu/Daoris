@@ -113,4 +113,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// listing, which runs no session, never has one.
     /// </summary>
     public RunningCall? Calling { get; init; }
+
+    /// <summary>Where the run it stands for is in its bound workflow version, which its row draws as steps passed, current and to come; null for none.</summary>
+    public RunPassage? Passage { get; init; }
 }

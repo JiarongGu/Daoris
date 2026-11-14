@@ -27,7 +27,10 @@ public sealed class SessionListAnswers(HostWiring host)
         var deletable = host.Mode == ServiceMode.Local && (await Service.Ledger.DeletableAsync([session], ct)).Contains(session.Id);
         var answered = await Service.Ledger.WithEntryAsync(session, ct);
         var head = local && session.Origin is null ? (await Lines.HeadOfLineAsync(Service.Sessions, Service.Quests, session, ct))?.Id : null;
-        return SessionAnswers.ToSession(answered, local) with { Deletable = deletable, Head = head };
+        var answer = SessionAnswers.ToSession(answered, local) with { Deletable = deletable, Head = head };
+        return local && (await SessionTurnLines.ReadAsync(Service.Sessions, [session], ct)).TryGetValue(session.Id, out var turns)
+            ? answer with { Turns = SessionAnswers.ToTurns(turns) }
+            : answer;
     }
 
     private async Task<SessionResponse[]> MakeAsync(string? repository, bool includeClosed, string? workspace, bool local, CancellationToken ct)
@@ -38,10 +41,13 @@ public sealed class SessionListAnswers(HostWiring host)
         var facts = await ListedFacts.ReadAsync(Service.Sessions, Service.Quests, sessions, ct);
         var answered = await Service.Ledger.WithEntriesAsync(sessions, facts, ct);
         var views = new List<SessionResponse>(answered.Count);
+        // Each session's turns across its line, read once for every line listed: answered on this machine only.
+        var turns = local ? await SessionTurnLines.ReadAsync(Service.Sessions, sessions, ct) : null;
         foreach (var session in answered)
         {
             var head = local && session.Origin is null ? (await Lines.HeadOfLineAsync(facts, session, ct))?.Id : null;
-            views.Add(SessionAnswers.ToSession(session, local) with { Deletable = deletable.Contains(session.Id), Head = head });
+            var view = SessionAnswers.ToSession(session, local) with { Deletable = deletable.Contains(session.Id), Head = head };
+            views.Add(turns?.TryGetValue(session.Id, out var line) == true ? view with { Turns = SessionAnswers.ToTurns(line) } : view);
         }
 
         return [.. views];
