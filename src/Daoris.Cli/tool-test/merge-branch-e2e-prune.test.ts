@@ -95,6 +95,36 @@ describe('the tool, end to end in a scratch repository (e2e-prune)', { concurren
     repo.cleanup();
   });
 
+  test('--prune unlocks and removes the harness-locked worktree of an agent that has ended after a short quiet, and keeps a live one', async () => {
+    const repo = scratch('prune-ended', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n', 'tracked.txt': 'base\n' });
+    const trees = join(dirname(repo.root), 'trees');
+    const worker = (name: string, reason: string): string => {
+      const path = join(trees, name);
+      git(repo.root, 'worktree', 'add', '--quiet', '-b', name, path, 'main');
+      git(repo.root, 'worktree', 'lock', '--reason', reason, path);
+      return path;
+    };
+    const done = worker('done', 'claude agent agent-d (pid 4)');
+    const live = worker('live', 'claude agent agent-l (pid 5)');
+    // The ended agent committed and its branch was merged; main then moved on, so the live one's branch is merged but at no tip.
+    writeFileSync(join(done, 'work.txt'), 'x\n');
+    git(done, 'add', '-A');
+    git(done, 'commit', '--quiet', '-m', `the agent's work${TRAILER}`);
+    git(repo.root, 'merge', '--quiet', '--no-ff', '-m', `Merge done${TRAILER}`, 'done');
+    git(repo.root, 'commit', '--quiet', '--allow-empty', '-m', `main moves on${TRAILER}`);
+    age(done, 10);
+    age(live, 10);
+
+    const result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /\n\s+removed\s+done\s/);
+    assert.match(result.out, /\n\s+kept\s+live\s.*written 10 minutes ago, a worker may be in it/);
+    assert.equal(existsSync(done), false);
+    assert.ok(existsSync(live));
+    assert.deepEqual(tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain')).filter((t) => t.locked).map((t) => t.branch), ['live']);
+    repo.cleanup();
+  });
+
   // A shared `core.worktree` (under `extensions.worktreeConfig`) makes a linked worktree report the main checkout's root.
   test('--prune never removes through a worktree git binds to the main checkout, and goes on where the value is in the main checkout\'s own worktree configuration', async () => {
     const repo = scratch('prune-bound', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n', 'tracked.txt': 'base\n' });

@@ -97,12 +97,16 @@ function nearness(unit: ReachedUnit, changed: readonly string[]): number {
 export function unitsOfMerge<U extends ReachedUnit>(
   units: readonly U[],
   paths: readonly string[],
-  { tiers, reaches, processSuites }: { tiers: Tiers; reaches: (unit: U, path: string) => boolean; processSuites: ReadonlySet<string> },
+  { tiers, reaches, processSuites, everything = false }: {
+    tiers: Tiers; reaches: (unit: U, path: string) => boolean; processSuites: ReadonlySet<string>;
+    /** The heavy tier's: every class the paths reach is kept, none left to the night. */
+    everything?: boolean;
+  },
 ): { units: U[]; night: Record<string, number> } {
   const kept: U[] = [];
   const night: Record<string, number> = {};
   for (const unit of units) {
-    if (!SUITES[unit.suite] || !processSuites.has(unit.suite)) {
+    if (everything || !SUITES[unit.suite] || !processSuites.has(unit.suite)) {
       kept.push(unit);
       continue;
     }

@@ -57,6 +57,8 @@ export interface Facts {
   atTip?: boolean; processes?: Proc[]; processError?: string;
   /** Minutes since the newest write read in the worktree. */
   idleMinutes?: number;
+  /** The worktree made a commit of its own, which its merged branch now holds: the agent's hand-back. */
+  ended?: boolean;
 }
 export interface Proc { pid: number; exe: string; command: string }
 /** A folder under `.claude/worktrees/` that git does not list. */
@@ -195,6 +197,7 @@ export const tool = await import(
   pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean; unlock?: boolean };
   harnessLock: (reason: string) => boolean;
   HARNESS_IDLE_MINUTES: number;
+  ENDED_IDLE_MINUTES: number;
   newestWrite: (path: string) => number;
   parseProcesses: (text: string, platform?: string) => Proc[];
   processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];

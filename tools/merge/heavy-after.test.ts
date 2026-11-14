@@ -34,6 +34,14 @@ describe('the heavy run started when a merge lands', () => {
 describe('the heavy run settled', () => {
   const running: HeavyRun = { id: 'heavy-0123456-1', state: 'running', commit, base: input.base, branches: ['feature-a', 'feature-b'], at: '2026-11-14T10:00:00.000Z' };
 
+  it('is not green when it ran nothing while the range reaches classes it left unrun', () => {
+    const settled = settleHeavy(running, outcome({ ran: 0, replayed: 0, unrun: 40 }), 0, '2026-11-14T10:20:00.000Z');
+    expect(settled.run.state).toBe('error');
+    expect(settled.run.note).toContain('40');
+    expect(settled.lines[0]).toMatch(/ERROR .*40 reached classes/);
+    expect(settleHeavy(running, outcome({ ran: 0, replayed: 0, unrun: 0 }), 0, '2026-11-14T10:20:00.000Z').run.state).toBe('green');
+  });
+
   it('is green with no finding where every class passed, noting what flaked', () => {
     const settled = settleHeavy(running, outcome({ flaked: ['driver-process|A.FlakyTests'] }), 0, '2026-11-14T10:20:00.000Z');
     expect(settled.run.state).toBe('green');

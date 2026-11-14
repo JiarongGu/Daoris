@@ -656,7 +656,7 @@ export function scratch(name: string, gates: { name: string; run: string }[], fi
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
       // A merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;
       // `BY_DEFAULT` in `extra` is the default itself, and the verbs that name their own gates take no flag.
-      const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci'].includes(arg));
+      const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci', '--commit'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
       // A scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
       const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', ...extra }, windowsHide: true });

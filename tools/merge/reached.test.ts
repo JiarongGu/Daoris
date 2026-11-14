@@ -126,6 +126,17 @@ test("a Process half's class is a unit of a merge only where a changed path is t
   assert.match(reachedLines(planned).join('\n'), /driver: 1 reached unit run; 5 replayed from a standing pass of the same inputs/);
 });
 
+test("the heavy tier runs every Process class the range reaches, leaving none to the night, whatever dependency's code changed", () => {
+  const needing = (name: string, needs: string[]): ReachedUnit => ({ ...dotnet(driverProcess, name, 'x'), needs, settings: 'src/Daoris.Desktop/process.runsettings' });
+  const harness = needing('HarnessProcessTests', ['harness']);
+  const changed = ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/HarnessProcessTests.cs'];
+  const input = { tiers: { harness: ['src/Ports/Agents/'] }, reaches: () => true, processSuites };
+  assert.deepEqual(unitsOfMerge([harness], changed, input).night, { harness: 1 }, 'a merge defers it');
+  const heavy = unitsOfMerge([harness], changed, { ...input, everything: true });
+  assert.deepEqual(heavy.units.map((unit) => unit.name), ['HarnessProcessTests']);
+  assert.deepEqual(heavy.night, {});
+});
+
 test('a Process class with no dependency named is never a unit of a merge', () => {
   assert.deepEqual(plan([dotnet(driverProcess, 'XProcessTests', 'x')], []).groups, []);
 });

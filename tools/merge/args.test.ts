@@ -207,3 +207,11 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     assert.match(error.message, message, argv.join(' '));
   }
 });
+
+test('--commit is a verb of its own: it takes no branch and only --no-prune', () => {
+  assert.equal(tool.parseArgs(['--commit']).commit, true);
+  assert.equal(tool.parseArgs(['--commit', '--no-prune']).autoPrune, false);
+  for (const [argv, message] of [[['--commit', 'b'], /--commit takes no branch/], [['--commit', '--keep-going'], /--commit takes only --no-prune/], [['--commit', '--continue'], /one of/]] as const) {
+    assert.match(refusal(() => tool.parseArgs([...argv])).message, message, argv.join(' '));
+  }
+});
