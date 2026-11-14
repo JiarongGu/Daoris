@@ -15,6 +15,9 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>Where the check runs only the gates its batch's changed paths reach (<c>reach: paths</c>); null where every gate it names runs.</summary>
     public VerifyReach? Reach { get; init; }
 
+    /// <summary>The ref the change is judged against where the declaration names a reached runner (the line's base or its branch); null where there is none, so the gates run.</summary>
+    public string? Base { get; init; }
+
     /// <summary>The check's bound, counted from both slots held.</summary>
     public TimeSpan Bound { get; init; } = HeavyExecutor.DefaultBound;
 

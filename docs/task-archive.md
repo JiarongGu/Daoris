@@ -25,6 +25,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## BANNERS1 — the standing banners take one compact line (2026-11-14)
 
 > **BANNERS1** (web): Outcome: *the terminal's presses run as yours* and *Ask Daoris pressed N acts for you in full access* are each one compact line (`StandingNote`: the words, *Back to ask*, *Show*, *Got it*) in English and 中文, with who turned the tier on and the presses behind *Show*; a line is drawn only for a change or press newer than the person's last *Got it*, kept in this browser (`standingSeen`), and `StandingNotes.test.tsx` holds the page tests.
+## INSTALLCHECK1 — the check node runs the repository's reached runner (2026-11-14)
+
+> **INSTALLCHECK1** (driver, tools): Outcome: a declaration's `reached` entry (`daoris.gates.json`: command with `{base}`, `clock`, outcome marker) makes a verification check with a base run `node tools/reached-checks.mjs --base <base>` in its tree instead of the whole gates, reading pass, red classes and flakes into the result's why under the step's one admission place; a declaration with none runs its gates.
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
