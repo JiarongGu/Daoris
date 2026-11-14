@@ -372,6 +372,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A move onto another account of the same agent that carried its own conversation, whole or for its agent to compact, or could not.
   'moved.carried-on': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
   'moved.carried-from': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
+  'moved.seeded-from': { values: ['session', 'agent', 'account', 'why'], why: 'handed' },
   'moved.compacted-from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'bound'], why: 'handed' },
   'moved.not-carried': { values: ['reason'] },
   // A conversation moved to another account of its agent by the usage curve: where it went and where it came from,

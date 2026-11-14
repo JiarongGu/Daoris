@@ -13,7 +13,13 @@ internal static class CarriedNotes
 
     /// <summary>On the new part: the conversation it goes on with, whole or compacted first.</summary>
     public static Noted From(string session, string agent, string? account, string why, CarryPlan.Carried carried) =>
-        carried is CarryPlan.Compacted compacted
+        carried is CarryPlan.Seeded
+            ? Noted.Of(
+                StartNoteCodes.MovedSeededFrom,
+                $"Continues the part before it, {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
+                + "its conversation could not be carried, so Daoris wrote what it kept of it as this agent's own conversation, which goes on, with no brief.",
+                ("session", session), ("agent", agent), ("account", account), ("why", why))
+            : carried is CarryPlan.Compacted compacted
             ? Noted.Of(
                 StartNoteCodes.MovedCompactedFrom,
                 $"Continues the part before it, {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
