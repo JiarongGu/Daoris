@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The run ends the service could not take, kept under the home one file a run until it takes them: a run's end is written once on its
-/// record, and its quests' Done and its sessions' end are owed until the service answers, so none is lost to a host that was down.
+/// record, and its quests' Done and its sessions' end are owed until the service answers, so none is lost to a host down at the time.
 /// </summary>
 public sealed class OwedRunEnds(string home)
 {

@@ -11,13 +11,9 @@ internal sealed class NodeRunKeeping(
     Func<ILandingWords?> landings, Func<Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>?>? finish = null,
     Func<Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>?>? reopen = null)
 {
-    /// <summary>The runs whose older records ended done this process has asked to carry on (<see cref="RunSessionReopens"/>).</summary>
     private readonly HashSet<string> _reopenAsked = new(StringComparer.Ordinal);
 
-    /// <summary>
-    /// A run not ended whose work ended done under the older meaning: its sessions asked, once this process, to wait on its next step, the
-    /// first of its graph's steps active or ready.
-    /// </summary>
+    /// <summary>A run's older records ended done asked once to wait on its first step active or ready (<see cref="RunSessionReopens"/>).</summary>
     public async Task ReopenSessionsAsync(GovernedUnit governed, RunScope scope, List<string> said, CancellationToken ct)
     {
         if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;

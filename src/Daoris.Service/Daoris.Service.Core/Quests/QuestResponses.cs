@@ -16,8 +16,7 @@ internal sealed class QuestResponses(
         IReadOnlyList<QuestAnswer>? answers,
         // A decline that applies only while the quest is open: an abandon's.
         bool whileOpen,
-        // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a
-        // submission does: which session wrote the handback.
+        // The session answering, as its connector's intake names it, kept on its operation: which session wrote the handback.
         string? session,
         // The note is a session's handback: the connector's `quest_respond`, so a close whose note only points
         // elsewhere is refused. Every other door, the person's among them, keeps its words as given.

@@ -1015,8 +1015,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// The driver binds a taken quest to the graph that closes it; the agent's
-    /// done there answers the quest Taken with its submission and the graph's digest.
+    /// The driver binds a taken quest to the graph that closes it; the agent's done there answers it Taken with its submission and digest.
     /// The close door writes it Done on the submission named, answers the same key again with the first outcome, and refuses a
     /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
     /// </summary>
