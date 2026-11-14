@@ -1,5 +1,6 @@
 {
-  "why": "The development workflow of this repository, in the session lifecycle's shape: the work is checked after its content holds, a red goes back to the work, and the second opinion and the person's look come before it merges.",
+  "schema": 2,
+  "why":"The development workflow of this repository, in the session lifecycle's shape: the work is checked after its content holds, a red goes back to the work, and the second opinion and the person's look come before it merges.",
   "graph": {
     "schemaVersion": 2,
     "entries": ["work"],
