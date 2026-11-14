@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// the writer holding the lock alone; a reader keeps its last snapshot (<see cref="Read"/> answers null). One whose
 /// <c>schemaVersion</c> is newer than <see cref="Schema"/> is read as none and never written over.</para>
 /// <para><b>Its age and its count</b>: a notice older than <see cref="Week"/> is never read, and goes at the next write; at most
-/// <see cref="Most"/> are kept, the oldest going first, read or not.</para>
+/// <see cref="Most"/> are kept, the oldest going first, read or not. A row set aside (<see cref="Aside"/>) ages out at neither (<see cref="MostAside"/> kept).</para>
 /// </remarks>
 public static class Notices
 {
@@ -32,6 +32,8 @@ public static class Notices
 
     /// <summary>How many notices are kept at most.</summary>
     public const int Most = 200;
+
+    public const int MostAside = 1000;
 
     /// <summary>A session that ended without the person asking, by its end state.</summary>
     public const string Ended = "ended";
@@ -74,15 +76,6 @@ public static class Notices
     public const string PluginCommand = "plugin-command";
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
-
-    /// <summary>The ids of kept notices of a kind this build no longer keeps.</summary>
-    public static IReadOnlyList<string> Spent(IEnumerable<Notice> notices) =>
-    [
-        .. notices
-            .Where(notice => (notice.Kind == Ended && Of(new AttentionEvent(AttentionKind.Ended, notice.Session ?? "", "", notice.State), notice.At) is null)
-                || (notice.Kind == PluginCommand && notice.State == "reached"))
-            .Select(notice => notice.Id),
-    ];
 
     public static Notice SetAsideOf(string kind, string id, string? since, string? workspace, DateTimeOffset at) =>
         new($"{Aside}:{kind}:{id}", Aside, at, Read: true, Workspace: workspace, Route: kind, Code: id, Act: since);
@@ -227,7 +220,7 @@ public static class Notices
             var read = record?.Notices ?? new Dictionary<string, Notice>(StringComparer.Ordinal);
             var notices = new Dictionary<string, Notice>(read, StringComparer.Ordinal);
             var changed = change(notices);
-            var kept = Young(notices.Values, now).Take(Most).ToDictionary(notice => notice.Id, StringComparer.Ordinal);
+            var kept = Kept(notices.Values, now).ToDictionary(notice => notice.Id, StringComparer.Ordinal);
             if (!changed && kept.Count == notices.Count && !begun) return null;
 
             JsonKeeping.SaveHolding(path, record is not null, Text(record?.SchemaVersion, read), Text(Schema.ToString(CultureInfo.InvariantCulture), kept));
@@ -246,9 +239,15 @@ public static class Notices
     /// </summary>
     public static NoticesImport ImportFile(string home, Func<StoreSettled>? settled = null) => NoticeStore.Import(home, DateTimeOffset.UtcNow, settled);
 
-    /// <summary>The notices younger than <see cref="Week"/>, newest first.</summary>
+    /// <summary>The notices younger than <see cref="Week"/>, and every row set aside whatever its age, newest first.</summary>
     internal static IEnumerable<Notice> Young(IEnumerable<Notice> notices, DateTimeOffset now) =>
-        notices.Where(notice => now - notice.At < Week).OrderByDescending(notice => notice.At).ThenBy(notice => notice.Id, StringComparer.Ordinal);
+        notices.Where(notice => notice.Kind == Aside || now - notice.At < Week).OrderByDescending(notice => notice.At).ThenBy(notice => notice.Id, StringComparer.Ordinal);
+
+    internal static IEnumerable<Notice> Kept(IEnumerable<Notice> notices, DateTimeOffset now)
+    {
+        var young = Young(notices, now).ToList();
+        return young.Where(notice => notice.Kind != Aside).Take(Most).Concat(young.Where(notice => notice.Kind == Aside).Take(MostAside));
+    }
 
     /// <summary>The unreadable record moved aside under a dated name, never written over.</summary>
     internal static void SetAside(string path, DateTimeOffset now)

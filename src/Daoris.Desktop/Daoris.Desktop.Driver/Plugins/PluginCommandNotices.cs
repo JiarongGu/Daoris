@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// <i>Done and failed</i>'s plugin commands: a round of a plugin's command that failed wherever it ran, one notice by plugin, command and moment, read from the machine log's
 /// <c>plugin.command</c> lines, which hold names alone. Its fields: <see cref="Notice.Code"/> the plugin, <see cref="Notice.Act"/> the
 /// command, <see cref="Notice.Route"/> who asked (<see cref="CommandWire"/>), <see cref="Notice.State"/> <c>failed</c>,
-/// <see cref="Notice.Session"/> the session an agent called from. A round that ended well is no notice.
+/// <see cref="Notice.Session"/> the session an agent called from. A round that ended well is no notice, so every one is <c>failed</c>.
 /// </summary>
 public static class PluginCommandNotices
 {
@@ -41,7 +41,7 @@ public static class PluginCommandNotices
         var failed = exit is not null and not 0 || (exit is null && from == CommandWire.Agent);
         if (!failed) return null;
         var id = $"{Kind}:{plugin}/{command}/{line.Stamp}";
-        return new Notice(id, Kind, line.Time, State: failed ? "failed" : "reached", Route: from, Act: command, Code: plugin, Session: Text(line, "session"));
+        return new Notice(id, Kind, line.Time, State: "failed", Route: from, Act: command, Code: plugin, Session: Text(line, "session"));
     }
 
     private static string? Text(LogLine line, string name) =>

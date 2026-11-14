@@ -90,16 +90,39 @@ public sealed class NoticesTests : IDisposable
     }
 
     [Fact]
-    public void A_notice_of_a_kind_no_longer_kept_is_spent()
+    public void A_row_set_aside_outlives_the_week_and_the_count_that_end_a_notice()
     {
-        var kept = new[]
-        {
-            Ended("s1", Now) with { State = "completed" }, Ended("s2", Now), Ended("s3", Now) with { State = "stood-down" },
-            new Notice("plugin-command:p/c/1", "plugin-command", Now, State: "reached"), new Notice("plugin-command:p/c/2", "plugin-command", Now, State: "failed"),
-            Notices.SetAsideOf("parked", "x", null, null, Now),
-        };
+        var aside = Notices.SetAsideOf("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z", "games", Now.AddDays(-30));
+        Assert.Null(Notices.Renew(_home, aside, Now.AddDays(-30)));
+        for (var n = 0; n < Notices.Most + 5; n++) Assert.Null(Notices.Add(_home, Ended($"s{n:000}", Now.AddMinutes(n - 600)), Now));
+        Assert.Null(Notices.MarkRead(_home, ["ended-s300"], Now));
 
-        Assert.Equal(["ended-s1", "ended-s3", "plugin-command:p/c/1"], Notices.Spent(kept));
+        var read = Notices.Read(_home, Now)!;
+        Assert.Contains(aside.Id, read.Select(notice => notice.Id));
+        Assert.Equal(Notices.Most, read.Count(notice => notice.Kind == Notices.Ended));
+        Assert.True(Notices.Hidden(read).Contains(Notices.HiddenKey("go-ahead", "a1#2", "2026-10-22T08:00:00.000Z")));
+        Assert.NotNull(Written()["notices"]![aside.Id]);
+    }
+
+    [Fact]
+    public void Rows_set_aside_are_kept_to_a_count_of_their_own_the_oldest_first()
+    {
+        var rows = new JsonObject();
+        for (var n = 0; n < Notices.MostAside + 3; n++)
+        {
+            rows[$"set-aside:parked:r{n:0000}"] = new JsonObject
+            {
+                ["kind"] = "set-aside", ["at"] = Now.AddDays(-30).AddMinutes(n).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), ["read"] = true, ["route"] = "parked", ["code"] = $"r{n:0000}",
+            };
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(PathOf)!);
+        File.WriteAllText(PathOf, new JsonObject { ["schemaVersion"] = 1, ["notices"] = rows }.ToJsonString());
+        Assert.Null(Notices.Add(_home, Ended("s1", Now), Now));
+
+        var read = Notices.Read(_home, Now)!;
+        Assert.Equal(Notices.MostAside, read.Count(notice => notice.Kind == Notices.Aside));
+        Assert.DoesNotContain(read, notice => notice.Code is "r0000" or "r0001" or "r0002");
     }
 
     [Fact]

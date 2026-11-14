@@ -104,7 +104,7 @@ internal static class NoticeStore
         var read = rows.ToDictionary(notice => notice.Id, StringComparer.Ordinal);
         var notices = new Dictionary<string, Notice>(read, StringComparer.Ordinal);
         change(notices);
-        var kept = Notices.Young(notices.Values, now).Take(Notices.Most).ToDictionary(notice => notice.Id, StringComparer.Ordinal);
+        var kept = Notices.Kept(notices.Values, now).ToDictionary(notice => notice.Id, StringComparer.Ordinal);
         var gone = read.Keys.Where(id => !kept.ContainsKey(id)).ToList();
         var put = kept.Values.Where(notice => !read.TryGetValue(notice.Id, out var held) || held != notice).ToList();
         return gone.Count == 0 && put.Count == 0 ? null : new Plan(gone, put);

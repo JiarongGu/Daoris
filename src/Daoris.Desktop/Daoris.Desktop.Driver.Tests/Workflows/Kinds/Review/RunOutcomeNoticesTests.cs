@@ -38,13 +38,36 @@ public sealed class RunOutcomeNoticesTests : IDisposable
             },
         });
 
-        var told = RunOutcomeNotices.Occurrences(_home, T.AddMinutes(5));
+        var told = RunOutcomeNotices.Read(_home, T.AddMinutes(5)).Occurrences;
 
         Assert.Equal(["outcome:q1/push/2"], told.Select(each => each.Key));
         var push = told[0].Notice!;
         Assert.Equal((RunOutcomeNotices.Kind, "q1", "push", NodeKinds.Push, NodeStates.Failed, "rejected", 2),
             (push.Kind, push.Quest, push.Act, push.Route, push.State, push.Code, push.Count));
-        Assert.Empty(RunOutcomeNotices.Occurrences(_home, T.AddDays(8)));
+        Assert.Empty(RunOutcomeNotices.Read(_home, T.AddDays(8)).Occurrences);
+    }
+
+    /// <summary>One read of the runs gives both the steps to keep and the notices that moved on; a step past the news' horizon is no new news but its notice still stands.</summary>
+    [Fact]
+    public void One_read_of_the_runs_answers_both_what_to_keep_and_what_moved_on()
+    {
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, Graph), T);
+        var unit = RunUnits.IdOf("q1");
+        new NodeRecordFiles(_home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["review"] = new(unit, "review", NodeStates.Reached) { Attempt = 1, Since = T },
+                ["push"] = new(unit, "push", NodeStates.Failed) { Attempt = 2, Since = T.AddMinutes(2), Code = "rejected" },
+            },
+        });
+        var now = T.AddDays(8);
+        var held = new[] { new Notice("outcome:q1/push/2", RunOutcomeNotices.Kind, T), new Notice("outcome:q1/push/1", RunOutcomeNotices.Kind, T) };
+
+        var read = RunOutcomeNotices.Read(_home, now);
+
+        Assert.Empty(read.Occurrences);
+        Assert.Equal(["outcome:q1/push/1"], read.Moved(held));
     }
 
     [Fact]
@@ -68,6 +91,6 @@ public sealed class RunOutcomeNoticesTests : IDisposable
 
         Assert.Equal(
             ["outcome:gone/push/1", "outcome:q1/landing/1", "outcome:q1/push/1"],
-            RunOutcomeNotices.Moved(_home, held).Order(StringComparer.Ordinal));
+            RunOutcomeNotices.Read(_home, T.AddMinutes(5)).Moved(held).Order(StringComparer.Ordinal));
     }
 }
