@@ -149,10 +149,14 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 30. The right-click menu is the page's own, offering the surface's acts from their one owner plus text, link and code
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell: presses waiting, *What needs you*, messages, and *Done and
-    failed*. There is no *Confirm all*; a *What needs you* row is answered, never dismissed. *Done and failed* holds a
-    session's end, none for a part whose line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), and each
-    watched step after a run's review once reached or failed, one line by run, node and attempt
-    (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once). Beside the presses waiting, counting toward no
+    failed*. There is no *Confirm all*; a *What needs you* row is answered, or set aside with *Set aside*, which every kind
+    offers: `NOTICE_DISMISS` with the row's kind, id and since keeps a read `set-aside` entry in the history, and the judge hides
+    that row only while it stands as it did (`Notices.Hidden`, `AttentionFacts.Hidden`), so one that moved on is shown again. *Done and failed* holds only what needs a look: a
+    session's end that failed, was stopped or ran out (never one that completed, was declined or stood down), none for a part whose
+    line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), a failed run step after the review, one line by run, node
+    and attempt (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once), a failed plugin round, and the set-asides. A notice whose
+    subject moved on (a step that went on, a run gone, a kind no longer kept) is cleared by the same pass (`Notices.Spent`,
+    `RunOutcomeNotices.Moved`). Beside the presses waiting, counting toward no
     group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run, the latter
     a compact line drawn only for a press newer than the person's last *Got it* (`HelpPressLine`, behind *Show*: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a press that opened a place says what it made under its row, as the

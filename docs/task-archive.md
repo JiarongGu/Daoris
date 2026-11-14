@@ -5,6 +5,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
+- **NOTIFYDIET1 (2026-11-14):** measured on the installed home (200 notices: 61 run steps reached, 48 clean session ends, 40 plugin rounds that went well, 13 failures, 5 look lines; 92 unread) and cut to what needs the person: failed steps, failed plugin rounds and unwell ends only; a notice whose step went on or run is gone clears itself, as does a kind no longer kept; every *What needs you* row has *Set aside*, kept read in the history; checks are `NoticesTests`, `RunOutcomeNoticesTests`, `AttentionSetAsideTests`, `NoticesStateSliceTests` and `AttentionRow.test.tsx`, record in `docs/areas/desktop-app.md`.
+
 ---
 
 ## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
