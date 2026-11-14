@@ -22,10 +22,7 @@ internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, K
     public static bool InPlace(string? tree, string? root) =>
         Trees.Normalize(tree) is not { } held || (Trees.Normalize(root) is { } place && string.Equals(held, place, StringComparison.Ordinal));
 
-    /// <summary>
-    /// The driver's code for a session that ended its turn on its own open helper ask (its <c>EndNoteCodes.EndedAwaitsHelper</c>,
-    /// a twin read here by its spelling): completed, since it waits on that helper and not on the person.
-    /// </summary>
+    /// <summary>The driver's code for a turn ended on its own helper ask (<c>EndNoteCodes.EndedAwaitsHelper</c>), read by its spelling.</summary>
     internal const string EndedAwaitsHelper = "ended.awaits-helper";
 
     /// <summary>Whether a finished record ended waiting on its own helper: completed, by that code.</summary>
@@ -40,7 +37,6 @@ internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, K
     /// </summary>
     public async Task<Session?> HolderAsync(string repository, string? tree, CancellationToken inside, string? except = null)
     {
-        // A session waiting on its step is active and wakes in its own tree, which it holds against nobody but itself.
         if (await sessions.ActiveForAsync(repository, tree, inside).ConfigureAwait(false) is { } active)
             return string.Equals(active.Id, except, StringComparison.Ordinal) ? null : active;
         foreach (var waiting in await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsHelper, inside).ConfigureAwait(false))

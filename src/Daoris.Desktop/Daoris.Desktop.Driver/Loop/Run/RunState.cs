@@ -239,7 +239,6 @@ internal sealed class RunState(Action<long>? giveBack = null) : IDisposable, IAs
         set => _bound.Set(value);
     }
 
-    /// <summary>The run's binding where the bind stage made one, else null: what its turn's end waits on.</summary>
     public WorkflowBind? BoundIfAny => _bound.Peek();
 
     /// <summary>The set-up step this start follows, or null where it is no set-up step.</summary>

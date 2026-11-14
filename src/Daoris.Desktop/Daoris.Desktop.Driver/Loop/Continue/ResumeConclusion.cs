@@ -155,9 +155,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                     awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, a failed run and never a park, as at a first run's end.
                     providerRefused: ended.ProviderRefused,
-                    reopenedFrom: Planner.ReopenedFrom(quest, after),
-                    // A turn of a session waiting on its run's step waits on that run again.
-                    waits: StepWaits.From(park.NoteParts))
+                    reopenedFrom: Planner.ReopenedFrom(quest, after), waits: StepWaits.From(park.NoteParts))
                 // A done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                     ? Observation.AfterQuiet(quietMinutes, quest.Status, status)

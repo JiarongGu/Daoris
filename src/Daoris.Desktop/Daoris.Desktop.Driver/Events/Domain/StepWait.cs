@@ -21,11 +21,10 @@ public sealed record StepWait(string? Run, string? Node = null, int? Attempt = n
 
     /// <summary>Its note: what it waits on, in the coded line the page words.</summary>
     public Noted Note() => Run is null
-        ? Noted.Of(EndNoteCodes.WaitsStep,
-            "It asked for a check and its turn ended while the check waits its turn: it goes on in the same conversation with the verdict.",
-            ("node", Node))
+        ? Noted.Of(EndNoteCodes.WaitsCheck,
+            "It asked for a check and its turn ended while the check waits its turn: it goes on in the same conversation with the verdict.")
         : Noted.Of(EndNoteCodes.WaitsStep,
             $"Its turn ended and it waits on its workflow's next step (run `{Run}`): it goes on in the same conversation where a step sends its "
             + "work back, and ends with its workflow.",
-            ("run", Run), ("node", Node), ("attempt", Attempt), ("tip", Tip));
+            ("run", Run));
 }

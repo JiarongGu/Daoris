@@ -881,7 +881,7 @@ describe('the session tone map', () => {
     expect(SESSION_DOT.completed).toBe('ended');
   });
 
-  it('counts exactly the five states that still hold a repository', () => {
+  it('counts the states that hold a repository', () => {
     expect([...SESSION_ACTIVE].sort())
       .toEqual(['awaiting-person', 'awaiting-step', 'queued', 'starting', 'working']);
     // Parked counts as active on purpose: the person is the flow control, not an exit.

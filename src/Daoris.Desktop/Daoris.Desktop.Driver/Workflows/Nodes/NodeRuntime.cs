@@ -123,10 +123,6 @@ public sealed class NodeRuntime(
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
-    /// <summary>
-    /// The door a run's end ends its waiting sessions through (<see cref="RunSessionEnds"/>): handed the session, the state and the note, it
-    /// answers whether the session moved. None by default: a run's end moves no session.
-    /// </summary>
     public Func<string, string, string, CancellationToken, Task<bool>>? Finish { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>

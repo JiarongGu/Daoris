@@ -147,9 +147,8 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
             if (Never(session) is { } never) return never;
 
             var parked = session.State == SessionState.AwaitingPerson;
-            // A record waiting on its workflow's step runs nothing, so it keeps a word as an ended record does, and the word wakes it.
             var still = parked || session.State == SessionState.AwaitingStep;
-            // A running record keeps words only for its own run, asked by the driver that runs it.
+            // A running record keeps words only for its own run, asked by the driver that runs it; one waiting on its step runs nothing.
             // A record that winds up or moves keeps the word for its next part, as an ended record keeps one.
             var forNext = session.Active && !still && ending && !running;
             var forRun = session.Active && !still && !forNext;

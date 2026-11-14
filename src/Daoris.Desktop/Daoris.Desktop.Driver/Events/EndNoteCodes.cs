@@ -51,8 +51,8 @@ public static class EndNoteCodes
     /// </summary>
     public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
 
-    /// <summary>Its agent's turn ended and the session waits on a step: its workflow's run (the run, the node, its attempt and the tip), or a check it asked.</summary>
-    public static readonly NoteCode WaitsStep = new("waits.step", ["run", "node", "attempt", "tip"]);
+    public static readonly NoteCode WaitsStep = new("waits.step", ["run"]);
+    public static readonly NoteCode WaitsCheck = new("waits.check", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);

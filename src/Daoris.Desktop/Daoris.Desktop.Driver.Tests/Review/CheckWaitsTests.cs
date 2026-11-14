@@ -36,7 +36,7 @@ public sealed class CheckWaitsTests
         {
             Assert.Equal("awaiting-step", conclusion.State);
             var part = Assert.Single(conclusion.Parts!);
-            Assert.Equal(EndNoteCodes.WaitsStep.Code, part.Code);
+            Assert.Equal(EndNoteCodes.WaitsCheck.Code, part.Code);
             Assert.Null(StepWaits.From(conclusion.Parts));
             Assert.DoesNotContain("Asked for the tests.", conclusion.Note);
         }

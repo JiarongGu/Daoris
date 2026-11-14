@@ -126,10 +126,7 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// <summary>Whether it is a partner's record: one carrying a piece, which lands only through its lead.</summary>
     public bool Partner => Piece is not null;
 
-    /// <summary>
-    /// Whether it ended waiting on its own helper: completed by <see cref="EndNoteCodes.EndedAwaitsHelper"/>, read by its
-    /// note's code, never its English. False for every other record and from an older host.
-    /// </summary>
+    /// <summary>Whether it ended waiting on its own helper: completed by <see cref="EndNoteCodes.EndedAwaitsHelper"/>, read by its code.</summary>
     public bool AwaitsHelper { get; init; }
 
     /// <summary>

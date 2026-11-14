@@ -26,7 +26,6 @@ public static class RecordNotes
     /// <summary>A quest's work paused by the steward (<see cref="EndNoteCodes.StoppedPausedQuestSteward"/>).</summary>
     public const string StoppedPausedQuestSteward = "stopped.paused-quest-steward";
 
-    /// <summary>A session that ended waiting on its own helper (<see cref="EndNoteCodes.EndedAwaitsHelper"/>).</summary>
     public const string EndedAwaitsHelper = "ended.awaits-helper";
 
     /// <summary>A choice its agent refused at the open (<see cref="EndNoteCodes.EndedChoiceNotOffered"/>).</summary>

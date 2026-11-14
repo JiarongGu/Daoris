@@ -15,8 +15,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
 
     /// <summary>
     /// What each live state may become. Forward only, and every live state can be stopped — the person's
-    /// hand is never refused. A session waiting on its workflow's step goes on with that step's word, parks for the person at a bound,
-    /// and ends only as its workflow ends.
+    /// hand is never refused; a session waiting on its workflow's step ends only as its workflow ends.
     /// </summary>
     private static IReadOnlyList<SessionState> Allowed(SessionState from) => from switch
     {
@@ -165,7 +164,6 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
 
             if (target == SessionState.Working && Admits(session, expect) is { } changed) return changed;
 
-            // A step's word wakes its waiting session as words wake an ended one: the same go-on, its note saying whose words.
             if (!session.Active || (session.State == SessionState.AwaitingStep && target == SessionState.Working))
             {
                 return target == SessionState.Working && from is null

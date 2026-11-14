@@ -4,10 +4,9 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The writer's lease on a place: the one in-place record of this machine's that holds a repository's own checkout. A record holds
-/// it while its turn runs (queued, starting or working there), and in a git place also while it is parked, or ended waiting on its
-/// own helper, with uncommitted paths of its own marked (<see cref="Session.HoldsPlace"/>). The passes (a helper, a partner, a second opinion, a
-/// supervisor's turn) and an intake write nothing in the place and hold none. The ledger reads it in the write that opens a record or
-/// moves one into a running state, and writes the mark in the move out of one; nothing renews it on a clock.
+/// it while its turn runs, and in a git place also while it is parked, waits on its step, or ended waiting on its own helper, with uncommitted
+/// paths of its own marked (<see cref="Session.HoldsPlace"/>). The passes and an intake write nothing in the place and hold none. The ledger
+/// reads it in the write that opens a record or moves one into a running state, and writes the mark in the move out of one.
 /// </summary>
 internal sealed class SessionPlaceLease(SessionStore store)
 {
