@@ -5,6 +5,20 @@ namespace Daoris.Testing;
 public abstract partial class RepositoryContract
 {
     [Fact]
+    public async Task A_status_lists_each_changed_path_with_its_state_and_each_untracked_file_by_itself()
+    {
+        var (root, _) = await OneAsync();
+        await WriteAsync(root, "a.txt", "changed\n");
+        await WriteAsync(root, "new/c.txt", "new\n");
+        await RemoveAsync(root, "src/b.txt");
+
+        var listed = await Backend.StatusEntriesAsync(root, Ct);
+
+        Assert.Equal([("a.txt", " M"), ("new/c.txt", "??"), ("src/b.txt", " D")], listed.OrderBy(each => each.Path, StringComparer.Ordinal).Select(each => (each.Path, each.State)));
+        Assert.All(listed, each => Assert.Null(each.From));
+    }
+
+    [Fact]
     public async Task Git_answers()
     {
         Assert.True(await Backend.AvailableAsync(Ct));

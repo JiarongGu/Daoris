@@ -2,11 +2,7 @@ using Daoris.Contracts.Sessions;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The paths a person's act in a repository's own checkout took out of a parked line's mark: each marked path that no longer differs
-/// from <c>HEAD</c>, by git's status read over the marked paths alone. A stash, a commit or a discard of the session's work releases
-/// them, and the place goes once none is left. A line still running holds the place by its turn, so its mark is not read here.
-/// </summary>
+/// <summary>The paths a person's act in a repository's own checkout took out of a parked line's mark: each marked path that no longer differs from <c>HEAD</c>.</summary>
 public static class PlaceMarkDiscards
 {
     /// <summary>Each parked line of <paramref name="repository"/> in <paramref name="checkout"/> with the marked paths now clean.</summary>
@@ -55,26 +51,14 @@ public static class PlaceMarkDiscards
     /// <summary>The paths of <paramref name="paths"/> git's status still lists, or null where git could not read it.</summary>
     private static async Task<HashSet<string>?> ChangedAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
     {
-        string[] status = ["--no-optional-locks", "status", "--porcelain=v2", "-z", "--untracked-files=all", "--"];
-        var (code, stdout, _) = await WorkingTree.GitAsync(root, [.. status, .. paths.Select(path => ":(literal)" + path)], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        var changed = new HashSet<string>(StringComparer.Ordinal);
-        var fields = stdout.Split('\0');
-        for (var i = 0; i < fields.Length; i++)
+        try
         {
-            var field = fields[i];
-            var path = field.Length < 2 ? "" : field[0] switch
-            {
-                '1' => field.Split(' ', 9)[8],
-                '2' => field.Split(' ', 10)[9],
-                'u' => field.Split(' ', 11)[10],
-                '?' => field[2..],
-                _ => "",
-            };
-            if (field.StartsWith('2')) i++;
-            if (path.Length > 0) changed.Add(path);
+            var asked = new HashSet<string>(paths, StringComparer.Ordinal);
+            return [.. (await MachinePorts.Repository.StatusEntriesAsync(root, ct).ConfigureAwait(false)).Select(each => each.Path).Where(asked.Contains)];
         }
-
-        return changed;
+        catch (DriverException)
+        {
+            return null;
+        }
     }
 }

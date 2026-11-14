@@ -18,6 +18,9 @@ public sealed partial class MemoryRepository
             || full.StartsWith(each.Path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
     }
 
+    public async Task<IReadOnlyList<GitStatusEntry>> StatusEntriesAsync(string folder, CancellationToken ct) =>
+        [.. (await StatusAsync(folder, ignored: false, ct).ConfigureAwait(false)).Select(each => new GitStatusEntry(each.Key, each.Value, null))];
+
     public Task<bool> AvailableAsync(CancellationToken ct) => Task.FromResult(true);
 
     public Task<GitDone> InitAsync(string folder, string line, CancellationToken ct)

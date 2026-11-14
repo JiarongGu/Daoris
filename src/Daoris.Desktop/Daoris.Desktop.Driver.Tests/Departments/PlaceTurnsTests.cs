@@ -7,25 +7,25 @@ namespace Daoris.Desktop.Driver.Tests;
 /// person changed meanwhile, which the session is told; the end against the start, with what the line carried in, is what of its own
 /// stays uncommitted, the mark it keeps the place with. A commit clears it, and an end is read once.
 /// </summary>
-[Trait(Category.Name, Category.Process)]
-[Trait(Category.Needs, Needed.Process)]
-[Trait(Category.Needs, Needed.Git)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class PlaceTurnsTests : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("place-turns");
-    private string Place => Path.Combine(_scratch, "reports");
+    private readonly PlaceMemory _memory;
+
+    public PlaceTurnsTests() => _memory = new PlaceMemory(Path.Combine(_scratch, "reports"));
+
+    private string Place => _memory.Place;
     private string Home => Path.Combine(_scratch, "home");
 
-    public void Dispose() => ConformanceScratch.Remove(_scratch);
+    public void Dispose()
+    {
+        _memory.Dispose();
+        ConformanceScratch.Remove(_scratch);
+    }
 
     private async Task<string> RepositoryAsync()
     {
-        Directory.CreateDirectory(Place);
-        await GitFixture.RunAsync(Place, "init", "-q", "-b", "main");
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "first\n");
-        await GitFixture.RunAsync(Place, "add", "-A");
-        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one");
+        await _memory.MakeAsync(("notes.md", "first\n"));
         return Place;
     }
 
@@ -40,10 +40,10 @@ public sealed class PlaceTurnsTests : IDisposable
         await RepositoryAsync();
 
         Assert.Equal(new PlaceTold([], []), await StartAsync("s-aaaaaaaa"));
-        File.WriteAllText(Path.Combine(Place, "draft.md"), "the session's\n");
+        _memory.Put("draft.md", "the session's\n");
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's line\n");
+        _memory.Put("notes.md", "the person's line\n");
         var told = await StartAsync("s-bbbbbbbb");
 
         Assert.Equal(["notes.md"], told!.Outside);
@@ -59,8 +59,8 @@ public sealed class PlaceTurnsTests : IDisposable
         await StartAsync("s-aaaaaaaa");
         await EndAsync("s-aaaaaaaa");
 
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's committed line\n");
-        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "theirs");
+        _memory.Put("notes.md", "the person's committed line\n");
+        await _memory.CommitAsync("theirs");
         var told = await StartAsync("s-bbbbbbbb");
 
         Assert.Equal(["notes.md"], told!.Outside);
@@ -73,17 +73,15 @@ public sealed class PlaceTurnsTests : IDisposable
         await RepositoryAsync();
 
         await StartAsync("s-aaaaaaaa");
-        File.WriteAllText(Path.Combine(Place, "draft.md"), "the session's\n");
+        _memory.Put("draft.md", "the session's\n");
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
         // Its next turn carries its own path in, not told it is another's; no tool event named it, so it is told it is unattributed.
         Assert.Equal(new PlaceTold([], []) { Unattributed = ["draft.md"] }, await StartAsync("s-aaaaaaaa"));
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
-        // A part carrying the line on carries the path in from the record it continues.
         Assert.Equal(new PlaceTold([], []), await StartAsync("s-cccccccc", continues: "s-aaaaaaaa"));
-        await GitFixture.RunAsync(Place, "add", "draft.md");
-        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "two");
+        await _memory.CommitAsync("two");
         Assert.Empty((await EndAsync("s-cccccccc"))!);
     }
 
@@ -95,11 +93,11 @@ public sealed class PlaceTurnsTests : IDisposable
         Assert.Null(await EndAsync("s-dddddddd"));
 
         await StartAsync("s-aaaaaaaa");
-        File.WriteAllText(Path.Combine(Place, "draft.md"), "the session's\n");
+        _memory.Put("draft.md", "the session's\n");
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
         // The person's end of the park after the turn returned reads the turn's end, never the person's later edits as its own.
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's line\n");
+        _memory.Put("notes.md", "the person's line\n");
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
     }
 
@@ -121,7 +119,7 @@ public sealed class PlaceTurnsTests : IDisposable
         await StartAsync("s-aaaaaaaa");
         Assert.Equal(composed.Deny, PlaceDenies.Compose(composed, PlaceTurns.Others(Home, "s-aaaaaaaa")).Deny);
 
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's line\n");
+        _memory.Put("notes.md", "the person's line\n");
         await StartAsync("s-bbbbbbbb");
         var handed = PlaceDenies.Compose(composed, PlaceTurns.Others(Home, "s-bbbbbbbb")).Deny;
 

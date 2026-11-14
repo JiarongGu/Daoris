@@ -22,10 +22,7 @@ public enum CreateFolderState
 /// <summary>A creation's folder and, where it is the empty commit, that commit's id.</summary>
 public sealed record CreateFolderReading(CreateFolderState State, string? Commit);
 
-/// <summary>
-/// The history a creation makes through the repository port: an init on the line, one empty commit as the author, no remote and no push,
-/// and the reading of a folder that says whether it is the folder a receipt made. Nothing is deleted, whatever is read.
-/// </summary>
+/// <summary>The history a creation makes through the repository port, and the reading of a folder that says whether a receipt made it.</summary>
 public static class CreateHistory
 {
     /// <summary>Whether git answers: its version, or false where it did not start.</summary>
@@ -51,10 +48,7 @@ public static class CreateHistory
             : new(CreateFolderState.Other, null);
     }
 
-    /// <summary>
-    /// The folder made, initialised, its head pointed at <paramref name="line"/>, and one empty commit as <paramref name="author"/> with
-    /// <paramref name="message"/>. Hooks and signing are left out of that one commit, so the folder's own state is all it asks of git.
-    /// </summary>
+    /// <summary>The folder initialised on <paramref name="line"/> with one empty commit as <paramref name="author"/>, hooks and signing left out.</summary>
     /// <returns>The commit's id, or git's words for why there is none.</returns>
     public static async Task<(string? Commit, string? Problem)> InitAsync(string folder, string line, CreateAuthor author, string message, CancellationToken ct)
     {

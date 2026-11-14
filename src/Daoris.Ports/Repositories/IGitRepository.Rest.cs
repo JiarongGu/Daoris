@@ -1,7 +1,16 @@
 namespace Daoris.Ports.Repositories;
 
+/// <summary>One path a checkout's status names.</summary>
+/// <param name="Path">The path from the tree's top, with <c>/</c>.</param>
+/// <param name="State">Its two-letter state, <c>??</c> for an untracked one.</param>
+/// <param name="From">The path a rename or copy came from; null otherwise.</param>
+public sealed record GitStatusEntry(string Path, string State, string? From);
+
 public partial interface IGitRepository
 {
+    /// <summary>Every path status names, untracked files one by one, each with where a rename or copy came from; thrown where git could not read it.</summary>
+    Task<IReadOnlyList<GitStatusEntry>> StatusEntriesAsync(string folder, CancellationToken ct);
+
     /// <summary>Whether git answers on this machine.</summary>
     Task<bool> AvailableAsync(CancellationToken ct);
 

@@ -39,7 +39,7 @@ public class MemoryRepositories : DispatchProxy
     /// <summary>The repository whose checkout <paramref name="folder"/> is.</summary>
     public MemoryRepository At(string folder) => _all.FirstOrDefault(each => each.Holds(folder)) ?? throw new InvalidOperationException($"{folder} holds no repository here");
 
-    /// <summary>Whether a repository was made or handed at <paramref name="folder"/>.</summary>
+    /// <summary>Whether a repository stands at <paramref name="folder"/>.</summary>
     public bool Has(string folder) => _all.Any(each => each.Holds(folder));
 
     protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)

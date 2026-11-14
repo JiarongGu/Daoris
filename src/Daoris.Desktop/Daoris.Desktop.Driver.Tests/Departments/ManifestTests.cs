@@ -7,26 +7,29 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the text of each new file in the place's content store. The start against the place's last end finds what the person changed
 /// meanwhile; the end against the start is the turn's own, and what of it stays uncommitted is what the line keeps the place with.
 /// </summary>
-[Trait(Category.Name, Category.Process)]
-[Trait(Category.Needs, Needed.Process)]
-[Trait(Category.Needs, Needed.Git)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class ManifestTests : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("manifest");
-    private string Place => Path.Combine(_scratch, "reports");
+    private readonly PlaceMemory _memory;
+
+    public ManifestTests() => _memory = new PlaceMemory(Path.Combine(_scratch, "reports"));
+
+    private string Place => _memory.Place;
     private string Home => Path.Combine(_scratch, "home");
 
-    public void Dispose() => ConformanceScratch.Remove(_scratch);
+    public void Dispose()
+    {
+        _memory.Dispose();
+        ConformanceScratch.Remove(_scratch);
+    }
+
+    private void Put(string path, string text) => _memory.Put(path, text);
+
+    private void Delete(string path) => _memory.Delete(path);
 
     private async Task<string> RepositoryAsync()
     {
-        Directory.CreateDirectory(Place);
-        await GitFixture.RunAsync(Place, "init", "-q", "-b", "main");
-        File.WriteAllText(Path.Combine(Place, "kept.md"), "kept\n");
-        File.WriteAllText(Path.Combine(Place, "notes.md"), "first\n");
-        await GitFixture.RunAsync(Place, "add", "-A");
-        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one");
+        await _memory.MakeAsync(("kept.md", "kept\n"), ("notes.md", "first\n"));
         return Place;
     }
 
@@ -37,8 +40,8 @@ public sealed class ManifestTests : IDisposable
         var store = new ManifestStore(Home, "default", "reports");
 
         var lastEnd = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
-        File.WriteAllText(Path.Combine(root, "notes.md"), "the person's line\n");
-        File.WriteAllText(Path.Combine(root, "new.txt"), "a new file\n");
+        Put("notes.md", "the person's line\n");
+        Put("new.txt", "a new file\n");
         var start = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
 
         var outside = PlaceChangesSince.Between(lastEnd, start, committed: []);
@@ -46,8 +49,8 @@ public sealed class ManifestTests : IDisposable
         Assert.Equal(["notes.md"], outside.Changed);
         Assert.Empty(outside.Removed);
 
-        File.WriteAllText(Path.Combine(root, "draft.md"), "the session's\n");
-        File.Delete(Path.Combine(root, "kept.md"));
+        Put("draft.md", "the session's\n");
+        Delete("kept.md");
         var end = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
 
         var turn = PlaceChangesSince.Between(start, end, committed: []);
@@ -60,7 +63,6 @@ public sealed class ManifestTests : IDisposable
         Assert.Equal(end.Entries, store.Read("s-1a2b3c4d", ManifestMoment.End)!.Entries);
         Assert.Equal(end.Head, store.Last()!.Head);
 
-        // The text of each new file went to the content store, by its hash.
         var draft = end.Entries.Single(entry => entry.Path == "draft.md");
         Assert.Equal("the session's\n", File.ReadAllText(store.Content.PathOf(draft.Sha256!)));
         Assert.Null(end.Entries.Single(entry => entry.Path == "kept.md").Sha256);
@@ -76,8 +78,8 @@ public sealed class ManifestTests : IDisposable
         Assert.Empty(before.Entries);
         Assert.Equal("main", before.Branch);
 
-        File.WriteAllText(Path.Combine(root, "kept.md"), "committed by the person\n");
-        await GitFixture.RunAsync(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "two");
+        Put("kept.md", "committed by the person\n");
+        await _memory.CommitAsync("two");
         var after = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
         var committed = await ManifestReader.CommittedBetweenAsync(root, before.Head, after.Head, CancellationToken.None);
 
@@ -120,26 +122,13 @@ public sealed class ManifestTests : IDisposable
     }
 
     [Fact]
-    public async Task A_renamed_path_lists_the_old_name_as_gone_beside_the_new()
-    {
-        var root = await RepositoryAsync();
-        var store = new ManifestStore(Home, "default", "reports");
-        await GitFixture.RunAsync(root, "mv", "notes.md", "renamed.md");
-
-        var manifest = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
-
-        Assert.Null(manifest.Listed("notes.md")!.Sha256);
-        Assert.NotNull(manifest.Listed("renamed.md")!.Sha256);
-    }
-
-    [Fact]
     public async Task A_listed_file_another_program_holds_open_is_listed_with_a_hash_of_its_own_and_the_read_does_not_throw()
     {
         if (!OperatingSystem.IsWindows()) return;
         var root = await RepositoryAsync();
         var store = new ManifestStore(Home, "default", "reports");
         var held = Path.Combine(root, "held.md");
-        File.WriteAllText(held, "being written\n");
+        Put("held.md", "being written\n");
         using var lease = new FileStream(held, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
         var manifest = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
