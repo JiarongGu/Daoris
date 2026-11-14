@@ -204,7 +204,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
         Write("served/docs/index/README.md", "# Where things are\n\n| Where | What |\n|---|---|\n| `src/Probe.cs` | the probe lock |\n");
         var held = new[]
         {
-            Write($"{app}/cli/node_modules/daoris/README.md", "# Zeppelins\n\n## Zeppelins\n\nAn install's package.\n"),
+            Write($"{app}/cli/canon/README.md", "# Zeppelins\n\n## Zeppelins\n\nAn install's canon.\n"),
             Write("served/node_modules/pkg/README.md", "# Zeppelins\n\n## Zeppelins\n\nA package.\n"),
             Write("served/_fixtures/probe/notes.md", "# Zeppelins\n\n## Zeppelins\n\nScratch.\n"),
         };

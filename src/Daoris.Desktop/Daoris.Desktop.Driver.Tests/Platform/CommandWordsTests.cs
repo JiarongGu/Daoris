@@ -66,10 +66,16 @@ public sealed class CommandWordsTests
             Directory.CreateDirectory(program);
             Assert.Null(CommandWords.CarriedCli(program));
 
-            var entry = Path.Combine(install, "app", "cli", "node_modules", "daoris", "bin", "daoris.mjs");
+            var home = Path.Combine(install, "data");
+            File.WriteAllText(Path.Combine(install, "INSTALLED.md"), "# Daoris — installed desktop\n");
+            Assert.Null(CommandWords.CarriedCliOf(home));
+
+            var entry = Path.Combine(install, "app", "cli", "daoris.mjs");
             Directory.CreateDirectory(Path.GetDirectoryName(entry)!);
             File.WriteAllText(entry, "");
             Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCli(program));
+            Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCliOf(home));
+            Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCliOf(install));
         }
         finally
         {

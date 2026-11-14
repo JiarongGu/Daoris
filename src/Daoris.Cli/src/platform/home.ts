@@ -44,8 +44,8 @@ export const INSTALL_APP = 'app';
 export const INSTALL_DATA = 'data';
 
 /**
- * The install a folder sits in: the folder above the `app/` it is in, however deep (this package is
- * `app/cli/node_modules/daoris/`), where that folder holds the marker. Null for a checkout, which is no install.
+ * The install a folder sits in: the folder above the `app/` it is in, however deep (the bundled CLI is
+ * `app/cli/daoris.mjs`), where that folder holds the marker. Null for a checkout, which is no install.
  */
 export function installOf(from: string): string | null {
   for (let directory = resolve(from); ;) {
