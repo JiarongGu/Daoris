@@ -165,8 +165,8 @@ as a pack.
 37. Each program hands the other a word it does not own, once: `DAORIS_HANDED` names who handed it. The CLI refuses a
     non-doctrine word the program handed, exit 2; the program refuses, with its usage and exit 2, a word no group owns that
     the CLI handed. An install's `app/bin/daoris.exe` runs the program, which runs a word no group owns through the CLI the
-    install carries, `app/cli/daoris.mjs`, by that path (`CommandWords.CarriedCli`) on the tools' Node.js, and says so where none is
-    carried; the set-up's doctrine runs find the same file from the home (`CarriedCliOf`), never a `PATH` lookup. That file is one
+    install carries, `app/cli/daoris.mjs`, by that path (`DoctrineTool.BesideProgram`) on the tools' Node.js, and says so where none is
+    carried; the set-up's doctrine runs find the same file from the home (`DoctrineTool.OfHome`), never a `PATH` lookup. That file is one
     bundle of every CLI module (`tools/desktop-publish/cli-bundle.mjs`; the release's npm package is still `npm pack`'s), its `canon/`,
     `package.json` and `build.json` beside it; the CLI finds its canon in the folder that holds the bundle. Ctrl+C is held off it from before the child starts
     until the child ends (`InterruptHold`). The CLI's own entry (`bin/node-floor.mjs`, before the dispatcher loads) refuses a

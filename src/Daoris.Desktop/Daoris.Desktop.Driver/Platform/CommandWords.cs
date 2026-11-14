@@ -46,18 +46,6 @@ public static class CommandWords
             .OrderBy(group => group.Name, StringComparer.Ordinal)];
     }
 
-    /// <summary>
-    /// The CLI an install carries, found from the desktop's program's own folder (<c>app/daoris-driver/</c>): the publish's one bundled
-    /// file, <c>app/cli/daoris.mjs</c> (<c>CLI_BUNDLE</c>), with its canon beside it; null where it is not there.
-    /// </summary>
-    public static string? CarriedCli(string programFolder) => Existing(Path.Combine(programFolder, "..", "cli", BundleFile));
-
-    public static string? CarriedCliOf(string home) =>
-        Existing(Path.Combine(DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, DaorisHome.InstallApp, "cli", BundleFile));
-
-    private const string BundleFile = "daoris.mjs";
-    private static string? Existing(string entry) => File.Exists(Path.GetFullPath(entry)) ? Path.GetFullPath(entry) : null;
-
     /// <summary>What a word no group owns says where no CLI is carried beside this program to run it as a doctrine command.</summary>
     public static string NoCli(string command) =>
         $"`{command}` is no group of this program (`daoris help` names each), and the doctrine commands are the CLI's, which this program "

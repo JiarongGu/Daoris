@@ -43,7 +43,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     }
 
     /// <summary>
-    /// The <c>node</c> Tools resolves and the doctrine tool the install carries (<see cref="CommandWords.CarriedCliOf"/>: its bundle
+    /// The <c>node</c> Tools resolves and the doctrine tool the install carries (<see cref="DoctrineTool.OfHome"/>: its bundle
     /// by its place in the install, no <c>PATH</c> lookup), each asked its version as a child would ask it; the bundle runs on that node.
     /// </summary>
     public async Task<SetupTools> ToolsAsync(CancellationToken ct)
@@ -56,7 +56,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
             ? (null, node.Problem ?? "`node` is not on the PATH Daoris's children start with")
             : await VersionAsync(node.File, read, ct).ConfigureAwait(false);
 
-        var daoris = CommandWords.CarriedCliOf(home);
+        var daoris = DoctrineTool.OfHome(home);
         var (daorisVersion, daorisProblem) = daoris is null || node.File is null
             ? (null, (string?)null)
             : await VersionAsync(node.File, read, ct, daoris).ConfigureAwait(false);
@@ -66,13 +66,13 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     /// <summary>
     /// The checkout's <c>daoris status --json</c>, asked of the CLI the install carries, run on the tools' node by the bundle's own
-    /// path (<see cref="CommandWords.CarriedCliOf"/>), so the answer is that CLI's own and no table of its is kept here.
+    /// path (<see cref="DoctrineTool.OfHome"/>), so the answer is that CLI's own and no table of its is kept here.
     /// </summary>
     public async Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct)
     {
         if (repository.Root is null) return new(null, "it has no checkout here");
         var read = Tools.Read(home);
-        if (CommandWords.CarriedCliOf(home) is not { } bundle) return new(null, "the install carries no doctrine tool (its app/cli/daoris.mjs is not there)");
+        if (DoctrineTool.OfHome(home) is not { } bundle) return new(null, "the install carries no doctrine tool (its app/cli/daoris.mjs is not there)");
         var node = Tools.Resolve(read, home, "node", ChildPath(read));
         return node.File is null
             ? new(null, node.Problem ?? "`node` is not on the PATH Daoris's children start with")

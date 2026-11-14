@@ -2,10 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The one command tree's words: each group declared by the code that runs it and collected at start; <c>CommandTreeTests</c>
-/// holds that every word declared routes.
-/// </summary>
+/// <summary>The one command tree's words, collected at start; <c>CommandTreeTests</c> holds that every word routes.</summary>
 public sealed class CommandWordsTests
 {
     [CommandGroup("twice", "one")]
@@ -37,7 +34,6 @@ public sealed class CommandWordsTests
         Assert.True(CommandWords.Group("drive")!.Whole);
     }
 
-    /// <summary>A lease names a command by its group and sub-verb as the person typed them, never an argument.</summary>
     [Theory]
     [InlineData("tree land s-1", "daoris tree land")]
     [InlineData("ask pause a-1", "daoris ask pause")]
@@ -55,33 +51,6 @@ public sealed class CommandWordsTests
     [InlineData("drive --once", "daoris drive")]
     public void ONEWAY1ai_i_a_lease_names_the_command_and_never_its_arguments(string typed, string named) =>
         Assert.Equal(named, CommandWords.Named(typed.Split(' ')));
-
-    [Fact]
-    public void ONEWAY1ai_i_the_cli_an_install_carries_is_found_beside_the_program()
-    {
-        var install = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "daoris-tree-" + Guid.NewGuid().ToString("N")[..8]);
-        try
-        {
-            var program = Path.Combine(install, "app", "daoris-driver");
-            Directory.CreateDirectory(program);
-            Assert.Null(CommandWords.CarriedCli(program));
-
-            var home = Path.Combine(install, "data");
-            File.WriteAllText(Path.Combine(install, "INSTALLED.md"), "# Daoris — installed desktop\n");
-            Assert.Null(CommandWords.CarriedCliOf(home));
-
-            var entry = Path.Combine(install, "app", "cli", "daoris.mjs");
-            Directory.CreateDirectory(Path.GetDirectoryName(entry)!);
-            File.WriteAllText(entry, "");
-            Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCli(program));
-            Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCliOf(home));
-            Assert.Equal(Path.GetFullPath(entry), CommandWords.CarriedCliOf(install));
-        }
-        finally
-        {
-            GitSeed.Discard(install);
-        }
-    }
 
     /// <summary>Where no Node.js runs, the doctrine command says so with the tools' reason, and does nothing.</summary>
     [Fact]
