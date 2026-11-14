@@ -49,6 +49,8 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-01-self-development-design.md`|Contract: concurrent work, landing queue
 |`2026-10-24-ci-scope-design.md`|Accepted design: CI by reach (D207)
 |`2026-11-12-long-lived-repository-design.md`|Accepted design: what a change reads, measured (D278)
+|`2026-11-14-session-lifecycle-design.md`|Design (proposed, D293): SESSIONLIFE1, a session waits between steps and ends at its workflow's end; checks as the workflow's step; turns inside one session
+|`2026-11-14-session-context-design.md`|Design (proposed, D293): CONTEXT1, a session's context as typed entries rendered by each provider (resume, a bounded head and files), chosen by the course decision
 |`2026-11-14-foundation-design.md`|Design (proposed): FOUNDATION1, one Decision and one Act contract, a run's subject as a typed unit, one role shape, triggers and meters, over the present runtime
 |`2026-11-14-usage-model-design.md`|Design (proposed): USAGEMODEL1, provider-declared windows, one cost rule that spends lapsing units first, learned spend rates, dated overrules
 |`2026-11-13-layers-design.md`|Design (settled, D286): LAYERS1, ports and adapters: the application on ports, each adapter a package pinned by fingerprint, its dependency tests run only when it moves
