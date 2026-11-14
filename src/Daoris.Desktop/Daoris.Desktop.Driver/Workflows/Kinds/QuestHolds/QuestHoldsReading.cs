@@ -14,7 +14,6 @@ internal static class QuestHoldsReading
 
     private const string HeldForYes = "its done is held for your yes";
 
-    /// <summary>Whether a hold's reason kept on its node is one the person's pass lets go: their yes, or a done nothing compared with what they asked.</summary>
     public static bool PersonLifts(string? holds) =>
         holds is not null && (holds.Contains(HeldForYes, StringComparison.Ordinal) || UncheckedDones.Says(holds));
 
