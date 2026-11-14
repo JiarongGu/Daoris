@@ -18,6 +18,15 @@ public static class CheckRounds
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
     /// <summary>
+    /// Whether <paramref name="node"/> has already settled a failure at <paramref name="tip"/>: another attempt there would repeat a red that no
+    /// commit has answered, and spend a round the work never had.
+    /// </summary>
+    public static bool RedAt(NodeRecord? record, string node, string? tip) =>
+        !string.IsNullOrEmpty(tip) && record?.Attempts.Any(attempt =>
+            attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed }
+            && attempt.Node == node && attempt.Call.SubjectRevision == tip) == true;
+
+    /// <summary>
     /// Whether a <c>back</c> wire from <paramref name="source"/> is taken on its failure: always but from a check, and from a check only while
     /// its reds stay under <see cref="Bound"/>.
     /// </summary>

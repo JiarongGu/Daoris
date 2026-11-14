@@ -241,8 +241,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     stays as it is, and a run already ended asks nothing. A run whose quests all closed asks nothing either: its sessions are never
     reopened, and its end (`quest-closed`) ends any that wait on it as stopped by Daoris, with the reason in their note.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
-    where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, a later
-    turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest
+    where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, which names the run and the commit
+    its submission handed, a later turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest
     parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
     taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
     left is `Unclosed`, a row of *What needs you* until the person's done closes it or their word goes on with the session, its
@@ -342,9 +342,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     wake by the go-on adds one, `person` where any word waiting is the person's or their supervisor's, else `step` with the node
     and attempt its word's key names (`check_run` for a broker check). The list answers each record its line's turns oldest first,
     numbered from one, each with the record it ran in, its agent, account, adapter and conversation (`SessionTurnLines`), so a
-    limit or a curve move is the line's next turn and the session's id stays its first record's. A record from before turns reads
-    its `from` link as its one turn (`SessionTurns.Own`), a read that goes once no such record is kept. The moves still open a
-    record of their own for each move's turn.
+    limit or a curve move is the line's next turn and the session's id stays its first record's. A move out of a running turn
+    hands what the door reported over the record's turns so far (`TurnSpent`, the event log's input and output tokens), and the
+    record's last turn keeps its share, that less what the turns before it kept (`SessionTurnKeep.UsageAsync`); the window says
+    each turn's input and output on its row. A record from before turns reads its `from` link as its one turn
+    (`SessionTurns.Own`), a read that goes once no such record is kept. The moves still open a record of their own for each
+    move's turn, since a record is one process, account and conversation.
 
 ### The tidy
 

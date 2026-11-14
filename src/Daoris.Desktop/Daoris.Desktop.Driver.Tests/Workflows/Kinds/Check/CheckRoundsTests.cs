@@ -26,6 +26,18 @@ public sealed class CheckRoundsTests
         Assert.True(CheckRounds.SendsBack(new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed), new Dictionary<string, int> { ["review"] = 9 }));
     }
 
+    [Fact]
+    public void A_commit_that_failed_the_check_is_not_asked_again_but_another_is()
+    {
+        var record = new NodeRecord("run:r") { Attempts = [Red(1)] };
+
+        Assert.True(CheckRounds.RedAt(record, "check", "tip"));
+        Assert.False(CheckRounds.RedAt(record, "check", "other"));
+        Assert.False(CheckRounds.RedAt(record, "opinion", "tip"));
+        Assert.False(CheckRounds.RedAt(record, "check", ""));
+        Assert.False(CheckRounds.RedAt(null, "check", "tip"));
+    }
+
     [Theory]
     [InlineData("merge-after-accept")]
     [InlineData("merge-automatic")]
