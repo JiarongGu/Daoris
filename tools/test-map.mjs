@@ -302,10 +302,7 @@ export function tsReader(files, read) {
     }
     return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide };
   };
-  /**
-   * The files within `depth` reads of `unit`, each with its fewest reads: the unit's own file 0, a file it imports or names 1, and so on
-   * through the imports. Only the files, never a folder or a glob, so a unit reached by a scan of its folder has no near file.
-   */
+  /** The files within `depth` reads of `unit` with their fewest reads: its own file 0, what it imports or names 1, and so on (never a folder or a glob). */
   const hopsFrom = (unit, depth) => {
     const found = new Map([[unit, 0]]);
     let frontier = [unit];
@@ -444,11 +441,7 @@ function reachedBy(result, path) {
   return new Set(result.classes.filter((each) => classHitByAreas(each, placed, result)).map((each) => each.full));
 }
 
-/**
- * How many reads lie between `unit` and the nearest of `paths`, or undefined where none is within `depth`: a TypeScript unit counts the
- * imports from its own file, a .NET class is 1 from a source file that declares a type its files name. A merge's bound keeps the units
- * with a count, since they read what changed, before the units that reach it only through an area.
- */
+/** The fewest reads between `unit` and `paths` within `depth`: a TypeScript unit's imports, a .NET class 1 from a file declaring a type it names. */
 export function unitHops(unit, paths, map, depth = 2) {
   if (unit.kind === 'dotnet') {
     const census = map.dotnet.find((each) => each.suite === unit.suite && each.project === unit.project)?.census;

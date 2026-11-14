@@ -17,7 +17,7 @@ export type Runner = 'dotnet' | 'vitest' | 'node';
 export type ReachedUnit = {
   suite: string; kind: string; unit: string; name: string; file: string; by?: string;
   project?: string; settings?: string | null; needs?: string[];
-  /** How many reads away a changed file is from this unit (its own file 0, a file it imports 1), where the census can count them. */
+  /** The fewest reads between this unit and a changed file (its own file 0, an import 1), where the census can count them. */
   hops?: number;
 };
 
@@ -62,10 +62,7 @@ const WEB = 'src/Daoris.Web';
 const CLI = 'src/Daoris.Cli';
 const VITEST = 'node_modules/vitest/vitest.mjs';
 
-/**
- * A unit this many reads or fewer from a changed file is the change's own tests: the bound never leaves it out (an integration's
- * many paths reach hundreds of units, and the bound is for the wide tail, not for the tests that read what changed).
- */
+/** A unit this many reads or fewer from a changed file is the change's own test: the bound never leaves it out. */
 export const NEAR_HOPS = 2;
 
 /** A command names at most this many units, so a bound lifted never meets the command line's length limit. */
@@ -122,9 +119,8 @@ export function unitsOfMerge<U extends ReachedUnit>(
 const isNear = (unit: ReachedUnit): boolean => unit.hops !== undefined && unit.hops <= NEAR_HOPS;
 
 /**
- * Which units of `units` (the census's `unitsReached`) a merge runs. A suite over its bound keeps every near unit (`NEAR_HOPS`),
- * then fills what room the bound has left with the units nearest the change: fewest reads away, then `nearness`, then the
- * census's order; `left` counts what each suite left out and `reached` every unit of the suites a merge runs that the paths reach.
+ * Which units of `units` (the census's `unitsReached`) a merge runs. A suite over its bound keeps every near unit, then the
+ * nearest (fewest `hops`, then `nearness`, then the census's order); `left` counts what each suite left out.
  */
 export function reachedPlan(
   units: readonly ReachedUnit[],

@@ -22,7 +22,7 @@ const dotnet = (suite: string, name: string, by: string, project = DRIVER): Reac
 });
 const web = (file: string, by: string): ReachedUnit => ({ suite: 'web-unit', kind: 'vitest', unit: file, name: file.split('/').pop()!, file, by });
 const node = (suite: string, file: string, by: string): ReachedUnit => ({ suite, kind: 'node', unit: file, name: file.split('/').pop()!, file, by });
-const plan = (units: ReachedUnit[], changed: string[], options: { bounds?: { dotnet?: number }; replayed?: Record<string, number> } = {}) =>
+const plan = (units: ReachedUnit[], changed: string[], options: { bounds?: { dotnet?: number; vitest?: number }; replayed?: Record<string, number> } = {}) =>
   reachedPlan(units, changed, { ...options, processSuites });
 
 test("the reached suites are the unit ones: the CLI's and the tools' tests are, the censuses, the Process halves, the browser suites and the rehearsals are not", () => {
@@ -67,7 +67,6 @@ test('past its bound a suite keeps first the units named for the change, then th
 });
 
 test('a unit within two hops of a changed file is never left out by the bound, however many the change reaches; the bound spends the rest nearest first', () => {
-  // The page's rail test reaches the changed row component through the rail: two imports, the same folder as ninety others.
   const near = (file: string, hops: number | undefined): ReachedUnit => ({ ...web(file, 'x'), ...(hops === undefined ? {} : { hops }) });
   const wide = Array.from({ length: 6 }, (_, at) => near(`src/Daoris.Web/src/work/Wide${at}.test.tsx`, undefined));
   const far = near('src/Daoris.Web/src/work/Far.test.tsx', 4);
