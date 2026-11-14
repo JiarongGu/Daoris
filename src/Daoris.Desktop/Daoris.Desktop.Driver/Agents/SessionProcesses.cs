@@ -32,6 +32,10 @@ public sealed record ShellClose(string? Build)
 public sealed class SessionProcesses(string? markers = null)
 {
     public ShellClose Close { get; set; } = ShellClose.Person;
+
+    /// <summary>Told the session and how many processes were still running in its job when its tracking ended and were ended with it.</summary>
+    public Action<string, int>? Reaped { get; set; }
+
     private sealed class Entry
     {
         public required Process Process;
@@ -800,7 +804,7 @@ public sealed class SessionProcesses(string? markers = null)
                     }
 
                     // Taken under the gate, so no JobOf opens a launcher's job again after this.
-                    job = entry.Job;
+                    job = JobOf(entry);
                     entry.Job = null;
                     entry.Launched = false;
                 }
@@ -813,8 +817,9 @@ public sealed class SessionProcesses(string? markers = null)
                 }
             }
 
-            // Last: whatever the session started and left running ends with it; through the launcher, as the launcher's own job
-            // closes with this handle, or as the launcher ended where the driver never opened it.
+            // Last: whatever the session started and left running ends with it, the launcher's own job opened here where the driver
+            // never did, so a launcher still running does not keep the job, and the tree, alive past its session.
+            if (SessionTreeReap.End(job) is > 0 and var left) owner.Reaped?.Invoke(sessionId, left);
             job?.Dispose();
         }
     }

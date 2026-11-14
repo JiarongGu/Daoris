@@ -117,7 +117,9 @@ finishes first and the whole set runs once.
     caller's) asks the running Daoris, which runs it as its own child and the verb only waits; where none takes it the verb says
     so in one line and runs it itself. Every other verb that can start a process asks the running Daoris first or is listed in
     `TerminalStartsCensusTests` with why it may not, and `node tools/process-tree.mjs` lists what still runs outside the tree,
-    under what started it. (from PROCTREE1)
+    under what started it. (from PROCTREE1) The service host a driver test starts (`RealServiceHost`) is held in a job that ends it
+    with the run's process however the run ends, and is recorded beside its build output (`ServiceHostRecords`), so the next
+    run of the checkout ends one whose run is dead before it builds.
 19. A branch is previewed (`--preview`) and queued with its message (`--message`); the queue's runner merges the queued branches
     into a candidate in `local/scope-tree` and promotes it to main by fast-forward once it is green. A merge runs the blocking checks
     (the universal gates, the code map, the census of test units) and the path checks its paths reach (the page's `tsc`, design and

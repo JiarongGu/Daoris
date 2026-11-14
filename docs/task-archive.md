@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
+
+> **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).
+>
+> **PROCLEAK1** (driver): Outcome: a session's tracking ending while its launcher still ran left the launcher's job, and the grandchildren in it, alive; the end now opens and ends the job (`SessionTreeReap`) and the machine log's `session.reaped` carries the count, one way for the launcher and the direct start; proved by `SessionTreeEndProcessTests` (a detached grandchild after exit, untracking and stop, with and without the launcher).
+
+---
+
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
 > **RERUNRATCHET1** (tools): Outcome: `--rerun time-ratchet` is taken as the merge's last check and no longer refused by name: it runs the check again alone (and after any gates named beside it), keeping every other verdict, on the timing records written since the merge's gating began (`ratchetSince` in the batch record), which every rerun now judges rather than only its own; `--rerun cli` after a vitest file failed outside a test is the way the "not re-run" note names, and its e2e case already holds.

@@ -158,7 +158,17 @@ internal sealed class LoopContext(
     public bool Beside { get; set; }
 
     /// <summary>The machine log, the driver's <see cref="Driver.Log"/>; null where nothing keeps one.</summary>
-    public MachineLog? Log { get; set; }
+    public MachineLog? Log
+    {
+        get => _log;
+        set
+        {
+            _log = value;
+            Processes.Reaped ??= (_, count) => _log?.Info("session.reaped", ("count", count));
+        }
+    }
+
+    private MachineLog? _log;
 
     /// <summary>Told after a look's news is kept as a notice: the desktop wakes its notices slice. Set once, before a look.</summary>
     public Action? Noticed { get; set; }
