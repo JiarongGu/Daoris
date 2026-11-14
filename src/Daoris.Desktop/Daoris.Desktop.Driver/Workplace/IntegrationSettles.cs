@@ -146,7 +146,6 @@ internal static class IntegrationSettles
         // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side.
         var fork = await MachinePorts.Repository.MergeBaseAsync(root, request.Tip, candidate.Base, ct).ConfigureAwait(false) ?? candidate.Base;
 
-        // The unit's own landed work: its merge commit and the commits the merge brought in, which supersede nothing.
         var replayed = member.Replayed!;
         if (await MachinePorts.Repository.RevListAsync(root, replayed, [$"{replayed}^1"], ct).ConfigureAwait(false) is not { } listed)
         {

@@ -331,6 +331,11 @@ syncs, the ref, stash and switch acts, fetches, tidying, the scheduler on real g
 takes, returns, line ends and refusals run on `MemoryRepository` (`TreePoolMemoryTests`), its slots made by the real tree opening, which
 asks the repository port; the pool cases left on real git are those whose git is a held, process-owned start (the journaled ref act
 behind a take's undo and a finish's branch delete) or whose subject is the disk (outputs held and set aside, hooks, nested repositories).
+The integration run's replay of a merge rule's press (a merge commit whose second parent is the frozen tip, a request the line holds
+settled at once, a conflict aborted and handed back, a stop kept until the line moves) and its crash recovery by ancestry run on
+`MemoryRepository` (`IntegrationReplayMemoryTests`, `IntegrationResumeMemoryTests`): the replay, resume, promotion, settle, line
+pull and landed review ask the port. What stays on real git is whatever reads the line's holds by patch and content (`LineHolds`,
+`LandedProofs`, `ContentHolds`, `BranchJudging`), the backlog's rows, a diff's text, and `ResolveTree`'s rebase and index plumbing.
 Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 

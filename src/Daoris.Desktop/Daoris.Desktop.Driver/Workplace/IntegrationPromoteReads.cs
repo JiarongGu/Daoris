@@ -36,8 +36,7 @@ internal static class IntegrationPromoteReads
 
     /// <summary>
     /// The one word the port is handed for an unconfirmed failure: the owner's rule for a unit no member reaches and for one a member
-    /// reaches, which the port cannot tell apart before it runs. Where the two differ, the less permissive of them (<c>split</c>, <c>hold</c>,
-    /// <c>land</c>, in that order) stands, so <c>land</c> is only ever the rule saying it for both.
+    /// reaches, which the port cannot tell apart before it runs: the less permissive (<c>split</c>, <c>hold</c>, <c>land</c>) stands.
     /// </summary>
     internal static string Unconfirmed(LandingIntegrate policy)
     {

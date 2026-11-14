@@ -188,8 +188,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// Go on with a candidate the claim holds, at the come-up or after a step's effect threw: its promotion judged by ancestry and a step a
-    /// crash cut ended for its next attempt (<see cref="IntegrationSteps.ResumeAsync"/>), then every step the members still need.
+    /// Go on with a candidate the claim holds, at the come-up or after a step threw: resumed (<see cref="IntegrationSteps.ResumeAsync"/>), then every step the members need.
     /// </summary>
     public async Task<IntegrationReplayRun> ContinueAsync(IntegrationClaim claim, IntegrationReplayAsk ask, CancellationToken ct = default)
     {
@@ -215,7 +214,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             IntegrationStep formed;
             if (store.OpenStep(candidate.Id) is { Step: IntegrationStepNames.Form } begun)
             {
-                // The form step the candidate's own write began: its effect is run, then its end written.
                 formed = store.End(claim, begun.Id, await Form(begun, ct).ConfigureAwait(false));
             }
             else if (store.OpenStep(candidate.Id) is { } other)
@@ -243,7 +241,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
                 member.Request, candidate.Base, ct).ConfigureAwait(false);
             if (ended.Outcome == IntegrationStepOutcomes.Held) return Answer(IntegrationReplayRuns.Held, ended.Said ?? "a step could not go on.", claim, tree);
 
-            // An end that leaves the member where it stands would be run again for ever.
             var after = store.Members(claim.Candidate).FirstOrDefault(each => each.Request == member.Request);
             if (after is { Stands: true } && after.State == next.State)
             {
@@ -262,8 +259,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         new(kind, said) { Candidate = store.Candidate(claim.Candidate), Claim = claim, Members = Members(claim), Tree = tree };
 
     private IReadOnlyList<IntegrationMember> Members(IntegrationClaim claim) => store.Members(claim.Candidate);
-
-    // ——— The form step's effect: the line's integration tree, made or found, at the candidate's base.
 
     /// <summary>
     /// The commit the line's integration tree is found, bound-checked and put back at, clean, by the step this very run just ended, or null: the
@@ -319,8 +314,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// The tree put back at <paramref name="commit"/>, detached: a merge a crash cut aborted, what it changed reset, untracked files it made
-    /// removed (ignored ones stay, as private files a gate reads do). Null where it is; else git's words.
+    /// The tree put back at <paramref name="commit"/>, detached, a merge a crash cut abandoned; null where it is, else git's words.
     /// </summary>
     internal static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
     {
@@ -329,8 +323,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     private static IntegrationStepEnd Held(string said) => new(IntegrationStepOutcomes.Held) { Said = said };
-
-    // ——— The replay step's effect: containment first, then the merge.
 
     private async Task<IntegrationStepEnd> ReplayEffectAsync(
         IntegrationClaim claim, IntegrationMember member, IntegrationReplayAsk ask, string tree, WarmTree warm, CancellationToken ct)
@@ -450,7 +442,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         };
     }
 
-    /// <summary>A merge that did not go: aborted, the tree back at the candidate so far, and the member <c>conflict</c>, to be handed back at its own step.</summary>
     private async Task<IntegrationStepEnd> ConflictAsync(string tree, string onto, string request, string why, CancellationToken ct)
     {
         if (await ResetAsync(tree, onto, ct).ConfigureAwait(false) is { } notReset) return Held(notReset);

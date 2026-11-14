@@ -413,8 +413,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         }
         else
         {
-            var moved = await MachinePorts.Repository.UpdateRefAsync(ask.Root, $"refs/heads/{ask.Line}", tip, step.LineCommit!, ct).ConfigureAwait(false);
-            if (!moved.Ok) return Held($"git would not move `{ask.Line}` from {TextBounds.ShortCommit(step.LineCommit!, 8)}, which it no longer holds ({ContentHolds.Said(moved.Error)}): it is tried again at the next look.");
+            var (moved, _, moveErr) = await WorkingTree.GitAsync(ask.Root, ["update-ref", $"refs/heads/{ask.Line}", tip, step.LineCommit!], ct).ConfigureAwait(false);
+            if (moved != 0) return Held($"git would not move `{ask.Line}` from {TextBounds.ShortCommit(step.LineCommit!, 8)}, which it no longer holds ({ContentHolds.Said(moveErr)}): it is tried again at the next look.");
             how = "one update-ref that verified its old value";
         }
 

@@ -81,9 +81,11 @@ internal static class LinePulls
         }
 
         // The ref alone, and only from the commit it is judged at: git refuses the move if it is elsewhere now.
-        var moved = await MachinePorts.Repository.UpdateRefAsync(root, $"refs/heads/{line}", pull.To!, pull.From!, ct).ConfigureAwait(false);
-        return moved.Ok
+        var (moved, _, moveErr) = await WorkingTree.GitAsync(
+            root, ["update-ref", "-m", $"daoris: fast-forward {line} to origin/{line}", $"refs/heads/{line}", pull.To!, pull.From!], ct)
+            .ConfigureAwait(false);
+        return moved == 0
             ? new(pull, true, took)
-            : new(pull, false, $"`{line}` moved since the list, so it was left: {Failure(moved.Error)}");
+            : new(pull, false, $"`{line}` moved since the list, so it was left: {Failure(moveErr)}");
     }
 }

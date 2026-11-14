@@ -25,7 +25,6 @@ public sealed class IntegrationSteps(IntegrationStore store)
     /// Run one step: its start written, then <paramref name="effect"/>, then its end as the effect answers it. An effect that throws leaves the
     /// start with no end, as a crash would: the claim's holder resumes it (<see cref="ResumeAsync"/>) at its next look, a taker at its come-up.
     /// </summary>
-    /// <param name="request">The member a member's step is of.</param>
     /// <param name="lineCommit">The line's commit the step read at its start, which its effect goes from.</param>
     public async Task<IntegrationStep> RunAsync(
         IntegrationClaim claim, string step, Func<IntegrationStep, CancellationToken, Task<IntegrationStepEnd>> effect, string? request = null,

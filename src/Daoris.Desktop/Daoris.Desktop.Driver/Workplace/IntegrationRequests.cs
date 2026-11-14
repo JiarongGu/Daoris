@@ -14,7 +14,6 @@ namespace Daoris.Driver;
 /// landing, made by the owner's press or a done, only on its record, its exact tip, its gate proof read as the record keeps it, and no
 /// double. <see cref="IntegrationRoutes.Records"/> takes a records branch, no unit's and no run's, and refuses a session's branch and a
 /// landing's there.</para>
-///
 /// <para><b>It reads, and writes nothing through a tree.</b> Each git it asks is a read of a ref or of ancestry in the repository's
 /// checkout, so a landing whose tree a tidy took needs no tree. The steps that write through a tree (the form, the replay) pass
 /// <see cref="TreeBinding.RefusalAsync"/> first, in the parts that build them.</para>

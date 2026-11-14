@@ -20,9 +20,9 @@ public enum GitMergeKind
 public sealed record GitMergeAsk(string Commit, GitMergeKind Kind, string? Message = null);
 
 /// <summary>What a merge came to.</summary>
-/// <param name="Ok">Whether it went in: committed, or staged where that was asked.</param>
+/// <param name="Ok">Whether it went in: committed, or staged where the ask is a staged merge.</param>
 /// <param name="Error">Git's words for why not, empty where it went.</param>
-/// <param name="Unmerged">The paths a refused merge left conflicted, none where it went or was refused before it began.</param>
+/// <param name="Unmerged">The paths a refused merge left conflicted, none where it went or git stopped it before it began.</param>
 /// <param name="Pending">Whether a merge stands begun in the checkout, to be committed or aborted.</param>
 public sealed record GitMerged(bool Ok, string Error, IReadOnlyList<string> Unmerged, bool Pending);
 

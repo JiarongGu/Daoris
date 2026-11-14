@@ -35,7 +35,6 @@ public sealed class IntegrationRunGitTests : LandedFixture
         await CommitAsync(root, "lines.txt", Lines(), "twenty lines");
         var @base = await CommitOfAsync(root, "main");
 
-        // The unit's branch, frozen at its request after one commit.
         await GitAsync(root, "checkout", "--quiet", "-b", "feature/unit");
         await CommitAsync(root, "lines.txt", Lines((2, "two, the unit's")), "the unit's work");
         var frozen = await CommitOfAsync(root, "HEAD");

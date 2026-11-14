@@ -19,11 +19,9 @@ internal sealed class LandedReviews(TreeContext context)
     /// <para>🔴 <b>Reads, and never writes.</b> Every question is a read of refs and objects (<c>rev-parse</c>,
     /// <c>merge-base</c>, <c>cat-file</c>, <c>diff</c> of two commits), so the person's checkout, its working tree and
     /// its index are untouched whatever state they are in.</para>
-    ///
     /// <para>🔴 <b>The checkout is proven first</b>: git walks UP, so a registered root that is not the top of a
     /// repository of its own would answer for whatever repository encloses it. Such a root is
     /// <see cref="LandedState.NoCheckout"/>, and git is asked nothing else.</para>
-    ///
     /// <para><b>A trace is gone, whatever stands under its name now</b>: the record says the landing's branch went, and
     /// a branch of that name since is someone else's. Whether its work reads on the line is the proof by content on
     /// the commit the landing made it at, while git still holds it.</para>
