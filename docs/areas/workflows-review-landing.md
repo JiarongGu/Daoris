@@ -69,7 +69,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    next number. The newest 20 and every version a kept run names are kept. (D157)
 7. Only graphs are saved, and only a graph version binds and runs. The one save judge refuses steps (`steps-refused`), a `land`
    with no method (`land-method`), an `accept` option (`accept`), and a kind, port or outcome declared arriving
-   (`arriving-kind`). (D227, D232)
+   (`arriving-kind`). (D227, D232) `workflow new <id> --from <default>|<id>[@<version>]` saves a copy: a saved graph version
+   (the newest where none is named) is copied whole under the new id, and a version of steps, an unkept version or an id already
+   saved is named and writes nothing.
 8. A graph holds at most 24 authored nodes, 96 wires and one `land`. The steps writing the work (`land`, `return`, `apply`) come
    after the `review` where there is one, on every way (`review-order`), each fed the last review's record on its way
    (`review-ambiguous` where two feed one). A graph ends at any node no such step lies past (`effect-past-end`); a development

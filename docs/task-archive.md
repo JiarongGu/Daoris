@@ -14,6 +14,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## KEYPICK1 — the SSH key import opens a key picker (2026-11-14)
 
 > **KEYPICK1** (app, modules, web): Outcome: `PickFile` takes a `PickKind` (program, key, file) and `PickDialogs` is the one place that says each kind's title and filters: a program opens on *Programs* then all files, a key on its usual names (`*.pem`, `*.ppk`, `*.key`, `id_ed25519`, `id_ecdsa`, `id_rsa`, `id_dsa`) then all files, a file on all files; `TOOLS_PICK` carries `kind` (none is a program), the key import's *Browse…* asks for a key and a tool's for a program, and a test holds each kind's dialog, the route's kind and the page's press.
+## WFNEW1 — `workflow new <id> --from <id>@<v>` saves the copy (2026-11-14)
+
+> **WFNEW1** (driver): Outcome: `WorkflowOperations.SourceAsync` read a saved source only to refuse it (a graph version got the "holds no steps" words that point at `export`); a saved graph version, the newest where none is named, is now copied whole into the new workflow (`--with-opinion`, `--with-look` and `--name` apply, `--plan` saves nothing), while a version of steps, an unkept version and an id already saved are still named and write nothing. Tests: `WorkflowCopyOfSavedTests`.
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 

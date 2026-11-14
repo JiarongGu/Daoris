@@ -165,9 +165,26 @@ public static class WorkflowOperations
                 + $"{string.Join(", ", WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`"))}.");
         }
 
+        var (version, index) = CopiedVersion(found, wanted);
         // A copy of a list of steps would save one, and a list of steps is not saved.
-        _ = VersionOf(found, wanted);
-        throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
+        if (version.Graph is null) throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
+        var graph = (JsonObject)RawOf(found, index).DeepClone();
+        graph = opinion || look ? WorkflowPresets.WithGraphGates(graph, opinion, look) : graph;
+        var gates = $"{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
+        return new($"`{found.Id}` v{version.Version}", $"{found.Read.Name}{gates}", null, graph, null);
+    }
+
+    /// <summary>The version of a saved workflow a copy is made from (the newest where none is named) and its place among the file's versions.</summary>
+    /// <exception cref="ChoiceWords">Where the workflow or the version does not read, or the version is not kept.</exception>
+    private static (NamedVersion Version, int Index) CopiedVersion(WorkflowFileFound found, int? wanted)
+    {
+        if (found.Read.Problem is not null) throw new ChoiceWords($"`{found.Id}` cannot be read: {found.Read.Problem}", 1);
+        var versions = found.Read.Versions;
+        var index = wanted is null ? versions.Count - 1 : versions.ToList().FindIndex(each => each.Version == wanted);
+        if (index < 0) throw new ChoiceWords($"`{found.Id}` keeps no v{wanted} — it keeps {string.Join(", ", versions.Select(each => $"v{each.Version}"))}.");
+        var version = versions[index];
+        if (version.Steps is null && version.Graph is null) throw new ChoiceWords($"`{found.Id}` v{version.Version} cannot be read here: {version.Unrun}", 1);
+        return (version, index);
     }
 
     /// <summary>What <c>new --from current:&lt;repository&gt;</c> is told: the conversion is the one door for what a place follows under Current.</summary>
