@@ -17,6 +17,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## WFNEW1 — `workflow new <id> --from <id>@<v>` saves the copy (2026-11-14)
 
 > **WFNEW1** (driver): Outcome: `WorkflowOperations.SourceAsync` read a saved source only to refuse it (a graph version got the "holds no steps" words that point at `export`); a saved graph version, the newest where none is named, is now copied whole into the new workflow (`--with-opinion`, `--with-look` and `--name` apply, `--plan` saves nothing), while a version of steps, an unkept version and an id already saved are still named and write nothing. Tests: `WorkflowCopyOfSavedTests`.
+## RELAUNCHPORT1 — update relaunch keeps its debug port (2026-11-14)
+
+> **RELAUNCHPORT1**: Outcome: self-update carries the shell's start arguments through the launcher; `UpdateRelaunchGateTests` covers configured debug ports and a start without one (install-home-update.md, rule 42).
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 

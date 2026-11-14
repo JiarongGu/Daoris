@@ -29,6 +29,11 @@ repository.
   cover reopening the remembered tab and keeping Current unread until Workflow opens. A disposable published install of
   2c58aeb470 rendered both tabs with real driver answers; `tools/desktop.mjs` captured `wftab1-workspace.png` and
   `wftab1-repository.png` under `_fixtures/desktop/screenshots/`.
+## 2026-11-14 - An update dropped the shell's start arguments and debug port
+
+- **Root cause:** ca177119be started the update launcher with only `--update --after <pid>`, discarding the shell's own start arguments before the launcher and swap could forward them.
+- **Fix:** the shell hands its `Main` arguments to `UpdateLauncher`, which appends each whole argument after the update controls.
+- **Verification:** `UpdateRelaunchGateTests` failed for two debug ports before forwarding was added; it also covers spaces, quotes, an empty argument and a start with no arguments.
 
 ## 2026-11-13 - A terminal's words of several lines reached a session as their first line, and `ask --require` was refused whatever the words
 
