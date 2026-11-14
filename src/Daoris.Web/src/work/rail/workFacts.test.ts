@@ -51,14 +51,23 @@ describe('a session listed as work', () => {
 
   it('lists its turns beneath it, a limit\'s move the next turn of the same session, with agent, account and usage', () => {
     const turns = [
-      { number: 1, cause: 'start', at: '2026-11-15T09:00:00Z', part: 's1', agent: 'claude-code', account: 'work' },
+      { number: 1, cause: 'start', at: '2026-11-15T09:00:00Z', part: 's1', agent: 'claude-code', account: 'work', input: 1200, output: 300 },
       { number: 2, cause: 'limit', at: '2026-11-15T09:20:00Z', part: 's2', agent: 'claude-code', account: 'home' },
     ];
-    const lines = turnLines(i18n.t, turns, { s1: { turns: 3, reported: 3, input: 1200, output: 300 } }, (id) => (id === 'home' ? 'Home' : id));
+    const lines = turnLines(i18n.t, turns, (id) => (id === 'home' ? 'Home' : id));
 
     expect(lines).toEqual([
-      'Turn 1 · started · claude-code · work · 1,500 tokens',
+      'Turn 1 · started · claude-code · work · 1,200 in · 300 out',
       'Turn 2 · account limit · claude-code · Home',
     ]);
+  });
+
+  it('says a turn\'s usage in Chinese with the counts its door reported', async () => {
+    await i18n.changeLanguage('zh');
+    const turns = [{ number: 1, cause: 'start', at: '2026-11-15T09:00:00Z', part: 's1', input: 5000 }];
+
+    const [line] = turnLines(i18n.t, turns);
+    expect(line).toContain('输入 5,000');
+    expect(line).not.toContain('输出');
   });
 });

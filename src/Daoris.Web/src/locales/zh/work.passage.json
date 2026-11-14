@@ -22,6 +22,6 @@
   "work.passage.cause.curve": "账户曲线",
   "work.passage.cause.agent": "智能体的请求",
   "work.passage.cause.daoris": "Daoris 继续",
-  "work.passage.tokens_one": "{{tokens}} 个 token",
-  "work.passage.tokens_other": "{{tokens}} 个 token"
+  "work.passage.tokensIn": "输入 {{tokens}}",
+  "work.passage.tokensOut": "输出 {{tokens}}"
 }

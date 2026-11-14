@@ -1,7 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Session } from '../../data/api';
 import { figure } from '../../locales/format';
-import type { PartSpent } from '../entries';
 import type { SessionGrouping } from '../groups';
 
 // A session listed as work: its run's steps, who it waits on, one sentence of where it stands, and its turns beneath it. Pure,
@@ -50,24 +49,20 @@ const CAUSES: ReadonlySet<string> = new Set(['start', 'step', 'person', 'limit',
 
 /**
  * Its turns beneath it, oldest first: the number, what woke it (and the step that did), its agent, its account by the name the person
- * gave it, and what its record spent on the record's last turn, where this machine answered it.
+ * gave it, and the input and output tokens its door reported for it, where it reported them.
  */
 export function turnLines(
-  t: TFunction, turns: readonly SessionTurn[] | null | undefined, spent: Readonly<Record<string, PartSpent | null | undefined>> = {},
-  accountName: (id: string) => string = (id) => id,
+  t: TFunction, turns: readonly SessionTurn[] | null | undefined, accountName: (id: string) => string = (id) => id,
 ): string[] {
-  const list = turns ?? [];
-  return list.map((turn, at) => {
+  return (turns ?? []).map((turn) => {
     const cause = t(`work.passage.cause.${CAUSES.has(turn.cause) ? turn.cause : 'daoris'}`);
-    const lastOfPart = list.slice(at + 1).every((later) => later.part !== turn.part);
-    const used = lastOfPart && turn.part ? spent[turn.part] : null;
-    const tokens = used && (used.input != null || used.output != null) ? (used.input ?? 0) + (used.output ?? 0) : null;
     return [
       t('work.passage.turn', { n: turn.number }),
       turn.node ? t('work.passage.causeAt', { cause, node: turn.node }) : cause,
       turn.agent ?? null,
       turn.account ? accountName(turn.account) : null,
-      tokens !== null ? t('work.passage.tokens', { count: tokens, tokens: figure(tokens) }) : null,
+      turn.input != null ? t('work.passage.tokensIn', { tokens: figure(turn.input) }) : null,
+      turn.output != null ? t('work.passage.tokensOut', { tokens: figure(turn.output) }) : null,
     ].filter(Boolean).join(' · ');
   });
 }

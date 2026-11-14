@@ -39,7 +39,6 @@ export type SessionRowFacts = {
   helps?: string | null;
   /** What a helper or a part that continues another spent, from this machine's record; absent where none answered. */
   spent?: PartSpent | null;
-  turnsSpent?: Readonly<Record<string, PartSpent | null | undefined>>;
   /** The entry's name where it is not the record's own: the ask's. Not drawn by ask, whose heading says it. */
   name?: string | null;
   /** The entry this row stands for: how many parts it holds, and all their ids, so any part attended marks the row. */
