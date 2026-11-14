@@ -53,6 +53,7 @@ describe('an ask’s channel', () => {
   it('words each of Daoris’s lines from its code, and says a code it has no words for as it was written', () => {
     expect(lineWords(t, line('published', 'x'))).toBe('asks.channel.line.published {"quest":"Read the figure","to":"db"}');
     expect(lineWords(t, line('taken', 'x'))).toContain('asks.channel.line.taken');
+    expect(lineWords(t, line('submitted', 'x'))).toContain('asks.channel.line.submitted');
     expect(lineWords(t, line('done', 'x'))).toContain('asks.channel.line.done');
     expect(lineWords(t, line('declined', 'x'))).toContain('asks.channel.line.declined');
     expect(lineWords(t, line('awaiting', 'x'))).toContain('asks.channel.line.awaiting');

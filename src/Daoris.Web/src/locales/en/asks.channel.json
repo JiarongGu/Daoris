@@ -20,6 +20,7 @@
   "asks.channel.questionOpen": "Open question",
   "asks.channel.line.published": "{{quest}} published to {{to}}",
   "asks.channel.line.taken": "{{quest}} taken by {{to}}",
+  "asks.channel.line.submitted": "{{quest}} submitted by {{to}}: it closes at its workflow's end",
   "asks.channel.line.done": "{{quest}} done by {{to}}",
   "asks.channel.line.declined": "{{quest}} declined by {{to}}",
   "asks.channel.line.awaiting": "{{quest}} is done and waits for your yes",
