@@ -4,7 +4,7 @@ import { figure } from '../../locales/format';
 import type { PartSpent } from '../entries';
 import type { SessionGrouping } from '../groups';
 
-// A session listed as work (D293): its run's steps, who it waits on, one sentence of where it stands, and its turns beneath it. Pure,
+// A session listed as work: its run's steps, who it waits on, one sentence of where it stands, and its turns beneath it. Pure,
 // so every state a row could be in is an argument; the row draws what these say.
 
 /** One step of the run's bound version as the row draws it. */

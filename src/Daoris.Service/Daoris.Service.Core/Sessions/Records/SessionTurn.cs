@@ -1,12 +1,12 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One agent conversation's turn inside a session (D293 point 5): what woke it, where, and who ran it. A session's turns are the turns
-/// of every record of its line, oldest first, numbered from one; the first turn's record is the session's id for the whole piece of work.
+/// One agent conversation's turn inside a session: what woke it, where, and who ran it. A session's turns are the turns of every record
+/// of its line, oldest first, numbered from one; the first turn's record is the session's id for the whole piece of work.
 /// </summary>
 /// <param name="Number">Its place among the session's turns, from one.</param>
 /// <param name="Cause">What woke it, one of <see cref="SessionTurns"/>' causes.</param>
-/// <param name="At">When it was woken.</param>
+/// <param name="At">Its start.</param>
 public sealed record SessionTurn(int Number, string Cause, DateTimeOffset At)
 {
     /// <summary>The workflow step that woke it, where one is named.</summary>

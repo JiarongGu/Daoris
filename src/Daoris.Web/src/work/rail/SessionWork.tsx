@@ -9,7 +9,7 @@ import { passageSteps, turnLines, workSentence } from './workFacts';
 const SIGNS: Record<string, string> = { passed: '✓', current: '●', next: '○', failed: '✕' };
 
 /**
- * A session's row as work (D293): its run's steps passed, current and to come, one sentence of whom it waits on, and its turns beneath
+ * A session's row as work: its run's steps passed, current and to come, one sentence of whom it waits on, and its turns beneath
  * it. A molecule: what it says is handed in, and it draws nothing where nothing is known.
  */
 export function SessionWork({ session, grouping, spent, accountName }: {

@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A session's turns (D293 point 5): each record keeps the turns it ran (the first at its open, one more at each wake), and the session
+/// A session's turns: each record keeps the turns it ran (the first at its open, one more at each wake), and the session
 /// reads them across its line, numbered from one. A limit or a curve move ends a turn, never the session: its turn is the line's next.
 /// </summary>
 public static class SessionTurns
@@ -27,7 +27,7 @@ public static class SessionTurns
     /// <summary>The agent asked to be handed over.</summary>
     public const string Agent = "agent";
 
-    /// <summary>Daoris carried it on by itself: a conversation lost, a retry, a part no account was offered for.</summary>
+    /// <summary>Daoris carries it on by itself: a conversation lost, a retry, a part no account is offered for.</summary>
     public const string Daoris = "daoris";
 
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
@@ -35,7 +35,7 @@ public static class SessionTurns
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>What a record continuing another was woken by, from the driver's reason and asker; a record continuing none was a start.</summary>
+    /// <summary>What wakes a record continuing another, from the driver's reason and asker; a record continuing none is a start.</summary>
     public static string CauseOf(string? fromWhy, string? fromBy) => fromWhy switch
     {
         null or "" => Start,

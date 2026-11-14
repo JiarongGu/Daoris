@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { AtWorkQuest } from './types';
 
-// An ask's quests by where they stand (D293): a quest's Done is written at its workflow's end, so an ask counting Done alone would sit
+// An ask's quests by where they stand: a quest's Done is written at its workflow's end, so an ask counting Done alone would sit
 // at zero while its quests are worked, checked and looked at. Pure, read from the quests the at-work answer lists with their takers.
 
 /** How many of an ask's quests stand where; a declined quest stands in none. */

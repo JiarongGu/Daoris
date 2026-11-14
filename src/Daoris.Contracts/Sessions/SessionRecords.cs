@@ -78,12 +78,7 @@ public sealed record SessionResponse(
     string? Work = null, string? Head = null, string? Decides = null, IReadOnlyList<string>? HoldsPlace = null, string? Performs = null,
     string? Line = null, IReadOnlyList<SessionTurnResponse>? Turns = null);
 
-/// <summary>
-/// One agent conversation's turn inside the session, as its line's records hold them (D293 point 5), answered to a caller on this
-/// machine only, since it names the account: its number from one, what woke it (<c>start</c>, <c>step</c>, <c>person</c>, <c>limit</c>,
-/// <c>curve</c>, <c>agent</c>, <c>daoris</c>), the step and attempt that did, the record it ran in, its agent, account, adapter and
-/// conversation, and when it began and ended (null while it runs).
-/// </summary>
+/// <summary>One agent conversation's turn inside the session, answered on this machine only, since it names the account.</summary>
 public sealed record SessionTurnResponse(
     int Number, string Cause, DateTimeOffset At, string? Node, int? Attempt, string? Part, string? Agent, string? Account, string? Adapter,
     string? Conversation, DateTimeOffset? Ended);

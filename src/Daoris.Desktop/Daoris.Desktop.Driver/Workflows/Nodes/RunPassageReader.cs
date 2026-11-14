@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// <param name="Mark">One of <see cref="RunPassageReader"/>' marks.</param>
 public sealed record PassageStep(string Node, string Kind, string Mark);
 
-/// <summary>A run's passage through its bound workflow version (D293 point 6): its steps in the graph's order, each with its mark.</summary>
+/// <summary>A run's passage through its bound workflow version: its steps in the graph's order, each with its mark.</summary>
 public sealed record RunPassage(string Run, string Workflow, int? Version, IReadOnlyList<PassageStep> Steps);
 
 /// <summary>

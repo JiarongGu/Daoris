@@ -49,7 +49,6 @@ public static class SessionAnswers
         Line: loopback ? s.Line : null,
         Turns: loopback ? ToTurns(SessionTurns.OfLine([s])) : null);
 
-    /// <summary>A session's turns as the door answers them, its line's where the caller read them.</summary>
     public static IReadOnlyList<SessionTurnResponse> ToTurns(IReadOnlyList<SessionTurn> turns) =>
         [.. turns.Select(turn => new SessionTurnResponse(
             turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Part, turn.Agent, turn.Account, turn.Adapter, turn.Conversation, turn.Ended))];
