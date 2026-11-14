@@ -12,11 +12,16 @@ internal static partial class CommitAttribution
 {
     internal const string Trailer = "Co-Authored-By";
 
-    // The makers of the built-in agents, and Daoris for the commits its driver writes: the same words the merge check accepts.
-    [GeneratedRegex(@"\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b", RegexOptions.IgnoreCase)]
+    internal const string MakerPattern = @"\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b";
+
+    internal const string NamedPattern = @"^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$";
+
+    internal const string Remedy = "Rewrite each of them so its message ends with a `Co-Authored-By: <your maker> (<your model>) <address>` line naming you, for example by `git rebase --exec` with `git commit --amend --trailer`, and write that line in every commit you make from now on.";
+
+    [GeneratedRegex(MakerPattern, RegexOptions.IgnoreCase)]
     private static partial Regex Maker();
 
-    [GeneratedRegex(@"^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$")]
+    [GeneratedRegex(NamedPattern)]
     private static partial Regex Named();
 
     /// <summary>The commits of <paramref name="log"/> without a maker's trailer, a merge of the line into the work aside, in the log's order.</summary>

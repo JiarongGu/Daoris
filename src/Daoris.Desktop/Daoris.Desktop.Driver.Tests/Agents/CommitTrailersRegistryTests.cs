@@ -32,7 +32,7 @@ public sealed class CommitTrailersRegistryTests
     }
 
     [Theory]
-    [InlineData("claude-code", "made by Anthropic. Use the model actually running this session")]
+    [InlineData("claude-code", "Co-Authored-By: Claude (Anthropic, MODEL) <noreply@anthropic.com>")]
     [InlineData("codex-acp", "Co-Authored-By: Codex (OpenAI, MODEL) <noreply@openai.com>")]
     [InlineData("dsh", "Co-Authored-By: DeepSeek (MODEL) <noreply@deepseek.com>")]
     [InlineData("stub", "Co-Authored-By: AGENT (MAKER, MODEL) <your maker's attribution address>")]
@@ -46,7 +46,7 @@ public sealed class CommitTrailersRegistryTests
         var adapters = With(Door("acme-openai", "OpenAI"), Door("acme-anthropic", "Anthropic"), Door("acme-none", null));
 
         Assert.Contains("Co-Authored-By: Codex (OpenAI, MODEL) <noreply@openai.com>", CommitTrailers.For(adapters, adapters.Door("acme-openai")));
-        Assert.Contains("made by Anthropic. Use the model actually running this session", CommitTrailers.For(adapters, adapters.Door("acme-anthropic")));
+        Assert.Contains("Co-Authored-By: Claude (Anthropic, MODEL) <noreply@anthropic.com>", CommitTrailers.For(adapters, adapters.Door("acme-anthropic")));
         Assert.Contains("<your maker's attribution address>", CommitTrailers.For(adapters, adapters.Door("acme-none")));
         Assert.Equal("OpenAI", adapters.MakerOf(adapters.Door("acme-openai")));
         Assert.Null(adapters.MakerOf(adapters.Door("acme-none")));

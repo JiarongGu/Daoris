@@ -18,9 +18,6 @@ public sealed record HeavyRunAsk(string? Gate)
     /// run) run as a heavy run: after the machine's admission, in the folder it runs from, no repository's slot taken and no gate read.
     /// </summary>
     public IReadOnlyList<string>? Command { get; init; }
-
-    /// <summary>Daoris's hand-back check selects a named declared gate, including one not marked heavy.</summary>
-    internal bool Observed { get; init; }
 }
 
 /// <summary>What a run hands its gates: the slot it holds, and the gates running, outermost first.</summary>
@@ -197,9 +194,10 @@ public static class HeavyRun
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
         }
 
-        // A worker's light pipeline leaves heavy gates to verification; its tree's git lock names the session.
-        // Daoris's observed checks run after the worker's turn and select their named gates.
-        if (!ask.Observed && SessionLocks.HolderOf(checkout) is { } heldBy && SessionChecks.Held(world.Home, heldBy) == SessionChecks.Light)
+        // A tree a session holds under a light pipeline is refused at once,
+        // before any gate is read or the slot is asked: its heavy gates are the verification's. The session is read from git's own lock on
+        // the tree, never from a variable it could leave out; a run from a checkout no session holds is the person's, and runs as today.
+        if (SessionLocks.HolderOf(checkout) is { } heldBy && SessionChecks.Held(world.Home, heldBy) == SessionChecks.Light)
         {
             output.WriteLine(
                 $"run-heavy: this tree is session `{heldBy}`'s, and its development pipeline is light: the repository's heavy gates run in its "
@@ -213,9 +211,9 @@ public static class HeavyRun
         // the name every door keys a repository's settings by; a run a person starts names it by its folder. Its home's driver file
         // is read only then, and one that does not read is a tool error, never "none set".
         var keyedAs = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : repository;
-        var declared = ask.Observed ? null : HeavyGates.Resolve(
+        var declared = HeavyGates.Resolve(
             checkout, keyedAs, () => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), keyedAs));
-        var choice = ask.Observed ? ObservedGate.Choose(checkout, ask.Gate) : HeavyGates.Choose(declared!, ask.Gate);
+        var choice = HeavyGates.Choose(declared, ask.Gate);
         if (choice.Refusal is { } refusal)
         {
             output.WriteLine($"run-heavy: {refusal}");
@@ -481,6 +479,7 @@ public static class HeavyRun
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
+                HeavyGateLog.CopyTo(steps?.Log, output);
                 if (code == 0) continue;
 
                 keep?.Invoke(holder => holder with { Failed = new HeavyGateFailed(gateName, code) });
@@ -494,6 +493,7 @@ public static class HeavyRun
             step?.Stop();
             step?.Dispose();
             await EndAsync(job, output, sayLeft: false).ConfigureAwait(false);
+            HeavyGateLog.CopyTo(steps?.Log, output);
             output.WriteLine($"run-heavy: stopped while `{current?.Name}` ran; everything it started was ended before the slot was let go.");
             return 1;
         }

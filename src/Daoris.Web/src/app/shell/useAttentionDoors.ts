@@ -51,15 +51,13 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     // A git go-ahead opens its session, whose head draws it; one no session's marker named has its row alone.
     ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     ...(attached && openHelp ? { 'second-check': () => openHelp() } : {}),
-    ...(attached ? { 'check-failed': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     // A go-ahead opens the ask it is asked on, where every go-ahead of it is listed.
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what is required and how its done answered are quoted.
     departure: (item) => openQuest(item.id),
     // A set-up shown for review opens its step's page, where every set-up it said and the review's presses are.
     'set-up': (item) => openQuest(item.id),
-    // A folder waiting on the person's trust opens what it holds: the quest's page, or the ask whose intake it is.
-    // The row asks the trust question itself. Only a shell has one.
+    // A folder waiting on the person's trust opens what it holds (the quest's page, or its intake's ask), and asks the trust question itself: a shell's alone.
     ...(attached ? {
       trust: (item: Attention) => {
         if (item.quest) openQuest(item.quest);

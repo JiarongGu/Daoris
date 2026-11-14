@@ -28,7 +28,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     /// <summary>The heavy executor's port: its answer asks a pass, which reconciles it.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Executor is { } executor
-        ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node) ?? AskRunChecks.SendOf(wiring.Home, unit, attempt, node))
+        ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node) ?? RunChecks.SendOf(wiring.Home, unit, attempt, node))
         : null;
 
     /// <summary>
@@ -59,7 +59,24 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
         }
     }
 
-    /// <summary>The gates a check names (its <c>gates</c> option): null for <c>heavy</c>, else the names it lists.</summary>
+    /// <summary>Whether the check's <c>gates</c> is the word <c>reached</c> alone: the hand-back, then the required commands its change reaches. A gate of that name is asked in a list, <c>["reached"]</c>.</summary>
+    public static bool ReachedChoice(NodeDeclaration node)
+    {
+        if (!node.Options.TryGetValue("gates", out var text)) return false;
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement is { ValueKind: JsonValueKind.String } word && word.GetString() == Reached;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private const string Reached = "reached";
+
+    /// <summary>The gates a check names (its <c>gates</c> option): null for <c>heavy</c> or <c>reached</c>, else the names it lists.</summary>
     public static IReadOnlyList<string>? GatesOf(NodeDeclaration node)
     {
         if (!node.Options.TryGetValue("gates", out var text)) return null;
@@ -67,7 +84,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
         {
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
-            if (root.ValueKind == JsonValueKind.String) return root.GetString() == "heavy" ? null : [root.GetString()!];
+            if (root.ValueKind == JsonValueKind.String) return root.GetString() is "heavy" or Reached ? null : [root.GetString()!];
             return root.ValueKind == JsonValueKind.Array
                 ? [.. root.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
                 : null;

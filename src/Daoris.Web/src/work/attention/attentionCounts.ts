@@ -2,11 +2,7 @@ import type { Session } from '../../data/api';
 import type { AttentionKind } from './AttentionRow';
 import type { PushedAttention } from './attentionPushed';
 
-/**
- * What *What needs you* lists and the bell counts: every row of the window's scope but a press's own,
- * whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this
- * one answer, so a count never holds a row the list does not.
- */
+/** What *What needs you* lists and the bell counts: every row of the window's scope but a press's own, whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this one answer, so a count never holds a row the list does not. */
 export function needsListed<T extends { kind: string; id?: string; obligation?: string }>(rows: readonly T[]): T[] {
   // Each obligation once, the first row that names it standing for it.
   const seen = new Set<string>();
@@ -92,7 +88,6 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // A git go-ahead: its session's page draws it in its head and foot, where it is answered too.
   'git-ask': 'sessions',
   'second-check': null,
-  'check-failed': 'sessions',
 };
 
 /** The sessions a place is judged with: those the page holds, for the branch a unit of work is cut for (`workCutFor`). */

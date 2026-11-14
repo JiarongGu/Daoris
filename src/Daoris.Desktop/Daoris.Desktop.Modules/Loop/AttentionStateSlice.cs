@@ -6,11 +6,7 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// Who needs the person, as every window holds it: <i>What needs you</i>'s rows and the Sessions
-/// badge's count, judged once per wake in .NET (<see cref="NeedsAPerson"/>) from what the other slices and the driver's look already
-/// hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.
-/// </summary>
+/// <summary>Who needs the person, as every window holds it: <i>What needs you</i>'s rows and the Sessions badge's count, judged once per wake in .NET (<see cref="NeedsAPerson"/>) from what the other slices and the driver's look already hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.</summary>
 /// <remarks>
 /// <para><b>Three keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values
 /// the page words it from, which the bell and each place of the activity bar count; <see cref="Sessions"/>, each session parked
@@ -73,7 +69,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "gitAsk", "obligation", "task", "secondCheck", "check",
+            "convert", "gitAsk", "obligation", "task", "secondCheck",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -130,7 +126,6 @@ public static class AttentionStateSlice
         // A run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
         ["secondCheck"] = ["session", "range", "index", "says", "certainty", "call", "at", "reader", "independence"],
-        ["check"] = ["name", "tip", "tail", "state"],
         // A run waiting on a person's task, its node and the presses it waits for.
         ["task"] = ["run", "node", "acts", "work"],
         // What memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
@@ -181,7 +176,6 @@ public static class AttentionStateSlice
         ["row.declined"] = "declined",
         ["row.task"] = "task",
         ["row.secondCheck"] = "secondCheck",
-        ["row.check"] = "check",
         ["row.memory"] = "memory",
         ["memory.end"] = "memoryEnd",
         ["row.integration"] = "integration",
@@ -342,7 +336,6 @@ public static class AttentionStateSlice
             StoppedQuests = StoppedRuns.Quests(loop.Home),
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
             Hidden = Notices.Hidden(Notices.Read(loop.Home, DateTimeOffset.UtcNow) ?? []),
-            Checks = CheckVerdict.Pending(loop.Home),
         };
     }
 

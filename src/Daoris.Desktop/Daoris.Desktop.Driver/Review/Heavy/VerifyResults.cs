@@ -68,7 +68,9 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
     /// <summary>The runner's own run held its lock through every offer.</summary>
     public const string Busy = "busy";
 
-    /// <summary>Why an unknown is what it is, where a door answers it: <see cref="Changed"/>, <see cref="Bound"/>, <see cref="Stopped"/>, <see cref="Busy"/>.</summary>
+    public const string Unrun = "unrun";
+
+    /// <summary>Why an unknown is what it is, where a door answers it: <see cref="Changed"/>, <see cref="Bound"/>, <see cref="Stopped"/>, <see cref="Busy"/>, <see cref="Unrun"/> (Daoris could not run it: never a failure).</summary>
     public string? Code { get; init; }
 
     /// <summary>The gate a failed check names (a runner's name for an opaque one).</summary>

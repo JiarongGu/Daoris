@@ -25,8 +25,11 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
     /// <summary>The standard handles the gates are handed; null for this process's own.</summary>
     public TerminalHandles? Streams { get; init; }
 
+    /// <summary>A separate file for the gate's output, copied into the run's writer after each step.</summary>
+    internal string? Log { get; init; }
+
     /// <summary>How each gate is started: as this process's own unless the world names an environment or handles.</summary>
-    internal StepOptions? Steps => Environment is null && Streams is null ? null : new StepOptions(Environment) { Streams = Streams };
+    internal StepOptions? Steps => Environment is null && Streams is null && Log is null ? null : new StepOptions(Environment, Log) { Streams = Streams };
 
     /// <summary>This process's: its folder and its environment.</summary>
     public static HeavyRunWorld OfThisProcess(string home) => new(home, System.Environment.CurrentDirectory, System.Environment.GetEnvironmentVariable);

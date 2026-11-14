@@ -24,19 +24,19 @@ public sealed class CheckBrokerTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static CheckAsk Ask(string id, string by = CheckAsk.ByAgent, int minute = 0, string session = "s1", string? gate = "tests") =>
-        new(id, session, gate, null, by, At.AddMinutes(minute));
+    private static CheckAsk Ask(string id, int minute = 0, string session = "s1", string? gate = "tests") =>
+        new(id, session, gate, null, At.AddMinutes(minute));
 
     [Fact]
-    public void A_daorisned_check_goes_before_a_workers_and_nothing_starts_while_one_runs()
+    public void The_oldest_check_goes_first_and_nothing_starts_while_one_runs()
     {
-        var asks = new[] { Ask("a1", minute: 0), Ask("a2", CheckAsk.ByDaoris, minute: 5), Ask("a3", minute: 1) };
+        var asks = new[] { Ask("a1", minute: 0), Ask("a2", minute: 5), Ask("a3", minute: 1) };
 
-        Assert.Equal("a2", CheckQueue.Next(asks, _ => null)?.Id);
+        Assert.Equal("a1", CheckQueue.Next(asks, _ => null)?.Id);
         Assert.Null(CheckQueue.Next(asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null));
-        Assert.Equal(0, CheckQueue.Ahead(asks[1], asks, _ => null));
-        Assert.Equal(2, CheckQueue.Ahead(asks[2], asks, _ => null));
-        Assert.Equal(1, CheckQueue.Ahead(asks[1], asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null));
+        Assert.Equal(0, CheckQueue.Ahead(asks[0], asks, _ => null));
+        Assert.Equal(2, CheckQueue.Ahead(asks[1], asks, _ => null));
+        Assert.Equal(1, CheckQueue.Ahead(asks[2], asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class CheckBrokerTests : IDisposable
         files.WriteState(new CheckState("a1", CheckStates.Failed, At) { Exit = 1, Tail = "boom", Tip = "abc123" });
 
         var ask = Assert.Single(files.Asks());
-        Assert.Equal(("a1", "s1", null, "agent"), (ask.Id, ask.Session, ask.Gate, ask.By));
+        Assert.Equal(("a1", "s1", null), (ask.Id, ask.Session, ask.Gate));
         Assert.Equal(["dotnet", "test"], ask.Command);
         var state = files.ReadState("a1");
         Assert.Equal((CheckStates.Failed, 1, "boom", "abc123"), (state!.State, state.Exit, state.Tail, state.Tip));
@@ -107,12 +107,16 @@ public sealed class CheckBrokerTests : IDisposable
     }
 
     [Fact]
-    public async Task An_asker_with_no_tree_is_a_failed_check_and_a_stopped_run_is_stopped()
+    public async Task An_asker_with_no_tree_is_an_error_and_a_stopped_run_is_stopped()
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         var none = new CheckBroker(_home, _ => null, (_, _, _, _) => Task.FromResult(0));
-        Assert.Equal(CheckStates.Failed, (await none.RunNextAsync(CancellationToken.None))!.State);
+        var missing = await none.RunNextAsync(CancellationToken.None);
+        Assert.Equal(CheckStates.Errored, missing!.State);
+        Assert.Contains("no tree", missing.Error);
+        Assert.Null(missing.Exit);
+        Assert.Equal("a1", CheckQueue.Next(files.Asks(), files.ReadState, missing.At + CheckQueue.RetryAfter)?.Id);
 
         files.WriteAsk(Ask("a2", minute: 1));
         using var cancel = new CancellationTokenSource();

@@ -1,7 +1,6 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SetUpRef } from '../../data/api';
-import type { CheckFailure } from './checkFailure';
 import { clockOf, elapsed } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import type { TrustHold } from '../../data/signals';
@@ -30,7 +29,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'unclosed' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'left' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check' | 'plan-question' | 'check-failed';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check' | 'plan-question';
 
 /** A second check's flag not yet seen, as a `second-check` row carries it: the reader's claim about one of Ask Daoris's acts. */
 export type SecondCheckFlag = {
@@ -84,10 +83,7 @@ export type SecondCheckFlag = {
  * Nothing connects for it until a change lifts it or the person's *Try again*, its one act, on the row itself.
  */
 export type Attention = {
-  /**
-   * The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for
-   * a `go-ahead`, its ask and its number, since one ask holds several.
-   */
+  /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for a `go-ahead`, its ask and its number, since one ask holds several. */
   id: string;
   kind: AttentionKind;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
@@ -185,7 +181,6 @@ export type Attention = {
   gitAsk?: GitAskWait;
   /** A `second-check` row's flag, which its *Seen* acknowledges. */
   secondCheck?: SecondCheckFlag;
-  check?: CheckFailure;
   /** The workspace a `git-held` row is judged in, which its *Try again* names; absent where .NET scoped it to none. */
   workspace?: string;
   /**

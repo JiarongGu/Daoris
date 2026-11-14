@@ -56,6 +56,10 @@ public static class HeavyTold
     public static HeavyHanded Hand(string root, string? home, string? repository, string? checks, bool takesRules)
     {
         var handed = HandChecks(root, home, repository, checks, takesRules);
+        if (HandbackGates.Told(root) is { } required)
+        {
+            handed = handed with { Words = handed.Words is null ? required : $"{handed.Words} {required}" };
+        }
         // Wherever the verb is reached, a long test command is told to go through it, beside whatever else the checks say.
         return home is not null && Reaches(home) ? handed with { Words = handed.Words is null ? Focused : $"{handed.Words} {Focused}" } : handed;
     }

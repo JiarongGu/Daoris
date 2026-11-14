@@ -1,9 +1,12 @@
 # A session as the work's passage through its workflow (SESSIONLIFE1)
 
-Status: proposed, 2026-11-14, under decision D293. Source: brainstorms `564feb57` and `20e6f579`, **one maker** (Anthropic `g1`,
-synthesis `s1`): the OpenAI pass was unavailable both times because the Codex workspace's spend cap was reached. Its second opinion
-is to be asked once the cap is raised, before step 3 below. The packet cut several sources at 12,000 characters (BRAINPACKET1), so
-each claim marked *(to check)* is read against the code first.
+Status: proposed, 2026-11-14, under decision D293. Sources: brainstorms `564feb57` and `20e6f579` (Anthropic: Fable), and
+`bd364ac3` (DeepSeek: dsh, `deepseek-flash`), asked the same question; the OpenAI pass was unavailable on the Codex workspace's low
+spend cap, and is asked when it has room. The two makers agree on points 1, 2, 4 and the migration below. They differ on point 3:
+DeepSeek moves `quest.holds` after the landing with an explicit `quest.close` before it, Anthropic keeps the holds before the
+landing (the graph rules require it) and writes the quest's Done at the graph's end; the second needs no change to graph rules 8
+and 9 and is recommended. The packets cut several sources at 12,000 characters (BRAINPACKET1), so each claim marked *(to check)* is
+read against the code first.
 
 ## The shape
 
