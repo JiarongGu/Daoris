@@ -89,6 +89,7 @@ internal static class SessionReads
                 Decides = session.Decides is { Length: > 0 } decides ? decides : null,
                 Performs = session.Performs is { Length: > 0 } performs ? performs : null,
                 HoldsPlace = session.HoldsPlace is { Count: > 0 } kept ? kept : null,
+                Updated = MomentOf(session.Updated),
             });
         }
 

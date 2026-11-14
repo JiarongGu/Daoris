@@ -135,6 +135,9 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyList<StartReservation> Starting { get; init; } = [];
 
+    /// <summary>The quests whose last start here could not go: planned after every quest that can, so they never hold its turn. Absent is none.</summary>
+    public IReadOnlySet<string> HeldStarts { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// The pieces on file with their leads and states, as the look read the boxes: those reserved and not yet opened hold a slot in
     /// <see cref="SlotsHeld"/>, the common admission every starter reads. Absent is none.

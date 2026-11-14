@@ -328,6 +328,9 @@ public sealed record SessionView(
     /// </summary>
     public string? Quest { get; init; }
 
+    /// <summary>When its record last moved, or null where unsaid: how long a start's record has stood untouched.</summary>
+    public DateTimeOffset? Updated { get; init; }
+
     /// <summary>The adapter its record opened on, or null where unsaid: an ending told at <c>work/event</c> names it where it is one of this build's.</summary>
     public string? Adapter { get; init; }
 
