@@ -236,6 +236,12 @@ public sealed class SessionLedger(
         IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null) =>
         advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace);
 
+    /// <summary>End a workflow's run: its quests Done and its waiting sessions ended in one write; see <see cref="RunEnds.EndAsync"/>.</summary>
+    public Task<RunEndOutcome> EndRunAsync(
+        string run, IReadOnlyList<(string Id, QuestOperationRef Submission)> named, IReadOnlyList<string> ended, string state, string? note,
+        string? noteParts, DateTimeOffset now, CancellationToken ct = default) =>
+        new RunEnds(quests, sessions, advances).EndAsync(run, named, ended, state, note, noteParts, now, ct);
+
     /// <summary>Clear a parked line's mark: all at the person's press, or the <paramref name="paths"/> a discard took out; null where no record of this machine's has the id.</summary>
     public async Task<Session?> ReleasePlaceAsync(string id, IReadOnlyList<string>? paths = null, CancellationToken ct = default) =>
         await new SessionPlaceLease(sessions).ReleaseAsync(id, paths, ct).ConfigureAwait(false)

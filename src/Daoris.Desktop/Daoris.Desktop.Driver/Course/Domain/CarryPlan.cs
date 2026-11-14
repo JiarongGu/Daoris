@@ -15,6 +15,8 @@ internal abstract record CarryPlan
     internal sealed record Compacted(string Conversation, long? Tokens, long Bound, IReadOnlyDictionary<string, string> Variables)
         : Carried(Conversation, Tokens);
 
+    internal sealed record Seeded(string Conversation, SeedPlacement Placed) : Carried(Conversation, null);
+
     /// <summary>Not carried: the new part is handed Daoris's brief, <paramref name="Why"/> by a <see cref="LimitCarry"/> code.</summary>
     internal sealed record Briefed(string Why) : CarryPlan;
 }

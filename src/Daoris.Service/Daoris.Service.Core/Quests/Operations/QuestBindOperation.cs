@@ -3,13 +3,40 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A taken quest bound to the closure graph that closes it: its note names the graph's digest. It moves no status.
-/// No door of this build writes one: a bound quest arrives through a sync from an older build, and the log reads and replays it.
+/// A quest bound to what closes it: its note names the workflow run that writes its Done at its end (<see cref="RunClosure"/>), or, from
+/// an older build's sync, a closure graph's digest. It moves no status.
 /// </summary>
 [QuestOperation("bound", QuestOperationPhase.Log)]
 internal sealed class QuestBindOperation : IQuestOperation
 {
     public QuestOperationKind Kind => QuestOperationKind.Bound;
+
+    /// <summary>How a quest names the run that closes it, so no run is read as a graph's digest.</summary>
+    public static string RunClosure(string run) => "run:" + run;
+
+    /// <summary>
+    /// The driver's bind at a session's first start in a workflow's run, before its agent can say <c>done</c>: once, on an open quest or one
+    /// this machine holds taken, before any submission. Its agent's done is then a submission and the run's end writes its Done.
+    /// </summary>
+    internal async Task<QuestMove> BindAsync(QuestTx tx, string id, string run, DateTimeOffset now)
+    {
+        var held = await tx.FindAsync(id).ConfigureAwait(false);
+        if (held is null) return new QuestMove(null, Moved: false);
+        var history = await tx.HistoryAsync(id).ConfigureAwait(false);
+        if (history.Count == 0) history = await tx.GiveHistoryAsync(held).ConfigureAwait(false);
+        var standing = QuestLog.Replay(history);
+        var judged = new QuestOperation(id, QuestOperationKind.Bound, tx.Machine, 0, now, RunClosure(run));
+        if (!QuestLog.Applies(standing, judged)) return new QuestMove(held, Moved: false);
+        if (standing!.Status == QuestStatus.Taken && QuestLog.Claim(history, tx.Machine) is not (QuestClaim.Held or QuestClaim.Unconfirmed))
+        {
+            return new QuestMove(held, Moved: false) { ClaimLost = true };
+        }
+
+        var operation = await tx.AppendAsync(judged).ConfigureAwait(false);
+        var moved = QuestLog.Step(standing, operation)!;
+        await tx.WriteCacheAsync(moved).ConfigureAwait(false);
+        return new QuestMove(moved, Moved: true);
+    }
 
     /// <summary>The graph's digest, as its note.</summary>
     public void WritePayload(Utf8JsonWriter writer, QuestOperation operation)

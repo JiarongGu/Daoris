@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal static class SessionSchema
 {
     /// <summary>The states that hold a repository: a parked session counts, since the person is the flow control.</summary>
-    internal const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson'";
+    internal const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson', 'AwaitingStep'";
 
     /// <summary>
     /// The next revision, as one statement's subquery — so under SQLite's write lock no two writes can

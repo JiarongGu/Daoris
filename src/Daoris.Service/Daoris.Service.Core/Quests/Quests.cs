@@ -505,6 +505,10 @@ public sealed class QuestStore
                 tx, id, status, note, now, answers, whileOpen, noteParts, byAgent, session),
             ct);
 
+    /// <inheritdoc cref="QuestBindOperation.BindAsync"/>
+    public Task<QuestMove> BindAsync(string id, string run, DateTimeOffset now, CancellationToken ct = default) =>
+        WriteAsync(tx => Operations.Of<QuestBindOperation>().BindAsync(tx, id.TrimStart('#'), run, now), ct);
+
     /// <inheritdoc cref="QuestSubmitOperation.SubmitAsync"/>
     public Task<QuestMove> SubmitAsync(
         string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct = default,

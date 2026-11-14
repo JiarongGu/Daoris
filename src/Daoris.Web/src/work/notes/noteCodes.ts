@@ -43,7 +43,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.parked-cut': { values: ['call'] },
   'ended.parked-cancelled': { values: [] },
   // It ended its turn on its own helper's ask, and waits on that helper, not on the person.
-  'ended.awaits-check': { values: [] },
+  'waits.step': { values: ['run', 'node', 'attempt', 'tip'] },
+  'waits.check': { values: [] },
   'ended.awaits-helper': { values: [] },
   'ended.answered-unfinished': { values: ['awaits', 'exit'] },
   'ended.carried-unfinished': { values: ['exit'] },
@@ -372,6 +373,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A move onto another account of the same agent that carried its own conversation, whole or for its agent to compact, or could not.
   'moved.carried-on': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
   'moved.carried-from': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
+  'moved.seeded-from': { values: ['session', 'agent', 'account', 'why'], why: 'handed' },
   'moved.compacted-from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'bound'], why: 'handed' },
   'moved.not-carried': { values: ['reason'] },
   // A conversation moved to another account of its agent by the usage curve: where it went and where it came from,

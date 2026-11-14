@@ -78,6 +78,9 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// <summary>The trigger firings already recorded (<see cref="WireFiring.Key"/>): a trigger fires once per receipt, whatever replays.</summary>
     public IReadOnlySet<string> Fired { get; init; } = ImmutableHashSet<string>.Empty;
 
+    /// <summary>The failed verdicts each check node has settled on the record (<see cref="CheckRounds.Reds"/>), which bound its way back.</summary>
+    public IReadOnlyDictionary<string, int> Reds { get; init; } = ImmutableDictionary<string, int>.Empty;
+
     /// <summary>How many performed attempts may run at once: a fork starts its targets within it.</summary>
     public int Limit { get; init; } = WireEvaluation.DefaultLimit;
 

@@ -177,7 +177,7 @@ export const isFolder = (registration: Registration): boolean => registration.ki
 export const canBeAsked = (registration: Registration): boolean =>
   registration.addressable ?? registration.adopted;
 export type SessionState =
-  | 'queued' | 'starting' | 'working' | 'awaiting-person'
+  | 'queued' | 'starting' | 'working' | 'awaiting-person' | 'awaiting-step'
   | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped';
 /**
  * Which states still hold their repository — the wire half of `Session.Active`, exhaustive here for
@@ -187,7 +187,7 @@ export type SessionState =
  * says it again for the views.
  */
 export const SESSION_ACTIVE: ReadonlySet<SessionState> =
-  new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person']);
+  new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person', 'awaiting-step']);
 /** What a start asked for, tagged so an explicit `default` differs from an account default. */
 export type ActorValue = { source: 'entry' | 'account-default' | 'command' | 'environment'; value?: string | null; carried: boolean };
 export type ActorAsked = { agent: string; model: ActorValue; effort: ActorValue };

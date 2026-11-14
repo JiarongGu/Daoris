@@ -97,7 +97,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 13. Ask Daoris writes its change to the editor's open draft as a graph in the room's `drafts/`, and saves a version only by
     pressing `daoris workflow apply <id> drafts/<id>.json --base <version>`, which the person confirms on a card drawing the graph
     and its changes. It proposes no workflow and never chooses or runs one. (D223, D261)
-14. The shipped defaults hold no `quest.close`: the agent's done closes the quest, and the flow's end is the work's. (D190)
+14. The shipped defaults hold no `quest.close`: a run's quest is bound to its run, its agent's done is a submission `claimed` and
+    `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). Every shipped development graph that holds
+    `content.holds` checks after it, `team-part` included; `documents` holds no check by design, since its work is prose no gate reaches. The
+    check is a `check` with `gates` `reached` between `content` and the review or landing, and a `back` wire from it `on` `failed` to the work, so a red verdict's words go to the work's open session as
+    Daoris's word under the step's key and its next commit is checked afresh (D293). A check's reds are counted from its run's record
+    (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
+    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red.
 
 **Runs**
 

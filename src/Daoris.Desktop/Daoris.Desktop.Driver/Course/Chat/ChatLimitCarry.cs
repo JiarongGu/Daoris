@@ -31,7 +31,7 @@ internal sealed class ChatLimitCarry(
     /// How the move takes the conversation, asked once the part it leaves has ended so its files are whole: carried, its copy made in the
     /// new account's home, or briefed by the carry's code.
     /// </summary>
-    public static CarryPlan Planned(ChatContext context, AgentDoor door, PriorSession prior, HarnessSelection selection, string tree)
+    public static CarryPlan Planned(ChatContext context, AgentDoor door, PriorSession prior, HarnessSelection selection, string tree, string record)
     {
         var registry = context.Harnesses.Adapters;
         var carry = LimitCarry.Declared(registry, door.Id);
@@ -48,7 +48,10 @@ internal sealed class ChatLimitCarry(
         var to = selection.Profile is { Length: > 0 } ? selection.ProfileHome : null;
         var high = context.Events.After(prior.Session, 0).Events.Where(e => e.Kind == SessionEventKind.Usage && e.Used is not null).MaxBy(e => e.Used);
         var plan = LimitCarry.Plan(carry, context.Conversations.Read(prior.Session)?.Conversation, from, to, high?.Used, high?.Size);
-        return from is null || to is null ? plan : LimitCarry.Copied(plan, carry, from, to, tree);
+        if (from is null || to is null) return plan;
+        plan = LimitCarry.Copied(plan, carry, from, to, tree);
+        return SeedCarry.Seeded(plan, ConversationSeedings.Through(registry, door.Id),
+            new SeedAsk(door.Id.Value, to, tree, Guid.NewGuid().ToString(), context.Events.After(prior.Session, 0).Events, record, DateTimeOffset.UtcNow));
     }
 
     /// <summary>The carry's code where the move asked to carry and is briefed instead; null where it carries or asked nothing.</summary>
@@ -100,7 +103,7 @@ internal sealed class ChatLimitCarry(
         context.Note(prior.Session, CarriedNotes.On(to, agent.Name, selection.Profile, HandOverWhy.Limit, carried.Tokens));
         context.Service.AccountSaid(Continuations.Moved(
             to, prior.Session, prior.Adapter ?? agent.Name, agent.Name, prior.Profile, selection.Profile, HandOverWhy.Limit, briefed: false,
-            carry: carried is CarryPlan.Compacted ? "compacted" : "whole"));
+            carry: carried switch { CarryPlan.Compacted => "compacted", CarryPlan.Seeded => "seeded", _ => "whole" }));
         var started = await runner.RunAsync("chat", to, message, agent, selection, config, place, onEnded, ct, new GoingOn(record, ask) { Carried = this })
             .ConfigureAwait(false);
         if (started.SessionId is null) Withdraw();
@@ -179,10 +182,9 @@ internal sealed class ChatLimitCarry(
 
     public void Withdraw()
     {
-        if (selection.ProfileHome is { Length: > 0 } home && prior.Tree is { Length: > 0 } tree)
-        {
-            LimitCarry.Withdrawn(LimitCarry.Declared(context.Harnesses.Adapters, door.Id), home, tree, carried.Conversation);
-        }
+        if (selection.ProfileHome is not { Length: > 0 } home) return;
+        if (carried is CarryPlan.Seeded seeded) SeedCarry.Withdrawn(ConversationSeedings.Of(context.Harnesses.Adapters.ProviderOf(door.Id)), home, seeded);
+        else if (prior.Tree is { Length: > 0 } tree) LimitCarry.Withdrawn(LimitCarry.Declared(context.Harnesses.Adapters, door.Id), home, tree, carried.Conversation);
     }
 
     private async Task FailedAsync(string to, string why)

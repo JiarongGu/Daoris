@@ -3,6 +3,7 @@
   "sessionState.starting": "启动中",
   "sessionState.working": "工作中",
   "sessionState.awaiting-person": "等你处理",
+  "sessionState.awaiting-step": "等下一步",
   "sessionState.completed": "已完成",
   "sessionState.declined": "已谢绝",
   "sessionState.stood-down": "已让位",

@@ -83,12 +83,6 @@ public enum QuestRespondRefusal
     ReviewRefused,
 
     /// <summary>
-    /// An agent's done on a quest a closure graph holds: it says <c>ready</c>, and the graph's close
-    /// writes the Done at the work's end.
-    /// </summary>
-    ClosedByGraph,
-
-    /// <summary>
     /// A <c>ready</c> where no closure graph holds the quest: not taken, or never bound by its taker's
     /// driver. A bind on a quest that is not taken, already submitted, or bound to another graph.
     /// </summary>

@@ -371,7 +371,7 @@ internal static class NodeGoverning
         var lines = new List<string>();
         foreach (var unit in read.Units.Where(unit => unit.Kind == WorkUnitKind.Quest).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            if (unit.Records.Quest is not { Closure: { Length: > 0 } bound, Status: not "Done" } quest) continue;
+            if (unit.Records.Quest is not { Closure: { Length: > 0 } bound, Status: not "Done" } quest || !ClosureGraphs.IsGraph(bound)) continue;
             NodeGraph? held = null;
             if (governed.GetValueOrDefault(unit.Id) is not { Closes: true } own)
             {

@@ -255,6 +255,7 @@ export const NOTE_VALUES: Readonly<
 > = {
   // The routing standing a chat is told, each of the judge's four worded by `work.note.routing.*`.
   standing: 'routing',
+  node: 'text', tip: 'id',
   // Who a word is by, each a code worded by `work.note.author.*` and joined the reader's way.
   authors: 'authors',
   // A commit rule's mode, its own word set as code by the sentence, and where it is set.
