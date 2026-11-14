@@ -358,9 +358,9 @@ public sealed class RegistrationStore
     /// Stop holding what a repository fed — its knowledge's commit and its code map — while its
     /// registration stays: it joined without sharing, or unjoined, and its knowledge is home now.
     /// </summary>
-    public Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default) => _db.RunAsync(async () =>
+    public Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default) => Beside().RunAsync(async () =>
     {
-        await using var command = _db.Command();
+        await using var command = Beside().Command();
         command.CommandText = """
             DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
@@ -368,6 +368,12 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$repository", repository);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
+
+    /// <summary>
+    /// The gate a write runs on: the one of the unit of work running it, where the index's write hands it this store's rows to
+    /// write inside its own, else this store's.
+    /// </summary>
+    private ConnectionGate Beside() => ConnectionGate.Running ?? _db;
 
     /// <summary>
     /// Forget the commit every repository's knowledge is fed at — the index that holds it is rebuilt.
@@ -405,9 +411,9 @@ public sealed class RegistrationStore
 
     /// <summary>Record which commit this deployment's copy of a repository's knowledge now stands on.</summary>
     public Task RecordProvenanceAsync(
-        string repository, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
+        string repository, FeedProvenance provenance, CancellationToken ct = default) => Beside().RunAsync(async () =>
     {
-        await using var command = _db.Command();
+        await using var command = Beside().Command();
         command.CommandText = $"""
             INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin, digest)
             VALUES ({RegistrationKey.Held("feed_provenance")},$commit, $committed_at, $branch, $origin, $digest)
