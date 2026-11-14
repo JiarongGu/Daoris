@@ -243,6 +243,13 @@ export const useSetAsideRow = () =>
       writtenOf(await call('NOTICE_DISMISS', { rowKind: row.kind, rowId: row.id, ...(row.since ? { rowSince: row.since } : {}), ...(row.workspace ? { workspace: row.workspace } : {}) })),
   });
 
+/** Every row of one kind set aside in one press (`NOTICE_DISMISS` with `all`): the shell sets aside the rows it holds now, of the window's scope. */
+export const useSetAsideKind = () =>
+  useMutation({
+    mutationFn: async (kind: { kind: string; workspace?: string }): Promise<boolean> =>
+      writtenOf(await call('NOTICE_DISMISS', { rowKind: kind.kind, all: true, ...(kind.workspace ? { workspace: kind.workspace } : {}) })),
+  });
+
 /** The person's *Dismiss* of one notice (`NOTICE_DISMISS`): removed from every window by the slice's push. */
 export const useDismissNotice = () =>
   useMutation({

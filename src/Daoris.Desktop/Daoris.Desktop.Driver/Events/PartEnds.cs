@@ -36,7 +36,7 @@ public static class PartEnds
     /// <summary>The closed class codes.</summary>
     public static readonly IReadOnlyList<string> Classes =
     [
-        "completed", "failed", "limited", "transient-bound", "access", "stopped-person", "stopped-role", "stopped-daoris", "refused-choice",
+        "completed", "failed", "limited", "transient-bound", "access", "stopped-person", "stopped-role", "stopped-daoris", "stopped-update", "refused-choice",
         "awaits-helper", "awaits-check", "stood-down", "unknown",
     ];
 
@@ -66,7 +66,7 @@ public static class PartEnds
         ["chat.cut"] = "stopped-daoris",
         ["chat.closed"] = "stopped-daoris",
         ["chat.restarted"] = "stopped-daoris",
-        ["update.closed"] = "stopped-daoris",
+        ["update.closed"] = "stopped-update",
         ["ended.limit-words-wait"] = "limited",
         ["ended.done"] = "completed",
         ["ended.done-left"] = "completed",
@@ -100,6 +100,7 @@ public static class PartEnds
         ["stopped-person"] = "person",
         ["stopped-role"] = "role",
         ["stopped-daoris"] = "daoris",
+        ["stopped-update"] = "daoris",
         ["refused-choice"] = "choice",
         ["awaits-helper"] = "agent",
         ["awaits-check"] = "agent",
@@ -172,8 +173,8 @@ public enum EndReader
 /// <summary>The one table of what each reader of an end takes.</summary>
 public static class EndReaders
 {
-    /// <summary>The classes the person is not told an end of: their own stop, an account's limit and an agent's refusal of the choice.</summary>
-    private static readonly FrozenSet<string> Silent = new[] { "stopped-person", "limited", "refused-choice" }.ToFrozenSet(StringComparer.Ordinal);
+    /// <summary>The classes the person is not told an end of: their own stop, an update's stop (the session carries on after it), an account's limit and an agent's refusal of the choice.</summary>
+    private static readonly FrozenSet<string> Silent = new[] { "stopped-person", "stopped-update", "limited", "refused-choice" }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>Whether <paramref name="reader"/> takes <paramref name="end"/>.</summary>
     public static bool Takes(EndReader reader, PartEnded end) => reader switch

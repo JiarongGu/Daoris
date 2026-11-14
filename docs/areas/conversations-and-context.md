@@ -135,7 +135,7 @@ of everything it handed, section by section.
     pending, words held, never one waiting on its limit, whose wake carries its words), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
     (`stopped-daoris`). The next start takes it up as words kept: its own conversation resumes with the word, or a lost one goes on
     briefed (rule 14), its line saying *Daoris restarted* (`resumed.opening`, why `restart`). One between turns ends `chat.closed`,
-    or `chat.restarted` at an update, and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
+    or `chat.restarted` at an update (a driven session's end at an update is `update.closed`, class `stopped-update`, which tells the person nothing), and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
 14. A conversation whose own conversation is lost (`gone`, `unkept`, `unable`, `offered`) goes on by itself in a new part
     handed the brief, why `resume`. Refused as `elsewhere`, or for a reason that is not loss: it waits for the person.
     (from D189)

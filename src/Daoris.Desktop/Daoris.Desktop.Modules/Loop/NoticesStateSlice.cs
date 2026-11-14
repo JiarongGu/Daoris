@@ -262,6 +262,13 @@ public sealed class NoticesStateSlice
     public string? SetAside(string kind, string id, string? since, string? workspace) =>
         Refusal(Notices.Renew(_home, Notices.SetAsideOf(kind, id, since, workspace, _clock.GetUtcNow()), _clock.GetUtcNow()));
 
+    /// <summary>Every row of <paramref name="kind"/> in <paramref name="attention"/> set aside in one write: how many, or null where the write is refused (logged).</summary>
+    public int? SetAsideKind(SliceSnapshot? attention, string kind, string? workspace)
+    {
+        var asides = AsideOfKind.Of(attention, kind, workspace, _clock.GetUtcNow());
+        return asides.Count == 0 ? 0 : Refusal(Notices.SetAsideAll(_home, asides, _clock.GetUtcNow())) is null ? asides.Count : null;
+    }
+
     /// <summary>The notices of <paramref name="workspace"/>'s window, its own and every machine-wide one, as last read; every one for none.</summary>
     public IReadOnlyList<string> Scoped(string? workspace) =>
         [.. (Notices.Read(_home, _clock.GetUtcNow()) ?? [])

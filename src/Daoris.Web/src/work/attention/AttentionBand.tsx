@@ -6,7 +6,7 @@ import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
   useDeclineHandOver, useGitAnswer, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
-  useDecideSessionMemory, useSetAsideRow,
+  useDecideSessionMemory, useSetAsideKind, useSetAsideRow,
 } from '../../bridge/shell';
 import { useScope } from '../../data/scope';
 import { permissionSaid } from '../waits/PermissionAsks';
@@ -39,6 +39,9 @@ const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', '
 
 /** What the band's act is on its way for while the stale go-aheads are refused in one press: no row's key. */
 const STALE_KEY = 'stale-go-aheads';
+
+/** What the band's act is on its way for while one kind of row is set aside in one press: no row's key. */
+const ASIDE_KEY = 'set-aside-kind';
 
 /**
  * **What needs you**, whose rows *Notifications* holds.
@@ -124,6 +127,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const stopSession = useStopSession();
   const runNodeWord = useRunNodeWord();
   const setAside = useSetAsideRow();
+  const setAsideKind = useSetAsideKind();
   const { workspace } = useScope();
 
   const publish = usePublishAsk();
@@ -473,6 +477,22 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     })();
   };
 
+  const asideKind = (kind: Attention['kind'], count: number, answered: Answered) => {
+    setActing(ASIDE_KEY);
+    void (async () => {
+      try {
+        const written = await setAsideKind.mutateAsync({ kind, workspace: workspace ?? undefined });
+        if (written) notify(t('work.attention.aside.done', { count }));
+        else notify(t('work.attention.setAsideRefused'), 'error');
+        answered.done();
+      } catch (error) {
+        answered.refused(sentence(error));
+      } finally {
+        setActing(null);
+      }
+    })();
+  };
+
   // Each row whose step waits on the person opens its run there: the session it names, else its quest's newest here.
   const runDoor = (item: Attention) => {
     const named = onRun ? rowRun(item) : null;
@@ -494,6 +514,8 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         bare={inView}
         onRefuseStale={refuseStale}
         refusingStale={acting === STALE_KEY}
+        onSetAsideKind={asideKind}
+        settingAside={acting === ASIDE_KEY}
       />
     </AttentionRegion>
   );

@@ -47,7 +47,7 @@ public sealed record NoticesLook(
 public static class NoticesRead
 {
     /// <summary>The verb's usage line.</summary>
-    public const string Usage = "usage: daoris notices [--json]";
+    public const string Usage = $"usage: daoris notices [--json | {NoticesAside.Form}]";
 
     /// <summary>The groups of <i>What needs you</i> in the order the view shows them, with their words.</summary>
     public static IReadOnlyList<(string Group, string Words)> Groups { get; } =
@@ -86,6 +86,11 @@ public static class NoticesRead
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args, string home, InstanceWorld? instance, TextWriter output, TextWriter error, CancellationToken ct = default)
     {
+        if (args is ["--set-aside", { Length: > 0 } kind] && !kind.StartsWith('-'))
+        {
+            return await NoticesAside.RunAsync(kind, instance, output, error, ct).ConfigureAwait(false);
+        }
+
         if (args.Any(arg => arg != "--json"))
         {
             error.WriteLine($"notices: {Usage}");
@@ -156,7 +161,7 @@ public static class NoticesRead
             foreach (var notice in answered) lines.Add($"  {Join("answered", notice.Session, notice.Repository, notice.Workspace, Ago(notice.At, now))}");
         }
 
-        var done = look.Notices.Where(notice => notice.Kind != Notices.Answered).ToList();
+        var done = look.Notices.Where(notice => notice.Kind is not (Notices.Answered or Notices.Aside)).ToList();
         if (done.Count > 0)
         {
             lines.Add($"Done and failed ({done.Count(notice => !notice.Read)} unread)");
@@ -214,7 +219,7 @@ public static class NoticesRead
 
     /// <summary>
     /// The <c>--json</c> form: <c>{ from, presses, needs, messages, notices }</c>, <c>from</c> <c>instance</c> or <c>record</c>, each live
-    /// group null where it is not read, and every notice of the record, read or not.
+    /// group null where it is not read, and every notice of the record, read or not, but the rows set aside, which are no notice.
     /// </summary>
     public static string Json(NoticesLook look) => JsonFile.Serialize(writer =>
     {
@@ -249,7 +254,7 @@ public static class NoticesRead
             Optional("line", ask.Line);
             Optional("at", ask.At is { } at ? Moment(at) : null);
         });
-        Array("notices", look.Notices, notice =>
+        Array("notices", look.Notices.Where(notice => notice.Kind != Notices.Aside).ToList(), notice =>
         {
             writer.WriteString("id", notice.Id);
             writer.WriteString("kind", notice.Kind);

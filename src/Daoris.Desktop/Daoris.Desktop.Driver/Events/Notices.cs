@@ -166,6 +166,21 @@ public static class Notices
             return true;
         });
 
+    /// <summary>Every row of <paramref name="asides"/> (<see cref="SetAsideOf"/>) kept in one write, over any older one of its id. Null where written; else why not.</summary>
+    public static string? SetAsideAll(string home, IReadOnlyCollection<Notice> asides, DateTimeOffset now, TimeSpan? within = null) =>
+        Edit(home, now, within, notices =>
+        {
+            var changed = false;
+            foreach (var aside in asides)
+            {
+                if (notices.TryGetValue(aside.Id, out var held) && held.At >= aside.At) continue;
+                notices[aside.Id] = aside;
+                changed = true;
+            }
+
+            return changed;
+        });
+
     /// <summary>The notices of <paramref name="ids"/> read; an id the record does not hold is nothing. Null where written; else why not.</summary>
     public static string? MarkRead(string home, IReadOnlyCollection<string> ids, DateTimeOffset now, TimeSpan? within = null) =>
         Edit(home, now, within, notices =>

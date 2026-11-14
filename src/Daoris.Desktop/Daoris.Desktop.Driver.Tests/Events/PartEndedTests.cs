@@ -23,6 +23,7 @@ public sealed class PartEndedTests
     [InlineData("Working", "Stopped", false, "ended.stopped", "stopped-person")]
     [InlineData("Working", "Stopped", false, "ended.stopped-steward", "stopped-role")]
     [InlineData("Working", "Stopped", false, "ended.driver-closed", "stopped-daoris")]
+    [InlineData("Working", "Stopped", false, "update.closed", "stopped-update")]
     [InlineData("Working", "Completed", false, "ended.awaits-helper", "awaits-helper")]
     [InlineData("Working", "StoodDown", false, null, "stood-down")]
     [InlineData("Working", "Stopped", false, null, "unknown")]
@@ -100,7 +101,7 @@ public sealed class PartEndedTests
     [Fact]
     public void The_four_readers_take_each_class_as_the_watch_and_the_page_did()
     {
-        var silent = new[] { "stopped-person", "limited", "refused-choice" };
+        var silent = new[] { "stopped-person", "stopped-update", "limited", "refused-choice" };
         foreach (var cls in PartEnds.Classes)
         {
             var driven = new PartEnded(1, "s", "s1", "failed", null, cls, false, null, DateTimeOffset.UnixEpoch, false);
