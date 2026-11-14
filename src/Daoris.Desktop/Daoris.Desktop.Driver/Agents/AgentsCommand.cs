@@ -260,7 +260,8 @@ public static class AgentsCommand
         var roster = new HarnessRoster(set, path);
         AccountAgent? Of(string each) => set.AgentNamed(each);
         var named = Named(set);
-        var name = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
+        var given = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
+        var name = set.RunAs(given);
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
         {
             // Never a silent fallback: a machine that installed another agent than the person named is the same failure as a

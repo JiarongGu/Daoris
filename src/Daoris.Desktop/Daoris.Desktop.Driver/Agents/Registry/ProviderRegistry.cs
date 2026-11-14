@@ -284,6 +284,14 @@ public sealed class ProviderRegistry
     /// </summary>
     public bool Listed(DoorId door, bool configured) => configured || Declarations(Entry(door)).Program is not { Binary.Count: 0 };
 
+    /// <summary>The agent a verb takes for a name: itself where known, else the first operand door onto the accounts it keys (<c>acme</c>).</summary>
+    public string RunAs(string name)
+    {
+        var given = name.Trim();
+        if (AgentNamed(given) is not null) return given;
+        return Operands().FirstOrDefault(operand => Ids.Same(OwnerOfAgent(operand).Value, given)) ?? given;
+    }
+
     /// <summary>
     /// The agents a verb may name as an operand (<c>AgentsCommand</c>, read by <c>AgentLoginCommand</c> through <c>Agent</c>), in the
     /// roster's order: each door that names a real program and each agent a door runs as with no door here (a holder, <c>codex</c>),

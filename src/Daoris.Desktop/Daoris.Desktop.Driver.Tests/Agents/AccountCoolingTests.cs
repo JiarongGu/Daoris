@@ -658,11 +658,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, "work", null)).Cooling);
     }
 
-    /// <summary>
-    /// The line a cooling account is given names <c>agent account ready &lt;agent&gt; &lt;account&gt;</c>, and the terminal
-    /// sends the account's owner (<c>codex</c> for <c>codex-acp</c>, an agent no door carries); the screen sends a door. Every name the
-    /// verbs take, and its owner, ends its account's cool-off and its own sign-in's: none is refused as an unknown adapter.
-    /// </summary>
+    /// <summary>The terminal sends a cooling account's owner and the screen a door: both end its cool-off, <c>codex</c> included.</summary>
     [Fact]
     public void The_command_a_cooling_line_names_ends_the_cool_off_for_every_agent_the_verbs_take()
     {
@@ -690,11 +686,14 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     [Fact]
-    public void A_ready_for_an_agent_nobody_declared_is_still_refused_naming_the_adapters()
+    public void A_ready_for_an_agent_nobody_declared_is_still_refused_naming_the_agents()
     {
         var roster = new HarnessRoster(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
-        Assert.Contains("unknown adapter 'nobody-knows'", Assert.Throws<DriverException>(() => roster.Ready("nobody-knows", null)).Message);
+        var said = Assert.Throws<DriverException>(() => roster.Ready("nobody-knows", null)).Message;
+
+        Assert.StartsWith("unknown agent 'nobody-knows' — one of: ", said);
+        Assert.Contains("codex,", said);
     }
 
     [Fact]
