@@ -26,7 +26,8 @@ public sealed record GitMergeAsk(string Commit, GitMergeKind Kind, string? Messa
 /// <param name="Pending">Whether a merge stands begun in the checkout, to be committed or aborted.</param>
 public sealed record GitMerged(bool Ok, string Error, IReadOnlyList<string> Unmerged, bool Pending);
 
-public partial interface IGitRepository
+/// <summary>A repository's integration: merges, their abort and put-back, and the staged commit a merge leaves (<see cref="IGitRepository"/>).</summary>
+public interface IGitIntegration
 {
     /// <summary>
     /// Merges a commit into the checkout's HEAD. A merge whose two sides changed one file differently is left begun with that path

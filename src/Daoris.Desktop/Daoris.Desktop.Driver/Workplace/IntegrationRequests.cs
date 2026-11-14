@@ -412,7 +412,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             true => (line, Refuse(IntegrationRefusals.Held, $"the line `{line}` already holds `{ask.Branch}` at {Short(tip)}: nothing was requested.")),
             false => (line, null),
             null => (line, Refuse(IntegrationRefusals.Unread,
-                $"git could not say whether the line `{line}` holds `{ask.Branch}` ({ContentHolds.Said("")}), so nothing was requested; ask again.")),
+                $"git could not say whether the line `{line}` holds `{ask.Branch}`, so nothing was requested; ask again.")),
         };
     }
 

@@ -55,9 +55,9 @@ public sealed record GitMatch(string Path, string Line);
 /// A repository's operations at the level the application's families ask them: refs, commits, trees, status and working trees, each
 /// with the answer a family reads, never git's whole surface. Every folder is a checkout of the repository, its own or a working
 /// tree's. A read that git could not answer is null (or an empty list where a list is the answer and failure is told by null); a
-/// write says whether it succeeded.
+/// write says whether it succeeded. Its integration, its working trees and its set-up are each a named part it joins.
 /// </summary>
-public partial interface IGitRepository
+public interface IGitRepository : IGitIntegration, IGitTrees, IGitSetup
 {
     /// <summary>The commit HEAD names in <paramref name="folder"/>, or null where it names none or git could not read it.</summary>
     Task<string?> HeadAsync(string folder, CancellationToken ct);

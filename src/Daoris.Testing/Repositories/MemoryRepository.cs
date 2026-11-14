@@ -8,7 +8,7 @@ namespace Daoris.Testing;
 /// <see cref="Write"/>. It answers as git does for what the contract holds it to (<see cref="RepositoryContract"/>), so a family's
 /// unit test runs on it without a process. Every act changes only memory; no folder is read or written.
 /// </summary>
-public sealed partial class MemoryRepository : IGitRepository
+public sealed class MemoryRepository : IGitRepository
 {
     private readonly MemoryHistory _history = new();
     private readonly List<MemoryTree> _trees = [];
@@ -312,5 +312,236 @@ public sealed partial class MemoryRepository : IGitRepository
         if (found is null) return null;
         why = "the main working tree cannot be locked, unlocked or removed";
         return found == _trees[0] ? null : found;
+    }
+
+    private readonly Dictionary<MemoryTree, MemoryMerging> _merging = [];
+
+    /// <summary>Settles a conflicted path of the merge begun in the checkout as a person does: the file written and added.</summary>
+    public void Resolve(string folder, string path, string content)
+    {
+        var tree = Tree(folder);
+        tree.Files[path] = content;
+        _merging[tree].Conflicts.Remove(path);
+    }
+
+    public Task<GitMerged> MergeAsync(string folder, GitMergeAsk ask, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(new GitMerged(false, $"{folder} is not a git repository", [], false));
+        if (_merging.ContainsKey(tree)) return Task.FromResult(new GitMerged(false, "fatal: You have not concluded your merge (MERGE_HEAD exists).", [], true));
+        if (HeadOf(tree) is not { } head || _history.Resolve(ask.Commit, head.Id) is not { } tip)
+        {
+            return Task.FromResult(new GitMerged(false, $"merge: {ask.Commit} - not something we can merge", [], false));
+        }
+
+        return Task.FromResult(new MemoryMerge(_history).Begin(tree, head, tip, ask, _merging, Make));
+    }
+
+    public Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree || _history.Resolve(tip, HeadOf(tree)?.Id) is not { } top) return Task.FromResult<IReadOnlyList<string>?>(null);
+        var reach = _history.Reach(top);
+        foreach (var each in exclude)
+        {
+            if (_history.Resolve(each, HeadOf(tree)?.Id) is not { } excluded) return Task.FromResult<IReadOnlyList<string>?>(null);
+            reach.ExceptWith(_history.Reach(excluded));
+        }
+
+        return Task.FromResult<IReadOnlyList<string>?>([.. reach.Select(id => _history.Commit(id)!).OrderByDescending(each => each.Order).Select(each => each.Id)]);
+    }
+
+    public Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (_merging.Remove(tree, out var merging) && HeadOf(tree) is { } head)
+        {
+            foreach (var added in merging.Result.Keys.Where(each => !head.Tree.ContainsKey(each))) tree.Files.Remove(added);
+            new MemoryAdvance(_history).ResetHard(tree, head, head);
+        }
+
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<IReadOnlyList<string>> UnmergedAsync(string folder, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<string>>(Find(folder) is { } tree && _merging.TryGetValue(tree, out var merging) ? [.. merging.Conflicts.Order(StringComparer.Ordinal)] : []);
+
+    public Task<GitDone> CommitStagedAsync(string folder, string message, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (!_merging.TryGetValue(tree, out var merging) || HeadOf(tree) is not { } head) return Task.FromResult(GitDone.Not("nothing to commit"));
+        if (merging.Conflicts.Count > 0) return Task.FromResult(GitDone.Not("error: Committing is not possible because you have unmerged files."));
+        var next = new Dictionary<string, MemoryBlob>(StringComparer.Ordinal);
+        foreach (var (path, content) in tree.Files) if (merging.Result.ContainsKey(path) || MemoryIgnores.Top(tree.Files, path) is null) next[path] = new MemoryBlob(MemoryBlob.File, content);
+        foreach (var (path, blob) in merging.Result.Where(each => each.Value.Mode == MemoryBlob.Submodule)) next[path] = blob;
+        _merging.Remove(tree);
+        Make(tree, [head.Id, merging.Tip.Id], next, message);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> PutBackAsync(string folder, string commit, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (_history.Resolve(commit, HeadOf(tree)?.Id) is not { } target) return Task.FromResult(GitDone.Not($"fatal: invalid reference: {commit}"));
+        MergeAbortAsync(folder, ct);
+        var now = HeadOf(tree);
+        var held = now?.Tree ?? new Dictionary<string, MemoryBlob>();
+        foreach (var path in tree.Files.Keys.Where(each => !held.ContainsKey(each) && MemoryIgnores.Top(tree.Files, each) is null).ToList()) tree.Files.Remove(path);
+        foreach (var (path, blob) in held) if (blob.Mode == MemoryBlob.File) tree.Files[path] = blob.Content;
+        MemorySwitch.Place(tree, held, target);
+        (tree.Branch, tree.Detached) = (null, target.Id);
+        return Task.FromResult(GitDone.Done);
+    }
+
+    private void Make(MemoryTree tree, IReadOnlyList<string> parents, IReadOnlyDictionary<string, MemoryBlob> files, string? message)
+    {
+        var made = _history.Add(parents, files, message ?? $"Merge {parents[^1]}");
+        if (tree.Branch is { } branch) _history.Refs[$"refs/heads/{branch}"] = made.Id;
+        else tree.Detached = made.Id;
+    }
+
+    private readonly List<GitHeldRun> _held = [];
+
+    /// <summary>The held gits an act asked this repository, in the order it asked them.</summary>
+    public IReadOnlyList<GitHeldRun> HeldRuns => _held;
+
+    /// <summary>
+    /// Answers an act's held git in memory instead of starting it: <c>update-ref --stdin</c> is a ref transaction, made as git makes it, and
+    /// any other git is refused with words naming it, so a test finds what it must teach this repository.
+    /// </summary>
+    public Task<GitHeldAnswer> RunHeldAsync(GitHeldRun run, GitHeldStart start)
+    {
+        lock (_held) _held.Add(run);
+        if (Find(run.Folder) is null) return Task.FromResult(new GitHeldAnswer(128, "", $"fatal: not a git repository: {run.Folder}", false, ""));
+        if (run.Arguments is not ["update-ref", "--stdin"]) return Task.FromResult(new GitHeldAnswer(1, "", $"memory repository does not answer `git {string.Join(' ', run.Arguments)}`", false, ""));
+        if (MemoryUpdateRefs.Read(run.Input ?? "") is not { } transaction) return Task.FromResult(new GitHeldAnswer(128, "", "fatal: update-ref: unknown command", false, ""));
+        var made = MemoryRefTransaction.Run(_history, transaction, CaseIgnored);
+        return Task.FromResult(new GitHeldAnswer(made.Done ? 0 : 128, "", made.Done ? "" : $"fatal: {made.Said}", false, ""));
+    }
+
+    public async Task<int?> UncommittedAsync(string folder, CancellationToken ct)
+    {
+        if (Find(folder) is null) return null;
+        var status = await StatusAsync(folder, ignored: false, ct).ConfigureAwait(false);
+        // Without `--untracked-files=all`, an untracked folder is one path.
+        return status.Select(each => each.Value == "??" && each.Key.IndexOf('/', StringComparison.Ordinal) is var cut and >= 0 ? each.Key[..(cut + 1)] : each.Key).Distinct().Count();
+    }
+
+    public async Task<GitTreeStatus?> TreeStatusAsync(string folder, CancellationToken ct) =>
+        Find(folder) is { } tree && await UncommittedAsync(folder, ct).ConfigureAwait(false) is { } changed ? new GitTreeStatus(changed, HeadOf(tree)?.Id, tree.Branch) : null;
+
+    public Task<GitTreePlace> PlaceAsync(string folder, CancellationToken ct) =>
+        Task.FromResult(Find(folder) is { } tree
+            ? new GitTreePlace(0, Path.Combine(Root, ".git").Replace('\\', '/'), "", tree.Branch ?? "HEAD", true, tree.Path.Replace('\\', '/'))
+            : new GitTreePlace(128, "", "fatal: not a git repository (or any of the parent directories): .git", "", false, ""));
+
+    public async Task<GitDone> RemoveTreeAsync(string folder, string path, bool force, CancellationToken ct)
+    {
+        if (Linked(folder, path, out var why) is not { } tree) return GitDone.Not(why);
+        if (!force && tree.Locked) return GitDone.Not($"cannot remove a locked working tree, lock reason: {tree.Reason}");
+        if (!force && (await StatusAsync(path, ignored: false, ct).ConfigureAwait(false)).Count > 0) return GitDone.Not($"'{path}' contains modified or untracked files, use --force to delete it");
+        Drop(tree);
+        return GitDone.Done;
+    }
+
+    /// <summary>Called as an unlock of a working tree begins, with its path and the reason it is locked under: where a test cuts an open off.</summary>
+    public Action<string, string?>? Unlocking { get; set; }
+
+    /// <summary>What an unlock answers instead of unlocking, for a path; null lets it unlock.</summary>
+    public Func<string, GitDone?>? UnlockFault { get; set; }
+
+    /// <summary>Whether adding a working tree makes its folder on the disk and removing one deletes it, as git does; off, no folder is touched.</summary>
+    public bool Materializes { get; set; }
+
+    /// <summary>A linked tree's folder as git leaves it: the folder, and in it the <c>.git</c> file that names where its git directory stands.</summary>
+    private void Materialize(MemoryTree tree)
+    {
+        Directory.CreateDirectory(tree.Path);
+        File.WriteAllText(Path.Combine(tree.Path, ".git"), $"gitdir: {Path.Combine(Root, ".git", "worktrees", Path.GetFileName(tree.Path)).Replace('\\', '/')}\n");
+    }
+
+    private void Drop(MemoryTree tree)
+    {
+        _trees.Remove(tree);
+        if (Materializes && Directory.Exists(tree.Path)) Directory.Delete(tree.Path, recursive: true);
+    }
+
+    public Task<IReadOnlyList<string>?> UnlandedAsync(string folder, string revision, string? except, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree || _history.Resolve(revision, HeadOf(tree)?.Id) is not { } top) return Task.FromResult<IReadOnlyList<string>?>(null);
+        var unheld = _history.Reach(top);
+        foreach (var (name, commit) in _history.Refs)
+        {
+            var held = name.StartsWith("refs/heads/", StringComparison.Ordinal) ? !name.StartsWith("refs/heads/daoris/", StringComparison.Ordinal) && name != $"refs/heads/{except}"
+                : name.StartsWith("refs/remotes/", StringComparison.Ordinal) && !name["refs/remotes/".Length..].Contains("/daoris/", StringComparison.Ordinal);
+            if (held && _history.Commit(commit) is { } holder) unheld.ExceptWith(_history.Reach(holder));
+        }
+
+        return Task.FromResult<IReadOnlyList<string>?>([.. unheld.Select(id => _history.Commit(id)!).OrderByDescending(each => each.Order).Select(each => $"{each.Id[..7]} {each.Message}")]);
+    }
+
+    public async Task<GitFreshTop> FreshTopAsync(string folder, CancellationToken ct) =>
+        await TopOfAsync(folder, ct).ConfigureAwait(false) is { } top ? new GitFreshTop(true, top.Replace('\\', '/'), "") : new GitFreshTop(false, "", "fatal: not a git repository");
+
+    public Task<IReadOnlyList<GitRefFact>?> RefFactsAsync(string folder, CancellationToken ct)
+    {
+        if (Find(folder) is null) return Task.FromResult<IReadOnlyList<GitRefFact>?>(null);
+        var facts = _history.Refs.Where(each => each.Key.StartsWith("refs/heads/", StringComparison.Ordinal) || each.Key.StartsWith("refs/remotes/origin/", StringComparison.Ordinal))
+            .OrderBy(each => each.Key, StringComparer.Ordinal)
+            .Select(each => new GitRefFact(each.Key, each.Value, "commit", "", "", TreeIdOf(_history.Commit(each.Value)!))).ToList();
+        return Task.FromResult<IReadOnlyList<GitRefFact>?>(facts);
+    }
+
+    public Task<IReadOnlyList<GitRef>?> HoldingRefsAsync(string folder, string commit, CancellationToken ct) => RefsAsync(folder, ["refs"], commit, null, ct);
+
+    /// <summary>A stable id for what a commit's tree holds, so two commits of one content name one tree as git's do.</summary>
+    private static string TreeIdOf(MemoryCommit commit)
+    {
+        var text = string.Join('\n', commit.Tree.OrderBy(each => each.Key, StringComparer.Ordinal).Select(each => $"{each.Value.Mode} {each.Key} {each.Value.Content}"));
+        return Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
+    }
+
+    public Task<GitLayout?> LayoutAsync(string folder, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult<GitLayout?>(null);
+        var common = Path.Combine(Root, ".git");
+        var own = tree == _trees[0] ? common : Path.Combine(common, "worktrees", Path.GetFileName(tree.Path));
+        return Task.FromResult<GitLayout?>(new GitLayout(own, common));
+    }
+
+    /// <summary>The empty commits made, as (folder, name, email, message), in order.</summary>
+    public List<(string Folder, string Name, string Email, string Message)> Empties { get; } = [];
+
+    /// <summary>Words that refuse the next empty commit, as a hook's refusal does; null for none.</summary>
+    public string? RefuseCommit { get; set; }
+
+    /// <summary>Whether <paramref name="folder"/> is a checkout of this repository or lies within one.</summary>
+    public bool Holds(string folder)
+    {
+        var full = Full(folder);
+        return _trees.Any(each => string.Equals(each.Path, full, StringComparison.OrdinalIgnoreCase)
+            || full.StartsWith(each.Path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<IReadOnlyList<GitStatusEntry>> StatusEntriesAsync(string folder, CancellationToken ct) =>
+        [.. (await StatusAsync(folder, ignored: false, ct).ConfigureAwait(false)).Select(each => new GitStatusEntry(each.Key, each.Value, null))];
+
+    public Task<bool> AvailableAsync(CancellationToken ct) => Task.FromResult(true);
+
+    public Task<GitDone> InitAsync(string folder, string line, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a folder of this repository"));
+        if (HeadOf(tree) is null) tree.Branch = line;
+        return Task.FromResult(GitDone.Done);
+    }
+
+    public Task<GitDone> CommitEmptyAsync(string folder, string name, string email, string message, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));
+        if (RefuseCommit is { } refused) return Task.FromResult(GitDone.Not(refused));
+        var head = HeadOf(tree);
+        var made = _history.Add(head is null ? [] : [head.Id], head?.Tree ?? new Dictionary<string, MemoryBlob>(), message);
+        if (tree.Branch is { } branch) _history.Refs[$"refs/heads/{branch}"] = made.Id;
+        else tree.Detached = made.Id;
+        Empties.Add((folder, name, email, message));
+        return Task.FromResult(GitDone.Done);
     }
 }

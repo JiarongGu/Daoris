@@ -8,7 +8,7 @@ namespace Daoris.Testing;
 /// a test cannot ask of the port (a fresh repository, a file written, a path hidden, a folder gone): the memory repository does them in
 /// memory and the real one on disk, so the same case holds both to what git answers.
 /// </summary>
-public abstract partial class RepositoryContract
+public abstract class RepositoryContract
 {
     protected abstract IGitRepository Backend { get; }
 
@@ -444,5 +444,273 @@ public abstract partial class RepositoryContract
         Assert.Equal([("loose.txt", "??")], (await Backend.StatusAsync(root, false, Ct)).Select(each => (each.Key, each.Value)));
         Assert.False((await Backend.RestoreAsync(root, ["missing.txt"], Ct)).Ok);
         Assert.True((await Backend.RunHookAsync(root, "post-checkout", ["0000000000000000000000000000000000000000", (await Backend.HeadAsync(root, Ct))!, "1"], Ct)).Ok);
+    }
+
+    /// <summary>A repository on <c>main</c> at its first commit with <c>feature</c> one commit on it that writes <paramref name="path"/>, main checked out again.</summary>
+    private async Task<(string Root, string First, string Feature)> BranchedAsync(string path, string content)
+    {
+        var (root, first) = await OneAsync();
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("feature", first, Creates: true), Ct)).Ok);
+        await WriteAsync(root, path, content);
+        Assert.True((await Backend.CommitAllAsync(root, "on feature", Ct)).Ok);
+        var feature = (await Backend.HeadAsync(root, Ct))!;
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("main"), Ct)).Ok);
+        return (root, first, feature);
+    }
+
+    [Fact]
+    public async Task A_fast_forward_merge_moves_the_branch_and_its_files_and_a_diverged_history_is_refused()
+    {
+        var (root, _, feature) = await BranchedAsync("c.txt", "three\n");
+
+        var merged = await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.FastForwardOnly), Ct);
+
+        Assert.True(merged.Ok, merged.Error);
+        Assert.Equal(feature, await Backend.HeadAsync(root, Ct));
+        Assert.Equal("three\n", await Backend.TextAtAsync(root, "HEAD", "c.txt", Ct));
+        Assert.Empty(await Backend.StatusAsync(root, false, Ct));
+
+        Assert.True((await Backend.SwitchAsync(root, new GitSwitch("other", (await Backend.CommitOfAsync(root, "HEAD^", Ct))!, Creates: true), Ct)).Ok);
+        await WriteAsync(root, "d.txt", "four\n");
+        Assert.True((await Backend.CommitAllAsync(root, "diverged", Ct)).Ok);
+        var refused = await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.FastForwardOnly), Ct);
+
+        Assert.False(refused.Ok);
+        Assert.False(refused.Pending);
+    }
+
+    [Fact]
+    public async Task A_merge_commit_holds_both_sides_and_has_the_merged_commit_as_its_second_parent()
+    {
+        var (root, _, feature) = await BranchedAsync("c.txt", "three\n");
+        await WriteAsync(root, "a.txt", "changed on main\n");
+        Assert.True((await Backend.CommitAllAsync(root, "on main", Ct)).Ok);
+        var main = (await Backend.HeadAsync(root, Ct))!;
+
+        var merged = await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Commit, "Merge branch 'feature'"), Ct);
+
+        Assert.True(merged.Ok, merged.Error);
+        Assert.False(merged.Pending);
+        Assert.Equal(main, await Backend.CommitOfAsync(root, "HEAD^1", Ct));
+        Assert.Equal(feature, await Backend.CommitOfAsync(root, "HEAD^2", Ct));
+        Assert.Equal("three\n", await Backend.TextAtAsync(root, "HEAD", "c.txt", Ct));
+        Assert.Equal("changed on main\n", await Backend.TextAtAsync(root, "HEAD", "a.txt", Ct));
+        Assert.Empty(await Backend.StatusAsync(root, false, Ct));
+        Assert.True((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Commit, "again"), Ct)).Ok);
+        Assert.Equal(2, await Backend.CountAsync(root, "HEAD", [main], Ct));
+        var own = await Backend.RevListAsync(root, "HEAD", ["HEAD^1"], Ct);
+        string[] expected = [(await Backend.HeadAsync(root, Ct))!, feature];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), own!.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_staged_merge_waits_for_its_commit_which_makes_the_merge_commit_and_an_abort_puts_it_back()
+    {
+        var (root, _, feature) = await BranchedAsync("c.txt", "three\n");
+        await WriteAsync(root, "a.txt", "changed on main\n");
+        Assert.True((await Backend.CommitAllAsync(root, "on main", Ct)).Ok);
+        var main = (await Backend.HeadAsync(root, Ct))!;
+
+        var staged = await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct);
+
+        Assert.True(staged.Ok, staged.Error);
+        Assert.True(staged.Pending);
+        Assert.Equal(main, await Backend.HeadAsync(root, Ct));
+        Assert.Empty(await Backend.UnmergedAsync(root, Ct));
+        Assert.True((await Backend.MergeAbortAsync(root, Ct)).Ok);
+        Assert.Empty(await Backend.StatusAsync(root, false, Ct));
+        Assert.Null(await Backend.TextAtAsync(root, "HEAD", "c.txt", Ct));
+
+        Assert.True((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct)).Ok);
+        Assert.True((await Backend.CommitStagedAsync(root, "Merge branch 'feature'", Ct)).Ok);
+
+        Assert.Equal(feature, await Backend.CommitOfAsync(root, "HEAD^2", Ct));
+        Assert.Equal(main, await Backend.CommitOfAsync(root, "HEAD^1", Ct));
+        Assert.False((await Backend.CommitStagedAsync(root, "nothing staged", Ct)).Ok);
+    }
+
+    [Fact]
+    public async Task A_merge_whose_sides_changed_one_file_differently_is_left_begun_with_that_path_unmerged_until_abandoned()
+    {
+        var (root, _, feature) = await BranchedAsync("a.txt", "theirs\n");
+        await WriteAsync(root, "a.txt", "ours\n");
+        await WriteAsync(root, "b-only.txt", "main only\n");
+        Assert.True((await Backend.CommitAllAsync(root, "on main", Ct)).Ok);
+        var main = (await Backend.HeadAsync(root, Ct))!;
+
+        var merged = await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct);
+
+        Assert.False(merged.Ok);
+        Assert.True(merged.Pending);
+        Assert.Equal(["a.txt"], merged.Unmerged);
+        Assert.Equal(["a.txt"], await Backend.UnmergedAsync(root, Ct));
+        Assert.False((await Backend.CommitStagedAsync(root, "unsettled", Ct)).Ok);
+        Assert.False((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct)).Ok);
+
+        Assert.True((await Backend.MergeAbortAsync(root, Ct)).Ok);
+
+        Assert.Empty(await Backend.UnmergedAsync(root, Ct));
+        Assert.Empty(await Backend.StatusAsync(root, false, Ct));
+        Assert.Equal(main, await Backend.HeadAsync(root, Ct));
+        Assert.True((await Backend.MergeAbortAsync(root, Ct)).Ok);
+    }
+
+    [Fact]
+    public async Task A_checkout_put_back_at_a_commit_is_detached_there_with_its_merge_abandoned_and_its_loose_files_gone()
+    {
+        var (root, first, feature) = await BranchedAsync("c.txt", "three\n");
+        await WriteAsync(root, "a.txt", "changed on main\n");
+        Assert.True((await Backend.CommitAllAsync(root, "on main", Ct)).Ok);
+        Assert.True((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct)).Ok);
+        await WriteAsync(root, "loose.txt", "x\n");
+
+        var done = await Backend.PutBackAsync(root, first, Ct);
+
+        Assert.True(done.Ok, done.Error);
+        Assert.Null(await Backend.BranchAsync(root, Ct));
+        Assert.Equal(first, await Backend.HeadAsync(root, Ct));
+        Assert.Empty(await Backend.StatusAsync(root, true, Ct));
+        Assert.True((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Stage), Ct)).Pending);
+    }
+
+    private async Task<(string Root, string First, string Tree)> WithTreeAsync(string branch)
+    {
+        var (root, first) = await OneAsync();
+        var tree = Beside(root, "tree");
+        Assert.True((await Backend.AddWorktreeAsync(root, new GitWorktreeAdd(tree, first, branch), Ct)).Ok);
+        return (root, first, tree);
+    }
+
+    [Fact]
+    public async Task A_tree_counts_its_uncommitted_paths_with_an_untracked_folder_as_one_and_reads_its_head_and_branch()
+    {
+        var (root, first) = await OneAsync();
+        Assert.Equal(0, await Backend.UncommittedAsync(root, Ct));
+        Assert.Equal(new GitTreeStatus(0, first, "main"), await Backend.TreeStatusAsync(root, Ct));
+
+        await WriteAsync(root, "a.txt", "changed\n");
+        await WriteAsync(root, "new/one.txt", "1\n");
+        await WriteAsync(root, "new/two.txt", "2\n");
+
+        Assert.Equal(2, await Backend.UncommittedAsync(root, Ct));
+        Assert.Equal(new GitTreeStatus(2, first, "main"), await Backend.TreeStatusAsync(root, Ct));
+    }
+
+    [Fact]
+    public async Task A_place_names_the_common_directory_the_working_root_and_the_branch_and_a_detached_tree_names_head()
+    {
+        var (root, first, tree) = await WithTreeAsync("feature/x");
+
+        var own = await Backend.PlaceAsync(tree, Ct);
+        var main = await Backend.PlaceAsync(root, Ct);
+
+        Assert.Equal(0, own.Code);
+        Assert.Equal("feature/x", own.Branch.Trim());
+        Assert.Equal(Path.GetFullPath(Path.Combine(root, ".git")), Path.GetFullPath(own.CommonDir.Trim()));
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(own.TopLevel.Trim()));
+        Assert.Equal("main", main.Branch.Trim());
+
+        Assert.True((await Backend.SwitchAsync(tree, new GitSwitch(null, first), Ct)).Ok);
+        Assert.Equal("HEAD", (await Backend.PlaceAsync(tree, Ct)).Branch.Trim());
+    }
+
+    [Fact]
+    public async Task A_layout_puts_a_linked_trees_git_directory_under_the_common_one_the_main_checkouts_in_it()
+    {
+        var (root, _, tree) = await WithTreeAsync("feature/x");
+
+        var main = await Backend.LayoutAsync(root, Ct);
+        var linked = await Backend.LayoutAsync(tree, Ct);
+
+        Assert.Equal(Path.GetFullPath(Path.Combine(root, ".git")), main!.CommonDir);
+        Assert.Equal(main.CommonDir, main.GitDir);
+        Assert.Equal(main.CommonDir, linked!.CommonDir);
+        Assert.StartsWith(Path.Combine(main.CommonDir, "worktrees") + Path.DirectorySeparatorChar, linked.GitDir, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task A_tree_is_removed_clean_and_refused_with_changes_or_a_lock_until_forced()
+    {
+        var (root, _, tree) = await WithTreeAsync("feature/x");
+        await WriteAsync(tree, "loose.txt", "x\n");
+
+        Assert.False((await Backend.RemoveTreeAsync(root, tree, force: false, Ct)).Ok);
+        Assert.Contains(await Backend.WorktreesAsync(root, Ct) ?? [], each => each.Branch == "feature/x");
+
+        await RemoveAsync(tree, "loose.txt");
+        Assert.True((await Backend.LockAsync(root, tree, "held", Ct)).Ok);
+        Assert.False((await Backend.RemoveTreeAsync(root, tree, force: false, Ct)).Ok);
+        Assert.True((await Backend.UnlockAsync(root, tree, Ct)).Ok);
+
+        Assert.True((await Backend.RemoveTreeAsync(root, tree, force: false, Ct)).Ok);
+        Assert.DoesNotContain(await Backend.WorktreesAsync(root, Ct) ?? [], each => each.Branch == "feature/x");
+    }
+
+    [Fact]
+    public async Task The_commits_no_branch_of_the_persons_holds_are_listed_newest_first_and_daoris_branches_hold_none()
+    {
+        var (root, first, tree) = await WithTreeAsync("daoris/s-1");
+        await WriteAsync(tree, "one.txt", "1\n");
+        Assert.True((await Backend.CommitAllAsync(tree, "one", Ct)).Ok);
+        await WriteAsync(tree, "two.txt", "2\n");
+        Assert.True((await Backend.CommitAllAsync(tree, "two", Ct)).Ok);
+        var tip = (await Backend.HeadAsync(tree, Ct))!;
+
+        var lines = (await Backend.UnlandedAsync(tree, "HEAD", null, Ct))!;
+        Assert.Equal(2, lines.Count);
+        Assert.EndsWith(" two", lines[0]);
+        Assert.EndsWith(" one", lines[1]);
+        Assert.Empty((await Backend.UnlandedAsync(root, first, null, Ct))!);
+
+        Assert.True((await Backend.UpdateRefAsync(root, "refs/heads/main", tip, first, Ct)).Ok);
+        Assert.Empty((await Backend.UnlandedAsync(tree, "HEAD", null, Ct))!);
+        Assert.Null(await Backend.UnlandedAsync(tree, "refs/heads/not-there", null, Ct));
+    }
+
+    [Fact]
+    public async Task A_status_lists_each_changed_path_with_its_state_and_each_untracked_file_by_itself()
+    {
+        var (root, _) = await OneAsync();
+        await WriteAsync(root, "a.txt", "changed\n");
+        await WriteAsync(root, "new/c.txt", "new\n");
+        await RemoveAsync(root, "src/b.txt");
+
+        var listed = await Backend.StatusEntriesAsync(root, Ct);
+
+        Assert.Equal([("a.txt", " M"), ("new/c.txt", "??"), ("src/b.txt", " D")], listed.OrderBy(each => each.Path, StringComparer.Ordinal).Select(each => (each.Path, each.State)));
+        Assert.All(listed, each => Assert.Null(each.From));
+    }
+
+    [Fact]
+    public async Task Git_answers()
+    {
+        Assert.True(await Backend.AvailableAsync(Ct));
+    }
+
+    [Fact]
+    public async Task An_init_makes_a_repository_on_the_line_with_no_commit()
+    {
+        var made = Beside(await NewAsync(), "made");
+
+        Assert.True((await Backend.InitAsync(made, "trunk", Ct)).Ok);
+
+        Assert.Equal("trunk", await Backend.BranchAsync(made, Ct));
+        Assert.Null(await Backend.HeadAsync(made, Ct));
+        Assert.Empty((await Backend.RefsAsync(made, ["refs"], null, null, Ct))!);
+    }
+
+    [Fact]
+    public async Task An_empty_commit_is_one_commit_on_the_line_holding_no_file()
+    {
+        var made = Beside(await NewAsync(), "made");
+        Assert.True((await Backend.InitAsync(made, "trunk", Ct)).Ok);
+
+        Assert.True((await Backend.CommitEmptyAsync(made, "Fixture", "fixture@example.test", "begin", Ct)).Ok);
+
+        var head = (await Backend.HeadAsync(made, Ct))!;
+        Assert.Equal(1, await Backend.CountAsync(made, "HEAD", [], Ct));
+        Assert.Empty((await Backend.EntriesAsync(made, head, [], true, Ct))!);
+        Assert.Equal([head], (await Backend.RefsAsync(made, ["refs"], null, null, Ct))!.Select(each => each.Commit));
+        Assert.Equal("refs/heads/trunk", Assert.Single(await Backend.RefsAsync(made, ["refs"], null, null, Ct) ?? []).Name);
     }
 }

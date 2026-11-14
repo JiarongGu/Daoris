@@ -1,5 +1,5 @@
-using Daoris.Ports.Repositories;
 using Daoris.Ports.Git;
+using Daoris.Ports.Repositories;
 
 namespace Daoris.Testing;
 
@@ -7,7 +7,7 @@ namespace Daoris.Testing;
 /// The repository a test process's root hands as its port, which each test's flow may choose for itself: a test that runs a family on a
 /// <see cref="MemoryRepository"/> <see cref="Use"/>s it for the flow it awaits, and every other flow reaches the repository the root chose.
 /// </summary>
-public sealed partial class FlowRepository(IGitRepository otherwise) : IGitRepository
+public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
 {
     private static readonly AsyncLocal<IGitRepository?> s_chosen = new();
 
@@ -98,4 +98,45 @@ public sealed partial class FlowRepository(IGitRepository otherwise) : IGitRepos
     {
         public void Dispose() => s_chosen.Value = before;
     }
+
+    public Task<GitMerged> MergeAsync(string folder, GitMergeAsk ask, CancellationToken ct) => Current.MergeAsync(folder, ask, ct);
+
+    public Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct) => Current.RevListAsync(folder, tip, exclude, ct);
+
+    public Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct) => Current.MergeAbortAsync(folder, ct);
+
+    public Task<IReadOnlyList<string>> UnmergedAsync(string folder, CancellationToken ct) => Current.UnmergedAsync(folder, ct);
+
+    public Task<GitDone> CommitStagedAsync(string folder, string message, CancellationToken ct) => Current.CommitStagedAsync(folder, message, ct);
+
+    public Task<GitDone> PutBackAsync(string folder, string commit, CancellationToken ct) => Current.PutBackAsync(folder, commit, ct);
+
+    public Task<GitHeldAnswer> RunHeldAsync(GitHeldRun run, GitHeldStart start) => Current.RunHeldAsync(run, start);
+
+    public Task<GitTreeStatus?> TreeStatusAsync(string folder, CancellationToken ct) => Current.TreeStatusAsync(folder, ct);
+
+    public Task<int?> UncommittedAsync(string folder, CancellationToken ct) => Current.UncommittedAsync(folder, ct);
+
+    public Task<GitTreePlace> PlaceAsync(string folder, CancellationToken ct) => Current.PlaceAsync(folder, ct);
+
+    public Task<GitDone> RemoveTreeAsync(string folder, string path, bool force, CancellationToken ct) => Current.RemoveTreeAsync(folder, path, force, ct);
+
+    public Task<IReadOnlyList<string>?> UnlandedAsync(string folder, string revision, string? except, CancellationToken ct) => Current.UnlandedAsync(folder, revision, except, ct);
+
+    public Task<GitFreshTop> FreshTopAsync(string folder, CancellationToken ct) => Current.FreshTopAsync(folder, ct);
+
+    public Task<IReadOnlyList<GitRefFact>?> RefFactsAsync(string folder, CancellationToken ct) => Current.RefFactsAsync(folder, ct);
+
+    public Task<IReadOnlyList<GitRef>?> HoldingRefsAsync(string folder, string commit, CancellationToken ct) => Current.HoldingRefsAsync(folder, commit, ct);
+
+    public Task<GitLayout?> LayoutAsync(string folder, CancellationToken ct) => Current.LayoutAsync(folder, ct);
+
+    public Task<IReadOnlyList<GitStatusEntry>> StatusEntriesAsync(string folder, CancellationToken ct) => Current.StatusEntriesAsync(folder, ct);
+
+    public Task<bool> AvailableAsync(CancellationToken ct) => Current.AvailableAsync(ct);
+
+    public Task<GitDone> InitAsync(string folder, string line, CancellationToken ct) => Current.InitAsync(folder, line, ct);
+
+    public Task<GitDone> CommitEmptyAsync(string folder, string name, string email, string message, CancellationToken ct) =>
+        Current.CommitEmptyAsync(folder, name, email, message, ct);
 }

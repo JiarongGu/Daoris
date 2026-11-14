@@ -315,7 +315,7 @@ public sealed class IntegrationRequestsTests : IDisposable
 
         _ancestryUnread = true;
         Refused(await AdmitAsync(Owner, new Records([Landed()]), Card()), IntegrationRefusals.Unread,
-            $"git could not say whether the line `main` holds `{Branch}` (fatal: not a valid commit)");
+            $"git could not say whether the line `main` holds `{Branch}`, so nothing was requested");
 
         _ancestryUnread = false;
         _refs.Remove("refs/heads/main");

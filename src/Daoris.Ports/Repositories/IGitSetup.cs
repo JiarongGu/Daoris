@@ -6,7 +6,8 @@ namespace Daoris.Ports.Repositories;
 /// <param name="From">The path a rename or copy came from; null otherwise.</param>
 public sealed record GitStatusEntry(string Path, string State, string? From);
 
-public partial interface IGitRepository
+/// <summary>A repository's set-up: whether git answers, a repository made, its first commit, and its status by path (<see cref="IGitRepository"/>).</summary>
+public interface IGitSetup
 {
     /// <summary>Every path status names, untracked files one by one, each with where a rename or copy came from; thrown where git could not read it.</summary>
     Task<IReadOnlyList<GitStatusEntry>> StatusEntriesAsync(string folder, CancellationToken ct);

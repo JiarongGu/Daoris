@@ -54,7 +54,8 @@ public sealed record GitFreshTop(bool Done, string Top, string Error);
 /// <param name="Tree">The tree of the commit it names; empty where it names none.</param>
 public sealed record GitRefFact(string Name, string Object, string Type, string Upstream, string UpstreamShort, string Tree);
 
-public partial interface IGitRepository
+/// <summary>A repository's refs and working trees, and the held gits an act runs (<see cref="IGitRepository"/>).</summary>
+public interface IGitTrees
 {
     /// <summary>The branches under <c>refs/heads</c> and the remote-tracking ones of <c>origin</c>, each with its facts, in name order; null where git could not list them.</summary>
     Task<IReadOnlyList<GitRefFact>?> RefFactsAsync(string folder, CancellationToken ct);
