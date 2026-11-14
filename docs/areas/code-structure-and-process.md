@@ -270,6 +270,6 @@ finishes first and the whole set runs once.
   build cut as they settle, the designs left at `docs/`'s top, the examples; the change-cost run against a fresh copy; the bench's
   memory half.
 - TESTDIET1: the cut in its census's order (`docs/2026-11-12-test-diet-census.md` §8).
-- SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
-- MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
+- FULLSET1: the scope's one verification (the full CI on main's tip, its reds fixed together) beside the full set's replay of passes.
+- MERGETS1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
   kept by age and size, and a gate killed from outside said as lost (`docs/2026-11-05-merge-tool-design.md`).

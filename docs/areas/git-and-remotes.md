@@ -360,7 +360,7 @@ Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `c
 - **GITAUTH1** c, a key added on a real host and a real fetch, the git setting's doors waiting on Settings → Tools; h, the
   install seen.
 - **ONEWAY1af**: once the unheld census reads zero on the install, `RecoveryRetention`, `RecoveryDropping` and the census go.
-- **PERF1**: the cuts the counts name, and the other test classes that start git counted.
+- **STARTPERF1**: the cuts the counts name, and the other test classes that start git counted.
 - **GITLIB1g**: the library's two ends.
 - **FABRIC-PERFORM1l**: the pull request's fields kept on the wire evidence (`WorkEvidence`).
 - The identity's `api` token setter, read only by the adoption, is the next removal (no row).
