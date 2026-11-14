@@ -10,7 +10,8 @@ namespace Daoris.Driver;
 /// (<c>turn/start</c>, <c>step/start</c>, …), the model's view rebuilt from <c>user/message</c>, <c>assistant/message</c>, <c>tool/call</c> and
 /// <c>tool/result</c> and the <c>request/header</c> snapshot each request appends. Its reader refuses a log with an event type it does not
 /// know, and its own seeding is a fork of one of its sessions, so a log written from outside is unproven until one is loaded; Daoris also
-/// declares no conversation home for it.
+/// declares no conversation home for it. Its JSONL persistence keeps each session as <c>--&lt;cwd&gt;--/&lt;id&gt;/session.vN.jsonl</c> under a
+/// root its profile must name, Zstandard-framed unless the profile asks for none, so a writer needs the profile's root and codec too.
 /// </summary>
 internal sealed class DshSeedWriter : IConversationSeedWriter
 {

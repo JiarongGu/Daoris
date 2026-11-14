@@ -3,8 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's context entries, written from the line a brief is composed from: what was asked, where the work stands and why it moves, what
-/// the tree holds, the files the line read and the memory it was handed, and the outgoing agent's note as its claim. A seed tells them after
+/// A session's context entries, written from the line a brief is composed from: the request, where the work stands and why it moves, what
+/// the tree holds, the files the line read and the memory it is handed, and the outgoing agent's note as its claim. A seed tells them after
 /// the conversation as the host's record; the brief's text is the floor's.
 /// </summary>
 internal static class SeedContext
@@ -53,7 +53,7 @@ internal static class SeedContext
         return said.ToString();
     }
 
-    /// <summary>Each file the line's read calls name, relative to its tree (one outside it by its name alone), with how often it was read.</summary>
+    /// <summary>Each file the line's read calls name, relative to its tree (one outside it by its name alone), with how many calls read it.</summary>
     private static List<string> Read(IEnumerable<SessionEvent> events, string? tree)
     {
         var reads = events

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A seed's record is the session's context entries, written from the line a brief is composed from, in place of the brief's text: what was
-/// asked, where it stands and why it moves, what the tree holds, what the line read and the memory it was handed, and the outgoing agent's
+/// A seed's record is the session's context entries, written from the line a brief is composed from, in place of the brief's text: the
+/// request, where it stands and why it moves, what the tree holds, what the line read and the memory it is handed, and the outgoing agent's
 /// note as its claim. No machine path is named.
 /// </summary>
 public sealed class SeedContextTests

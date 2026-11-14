@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// With real conversations on the protocol door: a hand-over to another agent whose provider seeds hands its new part the session written as
 /// that agent's own conversation in its account's home, resumed by its id with Daoris's word for the move's reason and no brief; the part it
-/// left says its conversation was written there, never carried.
+/// left says its conversation is written there, never carried.
 /// </summary>
 /// <remarks>
 /// The first conversation runs on <c>acp-stub</c>; it is handed to <c>alt-acp-stub</c>, the second stand-in's protocol door, whose one account

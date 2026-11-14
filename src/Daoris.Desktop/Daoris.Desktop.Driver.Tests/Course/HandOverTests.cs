@@ -309,9 +309,9 @@ public sealed class HandOverTests : IDisposable
                 taken.Calls.Add($"end {session}");
                 return Task.CompletedTask;
             },
-            start: (prior, request, from, keyed, _, _) =>
+            start: (p, request, from, keyed, _, _) =>
             {
-                taken.Calls.Add($"start {Path.GetFileName(prior.Tree)} {prior.Repository} {request.Agent} {request.Account}");
+                taken.Calls.Add($"start {Path.GetFileName(p.Tree)} {p.Repository} {request.Agent} {request.Account}");
                 taken.From = from;
                 taken.Keyed = keyed;
                 return Task.FromResult(taken.Started);

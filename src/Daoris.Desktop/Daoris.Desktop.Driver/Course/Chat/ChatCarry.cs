@@ -1,14 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A move's new part that goes on in a conversation rather than from the brief: onto another account of its own agent its own conversation,
-/// carried there; onto another agent, or where the copy cannot be made, the session written as the new agent's own conversation (the Seed
-/// form). Planned once the start's walk has settled the door and the account (<see cref="ChatCarries"/>), its new part's record is opened as a
-/// resume of that conversation, the refused turns' words and the moved ones its prompt with Daoris's word for the move's reason after them, no
-/// brief. Where the door refuses the resume before any prompt, the same part goes on in the brief, what was placed in that account's home
-/// taken out and the refusal said.
+/// A move's new part that resumes a conversation, never the brief: its own agent's carried to the new account, or the session written as
+/// another agent's own (the Seed form), planned at the start's hook (<see cref="ChatCarries"/>), its prompt the refused and moved words with
+/// Daoris's word for the move's reason. A resume the door refuses goes on in the brief, the placed files taken out and the refusal said.
 /// </summary>
-/// <remarks>Ask Daoris's room and a host whose open moves no word are briefed, and plan nothing here.</remarks>
 internal sealed class ChatCarry(
     IExecutorWiring wiring, AgentDoor door, PriorSession prior, HarnessSelection selection, CarryPlan.Carried carried, string why, ComposedBrief brief,
     IReadOnlyList<SessionEvent> refused, IReadOnlyList<ChatMessage> unkept, ConversationMove move, MoveFence fence, TaskCompletionSource<Task> read)
@@ -139,7 +135,7 @@ internal sealed class ChatCarry(
     }
 
     /// <summary>
-    /// The door refused the carried resume before any prompt, and its run let go: what was placed taken out of the new account's home, and the
+    /// The door refused the carried resume before any prompt, and its run let go: the placed files taken out of the new account's home, and the
     /// same part, its record working, opened afresh and handed Daoris's brief, the refused turns' words and the moved ones, the refusal said.
     /// </summary>
     public async Task<ChatStart> FallBackAsync()

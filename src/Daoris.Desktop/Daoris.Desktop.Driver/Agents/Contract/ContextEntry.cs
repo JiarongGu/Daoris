@@ -3,13 +3,13 @@ namespace Daoris.Driver;
 /// <summary>What an entry of a session's context is about: the five kinds a session carried from one agent to the next needs.</summary>
 public enum ContextKind
 {
-    /// <summary>What was asked, in the host's words.</summary>
+    /// <summary>The request, in the host's words.</summary>
     Work,
 
-    /// <summary>A choice that was made, and why.</summary>
+    /// <summary>A choice made, and why.</summary>
     Decided,
 
-    /// <summary>Something that was learned, and where, where that is known.</summary>
+    /// <summary>Something learned, and where, where that is known.</summary>
     Found,
 
     /// <summary>Where the work stands now, and why it moves.</summary>

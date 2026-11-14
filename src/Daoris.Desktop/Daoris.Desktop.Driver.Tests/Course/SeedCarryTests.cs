@@ -68,7 +68,7 @@ public sealed class SeedCarryTests
         Assert.DoesNotContain("whole", said.Note);
     }
 
-    /// <summary>🔴 The part a seeded move left says its conversation was written for the new agent, never that it was carried.</summary>
+    /// <summary>🔴 The part a seeded move left says its conversation is written for the new agent, never carried.</summary>
     [Fact]
     public void The_part_a_seeded_move_left_says_its_conversation_was_written_never_carried()
     {

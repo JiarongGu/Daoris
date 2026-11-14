@@ -312,8 +312,6 @@ public static class HandOverTake
     /// Opens the new conversation in the old one's tree on the ask's agent and account, its record naming the one it continues,
     /// why and who asked, asking the host to move the old part's waiting words under the move's key where it has one
     /// (<paramref name="opens"/>): every word of the person's kept there meanwhile, none named, since a hand-over carries none of its own.
-    /// Handed the brief, from which a part that goes on in a carried or seeded conversation (<see cref="ChatStart.Carried"/>) is written and
-    /// which it is then never told.
     /// </param>
     /// <param name="opens">The key the move's open is sent with; null for an open with no move record behind it.</param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
@@ -359,7 +357,6 @@ public static class HandOverTake
                 $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
         }
 
-        // Going on in its conversation, its parts have said where it went and what it goes on from, and it is handed no brief.
         if (started.Carried) return new HandedOver(to, true, null, $"conversation `{to}` goes on from `{id}` with {ask.Agent}, in its own conversation.");
 
         // A move by the usage curve names the account it left and the one it went to: the record that says so stays

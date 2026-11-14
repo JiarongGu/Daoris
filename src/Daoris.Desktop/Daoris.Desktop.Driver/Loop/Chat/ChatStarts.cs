@@ -51,10 +51,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
     /// which sends them only to a host whose <c>opens</c> mark is 2. What moved comes back on <see cref="ChatStart.Moved"/>. Null for every
     /// other start, which opens as before.
     /// </param>
-    /// <param name="carries">
-    /// A move's carry, asked with the door and account this start's walk settled once its record is open: the part runs as the resume of its
-    /// carried or seeded conversation (<see cref="ChatCarry.RunAsync"/>) where it answers one; null for every other start.
-    /// </param>
+    /// <param name="carries">A move's carry, asked with the walked door and account once the record is open (<see cref="ChatCarries"/>); null for every other start.</param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
@@ -261,7 +258,6 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
         {
             // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
             context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
-            // The walk has settled the door and the account, so the move's carry is placed in that account's home now.
             carrier = carries?.Invoke(resolved, selection);
             carrier?.Bound(sessionId);
             // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it

@@ -198,10 +198,14 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (`LimitCarry`), its files copied once the part it leaves has ended: whole at or under the provider's `WholeBound`, compacted
     first past it where the harness can be asked, else briefed. Where the copy cannot be made (the door declares no carry, no
     conversation is kept, its file is missing or the copy fails) the move asks the Seed form (`SeedCarry`): the new door's provider
-    writes the part's events and Daoris's brief as its agent's own conversation in the new account's home, resumed as a carry is,
-    with no brief (`moved.seeded-from`). It is briefed on another agent, from or to the tool's own home, past the bound with no
-    compaction, where the door's provider binds no seeding, or the door refuses the resume (the copy or seed taken out,
-    `IConversationCarry.Remove`, `IConversationSeeding.Remove`); `session.moved` says which. A restart cutting a carried move off before its new part runs leaves
+    writes the part's events and the line's context entries as its agent's own conversation in the new account's home, resumed as a
+    carry is, with no brief. A limit move to another agent, and a hand-over to another agent, are seeded the same way: the start's
+    walk settles the door and the account, so the move hands a hook (`ChatCarries`) its start asks once the record is open, and
+    `ChatCarry` plans, places and runs the resume, its word (`CarryWords`) and notes told by the move's reason (`moved.seeded-on` on
+    the part it left, `moved.seeded-from` on the new one). It is briefed, the floor, from or to the tool's own home, past the bound
+    with no compaction, where the door's provider binds no seeding, or the door refuses the resume (the copy or seed taken out,
+    `IConversationCarry.Remove`, `IConversationSeeding.Remove`); `session.moved` says which. A hand-over to the same agent is
+    briefed. A restart cutting a carried move off before its new part runs leaves
     it in the same conversation. With no account to move to it waits, showing the earliest reset. A driven line whose limits rule
     refers holds as an ask for the limit supervisor (roles rule 48). The bound is D206's measurement. (D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries rule:
@@ -247,9 +251,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     access readings stay apart (a field's and the words'), a limit's window, scope and stated reset reach D125's bounds as stated
     (`LayerStatedReset`), and an allowance report is put in the rate-limit frame's shape for the one reader of an agent's windows
     (`LayerAllowance`). A provider's seeding (`IConversationSeeding`, the Seed form of a session's context, D293 point 5) is bound
-    from its `Layer/` (`ConversationSeedings`) over Lyntai's Seed rendering (`LayerSeeding`, the events mapped by `SeedHistory`):
+    from its `Layer/` (`ConversationSeedings`) over Lyntai's Seed rendering (`LayerSeeding`, the events mapped by `SeedHistory`, the
+    line's context entries, `SeedContext` from the brief's line, as Lyntai's `SessionContext`, an agent's note as its claim):
     Claude Code's writer puts chained conversation lines in the tree's project folder for both its doors, Codex's a rollout under
     its day for `codex-acp`, each held by Lyntai's `SeedWriterConformance`; dsh states its seed unmeasured, so it takes the brief.
+    `SeedResumeProcessTests` resumes a written conversation on the real `claude` and `codex-acp` behind the suite's real-model switch.
     Without the layer no seeding is bound. `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
     person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
     The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
