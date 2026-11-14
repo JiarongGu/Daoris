@@ -74,7 +74,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
   if (!page) return null;
 
   const wayToday = page.identities.at(-1)?.way ?? 'ssh';
-  const browse = () => pick.mutateAsync(t('settings.git.pickTitle'), { onError: failed }).then((answer) => {
+  const browse = () => pick.mutateAsync({ title: t('settings.git.pickTitle'), kind: 'key' }, { onError: failed }).then((answer) => {
     if (!answer.can) {
       notify(t('settings.git.noPicker'), 'error');
       return null;

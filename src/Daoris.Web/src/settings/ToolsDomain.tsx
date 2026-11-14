@@ -76,7 +76,7 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
     });
   };
 
-  const browse = (tool: ToolShown) => pick.mutate(t('settings.tools.pickTitle', { name: tool.name }), {
+  const browse = (tool: ToolShown) => pick.mutate({ title: t('settings.tools.pickTitle', { name: tool.name }), kind: 'program' }, {
     onSuccess: (answer) => {
       if (!answer.can) {
         notify(t('settings.tools.noPicker'), 'error');

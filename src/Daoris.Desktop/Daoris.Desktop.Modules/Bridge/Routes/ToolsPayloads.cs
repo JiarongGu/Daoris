@@ -38,5 +38,5 @@ public sealed record GitAnswerPress(string? Ask, string? Answer);
 /// <summary>Which git a tool is set to: <c>Way</c> is system, managed or file, and each reads the fields it names.</summary>
 public sealed record ToolsGitPress(string Way, string? Version, string? File);
 
-/// <summary>The file picker; <c>Title</c> is what it is shown with.</summary>
-public sealed record ToolsPickRead(string? Title);
+/// <summary>The file picker; <c>Title</c> is what it is shown with, <c>Kind</c> is <c>program</c>, <c>key</c> or <c>file</c> (none is a program).</summary>
+public sealed record ToolsPickRead(string? Title, string? Kind = null);

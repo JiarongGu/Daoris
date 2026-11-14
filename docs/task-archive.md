@@ -11,6 +11,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## WFTAB1 — workspace and repository Workflow tabs (2026-11-14)
 
 > Outcome: both pages show Workflow, the workspace's own-rules door opens the repository tab, and settings stay in Agents → Setup; failing-first page tests and disposable installed-window proof cover the restoration in 2c58aeb470 (`docs/FIX-LOG.md`).
+## KEYPICK1 — the SSH key import opens a key picker (2026-11-14)
+
+> **KEYPICK1** (app, modules, web): Outcome: `PickFile` takes a `PickKind` (program, key, file) and `PickDialogs` is the one place that says each kind's title and filters: a program opens on *Programs* then all files, a key on its usual names (`*.pem`, `*.ppk`, `*.key`, `id_ed25519`, `id_ecdsa`, `id_rsa`, `id_dsa`) then all files, a file on all files; `TOOLS_PICK` carries `kind` (none is a program), the key import's *Browse…* asks for a key and a tool's for a program, and a test holds each kind's dialog, the route's kind and the page's press.
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 

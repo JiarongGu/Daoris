@@ -290,8 +290,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     joined, as it returns, to that purpose's kill-on-close job, held for the process's life; a process ended early is ended by
     `OwnedProcesses.End`; the census reads each job by process id and stops nothing. (from D249)
 64. A system file or folder picker is the kit's `IFileDialogs`, owned by the window that asked and shown on a thread of its
-    own; a census holds that no source shows one itself. A window thread's exception reaches the machine log and the pump goes
-    on. The executable is built with its context validation relaxed, since a shell extension's handled exception under a
+    own; `PickFile` is the one file dialog and takes its kind (`PickKind`: a program under *Programs* first, a key under its
+    usual names first, any file), each kind's title and filters written once in `PickDialogs`; a census holds that no source shows one itself. A window
+    thread's exception reaches the machine log and the pump goes on. The executable is built with its context validation relaxed, since a shell extension's handled exception under a
     picker's right-click menu otherwise fail-fasts it (`0xc0000409`). Every caller posts to a window's thread through one
     guarded `WindowPost`.
 
