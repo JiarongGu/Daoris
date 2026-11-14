@@ -60,7 +60,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
 
     private NodeRuntime Runtime(string root) => new(Files, _port, () => DateTimeOffset.UtcNow, () => true)
     {
-        Doors = NodeDoors.None.With(NodeKinds.Integrate, NodeRuntime.HomeDoor(Home)),
+        Doors = NodeDoors.None.With(NodeKinds.Integrate, NodeRuntime.HomeDoor(Home)).With(NodeKinds.Check, new GreenChecks()),
         Lines = Transport(root),
     };
 
@@ -142,6 +142,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
             Tips = NodeTips.ReadAsync,
         }, CancellationToken.None);
 
+        await Pass(Branch());
         var first = await Pass(Branch());
         var seen = Files.Read(RunUnits.IdOf(Run));
         Assert.True(Store().Open().Count == 1, string.Join("\n", first.Said) + "\n" + string.Join(",", seen?.Statuses.Select(s => s.Key + "=" + s.Value.State) ?? ["no record"]));

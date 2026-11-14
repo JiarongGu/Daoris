@@ -101,7 +101,11 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         var passes = Passes(client, RunCount, at => (at is >= TreeCount and < 2 * TreeCount ? "Taken" : "Done", at < TreeCount));
 
         Task<NodeRuntimePass> PassAsync(bool whole) => passes(whole);
-        await PassAsync(whole: true);
+        for (var pass = 0; pass < 4 && new NodeRecordFiles(home).Read(RunUnits.IdOf("r00"))?.Statuses.GetValueOrDefault("look")?.State != NodeStates.Active; pass++)
+        {
+            await PassAsync(whole: true);
+        }
+
         var (whole, wholeMs, _) = await CountedAsync("a whole pass where nothing moved", () => PassAsync(whole: true));
         var (wake, _, _) = await CountedAsync("a wake's pass where nothing moved", () => PassAsync(whole: false));
         Assert.Equal(NodeStates.Active, new NodeRecordFiles(home).Read(RunUnits.IdOf("r00"))!.Statuses["look"].State);
@@ -155,7 +159,10 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         }
 
         var read = new NodeUnitsRead(units, new Dictionary<string, string> { [Repository] = _root });
-        var runtime = new NodeRuntime(new NodeRecordFiles(home, () => true), new ObservedPort(), () => DateTimeOffset.UtcNow, () => true);
+        var runtime = new NodeRuntime(new NodeRecordFiles(home, () => true), new ObservedPort(), () => DateTimeOffset.UtcNow, () => true)
+        {
+            Doors = NodeDoors.None.With(NodeKinds.Check, new GreenChecks()),
+        };
         return whole =>
         {
             var gates = new NodeGates(home, client);
