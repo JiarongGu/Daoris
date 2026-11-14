@@ -3,9 +3,9 @@ import { store, stored } from '../lib/stored';
 /**
  * A repository's page's tabs, in the order the page draws them: what the page holds, its branches and its
  * line's history, its checkout's changes where the person let Daoris change its files
- *  its integration and the files git does not manage. Its setup and workflow are its place's, in the Agents place's Setup mode.
+ * its integration, the files git does not manage and how its work moves. Its settings are its place's, in Agents → Setup.
  */
-export const PROJECT_TABS = ['details', 'branches', 'history', 'changes', 'integration', 'files'] as const;
+export const PROJECT_TABS = ['details', 'branches', 'history', 'changes', 'integration', 'files', 'workflow'] as const;
 
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 

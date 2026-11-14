@@ -365,7 +365,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.
-59. Setup is the Agents place's default. A workspace's page has Details, Branches and Workflow tabs; its setup is its place's
+59. Setup is the Agents place's default. Workspace and repository pages in Repositories each have a Workflow tab, reading Current
+    only while open; a workspace's own-rules door opens the repository's Workflow tab. Settings doors open the place in Agents → Setup
     (defaults under Workflow, access and Reach under Sessions).
 
 ## Where a change goes

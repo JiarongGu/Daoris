@@ -8,6 +8,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)
 
 > **CLIPACK1** (publish, driver, CLI; the owner, 2026-11-14): Outcome: `app/cli/` is `daoris.mjs` (every CLI module bundled by the web build's esbuild) with `canon/`, `package.json` and `build.json` beside it, 54 files and about 0.46 MB in place of the npm layout's 155 files and 1.3 MB; the CLI finds its canon in the folder holding the bundle; the set-up's doctrine runs (`SetupWorld.ToolsAsync` and `StatusAsync`) run the install's file by its path on the tools' node and refuse only where the file is not there, no `PATH` lookup of `daoris`; the publish lays the layout and replaces an older `app/cli/node_modules` whole, and the rehearsal's `cliProblems` follow. The npm package the release publishes is unchanged.
+## WFTAB1 — workspace and repository Workflow tabs (2026-11-14)
+
+> Outcome: both pages show Workflow, the workspace's own-rules door opens the repository tab, and settings stay in Agents → Setup; failing-first page tests and disposable installed-window proof cover the restoration in 2c58aeb470 (`docs/FIX-LOG.md`).
 
 ## RERUNRATCHET1 and MERGEFILE1 — the merge tool's time check reruns, and git's driver temp files are swept (2026-11-14)
 
