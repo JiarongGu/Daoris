@@ -13,7 +13,8 @@ internal static class ClaimedReading
         if (NodeObserving.Unbound(reading, WorkUnitKind.Quest) is { } refused) return refused;
         var unit = reading.Unit;
         var onRun = reading.Binding.Subject is not null;
-        return unit.Records.Quest?.Status switch
+        // A quest its run closes stands at its agent's submission, which is its done until the run's end writes the Done.
+        return (QuestResults.Submitted(unit.Records.Quest) ? "Done" : unit.Records.Quest?.Status) switch
         {
             "Done" when onRun && unit.Records.Quest.Then.Any(step => step.SetUpIn is null
                 && string.Equals(step.To, unit.Records.Quest.To, StringComparison.OrdinalIgnoreCase)) =>

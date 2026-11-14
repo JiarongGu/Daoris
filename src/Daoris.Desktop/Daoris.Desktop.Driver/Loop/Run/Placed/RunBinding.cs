@@ -29,6 +29,14 @@ internal sealed class RunBinding(IRunWiring wiring) : IRunStage
         // A run bound already to a named version may be a graph run that ended and whose chain has come back here: the runtime is
         // asked, and re-arms for it until a pass judges it where its record holds its end.
         if (runBound is { Came: WorkflowBindCame.Already, Run: { } returned, Binding.IsCurrent: false }) wiring.RunReturned?.Invoke(returned);
+
+        // Its quest is the run's to close, so its agent's done is a submission.
+        if (await RunQuestBinding.BindAsync(wiring.Context.Service, run.Quest, runBound, ct).ConfigureAwait(false) is { } unbound)
+        {
+            await run.Fresh.LetGoAsync().ConfigureAwait(false);
+            return run.Hold(unbound);
+        }
+
         run.State.Bound = runBound;
         return null;
     }

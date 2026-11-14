@@ -123,7 +123,8 @@ public sealed class NodeRuntime(
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
-    public Func<string, string, string, CancellationToken, Task<bool>>? Finish { get; set; }
+    /// <summary>The door a run's end is written through (<see cref="RunSessionEnds"/>); none by default, and a run's end then writes nothing.</summary>
+    public Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>? Finish { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;

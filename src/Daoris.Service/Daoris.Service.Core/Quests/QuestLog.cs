@@ -47,9 +47,9 @@ public static class QuestLog
                                     && operation.SetUp is { } setUp && !quest.SetUps.Any(setUp.Same),
         QuestOperationKind.Verdict => quest is { Status: not QuestStatus.Declined } && operation.Verdict is { } verdict
                                       && QuestReviewing.Takes(quest, verdict),
-        // A bind once, on a taken quest before its first submission: a quest follows the graph bound at
-        // its start, so a second bind, of the same graph or another, is no move.
-        QuestOperationKind.Bound => quest is { Status: QuestStatus.Taken, Closure: null, Submission: null }
+        // A bind once, on an open or taken quest before its first submission: a quest follows what bound it at
+        // its start, so a second bind, of the same run or another, is no move.
+        QuestOperationKind.Bound => quest is { Status: QuestStatus.Open or QuestStatus.Taken, Closure: null, Submission: null }
                                     && !string.IsNullOrEmpty(operation.Note),
         // A submission only on a taken quest a closure graph binds. A later one replaces it; whether its successor seals it
         // is the store's to judge inside the write, since only the take's machine makes one.
