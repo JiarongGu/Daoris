@@ -11,11 +11,12 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     private static string Spell(SessionState state) => Session.Spell(state);
 
     private const string AdvanceTargets =
-        "starting, working, awaiting-person, completed, declined, stood-down, failed, stopped";
+        "starting, working, awaiting-person, awaiting-step, completed, declined, stood-down, failed, stopped";
 
     /// <summary>
     /// What each live state may become. Forward only, and every live state can be stopped — the person's
-    /// hand is never refused.
+    /// hand is never refused. A session waiting on its workflow's step goes on with that step's word, parks for the person at a bound,
+    /// and ends only as its workflow ends.
     /// </summary>
     private static IReadOnlyList<SessionState> Allowed(SessionState from) => from switch
     {
@@ -24,10 +25,12 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         SessionState.Starting =>
             [SessionState.Working, SessionState.StoodDown, SessionState.Failed, SessionState.Stopped],
         SessionState.Working =>
-            [SessionState.AwaitingPerson, SessionState.Completed, SessionState.Declined,
+            [SessionState.AwaitingPerson, SessionState.AwaitingStep, SessionState.Completed, SessionState.Declined,
              SessionState.StoodDown, SessionState.Failed, SessionState.Stopped],
         SessionState.AwaitingPerson =>
             [SessionState.Working, SessionState.Completed, SessionState.Declined, SessionState.Stopped],
+        SessionState.AwaitingStep =>
+            [SessionState.Working, SessionState.AwaitingPerson, SessionState.Completed, SessionState.Declined, SessionState.Stopped],
         _ => [],
     };
 
@@ -155,14 +158,15 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
-            if ((!session.Active || session.State == SessionState.AwaitingPerson) && target != session.State
+            if ((!session.Active || session.State is SessionState.AwaitingPerson or SessionState.AwaitingStep) && target != session.State
                 && await sessions.Opens.LeftForAsync(id, inside).ConfigureAwait(false) is { } destination)
                 return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal,
                     $"Session `{id}` continued in `{destination}`; its old record does not move.", Session: null);
 
             if (target == SessionState.Working && Admits(session, expect) is { } changed) return changed;
 
-            if (!session.Active)
+            // A step's word wakes its waiting session as words wake an ended one: the same go-on, its note saying whose words.
+            if (!session.Active || (session.State == SessionState.AwaitingStep && target == SessionState.Working))
             {
                 return target == SessionState.Working && from is null
                     ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, mainTree, inside).ConfigureAwait(false)

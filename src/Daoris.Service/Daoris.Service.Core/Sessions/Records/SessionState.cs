@@ -35,4 +35,10 @@ public enum SessionState
     /// sweep or the driver's shutdown ended it.
     /// </summary>
     Stopped,
+
+    /// <summary>
+    /// Its agent's turn ended and the session waits on its workflow's next step, with no process: still open and holding its tree, woken by
+    /// the step's word, and ended only at its workflow's end. Its note says what it waits on.
+    /// </summary>
+    AwaitingStep,
 }

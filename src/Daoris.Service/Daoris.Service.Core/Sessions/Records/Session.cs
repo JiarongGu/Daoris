@@ -264,7 +264,7 @@ public sealed record Session(
 
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
-        or SessionState.Working or SessionState.AwaitingPerson;
+        or SessionState.Working or SessionState.AwaitingPerson or SessionState.AwaitingStep;
 
     /// <summary>This state's public spelling — what every door prints and accepts back.</summary>
     public string StateName => Spell(State);
@@ -273,6 +273,7 @@ public sealed record Session(
     public static string Spell(SessionState state) => state switch
     {
         SessionState.AwaitingPerson => "awaiting-person",
+        SessionState.AwaitingStep => "awaiting-step",
         SessionState.StoodDown => "stood-down",
         _ => state.ToString().ToLowerInvariant(),
     };
