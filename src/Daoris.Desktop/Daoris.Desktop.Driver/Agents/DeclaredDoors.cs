@@ -23,7 +23,7 @@ public static class DeclaredDoors
         new DoorHome(declared.ProfileVariable, declared.OwnHome, null),
         LentPart.None,
         Known<IDoorOffers>.Absent,
-        new PosturesPart(declared.Posture, declared.AskingPosture, declared.FullPosture, null),
+        new PosturesPart(declared.Posture, declared.AskingPosture, declared.FullPosture),
         Known<ISpawn>.Declared(new DeclaredSpawn(declared.Command), "the plugin's declared command"),
         Known<IDialect>.Absent,
         new AbilitiesPart(

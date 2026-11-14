@@ -88,10 +88,9 @@ public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 }
 
 /// <summary>
-/// The postures a door speaks in its agent's own words: ordinary, asking and full, and the reading posture a door that
-/// takes no rules confines a read-only session with. Null maps none.
+/// The postures a door speaks in its agent's own words: ordinary, asking and full. Null maps none.
 /// </summary>
-public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full, string? Reading);
+public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full);
 
 /// <summary>
 /// What a door can do, a <see cref="Known{T}"/> each with its source and, where measured, the versions of its measurement. An ability a

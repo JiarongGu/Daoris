@@ -342,7 +342,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>The protocol stub with Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions"));
 
     /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, takes the quest and asks which

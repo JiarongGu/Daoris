@@ -33,7 +33,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     private static Provider Door(TestAgent toolchain, string? full = null, string name = "door", bool interactive = true) =>
         TestDoors.Door(
             name, toolchain, transport: Transport.Protocol, interactive: interactive,
-            postures: new PosturesPart(null, null, full, null), spawn: new TestDoors.RefusingSpawn("a placing test spawns nothing"));
+            postures: new PosturesPart(null, null, full), spawn: new TestDoors.RefusingSpawn("a placing test spawns nothing"));
 
     private ProviderRegistry _adapters = null!;
 
