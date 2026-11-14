@@ -1016,7 +1016,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// The driver binds a taken quest to the graph that closes it; the agent's
-    /// done is refused there naming `ready`, and its `ready` answers the quest Taken with its submission and the graph's digest.
+    /// done there answers the quest Taken with its submission and the graph's digest.
     /// The close door writes it Done on the submission named, answers the same key again with the first outcome, and refuses a
     /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
     /// </summary>
@@ -1047,7 +1047,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         var ready = await host.PostAsync($"/api/quests/{quest}/respond", new
         {
-            action = "ready", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
+            action = "done", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
         });
         Assert.Equal(200, ready.Status);
         var submission = ready.Json.GetProperty("quest").GetProperty("submission");
@@ -1086,11 +1086,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True((await host.Composed.Quests.SeedBound(quest, Graph, DateTimeOffset.UtcNow)).Moved);
 
         var answers = new[] { new { requirement = 1, met = "It is written." } };
-        var done = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written.", answers });
-        Assert.Equal(400, done.Status);
-        Assert.Contains("`ready`", done.Error);
-
-        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written.", answers });
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written.", answers });
         Assert.Equal(200, ready.Status);
         var submitted = ready.Json.GetProperty("quest");
         Assert.Equal("Taken", submitted.GetProperty("status").GetString());
@@ -1200,7 +1196,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
         Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
-        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written." });
         Assert.Equal(200, ready.Status);
         var submission = ready.Json.GetProperty("quest").GetProperty("submission");
         var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
@@ -1241,7 +1237,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
 
-        var again = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." });
+        var again = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written again." });
         Assert.Equal(200, again.Status);
         Assert.False(again.Json.GetProperty("quest").TryGetProperty("reopened", out _));
         var rebound = await Step();
@@ -1419,17 +1415,17 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
         Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
-        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written." });
         var submission = ready.Json.GetProperty("quest").GetProperty("submission");
         var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
         var stepId = (await host.GetAsync("/api/quests")).Json.EnumerateArray()
             .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest).GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
         Assert.True((await host.Composed.Quests.SeedBound(stepId, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
-        var checkedOnce = await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "ready", reason = "Looked." });
+        var checkedOnce = await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "done", reason = "Looked." });
         Assert.True(checkedOnce.Json.GetProperty("quest").TryGetProperty("submission", out _));
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." })).Status);
-        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written again." })).Status);
 
         var goOn = await host.PostAsync($"/api/quests/{stepId}/continue", new { });
 
@@ -1459,7 +1455,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
         Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
 
-        var said = await host.Composed.Exchange.RespondAsync(quest, "ready", "Written.", DateTimeOffset.UtcNow, session: "s0a1b2c3");
+        var said = await host.Composed.Exchange.RespondAsync(quest, "done", "Written.", DateTimeOffset.UtcNow, session: "s0a1b2c3");
 
         Assert.Equal(QuestRespondRefusal.None, said.Refusal);
         var answered = (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == quest);

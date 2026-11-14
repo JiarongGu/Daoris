@@ -484,7 +484,8 @@ public sealed class ChannelDesk(
 
     /// <summary>
     /// Daoris's lines for the ask (design §2.2), read from its quests as they stand and never stored: each quest asked by the ask or
-    /// published by a session on it, published, and where it has moved, taken, done, declined, or done and awaiting the person's yes.
+    /// published by a session on it, published, and where it has moved, taken, submitted (taken at its agent's done, its Done its run's
+    /// or its graph's), done, declined, or done and awaiting the person's yes.
     /// </summary>
     internal async Task<IReadOnlyList<ChannelLine>> LinesAsync(Ask ask, CancellationToken ct)
     {
@@ -494,6 +495,7 @@ public sealed class ChannelDesk(
             lines.Add(new ChannelLine("published", quest.Id, quest.Name, quest.From, quest.To, quest.Filed));
             var code = quest.Status switch
             {
+                QuestStatus.Taken when quest.Submission is not null => "submitted",
                 QuestStatus.Taken => "taken",
                 QuestStatus.Done when quest.Held || quest.Left => "awaiting",
                 QuestStatus.Done => "done",

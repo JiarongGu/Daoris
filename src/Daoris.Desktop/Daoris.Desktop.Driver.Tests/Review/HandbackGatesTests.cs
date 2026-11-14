@@ -38,7 +38,7 @@ public sealed class HandbackGatesTests : IDisposable
         Assert.Contains("node tools/reached-checks.mjs --base main --tier fast", words);
         Assert.Contains("npm run verify:checks", words);
         Assert.DoesNotContain("dotnet test", words);
-        Assert.Contains("Before done or ready", words);
+        Assert.Contains("Before done, run", words);
         Assert.Contains("check step verifies the same commands at your tip while you are open", words);
     }
 

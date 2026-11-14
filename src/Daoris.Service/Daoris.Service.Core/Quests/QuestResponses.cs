@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Answering a quest: take, done, ready, decline or wait.</summary>
+/// <summary>Answering a quest: take, done, decline or wait.</summary>
 internal sealed class QuestResponses(
-    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestReadies readies, QuestRemoteClaims claims)
+    QuestStore quests, QuestReviews reviews, QuestAnswering answering, QuestSubmissions submissions, QuestRemoteClaims claims)
 {
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal
@@ -16,7 +16,7 @@ internal sealed class QuestResponses(
         IReadOnlyList<QuestAnswer>? answers,
         // A decline that applies only while the quest is open: an abandon's.
         bool whileOpen,
-        // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a ready's
+        // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a
         // submission does: which session wrote the handback.
         string? session,
         // The note is a session's handback: the connector's `quest_respond`, so a close whose note only points
@@ -51,14 +51,9 @@ internal sealed class QuestResponses(
 
         // A session's closing note is its handback, the one record of its work whoever reads the quest later reads.
         // One that only points at another message, a commit or a file is refused before anything is read or written.
-        if (handback && action.ToLowerInvariant() is "done" or "ready" or "decline" && HandbackNotes.PointsElsewhere(reason) is { } pointer)
+        if (handback && action.ToLowerInvariant() is "done" or "decline" && HandbackNotes.PointsElsewhere(reason) is { } pointer)
         {
             return new(QuestRespondRefusal.PointsElsewhere, HandbackNotes.Refusal(pointer), Quest: null);
-        }
-
-        if (string.Equals(action, "ready", StringComparison.OrdinalIgnoreCase))
-        {
-            return await readies.ReadyAsync(id.TrimStart('#'), reason, answers ?? [], now, ct, session).ConfigureAwait(false);
         }
 
         var status = action.ToLowerInvariant() switch
@@ -73,7 +68,7 @@ internal sealed class QuestResponses(
         {
             return new(
                 QuestRespondRefusal.UnknownAction,
-                $"Unknown action '{action}' — one of: take, done, ready, decline, wait.",
+                $"Unknown action '{action}' — one of: take, done, decline, wait.",
                 Quest: null);
         }
 
@@ -122,7 +117,7 @@ internal sealed class QuestResponses(
             return new(QuestRespondRefusal.SourceReopened, QuestWords.SourceReopenedWords(move.Quest), Quest: null);
         }
 
-        if (move.ClosedByGraph) return await readies.ReadyAsync(move.Quest.Id, reason, answers ?? [], now, ct, session).ConfigureAwait(false);
+        if (move.ClosedByGraph) return await submissions.SubmitAsync(move.Quest.Id, reason, answers ?? [], now, ct, session).ConfigureAwait(false);
 
         if (move.Moved && status == QuestStatus.Taken
             && await claims.ClaimByPushAsync(move.Quest, ct).ConfigureAwait(false) is { } claimed)

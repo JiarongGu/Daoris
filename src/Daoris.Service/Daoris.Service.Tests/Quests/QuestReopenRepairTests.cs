@@ -15,7 +15,7 @@ public sealed class QuestReopenRepairTests : QuestReopenFixture
         var (quest, first, step) = await Sealed();
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(step.Id, "take", null, Now)).Refusal);
         Assert.True((await _quests.SeedBound(step.Id, Graph, Now)).Moved);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(step.Id, "ready", "Verified.", Now, answers: [Met(1), Met(2)])).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(step.Id, "done", "Verified.", Now, answers: [Met(1), Met(2)])).Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await Reopen(quest, first)).Refusal);
         await Ready(quest);
         Assert.Equal(QuestRespondRefusal.None, (await Found(quest)).Refusal);

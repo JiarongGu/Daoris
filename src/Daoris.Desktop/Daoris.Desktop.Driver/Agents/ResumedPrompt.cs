@@ -25,10 +25,10 @@ internal static class ResumedPrompt
             + "waited. What it did is in this tree — read its commits before you go on. The question was quest\n"
             + $"`#{answered.Id}`, \"{answered.Title}\", and {Answer(answered)}\n"),
         new(HandedSections.WrittenTo, WhileItWaited(target)),
-        .. TargetPrompt.Tail(target, target.Ready
-            ? "\nCarry on from there, inside this repository under its own doctrine and gates, then say\n"
-              + $"`#{target.QuestId}` is ready: `ready` when its work is done, with your note and an answer for each\n"
-              + $"requirement. {TargetPrompt.ReadyWords} Or `decline` with the reason — the reason is the part the asker can act on."
+        .. TargetPrompt.Tail(target, target.Submits
+            ? "\nCarry on from there, inside this repository under its own doctrine and gates, then submit\n"
+              + $"`#{target.QuestId}`: `done` when its work is done, with your note and an answer for each\n"
+              + $"requirement. {TargetPrompt.SubmitWords} Or `decline` with the reason — the reason is the part the asker can act on."
             : "\nCarry on from there, inside this repository under its own doctrine and gates, then close\n"
               + $"`#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part\n"
               + "the asker can act on."),
@@ -64,10 +64,10 @@ internal static class ResumedPrompt
             ],
         // Daoris's own words that waited on the session this carry-on goes on from, which its cooling account did not take.
         new(HandedSections.WrittenTo, WhileItWaited(target)),
-        .. TargetPrompt.Tail(target, target.Ready
+        .. TargetPrompt.Tail(target, target.Submits
             ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
-              + $"gates, then say `#{target.QuestId}` is ready: `ready` when its work is done, with your note and an\n"
-              + $"answer for each requirement. {TargetPrompt.ReadyWords} Or `decline` with the reason — the reason is the part\n"
+              + $"gates, then submit `#{target.QuestId}`: `done` when its work is done, with your note and an\n"
+              + $"answer for each requirement. {TargetPrompt.SubmitWords} Or `decline` with the reason — the reason is the part\n"
               + "the asker can act on. Commit as you go, so a second cut-off loses less."
             : "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
               + $"gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —\n"

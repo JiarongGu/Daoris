@@ -19,7 +19,7 @@ namespace Daoris.Knowledge;
 /// push, so a take that lost is known before any work starts.</para>
 ///
 /// <para>The exchange is the root that wires: each responsibility is a type of its own
-/// (<see cref="QuestPublishing"/>, <see cref="QuestResponses"/>,<see cref="QuestReadies"/>,
+/// (<see cref="QuestPublishing"/>, <see cref="QuestResponses"/>, <see cref="QuestSubmissions"/>,
 /// <see cref="QuestGraphCloses"/>, <see cref="QuestPersonMoves"/>, <see cref="QuestBringForwards"/>, <see cref="QuestEvidenceReads"/>,
 /// <see cref="QuestAnswering"/>, <see cref="QuestDeletes"/>, <see cref="QuestWorkflowKinds"/>, <see cref="QuestReceived"/>,
 /// <see cref="QuestCarry"/>), and each door here is one line to it.</para>
@@ -91,7 +91,7 @@ public sealed class QuestExchange
         var answering = new QuestAnswering(asks, reviews);
         publishing = new(service, quests, remotes, asks, reviews, carry, new QuestRequirementJudge(asks), kinds);
         received = new(carry);
-        responses = new(quests, reviews, answering, new QuestReadies(quests, reviews, answering), claims);
+        responses = new(quests, reviews, answering, new QuestSubmissions(quests, reviews, answering), claims);
         closes = new(quests);
         personMoves = new(quests, reviews);
         bringForwards = new(quests, service, sessions, claims);
@@ -143,7 +143,7 @@ public sealed class QuestExchange
     public (QuestPublishRefusal? Refusal, string Message, IReadOnlyList<string> Links) JudgeCarry(
         IReadOnlyList<string> links, IReadOnlyList<QuestUpload> uploads) => carry.JudgeCarry(links, uploads);
 
-    /// <summary>Answer a quest: take, done, ready, decline or wait; see <see cref="QuestResponses.RespondAsync"/>.</summary>
+    /// <summary>Answer a quest: take, done, decline or wait; see <see cref="QuestResponses.RespondAsync"/>.</summary>
     public Task<QuestRespondOutcome> RespondAsync(
         string id, string action, string? reason, DateTimeOffset now, CancellationToken ct = default,
         string? on = null, IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? session = null,

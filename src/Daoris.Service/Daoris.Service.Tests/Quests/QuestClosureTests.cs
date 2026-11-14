@@ -5,7 +5,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// In a graph that closes its quest itself, the agent's
-/// result is a submission, never a done. The driver binds the taken quest to the graph; the agent says <c>ready</c>, which keeps
+/// result is a submission, never a done. The driver binds the taken quest to the graph; the agent says <c>done</c>, which keeps
 /// the quest taken and hangs a done's holds on the submission; an unheld submission publishes the chain's next step and is
 /// sealed by it; and the graph's close door writes every quest's Done in one transaction, fenced by the submissions it names
 /// and by its key, so a stale close writes nothing and the same close twice writes once.
@@ -105,7 +105,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         new(1, null, Departed: "It went into the wiki instead.", Quote: "write the bridge report into docs/report-bridge.md");
 
     private Task<QuestRespondOutcome> Ready(Quest quest, params QuestAnswer[] answers) =>
-        _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: answers.Length > 0 ? answers : [Met(1), Met(2)]);
+        _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: answers.Length > 0 ? answers : [Met(1), Met(2)]);
 
     /// <summary>The report found, read for the quest's current submission, as the driver asks it.</summary>
     private async Task<QuestRespondOutcome> Found(Quest quest) =>
@@ -157,7 +157,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     {
         var quest = await Bound();
 
-        var said = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
+        var said = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
 
         Assert.Equal(QuestRespondRefusal.None, said.Refusal);
         Assert.Equal("s0a1b2c3", said.Quest!.Submission!.Session);
@@ -187,20 +187,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Ready_where_no_closure_graph_holds_the_quest_is_refused_and_moves_nothing()
-    {
-        var quest = await Taken();
-
-        var ready = await Ready(quest);
-
-        Assert.Equal(QuestRespondRefusal.NotInGraph, ready.Refusal);
-        var standing = await Find(quest.Id);
-        Assert.Null(standing.Submission);
-        Assert.Empty(standing.Answers);
-        Assert.Equal(QuestOperationKind.Taken, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
-    }
-
-    [Fact]
     public async Task A_bind_applies_once_to_a_taken_quest_before_its_first_submission()
     {
         var open = await Open();
@@ -227,6 +213,19 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
         Assert.Equal((QuestRespondRefusal.None, QuestStatus.Taken), (done.Refusal, done.Quest!.Status));
         Assert.NotNull(done.Quest.Submission);
+    }
+
+    [Fact]
+    public async Task The_agents_done_is_the_one_verb_of_a_submission_and_ready_is_no_verb()
+    {
+        var quest = await Bound();
+
+        var ready = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)]);
+
+        Assert.Equal(QuestRespondRefusal.UnknownAction, ready.Refusal);
+        Assert.Equal("Unknown action 'ready' — one of: take, done, decline, wait.", ready.Message);
+        Assert.Null((await Find(quest.Id)).Submission);
+        Assert.Equal(QuestStatus.Taken, (await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)])).Quest!.Status);
     }
 
     [Fact]

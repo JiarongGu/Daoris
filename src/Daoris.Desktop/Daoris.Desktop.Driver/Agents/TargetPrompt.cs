@@ -118,12 +118,9 @@ public static class TargetPrompt
         new(HandedSections.Boundary, target.Git is { Length: > 0 } git ? $"\n\n{git}" : ""),
     ];
 
-    /// <summary>
-    /// How a session ends a quest its closure graph closes: `ready`, never
-    /// `done`, which the service refuses on a bound quest, naming `ready`.
-    /// </summary>
-    internal const string ReadyWords =
-        "Never `done`: its graph refuses it, and closes\nthe quest itself once its holds and gates are through.";
+    /// <summary>What a done is on a quest its graph or its run closes: a submission, its Done the workflow's at its end.</summary>
+    internal const string SubmitWords =
+        "Your `done` is its submission: the quest stays taken\nwhile its workflow's steps go on, and its workflow closes it at its end.";
 
     /// <summary>
     /// Why the session before did not finish: cut off, or stopped to ask the person, who has

@@ -149,7 +149,7 @@ internal sealed class QuestGraphCloses(QuestStore quests)
         QuestCloseRefusal.NotHeld => $"Quest `#{quest.Id}` is not this machine's: it was never taken here, or another machine's take "
                                      + "reached the remote first.",
         QuestCloseRefusal.Stale => quest.Submission is null
-            ? $"Quest `#{quest.Id}` has no submission: its taker has not said `ready`."
+            ? $"Quest `#{quest.Id}` has no submission: its taker has not said `done`."
             : $"Quest `#{quest.Id}`'s current submission is not the one named: the close's binding is stale, so judge it again.",
         QuestCloseRefusal.Held => $"Quest `#{quest.Id}`'s submission is held for the person ({QuestEvidenceCodes.Spell(quest.Hold!.Value)}).",
         QuestCloseRefusal.Unsealed => $"Quest `#{quest.Id}`'s next step is not published from its submission, so the submission is not sealed.",

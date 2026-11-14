@@ -86,7 +86,7 @@ public abstract class QuestReopenFixture : IAsyncLifetime
     protected static QuestAnswer Met(int requirement) => new(requirement, Met: "Done as the check says.");
 
     protected Task<QuestRespondOutcome> Ready(Quest quest) =>
-        _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)]);
+        _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
 
     /// <summary>The report found, read for the quest's current submission, as the driver asks it.</summary>
     protected async Task<QuestRespondOutcome> Found(Quest quest)
@@ -134,7 +134,7 @@ public abstract class QuestReopenFixture : IAsyncLifetime
     }
 
     protected Task<QuestRespondOutcome> StepReady(Quest step) =>
-        _exchange.RespondAsync(step.Id, "ready", "Verified.", Now, answers: [Met(1), Met(2)]);
+        _exchange.RespondAsync(step.Id, "done", "Verified.", Now, answers: [Met(1), Met(2)]);
 
     protected static QuestOperationRef Ref(QuestSubmission submission) => new(submission.Machine, submission.Sequence);
 

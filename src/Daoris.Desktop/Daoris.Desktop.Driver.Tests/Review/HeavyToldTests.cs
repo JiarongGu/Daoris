@@ -153,7 +153,7 @@ public sealed class HeavyToldTests : IDisposable
         var resumed = bare with { Answered = new QuestView("q2", "console-ui", "console-api", "Which field?", "Need it.", "Done") };
         var carried = bare with { CutOff = "timed out after 30 minutes and was killed." };
 
-        foreach (var target in new[] { bare, resumed, carried, bare with { Ready = true } })
+        foreach (var target in new[] { bare, resumed, carried, bare with { Submits = true } })
         {
             var told = target with { Heavy = Said };
             var text = TargetPrompt.Compose(told);

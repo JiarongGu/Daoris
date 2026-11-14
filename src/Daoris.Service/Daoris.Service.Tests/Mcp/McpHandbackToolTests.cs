@@ -102,7 +102,7 @@ public sealed class McpHandbackToolTests : McpToolsFixture
         Assert.Contains("claim", read);
     }
 
-    /// <summary>🔴 By the session's id: the quest it served, and its handback; a ready is read as the submission it is, the quest still taken.</summary>
+    /// <summary>🔴 By the session's id: the quest it served, and its handback; a done its graph closes is read as the submission it is, the quest still taken.</summary>
     [Fact]
     public async Task A_sessions_handback_is_read_by_its_id_and_a_ready_says_the_quest_stays_taken()
     {
@@ -113,12 +113,12 @@ public sealed class McpHandbackToolTests : McpToolsFixture
         var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, session.Id));
         await owner.RespondToQuestAsync(quest.Id, "take");
         Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
-        await owner.RespondToQuestAsync(quest.Id, "ready", "Drew the minimap in 4f3e2d1; its render test passes.");
+        await owner.RespondToQuestAsync(quest.Id, "done", "Drew the minimap in 4f3e2d1; its render test passes.");
 
         var read = await (await StewardAsync()).ReadAsync(session.Id);
 
         Assert.Contains($"Session `{session.Id}` served quest `#{quest.Id}`", read);
-        Assert.Contains("said it ready", read);
+        Assert.Contains("submitted it", read);
         Assert.Contains("Drew the minimap in 4f3e2d1; its render test passes.", read);
         Assert.Contains("stays taken until its graph closes it", read);
     }

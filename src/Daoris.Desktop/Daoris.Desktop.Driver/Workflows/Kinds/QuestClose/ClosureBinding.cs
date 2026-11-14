@@ -18,13 +18,13 @@ namespace Daoris.Driver;
 public static class ClosureBinding
 {
     /// <summary>
-    /// What a session's start owes its quest's closure graph: a quest bound already says `ready` (a resume, a carry-on),
+    /// What a session's start owes its quest's closure graph: a quest bound already submits by its done (a resume, a carry-on),
     /// asking nothing. Null where it is bound to none: no choice holds a closure graph to bind at a take, so it closes by its done.
     /// </summary>
     public static Task<ClosureBound?> AtStartAsync(
         IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, string? home, CancellationToken ct,
         string? session = null, WorkflowRunBinding? run = null) =>
         Task.FromResult<ClosureBound?>(quest.Closure is { Length: > 0 } bound
-            ? new(true, $"#{quest.Id} closes through its graph `{bound}`: its session says `ready`.")
+            ? new(true, $"#{quest.Id} closes through its graph `{bound}`: its session's done is a submission.")
             : null);
 }

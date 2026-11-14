@@ -421,7 +421,7 @@ public sealed class ReopenTelling(ReopenMarks marks)
     public static string GoneOnWords(string quest, string source, QuestSubmissionRef grew) =>
         $"Daoris: the person reopened the work of `#{source}` that quest `#{quest}` grew from, and went on with `#{quest}` on its new "
         + $"submission `{grew.Machine}` {grew.Sequence}, so any result submitted on `#{quest}` was cleared. Bring your work up to date with "
-        + $"that submission (what Daoris did with your branch follows, where it did anything), then say `ready` on `#{quest}` again.";
+        + $"that submission (what Daoris did with your branch follows, where it did anything), then say `done` on `#{quest}` again.";
 
     /// <summary>
     /// Whether a step going on from <paramref name="record"/> is first brought up to date with its source's new submission, then the line:
@@ -444,8 +444,8 @@ public sealed class ReopenTelling(ReopenMarks marks)
     public static string Words(string quest, QuestReopenView reopen)
     {
         var sentence =
-            $"Daoris: the person reopened submission `{reopen.Of.Machine}` {reopen.Of.Sequence} of quest `#{quest}`, which your `ready` "
-            + $"made, so the quest is not ready any more. Address what they reopened it for, then say `ready` on `#{quest}` again.";
+            $"Daoris: the person reopened submission `{reopen.Of.Machine}` {reopen.Of.Sequence} of quest `#{quest}`, which your `done` "
+            + $"made, so the quest is not submitted any more. Address what they reopened it for, then say `done` on `#{quest}` again.";
         if (reopen.Note?.Trim() is not { Length: > 0 } note) return sentence;
 
         var quoted = string.Join("\n", note.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? ">" : "> " + line));
