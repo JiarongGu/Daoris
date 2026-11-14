@@ -50,11 +50,7 @@ public static class WorkingTree
             branch is "" or "HEAD" ? "(detached)" : branch);
     }
 
-    /// <summary>
-    /// The branch this checkout stands on, by its short name: what the composer's tree chip says. Null where HEAD is
-    /// detached, which is no branch at all; a branch with no commit yet answers its name. A git that fails is thrown, because a
-    /// tree git cannot read has no head to name, and "detached" would be a claim about it.
-    /// </summary>
+    /// <summary>The branch this checkout stands on, by its short name; null where HEAD is detached; a tree git cannot read is thrown.</summary>
     public static Task<string?> BranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.BranchAsync(root, ct);
 
     /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph.</summary>
@@ -223,10 +219,7 @@ public static class WorkingTree
     /// <summary>Where HEAD is now — the "before" a session's evidence is measured from.</summary>
     public static Task<string?> HeadAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.HeadAsync(root, ct);
 
-    /// <summary>
-    /// The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names no commit there
-    /// (a press's <c>branch</c> ground, read at its ask and again at its Confirm).
-    /// </summary>
+    /// <summary>The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names none.</summary>
     public static Task<string?> TipAsync(string root, string name, CancellationToken ct = default) => MachinePorts.Repository.CommitOfAsync(root, name, ct);
 
     /// <summary>

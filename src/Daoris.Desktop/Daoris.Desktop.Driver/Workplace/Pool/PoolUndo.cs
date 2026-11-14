@@ -5,9 +5,8 @@ namespace Daoris.Driver;
 /// claim enters <c>undoing</c> with the slot's row naming no line; the slot goes back where the claim found it, onto the branch it stood on
 /// only where that branch's tip is still the commit it stood at (else detached at that commit), with the hooks held and no ignored file
 /// overwritten; a take's own branch then goes through the journal where it still points at its start. The slot is released, its row
-/// written by <see cref="SlotStanding"/>, once it reads back so and binds to no other checkout. Where the branch is checked out in another
-/// checkout, which passes, the claim waits at <c>undo-waiting</c> for its run's look; anything else that keeps it from going back settles
-/// the slot <c>stuck</c>, detached where it stands and naming no line, and a take's own branch still goes through the journal.
+/// written by <see cref="SlotStanding"/>, once it reads back so. Where the branch is checked out elsewhere the claim waits at
+/// <c>undo-waiting</c>; anything else that keeps it from going back settles the slot <c>stuck</c>.
 /// </summary>
 internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
 {

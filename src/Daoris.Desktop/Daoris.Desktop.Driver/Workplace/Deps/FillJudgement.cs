@@ -2,10 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What an install changed in its tree, from git's status read before and after: <see cref="Tracked"/>, each tracked file it changed
-/// or path git does not ignore that it wrote, and <see cref="Beside"/>, each ignored path new outside its rule's paths.
-/// </summary>
+/// <summary>What an install changed in its tree, from git's status before and after: <see cref="Tracked"/> and <see cref="Beside"/>.</summary>
 internal sealed record FillChanges(IReadOnlyList<string> Tracked, IReadOnlyList<string> Beside);
 
 /// <summary>
@@ -15,7 +12,6 @@ internal sealed record FillChanges(IReadOnlyList<string> Tracked, IReadOnlyList<
 /// </summary>
 internal static class FillJudgement
 {
-    /// <summary>Every path git's status names in the tree, ignored ones at their tops, with its two-letter state.</summary>
     internal static Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct) => MachinePorts.Repository.StatusAsync(tree, ignored, ct);
 
     internal static FillChanges Changes(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after, StoreDependency dependency)

@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The tops of a take's plan inside which the start tracks a path, listed again after the switch (the tree-pool design §37.3, 1): git's
-/// ignored entries inside each, sorted one by one by the plan's rules, so a tracked file the switch wrote stays and only the previous
-/// line's entries beside it move. An entry whose rule keeps it stays; an intermediate moves only where the toolchain moved; every other,
-/// a <c>base</c> among them since an entry has no producer of its own read, moves aside.
+/// The tops of a take's plan inside which the start tracks a path, listed again after the switch: git's ignored entries inside each,
+/// sorted one by one by the plan's rules, so a tracked file the switch wrote stays and only the previous line's entries beside it move.
+/// An entry whose rule keeps it stays; an intermediate moves only where the toolchain moved; every other, a <c>base</c> among them, moves aside.
 /// </summary>
 internal static class PlanRelisting
 {

@@ -4,10 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The pool's acts over real git and real files: a slot made and let go and taken by another line, refused for the work only the disk
-/// shows (a lines' scratch folder, a repository inside, a half-done operation), the switch made with hooks held and the repository's own
-/// hook owed to the files stage, and a line found in the slot it let go. The takes' other refusals and the lock's reading run on a
-/// repository kept in memory (<c>TreePoolMemoryTests</c>). Each case has a scratch home and repository of its own.
+/// The pool's acts over real git and files: what only the disk or git shows; the rest runs in <c>TreePoolMemoryTests</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

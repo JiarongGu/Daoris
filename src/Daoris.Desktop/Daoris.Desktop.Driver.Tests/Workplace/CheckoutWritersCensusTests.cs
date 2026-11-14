@@ -32,7 +32,6 @@ public sealed partial class CheckoutWritersCensusTests
         ["ActWorkSteps.cs"] = (Checkout, "a switch, a stash Save or a stash Apply (GITAPP2k, GITAPP2l, D204): one `switch --no-guess` of the checkout to a local branch, never forced, one `stash push` that writes the shared `refs/stash`, or one `stash apply <id>` that writes the tracked files and leaves the stash, each in the act's job with its repository's hooks never skipped", ["switch@launch.Root", "stash@?", "stash@launch.Root"]),
         ["ActCommits.cs"] = (Checkout,"a commit or an amend (GITAPP2i, D204): one `commit` of the act journal, its repository's hooks run and never skipped, in the act's job; the old tip kept first by a ref step, and the index only read on a private copy (`write-tree`)", ["commit@?"]),
 
-        // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
         ["BacklogHeld.cs"] = (OwnTree, "a made backlog's rows the rules take out, staged and, in a replay, committed in its own tree or the line's integration tree", ["checkout@place", "commit@place", "update-index@place"]),
         ["UnionOnce.cs"] = (OwnTree, "a heading union kept twice, kept once and committed in the replay's own tree", ["add@tree", "commit@tree"]),

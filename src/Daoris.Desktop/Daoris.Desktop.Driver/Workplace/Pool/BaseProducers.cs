@@ -10,10 +10,9 @@ internal sealed record BaseProducer(string? Project, IReadOnlyList<string> Confi
 }
 
 /// <summary>
-/// What the take's plan reads of a <c>base</c> top's producer from git's objects at the new start (the tree-pool design §37.3, 2, §38.2,
-/// 1): the project file beside the top, and its declared <c>Configurations</c>, read from the project file and else from the nearest
-/// <c>Directory.Build.props</c> above it, as MSBuild imports that one alone; Debug and Release where neither names any. A
-/// configuration named only under a condition or through a property reads as undeclared, so its folder is set aside, costing a build.
+/// What the take's plan reads of a <c>base</c> top's producer from git's objects at the new start: the project file beside the top and
+/// its declared <c>Configurations</c>, from the project file else the nearest <c>Directory.Build.props</c> above it, as MSBuild imports
+/// that one alone; Debug and Release where neither names any. A configuration named only under a condition reads as undeclared.
 /// </summary>
 internal static class BaseProducers
 {

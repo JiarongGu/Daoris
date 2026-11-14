@@ -88,7 +88,6 @@ internal static class TakePlans
         }
     }
 
-    /// <summary>The paths the start tracks under the tops, one listing of git's objects.</summary>
     private static async Task<IReadOnlyList<string>> TrackedAsync(PoolGit git, string slot, string start, IReadOnlyList<string> tops, CancellationToken ct)
     {
         if (await git.Repository.EntriesAsync(slot, start, tops, true, ct).ConfigureAwait(false) is not { } listed) throw new DriverException("git could not list what the start tracks");

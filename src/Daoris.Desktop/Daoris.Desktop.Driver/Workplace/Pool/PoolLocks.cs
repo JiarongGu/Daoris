@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The pool's own lock reasons on a slot: <c>daoris kept tree</c> while it is free and <c>daoris kept tree (claimed by run &lt;id&gt;)</c>
-/// through a claim. Neither matches a session's prefix nor an opening's, so no other build lifts or reads them as its own.
+/// The pool's own lock reasons on a slot: <c>daoris kept tree</c> while free and <c>daoris kept tree (claimed by run &lt;id&gt;)</c> through a
+/// claim, which no session's or opening's reading takes as its own.
 /// </summary>
 internal static class PoolLocks
 {
@@ -12,7 +12,6 @@ internal static class PoolLocks
 
     internal static string Claimed(string run) => $"{ClaimedPrefix}{run})";
 
-    /// <summary>Whether a lock's reason is the pool's, free or claimed.</summary>
     internal static bool IsOwn(string? reason) => reason is { } said && (said == Free || (said.StartsWith(ClaimedPrefix, StringComparison.Ordinal) && said.EndsWith(')')));
 
     /// <summary>How a slot's lock reads to the judgement: only the pool's reasons, a session's whose record no longer holds it, or none, pass.</summary>

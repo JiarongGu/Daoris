@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A session's review where its line is pooled, holds no slot and has not landed: the line's tree is nowhere, so the review reads its
-/// branch in the repository's checkout, where a gone tree otherwise reads nothing. Both reads of a review, the chain and the graph,
-/// ask here first, so the two answer alike.
+/// branch in the repository's checkout. Both reads of a review, the chain and the graph, ask here first, so the two answer alike.
 /// </summary>
 internal static class PooledBranchReviews
 {

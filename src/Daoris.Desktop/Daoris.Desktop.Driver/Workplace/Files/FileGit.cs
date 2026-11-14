@@ -7,7 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class FileGit
 {
-    /// <summary>Every path git tracks at <paramref name="commit"/>.</summary>
     internal static async Task<IReadOnlyList<string>> TrackedAsync(string root, string commit, CancellationToken ct) =>
         await MachinePorts.Repository.EntriesAsync(root, commit, [], true, ct).ConfigureAwait(false) is { } entries
             ? [.. entries.Select(entry => entry.Path)]
@@ -23,10 +22,8 @@ internal static class FileGit
         return code == 0 ? Split(stdout) : null;
     }
 
-    /// <summary>The paths the working tree ignores, at their tops and never descending, a folder ending in <c>/</c>.</summary>
     internal static Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) => MachinePorts.Repository.IgnoredTopsAsync(root, ct);
 
-    /// <summary>The checkout's <c>core.ignorecase</c>: whether git matches its ignore patterns without regard to case.</summary>
     internal static Task<bool> IgnoresCaseAsync(string root, CancellationToken ct) => MachinePorts.Repository.IgnoresCaseAsync(root, ct);
 
     /// <summary>Each linked worktree git lists, by its full path.</summary>

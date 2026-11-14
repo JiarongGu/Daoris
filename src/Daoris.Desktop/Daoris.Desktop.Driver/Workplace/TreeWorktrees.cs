@@ -2,23 +2,16 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The working trees git lists, and where a tree stands below the trees home. A list git could not give is never an
-/// empty one: "no tree here" lets a branch go, and a branch checked out somewhere would then go from under it.
-/// </summary>
+/// <summary>The working trees git lists; a list git could not give is never an empty one, or a branch checked out somewhere would go.</summary>
 internal sealed class TreeWorktrees(TreeContext context)
 {
     /// <summary>What a kept branch says when git could not list the working trees.</summary>
     internal const string ListUnread = "git could not list the repository's working trees";
 
-    /// <summary>
-    /// Every working tree git lists for the checkout at <paramref name="root"/>, or null where git could not list them. Where the
-    /// judgement holds <paramref name="refs"/>, the list is the one it read for them, so a judgement lists once.
-    /// </summary>
+    /// <summary>Every working tree git lists for <paramref name="root"/>, or null; a judgement holding <paramref name="refs"/> lists once.</summary>
     internal static Task<IReadOnlyList<GitWorktree>?> EntriesAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
         refs?.WorktreesAsync(ct) ?? ListedAsync(root, ct);
 
-    /// <summary>The one start: <c>worktree list --porcelain</c>, as git printed it, or null where git could not list them.</summary>
     internal static async Task<string?> PorcelainAsync(string root, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false);
@@ -27,11 +20,9 @@ internal sealed class TreeWorktrees(TreeContext context)
 
     private static Task<IReadOnlyList<GitWorktree>?> ListedAsync(string root, CancellationToken ct) => MachinePorts.Repository.WorktreesAsync(root, ct);
 
-    /// <summary>The same list, by this instance, which a test may make fail, whatever the judgement's <paramref name="refs"/> hold.</summary>
     internal Task<IReadOnlyList<GitWorktree>?> ListAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
         context.ListFails?.Invoke(root) == true ? Task.FromResult<IReadOnlyList<GitWorktree>?>(null) : EntriesAsync(root, ct, refs);
 
-    /// <summary>Which tree each branch is checked out in, or null where git could not list them: each caller keeps what it judged.</summary>
     internal async Task<Dictionary<string, string>?> ReadAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
         await ListAsync(root, ct, refs).ConfigureAwait(false) is { } entries ? ByBranch(entries) : null;
 

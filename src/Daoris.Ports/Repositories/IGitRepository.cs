@@ -14,7 +14,7 @@ public sealed record GitRef(string Name, string Commit);
 /// <param name="Path">Its folder, as one full spelling.</param>
 /// <param name="Branch">The branch it has out, without <c>refs/heads/</c>; null for a detached one.</param>
 /// <param name="Locked">Whether it is locked.</param>
-/// <param name="LockReason">Why, as the lock was given it; null where none was.</param>
+/// <param name="LockReason">Why it is locked, as the lock states it; null where it states none.</param>
 public sealed record GitWorktree(string Path, string? Branch, bool Locked, string? LockReason);
 
 /// <summary>One entry of a commit's tree.</summary>
@@ -22,7 +22,7 @@ public sealed record GitWorktree(string Path, string? Branch, bool Locked, strin
 /// <param name="Path">Its path from the tree's top, with <c>/</c>.</param>
 public sealed record GitTreeEntry(string Mode, string Path);
 
-/// <summary>What a repository's act came to: done, or git's words for why it was not.</summary>
+/// <summary>What a repository's act came to: done, or git's words for why not.</summary>
 public sealed record GitDone(bool Ok, string Error)
 {
     public static GitDone Done { get; } = new(true, "");
@@ -42,7 +42,7 @@ public sealed record GitSwitch(string? Branch, string? Start = null, bool Create
 /// A repository's operations at the level the application's families ask them: refs, commits, trees, status and working trees, each
 /// with the answer a family reads, never git's whole surface. Every folder is a checkout of the repository, its own or a working
 /// tree's. A read that git could not answer is null (or an empty list where a list is the answer and failure is told by null); a
-/// write says whether it was done.
+/// write says whether it succeeded.
 /// </summary>
 public interface IGitRepository
 {

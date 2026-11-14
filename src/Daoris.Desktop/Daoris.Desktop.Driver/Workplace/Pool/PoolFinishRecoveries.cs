@@ -1,10 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// A dead run's <c>finish</c> or <c>retire</c> claim, settled from its phase and the disk. A finish stopped before it moved anything is
-/// dropped, its manifest left to the set-aside's one resume rule; stopped while it moved, what moved is renamed back first; once the paths
-/// are aside its detach is done again and the rest follows. A retirement stopped before its rename leaves the slot, else git's record goes.
-/// </summary>
+/// <summary>A dead run's <c>finish</c> or <c>retire</c> claim, settled from its phase and the disk: what moved is renamed back, or the detach done again.</summary>
 internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> RecoverAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, CancellationToken ct) =>

@@ -7,8 +7,7 @@ internal sealed record PoolFinish(PoolSite Site, string Holder, string Line, str
 /// <summary>
 /// A line's finish over a kept slot: the set-aside of the line's own ignored paths, the slot detached at the line's tip, the branch deleted
 /// through the journal, and the record posted from the manifest by the pass that posts every finished tree's. The manifest is written
-/// <c>judged</c> before anything moves, with the tip held on a recovery ref the delete makes in its own transaction. The slot keeps the
-/// tracked files, its dependencies, its intermediates and Daoris's own copies for the next line.
+/// <c>judged</c> before anything moves, with the tip held on a recovery ref the delete makes. The slot keeps the tracked files and copies.
 /// </summary>
 internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
 {
