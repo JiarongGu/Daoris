@@ -51,11 +51,14 @@ read against the code first.
 A running session crosses at its next done; a run not ended whose session ended done reopens as waiting. Today (2026-11-14) is
 replayed as a fixture: zero hand-back asks, zero check rows to the person.
 
-## Decisions for the person
+## Decided (2026-11-14, the steward for the person, who set the principles in D293)
 
-| Choice | Recommended |
+| Choice | Decided |
 |---|---|
-| Who writes the quest's Done (step 4) | **The runtime at the graph's end**, reversing driving rule 2's "the driver never writes quest state" |
+| Who writes the quest's Done (step 4) | **The runtime at the graph's end**, the one write that reverses driving rule 2's "the driver never writes quest state"; the holds stay before the landing |
 | A red check's rounds before the person hears | **3** |
 | Are a chain's later quests in one repository rounds of one session | **Yes**: one piece of work |
 | Per-kind workflow choices | **Kept for now**; the split offer suggests a room instead |
+| An ask Daoris makes of itself | **Carries its requirement** (`--require`), so a done is checked against it and never waits unchecked on the person |
+
+The build is one goal on one branch, verified once at its end (as LAYERS1 f was), with CONTEXT1 beside it.

@@ -44,10 +44,13 @@ A cost reading per wake (form, characters handed, first-turn tokens, calls and s
 both doors (a hand-over's new turn holds the head and an earlier finding; a re-wake after a check hands only the verdict), and one
 real task moved Claude Code to Codex and back, measured before and after against today's hand-over (2 minutes and a fresh read).
 
-## Decisions for the person
+## Decided (2026-11-14, the steward for the person, who set the principle in D293 point 5)
 
-| Choice | Recommended |
+| Choice | Decided |
 |---|---|
-| Where the context lives | **With the session record on the service**, so another machine can resume it |
+| Where the context's model lives | **In Lyntai**, beside what it already has for this (`Lyntai.Core.Agents`: `AgentTranscript`'s turns, `AgentHandover`'s resume-or-brief judgement, `AgentBriefComposer`): the typed entries, the rendering port and the bounded head are provider-neutral and belong to the agent library; Daoris writes its sessions' workflow entries and keeps them with the session record on the service, so another machine can resume it |
 | Native transcript import | **Not now**: an experiment per provider, kept only where it measures cheaper |
 | The `context_note` tool | **Yes**, beside the reading map that needs no agent's help |
+
+Lyntai's part is asked of Lyntai as its own quest (a change spanning two repositories is two changes and a request); Daoris's part
+follows SESSIONLIFE1's session record in the same goal.
