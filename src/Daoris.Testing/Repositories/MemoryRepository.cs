@@ -8,7 +8,7 @@ namespace Daoris.Testing;
 /// <see cref="Write"/>. It answers as git does for what the contract holds it to (<see cref="RepositoryContract"/>), so a family's
 /// unit test runs on it without a process. Every act changes only memory; no folder is read or written.
 /// </summary>
-public sealed class MemoryRepository : IGitRepository
+public sealed partial class MemoryRepository : IGitRepository
 {
     private readonly MemoryHistory _history = new();
     private readonly List<MemoryTree> _trees = [];
