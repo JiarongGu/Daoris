@@ -57,6 +57,8 @@ public sealed record StandingFacts
     /// <summary>The memory its line read, newest first, as the service rechecked it when a move's brief is composed; none at a first start.</summary>
     public IReadOnlyList<string> Memory { get; init; } = [];
 
+    public IReadOnlyList<string> PluginBriefs { get; init; } = [];
+
     /// <summary>
     /// The file the block goes through where the whole first prompt would pass its bound with it; null where no file can be written for
     /// the session, and the block is handed inline whatever its length.

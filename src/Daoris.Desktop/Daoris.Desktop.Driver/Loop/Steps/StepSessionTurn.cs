@@ -96,6 +96,13 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         {
             Session = sessionId,
             Prompt = ask.Prompt(),
+            Block = new StandingFacts
+            {
+                Repository = ask.Repository,
+                Workspace = ask.Workspace,
+                Knowledge = false,
+                PluginBriefs = PluginBriefs.At(home, new PluginPlace(ask.Repository, ask.Workspace), [tools]),
+            },
             Asked = choice.Effective?.Asked,
             Choice = choice.Effective?.From,
         };

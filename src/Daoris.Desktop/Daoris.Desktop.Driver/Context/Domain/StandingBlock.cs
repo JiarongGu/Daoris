@@ -110,6 +110,9 @@ public static class StandingBlock
             }
         }
 
+        foreach (var line in facts.PluginBriefs) text.Append("\n\n").Append(line);
+        if (facts.PluginBriefs.Count > 0) said.Add($"{facts.PluginBriefs.Count} plugin briefs for its tools");
+
         var block = text.ToString();
         var whose = facts.Repository is { } itself ? $"for `{itself}`" + (facts.Workspace is { } of ? $" of `{of}`" : "")
             : facts.Workspace is { } workspace ? $"for the workspace `{workspace}`" : "for this machine's workspaces";

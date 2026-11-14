@@ -180,6 +180,7 @@ public sealed record PluginChange(string What, string Was, string Now)
         {
             ["id"] = manifest.Id,
             ["version"] = manifest.Version,
+            ["brief"] = manifest.Brief ?? "",
             ["command"] = Line(manifest.Hooks?.Command ?? []),
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
             ["harnesses"] = string.Join("; ", manifest.Harnesses.Select(harness => $"{harness.Name} ({Line(harness.Command)})")),
@@ -192,7 +193,7 @@ public sealed record PluginChange(string What, string Was, string Now)
         };
         var before = Said(was);
         var after = Said(now);
-        return [.. new[] { "id", "version", "command", "points", "harnesses", "servers", "skills", "steps", "resources" }
+        return [.. new[] { "id", "version", "brief", "command", "points", "harnesses", "servers", "skills", "steps", "resources" }
             .Where(what => before[what] != after[what])
             .Select(what => new PluginChange(what, before[what], after[what])), .. PluginInterfaceChanges.Between(was.Interfaces, now.Interfaces)];
     }

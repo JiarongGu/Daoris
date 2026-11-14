@@ -59,6 +59,34 @@ public sealed class ChatRoutingProcessTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
+    [Theory]
+    [InlineData(true, "repository:engine")]
+    [InlineData(false, "repository:engine")]
+    [InlineData(false, "workspace:default")]
+    public async Task The_first_prompt_carries_a_plugin_s_brief_only_where_its_tools_are_on(bool on, string place)
+    {
+        const string brief = "Use tickets_lookup when you need the ticket's evidence.";
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme-tickets");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""
+            { "id": "acme-tickets", "brief": "{{brief}}",
+              "servers": [{ "name": "tickets", "command": ["node", "tickets.mjs"] }] }
+            """);
+        PluginSwitches.Set(_home, "acme-tickets", PluginSwitches.Tools, place, on);
+        var ledger = new ChatLedger().Register("engine", _root);
+        var events = Events;
+        using var runner = Runner(ledger, events);
+        var id = (await runner.StartAsync("engine", "acp-stub", Config(driven: true))).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", HeardText);
+        Assert.True(runner.Say(id, "open the ticket"));
+        await Poll.Until(() => Told(events, id).Count == 1 && HeardText().Contains("open the ticket", StringComparison.Ordinal), HeardText);
+        Assert.Equal(on, HeardText().Contains(brief, StringComparison.Ordinal));
+        Assert.Equal(on, Assert.Single(Told(events, id)).Text!.Contains(brief, StringComparison.Ordinal));
+        Assert.True(runner.Say(id, "next"));
+        await Poll.Until(() => HeardText().Contains("prompt: next", StringComparison.Ordinal), HeardText);
+        Assert.Equal(on ? 1 : 0, HeardText().Split(brief).Length - 1);
+    }
+
     /// <summary>The first message tells a driven repository's chat its standing block after the person's words, once, and the record keeps the note.</summary>
     [Fact]
     public async Task A_new_chats_first_message_is_told_its_standing_once_and_the_record_keeps_a_note_of_it()

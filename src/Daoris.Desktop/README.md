@@ -1182,6 +1182,9 @@ executable, else beside the home), each with its README's requirement lines, and
 {offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
+A manifest's optional `brief` supplies its authored guidance in the session's standing block, subject to the tool hand and place
+switches described in [the plugins area](../../docs/areas/plugins.md).
+
 **The module keeps the onion for its model and rules alone** (STRUCT3a, D166's note; flattened by FLAT1a): `Plugins/Domain` is
 the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
 (`PluginCatalog`), the hook wire's frames (`HookFrames`; the points' names, `HookPoints`, are in `Knowledge/Domain/PluginVocabulary.cs`), the log's events, the health's rules, the activity's
