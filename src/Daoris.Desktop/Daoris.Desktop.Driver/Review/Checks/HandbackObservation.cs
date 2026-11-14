@@ -18,12 +18,11 @@ public sealed record ObservedCheck(string Gate, string Verdict);
 
 /// <summary>
 /// A hand-back as Daoris reads it, never as the session says it: the base, how far the line moved past it, the paths touched, the gates
-/// those paths reach with the verdict each has at this tip, and the processes left running. The checks are the landing's own selection
-/// (<see cref="GateReach"/>), never a list of the worker's.
-/// </summary>
+/// those paths reach with the verdict each has at this tip (the landing's own selection, <see cref="GateReach"/>, never the worker's list),
+/// the processes left running, and the commits without their maker's line, or git's words where it could not read them.</summary>
 internal sealed record HandbackObservation(
     string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<ObservedCheck> Checks, IReadOnlyList<LeftProcess> Left,
-    IReadOnlyList<UnsignedCommit> Unsigned)
+    IReadOnlyList<UnsignedCommit> Unsigned, string? UnsignedUnread = null)
 {
     /// <summary>The gates with no verdict and no ask: the ones Daoris runs itself, never refusing the hand-back for them.</summary>
     public IReadOnlyList<ObservedCheck> Missing => [.. Checks.Where(check => check.Verdict == CheckVerdicts.Missing)];
@@ -37,10 +36,10 @@ internal sealed record HandbackObservation(
     /// </summary>
     public static HandbackObservation Judge(
         string tip, string? mergeBase, int behind, IReadOnlyList<string> touched, IReadOnlyList<DeclaredGate> gates,
-        IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks, IReadOnlyList<LeftProcess> left, IReadOnlyList<UnsignedCommit>? unsigned = null)
+        IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks, IReadOnlyList<LeftProcess> left, IReadOnlyList<UnsignedCommit>? unsigned = null, string? unread = null)
     {
         var reached = gates.Where(gate => GateReach.Reaches(gate, touched)).Select(gate => new ObservedCheck(gate.Name, VerdictOf(gate.Name, tip, checks)));
-        return new HandbackObservation(tip, mergeBase, behind, touched, [.. reached], left, unsigned ?? []);
+        return new HandbackObservation(tip, mergeBase, behind, touched, [.. reached], left, unsigned ?? [], unread);
     }
 
     private static string VerdictOf(string gate, string tip, IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks)
@@ -78,6 +77,7 @@ internal sealed record HandbackObservation(
         }
 
         if (CommitAttribution.Words(Unsigned) is { } unsigned) lines.Add(unsigned);
+        if (UnsignedUnread is { } unread) lines.Add($"Daoris could not read the commits' `Co-Authored-By` lines, so the merge's commit check is not read ahead: {unread}");
         return string.Join('\n', lines);
     }
 }

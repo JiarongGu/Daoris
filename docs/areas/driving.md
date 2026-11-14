@@ -54,7 +54,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
 7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
-    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule), the gates those paths reach (the landing's own selection, never a
+    line and how far the line moved past it, the paths touched, the commits the work adds that carry no `Co-Authored-By` line naming a maker (`CommitAttribution`, the merge check's rule, over the repository port's log; a log git could not read is said in git's words and refuses nothing), the gates those paths reach (the landing's own selection, never a
     list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
     this tip is run by Daoris through the broker from the tree's declaration, including one not marked heavy; a worker's heavy-only
     selection and light-session restriction do not apply to this observed check. A red comes back to the session as a word. The reading is

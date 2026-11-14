@@ -20,10 +20,10 @@ public sealed class HandbackReaderTests : IDisposable
 
     public void Dispose() => _chosen.Dispose();
 
-    private async Task CommitAsync(string path, string text)
+    private async Task CommitAsync(string path, string text, string? message = null)
     {
         _repository.Write(_tree, path, text);
-        Assert.True((await _repository.CommitAllAsync(_tree, path, CancellationToken.None)).Ok);
+        Assert.True((await _repository.CommitAllAsync(_tree, message ?? $"{path}\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>", CancellationToken.None)).Ok);
     }
 
     private async Task SwitchAsync(GitSwitch to) => Assert.True((await _repository.SwitchAsync(_tree, to, CancellationToken.None)).Ok);
@@ -56,21 +56,34 @@ public sealed class HandbackReaderTests : IDisposable
     }
 
     [Fact]
-    public void A_commit_without_its_makers_trailer_is_read_and_said_as_the_merge_check_refuses_it()
+    public async Task A_commit_without_its_makers_trailer_is_read_through_the_repository_and_said_as_the_merge_check_refuses_it()
     {
-        const string log =
-            "a1\u001fp0\u001fsigned by Claude\u001fClaude Sonnet 5.5 <noreply@anthropic.com>\n\u001e\n"
-            + "a2\u001fa1\u001fsigned by nobody\u001f\u001e\n"
-            + "a3\u001fa2\u001fsigned by a person\u001fA Person <person@example.invalid>\n\u001e\n"
-            + "a4\u001fa3 b9\u001fMerge branch 'line' into work\u001f\u001e\n";
+        await CommitAsync("README.md", "one");
+        await SwitchAsync(new GitSwitch("work", Creates: true));
+        await CommitAsync("a.md", "a.md", "signed by Claude\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>");
+        await CommitAsync("b.md", "b.md", "signed by nobody");
+        await CommitAsync("c.md", "c.md", "signed by a person\n\nCo-Authored-By: A Person <person@example.invalid>");
+        await SwitchAsync(new GitSwitch("line"));
+        await CommitAsync("d.md", "moved");
+        await SwitchAsync(new GitSwitch("work"));
+        Assert.True((await _repository.MergeAsync(_tree, new GitMergeAsk("line", GitMergeKind.Commit, "Merge branch 'line' into work"), CancellationToken.None)).Ok);
 
-        var seen = HandbackObservation.Judge("a4", "p0", 0, [], [], [], [], CommitAttribution.Unsigned(log));
+        var seen = await HandbackReader.ReadAsync(_tree, "line", [], [], [], CancellationToken.None);
 
-        Assert.Equal(["signed by nobody", "signed by a person"], seen.Unsigned.Select(commit => commit.Subject));
+        Assert.Equal(["signed by nobody", "signed by a person"], seen!.Unsigned.Select(commit => commit.Subject));
         Assert.Contains("signed by nobody", seen.Words());
         Assert.Contains("Co-Authored-By", seen.Words());
         Assert.False(seen.Ready);
         Assert.Null(seen.Unsigned[0].Trailer);
         Assert.Equal("A Person <person@example.invalid>", seen.Unsigned[1].Trailer);
+    }
+
+    [Fact]
+    public void A_log_git_could_not_read_is_said_in_its_words_and_refuses_nothing()
+    {
+        var seen = HandbackObservation.Judge("a4", "p0", 0, [], [], [], [], unread: "fatal: bad revision 'p0..a4'");
+
+        Assert.Contains("fatal: bad revision 'p0..a4'", seen.Words());
+        Assert.True(seen.Ready);
     }
 }
