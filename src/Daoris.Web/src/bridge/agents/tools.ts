@@ -117,7 +117,7 @@ export const useToolGitSet = () =>
 
 /** One act on a git identity, in the words `daoris git identity` uses. */
 export type GitIdentityChange =
-  | { action: 'add-ssh'; host: string; label: string; name?: string; email?: string; import?: string; rsa?: boolean }
+  | { action: 'add-ssh'; host: string; label: string; name?: string; email?: string; import?: string; rsa?: boolean; passphrase?: string }
   | { action: 'add-https'; host: string; label: string; user: string; token: string; name?: string; email?: string }
   | { action: 'token'; identity: string; kind?: 'api' | 'https'; token?: string; clear?: boolean }
   | { action: 'test'; identity: string; trust?: string; repository?: string }

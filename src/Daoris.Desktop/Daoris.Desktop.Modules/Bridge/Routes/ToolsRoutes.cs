@@ -275,7 +275,7 @@ public sealed class ToolsRoutes(DriverContext context)
             case "add-ssh":
             {
                 var identity = await GitIdentityActs.AddSshAsync(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.Name,
-                    press.Email, press.Import, press.Rsa, cancellationToken).ConfigureAwait(false);
+                    press.Email, press.Import, press.Rsa, cancellationToken, press.Passphrase).ConfigureAwait(false);
                 GitHolds.LiftAll(home);
                 return GitAdded(home, identity);
             }

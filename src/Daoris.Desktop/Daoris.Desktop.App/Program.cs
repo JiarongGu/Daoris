@@ -65,6 +65,7 @@ internal static class Program
             StartPolicy = Daoris.Driver.GitStartAdmission.Admit,
             Seal = Daoris.Adapters.Machine.KeySeal.Port,
             Git = Daoris.Driver.GitProcessRuns.Shared,
+            SshKeys = Daoris.Adapters.SshKeys.SshKeyFormats.Convert,
         });
 
         // The home before anything else: an install's `data/` folder is the Daoris home for this

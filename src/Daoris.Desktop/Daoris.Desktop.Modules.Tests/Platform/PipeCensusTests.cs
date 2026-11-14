@@ -606,6 +606,13 @@ public sealed class PipeCensusTests
     }
 
     [Fact]
+    public void An_import_passphrase_is_never_kept_on_a_pipe_confirmation()
+    {
+        var payload = System.Text.Json.JsonDocument.Parse("""{"action":"add-ssh","passphrase":"private"}""").RootElement;
+        Assert.Contains("never sent over the pipe", PipeCensus.SecretRefusal("GIT_IDENTITY", payload));
+    }
+
+    [Fact]
     public void The_keyed_routes_are_the_remotes_set_alone_and_each_is_the_person_s()
     {
         Assert.Equal(new[] { "DAORIS.REMOTES.SET", $"{DriverModule.Name.ToUpperInvariant()}.GIT_IDENTITY" }.Order(StringComparer.Ordinal), PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));

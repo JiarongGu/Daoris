@@ -33,9 +33,11 @@ internal static class TestPorts
         StartPolicy = GitStartAdmission.Admit,
         Seal = ScriptedSeal.Port,
         Git = Git,
+        SshKeys = SshKeys.Convert,
     });
 
     internal static FlowGit Git { get; } = new(GitProcessRuns.Shared);
+    internal static ScriptedSshKeys SshKeys { get; } = new();
 
     private static DateTimeOffset Created()
     {

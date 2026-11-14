@@ -40,7 +40,13 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 3. A private key lives in `profiles/git/keys/<id>/`, an identity's tokens in `profiles/git/tokens/<id>/` (`https` for git's
    HTTPS act, `api` for a hosted service's act), each folder limited to the person's account before a byte is written, plaintext
    at rest. A token goes in through the identity's doors (the route, `git identity token --token-stdin`, the page) and is never
-   said back, only whether one is set. (D198, D67, D241)
+   said back, only whether one is set. Key imports read unencrypted OpenSSH, PuTTY v2/v3 (Ed25519, RSA, NIST EC) and PEM
+   RSA, EC or PKCS#8 through `GitKeyImport`, converting in memory before the private folder is made. PuTTY's MAC is checked
+   before its private fields are used; `Daoris.Adapters.SshKeys` implements the `SshKeyConverter` port using Bouncy Castle's
+   PEM and Argon2 routines with bounded parameters. Settings asks for
+   the passphrase once and clears it after the attempt; `git identity add-ssh --import <file> --passphrase-stdin` reads it once
+   locally, never through a pipe confirmation. Both doors say before writing that the kept OpenSSH copy is unencrypted and the
+   original is unchanged; no passphrase is kept in the identity. (D198, D67, D241)
 4. A host key is trusted only at the person's press, after a compare with the host's published keys, and lives in
    `profiles/git/known_hosts`. (D198, D73)
 5. The person's `~/.ssh`, ssh agent and ssh configuration are never read or written, but a key file the person names to import;

@@ -9,6 +9,11 @@ The driver, its headless host and the shell all exist, and the family rehearsal
 drives them end to end. `docs/archive/2026-09-19-driver-design.md` (D46) is the contract; how each part
 got its shape is in `docs/decisions/` and `docs/task-archive.md`, not here.
 
+`Workplace/GitKeyImport` reads PuTTY v2/v3 and PEM RSA, EC and PKCS#8 keys into unencrypted OpenSSH in memory before
+`GitIdentityActs` makes the private folder, through `SshKeyConverter` supplied by `Daoris.Adapters.SshKeys` in each real root.
+The terminal reads an import passphrase with `--passphrase-stdin`; the window's
+`GIT_IDENTITY` accepts it directly, and the pipe refuses it so no confirmation record keeps it.
+
 For an isolated development start, run these from the repository root:
 
 ```sh

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\Layers.props" />
+  <PropertyGroup>
+    <RootNamespace>Daoris.Adapters.SshKeys</RootNamespace>
+    <Description>SSH private key formats: PuTTY and PEM converted to unencrypted OpenSSH</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+</Project>

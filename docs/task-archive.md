@@ -3,6 +3,8 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
+
 ---
 
 ## CLIPACK1 — the install carries its doctrine tool as one bundled file, run by its own path (2026-11-14)

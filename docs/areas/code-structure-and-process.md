@@ -215,7 +215,9 @@ finishes first and the whole set runs once.
     second fails the census, named, unless it is on its list of slower tests, which only shrinks; it reads the duration records
     of rule 22. The store's engine types (`SqliteConnection`, `SqliteCommand`, `SqliteDataReader`) are banned by symbol in the driver
     (`src/BannedSymbols.Store.txt`, taken by `DaorisBannedStore`, apart from the effects so a project takes the list its uses allow);
-    each adapter row takes its own symbols to zero for the code it moved. (from D286)
+    each adapter row takes its own symbols to zero for the code it moved. SSH import's `SshKeyConverter` is a delegate port:
+    `Daoris.Adapters.SshKeys` owns its cryptography dependency and format tests; `ScriptedSshKeys` scripts the driver's and
+    bridge's conversion answers, and both pass `SshKeyFormatContract`. (from D286)
 22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
     whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
     root `Directory.Build.props` (the kill bound: 60 seconds for a half with no run-settings file, two minutes for a Process half, which ends the
