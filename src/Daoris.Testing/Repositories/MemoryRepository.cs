@@ -51,6 +51,10 @@ public sealed class MemoryRepository : IGitRepository
     public Task<string?> CommitOfAsync(string folder, string revision, CancellationToken ct) =>
         Task.FromResult(Find(folder) is { } tree && revision.Length > 0 && revision[0] != '-' ? _history.Resolve(revision, HeadOf(tree)?.Id)?.Id : null);
 
+    public async Task<GitFound> FindCommitAsync(string folder, string revision, CancellationToken ct) => new(await CommitOfAsync(folder, revision, ct).ConfigureAwait(false));
+
+    public async Task<GitFound> FindMergeBaseAsync(string folder, string first, string second, CancellationToken ct) => new(await MergeBaseAsync(folder, first, second, ct).ConfigureAwait(false));
+
     public Task<string?> MergeBaseAsync(string folder, string first, string second, CancellationToken ct) =>
         Task.FromResult(Pair(folder, first, second) is var (one, two) ? _history.Base(one, two)?.Id : null);
 
@@ -492,7 +496,7 @@ public sealed class MemoryRepository : IGitRepository
     }
 
     public async Task<GitFreshTop> FreshTopAsync(string folder, CancellationToken ct) =>
-        await TopOfAsync(folder, ct).ConfigureAwait(false) is { } top ? new GitFreshTop(true, top.Replace('\\', '/'), "") : new GitFreshTop(false, "", "fatal: not a git repository");
+        await TopOfAsync(folder, ct).ConfigureAwait(false) is { } top ? new GitFreshTop(true, top.Replace('\\', '/'), "") : new GitFreshTop(false, "", "fatal: not a git repository", "fatal: not a git repository");
 
     public Task<IReadOnlyList<GitRefFact>?> RefFactsAsync(string folder, CancellationToken ct)
     {

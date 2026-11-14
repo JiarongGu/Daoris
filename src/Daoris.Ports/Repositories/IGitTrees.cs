@@ -42,8 +42,8 @@ public sealed record GitTreePlace(int Code, string CommonDir, string Err, string
 /// <summary>The working root git reports for a folder, read fresh.</summary>
 /// <param name="Done">Whether git reported one.</param>
 /// <param name="Top">The root as git printed it; empty where it printed none.</param>
-/// <param name="Error">Git's words where it did not.</param>
-public sealed record GitFreshTop(bool Done, string Top, string Error);
+/// <param name="Error">Git's words where it did not; <paramref name="Said"/> is its first line, or what the run shows where it said nothing.</param>
+public sealed record GitFreshTop(bool Done, string Top, string Error, string Said = "");
 
 /// <summary>One ref of a snapshot, with what a judgement reads of it.</summary>
 /// <param name="Name">Its full name.</param>

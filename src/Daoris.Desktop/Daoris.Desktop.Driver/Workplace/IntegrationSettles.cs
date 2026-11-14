@@ -141,10 +141,14 @@ internal static class IntegrationSettles
         string root, IntegrationCandidate candidate, IntegrationMember member, IntegrationRequest request, CancellationToken ct)
     {
         // A branch the landing's tidy removed holds nothing after its frozen tip.
-        var branchTip = await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{request.Branch}", ct).ConfigureAwait(false) ?? request.Tip;
+        var tip = await MachinePorts.Repository.FindCommitAsync(root, $"refs/heads/{request.Branch}", ct).ConfigureAwait(false);
+        if (tip.Unanswered) return (null, $"git could not read `{request.Branch}`: nothing was written, and it is asked again at the next look.");
+        var branchTip = tip.Value ?? request.Tip;
 
         // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side.
-        var fork = await MachinePorts.Repository.MergeBaseAsync(root, request.Tip, candidate.Base, ct).ConfigureAwait(false) ?? candidate.Base;
+        var began = await MachinePorts.Repository.FindMergeBaseAsync(root, request.Tip, candidate.Base, ct).ConfigureAwait(false);
+        if (began.Unanswered) return (null, $"git could not find where `{request.Branch}` began: nothing was written, and it is asked again at the next look.");
+        var fork = began.Value ?? candidate.Base;
 
         var replayed = member.Replayed!;
         if (await MachinePorts.Repository.RevListAsync(root, replayed, [$"{replayed}^1"], ct).ConfigureAwait(false) is not { } listed)

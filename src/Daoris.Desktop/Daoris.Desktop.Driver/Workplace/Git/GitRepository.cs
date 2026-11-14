@@ -35,19 +35,26 @@ public sealed class GitRepository : IGitRepository
         return ReviewChoices.Branch(code, stdout, stderr);
     }
 
-    public async Task<string?> CommitOfAsync(string folder, string revision, CancellationToken ct)
+    public async Task<string?> CommitOfAsync(string folder, string revision, CancellationToken ct) => (await FindCommitAsync(folder, revision, ct).ConfigureAwait(false)).Value;
+
+    public async Task<GitFound> FindCommitAsync(string folder, string revision, CancellationToken ct)
     {
         // A name git would read as an option names no commit here.
-        if (revision.Length == 0 || revision.StartsWith('-')) return null;
+        if (revision.Length == 0 || revision.StartsWith('-')) return new GitFound(null);
         var (code, stdout, _) = await RunGitAsync(folder, ["rev-parse", "--verify", "--quiet", $"{revision}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null;
+        return Found(code, stdout);
     }
 
-    public async Task<string?> MergeBaseAsync(string folder, string first, string second, CancellationToken ct)
+    public async Task<string?> MergeBaseAsync(string folder, string first, string second, CancellationToken ct) => (await FindMergeBaseAsync(folder, first, second, ct).ConfigureAwait(false)).Value;
+
+    public async Task<GitFound> FindMergeBaseAsync(string folder, string first, string second, CancellationToken ct)
     {
         var (code, stdout, _) = await RunGitAsync(folder, ["merge-base", first, second], ct).ConfigureAwait(false);
-        return code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null;
+        return Found(code, stdout);
     }
+
+    private static GitFound Found(int code, string stdout) =>
+        code is 0 or 1 ? new GitFound(code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null) : new GitFound(null, Unanswered: true);
 
     public async Task<bool?> IsAncestorAsync(string folder, string ancestor, string descendant, CancellationToken ct) =>
         (await RunGitAsync(folder, ["merge-base", "--is-ancestor", ancestor, descendant], ct).ConfigureAwait(false)).Code switch { 0 => true, 1 => false, _ => null };
@@ -398,8 +405,11 @@ public sealed class GitRepository : IGitRepository
 
     public async Task<GitFreshTop> FreshTopAsync(string folder, CancellationToken ct)
     {
-        var (code, stdout, stderr) = await WorkingTree.GitAsync(folder, ["rev-parse", "--show-toplevel"], new Dictionary<string, string>(), timeout: null, ct).ConfigureAwait(false);
-        return new GitFreshTop(code == 0 && stdout.Trim().Length > 0, stdout, stderr);
+        string[] ask = ["rev-parse", "--show-toplevel"];
+        var began = System.Diagnostics.Stopwatch.GetTimestamp();
+        var (code, stdout, stderr) = await WorkingTree.GitAsync(folder, ask, new Dictionary<string, string>(), timeout: null, ct).ConfigureAwait(false);
+        var done = code == 0 && stdout.Trim().Length > 0;
+        return new GitFreshTop(done, stdout, stderr, done ? "" : new TreeGit.GitSaid(code, stdout, stderr, System.Diagnostics.Stopwatch.GetElapsedTime(began), folder, ask).FirstWords());
     }
 
     public async Task<GitDone> RemoveTreeAsync(string folder, string path, bool force, CancellationToken ct) =>
