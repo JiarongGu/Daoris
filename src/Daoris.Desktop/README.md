@@ -1121,8 +1121,7 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 Machine logging is optional even when its folder cannot be resolved (STARTLOG1, D94). If both the current and legacy log folders hold files, the process disables its logger and leaves both folders untouched; D172's refusal still applies to tools that explicitly read that entry. Preserve and resolve the duplicate before using those tools.
 
 `npm run publish:desktop -- --to <folder> --service` publishes the application (D93; `--to` has no default): it
-builds only a tree the full set of gates passed, and otherwise refuses naming each gate that has not and the smallest
-`merge-branch` command that would pass it (`--force-ungated` is the person's override, and the publish says it is ungated). It writes `Daoris.exe`, a
+builds only a commit whose merge passed the fast tier and whose heavy run is green (or red only on classes filed as main's red), and otherwise refuses naming what the commit lacks and the command that supplies it (`--force-ungated` is the person's override, and the publish says it is ungated). It writes `Daoris.exe`, a
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
 `app/shell-files.txt`, so the next publish removes exactly those and nothing else), which is Daoris's
 browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and both

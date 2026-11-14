@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { driverFile } from '../test/_csharp.ts';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_BUNDLE, CLI_HOME, CLI_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
+  BUILD_MANIFEST, CLI_BIN, CLI_BUNDLE, CLI_HOME, CLI_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME,
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, insideFixtures,
   DRIVER_EXE, DRIVER_HOME, DRIVER_PROJECT, driverPublishCommand,
@@ -48,14 +48,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const folder = (): string => mkdtempSync(join(tmpdir(), 'daoris-publish-'));
 
 const markInstalled = (at: string) => writeFileSync(join(at, MARKER), `${MARKER_HEADER}\n\nours\n`);
-
-/** A background run's receipt on `tree` in the main checkout's `local/ci-runs.jsonl`, which a stage needs beside its verdicts. */
-function receipt(home: string, tree: string): void {
-  const file = join(home, 'local', 'ci-runs.jsonl');
-  mkdirSync(dirname(file), { recursive: true });
-  const held = existsSync(file) ? readFileSync(file, 'utf8') : '';
-  writeFileSync(file, `${held}${JSON.stringify({ commit: 'c', tree, kind: 'ci', started: '2026-10-24T10:00:00Z', ended: '2026-10-24T10:30:00Z', finished: true, state: 'green', gates: [] })}\n`);
-}
 
 test('five names make an install, the marker and the update’s folder among them', () => {
   assert.deepEqual([...OWN].sort(), ['Daoris.exe', 'INSTALLED.md', 'app', 'data', 'update']);
@@ -146,7 +138,7 @@ test('--stage stages only beside an install, never over a swap in progress, and 
  * same way, and this is where that is caught, the same day. The deployment rehearsal's own publishes go
  * into a scratch folder under `_fixtures`, which is never asked: it is one of the gates being run.
  */
-type Ask = (root: string) => { code: number; out: string };
+type Ask = (root: string) => { code: number; out: string; remedy?: { what: string; command: string } };
 
 test('a publish into a scratch folder under _fixtures is never asked about gates; any other folder is', () => {
   const fx = makeFixture('publish-inside-fixtures');
@@ -159,63 +151,21 @@ test('a publish into a scratch folder under _fixtures is never asked about gates
   fx.cleanup();
 });
 
-test('a publish refuses a commit the full set has not passed, naming what is missing, the command that runs it, and the override', async () => {
+test('a publish names what the asker says is lacking and the command that supplies it, and a record that cannot be read is no proof', () => {
   const fx = makeFixture('publish-ungated');
   const to = join(fx.root, 'install');
-  const asked: string[] = [];
-  const ask = (code: number, out: string): Ask => (root) => {
-    asked.push(root);
-    return { code, out };
-  };
-  const missing = 'merge-branch: the full set has NOT passed this checkout (tree 1a2b3c4, HEAD abc1234): 11 of 13 gates.\n'
-    + '  driver-process   none   no verdict on this tree\n  deployment       none   no verdict on this tree\n';
-
-  const passed = ungatedRefusal(to, fx.root, { ask: ask(0, 'merge-branch: the full set has passed this checkout (tree 1a2b3c4, HEAD abc1234): 13 of 13 gates.\n') });
-  assert.equal(passed.refusal, null);
-  assert.match(passed.note!, /the full set has passed/);
-  assert.deepEqual(asked, [fx.root]);
-
-  const refused = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run every gate on it: node tools/merge-branch.mjs --full\n`) });
-  assert.match(refused.refusal!, /the full set of gates has not passed/);
-  assert.match(refused.refusal!, /driver-process\s+none/);
-  assert.equal(refused.refusal!.split(GATE_COMMAND).length, 2, 'it names the command that runs the full set, once');
-  // One command, spelled in two files: the publish's refusal and the merge tool's own.
-  const mergeTool = await import(
-    // @ts-expect-error — untyped workspace tooling; see above
-    '../../../tools/merge-branch.mjs') as { FULL_COMMAND: string };
-  assert.equal(GATE_COMMAND, mergeTool.FULL_COMMAND);
-  assert.equal(GATE_COMMAND, 'node tools/merge-branch.mjs --full');
+  const ask = (code: number, out: string, remedy?: { what: string; command: string }): Ask => () => ({ code, out, ...(remedy ? { remedy } : {}) });
+  assert.match(ungatedRefusal(to, fx.root, { ask: ask(0, 'the fast tier passed') }).note!, /the fast tier passed/);
+  const refused = ungatedRefusal(to, fx.root, { ask: ask(1, 'no heavy run is recorded for abc1234', { what: 'the heavy tier', command: 'node tools/heavy-run.mjs' }) });
+  assert.match(refused.refusal!, /its tiers have not both passed/);
+  assert.match(refused.refusal!, /To supply the heavy tier: node tools\/heavy-run\.mjs\n/);
   assert.match(refused.refusal!, /--force-ungated/);
-  assert.match(refused.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full\n/);
-
-  // When a smaller command would pass it, the tool names that one, and so does the refusal, in place of the full set.
-  const stale = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run the 2 stale gates on it: node tools/merge-branch.mjs --stale\n`) });
-  assert.match(stale.refusal!, /run the 2 stale gates on this checkout: node tools\/merge-branch\.mjs --stale\n/);
-  assert.equal(stale.refusal!.split('merge-branch.mjs --stale').length, 2, 'it names the command once');
-  assert.doesNotMatch(stale.refusal!, /--full/);
-  assert.match(stale.refusal!, /driver-process\s+none/);
-  const lacks = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run the gate it lacks on it: node tools/merge-branch.mjs --rerun cli\n`) });
-  assert.match(lacks.refusal!, /run the gate it lacks on this checkout: node tools\/merge-branch\.mjs --rerun cli\n/);
-
-  // The person's explicit override publishes, and says it is ungated.
-  const forced = ungatedRefusal(to, fx.root, { force: true, ask: ask(1, missing) });
-  assert.equal(forced.refusal, null);
-  assert.match(forced.note!, /ungated \(--force-ungated\)/);
-  assert.match(forced.note!, /driver-process/);
-
-  // A record that cannot be read is no proof either.
-  const broken = ungatedRefusal(to, fx.root, { ask: ask(2, 'merge-branch: daoris.gates.json is not valid JSON') });
-  assert.match(broken.refusal!, /could not tell whether the full set passed/);
-  assert.match(broken.refusal!, /not valid JSON/);
-
-  // The deployment rehearsal's scratch install is not asked at all.
-  asked.length = 0;
-  assert.deepEqual(ungatedRefusal(join(fx.root, '_fixtures', 'deployment-rehearsal', 'install'), fx.root, { ask: ask(1, missing) }), { refusal: null, note: null });
-  assert.deepEqual(asked, []);
+  const broken = ungatedRefusal(to, fx.root, { ask: ask(2, 'could not read the commit to stage') });
+  assert.match(broken.refusal!, /could not tell whether its tiers passed/);
   fx.cleanup();
 });
 
-test('the stage refuses an ungated commit, as the merge tool\'s gates record reads, and publishes once every gate passed it', () => {
+test('the stage refuses a commit with no landing run, or one still running, and publishes once its heavy run is green', () => {
   const fx = makeFixture('publish-gates-record');
   const repo = join(fx.root, 'repo');
   mkdirSync(repo, { recursive: true });
@@ -232,42 +182,27 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   // git walks up: the tool must find this repository, never the one this suite sits in.
   assert.equal(git('rev-parse', '--show-toplevel').toLowerCase().replace(/\\/g, '/'), repo.toLowerCase().replace(/\\/g, '/'));
   writeFileSync(join(repo, '.gitignore'), 'local/\n');
-  writeFileSync(join(repo, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node a.mjs' }, { name: 'second', run: 'node b.mjs' }] })}\n`);
   writeFileSync(join(repo, 'code.txt'), 'built\n');
   git('add', '-A');
   git('commit', '--quiet', '-m', 'first');
-  const tree = git('rev-parse', 'HEAD^{tree}');
-  const record = (gates: string[]) => {
+  const head = git('rev-parse', 'HEAD');
+  const heavy = (state: string) => {
     mkdirSync(join(repo, 'local'), { recursive: true });
-    const at = '2026-10-04T12:00:00Z';
-    writeFileSync(join(repo, 'local', 'gate-verdicts.json'),
-      `${JSON.stringify({ schema: 1, verdicts: gates.map((gate) => ({ gate, verdict: 'PASS', tree, at, commit: null, branch: null })) }, null, 2)}\n`);
+    writeFileSync(join(repo, 'local', 'heavy-runs.jsonl'), `${JSON.stringify({ id: 'heavy-1', state, commit: head, base: head, branches: ['b'], at: '2026-11-14T10:00:00Z' })}\n`);
   };
   const to = join(fx.root, 'install');
 
   let gated = ungatedRefusal(to, repo);
-  assert.match(gated.refusal!, /first\s+none/);
-  assert.match(gated.refusal!, /second\s+none/);
-  // No background run finished on it, so the stage's own run is what it names.
-  assert.match(gated.refusal!, /not staged\s+no background run's receipt on its commit's tree/);
-  assert.match(gated.refusal!, /run the stage's own CI run on this checkout: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
-  receipt(repo, tree);
+  assert.match(gated.refusal!, new RegExp(`no heavy run is recorded for ${head.slice(0, 7)}`));
+  assert.match(gated.refusal!, /To supply the heavy tier: node tools\/heavy-run\.mjs --id heavy-[0-9a-f]{7}-by-hand --commit [0-9a-f]{40} --base [0-9a-f]{40}~1\n/);
 
-  gated = ungatedRefusal(to, repo);
-  assert.match(gated.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full/);
+  heavy('running');
+  assert.match(ungatedRefusal(to, repo).refusal!, /heavy run heavy-1 is still running/);
 
-  record(['first']);
-  gated = ungatedRefusal(to, repo);
-  assert.match(gated.refusal!, /second\s+none/);
-  assert.match(gated.refusal!, /first\s+PASS/);
-  // One gate lacking is one gate to run, which the refusal names in place of the full set.
-  assert.match(gated.refusal!, /run the gate it lacks on this checkout: node tools\/merge-branch\.mjs --rerun second\n/);
-  assert.doesNotMatch(gated.refusal!, /--full/);
-
-  record(['first', 'second']);
+  heavy('green');
   gated = ungatedRefusal(to, repo);
   assert.equal(gated.refusal, null, gated.refusal ?? '');
-  assert.match(gated.note!, /the full set has passed/);
+  assert.match(gated.note!, /heavy run heavy-1 is green/);
   fx.cleanup();
 });
 
@@ -313,29 +248,21 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   assert.equal(source.commit, gated);
   assert.equal(resolve(source.tree!).toLowerCase(), resolve(tree).toLowerCase());
   assert.equal(resolve(source.home!).toLowerCase(), resolve(repo).toLowerCase());
-  // Never while its full set runs: what it would build is what is being gated.
   writeFileSync(join(repo, GATE_TREE_LOCK), `${JSON.stringify({ pid: process.pid, commit: gated, at: '2026-10-18T10:00:00Z' })}\n`);
   source = gatedSource(repo, gated, { alive: () => true });
   assert.match(source.refusal!, new RegExp(`its full set is still running \\(pid ${process.pid}, since 2026-10-18 10:00 UTC\\)`));
   assert.equal(gatedSource(repo, gated, { alive: () => false }).refusal, null, 'a lock whose process ended holds nothing');
   rmSync(join(repo, GATE_TREE_LOCK));
 
-  // The verdicts are the main checkout's, keyed by tree: main's own pass does not stage the gate tree, and its gated tree's does.
-  const record = (trees: string[]) => writeFileSync(join(repo, 'local', 'gate-verdicts.json'), `${JSON.stringify({
-    schema: 1, verdicts: trees.map((at) => ({ gate: 'first', verdict: 'PASS', tree: at, at: '2026-10-18T11:00:00Z', commit: null, branch: null })),
-  }, null, 2)}\n`);
-  record([git('rev-parse', `${moved}^{tree}`)]);
-  // A background run finished on each tree, as a stage needs.
-  receipt(repo, git('rev-parse', `${moved}^{tree}`));
-  receipt(repo, git('rev-parse', `${gated}^{tree}`));
-  assert.equal(ungatedRefusal(to, repo).refusal, null, 'the main checkout passes on its own tree');
-  const refused = ungatedRefusal(to, tree);
-  assert.match(refused.refusal!, /the full set of gates has not passed this checkout/);
-  assert.match(refused.refusal!, /first\s+stale\s+PASS .*code\.txt changed/);
-  record([git('rev-parse', `${gated}^{tree}`)]);
-  const passed = ungatedRefusal(to, tree);
+  const heavy = (commit: string) => writeFileSync(join(repo, 'local', 'heavy-runs.jsonl'), `${JSON.stringify({ id: 'heavy-1', state: 'green', commit, base: commit, branches: ['b'], at: '2026-10-18T11:00:00Z' })}\n`);
+  heavy(moved);
+  assert.equal(ungatedRefusal(to, repo).refusal, null, 'the main checkout passes on its own commit');
+  const refused = ungatedRefusal(to, tree, { home: repo });
+  assert.match(refused.refusal!, new RegExp(`no heavy run is recorded for ${gated.slice(0, 7)}`));
+  heavy(gated);
+  const passed = ungatedRefusal(to, tree, { home: repo });
   assert.equal(passed.refusal, null, passed.refusal ?? '');
-  assert.match(passed.note!, /the full set has passed/);
+  assert.match(passed.note!, /heavy run heavy-1 is green/);
 
   // The gate tree's own publish runs with the same arguments, but the commit, and the install as an absolute path.
   assert.deepEqual(childArgs(['--to', 'install', '--service', '--stage', '--from-gated', 'abc1234'], to), ['--to', to, '--service', '--stage']);
@@ -454,18 +381,9 @@ test('a stage from the gate tree holds its lock through the build, so no CI run 
   assert.equal(source.refusal, null, source.refusal ?? '');
   assert.equal(JSON.parse(readFileSync(lock, 'utf8')).holder, 'stage');
   source.release!();
-  // Asked without holding, as its test above asks, nothing is taken.
   assert.equal(gatedSource(repo, gated).refusal, null);
   assert.equal(existsSync(lock), false);
 
-  // A refused stage from the gate tree names the CI's command, which runs there what the commit's verdicts lack.
-  const missing = 'merge-branch: the full set has NOT passed this checkout (tree 1a2b3c4, HEAD abc1234): 2 of 3 gates.\n  web  stale  PASS\n';
-  const refused = ungatedRefusal(join(fx.root, 'install'), join(repo, 'local', 'gate-tree'), {
-    ask: () => ({ code: 1, out: `${missing}  Run the stale gate on it: node tools/merge-branch.mjs --stale\n` }),
-    remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci --stage ${short}` },
-  });
-  assert.match(refused.refusal!, new RegExp(`run what this commit's verdicts lack in the gate tree: node tools/merge-branch\\.mjs --ci --stage ${short}\\n`));
-  assert.doesNotMatch(refused.refusal!, /--stale/);
   git('worktree', 'remove', join(repo, 'local', 'gate-tree'));
   fx.cleanup();
 });

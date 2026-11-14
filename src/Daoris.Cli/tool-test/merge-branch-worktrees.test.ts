@@ -161,8 +161,6 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
   assert.match(unreadWrite.why, /when it was last written could not be read/);
   assert.equal(tool.pruneVerdict(at(), { ...unwritten, gone: true }).remove, true, 'a folder that is gone has no one in it');
 
-  // An agent that has ended (it made commits of its own, its branch is merged, nothing runs in its folder) is taken after a short quiet,
-  // at main's tip too; a live one, in the same quiet, is kept.
   const ended: Facts = { ...clean, ended: true, idleMinutes: tool.ENDED_IDLE_MINUTES };
   assert.deepEqual(tool.pruneVerdict(at(), ended), { remove: true, why: '', unlock: true });
   assert.equal(tool.pruneVerdict(at(), { ...ended, atTip: true }).remove, true, 'its commits are what main now holds');

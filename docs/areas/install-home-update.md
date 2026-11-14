@@ -141,8 +141,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     one of its names. (from D60, D93)
 34. A republish removes exactly what `app/shell-files.txt` lists (a line naming a path, not one name, is no entry) and the retired names, then places its own. A publish into an
     install carrying a service host, without `--service`, is refused. (from D93)
-35. It publishes only a tree the full gate set passed, unless the folder is under `_fixtures/` or `--force-ungated` is given,
-    which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. From a session's terminal
+35. It publishes only a commit whose merge passed the fast tier and whose heavy run (`local/heavy-runs.jsonl`) is green, or red only
+    on classes already filed as main's red, unless the folder is under `_fixtures/` or `--force-ungated` is given, which it says;
+    a refusal names what the commit lacks (no landing run, a run still going, an error, an unfiled red) and the command that supplies it. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. From a session's terminal
     (`DAORIS_SESSION_ID`, Ask Daoris's among them) it neither stages nor publishes outside `_fixtures/`, and `daoris update`'s
     verbs are refused there too: a stage drains the install, so it is the person's. (from D115, D180)
 36. `--stage` builds the same build into `update/staged/`, with `build.json` (schema 1: id, version, commit, time, every file's

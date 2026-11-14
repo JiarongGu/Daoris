@@ -18,7 +18,6 @@ const FOLDER = '_fixtures/test-timing';
 export type RunOptions = {
   root: string; plan: ReachedPlan; keys: ReadonlyMap<string, string>; store: PassedClasses; exec: Exec; say: (line: string) => void;
   mainRedOf: (unit: FailedUnit) => boolean; now?: () => string; replayed?: number; deferred?: readonly string[];
-  /** Classes the paths reach that the plan leaves to the night, counted with what its bound leaves out. */
   night?: Readonly<Record<string, number>>;
   inPlace?: <T>(group: ReachedGroup, fn: () => Promise<T>) => Promise<T>;
 };

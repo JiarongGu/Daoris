@@ -192,11 +192,10 @@ Main is the development branch, and the cycle's aim is main green and the instal
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
    rule, set by `npm ci` and by the setup), so a builder's `git merge main` and the merge tool agree; the archive, the changelog
    and the fix log are append-only and merge by union.
-4. **Stage, then the full CI.** The install is staged from a tree whose light lane and reached Process classes passed
-   (`npm run publish:desktop -- --to <install> --service --stage --from-gated <commit> --light`, which asks
-   `node tools/merge-branch.mjs --passed --light`: every gate but the family and deployment rehearsals, with a plain `--ci`
-   run's receipt); the CI then runs the rehearsals on the staged commit (`--ci --stage <commit>`), and its reds are fixed as small
-   commits on main. The stage without `--light` still requires every gate.
+4. **Stage, then the CI.** The install is staged from a commit its merge landed: the fast tier passed at the merge, and the heavy run
+   after the landing (`local/heavy-runs.jsonl`) is green or red only on classes already filed as main's red
+   (`npm run publish:desktop -- --to <install> --service --stage`, which names what the commit lacks); the CI then runs the
+   rehearsals on the staged commit (`--ci --stage <commit>`), and its reds are fixed as small commits on main.
 
 ## Integrate and record
 
@@ -530,13 +529,12 @@ A release then waits only for the last delta and the rehearsals. Once the commit
 <commit>`. When that run's status says `green` and the gate tree holds the commit, stage it: `npm run publish:desktop --
 --to <install> --service --stage --from-gated <commit>`. A run writes its ended status (`green`, `failed`, `stopped`) only
 after it lets the gate tree go (CIWATCHHOLD1), so a status that says `green` is never read beside a hold the run keeps. The stage holds the gate tree's lock through its build, so no CI
-run moves the tree meanwhile. It still refuses a commit the tree does not hold, a tree a run holds, and a commit whose
-verdicts do not pass (`--passed`, GATE6), the rehearsals' among them. Its refusal names `--ci --stage <commit>`, which gates
-that commit there again, running only what it lacks. `--full --beside` remains the run of every gate, for a release that
+run moves the tree meanwhile. It still refuses a commit the tree does not hold, a tree a run holds, and a commit whose tiers
+have not both passed (no landing run, a heavy run going, in error or red on a class no finding holds). Its refusal names the command
+that supplies what is lacking. `--full --beside` remains the run of every gate, for a release that
 wants a fresh full set.
 
-`--passed` also asks for the background run's evidence (CISCOPE1d, D207's design §5.3), so an install is staged only on a
-commit the background run passed, with no waiver:
+`--passed`, the judgement of the full set on the checkout (the stage reads the tiers instead), also asks for the background run's evidence (CISCOPE1d, D207's design §5.3):
 
 - **A receipt.** A finished run's receipt on the commit's tree, matched by tree: an ordinary or nightly run, a plain `--ci`,
   `--ci --stage` or `--full --beside`. A sweep alone, a stopped run and a `--full` on the checkout give none.

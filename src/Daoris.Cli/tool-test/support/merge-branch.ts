@@ -57,7 +57,6 @@ export interface Facts {
   atTip?: boolean; processes?: Proc[]; processError?: string;
   /** Minutes since the newest write read in the worktree. */
   idleMinutes?: number;
-  /** The worktree made a commit of its own, which its merged branch now holds: the agent's hand-back. */
   ended?: boolean;
 }
 export interface Proc { pid: number; exe: string; command: string }
@@ -383,7 +382,7 @@ export interface CiStatus {
 // The stage's own question: the publish asks the merge tool's `--passed` before it builds.
 export const publish = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam as the merge tool above
-  '../../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string) => { refusal: string | null; note: string | null } };
+  '../../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string, options?: { home?: string; commit?: string }) => { refusal: string | null; note: string | null } };
 
 export function refusal(fn: () => unknown): { exitCode: number; message: string } {
   try {

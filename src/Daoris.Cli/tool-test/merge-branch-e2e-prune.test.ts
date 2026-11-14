@@ -106,7 +106,6 @@ describe('the tool, end to end in a scratch repository (e2e-prune)', { concurren
     };
     const done = worker('done', 'claude agent agent-d (pid 4)');
     const live = worker('live', 'claude agent agent-l (pid 5)');
-    // The ended agent committed and its branch was merged; main then moved on, so the live one's branch is merged but at no tip.
     writeFileSync(join(done, 'work.txt'), 'x\n');
     git(done, 'add', '-A');
     git(done, 'commit', '--quiet', '-m', `the agent's work${TRAILER}`);
