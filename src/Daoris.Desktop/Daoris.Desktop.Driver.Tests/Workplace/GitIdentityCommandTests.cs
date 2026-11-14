@@ -168,6 +168,33 @@ public sealed class GitIdentityCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task An_encrypted_import_reads_the_passphrase_once_on_stdin_and_never_sends_it_to_a_pipe()
+    {
+        const string text = "encrypted key fixture";
+        const string passphrase = "one passphrase";
+        var file = Path.Combine(_root, "mine.ppk");
+        File.WriteAllText(file, text);
+        var reads = 0;
+        var world = World(window: true) with { Token = () => { reads++; return Task.FromResult<string?>(passphrase); } };
+        var openSsh = GitKeyImport.Read(KeyFile(), "Work");
+        using var convert = TestPorts.SshKeys.Using((source, label, secret) =>
+        {
+            Assert.Equal(text, Encoding.UTF8.GetString(source));
+            Assert.Equal(("Work", passphrase), (label, secret));
+            return new Daoris.Ports.Git.SshKeyConversion(openSsh.Bytes, Convert.FromBase64String(openSsh.PublicLine.Split(' ')[1]));
+        });
+
+        var result = await Run(world, "identity", "add-ssh", "github.com", "--label", "Work", "--import", file, "--passphrase-stdin");
+
+        Assert.Equal(0, result.Code);
+        Assert.Equal(1, reads);
+        Assert.Empty(_pressed);
+        Assert.Contains("unencrypted OpenSSH copy", result.Out);
+        Assert.DoesNotContain(passphrase, result.Out + result.Error);
+        Assert.Single(GitIdentities.Read(Home));
+    }
+
+    [Fact]
     public async Task A_refusal_is_one_line_with_its_code()
     {
         var (code, _, error) = await Run(World(), "identity", "rename", "Nobody", "Other");

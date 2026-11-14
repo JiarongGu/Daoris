@@ -41,6 +41,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
           action: 'add-ssh', host: input.host, label: input.label,
           ...(input.name ? { name: input.name, email: input.email } : {}),
           ...(input.importFile ? { import: input.importFile } : {}),
+          ...(input.passphrase ? { passphrase: input.passphrase } : {}),
           ...(input.rsa ? { rsa: true } : {}),
         })
         : await identity.mutateAsync({

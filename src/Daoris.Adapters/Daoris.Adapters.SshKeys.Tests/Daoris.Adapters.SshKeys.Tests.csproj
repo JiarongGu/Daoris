@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\Layers.props" />
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Daoris.Adapters.SshKeys.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdditionalFiles Remove="$(MSBuildThisFileDirectory)..\..\BannedSymbols.Effects.txt" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <Using Include="Xunit" />
+    <ProjectReference Include="..\Daoris.Adapters.SshKeys\Daoris.Adapters.SshKeys.csproj" />
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
+  </ItemGroup>
+</Project>

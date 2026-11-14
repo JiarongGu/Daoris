@@ -33,4 +33,5 @@ internal static class MachinePorts
 
     /// <summary>Git, which the static git funnel (<see cref="GitRuns"/>) runs every git through.</summary>
     internal static IGit Git => Chosen.Git ?? throw new InvalidOperationException("the root handed no git, so this process runs no git.");
+    internal static SshKeyConverter SshKeys => Chosen.SshKeys ?? throw new InvalidOperationException("the root handed no SSH key converter.");
 }

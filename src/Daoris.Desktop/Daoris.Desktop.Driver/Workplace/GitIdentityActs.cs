@@ -66,7 +66,7 @@ public static partial class GitIdentityActs
     /// </summary>
     /// <exception cref="DriverException">A label in use, a host that does not read, an import refused, or ssh-keygen failed.</exception>
     public static async Task<GitIdentity> AddSshAsync(
-        string home, string host, string label, string? name, string? email, string? import, bool rsa, CancellationToken ct)
+        string home, string host, string label, string? name, string? email, string? import, bool rsa, CancellationToken ct, string? passphrase = null)
     {
         var canonical = HostOf(host);
         label = LabelOf(label);
@@ -77,7 +77,7 @@ public static partial class GitIdentityActs
         var (commitsName, commitsEmail) = CommitsOf(name, email);
 
         // Read the person's file before anything is made, so a refused import leaves nothing behind.
-        var imported = import is null ? null : GitKeys.ReadImport(import, label);
+        var imported = import is null ? null : GitKeyImport.Read(import, label, passphrase);
         var id = GitIdentities.NewId();
         var folder = GitKeys.MakeFolder(home, id);
         try

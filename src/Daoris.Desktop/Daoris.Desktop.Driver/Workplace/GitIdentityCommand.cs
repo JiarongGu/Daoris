@@ -42,7 +42,7 @@ public static class GitIdentityCommand
     public const string Usage =
         """
         usage: daoris git identity list [--json]
-               daoris git identity add-ssh <host> --label <label> [--name <name> --email <email>] [--import <file>] [--rsa]
+               daoris git identity add-ssh <host> --label <label> [--name <name> --email <email>] [--import <file> [--passphrase-stdin]] [--rsa]
                daoris git identity add-https <host> --label <label> --user <user> --token-stdin [--name <name> --email <email>]
                daoris git identity token <identity> [--kind api|https] --token-stdin | --clear
                daoris git identity public-key <identity>
@@ -87,6 +87,9 @@ public static class GitIdentityCommand
             return 1;
         }
 
+        if (words is ["identity", "add-ssh", ..] && flags.ContainsKey("--import"))
+            await output.WriteLineAsync(ImportNotice).ConfigureAwait(false);
+
         async Task<int> Alone()
         {
             if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
@@ -115,6 +118,7 @@ public static class GitIdentityCommand
     /// </summary>
     public static (InstanceRoute Route, object Payload)? Pressed(IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags)
     {
+        if (flags.ContainsKey("--passphrase-stdin")) return null;
         static void Put(Dictionary<string, object?> payload, string key, string? value)
         {
             if (value is not null) payload[key] = value;
@@ -175,7 +179,7 @@ public static class GitIdentityCommand
             return await (words switch
             {
                 ["identity", "list"] => List(world.Home, flags.ContainsKey("--json"), output),
-                ["identity", "add-ssh", var host] => AddAsync(world.Home, host, flags, output, ct),
+                ["identity", "add-ssh", var host] => AddAsync(world, host, flags, output, ct),
                 ["identity", "add-https", var host] => AddHttpsAsync(world, host, flags, output, ct),
                 ["identity", "public-key", var name] => Say(output, GitKeys.PublicKey(world.Home, GitIdentityActs.Find(world.Home, name).Id)
                     ?? throw new DriverException($"git: {name} has no public key on this machine (no-key)")),
@@ -224,7 +228,7 @@ public static class GitIdentityCommand
         for (var at = 0; at < args.Count; at++)
         {
             var arg = args[at];
-            if (arg is "--json" or "--rsa" or "--clear" or "--machine" or "--token-stdin") flags[arg] = null;
+            if (arg is "--json" or "--rsa" or "--clear" or "--machine" or "--token-stdin" or "--passphrase-stdin") flags[arg] = null;
             else if (arg.StartsWith("--", StringComparison.Ordinal))
             {
                 if (at + 1 >= args.Count || args[at + 1].StartsWith("--", StringComparison.Ordinal))
@@ -240,11 +244,20 @@ public static class GitIdentityCommand
 
     private static string? Flag(IReadOnlyDictionary<string, string?> flags, string name) => flags.TryGetValue(name, out var value) ? value : null;
 
-    private static async Task<int> AddAsync(string home, string host, IReadOnlyDictionary<string, string?> flags, TextWriter output, CancellationToken ct)
+    private const string ImportNotice = "git: this reads your key and saves an unencrypted OpenSSH copy in Daoris's private folder; the source stays unchanged and the passphrase is not saved.";
+
+    private static async Task<int> AddAsync(GitIdentityWorld world, string host, IReadOnlyDictionary<string, string?> flags, TextWriter output, CancellationToken ct)
     {
+        var home = world.Home;
         var label = Flag(flags, "--label") ?? throw new DriverException("git: name the identity with --label (label)");
+        var import = Flag(flags, "--import");
+        if (flags.ContainsKey("--passphrase-stdin") && import is null) throw new DriverException("git: --passphrase-stdin needs --import (usage)");
+        var passphrase = flags.ContainsKey("--passphrase-stdin")
+            ? world.Token is null ? throw new DriverException("git: supply the key passphrase on standard input (import-passphrase)")
+                : await world.Token().ConfigureAwait(false) ?? throw new DriverException("git: no key passphrase came on standard input (import-passphrase)")
+            : null;
         var identity = await GitIdentityActs.AddSshAsync(home, host, label, Flag(flags, "--name"), Flag(flags, "--email"), Flag(flags, "--import"),
-            flags.ContainsKey("--rsa"), ct).ConfigureAwait(false);
+            flags.ContainsKey("--rsa"), ct, passphrase).ConfigureAwait(false);
         var page = GitHosts.Known.TryGetValue(identity.Host, out var known) ? known.KeyPage : null;
         await output.WriteLineAsync($"git: {identity.Label} added for {identity.Host}: SSH {identity.KeyType} {identity.Fingerprint}"
             + (identity.Default ? $", {identity.Host}'s default." : ".")).ConfigureAwait(false);

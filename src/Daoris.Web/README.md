@@ -70,6 +70,8 @@ theme is, and said by `work/frame/ZoomReadout.tsx` and the status bar. Glyphs ar
 Each Settings domain is a `<Name>Domain.tsx`, in `src/settings/` (Get started's is `help/setupGuide`, Git's `settings/git/`),
 with its tests beside it, and `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
 (`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
+Git's import form takes an optional passphrase once for PuTTY v2/v3 or PEM keys, clears it after the attempt, and confirms
+before writing that Daoris keeps an unencrypted OpenSSH copy while leaving the source unchanged.
 *This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`wiring/Wiring*.tsx`, molecules over props); its card
 *Left in your own tool home* (`wiring/WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
 ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand. The *Downloads* row's clearing
