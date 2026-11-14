@@ -53,6 +53,22 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
     like: true,
     why: '`home` is the main checkout, where the gate tree and its record are kept, no Daoris home',
   },
+  {
+    file: 'tier-evidence.mjs',
+    join: 'join(home, ',
+    like: true,
+    why: '`home` is the main checkout, whose `local/` keeps the heavy runs and the CI findings a publish reads, no Daoris home',
+  },
+  {
+    file: 'LayerSeeding.cs',
+    join: 'Path.Combine(ask.Home, file.Name)',
+    why: '`ask.Home` is the agent’s own home (where its conversations are kept), into which a seed is written, no Daoris home',
+  },
+  {
+    file: 'LayerSeeding.cs',
+    join: 'Path.Combine(home, name)',
+    why: '`home` is the agent’s own home, from which a seed written into it is taken back, no Daoris home',
+  },
   { file: 'HostRootTests.cs', join: 'Path.Combine(root, "bin"', like: true, why: 'a host’s build output, no home' },
   {
     file: 'LandLineRuleLandingTests.cs',
