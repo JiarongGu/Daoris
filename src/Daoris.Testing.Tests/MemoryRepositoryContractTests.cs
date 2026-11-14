@@ -7,14 +7,16 @@ public sealed class MemoryRepositoryContractTests : RepositoryContract
 {
     private MemoryRepository _repository = null!;
 
-    protected override IGitRepository Backend => _repository;
+    private readonly MemoryRepositories _host = MemoryRepositories.New();
+
+    protected override IGitRepository Backend => _host.Port;
 
     protected override bool CaseIgnored => false;
 
     protected override Task<string> NewAsync()
     {
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "memory", Guid.NewGuid().ToString("N")[..8]));
-        _repository = new MemoryRepository(root);
+        _repository = _host.Add(new MemoryRepository(root));
         return Task.FromResult(root);
     }
 

@@ -22,18 +22,11 @@ public enum CreateFolderState
 /// <summary>A creation's folder and, where it is the empty commit, that commit's id.</summary>
 public sealed record CreateFolderReading(CreateFolderState State, string? Commit);
 
-/// <summary>
-/// The history a creation makes with real git: <c>git init</c> on the line, one empty commit as the author, no remote and no push, and the
-/// reading of a folder that says whether it is the folder a receipt made. Nothing is deleted, whatever is read.
-/// </summary>
+/// <summary>The history a creation makes through the repository port, and the reading of a folder that says whether a receipt made it.</summary>
 public static class CreateHistory
 {
     /// <summary>Whether git answers: its version, or false where it did not start.</summary>
-    public static async Task<bool> AvailableAsync(CancellationToken ct)
-    {
-        var (code, _, _) = await WorkingTree.GitAsync(AppContext.BaseDirectory, ["--version"], ct).ConfigureAwait(false);
-        return code == 0;
-    }
+    public static Task<bool> AvailableAsync(CancellationToken ct) => MachinePorts.Repository.AvailableAsync(ct);
 
     /// <summary>What <paramref name="folder"/> holds, read by git where it holds a repository.</summary>
     public static async Task<CreateFolderReading> ReadAsync(string folder, CancellationToken ct)
@@ -43,40 +36,28 @@ public static class CreateHistory
         if (entries.Count == 0) return new(CreateFolderState.Empty, null);
         if (entries is not [".git"] || !Directory.Exists(Path.Combine(folder, ".git"))) return new(CreateFolderState.Other, null);
 
-        var (code, count, _) = await WorkingTree.GitAsync(folder, ["rev-list", "--count", "--all"], ct).ConfigureAwait(false);
-        if (code != 0) return new(CreateFolderState.Other, null);
-        if (count.Trim() == "0") return new(CreateFolderState.Partial, null);
+        var repository = MachinePorts.Repository;
+        if (await repository.RefsAsync(folder, ["refs"], null, null, ct).ConfigureAwait(false) is not { } refs) return new(CreateFolderState.Other, null);
+        if (refs.Count == 0) return new(CreateFolderState.Partial, null);
 
-        var (headCode, head, _) = await WorkingTree.GitAsync(folder, ["rev-parse", "--verify", "HEAD"], ct).ConfigureAwait(false);
-        var (listCode, files, _) = await WorkingTree.GitAsync(folder, ["ls-tree", "-r", "--name-only", "HEAD"], ct).ConfigureAwait(false);
-        var (countCode, onLine, _) = await WorkingTree.GitAsync(folder, ["rev-list", "--count", "HEAD"], ct).ConfigureAwait(false);
-        return headCode == 0 && listCode == 0 && countCode == 0 && count.Trim() == "1" && onLine.Trim() == "1" && files.Trim().Length == 0
-            ? new(CreateFolderState.Fresh, head.Trim())
+        var head = await repository.HeadAsync(folder, ct).ConfigureAwait(false);
+        var files = await repository.EntriesAsync(folder, "HEAD", [], true, ct).ConfigureAwait(false);
+        var onLine = await repository.CountAsync(folder, "HEAD", [], ct).ConfigureAwait(false);
+        return head is not null && files is { Count: 0 } && onLine == 1 && refs.All(each => each.Commit == head)
+            ? new(CreateFolderState.Fresh, head)
             : new(CreateFolderState.Other, null);
     }
 
-    /// <summary>
-    /// The folder made, <c>git init</c>, its head pointed at <paramref name="line"/>, and one empty commit as <paramref name="author"/> with
-    /// <paramref name="message"/>. Hooks and signing are left out of that one commit, so the folder's own state is all it asks of git.
-    /// </summary>
+    /// <summary>The folder initialised on <paramref name="line"/> with one empty commit as <paramref name="author"/>, hooks and signing left out.</summary>
     /// <returns>The commit's id, or git's words for why there is none.</returns>
     public static async Task<(string? Commit, string? Problem)> InitAsync(string folder, string line, CreateAuthor author, string message, CancellationToken ct)
     {
-        Directory.CreateDirectory(folder);
-        (string Verb, string[] Arguments)[] steps =
-        [
-            ("init", ["init", "-q"]),
-            ("symbolic-ref", ["symbolic-ref", "HEAD", $"refs/heads/{line}"]),
-            ("commit", [.. GitAuthor.Arguments((author.Name, author.Email)), "-c", "commit.gpgsign=false", "commit", "--allow-empty", "--no-verify", "-q", "-m", message]),
-        ];
-        foreach (var (verb, arguments) in steps)
-        {
-            var (code, _, stderr) = await WorkingTree.GitAsync(folder, arguments, ct).ConfigureAwait(false);
-            if (code != 0) return (null, $"git {verb} said: {Said(stderr)}");
-        }
-
-        var (headCode, head, headError) = await WorkingTree.GitAsync(folder, ["rev-parse", "--verify", "HEAD"], ct).ConfigureAwait(false);
-        return headCode == 0 ? (head.Trim(), null) : (null, $"git rev-parse said: {Said(headError)}");
+        var repository = MachinePorts.Repository;
+        var init = await repository.InitAsync(folder, line, ct).ConfigureAwait(false);
+        if (!init.Ok) return (null, $"git init said: {Said(init.Error)}");
+        var commit = await repository.CommitEmptyAsync(folder, author.Name, author.Email, message, ct).ConfigureAwait(false);
+        if (!commit.Ok) return (null, $"git commit said: {Said(commit.Error)}");
+        return await repository.HeadAsync(folder, ct).ConfigureAwait(false) is { } head ? (head, null) : (null, "git rev-parse said: nothing");
     }
 
     private static string Said(string text) => text.Trim().Length == 0 ? "nothing" : text.Trim().ReplaceLineEndings(" ");

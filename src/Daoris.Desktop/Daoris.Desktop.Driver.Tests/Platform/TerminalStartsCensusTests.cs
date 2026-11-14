@@ -36,8 +36,6 @@ public sealed class TerminalStartsCensusTests
         ["PluginConsole"] = null,
         ["QuestCheckConsole"] = Reads,
         ["QuestReviewConsole"] = null,
-        ["RepositoryConsole"] = null,
-        ["RepositoryCreateConsole"] = null,
         ["SessionsConsole"] = null,
         ["ToolsConsole"] = Reads,
         ["TreesCleanVerb"] = null,

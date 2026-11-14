@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -7,21 +8,38 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>repository create</c> (the grow-department design §3, §4): a department made by one press whose hand ends before any
 /// content. The plan reads and writes nothing; the apply makes the folder, an empty history with a real <c>git init</c>, the registration, the
 /// drive and the set-up quest, its receipt written before the first effect and a re-press resumed from it. The folders are real, in the
-/// repository's gitignored <c>_fixtures</c>; the registry, the identities and the quest door are stand-ins.
+/// repository's gitignored <c>_fixtures</c>; the repositories are <see cref="MemoryRepositories"/>, and the registry, the identities and the quest door are stand-ins.
 /// </summary>
-[Trait(Category.Name, Category.Process)]
-[Trait(Category.Needs, Needed.Process)]
-[Trait(Category.Needs, Needed.Git)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class RepositoryCreateTests : IDisposable
 {
     private static readonly CreateAuthor Fixture = new("Fixture", "fixture@example.test");
 
     private readonly string _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "repository-create", Guid.NewGuid().ToString("N")[..8]);
+    private readonly MemoryRepositories _host = MemoryRepositories.New();
+    private readonly IDisposable _chosen;
 
-    public RepositoryCreateTests() => Directory.CreateDirectory(_scratch);
+    public RepositoryCreateTests()
+    {
+        Directory.CreateDirectory(_scratch);
+        _chosen = new Chosen(FlowRepository.Use(_host.Port), FlowGit.Use(new ScriptedGit()));
+    }
 
-    public void Dispose() => GitSeed.Remove(_scratch);
+    public void Dispose()
+    {
+        _chosen.Dispose();
+        GitSeed.Remove(_scratch);
+    }
+
+    private sealed class Chosen(IDisposable repository, IDisposable git) : IDisposable
+    {
+        public void Dispose()
+        {
+            git.Dispose();
+            repository.Dispose();
+        }
+    }
+
+    private async Task<string> HeadOfAsync(string folder) => (await _host.Port.HeadAsync(folder, CancellationToken.None))!;
 
     private string Home => Path.Combine(_scratch, "home");
 
@@ -32,8 +50,8 @@ public sealed class RepositoryCreateTests : IDisposable
     /// <summary>Two repositories of workspace <c>aurora</c> side by side, each a real checkout on <c>main</c>.</summary>
     private async Task<Stand> MakeAsync(Action<Stand>? shape = null)
     {
-        await GitSeed.PlainAsync(Work("atlas"), "atlas");
-        await GitSeed.PlainAsync(Work("engine"), "engine");
+        Directory.CreateDirectory(Work("atlas"));
+        Directory.CreateDirectory(Work("engine"));
         var stand = new Stand(Home);
         stand.Registry.Add(new RepoView("atlas", false, Work("atlas"), "aurora"));
         stand.Registry.Add(new RepoView("engine", true, Work("engine"), "aurora"));
@@ -232,19 +250,12 @@ public sealed class RepositoryCreateTests : IDisposable
     public async Task Git_absent_is_refused_for_a_repository_and_a_folder_needs_none()
     {
         var stand = await MakeAsync();
-        GitFlow.Answered.Value = args => args is ["--version"] ? (-1, "", "git did not start") : null;
-        try
-        {
-            var git = await Plan(stand, Ask());
-            var folder = await Plan(stand, Ask() with { Kind = PlaceKind.Folder });
+        _host.Absent = true;
+        var git = await Plan(stand, Ask());
+        var folder = await Plan(stand, Ask() with { Kind = PlaceKind.Folder });
 
-            Assert.NotEmpty(Refused(git, CreateRefusals.NoGit));
-            Assert.DoesNotContain(folder.Refusals, each => each.Code == CreateRefusals.NoGit);
-        }
-        finally
-        {
-            GitFlow.Answered.Value = null;
-        }
+        Assert.NotEmpty(Refused(git, CreateRefusals.NoGit));
+        Assert.DoesNotContain(folder.Refusals, each => each.Code == CreateRefusals.NoGit);
     }
 
     [Fact]
@@ -311,12 +322,12 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.True(result.Done, result.Message);
         Assert.Null(result.Refused);
         var folder = Work("ledger");
-        Assert.Equal("main", (await GitFixture.GitAsync(folder, "symbolic-ref", "--short", "HEAD")).Trim());
-        Assert.Equal("1", (await GitFixture.GitAsync(folder, "rev-list", "--count", "HEAD")).Trim());
-        Assert.Equal("Fixture|fixture@example.test|Fixture|fixture@example.test", (await GitFixture.GitAsync(folder, "log", "-1", "--format=%an|%ae|%cn|%ce")).Trim());
-        Assert.Contains("keeps the books", await GitFixture.GitAsync(folder, "log", "-1", "--format=%s"));
-        Assert.Equal("", (await GitFixture.GitAsync(folder, "ls-tree", "-r", "HEAD")).Trim());
-        Assert.Equal("", (await GitFixture.GitAsync(folder, "remote")).Trim());
+        Assert.Equal("main", await _host.Port.BranchAsync(folder, CancellationToken.None));
+        Assert.Equal(1, await _host.Port.CountAsync(folder, "HEAD", [], CancellationToken.None));
+        var (_, name, email, subject) = Assert.Single(_host.At(folder).Empties);
+        Assert.Equal(("Fixture", "fixture@example.test"), (name, email));
+        Assert.Contains("keeps the books", subject);
+        Assert.Empty((await _host.Port.EntriesAsync(folder, "HEAD", [], true, CancellationToken.None))!);
         Assert.Equal([".git"], Directory.EnumerateFileSystemEntries(folder).Select(Path.GetFileName));
 
         var body = Assert.Single(stand.Bodies);
@@ -331,7 +342,7 @@ public sealed class RepositoryCreateTests : IDisposable
 
         var receipt = new CreateReceipts(Home).Read(plan.Digest)!;
         Assert.All(receipt.Operations, each => Assert.Equal(PlaceOutcomes.Done, each.Outcome));
-        Assert.Equal((await GitFixture.GitAsync(folder, "rev-parse", "HEAD")).Trim(), receipt.Commit);
+        Assert.Equal(await HeadOfAsync(folder), receipt.Commit);
         Assert.Equal("q-1", receipt.Of(CreateOperations.SetUp)!.Quest);
         Assert.Contains("#q-1", result.Message);
         Assert.Null(new CreateReceipts(Home).Unfinished("ledger"));
@@ -451,7 +462,7 @@ public sealed class RepositoryCreateTests : IDisposable
         var (_, result) = await Apply(stand, Ask());
 
         Assert.True(result.Done, result.Message);
-        Assert.Equal("trunk", (await GitFixture.GitAsync(Work("ledger"), "symbolic-ref", "--short", "HEAD")).Trim());
+        Assert.Equal("trunk", await _host.Port.BranchAsync(Work("ledger"), CancellationToken.None));
         stand.Lines.Clear();
         Assert.Equal("main", (await Plan(stand, Ask("other"))).Line);
     }
@@ -537,7 +548,7 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.Equal(
             [PlaceOutcomes.Done, PlaceOutcomes.Done, PlaceOutcomes.Failed, PlaceOutcomes.Pending, PlaceOutcomes.Pending],
             kept.Operations.Select(each => each.Outcome));
-        var commit = (await GitFixture.GitAsync(Work("ledger"), "rev-parse", "HEAD")).Trim();
+        var commit = await HeadOfAsync(Work("ledger"));
         Assert.Equal(commit, kept.Commit);
 
         // The same press again: its folder holds exactly the empty commit its receipt names.
@@ -548,8 +559,8 @@ public sealed class RepositoryCreateTests : IDisposable
         var resumed = await RepositoryCreates.ApplyAsync(stand.Doors(), ask, again.Digest);
 
         Assert.True(resumed.Done, resumed.Message);
-        Assert.Equal(commit, (await GitFixture.GitAsync(Work("ledger"), "rev-parse", "HEAD")).Trim());
-        Assert.Equal("1", (await GitFixture.GitAsync(Work("ledger"), "rev-list", "--count", "HEAD")).Trim());
+        Assert.Equal(commit, await HeadOfAsync(Work("ledger")));
+        Assert.Equal(1, await _host.Port.CountAsync(Work("ledger"), "HEAD", [], CancellationToken.None));
         Assert.All(new CreateReceipts(Home).Read(first.Digest)!.Operations, each => Assert.Equal(PlaceOutcomes.Done, each.Outcome));
         Assert.Single(stand.Bodies.Where(body => (string)body["repository"]! == "ledger"));
         Assert.Single(stand.Setup.Published);
@@ -578,7 +589,7 @@ public sealed class RepositoryCreateTests : IDisposable
         var stand = await MakeAsync(each => each.RegisterAnswers.Enqueue((false, "no")));
         var ask = Ask();
         await Apply(stand, ask);
-        await GitFixture.GitAsync(Work("ledger"), "-c", "user.name=a", "-c", "user.email=a@b.test", "commit", "--allow-empty", "-q", "-m", "mine");
+        await _host.Port.CommitEmptyAsync(Work("ledger"), "a", "a@b.test", "mine", CancellationToken.None);
 
         var again = await Plan(stand, ask);
 
@@ -594,7 +605,11 @@ public sealed class RepositoryCreateTests : IDisposable
         var ask = Ask();
         await Apply(stand, ask);
         GitSeed.Remove(Work("ledger"));
-        await GitSeed.PlainAsync(Work("ledger"), "ledger");
+        Directory.CreateDirectory(Work("ledger", ".git"));
+        _host.Drop(Work("ledger"));
+        var other = _host.Add(new MemoryRepository(Work("ledger")));
+        other.Write(Work("ledger"), "README.md", "# ledger\n");
+        await other.CommitAllAsync(Work("ledger"), "seed", CancellationToken.None);
 
         var again = await Plan(stand, ask);
 
@@ -608,16 +623,8 @@ public sealed class RepositoryCreateTests : IDisposable
         var stand = await MakeAsync();
         var ask = Ask();
         var plan = await Plan(stand, ask);
-        GitFlow.Answered.Value = args => args.Contains("commit") ? (1, "", "fatal: refused by a hook") : null;
-        CreateResult result;
-        try
-        {
-            result = await RepositoryCreates.ApplyAsync(stand.Doors(), ask, plan.Digest);
-        }
-        finally
-        {
-            GitFlow.Answered.Value = null;
-        }
+        _host.RefuseCommit = "fatal: refused by a hook";
+        var result = await RepositoryCreates.ApplyAsync(stand.Doors(), ask, plan.Digest);
 
         Assert.False(result.Done);
         Assert.Contains("refused by a hook", result.Message);
