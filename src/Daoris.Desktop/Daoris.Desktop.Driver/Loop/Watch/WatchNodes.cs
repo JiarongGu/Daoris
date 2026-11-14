@@ -59,6 +59,20 @@ internal sealed class WatchNodes
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
+        // A run's end ends the sessions waiting on its steps, only those still waiting.
+        nodes.Finish = async (session, state, note, ct) =>
+        {
+            try
+            {
+                await service.AdvanceAsync(session, state, note, ct: ct, expected: StepWait.State).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException)
+            {
+                return false;
+            }
+        };
+
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 

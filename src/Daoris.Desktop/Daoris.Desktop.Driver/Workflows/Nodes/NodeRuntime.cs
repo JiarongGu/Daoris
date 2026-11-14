@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans))!;
@@ -122,6 +122,12 @@ public sealed class NodeRuntime(
     /// the pass says so.
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
+
+    /// <summary>
+    /// The door a run's end ends its waiting sessions through (<see cref="RunSessionEnds"/>): handed the session, the state and the note, it
+    /// answers whether the session moved. None by default: a run's end moves no session.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<bool>>? Finish { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;

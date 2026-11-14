@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
-    Func<ILandingWords?> landings)
+    Func<ILandingWords?> landings, Func<Func<string, string, string, CancellationToken, Task<bool>>?>? finish = null)
 {
     /// <summary>
     /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
@@ -98,6 +98,8 @@ internal sealed class NodeRunKeeping(
                 ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
+        await RunSessionEnds.FinishAsync(finish?.Invoke(), scope.Run.Run, ended,
+            [.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []], said, ct).ConfigureAwait(false);
         var outcome = $"{ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}";
         said.Add(why is null
             ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "
