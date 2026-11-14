@@ -100,13 +100,13 @@ public static partial class SetupPressRules
                 $"the doctrine tool cannot run here: {found}. Name one in Settings → Tools, or with `daoris tool use node …`.");
     }
 
-    /// <summary>The <c>daoris</c> a child finds, refused where it is missing or does not answer a version.</summary>
+    /// <summary>The doctrine tool the install carries, refused where its files are not there or it does not answer a version.</summary>
     internal static SetupRefusal? ToolRefusal(SetupTools tools)
     {
         string? found = tools.Daoris is null
-            ? "no `daoris` on the PATH Daoris's children start with" + (tools.DaorisProblem is { } why ? $" ({why})" : "")
-            : !IsVersion(tools.DaorisVersion)
-                ? $"the `daoris` a child finds did not answer its version (it said `{Said(tools.DaorisProblem ?? tools.DaorisVersion)}`)"
+            ? "the install carries no doctrine tool: a publish of Daoris that carries it lays it in place"
+            : tools.Node is not null && !IsVersion(tools.DaorisVersion)
+                ? $"the install's doctrine tool did not answer its version (it said `{Said(tools.DaorisProblem ?? tools.DaorisVersion)}`)"
                 : null;
         return found is null
             ? null

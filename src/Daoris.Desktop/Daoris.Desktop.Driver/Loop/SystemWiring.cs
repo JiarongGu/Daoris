@@ -472,7 +472,7 @@ public static class SystemWiring
         Fact(versions, "program", plus > 0 ? program![..plus] : program, world.Window is null ? "window" : "unsaid");
         Fact(versions, "build", plus > 0 ? program![(plus + 1)..] : null, world.Window is null ? "window" : "unsaid");
         Fact(versions, "kit", world.Window?.Kit, "window");
-        Fact(versions, "cli", install is null ? null : PackageVersion(Path.Combine(install, "app", "cli", "node_modules", "daoris", "package.json")), install is null ? "development" : "not-carried");
+        Fact(versions, "cli", install is null ? null : PackageVersion(Path.Combine(install, "app", "cli", "package.json")), install is null ? "development" : "not-carried");
         var driver = world.DriverVersion
             ?? (install is null ? null : FileVersion(Path.Combine(install, "app", "daoris-driver", "daoris-driver.dll")));
         Fact(versions, "driver", driver, install is null ? "development" : "not-carried");

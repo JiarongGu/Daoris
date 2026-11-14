@@ -172,7 +172,7 @@ public sealed class SetupPressTests : IDisposable
         Refused(await SetupPress.PlanReconcileAsync(unread, Driven, true, "billing", Day), SetupRefusals.StatusUnread, "daoris.json is not valid JSON");
 
         var none = await SetupPress.PlanReconcileAsync(toolless, Driven, true, "billing", Day);
-        Refused(none, SetupRefusals.NoTool, "no `daoris`");
+        Refused(none, SetupRefusals.NoTool, "the install carries no doctrine tool");
         Assert.Empty(toolless.Statused);
         Assert.Null(none.Doctrine);
     }
@@ -376,10 +376,10 @@ public sealed class SetupPressTests : IDisposable
     }
 
     [Theory]
-    [InlineData(null, null, "no `daoris` on the PATH")]
+    [InlineData(null, null, "the install carries no doctrine tool")]
     [InlineData("daoris", "", "did not answer its version")]
     [InlineData("daoris", "Usage: daoris <command>", "did not answer its version")]
-    public async Task No_doctrine_tool_on_a_childs_path_is_refused_saying_what_was_found(string? daoris, string? version, string said)
+    public async Task No_doctrine_tool_in_the_install_is_refused_saying_what_was_found(string? daoris, string? version, string said)
     {
         var tools = Tools() with { Daoris = daoris, DaorisVersion = version };
 
@@ -387,6 +387,16 @@ public sealed class SetupPressTests : IDisposable
 
         Refused(plan, SetupRefusals.NoTool, "the doctrine tool cannot run here");
         Assert.Contains(said, Find(plan, SetupRefusals.NoTool).Sentence);
+    }
+
+    [Fact]
+    public async Task No_node_refuses_once_and_the_bundle_is_not_judged_by_an_unasked_version()
+    {
+        var tools = Tools() with { Node = null, NodeVersion = null, NodeProblem = "no node", DaorisVersion = null };
+
+        var plan = await PlanAsync(new World { Tools = tools });
+
+        Assert.Equal([SetupRefusals.NoNode], plan.Refusals.Select(refusal => refusal.Code));
     }
 
     /// <summary>A set-up open or taken for the repository is named; a closed one, another repository's and an ordinary quest are not set-ups open here.</summary>

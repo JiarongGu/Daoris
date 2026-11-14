@@ -63,9 +63,9 @@ session.** \`daoris place list\` shows what this machine will drive.
 \`${CLI_BIN.join('/')}/\` holds \`${CLI_LAUNCHERS[0]}\`, for Command Prompt, PowerShell and Git Bash alike: Daoris's one command,
 \`daoris …\` (ONEWAY1ai), and \`daoris help\` names each of its groups. It is a program, not a batch file, so words of several
 lines reach a verb whole. It runs the desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node. Its doctrine commands
-(\`check\`, \`sync\`, \`status\` and the rest) it hands to the \`daoris\` package this install carries in
-\`${CLI_HOME.join('/')}/\`, packed from the same build as the application, as the release packs the one it publishes to npm
-(\`daoris --version\` says which), on the \`node\` your PATH finds: they need Node.js 22 or later.
+(\`check\`, \`sync\`, \`status\` and the rest) it hands to the doctrine tool this install carries in
+\`${CLI_HOME.join('/')}/\`, one file and its canon built from the same build as the application
+(\`daoris --version\` says which), run by its own path on the Node.js the tools name: they need Node.js 22 or later.
 Every program Daoris starts finds it by its bare name: a driven session, a conversation, an intake, a hook,
 a landing plugin and every shell of its terminal panel begin their PATH with \`${CLI_BIN.join('/')}/\`, because
 this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\` (D124). It reads the same home (\`DAORIS_HOME\`) the

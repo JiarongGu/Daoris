@@ -36,8 +36,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 2. `INSTALLED.md`, headed `# Daoris — installed desktop`, is the marker. It alone makes a folder an install, for the publish, the
    home and every program. (from D60, D93)
 3. `app/` holds everything a build ships: `Daoris.Desktop.exe` beside its Chromium, both service hosts, the driver's program
-   (`daoris-driver/`), the CLI (`cli/`, its package stamped with the build's id and commit in `build.json`, which `daoris --version`
-   says beside the package's version), the command and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
+   (`daoris-driver/`), the doctrine tool (`cli/`: one bundled file, `daoris.mjs`, with `canon/`, a `package.json` of its name and
+   version and a `build.json` stamped with the build's id and commit, which `daoris --version` says beside the version; the driver
+   and the set-up run the file by its own path, and the set-up refuses only where the file is not there), the command and Daoris's
+   git doors (`bin/`), `resources.json` and `plugin-offers/`.
    An update replaces it whole. The command is `daoris.exe`, a program and never a batch file: it starts the driver's program with
    each argument whole, so words of several lines reach every verb as typed, and Command Prompt, PowerShell and Git Bash all find it.
    (from D93, D99, D103, D121, D124, D172, D291)
@@ -113,8 +115,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     version in use is never deleted. (from D121)
 27. Versions come from `app/resources.json`, built in and never rewritten, and from the person's locations (https, or loopback
     http), fetched only on a press and kept under `cache/tools/`. Lists that disagree on one download refuse that version. (from D121)
-28. Every child the driver and the modules start gets the tools' environment: `app/bin/` first, then each managed or named
-    tool's folders, and `GIT_CONFIG_GLOBAL` when git carries a setting. The application's environment and the account's `PATH`
+28. Every child the driver and the modules start gets the tools' environment (`Tools.Hand`, over `Tools.ChildPath`): `app/bin/`
+    first, so an agent typing `daoris` gets the install's command, then each managed or named tool's folders, and
+    `GIT_CONFIG_GLOBAL` when git carries a setting. The application's environment and the account's `PATH`
     are never rewritten. (from D121, D124)
 29. Agents stay on their makers' channels, each Install's own `IReleaseSource` (`ClaudeReleaseSource`, `CodexReleaseSource`) found
     by the channel a program names in `ReleaseChannels.Sources`, never by a switch on ids. A pinned agent lives in `cache/toolchain/<agent>/<version>/` and runs with its own

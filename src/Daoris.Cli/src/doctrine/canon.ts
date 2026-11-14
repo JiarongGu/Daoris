@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareOrdinal, digestBytes, listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
+import { BUNDLE_FILE } from '../platform/package-root.ts';
 import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts';
 
 /**
@@ -26,12 +27,12 @@ const TIERS = ['rules', 'knowledge', 'skills'];
 export function resolveCanonRoot(packageRoot: string): string {
   if (process.env.DAORIS_CANON) return process.env.DAORIS_CANON;
 
-  // INSTALLED: the canon ships beside the package and is the only one that exists. Deciding by
+  // INSTALLED (under node_modules, or an install's bundle folder, which holds daoris.mjs): the canon ships beside the package and is the only one that exists. Deciding by
   // `node_modules` rather than by "does a canon happen to be here" matters, because `prepack` stages
   // a copy into the source tree and a leftover would otherwise SHADOW the real one — gitignored,
   // silent, and stale from whenever the last pack ran. Two copies with one quietly winning is the
   // exact failure this tool exists to prevent, so it must not be possible in the tool itself.
-  if (packageRoot.replace(/\\/g, '/').includes('/node_modules/')) {
+  if (packageRoot.replace(/\\/g, '/').includes('/node_modules/') || existsSync(join(packageRoot, BUNDLE_FILE))) {
     return join(packageRoot, 'canon');
   }
 

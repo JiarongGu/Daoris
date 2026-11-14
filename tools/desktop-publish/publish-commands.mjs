@@ -122,3 +122,12 @@ export function layCommand(published, install) {
   mkdirSync(bin, { recursive: true });
   for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
 }
+
+export const BIN_STAGES = Object.freeze({ command: 'command', doors: 'git-doors', pieceStart: 'piece-start' });
+
+/** Lay the command, the git doors and the partner's launcher out of their stages under `stages`, after {@link layCli} empties `app/bin/`. */
+export function layBinPrograms(stages, install) {
+  layCommand(join(stages, BIN_STAGES.command), install);
+  layGitDoors(join(stages, BIN_STAGES.doors), install);
+  layPieceStart(join(stages, BIN_STAGES.pieceStart), install);
+}

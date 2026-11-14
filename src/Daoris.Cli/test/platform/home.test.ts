@@ -24,7 +24,7 @@ test('the home is the variable and nothing else', () => {
 
 /**
  * 🔴 The install's launchers set no variable, so a `daoris` the install carries
- * (`<install>/app/cli/node_modules/daoris/`) finds its home where it runs: the install's own `data` folder. The
+ * (`<install>/app/cli/daoris.mjs`) finds its home where it runs: the install's own `data` folder. The
  * variable still wins, and a checkout is no install.
  */
 test('a daoris the install carries finds the install’s data folder, and the variable still wins', () => {
