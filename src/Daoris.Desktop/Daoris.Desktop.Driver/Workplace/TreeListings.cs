@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
 {
     /// <summary>
-    /// How many commits a session tree's HEAD holds beyond its repository's line: zero is a done that made no commits,
-    /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
+    /// Commits a session tree's HEAD holds beyond its repository's line: zero lands nothing; null is git unable to say, and the landing then decides.
     /// </summary>
     public async Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default)
     {

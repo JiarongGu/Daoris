@@ -3,9 +3,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The census of every git write the driver, its host and the modules make: each file that starts a git
-/// which changes a HEAD, an index, a working tree, a branch or git's record of its trees is named here with what it writes and where, by
-/// each call's verb and the folder it runs in. A writer of a repository's checkout (its HEAD, index, working tree or the branch it has out)
+/// The census of every git write the driver, its host and the modules make: each file that starts a git which changes a HEAD, an index, a
+/// working tree, a branch or git's record of its trees is named here with what it writes and where, by each call's verb and folder. A writer of a repository's checkout (its HEAD, index, working tree or the branch it has out)
 /// holds the repository alone through <c>TreeLock.TryWriting</c>, from its fresh judgement through its write and its read after it; every
 /// other write is in a tree of Daoris's own, or moves a ref no checkout has out. A new call is a failing line until it is named.
 /// </summary>

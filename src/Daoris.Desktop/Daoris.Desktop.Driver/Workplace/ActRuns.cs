@@ -116,8 +116,7 @@ public sealed class ActRuns(ActJournal journal)
     /// <param name="ct">The watch: it cancels the act before its first effect step, and after that only the watch.</param>
     public async Task<ActRun> RunAsync(ActPlan plan, CancellationToken ct)
     {
-        // A flow that holds the checkout alone already (a tidy, a removal) runs its act under that hold, since a second open in
-        // one process is refused; any other takes it here.
+        // A flow already holding the checkout (a tidy, a removal) runs its act under that hold: a second open in one process is refused.
         var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
         using var taken = outer is null ? Hold(journal.Home, plan.Checkout, plan.Repository) : null;
         var held = outer ?? taken;
@@ -228,7 +227,6 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>The refs a step moves, whose lock files are read before it.</summary>
     private static IEnumerable<string> RefsOf(ActStepPlan step)
     {
-        // A commit moves the branch HEAD names (none when detached).
         if (step.Kind == ActStepKinds.Commit)
         {
             return JsonNode.Parse(step.Postconditions) is JsonObject read && read.TryGetPropertyValue("branch", out var named) && named is JsonValue value

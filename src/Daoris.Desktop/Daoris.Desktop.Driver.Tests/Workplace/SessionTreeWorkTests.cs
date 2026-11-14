@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What one session's own tree holds that no branch of the person's does, by the landed proof: its
-/// uncommitted changes and its unlanded commits, the fact *To review* is read from. Real git throughout, so this is the
-/// suite's Process half; the reader over a judgement handed in is <see cref="SessionGroupsTests"/>.
+/// uncommitted changes and its unlanded commits, the fact *To review* is read from, over real git (the reader over a judgement handed in: <see cref="SessionGroupsTests"/>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

@@ -58,9 +58,7 @@ public static class WorkingTree
     /// <summary><see cref="DefaultBranchAsync"/>'s first question, origin's <c>HEAD</c>: G1, in Review's graph.</summary>
     internal static readonly string[] OriginHeadAsk = ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
-    /// <summary>
-    /// Which line this repository treats as canonical, as far as this checkout knows (<see cref="GitDefaultBranch"/>).
-    /// </summary>
+    /// <summary>Which line this repository treats as canonical, as far as this checkout knows (<see cref="GitDefaultBranch"/>).</summary>
     public static Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default) => MachinePorts.Repository.DefaultBranchAsync(root, ct);
 
     /// <summary>

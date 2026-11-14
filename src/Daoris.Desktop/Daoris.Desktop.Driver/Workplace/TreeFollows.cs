@@ -93,7 +93,6 @@ internal sealed class TreeFollows(TreeContext context)
     /// </param>
     internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct, string? root = null, RefSnapshot? refs = null)
     {
-        // Both places of the trees: a tree opened before the home's layout moved stays at its first place.
         var folders = context.TreesRoots.Select(trees => Path.Combine(trees, workspace, repository)).Where(Directory.Exists).ToList();
         if (folders.Count == 0) return;
         var listed = root is null || refs is null ? null : await TreeWorktrees.EntriesAsync(root, ct, refs).ConfigureAwait(false);
@@ -111,7 +110,6 @@ internal sealed class TreeFollows(TreeContext context)
                 string? now;
                 try
                 {
-                    // Listed, its branch is the list's (none where detached), as its own HEAD names it.
                     now = listed?.FirstOrDefault(each => SamePath(each.Path, tree)) is { } listedTree
                         ? listedTree.Branch
                         : await WorkingTree.BranchAsync(tree, ct).ConfigureAwait(false);

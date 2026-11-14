@@ -17,7 +17,6 @@ internal static class TreeGit
     {
         foreach (var reference in new[] { $"refs/heads/{branch}", $"refs/remotes/origin/{branch}" })
         {
-            // From the judgement's refs where they hold the answer.
             if (refs is not null && await refs.HasAsync(reference, ct).ConfigureAwait(false) is { } there)
             {
                 if (there) return reference;
@@ -38,19 +37,13 @@ internal static class TreeGit
     /// </summary>
     internal sealed record CommonDirAndBranch(int Code, string CommonDir, string Err, string Branch, bool Once)
     {
-        /// <summary>
-        /// The working root git reports for the tree, read in the one start, which <see cref="TreeBinding"/>
-        /// compares with the tree's folder before a door writes through it; empty where the two asks ran instead, and the check asks it.
-        /// </summary>
+        /// <summary>The working root git reports, which <see cref="TreeBinding"/> compares with the tree's folder before a door writes; empty where the two asks ran instead.</summary>
         public string TopLevel { get; init; } = "";
     }
 
     /// <summary>
-    /// A tree's repository and branch in one git start: a landing, a removal and an update asked
-    /// <c>--git-common-dir</c> and then <c>--abbrev-ref HEAD</c>, a start each. Where the one start fails (a branch with no
-    /// commit yet, a folder git does not know), the two are asked as before, one at a time, so each answer and each failure
-    /// is the one they gave: the branch is asked only where the common dir is read. The one start asks the
-    /// tree's working root too, which the doors that write through the tree compare with its folder, and which costs them no start.
+    /// A tree's repository, branch and working root in one git start. Where it fails (a branch with no commit yet, a folder git does
+    /// not know), the two are asked one at a time, so each answer and failure is the one they gave: the branch only where the common dir is read.
     /// </summary>
     internal static async Task<CommonDirAndBranch> CommonDirAndBranchAsync(string tree, CancellationToken ct)
     {
@@ -161,7 +154,6 @@ internal static class TreeGit
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Kept as written: a link that cannot be read is compared by its name.
             }
         }
 

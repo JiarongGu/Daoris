@@ -10,8 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The root of a unit test process: it chooses the ports the library reads, once, before any test runs, and chooses fakes. The desktop
 /// store's engine is <see cref="MemoryUnitOfWork"/> over the scratch files a test's home holds; the machine is <see cref="Processes"/>,
-/// four places and this test process the one that runs, and its seal <see cref="ScriptedSeal"/>, so the unit tier names no adapter; the
-/// admission of each start is the application's own git policy, which these tests prove.
+/// four places and this test process the one that runs, and its seal <see cref="ScriptedSeal"/>, so the unit tier names no adapter.
 /// </summary>
 internal static class TestPorts
 {

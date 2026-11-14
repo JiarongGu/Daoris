@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The repository keeps no work in the OS temp folder: a test's home or scratch tree lies under <c>_fixtures/</c>, rooted by
 /// <see cref="TestHomes"/>. This census reads both desktop test projects' sources and fails a file that asks the machine for its
-/// temporary folder or a temporary file (the .NET calls <c>GetTempPath</c> and <c>GetTempFileName</c>) unless the file is named below
-/// with the reason it must. Comments are not read.
+/// temporary folder or file (<c>GetTempPath</c>, <c>GetTempFileName</c>) unless named below with the reason. Comments are not read.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class TestHomesCensusTests

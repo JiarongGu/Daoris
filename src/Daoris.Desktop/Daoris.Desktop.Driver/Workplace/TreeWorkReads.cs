@@ -5,10 +5,8 @@ namespace Daoris.Driver;
 /// the fact Sessions' *To review* is read from, by the clean-up's own proof.
 /// </summary>
 /// <remarks>
-/// It takes the squash, the content proof and the follow for the members it reads (<c>SquashedHolderAsync</c>, <c>LandedHere</c>,
-/// <c>BranchOfTree</c>), and names their statics by their classes (<see cref="ContentHolds.HeldByContentAsync"/>,
-/// <see cref="ContentHolds.HoldsAsync"/>, <see cref="TreeFollows.OwnBranchOfAsync"/>, <see cref="TreeFollows.UnlandedAsync"/>,
-/// <see cref="ContentHolds.DiscardedPrefix"/>).
+/// It names the statics of the squash, the content proof and the follow by their classes (<see cref="ContentHolds.HeldByContentAsync"/>,
+/// <see cref="ContentHolds.HoldsAsync"/>, <see cref="TreeFollows.OwnBranchOfAsync"/>, <see cref="TreeFollows.UnlandedAsync"/>).
 /// </remarks>
 internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, ContentHolds content, TreeFollows follows)
 {
@@ -39,7 +37,6 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null, TreeStatus? read = null,
         TreeWalkBack? back = null)
     {
-        // Reads only (the remark above): each question of git is asked once, the tree's layout in one start.
         using var once = GitReadOnce.Within(ct);
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
@@ -63,7 +60,6 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
 
         var counted = await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false);
         var work = new TreeWork(counted, uncommitted) { Branch = own, Unlanded = counted };
-        // The one status of the walk, asked where the paths are not yet counted.
         async Task<TreeWork> CountedAsync(TreeWork of)
         {
             if (!known)

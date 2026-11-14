@@ -4,16 +4,12 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Session trees: the worktree half of "the tree is the unit of exclusion, and a
-/// repository may have more than one". These tests drive REAL git — worktree semantics are git's, and
-/// a mock agreeing with a guess about them is the mock-vs-mock trap the modules tests already paid
-/// for once.
+/// Session trees: the worktree half of "the tree is the unit of exclusion, and a repository may have more than one".
+/// Real git, since worktree semantics are git's and a mock agreeing with a guess about them proves nothing.
 /// </summary>
 /// <remarks>
-/// Fixtures live under the repository's gitignored `_fixtures/` — the family's own scratch rule —
-/// except the path-length test's, which needs a root shorter than the checkout's. Each test
-/// makes its own repository, so nothing here is order-dependent, and it starts git alone (a git hook the
-/// cut-off open waits in included): it runs four at once with the git-only classes.
+/// Fixtures live under the gitignored `_fixtures/`, except the path-length test's, which needs a root shorter than the checkout's.
+/// Each test makes its own repository and starts git alone (a git hook the cut-off open waits in included): it runs four at once with the git-only classes.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -74,14 +70,11 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Windows' 260-character path limit: a
-    /// repository's deepest tracked file fitted under its own root and not under a session tree, whose
-    /// prefix is longer. `worktree add` failed on every tick, and the quest sat.
+    /// 🔴 Windows' 260-character path limit: a repository's deepest tracked file fitted under its own root and not under a
+    /// session tree, whose prefix is longer. `worktree add` failed on every tick, and the quest sat.
     /// </summary>
     /// <remarks>
-    /// In a git worktree the repository sits deeper than in the main checkout, so the test makes its
-    /// repository under a short root of its own and sizes the path from that root, and proves the same
-    /// thing wherever the repository sits.
+    /// The repository sits deeper in a git worktree, so the test makes it under a short root of its own and sizes the path from there.
     /// </remarks>
     [Fact]
     public async Task A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens()
@@ -117,10 +110,8 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// A tree that cannot be opened leaves the repository as it found it. `worktree add -b` makes the
-    /// branch before it checks anything out, so every failed tick left one: sixteen on the first real
-    /// workspace. And the refusal quotes git's error, where it quoted git's progress line
-    /// (*"Preparing worktree (new branch …)"*), which said nothing about why.
+    /// A tree that cannot be opened leaves the repository as it found it: `worktree add -b` makes the branch before it checks
+    /// anything out, so every failed tick left one. And the refusal quotes git's error, not its progress line (*"Preparing worktree …"*).
     /// </summary>
     [Fact]
     public async Task A_tree_that_fails_to_check_out_leaves_no_branch_and_quotes_gits_error()

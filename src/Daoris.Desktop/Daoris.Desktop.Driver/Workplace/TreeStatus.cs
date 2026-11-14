@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A tree's uncommitted paths, its head commit and its branch, from one <c>status --porcelain=v2 --branch</c> where each would take a start of its
-/// own (<c>status --porcelain</c>, <c>rev-parse HEAD^{commit}</c>, <c>symbolic-ref --short -q HEAD</c>). Read-only: the same question
-/// asked again in a flow that reads once is answered from the first.
+/// own. Read-only: the same question asked again in a flow that reads once is answered from the first.
 /// </summary>
 /// <param name="Changed">The paths git lists as changed, unmerged or untracked, as <c>status --porcelain</c> counts them.</param>
 /// <param name="Head">The head commit's id; null on an unborn branch.</param>

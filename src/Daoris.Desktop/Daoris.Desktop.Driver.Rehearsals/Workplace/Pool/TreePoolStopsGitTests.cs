@@ -4,11 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The pool's acts stopped where the disk and a process decide, as a killed process leaves them: a lock file git left behind, and a git
-/// still running in the claim's job. The takeovers and the journaled deletes they end in run on a repository kept in memory
-/// (<see cref="TreePoolStopsMemoryTests"/>).
-/// </summary>
+/// <summary>A killed process's leavings: a git lock file, and a git still running in the claim's job (the rest: <see cref="TreePoolStopsMemoryTests"/>).</summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]

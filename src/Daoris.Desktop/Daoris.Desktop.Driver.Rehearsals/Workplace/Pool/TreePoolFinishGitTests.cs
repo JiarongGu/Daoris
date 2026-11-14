@@ -4,8 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A line's finish over a kept slot, a retirement, the size bound's renewal, a take's set-aside held as its line's own until the line
-/// finishes, and the files record's copy hashes and hook origin, over real git. Each case has a scratch home and repository of its own.
+/// A line's finish over a kept slot, a retirement, the size bound's renewal, a held set-aside, and the files record's hashes and hook origin, over real git.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

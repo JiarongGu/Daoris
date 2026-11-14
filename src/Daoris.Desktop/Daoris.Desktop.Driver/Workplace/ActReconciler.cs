@@ -39,8 +39,7 @@ public sealed class ActReconciler(ActJournal journal)
         new ActReconciler(new ActJournal(home)).UnderLockAsync(checkout, ct);
 
     /// <summary>
-    /// Every act not closed in the checkout reconciled, its caller holding the checkout's lock alone: null where none is left open, or the hold
-    /// that refuses the writer for this look.
+    /// Every act not closed in the checkout reconciled, its caller holding the lock alone: null where none is left open, else the hold refusing the writer.
     /// </summary>
     public async Task<ActHold?> UnderLockAsync(string checkout, CancellationToken ct)
     {

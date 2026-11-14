@@ -4,10 +4,8 @@ using static Daoris.Driver.TreeLeftovers;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session tree's removal: only a tree under the
-/// trees home, unforced only behind the clean-up's proof, its branch deleted only while it is the commit judged. Over the trees'
-/// context, the layout's answer of a tree's branch, the content proof's keep and delete, and the squash's record. The tidy, the
-/// landing's tidy and abandon's discard take it; the front keeps its public call.
+/// A session tree's removal: only a tree under the trees home, unforced only behind the clean-up's proof, its branch
+/// deleted only while it is the commit judged. The tidy, the landing's tidy and abandon's discard take it.
 /// </summary>
 internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, ContentHolds content, TreeSquashes squashes)
 {
@@ -43,11 +41,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"there is no tree at {path}.");
         }
 
-        // The main root, from git itself: the common dir is the main repository's .git, wherever the
-        // registered root is — nothing here guesses a layout it does not own.
-        // With its branch, in one start, and the working root git reports for the tree: read
-        // before anything is written, the session lock a forced removal lets go of below included, since a tree git binds to
-        // another checkout stays, said, forced or not.
+        // The main root, from git itself: the common dir is the main repository's .git, wherever the registered root is.
+        // Read with the branch and the working root before anything is written, the session lock a forced removal lets go of
+        // below included, since a tree git binds to another checkout stays, said, forced or not.
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code == 0 && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
