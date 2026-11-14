@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class SessionTreeReap
 {
-    /// <summary>End every process the job still holds, and say how many that was; none where there is no job or nothing runs in it.</summary>
+    /// <summary>End every process the job still holds, answering how many; zero with no job or nothing running in it.</summary>
     internal static int End(ProcessJob? job)
     {
         var held = job?.Active ?? 0;

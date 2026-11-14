@@ -72,7 +72,6 @@ internal sealed class RealServiceHost : IDisposable
             var project = Path.Combine(tests.Parent!.Parent!.FullName, "Daoris.Service", "Daoris.Service.Http", "Daoris.Service.Http.csproj");
             var artifacts = Path.Combine(tests.FullName, "obj", "service-host");
 
-            // A host a run killed left running holds this build output open, and the build below would fail to copy over it.
             ServiceHostRecords.Reap(ServiceHostRecords.FolderOf(artifacts));
             _recordsFolder = ServiceHostRecords.FolderOf(artifacts);
             await BuildAsync(project, configuration, artifacts);
@@ -186,7 +185,6 @@ internal sealed class RealServiceHost : IDisposable
         info.Environment["ASPNETCORE_URLS"] = url;
 
         var child = Process.Start(info)!;
-        // Held in a job that ends it on close, which closes with this process however it ends: an aborted run leaves no host.
         var job = ProcessJob.Hold(child);
         ServiceHostRecords.Record(_recordsFolder!, child);
         var host = new RealServiceHost(child, url, home, job, _recordsFolder!);

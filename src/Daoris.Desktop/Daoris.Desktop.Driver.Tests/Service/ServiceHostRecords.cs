@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// One file per host, named by the host's process id and holding its start time and its owner's process id and start time (UTC ticks), so
-/// a host is stale only where it still runs as the process that was recorded and its owner no longer does: a host of a run still going, in
+/// a host is stale only where it still runs as the process recorded and its owner no longer runs: a host of a run still going, in
 /// this checkout or beside it, is never touched, and an id since handed to another process is told apart by its start time.
 /// </remarks>
 internal static class ServiceHostRecords
@@ -74,7 +74,7 @@ internal static class ServiceHostRecords
             }
             catch (Exception error) when (error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
             {
-                // Ended as it was looked for.
+                // Already ending as it is looked for.
             }
 
             File.Delete(file);

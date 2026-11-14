@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A stand-in agent (<c>node</c> running a script of this test's, never an agent) starts a detached grandchild that never ends, then
 /// ends one of the ways a session ends: it exits on its own (completed), its tracking is let go while it still runs (the run's end), or
 /// the person's stop. Once the session has ended no grandchild remains, whether the start went through the launcher laid out beside the
-/// home (every agent of an install) or none was laid out (a development run's).
+/// home (every agent of an install) or no launcher is laid out (a development run's).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
