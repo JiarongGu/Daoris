@@ -40,9 +40,8 @@ public static class PluginCommandNotices
         if (plugin is null || command is null || from is null) return null;
         int? exit = line.Data.TryGetProperty("exit", out var code) && code.ValueKind == System.Text.Json.JsonValueKind.Number ? code.GetInt32() : null;
         var failed = exit is not null and not 0 || (exit is null && from == CommandWire.Agent);
-        var unwatched = from is CommandWire.Agent or CommandWire.Removal;
-        if (!failed && !unwatched) return null;
-        if (exit is null && !failed) return null;
+        // Only a failure needs the person: an agent's or a removal's round that ended well is the work going on.
+        if (!failed) return null;
         var id = $"{Kind}:{plugin}/{command}/{line.Stamp}";
         return new Notice(id, Kind, line.Time, State: failed ? "failed" : "reached", Route: from, Act: command, Code: plugin, Session: Text(line, "session"));
     }

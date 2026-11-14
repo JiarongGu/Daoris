@@ -68,7 +68,38 @@ public static class Notices
     /// <summary>A line of the look's that is news, by its code (<see cref="LookSaid"/>).</summary>
     public const string Look = "look";
 
+    /// <summary>
+    /// A row of <i>What needs you</i> the person set aside with no act: one entry in the history, read from the start, by the row's kind
+    /// (<see cref="Notice.Route"/>), its id (<see cref="Notice.Code"/>) and the moment it had waited since (<see cref="Notice.Act"/>). It
+    /// hides that row as it stood and no other, so a row that moved on is shown again.
+    /// </summary>
+    public const string Aside = "set-aside";
+
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+
+    /// <summary>
+    /// The ids of the kept notices of a kind no longer kept at all, which an earlier build wrote: an end that went well and a plugin's round
+    /// that ended well. The look clears them, so a record written before the diet does not keep what it no longer would.
+    /// </summary>
+    public static IReadOnlyList<string> Spent(IEnumerable<Notice> notices) =>
+    [
+        .. notices
+            .Where(notice => (notice.Kind == Ended && Of(new AttentionEvent(AttentionKind.Ended, notice.Session ?? "", "", notice.State), notice.At) is null)
+                || (notice.Kind == PluginCommandNotices.Kind && notice.State == "reached"))
+            .Select(notice => notice.Id),
+    ];
+
+    /// <summary>The entry that records a row set aside; <paramref name="since"/> is the row's own, null where it says none.</summary>
+    public static Notice SetAsideOf(string kind, string id, string? since, string? workspace, DateTimeOffset at) =>
+        new($"{Aside}:{kind}:{id}", Aside, at, Read: true, Workspace: workspace, Route: kind, Code: id, Act: since);
+
+    /// <summary>What a row set aside is hidden by: its kind, its id and the moment it waited since.</summary>
+    public static string HiddenKey(string kind, string id, string? since) => $"{kind}\n{id}\n{since ?? ""}";
+
+    /// <summary>The rows <paramref name="notices"/> say were set aside, each by <see cref="HiddenKey"/>.</summary>
+    public static IReadOnlySet<string> Hidden(IEnumerable<Notice> notices) =>
+        notices.Where(notice => notice.Kind == Aside && notice.Route is not null && notice.Code is not null)
+            .Select(notice => HiddenKey(notice.Route!, notice.Code!, notice.Act)).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Where the record is: the home table's <c>notices</c> entry.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Notices);
@@ -105,6 +136,8 @@ public static class Notices
     /// </summary>
     public static Notice? Of(AttentionEvent item, DateTimeOffset at) => item.Kind switch
     {
+        // An end that went well needs no one: the work's review and its landing carry what came of it.
+        AttentionKind.Ended when item.State?.Replace("-", "", StringComparison.Ordinal).ToLowerInvariant() is "completed" or "declined" or "stooddown" => null,
         AttentionKind.Ended => new($"ended-{item.Session}", Ended, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository, State: item.State),
         AttentionKind.Answered => new($"answered-{item.Session}", Answered, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository),
         _ => null,

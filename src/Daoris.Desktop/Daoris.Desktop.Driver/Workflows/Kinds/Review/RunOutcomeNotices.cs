@@ -23,7 +23,8 @@ public static class RunOutcomeNotices
         foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
         {
             if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
-            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State is NodeStates.Reached or NodeStates.Failed))
+            // Only a failure needs the person: a step reached is the run going on, which its review and its landing say.
+            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State == NodeStates.Failed))
             {
                 var at = step.Since ?? now;
                 if (now - at >= News.Horizon) continue;
@@ -34,5 +35,28 @@ public static class RunOutcomeNotices
         }
 
         return occurrences;
+    }
+
+    /// <summary>
+    /// The ids of the kept outcomes whose subject has moved on: the run is gone, or its step no longer fails the attempt the notice
+    /// names (a later attempt, a step reached since, an outcome an earlier build kept for a step that went on). A notice that is not an
+    /// outcome is not named.
+    /// </summary>
+    public static IReadOnlyList<string> Moved(string home, IEnumerable<Notice> held)
+    {
+        var outcomes = held.Where(notice => notice.Kind == Kind).ToList();
+        if (outcomes.Count == 0) return [];
+        var records = new NodeRecordFiles(home, () => false);
+        var failing = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
+        {
+            if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
+            foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State == NodeStates.Failed))
+            {
+                failing.Add($"outcome:{run.Run}/{step.Node}/{step.Attempt}");
+            }
+        }
+
+        return [.. outcomes.Where(notice => !failing.Contains(notice.Id)).Select(notice => notice.Id)];
     }
 }
