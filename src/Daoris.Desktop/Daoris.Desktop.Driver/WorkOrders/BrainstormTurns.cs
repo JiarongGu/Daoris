@@ -27,8 +27,7 @@ public sealed record BrainstormTurn(
 
 /// <summary>How a turn went: whether it ran, the account it ran as (this machine only), why it did not run, and the look's line.</summary>
 /// <param name="Code">Why it did not run, or how it failed: a fixed code; null for a turn that ran and ended.</param>
-/// <param name="Why">The walk's sentence for a turn it did not start, kept on the pass record; no path and no account name.</param>
-/// <param name="Lifts">When the cool-off a <c>cooling</c> turn found lifts (the earliest account's); null where none is known: the pass waits for it within its bound (BRAINWAIT1).</param>
+/// <param name="Why">The walk's sentence for a turn it did not start, kept on the pass record; no path and no account name. Lifts: when a cooling turn's first account lifts; null where unknown.</param>
 public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, string Line, string? Why = null, DateTimeOffset? Lifts = null);
 
 /// <summary>

@@ -19,11 +19,7 @@ public sealed record BrainstormSource(
 /// <summary>A source found and left out of the packet, with why: <c>bound</c>, <c>machine-path</c> or <c>removed</c>.</summary>
 public sealed record BrainstormLeftOut(string Path, string Why);
 
-/// <summary>
-/// The packet's bounds: first values, to read again on the first real run. <c>Each</c> and <c>All</c> bound what a search found;
-/// a source the asker named with <c>--source</c> is read whole within <c>NamedEach</c> and <c>NamedAll</c> instead (BRAINPACKET1), the
-/// room a model's context has for code the asker pointed at, and never taken from the searched sources' room.
-/// </summary>
+/// <summary>The packet's bounds: first values, to read again on the first real run; a named source has its own, apart from a search's.</summary>
 public sealed record BrainstormBounds(
     int Sources = 24, int Each = 12_000, int All = 60_000, int Question = 4_000, int NamedEach = 200_000, int NamedAll = 400_000)
 {

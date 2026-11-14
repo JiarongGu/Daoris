@@ -87,10 +87,7 @@ public static class BrainstormDocuments
     /// <summary>Why a document the person stopped is unranked.</summary>
     public const string StoppedByPerson = "stopped by the person: what answered is kept, and nothing ran after the stop";
 
-    /// <summary>
-    /// Why a document is unranked where a maker never answered because its accounts cool or the cap held it (BRAINWAIT1): who, why by code
-    /// and by the walk's sentence, and the offer: ask again once it lifts, which waits for it within the request's minutes.
-    /// </summary>
+    /// <summary>Why a document is unranked where a maker's accounts cool or the cap held it: who, and the offer to ask again.</summary>
     public static string ShortOfMakers(IReadOnlyList<BrainstormPassRecord> unavailable, int answered)
     {
         var said = string.Join("; ", unavailable.Select(pass =>

@@ -100,10 +100,7 @@ public sealed class BrainstormSourcesTests : IDisposable
         Assert.Contains("in as a source the asker named", BrainstormCommand.Packet("x", packet), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// 🔴 BRAINPACKET1: a source the asker named reaches the passes whole, not cut at the 12,000 characters a searched source is; the search's
-    /// finds keep their cut, and the named source takes none of their room.
-    /// </summary>
+    /// <summary>🔴 A named source reaches the passes whole, not cut at a searched source's 12,000 characters.</summary>
     [Fact]
     public async Task A_long_named_source_is_not_cut_at_twelve_thousand_characters()
     {
@@ -120,7 +117,6 @@ public sealed class BrainstormSourcesTests : IDisposable
         Assert.All(packet.Sources.Where(each => each.Tier != "named"), each => Assert.True(each.Kept <= BrainstormBounds.First.Each));
     }
 
-    /// <summary>A named source past a model's room is cut where the bound says, never silently: its record keeps what was kept and what it had.</summary>
     [Fact]
     public void A_named_source_past_its_bound_says_how_much_was_kept()
     {

@@ -45,7 +45,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>A turn whose account met its limit: the account cools, and the pass starts once more on the next one.</summary>
     internal const string Limit = "limit";
 
-    /// <summary>How many cool-offs one pass waits for within its deadline (BRAINWAIT1): a voice's accounts may cool again after the first lifts.</summary>
+    /// <summary>The cool-offs one pass waits for within its deadline.</summary>
     internal const int MostWaits = 3;
 
     /// <summary>A turn that ended by a failure of its own, with no answer.</summary>
@@ -379,9 +379,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             }
 
             var handed = BrainstormSyntheses.Number(answered);
-            // BRAINWAIT1: a maker whose accounts cool, or that the cap held, did not answer within its wait: the synthesis does not
-            // go on with the makers left as though the request had been theirs alone. The brainstorm says so, keeps what answered, and
-            // leaves the wait to the person.
+            // No synthesis from the makers left where one cooled or the cap held it: it says so and leaves the wait to the person.
             var shortOf = passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Unavailable }
                                              && pass.Codes.Any(code => code is StartPasses.Cooling or CapFull or Limit)).ToList();
             if (shortOf.Count > 0)
@@ -608,7 +606,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 account = ran.Account ?? account;
                 if (!ran.Ran && ran.Code == StartPasses.Cooling && ran.Lifts is { } lifts && lifts < until && waits < MostWaits)
                 {
-                    // BRAINWAIT1: the voice's accounts all cool, and the first lifts before the deadline: the pass waits for it, its slot
+                    // the voice's accounts all cool, and the first lifts before the deadline: the pass waits for it, its slot
                     // let go meanwhile, and its own minutes start when it runs. A cool-off that outlasts the deadline is not waited for.
                     waits++;
                     FreeSlot();

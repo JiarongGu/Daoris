@@ -392,7 +392,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 BRAINWAIT1: a maker whose accounts all cool, the first lifting within the deadline, is waited for: its pass starts again when
+    /// 🔴 A maker whose accounts all cool, the first lifting within the deadline, is waited for: its pass starts again when
     /// it lifts and answers, and the synthesis has both makers.
     /// </summary>
     [Fact]
@@ -419,7 +419,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 BRAINWAIT1: a maker cooling past the deadline is not waited for, and the brainstorm says so before it synthesizes: no synthesis
+    /// 🔴 A maker cooling past the deadline is not waited for, and the brainstorm says so before it synthesizes: no synthesis
     /// runs on the one maker left, what answered is kept unranked, and the document names who is cooling and offers the wait.
     /// </summary>
     [Fact]
