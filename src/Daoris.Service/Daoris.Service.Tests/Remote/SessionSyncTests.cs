@@ -387,7 +387,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal(SessionState.Working, (await _remote.FindAsync($"a@one/{chat.Id}"))!.State);
         var there = (await _b.FindAsync($"a@one/{chat.Id}"))!;
         Assert.Equal(SessionState.Working, there.State);
-        Assert.Equal("talked it through.\n\nWent on with your words at 2026-09-24 10:06 UTC.", there.Note);
+        Assert.Equal("Went on with your words at 2026-09-24 10:06 UTC.\n\ntalked it through.", there.Note);
         Assert.Empty(there.Said);
     }
 

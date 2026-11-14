@@ -1893,7 +1893,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, reopened.Status);
         var going = reopened.Json.GetProperty("session");
         Assert.Equal("working", going.GetProperty("state").GetString());
-        Assert.StartsWith("landed.\n\nWent on with your words at ", going.GetProperty("note").GetString());
+        Assert.StartsWith("Went on with your words at ", going.GetProperty("note").GetString());
+        Assert.EndsWith("\n\nlanded.", going.GetProperty("note").GetString());
         Assert.Equal(1, going.GetProperty("said").GetArrayLength());
 
         var taken = await host.PostAsync($"/api/sessions/{id}/taken", new { said = new[] { wordId } });

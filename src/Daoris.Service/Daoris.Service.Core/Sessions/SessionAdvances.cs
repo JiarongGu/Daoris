@@ -277,8 +277,8 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     /// words waiting each stay as they ended; and the tree it worked in must be free, since one session per working tree
     /// holds for going on as for a start.</para>
     ///
-    /// <para><b>Its history stays.</b> The note keeps what ended it and says when it went on, a note passed with the
-    /// move after that; the evidence stays, so the review counts from the record's own base. What ended it is forgiven
+    /// <para><b>Its history stays.</b> The note leads with when it went on, a note passed with the move after that, and keeps what
+    /// ended it beneath them; the evidence stays, so the review counts from the record's own base. What ended it is forgiven
     /// (a stop the sweep made, a limit's failure), so it says nothing of the run that follows. The words stay until that
     /// run takes them.</para>
     /// </remarks>
@@ -411,9 +411,9 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
          session.Said.Any(word => word.Supervisors));
 
     /// <summary>
-    /// The note an ended record goes on with: what ended it, when it went on, and the note the move passed,
-    /// each with its parts: the record's own, or its note carried whole; the ledger's
-    /// line with its moment; the move's own, or its note carried whole.
+    /// The note an ended record goes on with: when it went on, the note the move passed, then what ended it, each with its parts:
+    /// the ledger's line with its moment; the move's own, or its note carried whole; the record's own, or its note carried whole.
+    /// A working record never leads with the ending it went on from.
     /// </summary>
     /// <remarks>
     /// <b>Whose words, from <c>by</c></b>: the person's alone keep <see cref="LedgerNoteCodes.WentOn"/>.
@@ -436,11 +436,12 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 ($"Went on with the supervisor's answer at {at}.", LedgerNoteCodes.WentOnSupervisor),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
-        var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));
-        var parts = NoteParts.After(
-            string.IsNullOrWhiteSpace(session.Note) ? null : session.NoteParts, session.Note,
+        // The record works now, so its note leads with that, and what ended its last run follows as history (ORPHANSTATE1).
+        var went = string.Join("\n\n", new[] { line, note, session.Note }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        var parts = NoteParts.Before(
             [NoteLine.Coded(code, line, ("at", NoteParts.Moment(now)))],
-            string.IsNullOrWhiteSpace(note) ? null : noteParts, note);
+            string.IsNullOrWhiteSpace(note) ? null : noteParts, note,
+            string.IsNullOrWhiteSpace(session.Note) ? null : session.NoteParts, session.Note);
         return (went, parts);
     }
 }
