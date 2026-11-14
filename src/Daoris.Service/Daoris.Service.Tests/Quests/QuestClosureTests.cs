@@ -143,7 +143,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         // Its met requirement names evidence nobody read yet: held, as a done would be, and nothing follows it.
         Assert.Equal(QuestHold.EvidenceUnread, submitted.Hold);
         Assert.True(submitted.AwaitsEvidence);
-        Assert.Contains("ready", ready.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("submitted", ready.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(await _quests.ListAsync(), q => q.Parent == quest.Id);
         Assert.Equal(QuestOperationKind.Submitted, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
     }
@@ -170,17 +170,15 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task An_agents_done_on_a_bound_quest_is_refused_naming_ready_and_the_persons_done_stays_theirs()
+    public async Task An_agents_done_on_a_bound_quest_is_its_submission_and_the_persons_done_stays_theirs()
     {
         var quest = await Bound();
 
-        var done = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
+        var done = await _exchange.RespondAsync(quest.Id, "done", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
 
-        Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
-        Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
-        Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
+        Assert.Equal(QuestRespondRefusal.None, done.Refusal);
+        Assert.Equal((QuestStatus.Taken, "s0a1b2c3"), ((await Find(quest.Id)).Status, (await Find(quest.Id)).Submission!.Session));
 
-        // The person's override (§E5): their done at any time, closed as theirs.
         await Ready(quest);
         var theirs = await _exchange.PersonDoneAsync(quest.Id, "I checked it myself.", Now);
         Assert.Equal(QuestRespondRefusal.None, theirs.Refusal);
@@ -221,14 +219,14 @@ public sealed class QuestClosureTests : IAsyncLifetime
         draft: new AskDraft("Write the bridge report", "Through the bridge.") { Requirements = [Report, Bridge] })).Quest!;
 
     [Fact]
-    public async Task A_bound_quests_done_is_refused_naming_ready()
+    public async Task A_bound_quests_done_leaves_it_taken_with_its_submission()
     {
         var bound = await Bound(chain: false);
 
         var done = await _exchange.RespondAsync(bound.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
 
-        Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
-        Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
+        Assert.Equal((QuestRespondRefusal.None, QuestStatus.Taken), (done.Refusal, done.Quest!.Status));
+        Assert.NotNull(done.Quest.Submission);
     }
 
     [Fact]

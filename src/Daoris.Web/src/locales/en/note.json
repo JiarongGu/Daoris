@@ -466,7 +466,7 @@
   "note.waits.door-new-session": "To go on now in a new session instead, without that conversation: `daoris session hand-over {{session}}`.",
   "note.waits.door-chat": "To start a conversation with these words now instead, without that one: `daoris session start-from {{session}}`.",
   "note.waits.door-help": "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.",
-  "note.waits.step": "Its turn ended and it waits on its workflow's next step (run `{{run}}`): it goes on in the same conversation where a step sends its work back, and ends with its workflow.",
+  "note.waits.step": "Its turn ended and it waits on its workflow's next step (run `{{run}}`, after `{{node}}` attempt {{attempt}} at `{{tip}}`): it goes on in the same conversation where a step sends its work back, and ends with its workflow.",
   "note.waits.check": "It asked for a check and its turn ended while the check waits its turn: it goes on in the same conversation with the verdict.",
   "note.held.no-checkout": "It does not go on yet: `{{repository}}` has no checkout on this machine any more. Your words wait on it.",
   "note.held.replaying": "It does not go on yet: `{{repository}}`'s branches are being brought up to date right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",

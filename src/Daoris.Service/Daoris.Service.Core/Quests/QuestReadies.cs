@@ -55,8 +55,9 @@ internal sealed class QuestReadies(QuestStore quests, QuestReviews reviews, Ques
 
         return new(
             QuestRespondRefusal.None,
-            $"Quest `#{id}` is submitted: it stays Taken, and its graph writes its Done at the work's end, once its holds and gates "
-            + $"are through. A later `ready` replaces this one until its next step is published.{await answering.AnsweredAsync(standing, ct).ConfigureAwait(false)}"
+            $"Quest `#{id}` is submitted: it stays Taken, and its workflow writes its Done at its end, once its steps are through. "
+            + $"End your turn now: a step that sends the work back wakes you here. A later done replaces this one until its next step is "
+            + $"published.{await answering.AnsweredAsync(standing, ct).ConfigureAwait(false)}"
             + QuestWords.Then(move.FollowUp),
             standing);
     }
