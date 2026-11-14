@@ -18,16 +18,15 @@ public sealed class AdapterTests
         ServiceUrl: "http://localhost:5177");
 
     [Theory]
-    [InlineData("claude-code", "Anthropic", true)]
-    [InlineData("claude-code-acp", "Anthropic", true)]
-    [InlineData("codex-acp", "OpenAI", false)]
-    [InlineData("dsh", "DeepSeek", false)]
-    [InlineData("stub", "MAKER", false)]
-    [InlineData("acp-stub", "MAKER", false)]
-    public void Each_start_and_conversation_names_its_own_maker_and_running_model(string name, string maker, bool automatic)
+    [InlineData("claude-code", "Anthropic")]
+    [InlineData("claude-code-acp", "Anthropic")]
+    [InlineData("codex-acp", "OpenAI")]
+    [InlineData("dsh", "DeepSeek")]
+    [InlineData("stub", "MAKER")]
+    [InlineData("acp-stub", "MAKER")]
+    public void Each_start_and_conversation_names_its_own_maker_and_running_model(string name, string maker)
     {
         var adapter = ProviderRegistry.Built().Door(name);
-        // A new start must replace the attribution an earlier maker left on the target.
         var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, ProviderRegistry.Built(), adapter);
         var composed = TargetPrompt.Composed(target);
         var process = ChatRunner.ProcessTold(
@@ -40,22 +39,16 @@ public sealed class AdapterTests
             Assert.Contains("Co-Authored-By", words);
             Assert.Contains("do not add a duplicate", words);
             Assert.DoesNotContain("old maker's instruction", words);
-            if (automatic)
-            {
-                Assert.Contains("Your Claude harness adds", words);
-                Assert.DoesNotContain("Co-Authored-By:", words);
-            }
-            else
-            {
-                Assert.Contains("Co-Authored-By:", words);
-                Assert.Contains("model unreported rather than invent one", words);
-            }
+            Assert.Contains("Co-Authored-By:", words);
+            Assert.Contains("Write the line yourself", words);
+            Assert.DoesNotContain("let it do so", words);
+            Assert.Contains("model unreported rather than invent one", words);
+            if (maker == "Anthropic") Assert.Contains("Claude (Anthropic, MODEL) <noreply@anthropic.com>", words);
             if (maker == "OpenAI") Assert.Contains("Codex (OpenAI, MODEL) <noreply@openai.com>", words);
             if (maker == "DeepSeek") Assert.DoesNotContain("OpenAI", words);
         }
         Assert.Equal(composed.Text.Length, composed.Account.Sections.Sum(section => section.Chars ?? 0));
         Assert.Contains(process.Words, new ChatMessage("continue", []) { Process = process }.Prompt);
-        // The environment carries the same instruction that the ACP door's first prompt carries.
         var info = ProviderRegistry.Built().Start(adapter, target, ["node", "stand-in.mjs"]);
         Assert.Equal(composed.Text, info.Environment["DAORIS_TARGET"]);
         using var service = new ServiceClient("http://ledger.test", null);

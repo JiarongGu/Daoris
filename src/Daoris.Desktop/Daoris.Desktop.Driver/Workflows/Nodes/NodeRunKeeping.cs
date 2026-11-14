@@ -223,13 +223,18 @@ internal sealed class NodeRunKeeping(
             {
                 NodeStates.Rejected when was.Words is { } words => ChangesWords(source, words),
                 NodeStates.Failed when was.Words is { Length: > 0 } own => own,
-                NodeStates.Failed => $"Daoris: `{source}` failed{(was.Code is { } code ? $" (`{code}`)" : "")}, so your work goes back to you: mend what it "
-                    + "found and commit, and what you commit goes through the workflow again.",
+                NodeStates.Failed => FailedWords(source, was.Code, CheckResults.Newest(records.Home, scope.Run.Run, records.Read(governed.Unit.Id), source)?.Why),
                 _ => $"Daoris: `{source}` came to `{was.Current?.Outcome}`, so your work goes back to you: what you commit goes through the workflow again.",
             };
             await TellWorkAsync(governed, scope, source, was.Attempt, text, said, ct).ConfigureAwait(false);
         }
     }
+
+    /// <summary>What a failed step sends the work back with: its code, and where it is a check, what its newest result found.</summary>
+    internal static string FailedWords(string node, string? code, string? found) =>
+        $"Daoris: `{node}` failed{(code is { } named ? $" (`{named}`)" : "")}, so your work goes back to you: "
+        + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
+        + " and commit, and what you commit goes through the workflow again.";
 
     /// <summary>What a run's work is told of the person's changes: Daoris's own sentence, then their words quoted, as a reopen's are.</summary>
     private static string ChangesWords(string node, string words)

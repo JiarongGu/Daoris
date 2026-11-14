@@ -5,8 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The broker's files per check under <c>&lt;home&gt;/checks</c>: <c>&lt;id&gt;.ask.json</c> (written by the service's connector or by
-/// Daoris's reading of a hand-back), <c>&lt;id&gt;.state.json</c> and <c>&lt;id&gt;.log</c> (the driver's alone). The file is the contract; the
+/// The broker's files per check under <c>&lt;home&gt;/checks</c>: <c>&lt;id&gt;.ask.json</c> (written by the service's connector), <c>&lt;id&gt;.state.json</c> and <c>&lt;id&gt;.log</c> (the driver's alone). The file is the contract; the
 /// service's <c>CheckBox</c> shares no code with this.
 /// </summary>
 public sealed class CheckFiles(string home)
@@ -55,7 +54,11 @@ public sealed class CheckFiles(string home)
         }
     }
 
-    /// <summary>Every ask on file, oldest first; one unreadable or of another shape is not an ask here.</summary>
+    /// <summary>
+    /// Every ask on file, oldest first; one unreadable or of another shape is not an ask here. An ask Daoris itself wrote for a hand-back
+    /// (<c>"by": "daoris"</c>, written by a build before the workflow's check step was the only way Daoris checks work) is deleted with its
+    /// state and log as found: nothing runs it now.
+    /// </summary>
     public IReadOnlyList<CheckAsk> Asks()
     {
         if (!Directory.Exists(Folder)) return [];
@@ -66,6 +69,12 @@ public sealed class CheckFiles(string home)
             using (root)
             {
                 var element = root.RootElement;
+                if (Text(element, "by") == "daoris")
+                {
+                    Sweep(path);
+                    continue;
+                }
+
                 var id = Text(element, "id") ?? Path.GetFileName(path)[..^".ask.json".Length];
                 if (Text(element, "session") is not { Length: > 0 } session) continue;
                 IReadOnlyList<string>? command = element.TryGetProperty("command", out var words) && words.ValueKind == JsonValueKind.Array
@@ -73,7 +82,6 @@ public sealed class CheckFiles(string home)
                     : null;
                 asks.Add(new CheckAsk(
                     id, session, Text(element, "gate") is { Length: > 0 } gate ? gate : null, command is { Count: > 0 } ? command : null,
-                    Text(element, "by") == CheckAsk.ByDaoris ? CheckAsk.ByDaoris : CheckAsk.ByAgent,
                     Moments.Read(element, "at") ?? File.GetLastWriteTimeUtc(path)));
             }
         }
@@ -81,10 +89,20 @@ public sealed class CheckFiles(string home)
         return [.. asks.OrderBy(ask => ask.At).ThenBy(ask => ask.Id, StringComparer.Ordinal)];
     }
 
-    public void WriteObserved(string session, string tip)
+    private void Sweep(string askPath)
     {
-        Directory.CreateDirectory(Folder);
-        AtomicFile.WriteText(PathOf(session, "observed"), tip);
+        var id = Path.GetFileName(askPath)[..^".ask.json".Length];
+        foreach (var kind in new[] { "ask.json", "state.json", "log", "gate.log" })
+        {
+            try
+            {
+                File.Delete(PathOf(id, kind));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Left for the next look.
+            }
+        }
     }
 
     public void WriteAsk(CheckAsk ask) => JsonFile.Write(PathOf(ask.Id, "ask.json"), writer =>
@@ -100,7 +118,6 @@ public sealed class CheckFiles(string home)
             writer.WriteEndArray();
         }
 
-        writer.WriteString("by", ask.By);
         writer.WriteString("at", Moments.Write(ask.At));
         writer.WriteEndObject();
     });

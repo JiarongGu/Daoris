@@ -51,7 +51,6 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     // A git go-ahead opens its session, whose head draws it; one no session's marker named has its row alone.
     ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     ...(attached && openHelp ? { 'second-check': () => openHelp() } : {}),
-    ...(attached ? { 'check-failed': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     // A go-ahead opens the ask it is asked on, where every go-ahead of it is listed.
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what is required and how its done answered are quoted.

@@ -8,7 +8,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class CheckBrokerErrorTests : IDisposable
 {
-    private static Task<string?> Taken(string _, CancellationToken ct) => Task.FromResult<string?>("Taken");
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-12T10:00:00Z");
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "check-error-" + Guid.NewGuid().ToString("N")[..8]);
@@ -25,7 +24,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static CheckAsk Ask(string id, int minute = 0) => new(id, "s1", "tests", null, CheckAsk.ByAgent, At.AddMinutes(minute));
+    private static CheckAsk Ask(string id, int minute = 0) => new(id, "s1", "tests", null, At.AddMinutes(minute));
 
     private static Task<string?> Said(List<string> words, string session, string text, string key, CancellationToken ct)
     {
@@ -47,7 +46,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
         Assert.False(string.IsNullOrEmpty(state.Error));
         Assert.Null(state.Tail);
         var words = new List<string>();
-        Assert.Empty(await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None, Taken));
+        Assert.Empty(await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None));
         Assert.Empty(words);
         Assert.Empty(CheckWaits.Open("s1", files.Asks(), files.ReadState).Where(ask => files.ReadState(ask.Id)?.Handed is not null));
     }
@@ -84,7 +83,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
 
         Assert.Equal(CheckStates.Failed, (await broker.RunNextAsync(CancellationToken.None))!.State);
         var words = new List<string>();
-        Assert.Equal(["a1"], await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None, Taken));
+        Assert.Equal(["a1"], await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None));
         Assert.Contains("it failed (exit 1)", Assert.Single(words));
     }
 

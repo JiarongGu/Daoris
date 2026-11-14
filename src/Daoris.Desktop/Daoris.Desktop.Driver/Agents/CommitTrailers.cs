@@ -7,7 +7,6 @@ internal static class CommitTrailers
 {
     // The registration declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
-    // A carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
     internal static string For(ProviderRegistry adapters, AgentDoor adapter, EarlierMaker? earlier = null)
     {
         var maker = adapters.MakerOf(adapter);
@@ -16,12 +15,9 @@ internal static class CommitTrailers
 
     private static string Own(string? maker, AgentDoor adapter)
     {
-        if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
-            return $"This start runs on `{adapter.Id.Value}`, made by Anthropic. Use the model actually running this session for commit attribution. "
-                + "Your Claude harness adds its Co-Authored-By trailer; let it do so and do not add a duplicate or another maker's trailer.";
-
         var identity = maker switch
         {
+            "Anthropic" => "Claude (Anthropic, MODEL) <noreply@anthropic.com>",
             "OpenAI" => "Codex (OpenAI, MODEL) <noreply@openai.com>",
             "DeepSeek" => "DeepSeek (MODEL) <noreply@deepseek.com>",
             _ => "AGENT (MAKER, MODEL) <your maker's attribution address>",
@@ -31,7 +27,8 @@ internal static class CommitTrailers
             + $"Co-Authored-By: {identity}\n\n"
             + "Replace MODEL with the model your harness reports for this run, not an account default or a model from an earlier session's brief. "
             + "If no model identity is reported, say model unreported rather than invent one. "
-            + "Replace any other placeholders with your own identity. If your harness adds that trailer itself, do not add a duplicate.";
+            + "Replace any other placeholders with your own identity. Write the line yourself, whatever your harness is: a commit made from a shell gets none added through some harnesses, and the merge refuses a commit without it. "
+            + "If your harness does add one too, keep one line naming your maker and model and do not add a duplicate.";
     }
 
     /// <summary>

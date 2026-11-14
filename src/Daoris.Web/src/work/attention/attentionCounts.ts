@@ -92,7 +92,6 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // A git go-ahead: its session's page draws it in its head and foot, where it is answered too.
   'git-ask': 'sessions',
   'second-check': null,
-  'check-failed': 'sessions',
 };
 
 /** The sessions a place is judged with: those the page holds, for the branch a unit of work is cut for (`workCutFor`). */

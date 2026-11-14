@@ -12,13 +12,19 @@ internal sealed record UnsignedCommit(string Sha, string Subject, string? Traile
 /// </summary>
 internal static partial class CommitAttribution
 {
-    private const string Format = "--format=%h%x1f%p%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly)%x1e";
+    /// <summary>The merge check's log format, maker rule and trailer shape, held to one fixture by a test on each side.</summary>
+    internal const string Format = "--format=%h%x1f%p%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly)%x1e";
 
-    // The makers of the built-in agents, and Daoris for the commits its driver writes: the same words the merge check accepts.
-    [GeneratedRegex(@"\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b", RegexOptions.IgnoreCase)]
+    internal const string MakerPattern = @"\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b";
+
+    internal const string NamedPattern = @"^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$";
+
+    internal const string Remedy = "Rewrite each of them so its message ends with a `Co-Authored-By: <your maker> (<your model>) <address>` line naming you, for example by `git rebase --exec` with `git commit --amend --trailer`, and write that line in every commit you make from now on.";
+
+    [GeneratedRegex(MakerPattern, RegexOptions.IgnoreCase)]
     private static partial Regex Maker();
 
-    [GeneratedRegex(@"^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$")]
+    [GeneratedRegex(NamedPattern)]
     private static partial Regex Named();
 
     /// <summary>The commits in <paramref name="mergeBase"/>..<paramref name="tip"/> without a maker's trailer, oldest first; null where git could not say.</summary>

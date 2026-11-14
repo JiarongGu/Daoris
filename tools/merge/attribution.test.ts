@@ -1,6 +1,7 @@
 import { test } from 'vitest';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { commitAttributionProblems, parseCommits } from './attribution.ts';
+import { COMMIT_FORMAT, MAKER, NAMED, commitAttributionProblems, parseCommits } from './attribution.ts';
 
 test("the commit log is read for each commit's trailer, and a merge of main into the branch is marked", () => {
   const log = [
@@ -33,4 +34,15 @@ test('the commit check accepts each allowed maker and legacy harness trailers, a
     assert.equal(problems.length, 1, trailer);
     assert.match(problems[0]!, /abc1234 work.*Co-Authored-By.*expected.*Anthropic.*OpenAI.*DeepSeek.*Daoris/);
   }
+});
+
+test("the commit check's format, maker rule and trailer shape are the driver's hand-back reading's, held to one fixture", () => {
+  const contract = JSON.parse(readFileSync(new URL('./attribution-contract.json', import.meta.url), 'utf8'));
+  assert.equal(COMMIT_FORMAT, contract.format);
+  assert.equal(MAKER.source, contract.maker);
+  assert.equal(MAKER.flags, 'i');
+  assert.equal(NAMED.source, contract.named);
+  const commit = (trailer: string) => ({ sha: 'abc1234', subject: 'work', merge: false, trailer });
+  for (const trailer of contract.signed) assert.deepEqual(commitAttributionProblems([commit(trailer)]), [], trailer);
+  for (const trailer of contract.unsigned) assert.equal(commitAttributionProblems([commit(trailer)]).length, 1, trailer);
 });

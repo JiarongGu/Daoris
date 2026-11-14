@@ -133,5 +133,4 @@ public sealed record AttentionFacts
     /// <summary>The rows set aside, by <see cref="Daoris.Driver.Notices.HiddenKey"/>.</summary>
     public IReadOnlySet<string> Hidden { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
-    public IReadOnlyList<Daoris.Driver.CheckVerdict> Checks { get; init; } = [];
 }

@@ -49,6 +49,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
+        if (send.Reached) return await HandbackAsync(declared, ct).ConfigureAwait(false);
         if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from) is { } command) return (await ReachedAsync(reached, command, ct).ConfigureAwait(false), false);
 
         var runner = VerifyRunner.Of(text);
@@ -82,6 +83,40 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
 
         if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, kept) { Declaration = send.Accepted }, false);
+        return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
+    }
+
+    /// <summary>
+    /// The <c>reached</c> choice: the hand-back read from git against the line, a fault there the verdict and no gate run; else the declaration's required hand-back commands the
+    /// change reaches (<see cref="HandbackGates"/>). No line to read against, or git unable to say, is unrun and never failed.
+    /// </summary>
+    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
+    {
+        if (await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is not { } line)
+        {
+            return (Unknown("no line (the remote's head, `main` or `master`) is here to read the hand-back against") with { Code = VerifyResult.Unrun }, false);
+        }
+
+        if (await HandbackReading.ReadAsync(send.Checkout, line, send.Commit, ct).ConfigureAwait(false) is not { } seen)
+        {
+            return (Unknown($"git could not read the hand-back at {TextBounds.ShortCommit(send.Commit, 7)} against `{line}`") with { Code = VerifyResult.Unrun }, false);
+        }
+
+        if (seen.Faulty)
+        {
+            return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, seen.Words(), [new VerifyGate(HandbackReading.Gate, RunnerVerdicts.Fail)])
+            {
+                Failed = HandbackReading.Gate, Declaration = send.Accepted,
+            }, false);
+        }
+
+        // The declaration's required commands the change reaches; one a check of the home finished green at this very commit is not run again.
+        var files = new CheckFiles(home);
+        var required = declared.Where(gate => gate.Handback && GateReach.Reaches(gate, seen.Touched)).ToList();
+        var verified = required.Where(gate => HandbackGates.Verified(files, gate, send.Commit)).ToList();
+        var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
+        var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
+        if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, seen.Words(), kept) { Declaration = send.Accepted }, false);
         return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
     }
 

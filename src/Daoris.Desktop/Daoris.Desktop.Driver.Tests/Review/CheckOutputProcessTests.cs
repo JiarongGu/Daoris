@@ -16,7 +16,7 @@ public sealed class CheckOutputProcessTests : IDisposable
         File.WriteAllText(_fixture.At("says.mjs"), "console.log('gate stdout'); console.error('gate stderr'); process.exit(1);\n");
         var files = new CheckFiles(_fixture.Home);
         files.WriteAsk(new CheckAsk("a1", "s1", null,
-            ["node", _fixture.At("says.mjs")], CheckAsk.ByAgent, DateTimeOffset.UtcNow));
+            ["node", _fixture.At("says.mjs")], DateTimeOffset.UtcNow));
         var broker = new CheckBroker(_fixture.Home, _ => _fixture.Tree);
 
         var state = await broker.RunNextAsync(CancellationToken.None);

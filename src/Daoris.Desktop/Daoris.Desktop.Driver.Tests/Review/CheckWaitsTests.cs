@@ -10,15 +10,15 @@ public sealed class CheckWaitsTests
 {
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-12T10:00:00Z");
 
-    private static CheckAsk Ask(string id, string session = "s1", string by = CheckAsk.ByAgent, string? gate = "tests") =>
-        new(id, session, gate, null, by, At);
+    private static CheckAsk Ask(string id, string session = "s1", string? gate = "tests") =>
+        new(id, session, gate, null, At);
 
     private static Func<string, CheckState?> States(params CheckState[] states) => id => states.FirstOrDefault(state => state.Id == id);
 
     [Fact]
-    public void An_agents_check_is_open_until_its_verdict_is_handed()
+    public void A_check_is_open_until_its_verdict_is_handed()
     {
-        var asks = new[] { Ask("a1"), Ask("a2"), Ask("a3"), Ask("a4", by: CheckAsk.ByDaoris), Ask("a5", session: "s2") };
+        var asks = new[] { Ask("a1"), Ask("a2"), Ask("a3"), Ask("a5", session: "s2") };
         var states = States(
             new CheckState("a2", CheckStates.Reached, At), new CheckState("a3", CheckStates.Failed, At) { Handed = "w1" });
 

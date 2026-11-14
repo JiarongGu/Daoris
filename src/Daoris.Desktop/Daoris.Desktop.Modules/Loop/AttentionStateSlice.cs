@@ -342,7 +342,6 @@ public static class AttentionStateSlice
             StoppedQuests = StoppedRuns.Quests(loop.Home),
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
             Hidden = Notices.Hidden(Notices.Read(loop.Home, DateTimeOffset.UtcNow) ?? []),
-            Checks = CheckVerdict.Pending(loop.Home),
         };
     }
 

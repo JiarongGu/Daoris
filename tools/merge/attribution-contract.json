@@ -1,0 +1,21 @@
+{
+  "format": "--format=%h%x1f%p%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly)%x1e",
+  "maker": "\\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\\b",
+  "named": "^\\s*(.+?)\\s+<[^<>\\s]+@[^<>\\s]+>\\s*$",
+  "signed": [
+    "Claude Opus 4.6 <noreply@anthropic.com>",
+    "Claude (Anthropic, sonnet) <fixture@example.test>",
+    "Codex (OpenAI, gpt-fixture) <noreply@openai.com>",
+    "OpenAI gpt-fixture <fixture@example.test>",
+    "DeepSeek (fixture-model) <noreply@deepseek.com>",
+    "Human <person@example.test>\nCodex gpt-fixture <fixture@example.test>",
+    "Daoris <noreply@daoris.invalid>"
+  ],
+  "unsigned": [
+    "",
+    "Fixture <fixture@example.test>",
+    "OpenAI",
+    "Someone <OpenAI@example.test>",
+    "Someone <Daoris@example.test>"
+  ]
+}

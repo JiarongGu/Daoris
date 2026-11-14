@@ -21,6 +21,12 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The check's bound, counted from both slots held.</summary>
     public TimeSpan Bound { get; init; } = HeavyExecutor.DefaultBound;
 
+    /// <summary>
+    /// The check's <c>reached</c> choice: the hand-back is read from git first and a fault there is its verdict, else the declaration's required
+    /// hand-back commands its change reaches run, except any a check finished green at this commit.
+    /// </summary>
+    public bool Reached { get; init; }
+
     /// <summary>The verification tree its direct gates run in; null for one under the lines folder, by the repository's slot key.</summary>
     public string? Tree { get; init; }
 }

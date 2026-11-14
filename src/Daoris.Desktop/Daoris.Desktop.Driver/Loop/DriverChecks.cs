@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The check broker as the loop holds it: each look starts the broker's next check beside the look, never in it, so a session's turn has
-/// ended while its check waits. Verdicts reach an unfinished quest's session as Daoris's word; a done quest's reds wait for the person.
+/// ended while its check waits. Verdicts reach the asking session as Daoris's word.
 /// </summary>
 /// <remarks>
 /// A session that asks <c>check_run</c> ends its turn <see cref="EndNoteCodes.EndedAwaitsCheck"/> (<see cref="WaitsOnOwnCheckAsync"/>);
@@ -39,10 +39,9 @@ internal sealed class DriverChecks
         return Exchanges.AsksPersonNothing(Exchanges.Of(await _helpers.OwnLookAsync(session, since, ct).ConfigureAwait(false), session), session);
     }
 
-    /// <summary>One look: the hand-backs read, the asks' trees read, the next check started beside the look where none runs, the finished verdicts handed.</summary>
-    internal async Task LookAsync(IEnumerable<PriorSession> sessions, CancellationToken ct)
+    /// <summary>One look: the asks' trees read, the next check started beside the look where none runs, the finished verdicts handed.</summary>
+    internal async Task LookAsync(CancellationToken ct)
     {
-        await new DriverHandbacks(_context).LookAsync(sessions, ct).ConfigureAwait(false);
         var files = new CheckFiles(_context.Home);
         var asks = files.Asks();
         if (asks.Count == 0) return;
@@ -58,7 +57,7 @@ internal sealed class DriverChecks
             if (_running.IsCompleted) _running = Task.Run(RunAllAsync, CancellationToken.None);
         }
 
-        await CheckHanding.HandAsync(files, SayAsync, ct, QuestStatusAsync).ConfigureAwait(false);
+        await CheckHanding.HandAsync(files, SayAsync, ct).ConfigureAwait(false);
     }
 
     private async Task RunAllAsync()
@@ -90,13 +89,5 @@ internal sealed class DriverChecks
         {
             return null;
         }
-    }
-
-    private async Task<string?> QuestStatusAsync(string session, CancellationToken ct)
-    {
-        var record = await _context.Service.RecordAsync(session, ct).ConfigureAwait(false);
-        return (record?.Quest ?? record?.TookQuest) is { } quest
-            ? (await _context.Service.FindQuestAsync(quest, ct).ConfigureAwait(false))?.Status
-            : null;
     }
 }

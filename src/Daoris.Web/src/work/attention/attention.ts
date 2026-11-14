@@ -7,7 +7,6 @@ import { sittingSentence } from '../../data/signals';
 import type { Tool } from '../../agents/tools';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
-import { checkFailureWorded } from './checkFailure';
 import { accountRowWorded } from './accountWords';
 import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
@@ -96,7 +95,6 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A second check's flag on one of Ask Daoris's acts, which has run: the person should know before going on, and
   // nothing is held by it.
   'second-check': 'word',
-  'check-failed': 'word',
   // A session the watcher brings to the person: it holds its slot and its tree, and
   // its work stands still until they press, or it is heard again.
   quiet: 'holding',
@@ -225,7 +223,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'check-failed', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question',
+  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question',
   'left', 'review',
 ];
 
@@ -617,13 +615,6 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.gitAsk ? { gitAsk: row.gitAsk } : {}),
         ...(row.session ? { session: row.session } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
-      };
-    case 'check-failed':
-      return {
-        ...base,
-        ...(row.check ? checkFailureWorded(row.check) : { title: row.id }),
-        check: row.check,
-        session: row.session,
       };
     // The reader's claim, said as its claim with its certainty and the call it rests on; never a fact.
     case 'second-check':

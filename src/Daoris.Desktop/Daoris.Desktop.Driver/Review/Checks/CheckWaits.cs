@@ -7,9 +7,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class CheckWaits
 {
-    /// <summary>The checks <paramref name="session"/>'s agent asked that are still open: no verdict handed yet. A check Daoris asked is never the agent's wait.</summary>
+    /// <summary>The checks <paramref name="session"/>'s agent asked that are still open: no verdict handed yet.</summary>
     public static IReadOnlyList<CheckAsk> Open(string session, IEnumerable<CheckAsk> asks, Func<string, CheckState?> state) =>
-        [.. asks.Where(ask => string.Equals(ask.Session, session, StringComparison.Ordinal) && ask.By == CheckAsk.ByAgent && state(ask.Id)?.Handed is null)];
+        [.. asks.Where(ask => string.Equals(ask.Session, session, StringComparison.Ordinal) && state(ask.Id)?.Handed is null)];
 
     /// <summary>Whether a run's conclusion is the wait on its own check: its note's code.</summary>
     public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, EndNoteCodes.EndedAwaitsCheck);
@@ -25,7 +25,7 @@ public static class CheckWaits
     public static string Words(CheckAsk ask, CheckState state)
     {
         var what = ask.Gate is { } gate ? $"`{gate}`" : ask.Command is { } command ? $"`{HeavyRun.CommandText(command)}`" : "the heavy gates";
-        var who = ask.By == CheckAsk.ByDaoris ? "Daoris ran" : "Daoris ran, as you asked,";
+        const string who = "Daoris ran, as you asked,";
         var head = state.State switch
         {
             CheckStates.Reached => $"{who} {what} in your tree and it reached.",
