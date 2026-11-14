@@ -34,6 +34,9 @@ public partial interface IGitRepository
     /// </summary>
     Task<GitMerged> MergeAsync(string folder, GitMergeAsk ask, CancellationToken ct);
 
+    /// <summary>The commits <paramref name="tip"/> reaches that none of <paramref name="exclude"/> does, by full id, newest first; null where git could not say.</summary>
+    Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct);
+
     /// <summary>Abandons a merge begun, the files and the index as HEAD holds them; done where none is begun.</summary>
     Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct);
 

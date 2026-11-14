@@ -57,6 +57,9 @@ public abstract partial class RepositoryContract
         Assert.Empty(await Backend.StatusAsync(root, false, Ct));
         Assert.True((await Backend.MergeAsync(root, new GitMergeAsk(feature, GitMergeKind.Commit, "again"), Ct)).Ok);
         Assert.Equal(2, await Backend.CountAsync(root, "HEAD", [main], Ct));
+        var own = await Backend.RevListAsync(root, "HEAD", ["HEAD^1"], Ct);
+        string[] expected = [(await Backend.HeadAsync(root, Ct))!, feature];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), own!.Order(StringComparer.Ordinal));
     }
 
     [Fact]

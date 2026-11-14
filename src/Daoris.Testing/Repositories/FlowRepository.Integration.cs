@@ -6,6 +6,8 @@ public sealed partial class FlowRepository
 {
     public Task<GitMerged> MergeAsync(string folder, GitMergeAsk ask, CancellationToken ct) => Current.MergeAsync(folder, ask, ct);
 
+    public Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct) => Current.RevListAsync(folder, tip, exclude, ct);
+
     public Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct) => Current.MergeAbortAsync(folder, ct);
 
     public Task<IReadOnlyList<string>> UnmergedAsync(string folder, CancellationToken ct) => Current.UnmergedAsync(folder, ct);

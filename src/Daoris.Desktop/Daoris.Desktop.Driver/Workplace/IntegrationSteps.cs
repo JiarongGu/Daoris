@@ -120,12 +120,11 @@ public sealed class IntegrationSteps(IntegrationStore store)
     /// <summary>Whether the line holds <paramref name="tip"/>, asked of git: yes, no, or git's words where it could not say.</summary>
     private static async Task<(bool Held, string? Unread)> HoldsAsync(string root, string line, string tip, CancellationToken ct)
     {
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, $"refs/heads/{line}"], ct).ConfigureAwait(false);
-        return code switch
+        return await MachinePorts.Repository.IsAncestorAsync(root, tip, $"refs/heads/{line}", ct).ConfigureAwait(false) switch
         {
-            0 => (true, null),
-            1 => (false, null),
-            _ => (false, ContentHolds.Said(err)),
+            true => (true, null),
+            false => (false, null),
+            null => (false, ContentHolds.Said("")),
         };
     }
 

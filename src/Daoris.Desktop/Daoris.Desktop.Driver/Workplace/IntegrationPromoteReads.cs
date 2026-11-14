@@ -31,8 +31,7 @@ internal static class IntegrationPromoteReads
     /// <summary>The line's commit as git names it, or the words of git's refusal.</summary>
     internal static async Task<(string? Commit, string Why)> LineAsync(string root, string line, CancellationToken ct)
     {
-        var (code, output, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && output.Trim().Length > 0 ? (output.Trim(), "") : (null, ContentHolds.Said(err));
+        return await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false) is { } commit ? (commit, "") : (null, ContentHolds.Said(""));
     }
 
     /// <summary>

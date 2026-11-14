@@ -55,8 +55,7 @@ internal sealed class LandingPress(
     internal static async Task<string?> JudgedAsync(string path, string? pinned, CancellationToken ct)
     {
         if (pinned is not null) return pinned;
-        var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
-        return code == 0 ? head.Trim() : null;
+        return await MachinePorts.Repository.HeadAsync(Path.GetFullPath(path), ct).ConfigureAwait(false);
     }
 
     /// <summary>

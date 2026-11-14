@@ -26,6 +26,19 @@ public sealed partial class MemoryRepository
         return Task.FromResult(new MemoryMerge(_history).Begin(tree, head, tip, ask, _merging, Make));
     }
 
+    public Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct)
+    {
+        if (Find(folder) is not { } tree || _history.Resolve(tip, HeadOf(tree)?.Id) is not { } top) return Task.FromResult<IReadOnlyList<string>?>(null);
+        var reach = _history.Reach(top);
+        foreach (var each in exclude)
+        {
+            if (_history.Resolve(each, HeadOf(tree)?.Id) is not { } excluded) return Task.FromResult<IReadOnlyList<string>?>(null);
+            reach.ExceptWith(_history.Reach(excluded));
+        }
+
+        return Task.FromResult<IReadOnlyList<string>?>([.. reach.Select(id => _history.Commit(id)!).OrderByDescending(each => each.Order).Select(each => each.Id)]);
+    }
+
     public Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct)
     {
         if (Find(folder) is not { } tree) return Task.FromResult(GitDone.Not($"{folder} is not a git repository"));

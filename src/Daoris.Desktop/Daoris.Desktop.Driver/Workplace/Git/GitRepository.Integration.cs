@@ -23,6 +23,12 @@ public sealed partial class GitRepository
         return new GitMerged(false, stderr.Length > 0 ? stderr : stdout, pending ? await UnmergedAsync(folder, ct).ConfigureAwait(false) : [], pending);
     }
 
+    public async Task<IReadOnlyList<string>?> RevListAsync(string folder, string tip, IReadOnlyList<string> exclude, CancellationToken ct)
+    {
+        var (code, stdout, _) = await RunGitAsync(folder, exclude.Count == 0 ? ["rev-list", tip] : ["rev-list", tip, "--not", .. exclude], ct).ConfigureAwait(false);
+        return code == 0 ? [.. stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)] : null;
+    }
+
     public async Task<GitDone> MergeAbortAsync(string folder, CancellationToken ct)
     {
         if ((await RunGitAsync(folder, ["rev-parse", "--quiet", "--verify", "MERGE_HEAD"], ct).ConfigureAwait(false)).Code != 0) return GitDone.Done;

@@ -63,10 +63,10 @@ internal static class LinePulls
                 return new(pull, false, $"the repository's own checkout is not clean ({detail}), so `{line}` stays where it is.");
             }
 
-            var (_, onOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-            if (!string.Equals(onOut.Trim(), line, StringComparison.Ordinal))
+            var on = await MachinePorts.Repository.BranchAsync(root, ct).ConfigureAwait(false);
+            if (!string.Equals(on, line, StringComparison.Ordinal))
             {
-                return new(pull, false, $"the repository's checkout moved to `{onOut.Trim()}` since the list, so `{line}` was left for another look.");
+                return new(pull, false, $"the repository's checkout moved to `{on ?? "HEAD"}` since the list, so `{line}` was left for another look.");
             }
 
             if (await CommitOfAsync(root, "HEAD", ct).ConfigureAwait(false) != pull.From)
@@ -81,11 +81,9 @@ internal static class LinePulls
         }
 
         // The ref alone, and only from the commit it is judged at: git refuses the move if it is elsewhere now.
-        var (moved, _, moveErr) = await WorkingTree.GitAsync(
-            root, ["update-ref", "-m", $"daoris: fast-forward {line} to origin/{line}", $"refs/heads/{line}", pull.To!, pull.From!], ct)
-            .ConfigureAwait(false);
-        return moved == 0
+        var moved = await MachinePorts.Repository.UpdateRefAsync(root, $"refs/heads/{line}", pull.To!, pull.From!, ct).ConfigureAwait(false);
+        return moved.Ok
             ? new(pull, true, took)
-            : new(pull, false, $"`{line}` moved since the list, so it was left: {Failure(moveErr)}");
+            : new(pull, false, $"`{line}` moved since the list, so it was left: {Failure(moved.Error)}");
     }
 }

@@ -47,13 +47,12 @@ internal sealed class LandedReviews(TreeContext context)
 
         if (entry.GoneAt is not null) return new(entry, LandedState.Gone, Reads: await ReadsAsync(root, entry, ct).ConfigureAwait(false));
 
-        var (tipCode, tipOut, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-        if (tipCode != 0) return new(entry, LandedState.Gone, Reads: await ReadsAsync(root, entry, ct).ConfigureAwait(false));
+        if (await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct).ConfigureAwait(false) is not { } tip)
+        {
+            return new(entry, LandedState.Gone, Reads: await ReadsAsync(root, entry, ct).ConfigureAwait(false));
+        }
 
-        var tip = tipOut.Trim();
-        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
-        if (ours != 0) return new(entry, LandedState.NotOurs);
+        if (await MachinePorts.Repository.IsAncestorAsync(root, entry.Tip, tip, ct).ConfigureAwait(false) != true) return new(entry, LandedState.NotOurs);
         if (!changes) return new(entry, LandedState.Standing);
 
         var from = await LandedFromAsync(root, entry, tip, ct).ConfigureAwait(false);
@@ -76,20 +75,18 @@ internal sealed class LandedReviews(TreeContext context)
     {
         if (entry.From is { } recorded && WorkingTree.IsCommitId(recorded))
         {
-            var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", recorded, tip], ct).ConfigureAwait(false);
-            if (held == 0)
+            if (await MachinePorts.Repository.IsAncestorAsync(root, recorded, tip, ct).ConfigureAwait(false) == true)
             {
-                var (_, full, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{recorded}^{{commit}}"], ct).ConfigureAwait(false);
+                var full = await MachinePorts.Repository.CommitOfAsync(root, recorded, ct).ConfigureAwait(false);
                 // The choice Review's graph makes too (LandedGraph).
-                if (ReviewChoices.LandedFrom(held, full) is { } commit) return commit;
+                if (ReviewChoices.LandedFrom(0, full ?? "") is { } commit) return commit;
             }
         }
 
         var line = (await context.LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
-        var (code, fork, _) = await WorkingTree.GitAsync(root, ["merge-base", against, tip], ct).ConfigureAwait(false);
-        return code == 0 && fork.Trim() is { Length: > 0 } found ? found : null;
+        return await MachinePorts.Repository.MergeBaseAsync(root, against, tip, ct).ConfigureAwait(false);
     }
 
     /// <summary>Whether a gone branch's work reads on the line: the proof on the commit the landing made it at, while git holds it.</summary>

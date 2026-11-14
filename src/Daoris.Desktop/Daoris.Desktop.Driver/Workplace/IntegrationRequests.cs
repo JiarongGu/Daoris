@@ -408,13 +408,12 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
                 $"the line `{line}` has no branch in `{ask.Repository}`'s checkout, so nothing was requested."));
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(ask.Root, ["merge-base", "--is-ancestor", tip, at], ct).ConfigureAwait(false);
-        return code switch
+        return await MachinePorts.Repository.IsAncestorAsync(ask.Root, tip, at, ct).ConfigureAwait(false) switch
         {
-            0 => (line, Refuse(IntegrationRefusals.Held, $"the line `{line}` already holds `{ask.Branch}` at {Short(tip)}: nothing was requested.")),
-            1 => (line, null),
-            _ => (line, Refuse(IntegrationRefusals.Unread,
-                $"git could not say whether the line `{line}` holds `{ask.Branch}` ({ContentHolds.Said(err)}), so nothing was requested; ask again.")),
+            true => (line, Refuse(IntegrationRefusals.Held, $"the line `{line}` already holds `{ask.Branch}` at {Short(tip)}: nothing was requested.")),
+            false => (line, null),
+            null => (line, Refuse(IntegrationRefusals.Unread,
+                $"git could not say whether the line `{line}` holds `{ask.Branch}` ({ContentHolds.Said("")}), so nothing was requested; ask again.")),
         };
     }
 

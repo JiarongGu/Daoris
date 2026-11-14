@@ -141,10 +141,9 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             if (based.Kind == TrainBaseKinds.Unread) return new(IntegrationReplayRuns.Unread, based.Said);
         }
 
-        var (code, commit, err) = await WorkingTree.GitAsync(ask.Root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{ask.Line}^{{commit}}"], ct).ConfigureAwait(false);
-        if (code != 0 || commit.Trim().Length == 0)
+        if (await MachinePorts.Repository.CommitOfAsync(ask.Root, $"refs/heads/{ask.Line}", ct).ConfigureAwait(false) is not { Length: > 0 } commit)
         {
-            return new(IntegrationReplayRuns.Unread, $"git could not read where `{ask.Line}` stands ({ContentHolds.Said(err)}): nothing was formed, and it is asked again at the next look.");
+            return new(IntegrationReplayRuns.Unread, $"git could not read where `{ask.Line}` stands (it names no commit): nothing was formed, and it is asked again at the next look.");
         }
 
         // A stop is about the line as it stands, and its requests stay open: formed again at the same commit, the candidate would only be stopped again.
@@ -305,14 +304,14 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         {
             if (Path.Exists(tree)) return $"a folder stands where the integration tree goes and git does not list it as a working tree: {Path.GetFileName(tree)} is left as it is.";
             Directory.CreateDirectory(Path.GetDirectoryName(tree)!);
-            var (added, _, addErr) = await WorkingTree.GitAsync(ask.Root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", Reason, tree, at], ct).ConfigureAwait(false);
-            if (added != 0) return $"Daoris could not make the integration tree: {ContentHolds.Said(addErr)}";
+            var added = await MachinePorts.Repository.AddWorktreeAsync(ask.Root, new GitWorktreeAdd(tree, at, LockReason: Reason), ct).ConfigureAwait(false);
+            if (!added.Ok) return $"Daoris could not make the integration tree: {ContentHolds.Said(added.Error)}";
         }
 
         // A configuration binding linked trees to another checkout would have a merge here rewrite that checkout's files.
         if (await TreeBinding.RefusalAsync(tree, ct).ConfigureAwait(false) is { } bound)
         {
-            if (!found) await WorkingTree.GitAsync(ask.Root, ["worktree", "remove", "--force", "--force", tree], CancellationToken.None).ConfigureAwait(false);
+            if (!found) await MachinePorts.Repository.RemoveWorktreeAsync(ask.Root, tree, CancellationToken.None).ConfigureAwait(false);
             return $"nothing is replayed in the integration tree: {bound}.";
         }
 
@@ -325,17 +324,8 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     /// </summary>
     internal static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
     {
-        await WorkingTree.GitAsync(tree, ["merge", "--abort"], ct).ConfigureAwait(false);
-        foreach (var arguments in new[]
-        {
-            new[] { "reset", "--quiet", "--hard" }, new[] { "clean", "--quiet", "-fd" }, new[] { "checkout", "--quiet", "--force", "--detach", commit },
-        })
-        {
-            var (code, _, err) = await WorkingTree.GitAsync(tree, arguments, ct).ConfigureAwait(false);
-            if (code != 0) return $"git could not put the integration tree back at {TextBounds.ShortCommit(commit, 8)} ({ContentHolds.Said(err)}).";
-        }
-
-        return null;
+        var done = await MachinePorts.Repository.PutBackAsync(tree, commit, ct).ConfigureAwait(false);
+        return done.Ok ? null : $"git could not put the integration tree back at {TextBounds.ShortCommit(commit, 8)} ({ContentHolds.Said(done.Error)}).";
     }
 
     private static IntegrationStepEnd Held(string said) => new(IntegrationStepOutcomes.Held) { Said = said };
@@ -389,15 +379,15 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         // 3. The rest merged `--no-ff` onto the candidate so far, the second parent the frozen tip. A merge rule's press is merged the same way.
         if (request.Route == IntegrationRoutes.Merge) return await PressedAsync(tree, onto, member, request, ask, ct).ConfigureAwait(false);
-        var (merged, mergeOut, mergeErr) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
+        var merged = await MachinePorts.Repository.MergeAsync(tree, new GitMergeAsk(request.Tip, GitMergeKind.Stage), ct).ConfigureAwait(false);
         IReadOnlyList<string> paths = [];
-        if (merged != 0)
+        if (!merged.Ok)
         {
-            paths = await UnmergedAsync(tree, ct).ConfigureAwait(false);
+            paths = merged.Unmerged;
             if (paths.Count == 0)
             {
                 return await ConflictAsync(
-                    tree, onto, member.Request, $"git would not merge it ({ContentHolds.Said(mergeErr.Length > 0 ? mergeErr : mergeOut)})", ct).ConfigureAwait(false);
+                    tree, onto, member.Request, $"git would not merge it ({ContentHolds.Said(merged.Error)})", ct).ConfigureAwait(false);
             }
         }
         else if (Seam is { } afterMerge)
@@ -415,16 +405,14 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         if (Seam is { } afterResolve) await afterResolve("after-resolve").ConfigureAwait(false);
         var message = ask.Messages?.Invoke(request) ?? $"Merge branch '{request.Branch}'";
-        var (committed, _, commitErr) = await WorkingTree.GitAsync(tree, ["commit", "--quiet", "--no-verify", "-m", message], ct).ConfigureAwait(false);
-        if (committed != 0)
+        var committed = await MachinePorts.Repository.CommitStagedAsync(tree, message, ct).ConfigureAwait(false);
+        if (!committed.Ok)
         {
-            return await ConflictAsync(tree, onto, member.Request, $"its merge commit could not be made ({ContentHolds.Said(commitErr)})", ct).ConfigureAwait(false);
+            return await ConflictAsync(tree, onto, member.Request, $"its merge commit could not be made ({ContentHolds.Said(committed.Error)})", ct).ConfigureAwait(false);
         }
 
-        var (headCode, head, headErr) = await WorkingTree.GitAsync(tree, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        if (headCode != 0) return Held($"git could not read the integration tree's commit ({ContentHolds.Said(headErr)}).");
+        if (await MachinePorts.Repository.HeadAsync(tree, ct).ConfigureAwait(false) is not { } replayed) return Held("git could not read the integration tree's commit.");
         if (Seam is { } afterCommit) await afterCommit("after-commit").ConfigureAwait(false);
-        var replayed = head.Trim();
         return new(IntegrationStepOutcomes.Done)
         {
             Said = $"replayed {TextBounds.ShortCommit(request.Tip, 8)} onto {TextBounds.ShortCommit(onto, 8)}, as {TextBounds.ShortCommit(replayed, 8)}.{resolved.Said}",
@@ -441,22 +429,19 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         string tree, string onto, IntegrationMember member, IntegrationRequest request, IntegrationReplayAsk ask, CancellationToken ct)
     {
         var message = ask.Messages?.Invoke(request) ?? $"Merge branch '{request.Branch}'";
-        var (merged, mergeOut, mergeErr) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "-m", message, request.Tip], ct).ConfigureAwait(false);
-        if (merged != 0)
+        var merged = await MachinePorts.Repository.MergeAsync(tree, new GitMergeAsk(request.Tip, GitMergeKind.Commit, message), ct).ConfigureAwait(false);
+        if (!merged.Ok)
         {
-            var (staged, _, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--quiet", "--verify", "MERGE_HEAD"], ct).ConfigureAwait(false);
-            var hooked = staged == 0 && (await UnmergedAsync(tree, ct).ConfigureAwait(false)).Count == 0;
-            var first = (mergeErr.Length > 0 ? mergeErr : mergeOut).Trim().Split('\n')[0].Trim();
+            var hooked = merged.Pending && merged.Unmerged.Count == 0;
+            var first = merged.Error.Trim().Split('\n')[0].Trim();
             var why = hooked
-                ? LandingSayings.HookRefused(request.Branch, ask.Line, mergeErr, mergeOut)
+                ? LandingSayings.HookRefused(request.Branch, ask.Line, merged.Error, "")
                 : $"git would not merge `{request.Branch}` into `{ask.Line}`: {first} The merge was aborted and the checkout is as it was.";
             return await ConflictAsync(tree, onto, member.Request, why, ct).ConfigureAwait(false);
         }
 
-        var (headCode, head, headErr) = await WorkingTree.GitAsync(tree, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        if (headCode != 0) return Held($"git could not read the integration tree's commit ({ContentHolds.Said(headErr)}).");
+        if (await MachinePorts.Repository.HeadAsync(tree, ct).ConfigureAwait(false) is not { } replayed) return Held("git could not read the integration tree's commit.");
         if (Seam is { } afterCommit) await afterCommit("after-commit").ConfigureAwait(false);
-        var replayed = head.Trim();
         return new(IntegrationStepOutcomes.Done)
         {
             Said = $"merged {TextBounds.ShortCommit(request.Tip, 8)} onto {TextBounds.ShortCommit(onto, 8)} as the press's merge, as {TextBounds.ShortCommit(replayed, 8)}.",
@@ -557,8 +542,8 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     {
         var onto = candidate.Tip ?? candidate.Base;
         var conflicts = member.Said ?? "its merge did not go";
-        var (merged, _, _) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
-        if (merged != 0 && await UnmergedAsync(tree, ct).ConfigureAwait(false) is { Count: > 0 } paths)
+        var merged = await MachinePorts.Repository.MergeAsync(tree, new GitMergeAsk(request.Tip, GitMergeKind.Stage), ct).ConfigureAwait(false);
+        if (!merged.Ok && merged.Unmerged is { Count: > 0 } paths)
         {
             var resolved = await IntegrationResolves.ResolveAsync(
                 tree, ask.Root, ask.Repository, ask.Workspace, candidate.Base, onto, request.Tip, paths, ask.Config, ct).ConfigureAwait(false);
@@ -578,14 +563,6 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         return await RebaseTelling.TellAsync(ask.Say!, session, request.Tip, words, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The paths a merge in progress left unmerged, as git names them; none where it could not say.</summary>
-    private static async Task<IReadOnlyList<string>> UnmergedAsync(string tree, CancellationToken ct)
-    {
-        var (listed, unmerged, _) = await WorkingTree.GitAsync(
-            tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
-        return listed != 0 ? [] : [.. unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-    }
-
     /// <summary>
     /// The candidate ends with nothing to promote where the member leaving it is the last that could: no other standing member is yet to be
     /// replayed, replayed, or awaiting its hand-back. A member contained provisionally needs a replayed member to hold it, so none is left.
@@ -602,9 +579,9 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     /// </summary>
     private static async Task<bool> HoldsAsync(string tree, string tip, string commit, string line, bool ancestryOnly, CancellationToken ct)
     {
-        var (code, _, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--is-ancestor", tip, commit], ct).ConfigureAwait(false);
-        if (code == 0) return true;
-        if (code != 1 || ancestryOnly) return false;
+        var held = await MachinePorts.Repository.IsAncestorAsync(tree, tip, commit, ct).ConfigureAwait(false);
+        if (held == true) return true;
+        if (held != false || ancestryOnly) return false;
         var judged = await LineHolds.JudgeAsync(tree, tip, commit, line, ct).ConfigureAwait(false);
         return judged is { Commits.Count: > 0, Kept.Count: 0 };
     }

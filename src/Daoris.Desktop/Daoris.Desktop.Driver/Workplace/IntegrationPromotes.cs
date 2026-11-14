@@ -237,8 +237,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         var verdict = await port.JudgeAsync(asked).ConfigureAwait(false);
 
         // A verdict is acted on only for this tip: the tree stands there still, and the candidate is the one asked about.
-        var (head, headOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        if (store.Candidate(candidate.Id) is not { Stands: true } now || now.Tip != tip || head != 0 || headOut.Trim() != tip)
+        var head = await MachinePorts.Repository.HeadAsync(tree, ct).ConfigureAwait(false);
+        if (store.Candidate(candidate.Id) is not { Stands: true } now || now.Tip != tip || head != tip)
         {
             return (null, await AnswerAsync(
                 IntegrationPromoteRuns.Waiting,
@@ -413,8 +413,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         }
         else
         {
-            var (moved, _, moveErr) = await WorkingTree.GitAsync(ask.Root, ["update-ref", $"refs/heads/{ask.Line}", tip, step.LineCommit!], ct).ConfigureAwait(false);
-            if (moved != 0) return Held($"git would not move `{ask.Line}` from {TextBounds.ShortCommit(step.LineCommit!, 8)}, which it no longer holds ({ContentHolds.Said(moveErr)}): it is tried again at the next look.");
+            var moved = await MachinePorts.Repository.UpdateRefAsync(ask.Root, $"refs/heads/{ask.Line}", tip, step.LineCommit!, ct).ConfigureAwait(false);
+            if (!moved.Ok) return Held($"git would not move `{ask.Line}` from {TextBounds.ShortCommit(step.LineCommit!, 8)}, which it no longer holds ({ContentHolds.Said(moved.Error)}): it is tried again at the next look.");
             how = "one update-ref that verified its old value";
         }
 
