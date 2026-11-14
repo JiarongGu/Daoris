@@ -32,20 +32,43 @@ public static class RunSessionEnds
             ? []
             : [.. quests.Where(quest => QuestResults.Submitted(quest)).Select(quest => new RunEndQuest(quest.Id, quest.Submission!.Machine, quest.Submission.Sequence))];
 
-    /// <summary>Sends the run's end through <paramref name="finish"/> once, saying what it wrote or why it wrote nothing.</summary>
+    /// <summary>
+    /// Sends the run's end through <paramref name="finish"/>, saying what it wrote or why it wrote nothing. One the service could not take
+    /// is kept in <paramref name="owed"/>, and asked again at each look until it is (<see cref="AgainAsync"/>).
+    /// </summary>
     public static async Task FinishAsync(
         Func<RunFinish, CancellationToken, Task<RunEndResponse?>>? finish, string run, RunEnd ended, IEnumerable<QuestView> quests,
-        IEnumerable<string> sessions, List<string> said, CancellationToken ct)
+        IEnumerable<string> sessions, List<string> said, CancellationToken ct, OwedRunEnds? owed = null)
     {
         if (finish is null) return;
         var end = new RunFinish(run, QuestsOf(ended, quests), [.. sessions.Distinct(StringComparer.Ordinal)], StateOf(ended), NoteOf(run, ended));
         if (end.Quests.Count == 0 && end.Sessions.Count == 0) return;
+        await SendAsync(finish, end, owed, said, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Each run's end the service could not take, sent again; one it takes now is owed no more, one it cannot stays owed.</summary>
+    public static async Task AgainAsync(
+        Func<RunFinish, CancellationToken, Task<RunEndResponse?>>? finish, OwedRunEnds owed, List<string> said, CancellationToken ct)
+    {
+        if (finish is null) return;
+        foreach (var end in owed.Read()) await SendAsync(finish, end, owed, said, ct, again: true).ConfigureAwait(false);
+    }
+
+    private static async Task SendAsync(
+        Func<RunFinish, CancellationToken, Task<RunEndResponse?>> finish, RunFinish end, OwedRunEnds? owed, List<string> said,
+        CancellationToken ct, bool again = false)
+    {
         var answer = await finish(end, ct).ConfigureAwait(false);
-        said.Add(answer switch
+        if (answer is null)
         {
-            null => $"run   {run}: its end was not written, so its quests stay taken and its sessions wait; the person's done closes them.",
-            { Refused: { } refused } => $"run   {run}: its quests were not closed ({refused}), so its sessions wait: {answer.Message}",
-            _ => $"run   {run}: {answer.Message}",
-        });
+            owed?.Owe(end);
+            if (!again) said.Add($"run   {end.Run}: its end was not taken, so its quests stay taken and its sessions wait; it is asked again at the next look.");
+            return;
+        }
+
+        owed?.Paid(end.Run);
+        said.Add(answer.Refused is { } refused
+            ? $"run   {end.Run}: its quests were not closed ({refused}), so its sessions wait: {answer.Message}"
+            : $"run   {end.Run}: {answer.Message}");
     }
 }
