@@ -24,7 +24,7 @@ public sealed class HandbackReaderTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(_tree, path))!);
         File.WriteAllText(Path.Combine(_tree, path), text);
         await GitAsync("add", "-A");
-        await GitAsync("commit", "-m", path);
+        await GitAsync("commit", "-m", path, "-m", "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>");
     }
 
     [Fact]
@@ -54,5 +54,34 @@ public sealed class HandbackReaderTests : IDisposable
         Assert.Equal(1, behind!.Behind);
         Assert.False(behind.Ready);
         Assert.Null(await HandbackReader.ReadAsync(_tree, "no-such-line", gates, [], [], CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A commit the work adds without a <c>Co-Authored-By</c> line naming a maker is read from the tree and said, as the merge's own commit
+    /// check would refuse it; a merge of the line into the work needs none.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_without_its_makers_trailer_is_read_and_said_as_the_merge_check_refuses_it()
+    {
+        Directory.CreateDirectory(_tree);
+        await GitAsync("init", "-q", "-b", "line");
+        await CommitAsync("README.md", "one");
+        await GitAsync("checkout", "-q", "-b", "work");
+        await GitAsync("commit", "-q", "--allow-empty", "-m", "signed by Claude\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>");
+        await GitAsync("commit", "-q", "--allow-empty", "-m", "signed by nobody");
+        await GitAsync("commit", "-q", "--allow-empty", "-m", "signed by a person\n\nCo-Authored-By: A Person <person@example.invalid>");
+        await GitAsync("checkout", "-q", "line");
+        await CommitAsync("later.md", "moved");
+        await GitAsync("checkout", "-q", "work");
+        await GitAsync("merge", "-q", "--no-edit", "line");
+
+        var seen = await HandbackReader.ReadAsync(_tree, "line", [], [], [], CancellationToken.None);
+
+        Assert.Equal(["signed by nobody", "signed by a person"], seen!.Unsigned.Select(commit => commit.Subject));
+        Assert.Contains("signed by nobody", seen.Words());
+        Assert.Contains("Co-Authored-By", seen.Words());
+        Assert.False(seen.Ready);
+        Assert.Null(seen.Unsigned[0].Trailer);
+        Assert.Equal("A Person <person@example.invalid>", seen.Unsigned[1].Trailer);
     }
 }
