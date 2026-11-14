@@ -42,8 +42,13 @@ public static class StandingBlocks
             Routing = routing?.Standing,
             Lanes = routing?.Lanes ?? [],
             Choices = facts.Repository is { } named ? config.StandingFor(named) : null,
+            Writes = facts.Repository is not null && WritesMemory(work),
         };
     }
+
+    /// <summary>Whether a work changes its own repository's memory (the memory coordinator design §2): a build, a design, an exact build and a chat do; a review, a help, a partner and the rest are refused.</summary>
+    private static bool WritesMemory(string work) =>
+        work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact or ParticipantWork.Chat;
 
     /// <summary>
     /// <paramref name="facts"/> on <paramref name="adapter"/>: whether it takes none of the person's denies, and, for a kind

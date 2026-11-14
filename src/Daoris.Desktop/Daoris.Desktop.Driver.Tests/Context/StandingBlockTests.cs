@@ -128,6 +128,32 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         Assert.DoesNotContain("Memory this line read", StandingBlock.Compose(new StandingFacts { Repository = "engine" }).Text, StringComparison.Ordinal);
     }
 
+    // ——— The memory it writes (LYNTAIMEM1): a session is told `memory_write` exists only where the connector lets it write.
+
+    [Theory]
+    [InlineData(ParticipantWork.Build, true)]
+    [InlineData(ParticipantWork.Design, true)]
+    [InlineData(ParticipantWork.Exact, true)]
+    [InlineData(ParticipantWork.Chat, true)]
+    [InlineData(ParticipantWork.Review, false)]
+    [InlineData(ParticipantWork.Help, false)]
+    [InlineData(ParticipantWork.Partner, false)]
+    public void A_work_that_changes_its_repository_s_memory_is_told_to_write_what_it_confirms_and_no_other_is(string work, bool writes)
+    {
+        var block = Routed(Config(true, true), Engine("core"), work);
+
+        Assert.Equal(writes, block.Contains("`memory_write`", StringComparison.Ordinal));
+        if (writes) Assert.Contains("when your work is accepted", block, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_block_with_no_repository_never_tells_a_session_to_write_memory()
+    {
+        var text = StandingBlock.Compose(new StandingFacts { Workspace = "work", Writes = true }).Text;
+
+        Assert.DoesNotContain("`memory_write`", text, StringComparison.Ordinal);
+    }
+
     /// <summary>A kind with no repository, a brainstorm's pass, an intake, Ask Daoris: the workspace's part alone (§3 C).</summary>
     [Fact]
     public void A_kind_with_no_repository_is_handed_the_workspace_s_part_alone()
