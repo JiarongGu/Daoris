@@ -104,10 +104,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return (judged.Result is { } result ? result with { Declaration = send.Accepted } : null, judged.Busy);
     }
 
-    /// <summary>
-    /// The repository's reached runner in the verification tree at the commit, in place of the gates: it takes no place of its own in the
-    /// machine's admission, since the step's hold is the one its children inherit.
-    /// </summary>
+    /// <summary>The repository's reached runner in the verification tree at the commit, in place of the gates, under the step's one admission hold.</summary>
     private async Task<VerifyResult> ReachedAsync(ReachedRunner runner, string command, CancellationToken ct)
     {
         var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", key);

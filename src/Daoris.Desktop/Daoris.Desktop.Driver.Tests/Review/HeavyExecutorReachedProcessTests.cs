@@ -20,7 +20,7 @@ public sealed class HeavyExecutorReachedProcessTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         Directory.CreateDirectory(Home);
-        // A stand-in reached runner: notes what it was handed, prints the outcome line its mode names and exits as that mode says.
+        // A stand-in reached runner: notes its arguments, prints the outcome line its mode names and exits as the mode says.
         await File.WriteAllTextAsync(At("reached.mjs"), """
             import { appendFileSync } from 'node:fs';
             import { join } from 'node:path';
