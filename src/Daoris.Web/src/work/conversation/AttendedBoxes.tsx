@@ -1,4 +1,6 @@
 import type { TFunction } from 'i18next';
+import { channelRefusal } from '../../asks/ChannelSection';
+import { usePostChannel } from '../../bridge/shell';
 import { failure, type Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import { ownTree } from '../identity';
@@ -19,8 +21,9 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
   structured === true ? 'structured' : structured === false ? 'text' : undefined;
 
 /**
- * The box under the conversation: a chat's composer, or every other box (the running door, the park's answer, the
- * box where the same session goes on, and the line where nothing takes words), each keyed by its session so a draft's form starts fresh.
+ * The box under the conversation: a chat's composer, or every other box (the running door, the park's answer, a parked
+ * intake's answer, the box where the same session goes on, and the line where nothing takes words), each keyed by its
+ * session so a draft's form starts fresh.
  */
 export function AttendedBoxes({
   t, notify, session, boxState, words, boxWords, asks, waitsState, headState, refusal, roster, rootOf, attend,
@@ -40,6 +43,8 @@ export function AttendedBoxes({
   attend: (id: string) => void;
 }) {
   const { attended, live, sessions } = session;
+  // A parked intake takes no words, so its box posts them on its ask's channel: the person's own word, the door the ask's page posts through.
+  const postChannel = usePostChannel();
   const {
     talking, box, draft, setDraft, turns, levels, editQueued, keepingStop, treeFiles, reading, offered, setOption, setMentioning, held,
     chatTurns, goes, answering, question, goAheads, parkAsk,
@@ -50,6 +55,20 @@ export function AttendedBoxes({
   const { seekAt, toEvent } = waitsState;
   if (!attended) return null;
   const refused = refusal?.session === attended.id ? refusal.text : null;
+  const onAskWord = (text: string) => {
+    const ask = attended.ask;
+    if (!ask || !text) return;
+    // Handed back to the box where the post did not land, so the words are not lost with the refusal.
+    const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+    postChannel.mutate({ ask, post: { text } }, {
+      onSuccess: (posted) => {
+        if (posted.posted) { notify(t('work.intake.posted', { ask })); return; }
+        giveBack();
+        notify(channelRefusal(t, posted.code ?? 'other'), 'error');
+      },
+      onError: (error) => { giveBack(); notify(sentence(error), 'error'); },
+    });
+  };
   const focus = answerFocus?.session === attended.id ? answerFocus.at : 0;
 
   return (
@@ -116,7 +135,7 @@ export function AttendedBoxes({
           quest={attended.quest}
           draft={draft}
           onDraft={setDraft}
-          sending={say.isPending}
+          sending={box.kind === 'ask' ? postChannel.isPending : say.isPending}
           refusal={refused}
           held={held ? { queued: held.queued, taking: held.taking } : undefined}
           ending={ending?.session === attended.id ? ending.words : []}
@@ -127,7 +146,7 @@ export function AttendedBoxes({
           // *Answer…* from its row, and *Send back…* from its review, put the focus here.
           focus={focus}
           accepts={boxAccepts}
-          onSend={onSay}
+          onSend={box.kind === 'ask' ? onAskWord : onSay}
           levels={box.kind === 'steer' ? levels : undefined}
           onLevel={editQueued.level}
           onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}

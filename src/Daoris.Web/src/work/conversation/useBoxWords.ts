@@ -80,7 +80,7 @@ export function useBoxWords({
   const boxAccepts = (text: string) => accepts(parkPicked ? choiceWords(parkPicked, text) : text);
 
   const onSay = (text: string, level?: Level) => {
-    if (!attended || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
+    if (!attended || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat' || box.kind === 'ask') return;
     // The box's *Send* with an answer selected sends it, then the words, naming its question.
     if (parkPicked && question) { onChoice(parkPicked, question.id, text); return; }
     if (!text) return;

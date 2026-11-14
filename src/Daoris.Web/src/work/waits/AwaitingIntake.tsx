@@ -18,7 +18,8 @@ import { InConversation } from './WaitAnchor';
  * **Not the three moves a parked session has.** Each ends the record without answering the ask,
  * which then falls back to a proposal. *Finish* would even record `completed` for an
  * intake that published nothing, which reads later as a publish. *Decline* has nothing to decline.
- * And there is no box to answer in: an intake is one turn, and a parked one has no process left.
+ * And the box below is no session's: an intake is one turn, and a parked one has no process left, so what is written there is
+ * posted on the ask's channel (ASKANSWER1), where the ask's sessions and the person read it.
  *
  * **Its stop is the page header's**. Ending the intake without answering is still a real choice
  * (the person will settle the ask later, or wants the question off the list), and the header's stop asks with the

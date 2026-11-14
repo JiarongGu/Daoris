@@ -32,15 +32,18 @@ const record = (ask = PROPOSED, over: Partial<Parameters<typeof AskPage>[0]> = {
   return { ...props, page: screen.getByRole('main') };
 };
 
-/** An act of the page's ⋯, pressed (the head draws only *Resume*): the menu opened from the keyboard, as in jsdom. */
+/** An act of the page, pressed: a press the head draws (*Resume*, and for a proposed ask *Close ask* and *Delete…*), else the ⋯'s, opened from the keyboard, as in jsdom. */
 async function pick(page: HTMLElement, name: string) {
+  const drawn = within(page).queryByRole('button', { name });
+  if (drawn) { await userEvent.click(drawn); return; }
   within(page).getByRole('button', { name: 'More actions' }).focus();
   await userEvent.keyboard('{Enter}');
   await userEvent.click(await screen.findByRole('menuitem', { name }));
 }
 
-/** Whether the page's ⋯ offers an act. */
+/** Whether the page offers an act, drawn or in its ⋯. */
 async function offers(page: HTMLElement, name: string) {
+  if (within(page).queryByRole('button', { name })) return true;
   within(page).getByRole('button', { name: 'More actions' }).focus();
   await userEvent.keyboard('{Enter}');
   const found = (await screen.findAllByRole('menuitem')).some((item) => item.textContent === name);
@@ -220,12 +223,22 @@ describe('AskPage', () => {
   });
 
   it('puts the close down on Never mind and returns the focus to the ⋯ that held Close ask', async () => {
-    const { page, onClose } = record(PROPOSED);
+    const { page, onClose } = record(PUBLISHED);
 
     await pick(page, 'Close ask');
     await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
     expect(within(page).queryByRole('group', { name: 'close this ask' })).toBeNull();
     expect(within(page).getByRole('button', { name: 'More actions' })).toHaveFocus();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  /** A proposed ask draws *Close ask* in its header, so the press drawn again is where the focus goes. */
+  it('returns the focus to the Close ask press a proposed ask draws', async () => {
+    const { page, onClose } = record(PROPOSED);
+
+    await pick(page, 'Close ask');
+    await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
+    expect(within(page).getByRole('button', { name: 'Close ask' })).toHaveFocus();
     expect(onClose).not.toHaveBeenCalled();
   });
 

@@ -834,11 +834,11 @@ describe('clearing a parked session', () => {
   });
 
   /**
-   * A parked intake's answer is on its ask, which the application opens in Quests — so the
-   * frame hands the door up. No composer: an intake is one turn, and a parked one has no
-   * process left to hear a message.
+   * A parked intake's publish and close are on its ask, which the application opens in Quests — so the
+   * frame hands the door up. Its box takes the person's words and posts them on the ask's channel (ASKANSWER1): a parked
+   * intake has no process left to hear a message, so it is never sent one.
    */
-  it('leads a parked intake to its ask, with no composer and none of the three moves', async () => {
+  it('leads a parked intake to its ask, with a box that posts on the ask and none of the three moves', async () => {
     SESSIONS = [PARKED_INTAKE];
     const onAnswerAsk = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -857,7 +857,37 @@ describe('clearing a parked session', () => {
     expect(onAnswerAsk).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your answer — it is posted on the ask’s channel');
+  });
+
+  /** The words go to the ask's channel as the person's, and to no session: nothing is said to the intake over the driver. */
+  it('posts a parked intake’s answer on its ask’s channel, and says nothing to the session', async () => {
+    SESSIONS = [PARKED_INTAKE];
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'CHANNEL_POST' ? { posted: true } : DRIVER_STATE));
+    const notify = vi.fn();
+    show('i9n8t7k6', notify);
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'the engine owns it');
+    await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_POST', { payload: { ask: '0fda18', text: 'the engine owns it' } }));
+    expect(invoke.mock.calls.map(([, type]) => type)).not.toContain('SESSION_INPUT');
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Posted on ask #0fda18')));
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+  });
+
+  /** A refusal is said in the channel's own words, and the words are back in the box. */
+  it('says a refused post in the channel’s words and keeps the words in the box', async () => {
+    SESSIONS = [PARKED_INTAKE];
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'CHANNEL_POST' ? { posted: false, code: 'too-long' } : DRIVER_STATE));
+    const notify = vi.fn();
+    show('i9n8t7k6', notify);
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'a very long answer');
+    await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), 'error'));
+    expect(screen.getByLabelText('Message')).toHaveValue('a very long answer');
   });
 
   /**

@@ -19,6 +19,10 @@ const NONE = '*';
 /** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
 
+/** A post's refusal code said in the reader's language, or as the service wrote it where this page has no words for it. */
+export const channelRefusal = (t: (key: string, options?: Record<string, unknown>) => string, code: string): string =>
+  REFUSALS.has(code) ? t(`asks.channel.refused.${code}`) : t('asks.channel.refused.other', { code });
+
 /** The codes *Send to its session* is refused with, which this page has words for; another is said as the shell wrote it. */
 const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);
 
@@ -161,7 +165,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
     });
   };
 
-  const refusalWords = refusal === null ? null : REFUSALS.has(refusal) ? t(`asks.channel.refused.${refusal}`) : t('asks.channel.refused.other', { code: refusal });
+  const refusalWords = refusal === null ? null : channelRefusal(t, refusal);
 
   return (
     <div className="grid gap-3">

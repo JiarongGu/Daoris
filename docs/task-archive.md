@@ -7,6 +7,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKANSWER1 — a conversation that waits on the person takes the answer where it asks (2026-11-14)
+
+> **ASKANSWER1** (web): Outcome: a parked intake's page has a box (`Box` kind `ask`) whose words are posted on its ask's channel as the person's own through the existing channel door, with the refusal in the channel's words and the words kept in the box (the session still takes none, and publish and close stay the card's doors); a proposed ask's header draws *Close ask* and *Delete…* as presses of their own; page tests are `AskPage.proposed.test.tsx`, `say.test.ts`, `SessionBox.test.tsx` and the intake cases of `WorkFrame.words.test.tsx` (driving.md, rule 44).
+
 ## TESTHOSTEND1 and PROCLEAK1 — a test run's service host and a session's tree end with their owners (2026-11-14)
 
 > **TESTHOSTEND1** (driver tests): Outcome: the service host a driver test starts is held in a kill-on-close job (`ProcessJob.Hold`) so a run killed any way leaves none, and each host is recorded beside its build output (`ServiceHostRecords`) so the next run reaps a host whose owner run is dead before it builds; proved by `ServiceHostEndProcessTests` (a child run killed mid-way, a stale host reaped, a live run's left).

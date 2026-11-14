@@ -48,14 +48,17 @@ export const levelsOf = (reach: Reach | undefined): Levels | undefined =>
  * - `say`: words the same session goes on with: a park's `answer`; `goOn`, a session that ended or a park
  *   already answered, whose next word joins the first; or one `ending`, whose words wait for its record to end and
  *   then reopen it.
+ * - `ask`: a parked intake's box. The session takes no words (an intake never goes on), so what the person writes is posted on
+ *   its ask's channel, the person's own word on the ask; publishing and closing stay the head card's doors.
  * - `line`: nothing takes words, and the line says why, by the code, naming where a `continued` one went on (`to`).
- * - `none`: nothing to offer and nothing to say: no session, a live intake whose head says it, or nothing known yet.
+ * - `none`: nothing to offer and nothing to say: no session, a running intake whose head says it, or nothing known yet.
  */
 export type Box =
   | { kind: 'none' }
   | { kind: 'chat' }
   | { kind: 'steer' }
   | { kind: 'say'; mode: 'answer' | 'goOn' | 'ending' }
+  | { kind: 'ask' }
   | { kind: 'line'; why: string; to?: string };
 
 /** What decides a session's box: its record, whether it is this machine's, and what the module answered. */
@@ -75,8 +78,8 @@ export type BoxFacts = {
  * The box a session is offered: on every session that takes words, and the line saying why on the rest.
  *
  * @remarks
- * - **What the page knows first.** A teammate's record never takes words here, and a live intake's head already says why
- *   it takes none, so neither waits for the module. Nor does a second opinion's reviewer: one turn, no words, and
+ * - **What the page knows first.** A teammate's record never takes words here, and a running intake's head already says why
+ *   it takes none (a parked one waits on the person, so its box posts their words on its ask), so neither waits for the module. Nor does a second opinion's reviewer: one turn, no words, and
  *   the host refuses words to its record; ended, its line says why.
  * - **The module's code draws the line**, whatever the record says: it judges what the page cannot (a quest that went on
  *   in a later session, a record gone).
@@ -89,7 +92,7 @@ export function boxOf({ session, here, intake, listening, reach }: BoxFacts): Bo
   if (!here) return { kind: 'line', why: 'teammate' };
   const live = SESSION_ACTIVE.has(session.state);
   if (session.opinion) return live ? { kind: 'none' } : { kind: 'line', why: 'opinion' };
-  if (intake) return live ? { kind: 'none' } : { kind: 'line', why: 'intake' };
+  if (intake) return session.state === 'awaiting-person' ? { kind: 'ask' } : live ? { kind: 'none' } : { kind: 'line', why: 'intake' };
   if (reach?.why) return { kind: 'line', why: reach.why, ...(reach.to ? { to: reach.to } : {}) };
   const resumes = reach?.reaches === 'resume';
 
