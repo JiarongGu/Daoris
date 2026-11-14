@@ -168,6 +168,30 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
+    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_held_for_the_person_once_its_asks_are_spent()
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Unrun });
+        for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
+        {
+            await StartAsync(performer);
+            _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+            await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+            if (ask < UnrunChecks.Bound)
+            {
+                Assert.Equal(NodeStates.Ready, Status().State);
+                Assert.Equal((AttemptStates.Settled, WorkStates.Unknown, VerifyResult.Unrun), (Record().Attempts.Last().State, Record().Attempts.Last().Outcome, Record().Attempts.Last().Code));
+                Assert.Empty(CheckRounds.Reds(Record()));
+            }
+        }
+
+        Assert.Equal(AttemptStates.Held, Record().Attempts.Last().State);
+        Assert.Equal(UnrunChecks.Bound, Record().Attempts.Count);
+        Assert.Empty(CheckRounds.Reds(Record()));
+    }
+
+    [Fact]
     public async Task The_person_s_stop_of_a_running_check_is_told_to_the_executor()
     {
         var performer = Performer();

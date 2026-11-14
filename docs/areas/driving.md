@@ -238,7 +238,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
     its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
     `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person
-    stays as it is, and a run already ended asks nothing.
+    stays as it is, and a run already ended asks nothing. A run whose quests all closed asks nothing either: its sessions are never
+    reopened, and its end (`quest-closed`) ends any that wait on it as stopped by Daoris, with the reason in their note.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
     where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, a later
     turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest

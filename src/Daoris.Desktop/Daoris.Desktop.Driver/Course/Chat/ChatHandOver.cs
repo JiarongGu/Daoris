@@ -262,12 +262,12 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                     var approved = HandedChoice(sessionId, prior, request, config, out var gone);
                     if (gone is not null) return new ChatStart(null, gone);
 
-                    // Once the start's walk settles the door and the account, a conversation going on with another agent is written there as
-                    // that agent's own, and the new part resumes it; else it is handed the brief.
+                    // Once the start's walk settles the door and the account, the conversation is carried or seeded there and the new part
+                    // resumes it; else it is handed the brief.
                     var fence = new MoveFence(record);
                     ChatCarry? carrier = null;
                     ChatCarries? carries = keyed is not null && await _context.Service.Opens.MovesAsync(token).ConfigureAwait(false)
-                        ? (door, chosen) => carrier = prior.Adapter is { Length: > 0 } ran && !new AgentOfDoor(_context.Harnesses.Adapters).Same(ran, door.Id.Value)
+                        ? (door, chosen) => carrier = prior.Adapter is { Length: > 0 }
                                                        && ChatCarry.Planned(_context, door, prior, chosen, prior.Tree ?? "", brief) is CarryPlan.Carried plan
                             ? new ChatCarry(wiring, door, prior, chosen, plan, request.Why, brief, [], [], record, fence, wrote)
                             : null

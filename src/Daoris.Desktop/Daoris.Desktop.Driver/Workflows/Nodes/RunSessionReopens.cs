@@ -9,7 +9,8 @@ public sealed record RunReopen(string Run, IReadOnlyList<string> Sessions, Noted
 /// A run still going on whose work ended done under the older meaning, where the agent's done ended the session and closed the quest,
 /// carries that record on under the newer one: its sessions wait on the run's next step, so the run's end ends them. Asked once a process,
 /// at the run's first look; the service moves only a record ended done that never waited on a step, so a record ended since by its
-/// workflow or by the person stays as it is.
+/// workflow or by the person stays as it is. A run whose quests all closed is never reopened: what its sessions would wait on can no longer
+/// come, and the run's end (<see cref="ClosedRunEnds.QuestClosed"/>) ends them.
 /// </summary>
 public static class RunSessionReopens
 {
@@ -23,7 +24,9 @@ public static class RunSessionReopens
         IEnumerable<QuestView> quests, IEnumerable<string> sessions, string? next, List<string> said, CancellationToken ct)
     {
         if (reopen is null || ended is not null || asked.Contains(run)) return;
-        if (!quests.Any(quest => quest.Status == "Done" || QuestResults.Submitted(quest))) return;
+        var all = quests.ToList();
+        if (all.All(quest => ClosedRunEnds.Closed(quest.Status))) return;
+        if (!all.Any(quest => quest.Status == "Done" || QuestResults.Submitted(quest))) return;
         var named = sessions.Distinct(StringComparer.Ordinal).ToList();
         if (named.Count == 0) return;
         var answer = await reopen(new RunReopen(run, named, new StepWait(run, next).Note()), ct).ConfigureAwait(false);

@@ -133,6 +133,51 @@ public sealed class HandOverSeedProcessTests : IDisposable
         Assert.Equal(("delivered", next), (Assert.Single(new MoveStore(_home).Of(old)).PhaseWord, Assert.Single(new MoveStore(_home).Of(old)).Destination));
     }
 
+    /// <summary>
+    /// A hand-over to another account of its own agent (what the curve's move is) is resumed as a conversation written in the new account's
+    /// home, no brief: seeded on both parts and in the machine log as not briefed.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_over_to_another_account_of_its_own_agent_resumes_a_seeded_conversation_and_no_brief()
+    {
+        new HarnessSettings().WithRotation("alt-stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var second = HarnessSettings.ProfileHome(_home, "alt-stub", "account-2");
+        Directory.CreateDirectory(second);
+        var ledger = new ChatLedger { Opens = 2 }.Register("engine", _root);
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["alt-acp-stub"] = ["node", Agent(), Log],
+                ["alt-stub"] = ["node", TextAgent()],
+            },
+        };
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        using var client = ledger.Client();
+        var adapters = ProviderRegistry.Built();
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var old = (await runner.StartAsync("engine", "alt-acp-stub", config, null, "account-1")).SessionId!;
+        await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, old));
+        Assert.True(runner.Say(old, "Make the port configurable."));
+        await Poll.Until(() => Events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, old));
+        await Poll.Until(() => !runner.Taking(old), () => Seen(ledger, old));
+
+        var handed = await runner.HandOverAsync(old, "alt-acp-stub", "account-2", HandOverWhy.Press, HandOverBy.Person, config);
+
+        Assert.True(handed.Kept, handed.Message);
+        var next = handed.SessionId!;
+        await Poll.Until(() => Prompts("account-2").Any(), () => Seen(ledger, next));
+        var seed = Assert.Single(_seeding.Asked);
+        Assert.Equal(("alt-acp-stub", second), (seed.Door, seed.Home));
+        var resumed = Assert.Single(Heard(), line => line["method"]!.GetValue<string>() is "session/resume" or "session/load");
+        Assert.Equal((seed.Conversation, "account-2"), (Text(resumed, "conversation"), Text(resumed, "account")));
+        Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/new" && Text(line, "account") == "account-2");
+        Assert.DoesNotContain("You continue session", Blocks(Prompts("account-2").First()));
+        Assert.Contains(Codes(old), part => part.Code == "moved.seeded-on");
+    }
+
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
     private IEnumerable<JsonObject> Prompts(string account) =>

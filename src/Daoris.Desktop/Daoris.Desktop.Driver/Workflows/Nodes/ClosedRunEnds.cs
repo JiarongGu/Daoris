@@ -15,6 +15,9 @@ public static class ClosedRunEnds
     /// <summary>The line holds the work each standing step is bound to, so nothing is left to land.</summary>
     public const string OnLine = "on-line";
 
+    /// <summary>Every standing step reads only the closed quest, and the person can lift none: Daoris stops the run there.</summary>
+    public const string QuestClosed = "quest-closed";
+
     /// <summary>Whether a quest's status closes it: done or declined.</summary>
     public static bool Closed(string status) =>
         string.Equals(status, "Done", StringComparison.OrdinalIgnoreCase) || string.Equals(status, "Declined", StringComparison.OrdinalIgnoreCase);
@@ -40,6 +43,11 @@ public static class ClosedRunEnds
         var standing = Standing(graph, record);
         if (standing.Count == 0) return null;
         var after = RunSubjects.AfterHanded(graph);
+        if (standing.All(node => RunSubjects.Of(node, after) == RunSubject.Quest))
+        {
+            return standing.Any(node => QuestHoldsReading.PersonLifts(WorkPerformer.StatusOf(record, node.Id).Holds)) ? null : QuestClosed;
+        }
+
         if (standing.Any(node => RunSubjects.Of(node, after) is not (RunSubject.Branch or RunSubject.Landing))) return null;
         if (PastLanding(graph, record, standing, after)) return null;
         var bound = standing.Select(node => WorkPerformer.StatusOf(record, node.Id).Binding?.SubjectRevision).ToList();

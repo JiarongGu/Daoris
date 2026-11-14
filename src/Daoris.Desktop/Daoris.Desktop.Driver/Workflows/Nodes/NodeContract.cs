@@ -205,6 +205,9 @@ public static class NodeSource
     /// <summary>A plugin's believed answer or event: the five belief rules passed, bound to the work's commit.</summary>
     public const string Plugin = "plugin";
 
+    /// <summary>Daoris's own stop of a run, where what its standing step waits on can no longer come.</summary>
+    public const string Daoris = "daoris";
+
     /// <summary>The person, at their doors: an approval, <i>reviewed</i>, a yes.</summary>
     public const string Person = "person";
 
