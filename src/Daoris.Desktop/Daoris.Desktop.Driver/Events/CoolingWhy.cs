@@ -17,7 +17,9 @@ public static class CoolingWhy
 
     public const string Learned = "learned";
 
+    public const string CapWindow = "cap";
+
     /// <summary>The code for an entry, read as <see cref="CoolingWords"/> reads it for its sentence.</summary>
     public static string Of(CoolingEntry entry) =>
-        entry.Window == SpendCaps.Window ? Learned : entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
+        entry.Window == CapWindow ? Learned : entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
 }

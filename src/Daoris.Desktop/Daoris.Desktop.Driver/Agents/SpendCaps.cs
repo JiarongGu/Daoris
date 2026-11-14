@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 public static class SpendCaps
 {
     /// <summary>The window a cap's cool-off carries, in Daoris's own name.</summary>
-    public const string Window = "cap";
+    public const string Window = CoolingWhy.CapWindow;
 
     /// <summary>What a refusal's <c>hit</c> says where it is a cap.</summary>
     public const string Hit = "spend cap";
