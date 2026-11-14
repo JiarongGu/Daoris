@@ -369,10 +369,6 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
-    /// <summary>
-    /// The gate a write runs on: the one of the unit of work running it, where the index's write hands it this store's rows to
-    /// write inside its own, else this store's.
-    /// </summary>
     private ConnectionGate Beside() => ConnectionGate.Running ?? _db;
 
     /// <summary>
