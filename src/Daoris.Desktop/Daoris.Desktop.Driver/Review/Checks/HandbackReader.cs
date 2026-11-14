@@ -11,13 +11,14 @@ internal static class HandbackReader
         string folder, string line, IReadOnlyList<DeclaredGate> gates, IReadOnlyList<(CheckAsk Ask, CheckState? State)> checks,
         IReadOnlyList<LeftProcess> left, CancellationToken ct)
     {
-        var tip = await OneAsync(folder, ["rev-parse", "HEAD"], ct).ConfigureAwait(false);
-        var mergeBase = await OneAsync(folder, ["merge-base", "HEAD", line], ct).ConfigureAwait(false);
+        var repository = MachinePorts.Repository;
+        var tip = await repository.HeadAsync(folder, ct).ConfigureAwait(false);
+        var mergeBase = await repository.MergeBaseAsync(folder, "HEAD", line, ct).ConfigureAwait(false);
         if (tip is null || mergeBase is null) return null;
-        var behind = await OneAsync(folder, ["rev-list", "--count", $"HEAD..{line}"], ct).ConfigureAwait(false);
-        var touched = await GateReach.ChangedAsync(folder, mergeBase, tip, ct).ConfigureAwait(false);
+        var behind = await repository.CountAsync(folder, line, ["HEAD"], ct).ConfigureAwait(false);
+        var touched = await repository.ChangedAsync(folder, mergeBase, tip, ct).ConfigureAwait(false);
         if (touched is null) return null;
-        return HandbackObservation.Judge(tip, mergeBase, int.TryParse(behind, out var count) ? count : 0, touched, gates, checks, left);
+        return HandbackObservation.Judge(tip, mergeBase, behind ?? 0, touched, gates, checks, left);
     }
 
     private static readonly NoteCode[] Dones = [EndNoteCodes.EndedDone, EndNoteCodes.EndedDoneLeft, EndNoteCodes.EndedSubmitted];

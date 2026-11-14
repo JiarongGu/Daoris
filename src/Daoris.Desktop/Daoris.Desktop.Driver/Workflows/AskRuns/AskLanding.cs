@@ -20,8 +20,8 @@ public sealed class AskLanding(string home, Func<DateTimeOffset> clock)
         }
 
         var name = TrainBranch.Of(binding.Ask!);
-        var (code, stands, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
-        if (code != 0 || !string.Equals(stands.Trim(), start.Tip, StringComparison.OrdinalIgnoreCase))
+        var stands = await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{name}", ct).ConfigureAwait(false);
+        if (!string.Equals(stands, start.Tip, StringComparison.OrdinalIgnoreCase))
         {
             return Kept(start, LandingCode.Moved, $"`{name}` moved since it was judged; press Accept again.");
         }

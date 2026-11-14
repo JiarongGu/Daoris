@@ -21,14 +21,10 @@ public static class RunRepairs
         records.Edit(unit, record => (record with { Repairs = [.. record.Repairs.Where(each => each.Node != node)] }, true));
     }
 
-    /// <summary>
-    /// Whether <paramref name="tip"/> descends from the tip the Accept is given at, so the commits since are the session's own continuation:
-    /// asked of git, false where it cannot be told.
-    /// </summary>
+    /// <summary>Whether <paramref name="tip"/> descends from the tip the Accept is given at, so the commits since are the session's own; false where git cannot say.</summary>
     public static async Task<bool> ContinuesAsync(string root, NodeRepair repair, string tip, CancellationToken ct)
     {
         if (string.Equals(repair.Tip, tip, StringComparison.OrdinalIgnoreCase)) return false;
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", repair.Tip, tip], ct).ConfigureAwait(false);
-        return code == 0;
+        return await MachinePorts.Repository.IsAncestorAsync(root, repair.Tip, tip, ct).ConfigureAwait(false) == true;
     }
 }

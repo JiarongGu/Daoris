@@ -2,10 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The line's tip as a landed route reads it: its line, the commit at its tip, and git's blob id of the
-/// <c>daoris.gates.json</c> it holds there, or <c>none</c> where it holds none.
-/// </summary>
+/// <summary>The line's tip as a landed route reads it: its line, the commit at its tip, and git's blob id of the <c>daoris.gates.json</c> it holds there, or <c>none</c>.</summary>
 public sealed record LandedTip(string Line, string Commit, string Gates);
 
 /// <summary>
@@ -48,10 +45,8 @@ public static class LandedGates
         if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false)) return (null, "its checkout here is not a git repository");
         if (!BranchName.IsValid(line)) return (null, $"its line `{line}` is not a branch name git would take");
 
-        var (found, sha, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        var commit = sha.Trim();
-        if (found != 0 || !WorkingTree.IsCommitId(commit)) return (null, $"its line `{line}` names no commit here");
+        var commit = await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        if (commit is null || !WorkingTree.IsCommitId(commit)) return (null, $"its line `{line}` names no commit here");
 
         // The tip's entry of that name at the top, `<mode> <type> <object>\t<name>`: a blob alone is a declaration, never a folder.
         var (listed, entry, problem) = await WorkingTree.GitAsync(root, ["ls-tree", "--full-tree", "-z", commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);

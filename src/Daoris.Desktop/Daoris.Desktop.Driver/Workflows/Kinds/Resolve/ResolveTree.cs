@@ -270,12 +270,12 @@ internal sealed class ResolveTree(ReplaySettles settles)
 
     private static async Task<string?> CommitOfAsync(string tree, string rev, CancellationToken ct)
     {
-        var (code, sha, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", rev], ct).ConfigureAwait(false);
-        return code == 0 ? sha.Trim() : null;
+        var repository = MachinePorts.Repository;
+        return await repository.CommitOfAsync(tree, rev, ct).ConfigureAwait(false);
     }
 
     private static async Task<bool> DescendsAsync(string tree, string ancestor, CancellationToken ct) =>
-        (await WorkingTree.GitAsync(tree, ["merge-base", "--is-ancestor", ancestor, "HEAD"], ct).ConfigureAwait(false)).Code == 0;
+        await MachinePorts.Repository.IsAncestorAsync(tree, ancestor, "HEAD", ct).ConfigureAwait(false) == true;
 
     private static bool SameCommit(string? one, string? other) => one is not null && string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 

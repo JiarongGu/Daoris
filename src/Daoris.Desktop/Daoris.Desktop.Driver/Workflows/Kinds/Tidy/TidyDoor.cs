@@ -91,11 +91,8 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
     private async Task<TidiedPart?> EndAsync(TidyStart start, string branch, IReadOnlyDictionary<string, string> trees, CancellationToken ct)
     {
         var full = $"refs/heads/{branch}";
-        var (stands, at, _) = await WorkingTree.GitAsync(start.Root, ["rev-parse", "--verify", "--quiet", full], ct).ConfigureAwait(false);
-        if (stands != 0 || !WorkingTree.IsCommitId(at.Trim())) return null;
-        var tip = at.Trim();
-        // Kept whether or not the branch goes: a part whose branch stays is ended all the same, and the press removes it on that record once
-        // its tree is gone, resting on this ref.
+        if (await MachinePorts.Repository.CommitOfAsync(start.Root, full, ct).ConfigureAwait(false) is not { } tip || !WorkingTree.IsCommitId(tip)) return null;
+        // Kept whether or not the branch goes: a part whose branch stays is ended all the same, and the press removes it once its tree is gone.
         var (kept, why) = await RecoveryKeeps.KeepAsync(home, start.Root, start.Repository, branch, tip).ConfigureAwait(false);
         if (kept is null) return new TidiedPart(branch, tip) { Kept = $"its commits could not be kept on a recovery ref ({why})" };
         if (trees.GetValueOrDefault(branch) is { } tree) return new TidiedPart(branch, tip) { KeptOn = kept, Kept = $"it is checked out at {tree}" };

@@ -68,10 +68,7 @@ public static class LineBatching
         };
     }
 
-    /// <summary>
-    /// One look's batching: each registered repository with a checkout here whose landed route names a verification pipeline has its line's tip
-    /// read (one ref read) and the run it owes bound under <c>lines/</c>. Returns what it bound, as the look's report says it.
-    /// </summary>
+    /// <summary>One look's batching: each registered repository with a checkout here whose landed route names a verification pipeline has its line's tip read and the run it owes bound under <c>lines/</c>; what it bound, as the look's report says it.</summary>
     public static async Task<IReadOnlyList<string>> BindAsync(
         string home, DriverConfig config, IReadOnlyList<RepoView> registry, NodeRecordFiles records, DateTimeOffset now, CancellationToken ct)
     {
@@ -94,9 +91,8 @@ public static class LineBatching
     /// <summary>The line's tip in <paramref name="root"/>, or null where its branch names no commit there.</summary>
     public static async Task<string?> TipAsync(string root, string line, CancellationToken ct)
     {
-        var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        var tip = sha.Trim();
-        return code == 0 && WorkingTree.IsCommitId(tip) ? tip : null;
+        var tip = await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        return tip is not null && WorkingTree.IsCommitId(tip) ? tip : null;
     }
 
     /// <summary>The check nodes of the version a run is bound to; none where it does not read.</summary>

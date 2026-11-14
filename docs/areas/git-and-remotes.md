@@ -331,6 +331,10 @@ syncs, the ref, stash and switch acts, fetches, tidying, the scheduler on real g
 takes, returns, line ends and refusals run on `MemoryRepository` (`TreePoolMemoryTests`), its slots made by the real tree opening, which
 asks the repository port; the pool cases left on real git are those whose git is a held, process-owned start (the journaled ref act
 behind a take's undo and a finish's branch delete) or whose subject is the disk (outputs held and set aside, hooks, nested repositories).
+The landed proof (`LandedProofs.ProveAsync`, the changed names every proof reads, the standing tip), the hand-back read, the step refs, and
+the workflow nodes' one-commit, ancestry, merge-base and ref-list reads ask the repository port, and their cases run on `MemoryRepository`
+(`LandedProofMemoryTests`, `HandbackReaderTests`, `StepRefsMemoryTests`); the review graph's reads (a command-level census of what
+starts), the diff and patch text, and the merges, rebases and the landing's judgements stay on git's commands.
 Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 
