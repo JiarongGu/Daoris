@@ -178,6 +178,7 @@ const ORGANISMS = new Set<string>([
   // A repository's Integration tab: its look and acts, so the tab below it holds none.
   './projects/integration/RepositoryIntegration.tsx',
   './projects/files/RepositoryFiles.tsx',
+  './projects/pool/RepositoryTreePool.tsx',
   // The views a place's activity opens, organisms by standing at the sources' top above their folder's
   // molecules, named here by their folder: Search's and Convergence's queries, and
   // Knowledge's view over the two.

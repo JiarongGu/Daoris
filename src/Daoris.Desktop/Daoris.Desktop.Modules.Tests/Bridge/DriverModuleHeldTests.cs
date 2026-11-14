@@ -58,6 +58,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["GIT_FETCH_PLAN"] = new { repository = "engine" },
         ["GIT_PUSH_PLAN"] = new { repository = "engine" },
         ["FILES"] = new { repository = "engine" },
+        ["TREE_POOL"] = new { workspace = "aurora", repository = "engine" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];

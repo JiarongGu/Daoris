@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **TREEPOOL1y (2026-11-14):** A repository's Details page lists its tree pool slots and words `tree.kept-restoring` in English and Chinese, with page and bridge tests (`docs/areas/desktop-app.md`).
 - **KEYPUTTY1 (2026-11-14):** PuTTY v2/v3 and PEM RSA, EC and PKCS#8 import as unencrypted OpenSSH through a pinned format adapter, with one passphrase entry and a notice before writing; format, storage and bridge checks are in `e31e3503ce` and `docs/areas/git-and-remotes.md`.
 
 ---

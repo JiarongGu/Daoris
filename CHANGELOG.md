@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's Details page shows this machine's tree pool slots and explains in English or Chinese when a slot is waiting to be restored.
 - A self-update keeps the window's start arguments, including its debug port, so desktop tools can reconnect after the restart.
 - SSH key import reads PuTTY v2/v3 and PEM RSA, EC and PKCS#8 keys, taking an encrypted key's passphrase once and explaining before it writes the unencrypted OpenSSH copy Daoris keeps. The original key stays unchanged.
 
