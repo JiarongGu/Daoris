@@ -140,7 +140,8 @@ public static class WorkflowOperations
     /// </summary>
     /// <exception cref="ChoiceWords">Naming why the source cannot be used.</exception>
     public static async Task<WorkflowVersionSource> SourceAsync(
-        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null)
+        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null,
+        string? plugin = null, string? pattern = null)
     {
         // Converting Current has one door, and it is not a copy made by hand.
         if (from.StartsWith("current:", StringComparison.Ordinal))
@@ -151,7 +152,7 @@ public static class WorkflowOperations
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
         {
             var name = $"{graphPreset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
-            return new($"the default `{shipped.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset)
+            return new($"the default `{shipped.Id}`", name, null, WorkflowDefaults.Variant(shipped, opinion, look, plugin, pattern), graphPreset)
             {
                 From = shipped.From,
             };
@@ -302,7 +303,7 @@ public static class WorkflowOperations
     public static async Task<WorkflowSaved> SaveAsync(
         DriverConfig choices, string home, RegistryRead registry, string id, string? from, JsonNode? steps, JsonNode? graph,
         bool opinion, bool look, string? name, string? @base, IReadOnlyCollection<string>? authorized, bool plan, string at, CancellationToken ct,
-        string? updates = null)
+        string? updates = null, string? plugin = null, string? pattern = null)
     {
         WorkflowSaved Refuse(string code, string message, IReadOnlyList<WorkflowScope>? scopes = null, IReadOnlyList<WorkflowReach>? reach = null, bool appended = false) =>
             new(id, false, code, message, null, false, appended, scopes ?? [], reach ?? []);
@@ -322,7 +323,7 @@ public static class WorkflowOperations
                 string made;
                 if (from is not null)
                 {
-                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct, id).ConfigureAwait(false);
+                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct, id, plugin, pattern).ConfigureAwait(false);
                     planned = PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph, source.From);
                     made = source.Description;
                 }

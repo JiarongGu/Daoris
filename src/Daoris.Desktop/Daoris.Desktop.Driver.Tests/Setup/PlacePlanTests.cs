@@ -81,6 +81,83 @@ public sealed class PlacePlanTests
         Assert.True(plan.Applies);
     }
 
+    private static readonly SetupPresetsTests.Catalog Platforms = new(
+        new SetupPresetsTests.Entry("example.github-pull-request", [HookPoints.Perform]),
+        new SetupPresetsTests.Entry("example.gitlab-pull-request", [HookPoints.Perform]),
+        new SetupPresetsTests.Entry("example.azure-devops-pull-request", [HookPoints.Perform]),
+        new SetupPresetsTests.Entry("example.bitbucket-pull-request", [HookPoints.Perform]));
+
+    private static IEnumerable<string> PullRequestKinds(IWorkflowStore store, string id) =>
+        store.Load(id)!.Read.Versions[^1].Graph!.Nodes.Select(node => node.Kind).Where(kind => kind.EndsWith("/pull-request", StringComparison.Ordinal));
+
+    [Theory]
+    [InlineData("github.com", "example.github-pull-request")]
+    [InlineData("gitlab.com", "example.gitlab-pull-request")]
+    [InlineData("dev.azure.com", "example.azure-devops-pull-request")]
+    [InlineData("bitbucket.org", "example.bitbucket-pull-request")]
+    public async Task The_pull_request_preset_saves_the_step_of_the_plugin_the_remote_s_platform_has(string host, string plugin)
+    {
+        var world = new World();
+        world.Tips["web"] = new("main", Commit, "none", null, host);
+        var ask = Ask(SetupPresets.PullRequest, "web");
+
+        var plan = await PlacePlans.PlanAsync(world, Config, _home, Platforms, true, ask);
+        var applied = PlacePlans.Apply(Config, world.Registry.Single(each => each.Repository == "web"), ask, world.Tips["web"], Platforms, true, [], _home);
+
+        var save = Assert.Single(plan.Saves);
+        Assert.Equal(plugin, save.Plugin);
+        Assert.Equal([$"{plugin}/pull-request"], PullRequestKinds(applied.Store!, save.Id));
+        Assert.Equal(plugin, Assert.Single(plan.Repositories).After.Land!.Plugin);
+        Assert.True(plan.Applies);
+    }
+
+    [Fact]
+    public async Task The_pull_request_preset_keeps_the_branch_pattern_the_place_follows()
+    {
+        var config = FollowingPattern("web", "mine", "work/{ticket}");
+        var world = new World();
+        var ask = Ask(SetupPresets.PullRequest, "web");
+
+        var plan = await PlacePlans.PlanAsync(world, config, _home, Platforms, true, ask);
+        var applied = PlacePlans.Apply(config, world.Registry.Single(each => each.Repository == "web"), ask, world.Tips["web"], Platforms, true, [], _home);
+
+        var save = Assert.Single(plan.Saves);
+        Assert.Equal("work/{ticket}", save.Pattern);
+        var land = applied.Store!.Load(save.Id)!.Read.Versions[^1].Graph!.Nodes.First(node => node.Kind == NodeKinds.Land);
+        Assert.Equal("work/{ticket}", LandNodes.Written(land, "pattern"));
+    }
+
+    [Fact]
+    public async Task A_preset_applied_to_a_workspace_saves_one_copy_for_places_that_want_the_same_and_another_for_each_that_differs()
+    {
+        var config = FollowingPattern("shop", "mine", "work/{ticket}");
+        var world = new World();
+        world.Registry.AddRange([new("shop", true, "/fixture/shop", "aurora"), new("cart", true, "/fixture/cart", "aurora")]);
+        world.Tips["shop"] = new("main", Commit, "none", null, "github.com");
+        world.Tips["cart"] = new("main", Commit, "none", null, "github.com");
+
+        var plan = await PlacePlans.PlanAsync(world, config, _home, Platforms, true, Ask(SetupPresets.PullRequest, "web", "cart", "shop", "docs"));
+
+        Assert.Equal(["pull-request", "pull-request-2", "pull-request-3"], plan.Saves.Select(save => save.Id));
+        Assert.Equal(
+            [("web", "pull-request"), ("cart", "pull-request"), ("shop", "pull-request-2"), ("docs", "pull-request-3")],
+            plan.Repositories.Select(row => (row.Repository, row.Changes.Single(change => change.Key == "WORKFLOW_USE").After.Trim('`'))));
+        Assert.Equal(
+            ["example.github-pull-request", "example.github-pull-request", "example.gitlab-pull-request"],
+            plan.Saves.OrderBy(save => save.Id, StringComparer.Ordinal).Select(save => save.Plugin));
+    }
+
+    private DriverConfig FollowingPattern(string repository, string workflow, string pattern)
+    {
+        var graph = WorkflowDefaults.Of(SetupPresets.PullRequest)!.Graph();
+        graph["nodes"]!.AsArray().First(node => (string?)node!["kind"] == NodeKinds.Land)!["options"]!.AsObject()["pattern"] = pattern;
+        var saved = WorkflowOperations.SaveAsync(
+            Config, _home, _ => Task.FromResult(new ChoicesRegistry([], null)), workflow, null, null, graph, false, false, null, null, null, plan: false,
+            PlannedWorkflows.At, CancellationToken.None).GetAwaiter().GetResult();
+        Assert.True(saved.Done, saved.Message);
+        return WorkflowSelection.Apply(Config, new WorkflowUse(workflow, repository, null, null));
+    }
+
     [Fact]
     public async Task A_remote_no_landing_plugin_serves_is_refused_a_pull_request_and_offered_a_merge()
     {
@@ -141,7 +218,7 @@ public sealed class PlacePlanTests
 
         Assert.Equal(["solo", "atlas"], plan.Repositories.Select(row => row.Repository));
         Assert.Equal(
-            [("WORKFLOW_SAVE", "solo,atlas"), ("WORKFLOW_USE", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
+            [("WORKFLOW_SAVE", "solo"), ("WORKFLOW_USE", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
             plan.Changes.Select(each => (each.Change.Key, string.Join(",", each.Repositories))));
     }
 

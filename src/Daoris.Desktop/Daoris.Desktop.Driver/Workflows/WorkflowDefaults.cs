@@ -79,7 +79,10 @@ public static class WorkflowDefaults
     public static ShippedNewer? NewerThan(WorkflowFrom? from, NodeGraph? copy)
     {
         if (from is null || copy is null || Of(from.Default) is not { } shipped || shipped.Digest == from.Digest) return null;
-        var made = Copy(shipped, copy.Nodes.Any(node => node.Kind == NodeKinds.Opinion), copy.Nodes.Any(node => node.Kind == NodeKinds.Look));
+        // The copy keeps the plugin of its platform, which the default names another of.
+        var plugin = copy.Nodes.FirstOrDefault(node => NodeKit.IsPlugin(node.Kind) && node.Kind.EndsWith("/pull-request", StringComparison.Ordinal)) is { } step
+            ? NodeGoverning.PluginOf(step.Kind) : null;
+        var made = Copy(shipped, copy.Nodes.Any(node => node.Kind == NodeKinds.Opinion), copy.Nodes.Any(node => node.Kind == NodeKinds.Look), null, plugin);
         return new ShippedNewer(shipped.Id, shipped.Name, made.Graph);
     }
 
@@ -137,13 +140,45 @@ public static class WorkflowDefaults
     /// <paramref name="taken"/> where a person's own workflow holds it; the graph with the gates the ticks add; <c>from</c> stamped.
     /// </summary>
     /// <param name="taken">Whether an id is held by a workflow that is not a copy of this variant (a person's own).</param>
-    public static WorkflowCopy Copy(WorkflowDefault shipped, bool opinion, bool look, Func<string, bool>? taken = null)
+    public static WorkflowCopy Copy(
+        WorkflowDefault shipped, bool opinion, bool look, Func<string, bool>? taken = null, string? plugin = null, string? pattern = null)
     {
         var id = shipped.Id + (opinion ? "-opinion" : "") + (look ? "-look" : "");
         var free = id;
         for (var number = 2; taken?.Invoke(free) == true; number++) free = $"{id}-{number}";
         var name = shipped.Name + (opinion ? " + second opinion" : "") + (look ? " + your look" : "");
-        return new WorkflowCopy(free, name, WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look), shipped.From);
+        return new WorkflowCopy(free, name, Variant(shipped, opinion, look, plugin, pattern), shipped.From);
+    }
+
+    /// <summary>The plugin whose <c>pull-request</c> step <paramref name="shipped"/> names, or null for a default that opens none.</summary>
+    public static string? PullRequestPluginOf(WorkflowDefault shipped) =>
+        NodeGraphs.Read(shipped.GraphJson).Graph!.Nodes.FirstOrDefault(node => NodeKit.IsPlugin(node.Kind) && node.Kind.EndsWith("/pull-request", StringComparison.Ordinal)) is { } step
+            ? NodeGoverning.PluginOf(step.Kind) : null;
+
+    /// <summary>
+    /// The graph a copy of <paramref name="shipped"/> saves: the gates its ticks add, the pull-request step of <paramref name="plugin"/> where the default
+    /// names another plugin's, and the branch <paramref name="pattern"/> a place keeps written on its <c>land</c>. Every copy is this one graph, so the
+    /// digest a copy is looked up by is the digest it is saved with.
+    /// </summary>
+    public static JsonObject Variant(WorkflowDefault shipped, bool opinion, bool look, string? plugin = null, string? pattern = null)
+    {
+        var graph = WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look);
+        foreach (var node in graph["nodes"]!.AsArray().OfType<JsonObject>())
+        {
+            var kind = (string?)node["kind"];
+            if (plugin is not null && kind is not null && NodeKit.IsPlugin(kind) && kind.EndsWith("/pull-request", StringComparison.Ordinal))
+            {
+                node["kind"] = $"{plugin}/pull-request";
+            }
+            else if (pattern is not null && kind == NodeKinds.Land)
+            {
+                var options = node["options"] as JsonObject ?? new JsonObject();
+                options["pattern"] = pattern;
+                node["options"] = options;
+            }
+        }
+
+        return graph;
     }
 
     /// <summary>

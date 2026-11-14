@@ -40,10 +40,10 @@ internal sealed class PlannedWorkflows : IWorkflowStore
     /// The id of a saved workflow whose newest version is a copy of <paramref name="shipped"/> with the gates a variant asks for, the home's
     /// first by id; null where there is none.
     /// </summary>
-    public string? CopyOf(WorkflowDefault shipped, bool opinion, bool look)
+    public string? CopyOf(WorkflowDefault shipped, bool opinion, bool look, string? plugin = null, string? pattern = null)
     {
         // The newest version's digest is the variant's own: a copy the person edited is no copy of it.
-        var wanted = NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look).ToJsonString()).Graph!);
+        var wanted = NodeGraphs.Digest(NodeGraphs.Read(WorkflowDefaults.Variant(shipped, opinion, look, plugin, pattern).ToJsonString()).Graph!);
         return List().FirstOrDefault(each => each.Read is { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] }
             && from.Default == shipped.Id && digest == wanted)?.Id;
     }

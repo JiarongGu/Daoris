@@ -61,6 +61,10 @@ public sealed record PlaceOperation(string Id, string Kind, string? Repository, 
     public bool Opinion { get; init; }
 
     public bool Look { get; init; }
+
+    public string? Plugin { get; init; }
+
+    public string? Pattern { get; init; }
 }
 
 /// <summary>
