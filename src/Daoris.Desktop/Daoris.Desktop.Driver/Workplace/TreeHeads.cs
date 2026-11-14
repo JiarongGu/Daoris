@@ -32,8 +32,14 @@ internal static class TreeHeads
 
     private static async Task<(int Code, string Branch)> AskedAsync(string tree, CancellationToken ct)
     {
-        var (code, branch, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        return (code, branch.Trim());
+        try
+        {
+            return (0, await MachinePorts.Repository.BranchAsync(tree, ct).ConfigureAwait(false) ?? "HEAD");
+        }
+        catch (Exception error) when (error is DriverException or InvalidOperationException)
+        {
+            return (128, "");
+        }
     }
 
     /// <summary>The repository a linked tree belongs to, from its <c>.git</c> link and its git dir's <c>commondir</c>; empty where the files do not say.</summary>

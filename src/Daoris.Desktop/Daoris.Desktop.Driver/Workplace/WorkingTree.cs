@@ -344,7 +344,9 @@ public static class WorkingTree
     /// to BE this path also rejects a subdirectory, which the driver never passes and which would
     /// silently narrow the answer if it ever did.
     /// </remarks>
-    internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
+    internal static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct) =>
+        !string.IsNullOrWhiteSpace(root) && Directory.Exists(root)
+        && await MachinePorts.Repository.TopOfAsync(root, ct).ConfigureAwait(false) is { } top && SamePath(top, root);
 
     /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
     /// <param name="git">How git is read: the review's seam, so its tests count this start with the range's, and
@@ -364,15 +366,6 @@ public static class WorkingTree
             },
             ct).ConfigureAwait(false);
         return code == 0 && SamePath(stdout.ToString().Trim(), root);
-    }
-
-    /// <summary>git's whole answer handed on at once: how every caller but the review asks, through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> as before.</summary>
-    private static async Task<int> WholeAsync(
-        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
-    {
-        var (code, stdout, _) = await GitAsync(root, arguments, ct).ConfigureAwait(false);
-        take(stdout.AsMemory());
-        return code;
     }
 
     /// <summary>

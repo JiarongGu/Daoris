@@ -141,8 +141,9 @@ internal sealed class RefSnapshot
 
     internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
     {
-        var (code, output, _) = await WorkingTree.GitAsync(root, ["for-each-ref", .. GitLibraryRefs.Listed], ct).ConfigureAwait(false);
-        return code == 0 ? output : null;
+        return await MachinePorts.Repository.RefFactsAsync(root, ct).ConfigureAwait(false) is { } facts
+            ? string.Join('\n', facts.Select(each => $"{each.Name} {each.Object} {each.Type} {each.Upstream} {each.UpstreamShort} {each.Tree}"))
+            : null;
     }
 
     /// <summary>The read's refs; null where a line is not the five fields asked for, so nothing is answered from a read half understood.</summary>
