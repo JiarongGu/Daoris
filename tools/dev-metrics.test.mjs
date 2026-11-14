@@ -127,7 +127,6 @@ test('memory reads, hits and writes are counted for a Codex session\'s result sh
   mkdirSync(homeEntry(dir, 'sessions'), { recursive: true });
   const user = { seq: 1, at: '2026-01-02T01:00:00Z', kind: 'user', text: 'Your target is quest `#aaa111111111`, asked by x' };
   const call = (id, title, at) => ({ seq: 2, at, kind: 'tool', id, title, status: 'in_progress', input: '{}' });
-  // Codex completes a call with its result wrapped as JSON in `output`, and the title only on the in-progress row.
   const wrapped = (id, at, text) => ({ seq: 3, at, kind: 'tool', id, status: 'completed', output: JSON.stringify({ result: { content: [{ type: 'text', text }] }, error: null }) });
   writeFileSync(homeEntry(dir, 'sessions', 'aaaa1111.events.jsonl'), jl([
     user,

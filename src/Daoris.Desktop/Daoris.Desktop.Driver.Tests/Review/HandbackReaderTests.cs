@@ -55,10 +55,6 @@ public sealed class HandbackReaderTests : IDisposable
         Assert.Null(await HandbackReader.ReadAsync(_tree, "no-such-line", gates, [], [], CancellationToken.None));
     }
 
-    /// <summary>
-    /// The work's log as the check's format reads it (short id, parents, subject, the trailer's values): a maker's commit passes, one
-    /// signed by nobody or by a person is said, and a merge of the line into the work is not the work's own.
-    /// </summary>
     [Fact]
     public void A_commit_without_its_makers_trailer_is_read_and_said_as_the_merge_check_refuses_it()
     {

@@ -128,7 +128,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         Assert.DoesNotContain("Memory this line read", StandingBlock.Compose(new StandingFacts { Repository = "engine" }).Text, StringComparison.Ordinal);
     }
 
-    // ——— The memory it writes (LYNTAIMEM1): a session is told `memory_write` exists only where the connector lets it write.
+    // ——— The memory it writes: a session is told `memory_write` exists only where the connector lets it write.
 
     [Theory]
     [InlineData(ParticipantWork.Build, true)]

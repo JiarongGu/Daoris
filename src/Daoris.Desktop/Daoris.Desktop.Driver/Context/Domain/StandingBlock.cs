@@ -41,10 +41,6 @@ public static class StandingBlock
         "Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this "
         + "repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).";
 
-    /// <summary>
-    /// What a session that may change its repository's memory is told of it: nothing else in a session's start names <c>memory_write</c>,
-    /// and a tool no session is told of is never called (LYNTAIMEM1).
-    /// </summary>
     internal const string WriteMemory =
         "A fact you confirmed that a later session on this repository would otherwise have to find out again goes into its memory with "
         + "`memory_write`: one fact in a sentence or two, citing the record that shows it. It applies when your work is accepted.";

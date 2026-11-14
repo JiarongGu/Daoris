@@ -30,10 +30,7 @@ public sealed record StandingFacts
     /// <summary>Whether it may call the connector's knowledge and memory tools: false for a brainstorm's pass, which reads its room alone.</summary>
     public bool Knowledge { get; init; } = true;
 
-    /// <summary>
-    /// Whether the connector lets it change its repository's memory (<c>memory_write</c>), which the block then tells it: a session is
-    /// never told a tool it would be refused, and one it is never told is one it never calls.
-    /// </summary>
+    /// <summary>Whether the connector lets it write its repository's memory (<c>memory_write</c>): a session is told only a tool it may call.</summary>
     public bool Writes { get; init; }
 
     /// <summary>The tree's skill folders, named only where its harness loads none of them itself (<see cref="AgentDoor.LoadsTreeSkills"/>).</summary>

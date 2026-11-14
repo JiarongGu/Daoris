@@ -102,8 +102,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(handed.Deny.Distinct(StringComparer.Ordinal).Count(), handed.Deny.Count);
     }
 
-    // ——— Both real doors under the posture. Claude Code takes the rules above on either door; Codex takes none and runs its
-    // ——— ordinary mode. Nothing here starts a process.
+    // ——— Both real doors: Claude Code takes the rules above on either door, Codex none. Nothing here starts a process.
 
     /// <summary>
     /// 🔴 Claude Code's protocol door is handed the posture's rules as its pipe door is, through the file its session takes on `session/new`,
@@ -132,11 +131,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal("auto|acceptEdits", adapter.Postures.Ordinary);
     }
 
-    /// <summary>
-    /// 🔴 Codex takes no rules, so none is written and no `_meta` rides its open; its pass keeps the door's ordinary mode, `agent`, in
-    /// which a read of its room runs unasked. Its `read-only` mode asks the driver for every read on Windows and the driver answers no
-    /// request, so a pass set to it ended with no answer. Never `agent-full-access`.
-    /// </summary>
+    /// <summary>🔴 Codex takes no rules and keeps its ordinary mode, `agent`, where its room's reads run unasked; never full access.</summary>
     [Fact]
     public void Codex_is_handed_no_rules_and_keeps_its_ordinary_mode_so_its_reads_run_unasked()
     {

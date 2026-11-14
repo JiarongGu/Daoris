@@ -99,10 +99,6 @@ function logEvents(logs, inRange) {
   return filesOf(logs, (f) => /\.jsonl$/.test(f)).flatMap((f) => readLines(join(logs, f))).filter((e) => inRange(e.time));
 }
 
-/**
- * What a completed tool row answered, as text: Claude Code's `content` parts, or Codex's `output`, the whole result wrapped as JSON
- * (`{result: {content: [...]}, error}`); a row of neither shape answers nothing, which is no hit.
- */
 function resultText(row) {
   if (Array.isArray(row.content)) return row.content.map((p) => p.text ?? '').join('\n');
   if (typeof row.output !== 'string') return '';
@@ -137,12 +133,10 @@ function memoryCalls(events, inRange) {
 function lyntaiOf(calls) {
   const by = (k) => calls.filter((c) => c.kind === k);
   const searches = by('search');
-  // A read that found an entry answers its text; one that found none, or was refused, says so in words the connector fixes.
   const hit = (c) => c.endedAt && !c.failed && !/^(No memory entry|Refused:|Memory is not on)/.test(c.result ?? '') && (c.result ?? '') !== '';
   const hits = searches.filter(hit);
   const reads = [...searches, ...by('get')];
   const fetched = hits.filter((s) => calls.some((c) => c.kind === 'get' && c.session === s.session && c.startedAt >= s.startedAt));
-  // A write the connector kept says it staged an operation; any other answer (a refusal, memory off) changed nothing.
   const kept = (c) => c.endedAt && !c.failed && /^Kept as operation /.test(c.result ?? '');
   const latency = calls.filter((c) => c.endedAt).map((c) => Date.parse(c.endedAt) - Date.parse(c.startedAt));
   return {
@@ -161,10 +155,7 @@ function lyntaiOf(calls) {
   };
 }
 
-/**
- * The memory's own row counts, read-only, through node:sqlite where this Node has it: Lyntai's entries and nodes in `memory.db`, and
- * the operations the coordinator's log holds by state in `knowledge.db`, so a write's way (staged, released, applied) is seen where it stops.
- */
+/** The memory's own row counts, read-only through node:sqlite, so a write's way (staged, released, applied) is seen where it stops. */
 async function storeCounts(home) {
   const out = { entries: missing('no memory.db in the home'), operations: missing('no knowledge.db memory_ops in the home') };
   let sqlite;
