@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -9,19 +10,20 @@ namespace Daoris.Desktop.Driver.Tests;
 /// judge by, reads the workspace's value. <c>off</c> refuses in the route's words with nothing written, in every door; <c>asked</c> and <c>mode</c>
 /// are carried on the plan for the card and the pipe to read; a repository's own value governs a room alone, never a department opened in its workspace.
 /// </summary>
-[Trait(Category.Name, Category.Process)]
-[Trait(Category.Needs, Needed.Process)]
-[Trait(Category.Needs, Needed.Git)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class RepositoryCreateGrowthTests : IDisposable
 {
     private static readonly CreateAuthor Fixture = new("Fixture", "fixture@example.test");
 
     private readonly string _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "repository-create-growth", Guid.NewGuid().ToString("N")[..8]);
+    private readonly IDisposable _chosen = FlowRepository.Use(MemoryRepositories.New().Port);
 
     public RepositoryCreateGrowthTests() => Directory.CreateDirectory(Work());
 
-    public void Dispose() => GitSeed.Remove(_scratch);
+    public void Dispose()
+    {
+        _chosen.Dispose();
+        GitSeed.Remove(_scratch);
+    }
 
     private string Work(params string[] parts) => Path.Combine([_scratch, "aurora", .. parts]);
 

@@ -7,7 +7,7 @@ namespace Daoris.Testing;
 /// The repository a test process's root hands as its port, which each test's flow may choose for itself: a test that runs a family on a
 /// <see cref="MemoryRepository"/> <see cref="Use"/>s it for the flow it awaits, and every other flow reaches the repository the root chose.
 /// </summary>
-public sealed class FlowRepository(IGitRepository otherwise) : IGitRepository
+public sealed partial class FlowRepository(IGitRepository otherwise) : IGitRepository
 {
     private static readonly AsyncLocal<IGitRepository?> s_chosen = new();
 
