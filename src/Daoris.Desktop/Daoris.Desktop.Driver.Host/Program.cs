@@ -477,6 +477,12 @@ try
         return Daoris.Driver.Host.SessionChecksConsole.Run(checksArgs);
     }
 
+    // Whether Daoris may change a repository's registered checkout's files: kept in the driver's file; Setup's Reach is the other door.
+    if (args is ["checkout", .. var checkoutArgs])
+    {
+        return Daoris.Driver.Host.CheckoutWritesConsole.Run(checkoutArgs);
+    }
+
     // Finished history from a terminal: what this machine keeps of it, per
     // workspace, and a workspace's clear, listed first and pressed with --yes. The workspace page's *Kept on this machine* is the
     // other door; a clear's log line says this one.

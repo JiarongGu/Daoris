@@ -55,7 +55,6 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
     [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
     [GroundListed("SET_CHECKOUT_WRITES", "checkoutWrites", "allow")]
-    [NoTwin("SET_CHECKOUT_WRITES", "no verb yet: a repository's switch for changing its registered checkout's files is the setup page's alone until `daoris place` takes it")]
     [Says("SET_CHECKOUT_WRITES", "repository:repository")]
     [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
     private object? SetCheckoutWrites(SetCheckoutWrites press)
