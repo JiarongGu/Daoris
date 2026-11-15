@@ -29,7 +29,32 @@ internal sealed class VerifyPreparation : IVerifyPreparation
         var keys = new List<string>();
         foreach (var dependency in deps.Each) keys.Add(await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, keys, ct).ConfigureAwait(false));
         var declared = TreePrepDeclared.Read(checkout);
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', [.. keys, .. declared.Regenerate]))));
+        return Of(keys, declared.Regenerate, TreeLocalInputs.Declared(checkout), checkout);
+    }
+
+    /// <summary>
+    /// The stamp over every input the preparation reads: the dependency keys, the declared <c>regenerate</c> commands, and each declared
+    /// local input (its path and the checkout file's content hash, or <c>absent</c>), which the files stage copies into the tree. A new
+    /// input the preparation reads goes in here, and the stamp test moves it.
+    /// </summary>
+    internal static string Of(IReadOnlyList<string> keys, IReadOnlyList<string> regenerate, IReadOnlyList<LocalInput> localInputs, string checkout)
+    {
+        var words = new List<string>(keys);
+        words.AddRange(regenerate.Select(command => "regenerate:" + command));
+        words.AddRange(localInputs.Select(input => "local:" + input.Path + "=" + ContentOf(Path.Combine(checkout, input.Path))));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', words))));
+    }
+
+    private static string ContentOf(string file)
+    {
+        try
+        {
+            return File.Exists(file) ? Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file))) : "absent";
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return "absent";
+        }
     }
 
     public async Task<string?> RunAsync(string home, string checkout, string tree, string repository, CancellationToken ct)
@@ -46,7 +71,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
 
 /// <summary>
 /// A check's verification tree prepared before its gates run: the preparation asked once for the tree, then again only where the
-/// inputs it stands on moved (the stamp is the dependency keys the stage itself reads, and the declared commands).
+/// inputs it stands on moved (the stamp is the dependency keys the stage itself reads, the declared commands and the declared local inputs).
 /// </summary>
 internal static class VerifyTreeReady
 {

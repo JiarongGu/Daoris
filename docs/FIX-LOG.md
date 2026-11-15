@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - A check's verification tree kept a stale stamp and lacked a declared local input (STAMPINPUTS1)
+
+- **Symptom:** after 7e689f9074 declared `localInputs` in `daoris.gates.json`, the install's line verification tree for a quest still
+  lacked `local/shenora-local.props` at the next check (`Daoris.Desktop.App` CS0246, every Modules class red).
+- **Root cause:** `VerifyPreparation.StampAsync`, which came in with 8c1220f889 (VERIFYPREP1, merged as 72c081ba4b), hashed only the
+  dependency keys and the declared `regenerate` commands, so `VerifyTreeReady.EnsureAsync` skipped the preparation that copies the
+  local inputs (`TreeLocalInputs.CopyAsync`): a stamp that left out an input the guarded work reads.
+- **Fix:** the stamp (`VerifyPreparation.Of`) also covers each declared local input, its path and the checkout file's content hash or
+  `absent`. **Verified:** `VerifyTreeStampTests` changes each input in turn (a command, a declaration, the file's presence and content,
+  a dependency key) and sees the stamp move; red first on the declaration.
+
 ## 2026-11-16 - Three reds main carried past their merges' reached gates (GATEBUDGET1, WEBHELD1, LINEEND1)
 
 - **Symptom:** OPENSLOW1's merge failed `reached` on `GateReachTests`, `DriverModuleRoutesTests` and `SetupAdmissionTests`; each
