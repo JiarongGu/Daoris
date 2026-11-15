@@ -128,11 +128,15 @@ public sealed class OwnerSetTests : IDisposable
 
     // ——— By the record: the service's person doors.
 
-    /// <summary>A quest published this run, and its ask's own words, mark nothing; a person's word or move after its publication marks it.</summary>
+    /// <summary>
+    /// A quest published this run, and its ask's own words, mark nothing; a person's word or move after its publication marks it. An
+    /// appointed role's yes is the role's, never the owner's mark: the moves door names it by (D297).
+    /// </summary>
     [Theory]
     [InlineData("published", null)]
     [InlineData("added", null)]
     [InlineData("before", null)]
+    [InlineData("role-accepted", null)]
     [InlineData("done", "note:quest.person-done")]
     [InlineData("accepted", "move:accepted")]
     [InlineData("answered", "session-note:ledger.answered")]
@@ -144,7 +148,7 @@ public sealed class OwnerSetTests : IDisposable
         const string after = "2026-10-24T10:00:00Z";
         const string earlier = "2026-10-24T08:00:00Z";
         var quest = $$"""[{"id":"q1","to":"engine","status":"{{(write == "done" ? "Done" : "Taken")}}","filed":"{{after}}","updated":"{{after}}","noteParts":[{{(write == "done" ? """{"code":"quest.person-done","by":"person"}""" : "")}}]}]""";
-        var moves = $$"""{"moves":[{"kind":"published","at":"{{after}}","machine":"m","sequence":1},{"kind":"taken","at":"{{after}}","machine":"m","sequence":2}{{(write == "accepted" ? $$""",{"kind":"accepted","at":"{{after}}","machine":"m","sequence":3}""" : write == "before" ? $$""",{"kind":"accepted","at":"{{earlier}}","machine":"m","sequence":3}""" : "")}}]}""";
+        var moves = $$"""{"moves":[{"kind":"published","at":"{{after}}","machine":"m","sequence":1},{"kind":"taken","at":"{{after}}","machine":"m","sequence":2}{{(write == "accepted" ? $$""",{"kind":"accepted","at":"{{after}}","machine":"m","sequence":3}""" : write == "role-accepted" ? $$""",{"kind":"accepted","at":"{{after}}","machine":"m","sequence":3,"by":"role:daoris-landing · codex-acp"}""" : write == "before" ? $$""",{"kind":"accepted","at":"{{earlier}}","machine":"m","sequence":3}""" : "")}}]}""";
         var words = write switch
         {
             "added" => $$"""{"kind":"added","text":"also this","at":"{{after}}","session":"s1","quest":"q1"}""",

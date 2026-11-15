@@ -39,6 +39,14 @@ public static class SupervisorDoorActs
     };
 }
 
+/// <summary>
+/// A session's answer at a door as the page reads it, to offer <i>Overrule</i> while it is held: its kind, its subject's id (<c>staged</c>, an
+/// end's operation, a quest), the act and its choice, the role and the agent it is the answer of, where it stands and when it goes on.
+/// </summary>
+public sealed record SupervisorDoorView(
+    string Id, string Kind, string Subject, string Do, string? Choice, string Role, string Agent, SupervisorState State,
+    DateTimeOffset KeptAt, DateTimeOffset GoesOnAt);
+
 /// <summary>The service's door for a released answer: null where it kept it, else why it refused, keeping nothing.</summary>
 public delegate Task<string?> SupervisorDoorPost(SupervisorDoorDue due, CancellationToken ct);
 
@@ -53,6 +61,7 @@ internal sealed class SupervisorDoorDecision
     public required string Generation { get; init; }
     public required string Role { get; init; }
     public required string Agent { get; init; }
+    public required DateTimeOffset KeptAt { get; init; }
     public required DateTimeOffset GoesOnAt { get; init; }
     public SupervisorState State { get; set; } = SupervisorState.Held;
 }
@@ -98,7 +107,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             var decision = new SupervisorDoorDecision
             {
                 Id = id, Subject = subject, Repository = answer.Repository, Do = answer.Do, Choice = answer.Choice, Generation = answer.Generation,
-                Role = admitted.Role ?? AppointedRoles.Supervisor, Agent = AgentOf(answer.Holder), GoesOnAt = goesOnAt,
+                Role = admitted.Role ?? AppointedRoles.Supervisor, Agent = AgentOf(answer.Holder), KeptAt = now, GoesOnAt = goesOnAt,
                 State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(subject.Session));
@@ -151,6 +160,15 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
             return Task.FromResult<SupervisorState?>(held.State);
         }, ct);
+
+    /// <summary>A session's answers this run, oldest first; a restart's sweep has closed every earlier one, so none of them is held.</summary>
+    public IReadOnlyList<SupervisorDoorView> DoorsOf(string session) =>
+    [
+        .. book.Doors.Values.Where(each => each.Subject.Session == session)
+            .OrderBy(each => each.KeptAt).ThenBy(each => each.Id, StringComparer.Ordinal)
+            .Select(each => new SupervisorDoorView(
+                each.Id, each.Subject.Kind, each.Subject.Id, each.Do, each.Choice, each.Role, each.Agent, each.State, each.KeptAt, each.GoesOnAt)),
+    ];
 
     /// <summary>Whether <paramref name="subject"/> waits for the holder: no answer on it, and it is not closed to the person.</summary>
     public bool Waits(SupervisorSubject subject) => !book.Doors.Values.Any(each => each.Subject == subject) && !book.Closed.ContainsKey(subject);

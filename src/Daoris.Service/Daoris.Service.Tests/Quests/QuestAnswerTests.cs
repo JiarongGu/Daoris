@@ -320,6 +320,28 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Contains(quest.Id, (await _quests.ListAsync()).Select(listed => listed.Id));
     }
 
+    /// <summary>
+    /// 🔴 An appointed role's yes is kept on its move as the role's and its agent's, so the owner's mark never reads it as theirs; the
+    /// person's own names no one (D297).
+    /// </summary>
+    [Fact]
+    public async Task A_roles_yes_is_kept_on_its_move_as_the_roles()
+    {
+        var (_, byRole) = await Built(chain: false);
+        await Done(byRole, Met(1), Departed(2, "the calculation is in the ticket"));
+        var (_, byPerson) = await Built(chain: false);
+        await Done(byPerson, Met(1), Departed(2, "the calculation is in the ticket"));
+
+        var accepted = await _exchange.AcceptAsync(byRole.Id, Now, by: "role:daoris-landing · codex-acp");
+        await _exchange.AcceptAsync(byPerson.Id, Now);
+
+        Assert.Equal(QuestRespondRefusal.None, accepted.Refusal);
+        Assert.Contains("role:daoris-landing · codex-acp", accepted.Message);
+        Assert.Equal("role:daoris-landing · codex-acp",
+            Assert.Single(QuestMoves.Read(await _quests.HistoryAsync(byRole.Id)), move => move.Kind == QuestOperationKind.Accepted).By);
+        Assert.Null(Assert.Single(QuestMoves.Read(await _quests.HistoryAsync(byPerson.Id)), move => move.Kind == QuestOperationKind.Accepted).By);
+    }
+
     /// <summary>Only a quest held by a departure takes a yes: a taken one, one met in full and one already accepted each say why not.</summary>
     [Fact]
     public async Task Only_a_held_quest_takes_a_yes()

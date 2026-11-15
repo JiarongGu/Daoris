@@ -113,6 +113,9 @@ public sealed class QuestionSupervisorDecisions
     public Task<IReadOnlyList<SupervisorState>> ReleaseDoorsAsync(SupervisorDoorPost post, DateTimeOffset now, CancellationToken ct = default) =>
         _doors.ReleaseAsync(post, now, ct);
 
+    /// <summary>A session's door answers as the page reads them (<see cref="SupervisorDoorAnswers.DoorsOf"/>).</summary>
+    public IReadOnlyList<SupervisorDoorView> DoorsOf(string session) => _doors.DoorsOf(session);
+
     /// <summary>Whether a door's subject waits for the holder (<see cref="SupervisorDoorAnswers.Waits"/>).</summary>
     public bool RefersDoor(SupervisorSubject subject) => _doors.Waits(subject);
 

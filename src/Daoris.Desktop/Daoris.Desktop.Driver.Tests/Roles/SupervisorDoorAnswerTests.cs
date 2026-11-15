@@ -66,6 +66,27 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.Equal(("daoris-landing", "codex-acp · gpt-5 · high", true), (due.Role, due.Agent, due.Yes));
     }
 
+    /// <summary>🔴 The page reads a session's held answer, its subject, act, choice, role, agent and moment, to offer <i>Overrule</i> on it; an overrule says so.</summary>
+    [Fact]
+    public async Task A_sessions_held_door_answer_is_read_for_the_page_with_its_role_its_agent_and_its_moment()
+    {
+        var decisions = new QuestionSupervisorDecisions(_home, new Holds("memory.keep", "departure.accept"));
+        var kept = await decisions.DoorAsync(Staged(SupervisorDoorActs.Drop), null, At);
+        await decisions.DoorAsync(Departure(), null, At.AddMinutes(1));
+
+        var read = decisions.DoorsOf("s1");
+
+        Assert.Equal(2, read.Count);
+        var staged = read[0];
+        Assert.Equal((kept.Decision, SupervisorKinds.Memory, SupervisorDoorActs.Staged, "keep", SupervisorDoorActs.Drop), (staged.Id, staged.Kind, staged.Subject, staged.Do, staged.Choice));
+        Assert.Equal(("daoris-landing", "codex-acp · gpt-5 · high", SupervisorState.Held, At, At.AddMinutes(10)), (staged.Role, staged.Agent, staged.State, staged.KeptAt, staged.GoesOnAt));
+        Assert.Equal((SupervisorKinds.Departure, "q7", SupervisorDoorActs.Accept), (read[1].Kind, read[1].Subject, read[1].Do));
+        Assert.Empty(decisions.DoorsOf("s2"));
+
+        await decisions.OverruleAsync("s1", kept.Decision!, (_, _, _) => Task.FromResult(true), At.AddMinutes(2));
+        Assert.Equal(SupervisorState.Overruled, decisions.DoorsOf("s1")[0].State);
+    }
+
     [Fact]
     public async Task The_same_keep_without_the_role_is_refused_and_nothing_is_posted()
     {

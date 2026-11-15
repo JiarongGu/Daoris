@@ -144,10 +144,11 @@ public sealed record QuestMovesResponse(string Quest, IReadOnlyList<QuestMoveRes
 /// <param name="Number">The remote's number; absent while pending.</param>
 /// <param name="From">The status it reached the quest at; absent before the publish.</param>
 /// <param name="Hold">The hold an applied move set, or <c>none</c> where it let one go.</param>
+/// <param name="By">An accepted's: the appointed role whose yes it was and its agent, <c>role:&lt;role&gt; · &lt;agent&gt;</c>; absent for the person's own.</param>
 public sealed record QuestMoveResponse(
     string Kind, DateTimeOffset At, string Machine, long Sequence, long? Number, bool Applied, string? From = null,
     string? Attempted = null, QuestMoveRefResponse? Dismisses = null, string? WaitsOn = null, string? Session = null,
-    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
+    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null, string? By = null);
 
 /// <summary>An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.</summary>
 public sealed record QuestMoveRefResponse(string Machine, long Sequence);
