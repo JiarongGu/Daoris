@@ -326,20 +326,28 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and the parts land on it unmerged; a missing branch is made at the line's tip), and each promoted batch is kept on
     `refs/daoris/train/<ask>/<n>` (`TrainRefs`). The shipped `team-part` (work, checks, `integrate` with `request: done`, the line)
     and `ask-delivery` (`parts`, a joint `check`, the one `review`, a `merge` landing, the line) presets are saved and chosen as any
-    other. (TEAMWORK1f)
+    other. A part's run is chosen by the kind `team-part` Daoris gives it (`TeamKinds`): where the ask makes no choice of its own and
+    the place maps that kind (`workflow kind`, `workflow use --kind`), its quest, the one the plan gave the part, binds the mapped
+    workflow, its plan read strictly at the bind so an unanswered read holds the start; a place that maps none binds a part as any
+    quest. This repository maps it to `tools/workflows/daoris-part.json` (apart, checked on the gates reached, a second opinion, then
+    integrated onto the ask's branch and released): the close review of the team's two. (TEAMWORK1f, D296)
 39b. An ask's delivery run is one run of the saved `ask-delivery` per repository on this machine the ask's plan gives a part to
     (`AskRunKey`: `ask-<ask>-<digest of the repository>`, keyed by the ask, never a quest's chain). A whole look binds it
-    (`AskRunBinder`: the open asks that have quests, their plans read from the service; the home's saved copy of the shipped workflow,
-    saved from it where the home has none, its newest version, so a person's later version of it binds) and writes it once; an ask
+    (`AskRunBinder`: the open asks that have quests, their plans read from the service; the workflow the place maps to the kind
+    `ask-delivery`, else the home's saved copy of the shipped workflow, saved from it where the home has none, its newest version, so a
+    person's later version of it binds) and writes it once; an ask
     whose plan is bound for its quests as they stand is not read again until they change. It is a run like any other on the one runtime
     (`AskRunScopes`, hooked at `NodeGoverning`): its subject is `daoris/ask-<id>`, a branch unit no session made, whose tip each pass reads;
     it has no quest, so it ends (`AskRunEnds`) when nothing waits and no node can move, naming the ask, and is never governed again.
     Its `parts` waits for the plan's parts given to its repository (`PartsReport.For`, a part given to none waits everywhere); its
     `check` verifies its repository at the tip it is bound to under the accepted declaration (`RunChecks`, beside a verification
     run's send, for a chain's run as for an ask's); its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
-    (`AskRunReads`: the merge base), its handbacks the quests the ask gave the repository; its `land` merges the branch at the accepted
+    (`AskRunReads`: the merge base), its handbacks the quests the ask gave the repository, answered by the person or by the place's
+    appointed landing supervisor (roles rule 49), its step kept against the newest session of those quests (`LandingSessions`); its `land` merges the branch at the accepted
     tip into the line (`AskLanding`, through the integration the session merges use, with no session or tree) and is reached where the
-    line holds the tip. (TEAMWORK1f)
+    line holds the tip. This repository maps `ask-delivery` to `tools/workflows/daoris-ask.json` (parts, the whole checked on the
+    gates reached, the review, a merge into main) and appoints an agent landing supervisor for it, so its wide review is an agent's of
+    another family and no step waits on the owner; a place at high risk appoints none, and its review waits for the person. (TEAMWORK1f, D296)
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every

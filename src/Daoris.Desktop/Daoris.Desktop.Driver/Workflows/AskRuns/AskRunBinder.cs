@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Binds the delivery run of each planned ask: for every repository on this machine the ask's plan gives a part to, one run of the saved
-/// <c>ask-delivery</c> workflow, keyed by the ask (<see cref="AskRunKey"/>) and bound once, the plan's parts read from the service.
+/// Binds the delivery run of each planned ask, once per repository here its plan gives a part to, keyed by the ask (<see cref="AskRunKey"/>): the
+/// place's workflow for <see cref="TeamKinds.Delivery"/> where it maps one, else the home's saved copy of the shipped <c>ask-delivery</c>.
 /// </summary>
 public sealed class AskRunBinder(string home, IWorkflowStore store, IWorkflowRunStore runs, ITrainPlans plans, Func<DateTimeOffset> clock)
 {
@@ -50,10 +50,10 @@ public sealed class AskRunBinder(string home, IWorkflowStore store, IWorkflowRun
         if (runs.Bound(run)) return (true, null);
         try
         {
-            var workflow = SavedWorkflow();
+            var task = TeamKinds.Chosen(config, at.Repository, at.Workspace, TeamKinds.Delivery) ?? new WorkflowTaskChoice(null, SavedWorkflow());
             var binding = WorkflowRunBindings.Plan(
-                config, store, run, at.Repository, at.Workspace, ask, new WorkflowTaskChoice(null, workflow), plugins, clock(), () => RoleCatalog.ReadHome(home));
-            return (true, runs.Bind(binding) ? $"work  ask #{ask}: its delivery in `{at.Repository}` is run {run}, following `{workflow}` v{binding.Version}." : null);
+                config, store, run, at.Repository, at.Workspace, ask, task, plugins, clock(), () => RoleCatalog.ReadHome(home));
+            return (true, runs.Bind(binding) ? $"work  ask #{ask}: its delivery in `{at.Repository}` is run {run}, following `{binding.Workflow}` v{binding.Version}." : null);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or ChoiceWords)
         {

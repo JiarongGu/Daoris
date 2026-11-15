@@ -219,7 +219,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     `answered` once it moved, `go-ahead-open` under a `go-ahead` and `owner-held` on a line the person stopped or paused. Its
     release reads all again, a moved record going stale, and keeps the node's word on the run's record with its author, which the
     pass applies or drops; a person's word supersedes it, and a `return`'s per-file choice offers a supervisor no act. The head's
-    card says an Accept only when it goes on, by the kind of work its record holds. (D208, D233)
+    card says an Accept only when it goes on, by the kind of work its record holds. A step's subject names the newest session of its
+    run's work in its repository (`LandingSessions`): a chain's quests for a chain's run, and for an ask's delivery run, which has no
+    quest, the quests its ask gave that repository, so the ask's one review is answered as a chain's. Who answers a review is the
+    place's appointment, never the step's: a place appoints a landing supervisor held by an agent and granted `landing.accept`, or
+    none, and its reviews wait for the person. (D208, D233, D296)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a

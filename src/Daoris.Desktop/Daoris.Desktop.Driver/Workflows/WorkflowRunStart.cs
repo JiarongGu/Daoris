@@ -16,6 +16,9 @@ public interface IWorkflowStartWorld
     /// <summary>One ask, or null where the service holds none.</summary>
     Task<AskView?> FindAskAsync(string id, CancellationToken ct);
 
+    /// <summary>The asks' plans, read where a quest may be a part (<see cref="TeamKinds.OfPartAsync"/>); none read where a world has no service.</summary>
+    ITrainPlans Plans => NoPlans.Read;
+
     /// <summary>The machine log's line for a run bound (<see cref="WorkflowLines.Chosen"/>).</summary>
     void Chosen(LandingLine line);
 }
@@ -196,6 +199,7 @@ public static class WorkflowRunStart
         var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
         // A quest no ask published carries its own choice, made on its page before it starts.
         var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
+        task = await TeamKinds.OfPartAsync(config, quest, askId, start.Workspace, task, world.Plans, ct).ConfigureAwait(false);
         return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles);
     }
 
