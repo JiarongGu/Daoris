@@ -28,9 +28,9 @@ public sealed class SessionOpenings
     public async Task<(string? SessionId, string Message)> SessionAsync(
         string questId, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
-        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null) =>
+        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null, WorkStep? step = null) =>
         await OpenRecordAsync(
-                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access), opened => (opened.Session, opened.Message),
+                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access, step), opened => (opened.Session, opened.Message),
                 SessionOpened.Driven, adapter, repository: null, ct, setup)
             .ConfigureAwait(false);
 
@@ -48,12 +48,12 @@ public sealed class SessionOpenings
     public async Task<DestinationOpen> SessionMovingAsync(
         string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords? moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null,
-        string? opens = null)
+        string? opens = null, WorkStep? step = null)
     {
         var left = moves?.From ?? from?.Session ?? throw new ArgumentException("A keyed open names the record it continues.", nameof(from));
         var opened = await _service.Opens
             .OpenAsync(
-                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access),
+                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access, step),
                 opens ?? moves?.Opens ?? MoveWords.DrivenKey(), left, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id)
@@ -75,9 +75,9 @@ public sealed class SessionOpenings
     /// </summary>
     private static OpenSession DrivenOpen(
         string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
-        IReadOnlyDictionary<string, string>? access) =>
+        IReadOnlyDictionary<string, string>? access, WorkStep? step) =>
         new(questId, adapter, doorVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By,
-            access is { Count: > 0 } ? new Dictionary<string, string>(access) : null, "build");
+            access is { Count: > 0 } ? new Dictionary<string, string>(access) : null, "build", Node: step?.Node, Attempt: step?.Attempt);
 
     /// <summary>
     /// Ask the ledger to open a CHAT in a repository — a person's session, serving no quest yet. A refusal is an answer, not an

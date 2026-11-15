@@ -340,16 +340,21 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     head is found by walking `from` forward, at most 256 hops; a cycle or the bound reads as no head. (D167, D212)
 46a. Each agent conversation is a numbered turn of its session (D293 point 5). A record keeps the turns it ran (`turns`, this
     machine's own and answered on loopback only): its open writes the first, with its cause read from its `from` link (`start`
-    where it continues none, `limit` for a limit or a near one, `curve`, `agent`, `person` for a press, else `daoris`), and each
-    wake by the go-on adds one, `person` where any word waiting is the person's or their supervisor's, else `step` with the node
-    and attempt its word's key names (`check_run` for a broker check). The list answers each record its line's turns oldest first,
-    numbered from one, each with the record it ran in, its agent, account, adapter and conversation (`SessionTurnLines`), so a
-    limit or a curve move is the line's next turn and the session's id stays its first record's. A move out of a running turn
+    where it continues none, `limit` for a limit or a near one, `curve`, `agent`, `person` for a press, else `daoris`), the agent,
+    account and adapter it runs on, and the workflow step and attempt it performs where its run's graph has a work (`claimed`) node
+    (`WorkflowBind.Work`, `WorkflowWorkSteps`, sent as the open's `node` and `attempt`; the run's conclusion waits after the same
+    step); each wake by the go-on adds one, `person` where any word waiting is the person's or their supervisor's, else `step`
+    with the node and attempt its word's key names (`check_run` for a broker check), continuing the agent, account and conversation of the turn before it. A move naming a transcript keeps it on the record's last turn, the conversation being that transcript's name.
+    The list answers each record its line's turns oldest first, numbered from one, each with the record it ran in and its own
+    agent, account, adapter and conversation (`SessionTurnLines`), so a limit or a curve move is the line's next turn and the
+    session's id stays its first record's. A move out of a running turn
     hands what the door reported over the record's turns so far (`TurnSpent`, the event log's input and output tokens), and the
     record's last turn keeps its share, that less what the turns before it kept (`SessionTurnKeep.UsageAsync`); the window says
     each turn's input and output on its row. A record from before turns reads its `from` link as its one turn
-    (`SessionTurns.Own`), a read that goes once no such record is kept. The moves still open a record of their own for each
-    move's turn, since a record is one process, account and conversation.
+    (`SessionTurns.Own`), and a turn kept before turns held their own fields reads its record's agent, account, adapter and
+    transcript; both reads go once no such record is kept (TURNSREAD1). The limit and curve moves still open a record of their
+    own for each move's turn, which `OfLine` reads as the line's next turn, since a record's process, tree lease and event log are
+    keyed by its id.
 
 ### The tidy
 

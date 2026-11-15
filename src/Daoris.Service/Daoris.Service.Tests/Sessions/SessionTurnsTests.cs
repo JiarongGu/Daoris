@@ -55,6 +55,37 @@ public sealed class SessionTurnsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_open_names_the_first_turn_s_step_and_attempt()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "claude-code", Now, tree: "/trees/s-8", node: "work", attempt: 1)).Session!;
+
+        var kept = SessionTurns.Own((await _sessions.FindAsync(opened.Id))!);
+
+        Assert.Equal([("work", 1)], kept.Select(turn => (turn.Node!, turn.Attempt!.Value)));
+    }
+
+    [Fact]
+    public async Task A_turn_keeps_its_own_agent_account_and_transcript_which_its_record_no_longer_names()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "claude-code", Now, doorVersion: "2.1", profile: "work", tree: "/trees/s-9")).Session!;
+        await Move(opened.Id, "starting", "working");
+        await _ledger.AdvanceAsync(opened.Id, "awaiting-step", null, null, "/logs/conv-one.jsonl", Now.AddMinutes(1));
+        await _ledger.SayAsync(opened.Id, "Daoris: `check` failed.", null, Now.AddMinutes(3), from: SaidFrom.Daoris, key: "changes/r/check/1");
+        await _ledger.AdvanceAsync(opened.Id, "working", null, null, null, Now.AddMinutes(4));
+
+        var record = (await _sessions.FindAsync(opened.Id))!;
+        var elsewhere = record with { Profile = "home", Door = "codex", DoorVersion = "9", Transcript = "/logs/conv-two.jsonl" };
+        var line = SessionTurns.OfLine([elsewhere]);
+
+        Assert.Equal(
+            [("claude-code", "work", "2.1", "conv-one"), ("claude-code", "work", "2.1", "conv-one")],
+            line.Select(turn => (turn.Agent!, turn.Account!, turn.Adapter!, turn.Conversation!)));
+        Assert.All(line, turn => Assert.Equal("/logs/conv-one.jsonl", turn.Transcript));
+    }
+
+    [Fact]
     public async Task A_limit_move_appends_a_turn_and_the_session_s_id_stays()
     {
         var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);

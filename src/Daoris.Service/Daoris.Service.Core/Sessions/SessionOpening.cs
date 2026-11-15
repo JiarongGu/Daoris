@@ -359,11 +359,12 @@ internal sealed class SessionOpening(
         string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null)
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null,
+        string? node = null, int? attempt = null)
     {
         if (opens is not null)
             return await KeyedOpenAsync(opens, from, moves, inside => OpenAsync(questId, adapter, now,
-                doorVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
+                doorVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor, node: node, attempt: attempt), ct).ConfigureAwait(false);
         if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(adapter))
@@ -480,7 +481,7 @@ internal sealed class SessionOpening(
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
                     doorVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: origin, access: setup, actor: actor)
+                    entryOrigin: origin, access: setup, actor: actor, node: node, attempt: attempt)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

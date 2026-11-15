@@ -25,4 +25,17 @@ public sealed class DevelopmentWorkflowFileTests : IDisposable
         var planned = WorkflowOperations.PlanGraph(_home, null, "daoris-dev", null, "Daoris development", "terminal", "2026-11-15T00:00:00Z", graph);
         Assert.NotNull(planned.Next?.Graph);
     }
+
+    [Fact]
+    public void A_run_bound_to_it_performs_the_graph_s_work_step_its_first_turn_names()
+    {
+        Assert.True(DriverWorkflowsCommand.GraphIn(File(), out var graph));
+        var planned = WorkflowOperations.PlanGraph(_home, null, "daoris-dev", null, "Daoris development", "terminal", "2026-11-15T00:00:00Z", graph);
+        var store = WorkflowPorts.Store(_home);
+        store.Write("daoris-dev", planned.Plan.Result!);
+        var binding = new WorkflowRunBinding("q1", "Owner", "ws", "daoris-dev", WorkflowLevels.Task, DateTimeOffset.Parse("2026-11-15T10:00:00Z")) { Version = 1 };
+
+        Assert.Equal(new WorkStep("work", 1), WorkflowWorkSteps.Of(store, binding));
+        Assert.Null(WorkflowWorkSteps.Of(store, binding with { Workflow = WorkflowSelection.Current }));
+    }
 }

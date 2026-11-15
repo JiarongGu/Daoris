@@ -54,7 +54,7 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
             outcome = await Service.Ledger.OpenAsync(
                 request.Quest!, request.Door!, DateTimeOffset.UtcNow, request.DoorVersion, request.Profile, request.Tree,
                 request.BaseCommit, ct, request.From, request.FromWhy, request.FromBy, request.Access, actor: request.Actor,
-                opens: request.Opens, moves: SessionAnswers.MovesOf(request.Moves));
+                opens: request.Opens, moves: SessionAnswers.MovesOf(request.Moves), node: request.Node, attempt: request.Attempt);
         }
         catch (ArgumentException refused)
         {
