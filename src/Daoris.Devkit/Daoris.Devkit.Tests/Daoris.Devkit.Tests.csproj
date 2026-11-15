@@ -14,5 +14,7 @@
   <ItemGroup>
     <Compile Include="..\..\Daoris.Service\Daoris.Service.Tests\ScratchTemp.cs" Link="ScratchTemp.cs" />
     <Compile Include="..\..\Daoris.Service\Daoris.Service.Tests\ScratchTempTests.cs" Link="ScratchTempTests.cs" />
+    <!-- A scratch folder a just-ended git process may still hold is removed by the one retrying remover, held once. -->
+    <Compile Include="..\..\Daoris.Desktop\Daoris.Desktop.Driver.Tests\Trees\ScratchRemoval.cs" Link="ScratchRemoval.cs" />
   </ItemGroup>
 </Project>

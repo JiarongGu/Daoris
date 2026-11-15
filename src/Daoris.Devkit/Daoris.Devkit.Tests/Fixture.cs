@@ -41,16 +41,9 @@ public sealed class Fixture : IDisposable
 
     public void Dispose()
     {
-        if (!Directory.Exists(Path)) return;
-
-        // A fixture that ran `git init` holds git's objects, which git writes read-only — and a
-        // recursive delete on Windows refuses a read-only file.
-        foreach (var file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
-        {
-            File.SetAttributes(file, FileAttributes.Normal);
-        }
-
-        Directory.Delete(Path, recursive: true);
+        // Git writes its objects read-only and a just-ended git process may still hold the folder on Windows: the
+        // shared remover makes files writable, retries briefly and leaves a still-held folder under the ignored fixtures.
+        Daoris.Desktop.Driver.Tests.ScratchRemoval.Discard(Path);
     }
 
     /// <summary>
