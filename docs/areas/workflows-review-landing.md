@@ -369,7 +369,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
     session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands
     then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
-    saying so; a line's own run and a declaration's runner judge their commit as it stands. The verification tree is prepared as a
+    saying so; a line's own run and a declaration's runner judge their commit as it stands (D299). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
     gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
     preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.
