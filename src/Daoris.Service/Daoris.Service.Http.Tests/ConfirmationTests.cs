@@ -716,7 +716,7 @@ public sealed class ConfirmationTests
             ("POST", Wire, """{"words":"a","Words":"b"}""", "a name twice, as the binder reads names"),
             ("POST", "/api/quests/12/review", """{"verdict":"reviewed","setUp":{"machine":"m-1","sequence":3,"extra":1}}""", "a nested name the door does not bind"),
             ("POST", "/api/asks", """{"then":[{"to":"quest","title":"3","all":true}]}""", "a name inside a list"),
-            ("POST", "/api/quests/12/accept", "{}", "a body on a door that binds none"),
+            ("POST", "/api/quests/12/continue", "{}", "a body on a door that binds none"),
             ("POST", "/api/sync?workspac=default", null, "a query name the door does not bind"),
             ("POST", "/api/sync?workspace=a&Workspace=b", null, "a query name twice"),
             ("POST", "/api/quests/12/done?note=x", """{"note":"y"}""", "a query on a door that reads none"),

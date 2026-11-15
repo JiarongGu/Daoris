@@ -24,9 +24,18 @@ public sealed class MemoryDesk(MemoryOpStore ops)
     public const string Person = "person";
 
     /// <summary>
-    /// An awaiting end decided: by the person where <paramref name="session"/> is null, else refused, its proposer's lineage as its own.
+    /// The approver a row names: the person, or an appointed role and the agent that held it (<c>role:&lt;role&gt; · &lt;agent&gt;</c>), whose
+    /// answer the driver posts with the key through the role's form of the door.
     /// </summary>
-    public async Task<MemoryDecisionOutcome> DecideAsync(string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default)
+    public static string ApproverOf(string? role, string? agent) =>
+        role is not { Length: > 0 } ? Person : agent is { Length: > 0 } ? $"role:{role} · {agent}" : $"role:{role}";
+
+    /// <summary>
+    /// An awaiting end decided: by <paramref name="approver"/> (the person, or an appointed role) where <paramref name="session"/> is null,
+    /// else refused, its proposer's lineage as its own.
+    /// </summary>
+    public async Task<MemoryDecisionOutcome> DecideAsync(
+        string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default, string approver = Person)
     {
         if (await ops.FindAsync(id, ct).ConfigureAwait(false) is not { State: MemoryOpState.Awaiting } awaiting || !MemoryOpKind.Ends(awaiting.Change.Kind))
         {
@@ -44,15 +53,19 @@ public sealed class MemoryDesk(MemoryOpStore ops)
         }
 
         var what = awaiting.Change.Kind == MemoryOpKind.Supersede ? "replacement" : "end";
-        return await ops.DecideAsync(id, Person, approve, now, ct).ConfigureAwait(false) is { } decided
-            ? new(MemoryDecisionRefusal.None, approve ? $"The {what} `{id}` is approved and applies next." : $"The {what} `{id}` is declined.", decided)
+        var by = approver == Person ? "" : $" by {approver}";
+        return await ops.DecideAsync(id, approver, approve, now, ct).ConfigureAwait(false) is { } decided
+            ? new(MemoryDecisionRefusal.None, approve ? $"The {what} `{id}` is approved{by} and applies next." : $"The {what} `{id}` is declined{by}.", decided)
             : new(MemoryDecisionRefusal.NotFound, $"No end awaits its approver as operation `{id}`. Nothing was decided.");
     }
 
-    /// <summary>An ended session's staged rows, and those of the sessions it continues, kept to apply or dropped.</summary>
-    public async Task<MemoryDecisionOutcome> KeepAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default) =>
+    /// <summary>
+    /// An ended session's staged rows, and those of the sessions it continues, kept to apply or dropped: by the person, or by an appointed
+    /// role, which its answer's words name.
+    /// </summary>
+    public async Task<MemoryDecisionOutcome> KeepAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default, string by = Person) =>
         await ops.KeepStagedAsync(session, keep, now, ct).ConfigureAwait(false) is { } moved
-            ? new(MemoryDecisionRefusal.None, keep ? $"{moved} staged change(s) of session `{session}` kept." : $"{moved} staged change(s) of session `{session}` dropped.", Moved: moved)
+            ? new(MemoryDecisionRefusal.None, $"{moved} staged change(s) of session `{session}` {(keep ? "kept" : "dropped")}{(by == Person ? "" : $" by {by}")}.", Moved: moved)
             : new(MemoryDecisionRefusal.Running,
                 $"Refused: session `{session}` is running or unknown here, and its changes are its own until it ends. Nothing was moved.");
 

@@ -224,6 +224,10 @@ public sealed class PersonDoorTableTests
             {
                 ("POST", "/api/quests/{id}/respond", "whileOpen", Person),
                 ("POST", "/api/quests/{id}/set-up", "look", Person),
+                // A workflow's accept steps an appointed role answers, its answer posted by the driver.
+                ("POST", "/api/quests/{id}/accept", "role", Driver),
+                ("POST", "/api/memory/{id}/decide", "role", Driver),
+                ("POST", "/api/sessions/{id}/memory", "role", Driver),
             },
             forms);
         Assert.Same(PersonDoors.Respond, PersonDoors.Find("POST", "/api/quests/{id}/respond"));
