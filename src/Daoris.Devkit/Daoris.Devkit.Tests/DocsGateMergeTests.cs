@@ -37,6 +37,20 @@ public sealed class DocsGateMergeTests : IDisposable
         GitOn(day, "commit", "-q", "-m", message);
     }
 
+    /// <summary>Commits what is already tracked and changed: one git start fewer than <see cref="Commit"/>, for a commit that adds no file.</summary>
+    private void CommitTracked(int day, string message) => GitOn(day, "commit", "-q", "-a", "-m", message);
+
+    /// <summary>
+    /// A fresh repository on main with its identity and line-ending setting written to its config file: each git start
+    /// costs seconds on a scanned machine, and three `git config` starts bought nothing a file write does not.
+    /// </summary>
+    private void InitMain()
+    {
+        Git("init", "-q", "-b", "main");
+        File.AppendAllText(Path.Combine(_fx.Path, ".git", "config"),
+            "[user]\n\tname = Fixture\n\temail = fixture@example.invalid\n[core]\n\tautocrlf = false\n");
+    }
+
     /// <summary>
     /// Main holds the README and its source from day 1; the branch `work` changes the source on day
     /// 5; main then changes <paramref name="onMain"/> on <paramref name="mainDay"/>. The merge is left open, as the
@@ -44,17 +58,14 @@ public sealed class DocsGateMergeTests : IDisposable
     /// </summary>
     private void MergeOpen(string onMain = "other.txt", int mainDay = 2)
     {
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.name", "Fixture");
-        Git("config", "user.email", "fixture@example.invalid");
-        Git("config", "core.autocrlf", "false");
+        InitMain();
         _fx.Write("README.md", "# Fixture\n\nWhat src does.\n");
         _fx.Write("src/a.txt", "one\n");
         Commit(1, "one");
 
         Git("checkout", "-q", "-b", "work");
         _fx.Write("src/a.txt", "one\ntwo\n");
-        Commit(5, "two");
+        CommitTracked(5, "two");
 
         Git("checkout", "-q", "main");
         _fx.Write(onMain, "main\n");
@@ -72,10 +83,10 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>What git says of the checkout, and what its git folder holds: judging a merge leaves all of it.</summary>
     private string State()
     {
-        var gitDir = Git("rev-parse", "--absolute-git-dir");
+        var gitDir = Path.Combine(_fx.Path, ".git");
         var mergeHead = Path.Combine(gitDir, "MERGE_HEAD");
+        // `status --branch` carries HEAD's id (branch.oid), so HEAD needs no start of its own.
         return string.Join("\n--\n",
-            Git("rev-parse", "HEAD"),
             File.Exists(mergeHead) ? File.ReadAllText(mergeHead) : "no merge",
             Git("diff", "--cached", "--name-status"),
             Git("status", "--porcelain=v2", "--branch"),
@@ -177,15 +188,12 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>The README and its source from day 1, then a commit on day 9 touching only the source, under <paramref name="message"/>.</summary>
     private void SourceChangedLater(string message)
     {
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.name", "Fixture");
-        Git("config", "user.email", "fixture@example.invalid");
-        Git("config", "core.autocrlf", "false");
+        InitMain();
         _fx.Write("README.md", "# Fixture\n\nWhat src does.\n");
         _fx.Write("src/a.txt", "one\n");
         Commit(1, "one");
         _fx.Write("src/a.txt", "one // a comment\n");
-        Commit(9, message);
+        CommitTracked(9, message);
     }
 
     [Theory]
