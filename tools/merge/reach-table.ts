@@ -233,7 +233,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: ['service', 'driver'],
     why: "the service's MarkdownFence and the driver's SelfDescription fence twins read the shared fence table (ORIENT2h6, ORIENT2h6b)",
   },
-  { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
+  { paths: ['tools/orient-index-fixtures/**'], gates: ['service', 'tool-tests'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h); the provider census scans every tool" },
   // By its name at any depth of the CLI's sources, which sit in module folders.
   {
     paths: ['src/Daoris.Cli/src/**/documents.ts'],
