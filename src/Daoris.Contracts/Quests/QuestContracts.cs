@@ -56,7 +56,9 @@ public sealed record RespondQuest(
 }
 
 /// <summary>The person's yes to a done's departure from what they required: what it held goes on.</summary>
-public sealed record AcceptQuest(string Id) : IRoute<QuestActionResponse>
+/// <param name="Role">The appointed role that answered instead of the person, posted by the driver alone; null for the person's own yes.</param>
+[OptionalBody]
+public sealed record AcceptQuest(string Id, RoleAnswerWire? Role = null) : IRoute<QuestActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/quests/{id}/accept";

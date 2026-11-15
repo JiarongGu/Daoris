@@ -112,7 +112,8 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
             foreach (var file in Directory.EnumerateFiles(folder, "*.json"))
             {
                 var id = Path.GetFileNameWithoutExtension(file);
-                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
+                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || book.Doors.ContainsKey(id)
+                    || Decided(session, id) is not { } earlier) continue;
                 var closed = earlier.State switch
                 {
                     SupervisorState.Released when earlier.Made => SupervisorState.WentOn,
@@ -147,5 +148,6 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
         book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State, false)
         : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point, course.Kind), course.State, false)
         : SupervisorLandingView.Read(book.Files, session, id) is { } landing ? (landing.Subject, landing.State, landed?.Invoke(landing) == true)
+        : SupervisorDoorAnswers.Read(book.Files, session, id) is { } door ? (door.Subject, door.State, false)
         : null;
 }

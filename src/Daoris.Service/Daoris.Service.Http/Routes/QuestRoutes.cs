@@ -40,8 +40,10 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
         // agent's result is its respond.
         if (host.Mode != ServiceMode.Local) return;
 
+        // The person's yes, or an appointed role's through the driver (`role`); keyless, refused either way.
         routes.Map<AcceptQuest, QuestActionResponse>(async (request, http, ct) =>
-            await StateAsync(http, await Service.Exchange.AcceptAsync(request.Id, DateTimeOffset.UtcNow, ct), ct));
+            host.Gate.Refused(http, RoleAnswerDoors.Accept, form: request.Role is not null) is { } refused ? refused
+            : await StateAsync(http, await Service.Exchange.AcceptAsync(request.Id, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<MarkQuestDone, QuestActionResponse>(async (request, http, ct) =>
             await StateAsync(http, await Service.Exchange.PersonDoneAsync(request.Id, request.Note, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<ReopenQuest, QuestActionResponse>(ReopenAsync);

@@ -223,7 +223,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     run's work in its repository (`LandingSessions`): a chain's quests for a chain's run, and for an ask's delivery run, which has no
     quest, the quests its ask gave that repository, so the ask's one review is answered as a chain's. Who answers a review is the
     place's appointment, never the step's: a place appoints a landing supervisor held by an agent and granted `landing.accept`, or
-    none, and its reviews wait for the person. (D208, D233, D296)
+    none, and its reviews wait for the person. The `memory` kind's `keep` (a session's staged changes, `keep` or `drop`) and `decide`
+    (an end, `approve` or `decline`) and the `departure` kind's `accept` are held and overruled the same way, their files naming the
+    role and its agent, and released by posting to the service's own door with the role named (its `role` form, the driver's), never
+    as the person's; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
+    high-risk place holds none. (D208, D233, D296, D297)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a
