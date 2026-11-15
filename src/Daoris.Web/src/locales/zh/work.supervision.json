@@ -44,6 +44,12 @@
   "work.supervision.allow.reject": "主管已拒绝这一次（{{when}}）：智能体会得知，并在没有它的情况下继续。",
   "work.supervision.allow.leave": "主管已交给你处理（{{when}}）：该调用仍在等你决定。",
   "work.supervision.kind.allow": "一项允许",
+  "work.supervision.door.title": "任命的角色替你作的回答",
+  "work.supervision.door.keep": "{{role}}（{{agent}}）保留这个会话暂存的记忆改动；将于 {{at}} 生效。",
+  "work.supervision.door.drop": "{{role}}（{{agent}}）丢弃这个会话暂存的记忆改动；将于 {{at}} 生效。",
+  "work.supervision.door.approve": "{{role}}（{{agent}}）批准这项记忆的结束；将于 {{at}} 生效。",
+  "work.supervision.door.decline": "{{role}}（{{agent}}）拒绝这项记忆的结束；将于 {{at}} 生效。",
+  "work.supervision.door.accept": "{{role}}（{{agent}}）采纳委托 #{{quest}} 完成时的偏离；将于 {{at}} 生效。",
   "work.supervision.overrule":"否决",
   "work.supervision.overruleRefused": "它已经继续了，无法否决。"
 }

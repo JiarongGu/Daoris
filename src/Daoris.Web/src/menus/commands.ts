@@ -81,10 +81,14 @@ export type KeyBinding = { combo: string; reach: KeyReach };
 /** What the frame does with the session attended on Sessions, which only the frame can; `outputs/<run>` opens that run's outputs. */
 export type FrameIntent =
   | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'atWork' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
-  | `outputs/${string}`;
+  | `outputs/${string}` | `memory/${string}`;
 
 export const outputsOfIntent = (intent: FrameIntent | null | undefined): string | null =>
   intent?.startsWith('outputs/') ? intent.slice('outputs/'.length) || null : null;
+
+/** The session whose Memory section a door opens it at (`memory/<session>`), or null for any other intent. */
+export const memoryOfIntent = (intent: FrameIntent | null | undefined): string | null =>
+  intent?.startsWith('memory/') ? intent.slice('memory/'.length) || null : null;
 
 /** What is true now, which decides what applies. Every field a value, so each world is an argument. */
 export type CommandState = {

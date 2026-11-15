@@ -226,7 +226,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     none, and its reviews wait for the person. The `memory` kind's `keep` (a session's staged changes, `keep` or `drop`) and `decide`
     (an end, `approve` or `decline`) and the `departure` kind's `accept` are held and overruled the same way, their files naming the
     role and its agent, and released by posting to the service's own door with the role named (its `role` form, the driver's), never
-    as the person's; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
+    as the person's: a departure's accepted move names the role (`by`), so the owner's mark never reads it as theirs, and the
+    session's head shows a held one with *Overrule*; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
     high-risk place holds none. (D208, D233, D296, D297)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
