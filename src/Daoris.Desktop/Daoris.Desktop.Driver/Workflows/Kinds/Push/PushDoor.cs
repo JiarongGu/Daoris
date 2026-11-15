@@ -27,6 +27,13 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
     /// <summary>The push act for the landed branch at its tip, and what it came to written: the landing record on success, the node's failure otherwise.</summary>
     internal async Task PerformAsync(PushStart start, CancellationToken ct)
     {
+        if (await PushLineRead.ReadAsync(home, start, ct).ConfigureAwait(false) is { } gone)
+        {
+            log?.Invoke($"push  {start.Unit}: `{start.Node.Id}`: {gone.Said}");
+            if (!gone.Held) Fail(start, gone.Code!);
+            return;
+        }
+
         var ask = new PushAsk(start.Repository, start.Root, "branch", start.Branch, start.Tip, start.Workspace);
         var run = await GitPushActs.PushAsync(new ActRuns(new ActJournal(home)), ask, "workflow", "yes", ct).ConfigureAwait(false);
         Settle(start, run);
@@ -53,15 +60,16 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
         Fail(start);
     }
 
-    private void Fail(PushStart start)
+    private void Fail(PushStart start, string code = Refused)
     {
         var records = new NodeRecordFiles(home, holdsLease);
         records.Edit<bool>(start.Unit, record =>
         {
             var status = WorkPerformer.StatusOf(record, start.Node.Id);
-            if (status.State != NodeStates.Active || status.Binding?.SubjectRevision is { } bound && !string.Equals(bound, start.Tip, StringComparison.Ordinal)) return (null, false);
-            var moved = NodeLifecycle.Apply(start.Node, status, new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Attempt = status.Attempt, Code = Refused });
-            return (moved.Moved ? WorkPerformer.Kept(record, moved, "push-refused", DateTimeOffset.UtcNow) : null, moved.Moved);
+            if (status.State != NodeStates.Active || start.Authority is { } authority && authority.Attempt != status.Attempt) return (null, false);
+            var moved = NodeLifecycle.Apply(start.Node, status,
+                new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Attempt = status.Attempt, Code = code });
+            return (moved.Moved ? WorkPerformer.Kept(record, moved, code, DateTimeOffset.UtcNow) : null, moved.Moved);
         });
     }
 }

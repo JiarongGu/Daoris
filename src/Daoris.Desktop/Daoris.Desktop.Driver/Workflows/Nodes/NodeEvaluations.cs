@@ -122,6 +122,8 @@ internal static class NodeEvaluations
         var run = new WireRun(governed.GraphDigest, governed.Run)
         {
             Clock = clock,
+            LandingUnread = scope.Attributed && landed is null && LandNodeOf(governed) is { } land
+                && before.GetValueOrDefault(land.Id) is { State: NodeStates.Reached, Acceptance.Subject: not null },
             RunBranch = scope.Branch,
             Revisions = revisions,
             Subjects = subjects,

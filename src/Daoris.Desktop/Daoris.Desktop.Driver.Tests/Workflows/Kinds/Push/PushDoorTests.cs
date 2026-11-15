@@ -16,14 +16,15 @@ public sealed class PushDoorTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_scratch);
 
-    private PushStart Start(string tip) => new("unit-a", Push, "engine", "default", _scratch, "feature/x", tip) { Authority = StepAuthority.OfDoor("unit-a", Push.Id, 1) };
+    private PushStart Start(string tip, int attempt = 1) =>
+        new("unit-a", Push, "engine", "default", _scratch, "feature/x", tip) { Authority = StepAuthority.OfDoor("unit-a", Push.Id, attempt) };
 
-    private void Active(string tip) =>
+    private void Active(string bound, int attempt = 1) =>
         new NodeRecordFiles(_scratch, () => true).Write(new NodeRecord("unit-a")
         {
             Statuses = new Dictionary<string, NodeStatus>
             {
-                [Push.Id] = new("unit-a", Push.Id, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = new NodeAcceptance("unit-a", tip, "graph-1", Push.Id, 1, 1) },
+                [Push.Id] = new("unit-a", Push.Id, NodeStates.Active) { Attempt = attempt, Tries = 1, Binding = new NodeAcceptance("unit-a", bound, "graph-1", Push.Id, 1, attempt) },
             },
         });
 
@@ -40,13 +41,23 @@ public sealed class PushDoorTests : IDisposable
     }
 
     [Fact]
-    public void A_refusal_of_an_older_tip_leaves_the_attempt_bound_to_a_newer_one_active()
+    public void A_refusal_of_an_older_attempt_leaves_a_newer_one_active()
     {
-        Active("t2");
+        Active("t1", attempt: 2);
 
         new PushDoor(_scratch, _said.Add, holdsLease: () => true).Settle(Start("t1"), new ActRun("push", null, "Write is denied", true));
 
         Assert.Equal(NodeStates.Active, State());
+    }
+
+    [Fact]
+    public void A_refusal_fails_the_attempt_though_the_unit_is_bound_to_another_commit_than_the_landings_tip()
+    {
+        Active("merge-commit");
+
+        new PushDoor(_scratch, _said.Add, holdsLease: () => true).Settle(Start("t1"), new ActRun("push", null, "no branch named `feature/x` stands, so nothing was pushed.", true));
+
+        Assert.Equal(NodeStates.Failed, State());
     }
 
     [Fact]

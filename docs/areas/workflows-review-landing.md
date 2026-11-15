@@ -237,8 +237,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
     after its step failed), so the run goes on to its monitor and the held list clears. A `push` the line comes to hold is passed over
     the same way while active or unknown, its lost attempt cleared; one the line does not hold whose remote's ref lacks the commit it
-    recorded as pushed is pushed again (`PushAttempts.Due`). A monitor is reached at the commit its own binding holds, whatever tip the
-    landing reads (a squash merge), saying the line holds the branch where it does.
+    recorded as pushed is pushed again (`PushAttempts.Due`). A `push` whose branch no longer stands is never pushed: the door reads the
+    line once (`PushLineRead`, the line's fetch under the git policy and the workspace's own access) and, where the line holds the
+    landing's tip or its content as the same change, writes that proof on the landing (`LandedBranches.Delivered`) for the push to be
+    passed over as delivered; else it fails once, `push-branch-gone` (the line lacks the work) or `push-line-unread` (origin could not be
+    read), worded for the person, and a refusal fails the attempt its start is for. A delivery step past a `land` that reached on a branch
+    no record names any more (`WireRun.LandingUnread`, every record of the work read) is passed over too, saying so. A monitor is reached at the commit its own binding holds, whatever tip the
+    landing reads (a squash merge), saying the line holds the branch where it does; a `push` and a `tidy`, which keep no attempt journal and
+    leave `active` only by their reading's reach, are reached at their own binding's commit too, their evidence naming the landing's.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its
     branch deleted through the journal with its Undo, or kept where a tree has it checked out (a run's own tree then goes at the
     look's sweep, rule 31b), `tidied` written when every part ended, else `partly` for the next pass; nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`

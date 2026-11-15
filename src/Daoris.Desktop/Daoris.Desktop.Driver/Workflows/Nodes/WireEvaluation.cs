@@ -99,7 +99,7 @@ public static class WireEvaluation
         // A step past a landing that leaves it nothing to deliver is Daoris's skip on the path, which holds while that landing does.
         WorkUnit? UnitOf(string id) =>
             subjects.GetValueOrDefault(id) is { Withheld: null, Subject: { } subject } && run.Units.TryGetValue(subject, out var unit) ? unit : null;
-        NodeMove? Undelivered(NodeDeclaration node) => NothingToDeliver.Skip(node, declared, wires, now, UnitOf, run.ScopeOf(node.Id));
+        NodeMove? Undelivered(NodeDeclaration node) => NothingToDeliver.Skip(node, declared, wires, now, UnitOf, run.ScopeOf(node.Id), run.LandingUnread);
         bool Delivers(NodeDeclaration node) => Undelivered(node) is null;
 
         // 1. Invalidations, transitively, before anything is observed: a node whose binding lapsed is invalidated, never

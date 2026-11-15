@@ -14,11 +14,17 @@ internal static class NothingToDeliver
     /// </summary>
     public static NodeMove? Skip(
         NodeDeclaration node, IReadOnlyList<NodeDeclaration> nodes, IReadOnlyList<Wire> wires, IReadOnlyDictionary<string, NodeStatus> statuses,
-        Func<string, WorkUnit?> unitOf, NodeScope scope)
+        Func<string, WorkUnit?> unitOf, NodeScope scope, bool landingUnread = false)
     {
         foreach (var land in nodes.Where(each => each.Kind == NodeKinds.Land && statuses.GetValueOrDefault(each.Id)?.State == NodeStates.Reached))
         {
-            if (!Follows(land.Id, node.Id, wires) || unitOf(land.Id) is not { } unit || Why(node, unit) is not { } words) continue;
+            if (!Follows(land.Id, node.Id, wires)) continue;
+            if (landingUnread && Delivers(node))
+            {
+                return new NodeMove(NodeStates.Skipped, NodeCause.Daoris) { Source = NodeSource.Path, Words = UnreadWords, Scope = scope };
+            }
+
+            if (unitOf(land.Id) is not { } unit || Why(node, unit) is not { } words) continue;
             return new NodeMove(NodeStates.Skipped, NodeCause.Daoris) { Source = NodeSource.Path, Words = words, Scope = scope };
         }
 
@@ -29,9 +35,16 @@ internal static class NothingToDeliver
     internal static string? Why(NodeDeclaration node, WorkUnit unit)
     {
         if (Empty(unit) is { } empty) return empty;
-        if (node.Kind != NodeKinds.Push && PullRequestKind.PluginOf(node.Kind) is null) return null;
+        if (!Delivers(node)) return null;
         return NodeObserving.LandingOf(unit) is { } landing ? OnTheLineWords(landing) : null;
     }
+
+    /// <summary>What a delivery step past a landing whose branch no record names says: there is no branch left to push or to open a pull request for.</summary>
+    private const string UnreadWords =
+        "nothing left to deliver here: the branch its landing made is no longer on record, so there is nothing to push and no pull request to open from this run.";
+
+    /// <summary>Whether <paramref name="node"/> delivers a landed branch: a <c>push</c> or a plugin's pull request.</summary>
+    private static bool Delivers(NodeDeclaration node) => node.Kind == NodeKinds.Push || PullRequestKind.PluginOf(node.Kind) is not null;
 
     internal static bool SkipsWhileActive(NodeDeclaration node) => node.Kind == NodeKinds.Push;
 
