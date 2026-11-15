@@ -55,10 +55,6 @@ public sealed class TreePreparationTests : IDisposable
         Assert.True(TreePrepDeclared.Read(Path.Combine(_scratch, "nowhere")).Empty);
     }
 
-    /// <summary>
-    /// OPENSLOW1: a session's open waited minutes on the declared preparation (TREEPREP1), its agent idle; the tree is handed with what the
-    /// store placed, the session told the declared commands, and nothing of them runs. Each step of the stage is timed.
-    /// </summary>
     [Fact]
     public async Task A_sessions_tree_is_handed_without_waiting_on_the_declared_preparation_and_is_told_it()
     {

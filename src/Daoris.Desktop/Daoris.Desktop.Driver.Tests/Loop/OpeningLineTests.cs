@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>session.opening</c> (OPENSLOW1): a driven session's open up to its agent's spawn, each run stage, each step of its files stage
+/// <c>session.opening</c>: a driven session's open up to its agent's spawn, each run stage, each step of its files stage
 /// and the hand's own preparation timed in the compact line <c>watch.looked</c> carries, written once at the hand.
 /// </summary>
 public sealed class OpeningLineTests : IDisposable

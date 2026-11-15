@@ -465,7 +465,6 @@ public sealed class Driver(
         {
             foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
             {
-                // Each timed by its name for the open's line (`session.opening`), which the hand writes.
                 foreach (var (name, stage) in RunStages.NamedIn(phase))
                 {
                     using (state.Steps.Begin(name))

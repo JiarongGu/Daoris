@@ -26,7 +26,6 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 {
     private const string Zeros = "0000000000000000000000000000000000000000";
 
-    // The step timed now, ended as the next begins or the stage ends.
     private IDisposable? _step;
 
     private readonly List<Noted> _said = [];
@@ -135,7 +134,6 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.AddRange(based.Said);
         At("files.local");
         await CopyLocalAsync(ct).ConfigureAwait(false);
-        // A verification tree regenerates; a session's is handed now and told the declaration, which it runs itself (OPENSLOW1).
         if (unworked && regenerate) At("files.prep");
         if (unworked && regenerate && await TreePreparation.RegenerateAsync(home, repository, root, tree, _said, ct, _visited).ConfigureAwait(false)) return Stop();
         var prepared = unworked && !regenerate ? TreePreparation.Told(root) : null;
@@ -379,7 +377,6 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private async Task InstallAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
         IDisposable admitted;
-        // The wait for its key's lock and the machine's admission, timed apart within the install's step.
         using (steps?.Begin("files.admit")) admitted = await InstallAdmission.TakeAsync(home, repository, tree, dependency, key, ct).ConfigureAwait(false);
         using var admission = admitted;
         if (Placeable(dependency) && await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return;

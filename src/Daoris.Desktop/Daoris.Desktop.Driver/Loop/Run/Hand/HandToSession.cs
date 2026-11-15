@@ -18,7 +18,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var home = context.Home;
         var config = context.Config;
         var state = run.State;
-        // The hand's own preparation up to the spawn, the open's last step (`session.opening`).
         using var hand = state.Steps.Begin("hand");
         var quest = run.Quest;
         var registry = run.Registry;

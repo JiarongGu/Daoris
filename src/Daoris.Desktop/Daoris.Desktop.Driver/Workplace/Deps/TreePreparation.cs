@@ -50,9 +50,8 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
 /// <summary>
 /// What a repository declares to make a tree like its checkout, once its dependencies and machine-local files stand: each <c>regenerate</c>
 /// makes a generated input current, and the <c>treeBaseline</c> records the base a later check reads its reds against. A session's tree
-/// is handed without either, its session told the commands (<see cref="Told"/>): run before the hand they held every open of this
-/// repository minutes with its agent idle (OPENSLOW1), for work only its later checks read, which its agent can run beside its reading.
-/// A verification tree, which no session prepares, runs each <c>regenerate</c> (<see cref="RegenerateAsync"/>), never the baseline.
+/// is handed without either and told them (<see cref="Told"/>): run before the hand they held its open minutes with its agent idle, for
+/// work only its later checks read. A verification tree, which no session prepares, runs each <c>regenerate</c>, never the baseline.
 /// </summary>
 /// <remarks>
 /// Run as a gate's command is (<see cref="IInstallRunner.GateEnvironment"/>), inside the machine's admission, and ended with all it started at the
