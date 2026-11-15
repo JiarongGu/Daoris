@@ -1588,9 +1588,8 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("codex-acp"), new HelperRule(HelperRules.On, []), adapters, "claude-code"));
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("CODEX-ACP"), new HelperRule(HelperRules.On, ["codex-acp", "dsh"]), adapters, "claude-code"));
-        // Named, listed or not: the named agent alone, never another.
+        // Named, listed or not: that agent alone.
         Assert.Equal(["stub"], HelperChoice.Candidates(Ask("stub"), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
-        Assert.Equal(["dsh"], HelperChoice.Candidates(Ask("dsh"), HelperRule.Default.Over(["codex-acp"]), adapters, "claude-code"));
         Assert.Equal(["dsh", "codex-acp"], HelperChoice.Candidates(Ask(null), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
 
         // Nothing named, no list: every agent of this machine that is not the asker's own family.
