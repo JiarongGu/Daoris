@@ -118,10 +118,7 @@ public static class LinePolicyKey
         return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
     }
 
-    /// <summary>
-    /// A policy as <c>SET_LINE</c> takes it on the wire, the keys the file writes, each only where set: what a terminal sends the running
-    /// Daoris so the press and the file hold one policy, <see cref="IntegrateOf"/> reading it back.
-    /// </summary>
+    /// <summary>A policy as <c>SET_LINE</c> takes it, the keys the file writes, each only where set.</summary>
     internal static JsonObject Wire(LandingIntegrate policy)
     {
         var wire = new JsonObject();

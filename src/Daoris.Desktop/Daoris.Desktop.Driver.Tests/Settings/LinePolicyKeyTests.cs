@@ -93,7 +93,6 @@ public sealed class LinePolicyKeyTests
         Assert.Contains(says, problem);
     }
 
-    /// <summary>What a terminal sends the press (<c>Wire</c>) reads back as the policy it was made from, each key set once.</summary>
     [Fact]
     public void A_policy_on_the_wire_reads_back_as_itself()
     {
