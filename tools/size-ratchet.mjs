@@ -34,10 +34,7 @@ export function scanSizes(root, { files = repositoryFiles(root), read = (path) =
   return Object.fromEntries(Object.entries(over).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-/**
- * The breaches of `list` (path -> bytes) against `found` (the same, from the tree). A file does not pass the size `base` (main's list
- * at the merge-base) gives it, so a branch that raised its own entry is red here as at the merge; with no `base` the list is the limit.
- */
+/** The breaches of `list` (path -> bytes) against `found` (the same, from the tree), no file past its size in `base` (main's list) where given. */
 export function checkSizes(found, list, base = null) {
   const problems = [];
   for (const [path, size] of Object.entries(found)) {
@@ -57,7 +54,7 @@ export function checkSizes(found, list, base = null) {
   return problems;
 }
 
-/** The list as main holds it at its merge-base with this tree's HEAD, the file the merge judges the branch against. */
+/** The list as main holds it at the merge-base. */
 export function baseList(root) {
   const git = (args) => execGit(args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const base = git(['merge-base', 'main', 'HEAD']).trim();
