@@ -46,8 +46,8 @@ Declared in `daoris.json`; look here before searching.
    with another agent; record why and go on. A question to the owner says what it is, what yes does, what no does
    and where to look. Work you cannot finish is reported as "gave up" with what you tried, never asked about.
 2. **Ownership is local.** Change only this repository. What another needs is a request to whoever works there, with
-   the evidence: a quest where a request system runs, else a message to its owner. Already touched one? Stop and say so
-   (`reaching-in`).
+   the evidence: a quest where a request system exists, a message to its owner where none does. Already touched one?
+   Stop and say so (`reaching-in`).
 3. **Delivery follows risk, as the repository declares it:** what may run, land and publish unasked is a declaration
    its brief names; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
    beyond the change) and close (details, edge cases, tests), from different agent families where two are ready.

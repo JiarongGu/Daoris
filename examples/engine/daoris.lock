@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "7bb08d97df143b7f7a186069defcefd933d175cec2985851deafb1803c33769b",
+  "canonDigest": "ab35f743a4808103eba868cb52ba14369981ef21a670f60c1942215f41e595d2",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -114,7 +114,7 @@
       "source": "core/rules/every-session.md",
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
-      "sha256": "3e5002df0780bd5e175eafe99fc0ddbf8a6ae4aed36c78f6a38140bf13a44c64",
+      "sha256": "e7842d4cc9ccd002b1ae3c39cdc6382a3cd4e256323794a8f2922d450f48c421",
       "in": "AGENTS.md"
     },
     {
