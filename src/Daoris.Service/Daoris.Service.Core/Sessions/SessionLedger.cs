@@ -111,8 +111,9 @@ public sealed class SessionLedger(
         string? doorVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null) =>
-        opening.OpenAsync(questId, adapter, now, doorVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, access, actor, opens, moves);
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null,
+        string? node = null, int? attempt = null) =>
+        opening.OpenAsync(questId, adapter, now, doorVersion, profile, tree, baseCommit, ct, from, fromWhy, fromBy, access, actor, opens, moves, node, attempt);
 
     /// <summary>Record the access mode an Ask Daoris conversation goes on under (HELPMODE1a2); see <see cref="SessionKeeps.KeepHelpModeAsync"/>.</summary>
     /// <exception cref="ArgumentException">A mode the ledger does not know.</exception>

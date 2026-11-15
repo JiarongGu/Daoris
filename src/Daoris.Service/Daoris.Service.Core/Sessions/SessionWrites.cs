@@ -24,7 +24,7 @@ internal sealed class SessionWrites(SessionStore store)
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
-        string? performs = null) => _db.RunAsync<Session>(async () =>
+        string? performs = null, string? node = null, int? attempt = null) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link: the three are kept together or not at all.
         var continues = Blank(from);
@@ -58,7 +58,12 @@ internal sealed class SessionWrites(SessionStore store)
         {
             HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null), Access = access is { Count: > 0 } ? access : null,
             Line = await SessionLines.OfNewAsync(_db, id, continues, quest, kind, ct).ConfigureAwait(false),
-            Turns = [SessionTurns.First(continues is null ? null : Blank(fromWhy), continues is null ? null : Blank(fromBy), now)],
+            Turns =
+            [
+                SessionTurns.First(
+                    continues is null ? null : Blank(fromWhy), continues is null ? null : Blank(fromBy), now, adapter, session.Profile, session.DoorVersion,
+                    Blank(node), node is null ? null : attempt),
+            ],
         };
 
         await using var command = _db.Command();
@@ -130,6 +135,7 @@ internal sealed class SessionWrites(SessionStore store)
             NoteParts = note is null ? session.NoteParts : noteParts,
             Evidence = evidence ?? session.Evidence,
             Transcript = transcript ?? session.Transcript,
+            Turns = transcript is null || session.Turns is null ? session.Turns : SessionTurns.Sealed(session.Turns, transcript),
             Updated = now,
             Interrupted = interrupted || (!forgive && session.Interrupted),
             Limit = limit || (!forgive && session.Limit),
@@ -141,9 +147,10 @@ internal sealed class SessionWrites(SessionStore store)
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, note_parts = $noteParts, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
-              said = CASE WHEN $clear THEN NULL ELSE said END,
+              said = CASE WHEN $clear THEN NULL ELSE said END, turns = COALESCE($turns, turns),
               revision = {NextRevision} WHERE id = $id
             """;
+        command.Parameters.AddWithValue("$turns", transcript is null || moved.Turns is null ? DBNull.Value : SessionTurns.Write(moved.Turns));
         command.Parameters.AddWithValue("$noteParts", (object?)moved.NoteParts ?? DBNull.Value);
         command.Parameters.AddWithValue("$clear", clearSaid ? 1 : 0);
         command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);

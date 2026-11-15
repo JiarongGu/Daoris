@@ -25,6 +25,14 @@ public sealed class WorkflowBindWaitsTests
     }
 
     [Fact]
+    public void A_first_turn_waits_after_the_graph_s_work_step_and_its_attempt()
+    {
+        var bound = Bound("daoris-dev") with { Work = new WorkStep("work", 1) };
+
+        Assert.Equal(new StepWait("q1", "work", 1), bound.WaitsAfter(null));
+    }
+
+    [Fact]
     public void A_run_under_no_chosen_workflow_waits_on_nothing()
     {
         Assert.Null(Bound(WorkflowSelection.Current).WaitsAfter(null));

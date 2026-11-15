@@ -305,19 +305,19 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
-        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null, IStartHold? starting = null)
+        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null, IStartHold? starting = null, WorkStep? step = null)
     {
         Governed(tree, starting);
-        return Openings.SessionAsync(questId, adapter, doorVersion, profile, tree, baseCommit, ct, setup, from, access);
+        return Openings.SessionAsync(questId, adapter, doorVersion, profile, tree, baseCommit, ct, setup, from, access, step);
     }
 
     public Task<DestinationOpen> OpenSessionMovingAsync(
         string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords? moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null,
-        string? opens = null, IStartHold? starting = null)
+        string? opens = null, IStartHold? starting = null, WorkStep? step = null)
     {
         Governed(tree, starting);
-        return Openings.SessionMovingAsync(questId, adapter, doorVersion, profile, tree, baseCommit, from, moves, ct, setup, access, opens);
+        return Openings.SessionMovingAsync(questId, adapter, doorVersion, profile, tree, baseCommit, from, moves, ct, setup, access, opens, step);
     }
 
     /// <summary>An open in a tree is a start's, asked inside its hold; one with no tree starts in nothing a hold covers.</summary>

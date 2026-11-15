@@ -46,20 +46,37 @@ public static class SessionTurns
         _ => fromBy == "person" ? Person : Daoris,
     };
 
-    /// <summary>A record's first turn as its open writes it.</summary>
-    public static SessionTurn First(string? fromWhy, string? fromBy, DateTimeOffset at) => new(1, CauseOf(fromWhy, fromBy), at);
+    /// <summary>
+    /// A record's first turn as its open writes it: the agent, account and adapter it runs on, and the workflow step and attempt it
+    /// performs where the graph names one.
+    /// </summary>
+    public static SessionTurn First(
+        string? fromWhy, string? fromBy, DateTimeOffset at, string? agent, string? account, string? adapter, string? node = null, int? attempt = null) =>
+        new(1, CauseOf(fromWhy, fromBy), at) { Agent = agent, Account = account, Adapter = adapter, Node = node, Attempt = attempt };
 
     /// <summary>
     /// The turn a wake adds to a record: the person's when any word waiting is theirs or their supervisor's, else the step's whose word
-    /// woke it, with the node and attempt its key names.
+    /// woke it, with the node and attempt its key names. It continues its record's conversation, so it keeps the agent, account, adapter and
+    /// transcript of the turn before it.
     /// </summary>
     public static SessionTurn Woken(Session record, DateTimeOffset at)
     {
-        var number = Own(record).Count + 1;
-        if (record.Said.Count == 0 || record.Said.Any(word => word.Persons || word.Supervisors)) return new(number, Person, at);
+        var own = Own(record);
+        var last = own.OrderBy(turn => turn.Number).LastOrDefault();
+        var number = own.Count + 1;
+        var kept = new SessionTurn(number, Person, at)
+        {
+            Agent = last?.Agent ?? record.Door, Account = last?.Account ?? record.Profile, Adapter = last?.Adapter ?? record.DoorVersion,
+            Transcript = last?.Transcript ?? record.Transcript,
+        };
+        if (record.Said.Count == 0 || record.Said.Any(word => word.Persons || word.Supervisors)) return kept;
         var (node, attempt) = StepOf(record.Said.Select(word => word.Key).LastOrDefault(key => key is { Length: > 0 }));
-        return new SessionTurn(number, Step, at) { Node = node, Attempt = attempt };
+        return kept with { Cause = Step, Node = node, Attempt = attempt };
     }
+
+    /// <summary>The turns with the last one's transcript set, where a move names the captured run its turn wrote.</summary>
+    public static IReadOnlyList<SessionTurn> Sealed(IReadOnlyList<SessionTurn> turns, string transcript) =>
+        turns.Count == 0 ? turns : [.. turns.Take(turns.Count - 1), turns[^1] with { Transcript = transcript }];
 
     /// <summary>
     /// The node and attempt a step's word key names: a broker check's (<c>check/&lt;ask&gt;</c>) is the <c>check_run</c> step, a run's
@@ -78,11 +95,12 @@ public static class SessionTurns
     /// That read stands while such a record is kept, and goes when none is.
     /// </summary>
     public static IReadOnlyList<SessionTurn> Own(Session record) =>
-        record.Turns ?? [First(record.FromWhy, record.FromBy, record.Created)];
+        record.Turns ?? [First(record.FromWhy, record.FromBy, record.Created, null, null, null)];
 
     /// <summary>
-    /// The session's turns across the records of its line, oldest first and numbered from one, each named with the record it ran in, its
-    /// agent, account, adapter and conversation; a turn ends where the next begins, or where its record ended.
+    /// The session's turns across the records of its line, oldest first and numbered from one, each named with the record it ran in and its
+    /// agent, account, adapter and transcript, as the turn kept them; a turn kept before turns kept their own reads its record's. A turn
+    /// ends where the next begins, or where its record ended.
     /// </summary>
     public static IReadOnlyList<SessionTurn> OfLine(IEnumerable<Session> members)
     {
@@ -90,13 +108,13 @@ public static class SessionTurns
         var turns = new List<SessionTurn>();
         foreach (var record in ordered)
         {
-            var conversation = record.Transcript is { Length: > 0 } transcript ? Path.GetFileNameWithoutExtension(transcript) : null;
             foreach (var turn in Own(record).OrderBy(turn => turn.Number))
             {
                 turns.Add(turn with
                 {
-                    Number = turns.Count + 1, Part = record.Id, Agent = record.Door, Account = record.Profile, Adapter = record.DoorVersion,
-                    Conversation = conversation, Ended = record.Active ? null : record.Updated,
+                    Number = turns.Count + 1, Part = record.Id, Agent = turn.Agent ?? record.Door, Account = turn.Account ?? record.Profile,
+                    Adapter = turn.Adapter ?? record.DoorVersion, Transcript = turn.Transcript ?? record.Transcript,
+                    Ended = record.Active ? null : record.Updated,
                 });
             }
         }
@@ -107,7 +125,10 @@ public static class SessionTurns
 
     /// <summary>The turns as the record's column keeps them.</summary>
     public static string Write(IReadOnlyList<SessionTurn> turns) =>
-        JsonSerializer.Serialize(turns.Select(turn => new Kept(turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Input, turn.Output)), Options);
+        JsonSerializer.Serialize(
+            turns.Select(turn => new Kept(
+                turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Input, turn.Output, turn.Agent, turn.Account, turn.Adapter, turn.Transcript)),
+            Options);
 
     /// <summary>The turns a record's column keeps; null for a record from before the column, or one that does not read.</summary>
     public static IReadOnlyList<SessionTurn>? Read(string? kept)
@@ -116,7 +137,11 @@ public static class SessionTurns
         try
         {
             return JsonSerializer.Deserialize<List<Kept>>(kept, Options)?
-                .Select(turn => new SessionTurn(turn.N, turn.Cause, turn.At) { Node = turn.Node, Attempt = turn.Attempt, Input = turn.Input, Output = turn.Output })
+                .Select(turn => new SessionTurn(turn.N, turn.Cause, turn.At)
+                {
+                    Node = turn.Node, Attempt = turn.Attempt, Input = turn.Input, Output = turn.Output,
+                    Agent = turn.Agent, Account = turn.Account, Adapter = turn.Adapter, Transcript = turn.Transcript,
+                })
                 .ToList();
         }
         catch (JsonException)
@@ -125,5 +150,7 @@ public static class SessionTurns
         }
     }
 
-    private sealed record Kept(int N, string Cause, DateTimeOffset At, string? Node, int? Attempt, long? Input, long? Output);
+    private sealed record Kept(
+        int N, string Cause, DateTimeOffset At, string? Node, int? Attempt, long? Input, long? Output, string? Agent, string? Account, string? Adapter,
+        string? Transcript);
 }

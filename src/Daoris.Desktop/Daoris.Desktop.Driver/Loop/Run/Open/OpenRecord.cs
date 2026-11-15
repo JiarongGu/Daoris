@@ -87,14 +87,14 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
             : await service
                 .OpenSessionMovingAsync(
                     quest.Id, agent, selection.Version, selection.Profile, workTree, before, continues, moves, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey, starting: starting)
+                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey, starting: starting, step: state.BoundIfAny?.Work)
                 .ConfigureAwait(false);
         var (sessionId, message) = keyed is not null
             ? (keyed.SessionId, keyed.Message)
             : await service
                 .OpenSessionAsync(
                     quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values, starting: starting)
+                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values, starting: starting, step: state.BoundIfAny?.Work)
                 .ConfigureAwait(false);
         if (sessionId is null)
         {

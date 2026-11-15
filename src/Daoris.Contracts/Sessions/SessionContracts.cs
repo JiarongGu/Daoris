@@ -76,7 +76,8 @@ public sealed record OpenMovesRequest(string? From, List<string>? Words, List<st
 public sealed record OpenSession(
     string? Quest, string? Door, string? DoorVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null, OpenMovesRequest? Moves = null)
+    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null, OpenMovesRequest? Moves = null,
+    string? Node = null, int? Attempt = null)
     : IRoute<SessionOpenResponse>
 {
     public static string Method => "POST";

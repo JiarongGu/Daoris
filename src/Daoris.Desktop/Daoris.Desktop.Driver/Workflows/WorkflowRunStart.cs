@@ -53,8 +53,13 @@ public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string
     /// <summary>Whether the start holds on it: its run is not bound, so no take may go on under a graph it is not bound to.</summary>
     public bool Holds => Came is WorkflowBindCame.Unread or WorkflowBindCame.Failed;
 
+    /// <summary>The graph's work step its quest's session performs, which its first turn names; null where the run's graph names none.</summary>
+    public WorkStep? Work { get; init; }
+
     public StepWait? WaitsAfter(QuestView? handed) =>
-        this is { Run: { Length: > 0 } run, Binding: { IsCurrent: false } } ? new StepWait(run, Tip: handed?.Submission?.Commit) : null;
+        this is { Run: { Length: > 0 } run, Binding: { IsCurrent: false } }
+            ? new StepWait(run, Work?.Node, Work?.Attempt, handed?.Submission?.Commit)
+            : null;
 }
 
 /// <summary>
@@ -147,7 +152,7 @@ public static class WorkflowRunStart
             run = quest.Id;
             run = await RunOfAsync(quest, world, every, ct).ConfigureAwait(false);
             if (!WorkflowRunBindings.IsRunId(run)) return new(quest, WorkflowBindCame.None, null, null, null);
-            if (runs.Bound(run)) return Kept(quest, runs, run);
+            if (runs.Bound(run)) return Kept(quest, runs, store, run);
 
             var binding = await PlanAsync(start, run, world, store, config, plugins, now, every, roles, ct).ConfigureAwait(false);
             hold?.Assert("a run's bind");
@@ -155,12 +160,12 @@ public static class WorkflowRunStart
             {
                 // Another start of the run bound it first, between the look above and this write: its
                 // binding is the run's, and this start takes under it.
-                return Kept(quest, runs, run);
+                return Kept(quest, runs, store, run);
             }
 
             // The machine log keeps which level chose and whether a named version or Current.
             world.Chosen(WorkflowLines.Chosen(binding));
-            return new(quest, WorkflowBindCame.Bound, run, binding, null);
+            return new(quest, WorkflowBindCame.Bound, run, binding, null) { Work = WorkflowWorkSteps.Of(store, binding) };
         }
         catch (Exception error) when (Unbound(error, ct))
         {
@@ -195,9 +200,9 @@ public static class WorkflowRunStart
     }
 
     /// <summary>The binding kept for <paramref name="run"/>, read; one that does not read holds the start, since what its take names is not known.</summary>
-    private static WorkflowBind Kept(QuestView quest, IWorkflowRunStore runs, string run) =>
+    private static WorkflowBind Kept(QuestView quest, IWorkflowRunStore runs, IWorkflowStore store, string run) =>
         runs.Read(run) is { } kept
-            ? new(quest, WorkflowBindCame.Already, run, kept, null)
+            ? new(quest, WorkflowBindCame.Already, run, kept, null) { Work = WorkflowWorkSteps.Of(store, kept) }
             : new(quest, WorkflowBindCame.Unread, run, null,
                 "its run's binding could not be read here, so the workflow its quest is taken under is not known, and none is put in its place.");
 
