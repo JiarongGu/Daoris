@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** The longest a unit test may take, in milliseconds. */
@@ -31,16 +31,18 @@ export function parseTrx(text, gate) {
 export function readRecords(dir) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter((name) => name.endsWith('.trx'))
-    .map((name) => parseTrx(readFileSync(join(dir, name), 'utf8'), name.replace(/(\.logged-\d+)?\.trx$/, '')));
+    .map((name) => ({
+      ...parseTrx(readFileSync(join(dir, name), 'utf8'), name.replace(/(\.logged-\d+)?\.trx$/, '')), at: statSync(join(dir, name)).mtimeMs,
+    }));
 }
 
-/** The slowest run of each unit-tier test across `records`, by `Class.test`, with the gate that ran it. */
-export function slowest(records) {
+/** The newest run of each unit-tier test across `records`, by `Class.test`, with the gate that ran it: not the worst run ever kept. */
+export function latestRuns(records) {
   const found = new Map();
   for (const record of records.filter((each) => each.tier === 'unit')) {
     for (const test of record.tests ?? []) {
       const key = `${test.class}.${test.test}`;
-      if (!found.has(key) || found.get(key).ms < test.ms) found.set(key, { ms: test.ms, gate: record.gate });
+      if (!found.has(key) || found.get(key).at <= (record.at ?? 0)) found.set(key, { ms: test.ms, gate: record.gate, at: record.at ?? 0 });
     }
   }
   return found;
@@ -52,7 +54,7 @@ export function slowest(records) {
  */
 export function checkBudget(records, list) {
   const problems = [];
-  const found = slowest(records);
+  const found = latestRuns(records);
   for (const [key, { ms, gate }] of found) {
     const listed = list.slowTests[key];
     if (listed === undefined && ms > BUDGET_MS) {
@@ -68,5 +70,5 @@ export function checkBudget(records, list) {
 
 /** The tests over the budget in `records`, by name, for the list's first writing. */
 export function slowTestsOf(records) {
-  return Object.fromEntries([...slowest(records)].filter(([, { ms }]) => ms > BUDGET_MS).map(([key, { ms }]) => [key, ms]).sort());
+  return Object.fromEntries([...latestRuns(records)].filter(([, { ms }]) => ms > BUDGET_MS).map(([key, { ms }]) => [key, ms]).sort());
 }

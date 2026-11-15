@@ -89,6 +89,7 @@ public sealed class NewerIndexTests : IDisposable
     /// and nothing forgets which commit the index holds (nothing is rebuilt).
     /// </summary>
     [Fact]
+    [Trait(Category.Name, Category.Process)]
     public async Task A_composed_service_over_a_newer_index_starts_and_its_records_work_while_its_index_refuses()
     {
         var options = new ServiceOptions(Path.Combine(_root, "unread"), Database);
@@ -264,6 +265,7 @@ public sealed class NewerIndexTests : IDisposable
     /// machine log as <c>index.refused</c>, by the two versions and never a path.
     /// </summary>
     [Fact]
+    [Trait(Category.Name, Category.Process)]
     public async Task The_connector_over_a_newer_index_starts_and_says_so_once()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Database)!);

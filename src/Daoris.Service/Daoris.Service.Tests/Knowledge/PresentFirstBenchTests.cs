@@ -10,6 +10,7 @@ namespace Daoris.Service.Tests;
 /// SQLite, words only. A present question's area document answers first for most of them, and a history question's
 /// record is still within its first three. Each run writes its scorecard, the words' own rank beside it.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class PresentFirstBenchTests(PresentFirstBenchTests.Checkout checkout, ITestOutputHelper output)
     : IClassFixture<PresentFirstBenchTests.Checkout>
 {
