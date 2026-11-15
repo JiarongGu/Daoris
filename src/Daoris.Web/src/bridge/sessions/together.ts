@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { askHeld } from '../state/held';
+import { askHeld, fieldsOf } from '../state/held';
 import { useShenora } from '@shenora/react';
 import type { TogetherView } from '../../work/head/TogetherDoor';
 import { call } from '../call';
@@ -22,7 +22,7 @@ export const useTogether = (session: string | null | undefined): TogetherView | 
   const queryKey = ['sessions', 'together', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld('TOGETHER', client, queryKey, { session: session ?? '' }, (told) => told as { operation?: TogetherView | null }),
+    queryFn: () => askHeld('TOGETHER', client, queryKey, { session: session ?? '' }, fieldsOf<{ operation?: TogetherView | null }>),
     enabled: isAvailable && Boolean(session),
     staleTime: 10_000,
   });
