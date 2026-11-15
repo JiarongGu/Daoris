@@ -13,17 +13,17 @@ const jsonLines = file => {
 };
 
 /** A branch's newest merge-record row, the passing one where it has one. */
-export function mergeRowOf(home, branch) {
-  const rows = readRecords(join(home, MERGE_RECORD)).filter(r => r.branch === branch);
+export function mergeRowOf(checkout, branch) {
+  const rows = readRecords(join(checkout, MERGE_RECORD)).filter(r => r.branch === branch);
   return rows.filter(r => r.passed).at(-1) ?? rows.at(-1) ?? null;
 }
 
 /** Every branch that landed (a passing merge-record row), with whether it counts red and why. */
-export function landedBranches(home) {
-  const heavy = readHeavy(home);
-  const ci = jsonLines(join(home, CI_RUNS)).filter(r => r.finished);
+export function landedBranches(checkout) {
+  const heavy = readHeavy(checkout);
+  const ci = jsonLines(join(checkout, CI_RUNS)).filter(r => r.finished);
   const byBranch = new Map();
-  for (const r of readRecords(join(home, MERGE_RECORD))) byBranch.set(r.branch, [...(byBranch.get(r.branch) ?? []), r]);
+  for (const r of readRecords(join(checkout, MERGE_RECORD))) byBranch.set(r.branch, [...(byBranch.get(r.branch) ?? []), r]);
   const out = [];
   for (const [branch, rows] of byBranch) {
     const landed = rows.filter(r => r.passed).at(-1);
@@ -48,9 +48,9 @@ const rate = (landed, now, days) => {
 };
 
 /** Main's measures: the red rate of the landings of the last 7 and 30 days, and the days since the CI's last green. */
-export function mainMeasures(home, now = Date.now()) {
-  const landed = landedBranches(home);
-  const green = json(join(home, CI_STATE))?.lastGreen;
+export function mainMeasures(checkout, now = Date.now()) {
+  const landed = landedBranches(checkout);
+  const green = json(join(checkout, CI_STATE))?.lastGreen;
   const at = green?.at && Number.isFinite(Date.parse(green.at)) ? green.at : null;
   return {
     redRate7d: rate(landed, now, 7), redRate30d: rate(landed, now, 30),

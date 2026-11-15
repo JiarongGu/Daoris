@@ -8,52 +8,52 @@ import { CLASSES } from './read-class.mjs';
 export const LANDINGS = 'local/metrics/landings.jsonl';
 
 /** One landed commit's record: the builder's measures, the gates' row for its branch, main's standing. A source with nothing is null and says where it is logged. */
-export function landingRecord(home, { commit, branch, at = new Date().toISOString() }, options = {}) {
-  const built = builderOf(branch, home, options);
-  const row = mergeRowOf(home, branch);
+export function landingRecord(checkout, { commit, branch, at = new Date().toISOString() }, options = {}) {
+  const built = builderOf(branch, checkout, options);
+  const row = mergeRowOf(checkout, branch);
   return {
     schema: 2, commit, branch, at,
     builder: built.builder, ...(built.builder ? {} : { builderMissing: built.missing }),
     gates: row ? { passed: row.passed, firstPass: row.firstPass, ms: row.ms } : null,
     ...(row ? {} : { gatesMissing: missing(`${branch} in local/merge-record.jsonl`) }),
-    main: mainMeasures(home, Date.parse(at)),
+    main: mainMeasures(checkout, Date.parse(at)),
   };
 }
 
 /** One record appended to the machine-local log. Never throws: a measure that fails must not hold a landing. */
-export function recordLanding(home, landing, options = {}) {
+export function recordLanding(checkout, landing, options = {}) {
   try {
-    const file = join(home, LANDINGS);
+    const file = join(checkout, LANDINGS);
     mkdirSync(dirname(file), { recursive: true });
-    appendFileSync(file, `${JSON.stringify(landingRecord(home, landing, options))}\n`);
+    appendFileSync(file, `${JSON.stringify(landingRecord(checkout, landing, options))}\n`);
     return true;
   } catch {
     return false;
   }
 }
 
-export function readLandings(home, { since } = {}) {
+export function readLandings(checkout, { since } = {}) {
   let text = '';
-  try { text = readFileSync(join(home, LANDINGS), 'utf8'); } catch { return []; }
+  try { text = readFileSync(join(checkout, LANDINGS), 'utf8'); } catch { return []; }
   return text.split(/\r?\n/).filter(Boolean).flatMap(l => { try { return [JSON.parse(l)]; } catch { return []; } })
     .filter(r => !since || r.at.slice(0, 10) >= since);
 }
 
 /** A schema-1 record has no classes: its builder's transcript, where it stands, gives them. */
-function reread(record, home, options) {
+function reread(record, checkout, options) {
   if (record.schema !== 1 || !record.builder || record.builder.preEditBytes === null) return record;
-  const built = builderOf(record.branch, home, options);
+  const built = builderOf(record.branch, checkout, options);
   return built.builder ? { ...record, builder: built.builder } : record;
 }
 
 /** The log's records, and for each branch the merge record shows landed before the log began, a record built now from the same sources (commit null). */
-export function landingsSince(home, { since, before, options } = {}) {
+export function landingsSince(checkout, { since, before, options } = {}) {
   const early = r => !before || Date.parse(r.at) < Date.parse(before);
-  const logged = readLandings(home, { since }).filter(early).map(r => reread(r, home, options));
-  const known = new Set(readLandings(home).map(r => r.branch));
-  const history = landedBranches(home)
+  const logged = readLandings(checkout, { since }).filter(early).map(r => reread(r, checkout, options));
+  const known = new Set(readLandings(checkout).map(r => r.branch));
+  const history = landedBranches(checkout)
     .filter(l => !known.has(l.branch) && (!since || l.at.slice(0, 10) >= since) && early(l))
-    .map(l => landingRecord(home, { commit: null, branch: l.branch, at: l.at }, options));
+    .map(l => landingRecord(checkout, { commit: null, branch: l.branch, at: l.at }, options));
   return [...history, ...logged];
 }
 
@@ -77,7 +77,7 @@ function byClassOf(edited) {
 }
 
 /** The three measures over a set of landing records: the context read before the first edit, the change's wall time and tokens, main's standing. */
-export function summarizeLandings(records, home, now = Date.now()) {
+export function summarizeLandings(records, checkout, now = Date.now()) {
   const built = records.filter(r => r.builder);
   const edited = built.filter(r => r.builder.preEditBytes !== null);
   return {
@@ -91,6 +91,6 @@ export function summarizeLandings(records, home, now = Date.now()) {
     change: built.length
       ? { meanWallMinutes: mean(built.map(r => r.builder.wallMinutes)), tokens: Object.fromEntries(['input', 'output', 'cacheRead', 'cacheWrite'].map(k => [k, built.reduce((n, r) => n + r.builder.tokens[k], 0)])) }
       : missing('no landing in the range has a builder transcript'),
-    main: mainMeasures(home, now),
+    main: mainMeasures(checkout, now),
   };
 }

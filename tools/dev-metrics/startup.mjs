@@ -68,12 +68,12 @@ function runOnce(tree, model) {
 }
 
 /** The runs, in a throwaway worktree beside the checkout (never inside it, where the checkout's own brief would load too), one at a time; the worktree goes through the removal tool. Rows are appended to the machine-local log. */
-export function runStartup(home, models = MODELS) {
-  const tree = resolve(dirname(home), `.daoris-startup-${Date.now()}`);
-  const log = join(home, STARTUP);
+export function runStartup(checkout, models = MODELS) {
+  const tree = resolve(dirname(checkout), `.daoris-startup-${Date.now()}`);
+  const log = join(checkout, STARTUP);
   mkdirSync(dirname(log), { recursive: true });
   const rows = [];
-  git(home, ['worktree', 'add', '--detach', tree, 'HEAD']);
+  git(checkout, ['worktree', 'add', '--detach', tree, 'HEAD']);
   try {
     const setup = spawnSync('node', ['tools/worktree-setup.mjs'], { cwd: tree, stdio: 'inherit', windowsHide: true, timeout: 900_000 });
     if (setup.status !== 0) throw new Error('worktree-setup failed in the throwaway worktree');
@@ -86,7 +86,7 @@ export function runStartup(home, models = MODELS) {
       rows.push(row);
     }
   } finally {
-    removeWorktree(home, tree, { force: true });
+    removeWorktree(checkout, tree, { force: true });
   }
   return rows;
 }
