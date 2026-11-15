@@ -23,6 +23,9 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
     public bool Recorded { get; init; }
 
+    /// <summary>Whether a session of this machine waits on its steps (<see cref="RunWaiters"/>): one at its end is governed for its end alone.</summary>
+    public bool Waited { get; init; }
+
     /// <summary>A conversation's run: the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
     public ChatCandidateFile? Candidate { get; init; }
 
@@ -39,9 +42,8 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
 }
 
 /// <summary>
-/// The home's runs bound to graph versions : <c>&lt;home&gt;/workflows/runs/</c> listed, each
-/// binding read only when its file is new or changed after this process read it, and a graph run's version and end read once and kept. A
-/// home with no runs folder costs one stat; a run bound to Current or a steps version is never one.
+/// The home's runs bound to graph versions: <c>&lt;home&gt;/workflows/runs/</c> listed, each binding read only when its file is new or changed
+/// since, a graph run's version and end read once and kept. No runs folder costs one stat; a run bound to Current or a steps version is none.
 /// </summary>
 /// <remarks>Read from the plan's look and link 8 alike, so every read holds one lock.</remarks>
 public sealed class GraphRuns(NodeRecordFiles records)

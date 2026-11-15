@@ -23,10 +23,11 @@ internal static class NodeGoverning
     /// attribution is not read (<see cref="NodeUnitsRead.Unread"/>), no branch of a repository holding an open graph run is governed.
     /// </param>
     /// <param name="said">What the pass says of them: a branch held, an attribution not read, a version that does not read.</param>
+    /// <param name="skipped">A run a session still waits on that is not governed, and why (an <see cref="EmptyRunEnds"/> reason).</param>
     public static IReadOnlyList<GovernedUnit> Govern(
         DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null,
         Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null, IReadOnlyList<GraphRun>? runs = null,
-        ICollection<string>? said = null)
+        ICollection<string>? said = null, Action<string, string>? skipped = null)
     {
         var governed = new List<GovernedUnit>();
         var identities = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -105,7 +106,7 @@ internal static class NodeGoverning
         var reads = new RunReads(read, owners);
         foreach (var run in runs ?? [])
         {
-            if (Governs(config, run, read, reads, owners, steps, identities, said) is { } one) governed.Add(one);
+            if (Governs(config, run, read, reads, owners, steps, identities, said, skipped) is { } one) governed.Add(one);
         }
 
         return governed;
@@ -202,7 +203,7 @@ internal static class NodeGoverning
     /// </summary>
     private static GovernedUnit? Governs(
         DriverConfig config, GraphRun run, NodeUnitsRead read, RunReads reads, RunOwners owners, IReadOnlyList<NodeDeclaration> steps,
-        Dictionary<string, string> identities, ICollection<string>? said)
+        Dictionary<string, string> identities, ICollection<string>? said, Action<string, string>? skipped)
     {
         var binding = run.Binding;
         NodeDeclaration Valued(NodeDeclaration node) => NodeValues.Over(config, binding.Repository, binding.Workflow, node);
@@ -213,6 +214,10 @@ internal static class NodeGoverning
             {
                 said?.Add($"work  {run.Unit}: the graph version its run is bound to does not read ({run.Version.Unreadable}), so its record is held whole, "
                           + "and nothing on it is judged or started until it reads again.");
+            }
+            else if (run.Waited)
+            {
+                skipped?.Invoke(run.Run, EmptyRunEnds.VersionUnread);
             }
 
             return null;
@@ -248,12 +253,13 @@ internal static class NodeGoverning
             .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
         var newest = work.LastOrDefault();
 
-        // An ended run is judged again only once its chain has come back here, at a start's ask or this process's first look. A conversation's
-        // comes back at its next candidate, which a press submits, never at a turn's end.
+        // An ended run is judged again once its chain comes back here, at a start's ask or the first look, or while a session waits on it at its end
+        // (RunReEnds); one skipped while a session waits says why. A conversation's comes back at its next candidate, never at a turn's end.
         if (run.Ended is { } ended
             && !(chat is not null ? !string.Equals(chat.IdIn(binding.Run), ended.Quest, StringComparison.Ordinal)
-                : run.Asked && newest is not null && !string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal)))
+                : newest is not null && (string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal) ? run.Waited : run.Asked)))
         {
+            if (run.Waited && chat is null) skipped?.Invoke(run.Run, newest is null ? EmptyRunEnds.QuestUnread : EmptyRunEnds.NotAsked);
             return null;
         }
 
