@@ -91,8 +91,7 @@ const deletedIn = (repo) => new Set(git(repo, ['ls-files', '--deleted']).out.spl
 
 /**
  * Removes the worktree at `path` of the repository at `repo`. `force` is passed to git only where the caller asks.
- * `removeLink` and `afterRemove` are seams for tests; `seen` is the files git listed deleted after the last removal, handed on so
- * removals in a row read the list once each. Returns `{ ok, why, links }`.
+ * `removeLink` and `afterRemove` are seams for tests; `seen` hands the deleted-files list on to the next removal. Returns `{ ok, why, links }`.
  */
 export function removeWorktree(repo, path, { force = false, removeLink = removeLinkOnly, afterRemove = () => {}, seen = {} } = {}) {
   const links = [];
