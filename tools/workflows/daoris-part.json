@@ -1,0 +1,35 @@
+{
+  "schema": 2,
+  "why": "One part of a planned ask in this repository, the close half of the team's two reviews: the part is worked apart in its own tree, checked on the gates its change reaches with a red sent back to the work, read by a second opinion from another agent, then integrated through the line's one queue onto the ask's branch, where the ask's delivery checks and reviews the whole before it lands on main. No step waits on the person.",
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["apart"],
+    "end": "tree",
+    "nodes": [
+      { "id": "apart", "kind": "isolate", "version": 1, "reach": "observed", "options": { "kind": "worktree" } },
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+      { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
+      { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
+      { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "integrate" } },
+      { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited", "options": { "request": "done", "conflicts": "session" } },
+      { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+      { "id": "tree", "kind": "release", "version": 1, "reach": "performed" }
+    ],
+    "wires": [
+      { "id": "apart>work", "kind": "after", "from": "apart", "to": "work" },
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
+      { "id": "i", "kind": "after", "from": "holds", "to": "content" },
+      { "id": "ck", "kind": "after", "from": "content", "to": "check" },
+      { "id": "cb", "kind": "back", "from": "check", "on": "failed", "to": "work" },
+      { "id": "o", "kind": "after", "from": "check", "to": "opinion" },
+      { "id": "ol", "kind": "after", "from": "opinion", "to": "landing" },
+      { "id": "c", "kind": "after", "from": "landing", "to": "integrate" },
+      { "id": "d", "kind": "after", "from": "integrate", "to": "line" },
+      { "id": "r", "kind": "after", "from": "line", "to": "tree" }
+    ]
+  }
+}
