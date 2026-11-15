@@ -42,7 +42,7 @@ public sealed class FrameTapeTests : IDisposable
         Assert.Equal("not a frame", await heard.ReadLineAsync(CancellationToken.None));
         Assert.Null(await heard.ReadLineAsync(CancellationToken.None));
 
-        // Read while the tape is still open: each line was flushed as it was kept.
+        // Read while the tape is still open: each line is flushed as it is kept.
         var kept = Kept();
         Assert.Equal(["out", "in", "in"], kept.Select(each => each.GetProperty("dir").GetString()));
         Assert.Equal("session/prompt", kept[0].GetProperty("frame").GetProperty("method").GetString());

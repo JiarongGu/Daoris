@@ -124,10 +124,7 @@ public sealed class HelperJudgeTests
         Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(HelperAsk.ByPerson, "dsh"), null, Asker(), setUp, 0, true));
     }
 
-    /// <summary>
-    /// A rule the person set is never read as the default: its agents stand, and an agent's ask naming one it leaves out is refused,
-    /// never answered by another. The person's own ask names its agent and is theirs.
-    /// </summary>
+    /// <summary>A rule the person set stands: an agent's ask naming one it leaves out is refused, never answered by another.</summary>
     [Fact]
     public void A_rule_the_person_set_is_not_the_default_and_refuses_an_agent_it_does_not_list()
     {

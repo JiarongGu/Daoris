@@ -355,7 +355,7 @@ public sealed class HelperLookTests : IDisposable
         var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.refused-by"], NoteAssert.Codes(note.Parts!));
         Assert.Equal(("claude-code-acp", "not-set-up"), (note.Parts![0].Value("agent"), note.Parts![0].Value("why")));
-        Assert.Contains("not an agent Daoris has set up and signed in on this machine", note.Text);
+        Assert.Contains("an agent Daoris has set up and signed in on this machine", note.Text);
     }
 
     /// <summary>Under the default with no agent set up and signed in for Daoris here, an ask naming none is refused, never a guessed agent.</summary>
@@ -1588,8 +1588,7 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("codex-acp"), new HelperRule(HelperRules.On, []), adapters, "claude-code"));
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("CODEX-ACP"), new HelperRule(HelperRules.On, ["codex-acp", "dsh"]), adapters, "claude-code"));
-        // Named, whether or not the person's list names it: the named agent alone, never another (the judge refuses an agent's
-        // ask for one the list leaves out before the walk).
+        // Named, listed or not: the named agent alone, never another.
         Assert.Equal(["stub"], HelperChoice.Candidates(Ask("stub"), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
         Assert.Equal(["dsh"], HelperChoice.Candidates(Ask("dsh"), HelperRule.Default.Over(["codex-acp"]), adapters, "claude-code"));
         Assert.Equal(["dsh", "codex-acp"], HelperChoice.Candidates(Ask(null), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));

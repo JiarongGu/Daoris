@@ -16,8 +16,6 @@ public static class HelperChoice
     {
         if (ask.Agent is { Length: > 0 } named)
         {
-            // The named agent alone, in the spelling the person's list gives it: where it cannot run the walk says why, and no
-            // other agent answers in its place (an agent's ask the list leaves out is refused before it, by the judge).
             return [rule.Agents.FirstOrDefault(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase)) ?? named];
         }
 
