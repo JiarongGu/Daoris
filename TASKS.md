@@ -163,8 +163,9 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 - [ ] **OUTPUTPANEL1 — a session's outputs in one panel on the right** (web, modules; the person, 2026-11-15; after the session
   foundation): what a session made or has running (its background tasks, the files and runs it wrote, previews, the run's steps
   and checks) sits today in separate places. One panel on the right of a session, as a good desktop agent app keeps beside its
-  conversation, gathers them and updates live, with what it holds while the session works, waits on a step and has ended. Its
-  design is brainstormed first (`daoris brainstorm`, both makers), then built after the foundation rows.
+  conversation, gathers them and updates live, with what it holds while the session works, waits on a step and has ended.
+  Designed (brainstorm `uxpanel1`, both makers): `docs/2026-11-15-session-panel-design.md`, its first slice named there; built
+  after the foundation rows.
 - [ ] **SESSIONROWS1 — the session list shows a session's passage without crowding its line** (web; the person, 2026-11-15; with
   OUTPUTPANEL1): the session menu merges the workflow's current step into each session's line, which reads messy now that a session
   holds many turns and waits on steps. Its rows say the session, where it stands and who it waits on; the passage (steps passed,
