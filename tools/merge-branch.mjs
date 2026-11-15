@@ -2044,10 +2044,7 @@ const dropState = (root) => rmSync(statePath(root), { force: true });
 // ---------------------------------------------------------------------------------------------------
 // Running gates
 
-/**
- * A file as a line names it, from `root`. A CI run's logs are the main checkout's while its gates run in the gate tree,
- * so one outside the gate tree is named from the main checkout that holds it, as the run's status names it.
- */
+/** A file as a line names it, from `root`; one outside the gate tree from the main checkout that holds it. */
 const shown = (root, file) => {
   const near = relative(root, file);
   const home = near.startsWith('..') ? resolve(root, '..', '..') : null;
@@ -2393,11 +2390,11 @@ export { flakeNote, memoryLine };
  * The slowest classes of a Process gate's run, under its line. The classes run at once, so their times
  * are their own and the wall is the run's (`result.ms`), said beside them.
  */
-function slowestLines(root, result) {
+export function slowestLines(root, result) {
   if (!result.slowest?.length) return [];
   const wall = result.ms === undefined ? '' : `; the half's wall was ${duration(result.ms)} (its classes ran at once, so the times do not add up to it)`;
   return [
-    `           slowest classes of ${result.gate.name}, by their own times${wall}, from ${shown(root, result.trx)}:`,
+    `           slowest classes of ${result.gate.name}, by their own times${wall}${result.trx ? `, from ${shown(root, result.trx)}` : ''}:`,
     ...result.slowest.map((slow, i) => `           ${pad(`${i + 1}.`, 4)}${pad(duration(slow.ms), 10)} ${pad(count(slow.tests, 'test'), 10)} ${slow.name}`),
   ];
 }
