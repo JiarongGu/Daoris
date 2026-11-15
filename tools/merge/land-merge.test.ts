@@ -74,7 +74,7 @@ describe('the landing a --commit makes', () => {
       startAfterLanding(home, { tip: 'tip1', base: 'base1', members: [{ branch: 'steward/q' }] });
       const rows = readFileSync(join(home, 'local', 'metrics', 'landings.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({ schema: 1, commit: 'tip1', branch: 'steward/q', builder: null });
+      expect(rows[0]).toMatchObject({ schema: 2, commit: 'tip1', branch: 'steward/q', builder: null });
     } finally {
       try { rmSync(home, { recursive: true, force: true }); } catch { /* the runner just started holds the folder */ }
     }
