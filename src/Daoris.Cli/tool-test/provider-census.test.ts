@@ -7,9 +7,8 @@ import { fileURLToPath } from 'node:url';
 // reaches: tools/** — the census counts every tool's sites that name a provider
 
 /**
- * The tools' twin of the driver's `ProviderCensusTests` (the agent-provider design §9). Every site
- * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
- * or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
+ * The tools' twin of the driver's `ProviderCensusTests` (the agent-provider design §9). Every site in the repository's tools
+ * (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
  * `fixtures/provider-census.json` by file and token (the count is not pinned), the design's row that moves it and its class. The ids and the vocabulary are the
  * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types, the one
  * table the four censuses share; nothing here copies a word of it. The census runs the contracts' generator first (`--if-stale`, under
