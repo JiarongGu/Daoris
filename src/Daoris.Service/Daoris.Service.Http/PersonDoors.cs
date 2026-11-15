@@ -429,6 +429,9 @@ public static class PersonDoors
         return @class is DoorClass.Driver or DoorClass.Person ? act : null;
     }
 
+    /// <summary>Whether <paramref name="body"/> makes a form of <paramref name="door"/> that is the driver's alone, as a role's answer is.</summary>
+    public static bool DriversForm(Door door, JsonElement? body) => door.Form is { Class: DoorClass.Driver } && MakesForm(door, body);
+
     // The routes' own judgements of their forms: `respond` with `whileOpen` true; a `set-up` naming no session; a role's answer.
     private static bool MakesForm(Door door, JsonElement? body) =>
         ReferenceEquals(door, Respond) ? Property(body, "whileOpen") is { ValueKind: JsonValueKind.True }

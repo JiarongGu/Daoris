@@ -42,6 +42,7 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
 
         routes.Map<AcceptQuest, QuestActionResponse>(async (request, http, ct) =>
             host.Gate.Refused(http, RoleAnswerDoors.Accept, form: request.Role is not null) is { } refused ? refused
+            : request.Role?.Malformed is { } malformed ? Refusal.BadRequest(malformed)
             : await StateAsync(http, await Service.Exchange.AcceptAsync(
                 request.Id, DateTimeOffset.UtcNow, ct, request.Role is { } role ? MemoryDesk.ApproverOf(role.Role, role.Agent) : null), ct));
         routes.Map<MarkQuestDone, QuestActionResponse>(async (request, http, ct) =>

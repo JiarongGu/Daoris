@@ -125,6 +125,21 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
 
+    /// <summary>🔴 A role's yes accepts a departure alone: a submission held for its unread evidence refuses it, and the person's yes still accepts it.</summary>
+    [Fact]
+    public async Task OWNERGATE1c_a_roles_yes_never_accepts_a_done_held_for_its_evidence()
+    {
+        var quest = await Bound();
+        Assert.Equal(QuestHold.EvidenceUnread, (await Ready(quest)).Quest!.Hold);
+
+        var role = await _exchange.AcceptAsync(quest.Id, Now, by: "role:daoris-landing · codex-acp");
+
+        Assert.Equal(QuestRespondRefusal.NotHeld, role.Refusal);
+        Assert.Contains("a role's yes does not accept", role.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestHold.EvidenceUnread, (await Find(quest.Id)).Hold);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(quest.Id, Now)).Refusal);
+    }
+
 
     [Fact]
     public async Task Ready_keeps_the_quest_taken_with_its_submission_and_holds_it_as_a_done_would_be()

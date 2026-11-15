@@ -44,6 +44,9 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             var standing = move.Quest;
             return new(QuestRespondRefusal.NotHeld, standing switch
             {
+                // A role's yes accepts a departure alone: evidence unread or missing is the person's to accept as it stands.
+                { Hold: { } hold } when by is not null && hold != QuestHold.Departed =>
+                    $"Quest `#{standing.Id}` is held for its evidence or review, which a role's yes does not accept: it waits for you.",
                 { Status: not QuestStatus.Done } =>
                     $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
                     + "required waits for your yes.",

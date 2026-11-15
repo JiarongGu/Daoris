@@ -27,9 +27,13 @@ public sealed class MemoryDesk(MemoryOpStore ops)
     public static string ApproverOf(string? role, string? agent) =>
         role is not { Length: > 0 } ? Person : agent is { Length: > 0 } ? $"role:{role} · {agent}" : $"role:{role}";
 
-    /// <summary>An awaiting end decided by <paramref name="approver"/> where <paramref name="session"/> is null, else refused, its proposer's lineage as its own.</summary>
+    /// <summary>
+    /// An awaiting end decided by <paramref name="approver"/> where <paramref name="session"/> is null, else refused, its proposer's lineage as
+    /// its own. A role's approval is refused the same way where <paramref name="holder"/>, the record of the agent's turn that held the role,
+    /// is the proposer or of its lineage; that record's serving the session it decides for is no lineage, or no role could approve an end.
+    /// </summary>
     public async Task<MemoryDecisionOutcome> DecideAsync(
-        string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default, string approver = Person)
+        string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default, string approver = Person, string? holder = null)
     {
         if (await ops.FindAsync(id, ct).ConfigureAwait(false) is not { State: MemoryOpState.Awaiting } awaiting || !MemoryOpKind.Ends(awaiting.Change.Kind))
         {
@@ -44,6 +48,14 @@ public sealed class MemoryDesk(MemoryOpStore ops)
                     + "nor of its lineage. The person decides it. Nothing was decided.", awaiting)
                 : new(MemoryDecisionRefusal.NotThePerson,
                     $"Refused: until a second opinion may approve an end, the person decides operation `{id}`. Nothing was decided.", awaiting);
+        }
+
+        if (approver != Person && holder is { Length: > 0 } && awaiting.By?.Session is { } proposed
+            && await ops.InLineageAsync(holder, proposed, ct, deciding: true).ConfigureAwait(false))
+        {
+            return new(MemoryDecisionRefusal.Own,
+                $"Refused: operation `{id}` was proposed by session `{proposed}`, and {approver} held the role from that session or its lineage, "
+                + "which an end's approver never is. The person decides it. Nothing was decided.", awaiting);
         }
 
         var what = awaiting.Change.Kind == MemoryOpKind.Supersede ? "replacement" : "end";

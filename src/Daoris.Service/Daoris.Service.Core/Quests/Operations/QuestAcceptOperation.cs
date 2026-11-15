@@ -50,9 +50,9 @@ internal sealed class QuestAcceptOperation : IQuestOperation
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
         if (QuestLog.Replay(history) is not { } quest) return new QuestMove(await tx.FindAsync(id).ConfigureAwait(false), Moved: false);
 
-        // A departure or its evidence takes a yes, and a review's hold does not.
+        // A departure or its evidence takes a yes, and a review's hold does not; a role's yes takes a departure alone (D297).
         var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now, By: by);
-        if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
+        if (!QuestLog.Applies(quest, judged) || (by is not null && quest.Hold != QuestHold.Departed)) return new QuestMove(quest, Moved: false);
 
         var accepted = QuestLog.Step(quest, await tx.AppendAsync(judged).ConfigureAwait(false))!;
         await tx.WriteCacheAsync(accepted).ConfigureAwait(false);

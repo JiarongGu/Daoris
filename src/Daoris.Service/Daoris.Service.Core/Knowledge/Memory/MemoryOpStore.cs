@@ -139,16 +139,17 @@ public sealed class MemoryOpStore
 
     /// <summary>
     /// Whether <paramref name="session"/> is <paramref name="proposer"/> or of its lineage (§4): a session it continues or serves, as a
-    /// helper or a partner serves, followed up to the root. A subagent calls as its session, so it is the proposer here.
+    /// helper or a partner serves, followed up to the root. A subagent calls as its session, so it is the proposer here. With
+    /// <paramref name="deciding"/>, a supervisor's record (its <c>decides</c> set) serves the session it decides for as no part of it.
     /// </summary>
-    public Task<bool> InLineageAsync(string session, string proposer, CancellationToken ct = default) => _db.RunAsync(async () =>
+    public Task<bool> InLineageAsync(string session, string proposer, CancellationToken ct = default, bool deciding = false) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = """
+        command.CommandText = $"""
             WITH RECURSIVE up(id) AS (
               SELECT $session
               UNION SELECT s.from_session FROM sessions s JOIN up ON s.id = up.id WHERE s.from_session IS NOT NULL
-              UNION SELECT s.serves FROM sessions s JOIN up ON s.id = up.id WHERE s.serves IS NOT NULL)
+              UNION SELECT s.serves FROM sessions s JOIN up ON s.id = up.id WHERE s.serves IS NOT NULL{(deciding ? " AND s.decides IS NULL" : "")})
             SELECT EXISTS (SELECT 1 FROM up WHERE id = $proposer)
             """;
         command.Parameters.AddWithValue("$session", session);

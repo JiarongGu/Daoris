@@ -425,6 +425,12 @@ public sealed class PersonConfirmations(
             }
         }
 
+        // A role's answer is the driver's to post with the key: a person's press carrying it would drop the owner's mark for a role's name.
+        if (PersonDoors.DriversForm(door, parsed))
+        {
+            return Shape($"{Capitalized(door.Form!.Act)} is the driver's alone, posted with the key: a confirmation is the person's press, so send the body without it.");
+        }
+
         if (PersonDoors.Wanted(door, parsed) is not { } act)
         {
             return Shape($"{Capitalized(door.Act ?? "This door")} is answered without the person's key, so it needs no confirmation: send it as it was.");
