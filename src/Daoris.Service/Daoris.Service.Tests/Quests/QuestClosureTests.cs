@@ -10,7 +10,7 @@ namespace Daoris.Service.Tests;
 /// sealed by it; and the graph's close door writes every quest's Done in one transaction, fenced by the submissions it names
 /// and by its key, so a stale close writes nothing and the same close twice writes once.
 /// </summary>
-public sealed partial class QuestClosureTests: IAsyncLifetime
+public sealed class QuestClosureTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-closure-" + Guid.NewGuid().ToString("N")[..8]);
