@@ -20,7 +20,7 @@ against the person's aim of one continued context).
    each rendering has one. This is ContextBrief generalised: today it is a pure function of the line's records with no model.
 2. **One provider port, `IContextRendering`.** It declares its abilities and offers `Render(context, form)` and `ReadBack(turn)`.
    Three forms: **Resume** (the agent's own conversation plus the entries since, as words), **Prompt** (a bounded head plus files),
-   and **Seed** (a native transcript; absent until measured, see 6). Claude Code's and Codex's conversation carries go behind Resume;
+   and **Seed** (a native transcript, see 6). Claude Code's and Codex's conversation carries go behind Resume;
    a plugin's door gets Prompt. Daoris chooses the form; the provider only translates. Read-back maps the wire to entries and drops
    Daoris's own composed words. *(to check: that both carries fit one Resume operation.)*
 3. **Two tiers on every provider.** A bounded head in the agent's first words (the work, the decisions, where it stands, what the

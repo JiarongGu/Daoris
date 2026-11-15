@@ -264,8 +264,12 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     from its `Layer/` (`ConversationSeedings`) over Lyntai's Seed rendering (`LayerSeeding`, the events mapped by `SeedHistory`, the
     line's context entries, `SeedContext` from the brief's line, as Lyntai's `SessionContext`, an agent's note as its claim):
     Claude Code's writer puts chained conversation lines in the tree's project folder for both its doors, Codex's a rollout under
-    its day for `codex-acp`, each held by Lyntai's `SeedWriterConformance`; dsh states its seed unmeasured, so it takes the brief.
-    `SeedResumeProcessTests` resumes a written conversation on the real `claude` and `codex-acp` behind the suite's real-model switch.
+    its day for `codex-acp`, dsh's a session log under `sessions/--<tree>--/<id>/` (header line, then each turn's events, the model's
+    view rebuilt from its messages; a turn ending on the host's words is left open, which dsh closes at its resume), placed as the two
+    Zstandard frames its default compression reads (`DshZstdFrames`, blocks stored raw: the layer's `physical` form of a file, since
+    a writer returns text), each held by Lyntai's `SeedWriterConformance`.
+    `SeedResumeProcessTests` resumes a written conversation on the real `claude`, `codex-acp` and dsh (`session/resume` under the
+    spawn's own recipe and a home of its own) behind the suite's real-model switch; dsh's answer to a prompt needs its key variable set.
     Without the layer no seeding is bound. `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
     person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
     The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
