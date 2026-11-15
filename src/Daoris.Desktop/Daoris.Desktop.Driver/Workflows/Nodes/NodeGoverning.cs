@@ -253,9 +253,8 @@ internal static class NodeGoverning
             .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
         var newest = work.LastOrDefault();
 
-        // An ended run is judged again only once its chain has come back here, at a start's ask or this process's first look, and one still at
-        // its end only while a session of this machine waits on it, for its end alone (RunReEnds). A conversation's comes back at its next
-        // candidate, which a press submits, never at a turn's end. A run a session waits on and skipped anyway says why, once.
+        // An ended run is judged again once its chain comes back here, at a start's ask or the first look, or while a session waits on it at its end
+        // (RunReEnds); one skipped while a session waits says why. A conversation's comes back at its next candidate, never at a turn's end.
         if (run.Ended is { } ended
             && !(chat is not null ? !string.Equals(chat.IdIn(binding.Run), ended.Quest, StringComparison.Ordinal)
                 : newest is not null && (string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal) ? run.Waited : run.Asked)))

@@ -35,11 +35,7 @@ internal sealed class NodeRunKeeping(
         if (holdsLease()) await RunSessionEnds.AgainAsync(Ends, said, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The runs a fresh look read, each at its end marked where a session of this machine still waits on it (<see cref="RunWaiters"/>), so the
-    /// pass governs it and its end reaches that session again (<see cref="RunReEnds"/>): at the first look after a start, and at every look
-    /// while one waits. The sessions are read once, and only where a run is at its end; where they do not read, that is said once.
-    /// </summary>
+    /// <summary>The runs read, each at its end marked where a session of this machine waits on it (<see cref="RunWaiters"/>); unread, said once.</summary>
     public async Task<List<GraphRun>> WaitedAsync(List<GraphRun> runs, CancellationToken ct)
     {
         var ports = Ends;
@@ -50,7 +46,6 @@ internal sealed class NodeRunKeeping(
             return runs;
         }
 
-        // Read again, so the next time they do not read is said once more.
         EmptyRunEnds.Changed(ports.Home, "", "read");
         var waited = RunWaiters.Runs(read);
         return [.. runs.Select(run => run.Ended is not null && waited.Contains(run.Run) ? run with { Waited = true } : run)];
@@ -59,10 +54,7 @@ internal sealed class NodeRunKeeping(
     /// <summary>A run a session waits on that the pass did not govern, and why: said once per reason (<see cref="EmptyRunEnds"/>).</summary>
     public void Skipped(string run, string reason) => RunSessionEnds.Quiet(Ends, run, reason);
 
-    /// <summary>
-    /// What a run's rounds leave to keep before its end is judged: its reviews' records, its carried-on repairs, the accepts it earns through,
-    /// its doors started and its pull requests kept. None of it is kept for a run still at its end (<see cref="AtEnd"/>).
-    /// </summary>
+    /// <summary>What a run's rounds leave to keep: its reviews, repairs, accepts through, doors and pull requests; none for one at its end.</summary>
     public async Task AfterRoundsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
     {
         KeepReviews(governed, scope);
@@ -124,10 +116,7 @@ internal sealed class NodeRunKeeping(
         }
     }
 
-    /// <summary>
-    /// Whether a run is still at its end, its record's end naming its newest quest here: nothing on it is judged or kept, and only its end reaches
-    /// it again (<see cref="EndAsync"/>). An ask's run ends its own way, and is never at its end here.
-    /// </summary>
+    /// <summary>Whether a run's record still ends at its newest quest: only its end reaches it again; an ask's run ends its own way.</summary>
     public bool AtEnd(GovernedUnit governed, RunScope scope) =>
         !AskRunKey.Is(scope.Run.Binding) && scope.Quest?.Records.Quest is { } newest && records.Read(governed.Unit.Id) is { } record && HoldsEnd(record, newest);
 

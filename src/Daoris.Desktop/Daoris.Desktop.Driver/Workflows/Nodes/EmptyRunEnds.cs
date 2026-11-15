@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a run's end closed no quest and ended no session, or why a run at its end that a session waits on was not governed for its end to reach
-/// it, by a code: written to the machine log once per change of reason for its run, as a landing's wait is (<see cref="LandWaits"/>), so an end
+/// Why a run's end closed no quest and ended no session, or why a look did not govern a run at its end that a session waits on, so that its end
+/// reaches it, by a code: written to the machine log once per change of reason for its run, as a landing's wait is (<see cref="LandWaits"/>), so an end
 /// that leaves its sessions waiting shows why. Kept in memory: a restart says each once more.
 /// </summary>
 public static class EmptyRunEnds
@@ -24,7 +24,7 @@ public static class EmptyRunEnds
     /// <summary>The service took it, and nothing it named still waited.</summary>
     public const string Unmoved = "unmoved";
 
-    /// <summary>A run at its end that a session waits on is not governed: its newest quest here was not read.</summary>
+    /// <summary>A run at its end that a session waits on is not governed: its newest quest here is not read.</summary>
     public const string QuestUnread = "quest-unread";
 
     /// <summary>A run at its end that a session waits on is not governed: its chain came back here, and no start asked a pass for it yet.</summary>
@@ -57,7 +57,7 @@ public static class EmptyRunEnds
             Nothing => "it names no quest to close, and no session waits on the run.",
             Refused => $"the service refused to close its quests ({detail}), so no session of it moved.",
             Unmoved => "the service took it, and nothing it named still waited.",
-            QuestUnread => "a session waits on it at its end, and its newest quest here was not read, so its end does not reach that session.",
+            QuestUnread => "a session waits on it at its end, and its newest quest here is not read, so its end does not reach that session.",
             NotAsked => "a session waits on it, and its chain came back here with a newer quest that no start has asked a pass for yet.",
             VersionUnread => "a session waits on it at its end, and the graph version it is bound to does not read, so its end does not reach that session.",
             SessionsUnread => "this machine's session records did not read, so no session waiting on a run at its end is known; they are read again at the next look.",

@@ -333,8 +333,7 @@ public sealed class NodeRuntime(
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
-                // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
-                // which judges every bound run once, so a restart loses nothing; one at its end, while a session still waits on it.
+                // Each bound run is owed a pass at its chain's start and the first look, so a restart loses nothing; at its end, while a session waits.
                 var runs = await Keeping.WaitedAsync([.. _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) })], ct)
                     .ConfigureAwait(false);
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings, Keeping.Skipped)
