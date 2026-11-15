@@ -179,6 +179,13 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
   account, another agent, the curve and a hand-over append a turn instead of opening a record linked by `from`; then the `from`
   chains migrate onto one record each, with the older read's end stated. Also a failed or quiet end Daoris carries on, and a cut
   record with words waiting.
+- [ ] **ADAPTERROOM1 — the adapters are completed packages with a development of their own** (tools, docs, the place's rooms; the
+  person, 2026-11-16): an adapter's suite runs only in its own development (a change to its sources or its port, judged a risk enough
+  change), never as part of this repository's checks or its full CI. The adapters become a room of their own (or a repository of
+  their own, if a room cannot hold the boundary) with their own workflow: a change there is checked by that adapter's suite and
+  released into `daoris.adapters.lock`; this repository's workflow consumes them by their released version and runs none of their
+  suites. GATEBUDGET1 takes the first step (adapter suites out of the full CI; the fingerprint narrowed to the adapter's own sources
+  and port).
 
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
