@@ -52,7 +52,8 @@ public static class SessionAnswers
     public static IReadOnlyList<SessionTurnResponse> ToTurns(IReadOnlyList<SessionTurn> turns) =>
         [.. turns.Select(turn => new SessionTurnResponse(
             turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Part, turn.Agent, turn.Account, turn.Adapter, turn.Conversation, turn.Ended,
-            turn.Input, turn.Output))];
+            turn.Input, turn.Output,
+            turn.End is { } end ? new SessionTurnEndResponse(end.State, end.Limit, end.Interrupted, end.Codes ?? []) : null))];
 
     public static SaidWordResponse ToSaid(SaidWord word) =>
         new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt,

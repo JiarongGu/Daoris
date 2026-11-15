@@ -186,6 +186,12 @@ public static class NoteParts
         && list.EnumerateArray().Any(part =>
             part.ValueKind == JsonValueKind.Object && string.Equals(Text(part, "code"), code, StringComparison.Ordinal));
 
+    /// <summary>The parts' codes in order, an uncoded line left out; none for no parts.</summary>
+    public static IReadOnlyList<string> Codes(string? parts) =>
+        Parse(parts) is { } list
+            ? [.. list.EnumerateArray().Where(part => part.ValueKind == JsonValueKind.Object).Select(part => Text(part, "code")).OfType<string>()]
+            : [];
+
     /// <summary>A moment as a value: ISO 8601 in UTC, to the second, which the page formats in the reader's language and zone.</summary>
     public static string Moment(DateTimeOffset at) =>
         at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);

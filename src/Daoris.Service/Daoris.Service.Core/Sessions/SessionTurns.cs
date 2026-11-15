@@ -56,8 +56,8 @@ public static class SessionTurns
 
     /// <summary>
     /// The turn a wake adds to a record: the person's when any word waiting is theirs or their supervisor's, else the step's whose word
-    /// woke it, with the node and attempt its key names. It continues its record's conversation, so it keeps the agent, account, adapter and
-    /// transcript of the turn before it.
+    /// woke it, with the node and attempt its key names, else Daoris's where its own words name no step (a restart, a limit's reset). It
+    /// continues its record's conversation, so it keeps the agent, account, adapter and transcript of the turn before it.
     /// </summary>
     public static SessionTurn Woken(Session record, DateTimeOffset at)
     {
@@ -71,7 +71,19 @@ public static class SessionTurns
         };
         if (record.Said.Count == 0 || record.Said.Any(word => word.Persons || word.Supervisors)) return kept;
         var (node, attempt) = StepOf(record.Said.Select(word => word.Key).LastOrDefault(key => key is { Length: > 0 }));
+        if (node is null && record.Said.All(word => word.From == SaidFrom.Daoris)) return kept with { Cause = Daoris };
         return kept with { Cause = Step, Node = node, Attempt = attempt };
+    }
+
+    /// <summary>
+    /// The turns of an ended record that goes on: its last turn sealed with how the record ended, then the turn the wake adds, so a later
+    /// reader of the turns still finds the end the go-on forgives on the record.
+    /// </summary>
+    public static IReadOnlyList<SessionTurn> WentOn(Session ended, DateTimeOffset at)
+    {
+        var own = Own(ended).OrderBy(turn => turn.Number).ToList();
+        if (own.Count > 0) own[^1] = own[^1] with { End = SessionTurnEnd.Of(ended) };
+        return [.. own, Woken(ended, at)];
     }
 
     /// <summary>The turns with the last one's transcript set, where a move names the captured run its turn wrote.</summary>
@@ -127,7 +139,8 @@ public static class SessionTurns
     public static string Write(IReadOnlyList<SessionTurn> turns) =>
         JsonSerializer.Serialize(
             turns.Select(turn => new Kept(
-                turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Input, turn.Output, turn.Agent, turn.Account, turn.Adapter, turn.Transcript)),
+                turn.Number, turn.Cause, turn.At, turn.Node, turn.Attempt, turn.Input, turn.Output, turn.Agent, turn.Account, turn.Adapter, turn.Transcript,
+                turn.End)),
             Options);
 
     /// <summary>The turns a record's column keeps; null for a record from before the column, or one that does not read.</summary>
@@ -140,7 +153,7 @@ public static class SessionTurns
                 .Select(turn => new SessionTurn(turn.N, turn.Cause, turn.At)
                 {
                     Node = turn.Node, Attempt = turn.Attempt, Input = turn.Input, Output = turn.Output,
-                    Agent = turn.Agent, Account = turn.Account, Adapter = turn.Adapter, Transcript = turn.Transcript,
+                    Agent = turn.Agent, Account = turn.Account, Adapter = turn.Adapter, Transcript = turn.Transcript, End = turn.End,
                 })
                 .ToList();
         }
@@ -152,5 +165,5 @@ public static class SessionTurns
 
     private sealed record Kept(
         int N, string Cause, DateTimeOffset At, string? Node, int? Attempt, long? Input, long? Output, string? Agent, string? Account, string? Adapter,
-        string? Transcript);
+        string? Transcript, SessionTurnEnd? End = null);
 }
