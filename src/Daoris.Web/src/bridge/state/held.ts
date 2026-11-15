@@ -12,6 +12,9 @@ export type Answered = { held?: unknown; answer?: unknown; failed?: unknown };
 export const isPending = (answer: unknown): boolean =>
   typeof answer === 'object' && answer !== null && (answer as { pending?: unknown }).pending === true;
 
+/** A reader of an answer each field of which is optional: nothing held yet reads as none of them. */
+export const fieldsOf = <T extends object>(answer: unknown): T => (isPending(answer) ? {} : answer) as T;
+
 // How each held query reads its route's answer into what it keeps, by the query's hash: what an event's answer passes through,
 // so the query holds one shape whether its ask or its event answered it.
 const readers = new Map<string, (answer: unknown) => unknown>();
@@ -19,18 +22,16 @@ const readers = new Map<string, (answer: unknown) => unknown>();
 /**
  * Ask a read the shell tells by event, for the query under `queryKey`, its answer read by `read` into what the query keeps: the
  * payload carries `held`, the key's hash, which the event names. An answer of nothing held yet keeps what the query holds, so the
- * page shows what it held until the event comes; with nothing held either, it is the pending answer read, which each reader
- * reads as empty.
+ * page shows what it held until the event comes; with nothing held either, the reader reads the pending answer as empty.
  */
-export function askHeld<R extends TypedRoute, T = unknown>(
-  route: R, client: QueryClient, queryKey: QueryKey, payload: Payload<R>, read?: (answer: unknown) => T,
+export function askHeld<R extends TypedRoute, T>(
+  route: R, client: QueryClient, queryKey: QueryKey, payload: Payload<R>, read: (answer: unknown) => T,
 ): Promise<T>;
 export function askHeld<T>(
-  route: NoPayloadRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, never>, read?: (answer: unknown) => T,
+  route: NoPayloadRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, never>, read: (answer: unknown) => T,
 ): Promise<T>;
 export async function askHeld<T>(
-  route: DriverRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
-  read: (answer: unknown) => T = (answer) => answer as T,
+  route: DriverRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>, read: (answer: unknown) => T,
 ): Promise<T> {
   const held = hashKey(queryKey);
   readers.set(held, read);

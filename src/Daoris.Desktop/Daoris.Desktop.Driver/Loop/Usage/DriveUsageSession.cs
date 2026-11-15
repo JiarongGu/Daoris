@@ -29,6 +29,8 @@ internal static class DriveUsageSession
           session at-work <session> [--json]
               who is at work on a session: its line's parts, what it waits on of others and its co-workers, as the
               window's *At work* draws them (COWORKVIEW1a, COMMS1i).
+          session option <id> <option> <value>
+              one of a running conversation's options set in the running Daoris, as its page's picker sets it.
           session start-from <id>
               words a session cannot go on with: start a conversation in the running Daoris with them, which this
               terminal holds as `chat` does, without that session's context; they leave that session, naming the

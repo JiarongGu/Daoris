@@ -14,7 +14,7 @@ public static class IntegrateGatesCommand
 
     private static InstanceRoute Look { get; } = new(InstanceRoute.DriverModule, "WORKFLOW_CURRENT", RouteClass.Open);
 
-    private static InstanceRoute Press { get; } = new(InstanceRoute.DriverModule, "INTEGRATION_GATES", RouteClass.Person);
+    public static InstanceRoute Press { get; } = new(InstanceRoute.DriverModule, "INTEGRATION_GATES", RouteClass.Person);
 
     /// <summary>What a terminal says where no Daoris runs to take the press: the acceptance is the person's, pressed in its window.</summary>
     public static string Alone(IntegrateAsk ask) =>

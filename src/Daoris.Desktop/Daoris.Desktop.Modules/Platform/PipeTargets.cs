@@ -22,12 +22,13 @@ public sealed class PipeTargets
 
     private PipeTargets(
         IDictionary<string, PipeGroundRow> rows, IDictionary<string, OwnerTarget> marks, IDictionary<string, string> notAlready,
-        IDictionary<string, IReadOnlyList<PipeWord>> words)
+        IDictionary<string, IReadOnlyList<PipeWord>> words, IDictionary<string, string> noTwin)
     {
         _rows = rows.ToFrozenDictionary(StringComparer.Ordinal);
         _marks = marks.ToFrozenDictionary(StringComparer.Ordinal);
         NotAlready = notAlready.ToFrozenDictionary(StringComparer.Ordinal);
         Words = words.ToFrozenDictionary(StringComparer.Ordinal);
+        NoTwin = noTwin.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     /// <summary>The desktop's table, the census's.</summary>
@@ -42,8 +43,12 @@ public sealed class PipeTargets
             marks.Where(each => each.Grounds is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Grounds!, StringComparer.Ordinal),
             owners,
             marks.Where(each => each.NotAlready is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.NotAlready!, StringComparer.Ordinal),
-            marks.Where(each => each.Words is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Words!, StringComparer.Ordinal));
+            marks.Where(each => each.Words is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Words!, StringComparer.Ordinal),
+            marks.Where(each => each.NoTwin is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.NoTwin!, StringComparer.Ordinal));
     }
+
+    /// <summary>The person's presses no <c>daoris</c> verb writes, each with why it stays the window's alone (<c>NoTwinAttribute</c>).</summary>
+    public IReadOnlyDictionary<string, string> NoTwin { get; }
 
     /// <summary>The values each person's press's card names by role, by its module and route; a press naming none says its act alone.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<PipeWord>> Words { get; }
