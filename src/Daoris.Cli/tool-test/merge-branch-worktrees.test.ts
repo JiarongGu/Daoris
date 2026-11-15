@@ -220,6 +220,10 @@ test('logs and scratch under local/ are an agent\'s disposable output; anything 
   assert.equal(tool.disposableLocal('local/scratch', true), true, 'the scratch folder is not walked at all');
   for (const path of ['local/out.md', 'local/scratchpad.md', 'local/a.log.md', 'local/notes/log']) assert.equal(tool.disposableLocal(path), false, path);
   assert.equal(tool.disposableLocal('local/runs.log', true), false, 'a folder named like a log is walked');
+  for (const path of ['local/lyntai-local.props', 'local/shenora-local.props', 'local/other.props']) assert.equal(tool.disposableLocal(path), true, `${path} is a copy the setup made`);
+  assert.equal(tool.disposableLocal('local/sensitive-patterns.txt'), false, 'a private gate file is a copy only where the declaration names it');
+  assert.equal(tool.disposableLocal('local/sensitive-patterns.txt', false, ['local/sensitive-patterns.txt']), true);
+  assert.equal(tool.disposableLocal('local/deep/x.props'), false, 'the setup copies only the props directly under local/');
 
   const fx = makeFixture('merge-branch-local');
   try {

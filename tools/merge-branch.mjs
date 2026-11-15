@@ -195,8 +195,8 @@
  * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
  * when that worktree has no modified or staged tracked file, has no untracked file (`git worktree remove`
  * refuses those without `--force`, and one may be work), and holds nothing under its gitignored `local/`
- * but a worker's logs and scratch: `local/scratch/` and a `*.log` anywhere under `local/` go with it, and
- * anything else there is an agent's private output, which nothing else keeps, and is named.
+ * but a worker's logs and scratch and the copies the worktree setup made: `local/scratch/`, a `*.log` anywhere under `local/`,
+ * every `local/*.props` and the private files a gate reads go with it, and anything else there is an agent's private output, which nothing else keeps, and is named.
  *
  * A locked worktree is in use, never looked into or unlocked, but for the agent harness's own lock,
  * `claude agent <id> (pid N)`: the harness holds it for its session's whole life, not only
@@ -304,8 +304,7 @@
  *
  * node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]
  * node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]
- * node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]
- * node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
+ * node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time] * node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
  * node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  * node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  * node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
@@ -1675,7 +1674,7 @@ export function firstFile(dir, skip = () => false) {
 }
 
 /** What a prune needs to know of a worktree it may remove: its folder gone, its changes, its `local/` but logs and scratch. */
-function inspectWorktree(tree) {
+function inspectWorktree(tree, root) {
   if (tree.prunable || !existsSync(tree.path)) return { gone: true };
   const facts = { tracked: [], untracked: [], local: null };
   // git walks up: in a folder that lost its .git file, a status would answer for the repository above it.
@@ -1684,7 +1683,8 @@ function inspectWorktree(tree) {
   if (status.status !== 0) return { ...facts, error: gitSays(status.err || status.out) };
   for (const line of lines(status.out)) (line.startsWith('?? ') ? facts.untracked : facts.tracked).push(line.slice(3));
   try {
-    facts.local = firstFile(join(tree.path, 'local'), disposableLocal);
+    const copies = privateGateFiles(root);
+    facts.local = firstFile(join(tree.path, 'local'), (path, directory) => disposableLocal(path, directory, copies));
   } catch (error) {
     facts.local = `local/ itself, which could not be read: ${error?.code ?? error?.message}`;
   }
@@ -1781,7 +1781,7 @@ export function planPrune(root, { hold = [], atMerge = false } = {}) {
     const tree = candidate.worktree;
     let facts = null;
     if (!candidate.held && tree && (!tree.locked || harnessLock(tree.lockReason))) {
-      facts = inspectWorktree(tree);
+      facts = inspectWorktree(tree, root);
       if (tree.locked && !facts.gone) {
         const written = newestWrite(tree.path);
         const reflog = git(tree.path, ['reflog', 'show', '--format=%gs', 'HEAD'], { allowFail: true });
