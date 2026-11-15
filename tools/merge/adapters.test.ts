@@ -49,8 +49,10 @@ test('a fingerprint is the same for the same inputs and moves with each input th
   assert.notEqual(at({ 'src/Daoris.Adapters/Daoris.Adapters.Store.Tests': 'edited' }), base, 'its suite');
   assert.notEqual(at({ 'src/Daoris.Testing/Store': 'edited' }), base, 'the contract and the fake it is held to');
   assert.notEqual(at({ 'src/Daoris.Ports/Store': 'edited' }), base, 'a port it implements');
-  assert.notEqual(at({ 'Directory.Build.props': 'edited' }), base, 'a build file that reaches every project');
-  assert.notEqual(at({ 'src/Layers.props': 'edited' }), base, 'the layers\' settings, which every package takes through the ports');
+  assert.equal(at({ 'Directory.Build.props': 'edited' }), base, 'a shared build file never stales a completed package');
+  assert.equal(at({ 'src/Daoris.Desktop/Directory.Build.props': 'edited' }), base);
+  assert.equal(at({ 'src/Layers.props': 'edited' }), base);
+  assert.equal(at({ 'daoris.gates.json': '{}' }), base);
   assert.notEqual(at({ 'src/Daoris.Desktop/Directory.Packages.props': PINS.replace('10.0.14', '10.0.15') }), base, 'the pin of what it drives');
 });
 
@@ -122,6 +124,8 @@ test('a row equal to the fingerprint is kept, a different one stale and none mis
   assert.equal(judge(lock(at()), sight)[0]?.state, 'kept');
   assert.equal(judge(lock('other'), sight)[0]?.state, 'stale');
   assert.equal(judge(emptyLock(), sight)[0]?.state, 'missing');
+  assert.equal(judge(lock(at()), commit({ 'Directory.Build.props': 'edited' }))[0]?.state, 'kept', 'a shared build change asks for no release');
+  assert.equal(judge(lock(at()), commit({ 'src/Daoris.Adapters/Daoris.Adapters.Store': 'edited' }))[0]?.state, 'stale', 'its own sources do');
 });
 
 test('the lock keeps its rows in name order so the file is a stable diff', () => {

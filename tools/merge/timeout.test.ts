@@ -1,5 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { budgetMs, overBudgetNote, timeoutState } from './timeout.ts';
 
 test('a gate\'s budget is its declared timeoutMinutes, else the lane\'s: five minutes in a merge, ten in the full set or the CI', () => {
@@ -9,6 +10,21 @@ test('a gate\'s budget is its declared timeoutMinutes, else the lane\'s: five mi
   assert.equal(budgetMs({ name: 'a' }, 'checkout'), 10 * 60_000);
   assert.equal(budgetMs({ name: 'a', timeoutMinutes: 2 }, 'ci'), 2 * 60_000);
   assert.equal(budgetMs({ name: 'a', timeoutMinutes: -1 }, 'merge'), 5 * 60_000, 'a budget that does not read is the lane\'s');
+});
+
+test('the declared gates: each timeoutMinutes carries its reason, and the full set runs no adapter suite beside adapters-lock', () => {
+  const { gates } = JSON.parse(readFileSync(new URL('../../daoris.gates.json', import.meta.url), 'utf8')) as {
+    gates: { name: string; timeoutMinutes?: number; timeoutWhy?: string }[];
+  };
+  for (const gate of gates.filter((each) => each.timeoutMinutes !== undefined)) {
+    assert.ok(Number.isInteger(gate.timeoutMinutes) && gate.timeoutMinutes! > 0, `${gate.name} declares a whole number of minutes`);
+    assert.ok((gate.timeoutWhy ?? '').length > 20, `${gate.name} says why its budget is what it is`);
+  }
+  assert.deepEqual(gates.map((each) => each.name).filter((name) => name.startsWith('adapters-')), ['adapters-lock']);
+  const over = gates.find((each) => each.name === 'tool-tests')!;
+  const budget = budgetMs(over, 'ci')!;
+  assert.ok(budget > 10 * 60_000, 'a gate killed at the old budget has its measured one');
+  assert.match(overBudgetNote(budget + 1000, budget, []), /^over-budget: killed after/, 'a gate over its new budget still fails');
 });
 
 test('--no-timeout gives no budget and says so in the summary', () => {

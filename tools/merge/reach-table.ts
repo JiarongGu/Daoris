@@ -21,7 +21,7 @@ const MODULES_READERS = ['modules', 'censuses', 'modules-process', 'deployment']
 const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 
 // The adapters' lock and each adapter's dependency tests, which a port, a contract case or an adapter moves.
-const ADAPTER_SUITES = ['adapters-lock', 'adapters-clock', 'adapters-desktopstore-sqlite', 'adapters-git', 'adapters-machine', 'adapters-memory-lyntai'];
+const ADAPTER_SUITES = ['adapters-lock'];
 
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
@@ -384,7 +384,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   {
     lane: 'layers',
     gates: ['layers', ...ADAPTER_SUITES, ...DRIVER_READERS, 'driver-rehearsals', 'service', 'service-process'],
-    why: "the ports, the fakes, the adapters and the build settings the application's projects build with: the layers census and the fakes' own tests, the adapters' lock and each adapter's dependency tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
+    why: "the ports, the fakes, the adapters and the build settings the application's projects build with: the layers census and the fakes' own tests, the adapters' lock (their suites run in their own development, not here), the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
   { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },

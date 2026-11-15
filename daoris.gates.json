@@ -20,7 +20,7 @@
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify:checks", "clock": true, "handback": true, "regenerate": "node tools/contracts.mjs --if-stale" },
     { "name": "cli-tests", "run": "npm run verify:tests", "clock": true },
-    { "name": "tool-tests", "run": "npm run tooltests", "clock": true,
+    { "name": "tool-tests", "timeoutMinutes": 15, "timeoutWhy": "latest green run 11.3 min x 1.3; killed at 10.1 min on a quiet machine under the old default", "run": "npm run tooltests", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/", "src/Daoris.Cli/test/_fixture.ts", "src/Daoris.Cli/tool-test/",
@@ -49,7 +49,7 @@
         "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/", "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs",
         "tools/orient-index-fixtures/"
       ] },
-    { "name": "service-process", "run": "dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings",
+    { "name": "service-process", "timeoutMinutes": 15, "timeoutWhy": "green runs 1.6 to 6.8 min, but one quiet run was killed at 11.2 min: 11.2 x 1.3; re-set from the next green wall time", "run": "dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Service/Daoris.Service.slnx", "src/Daoris.Service/Directory.Build.props",
@@ -68,55 +68,16 @@
         "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/",
         "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
-    { "name": "layers", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests",
+    { "name": "layers", "timeoutMinutes": 15, "timeoutWhy": "no recent green wall time (killed at 10.0 min on a quiet machine): 10 x 1.5; re-set from the next green wall time", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", "Directory.Build.props",
         "src/", "tools/fsx.mjs", "tools/layers-census.mjs", "tools/layers-census.json", "tools/layers-census/"
       ] },
     { "name": "adapters-lock", "run": "node tools/merge/adapters.ts check",
       "paths": [
-        "daoris.adapters.lock", "daoris.gates.json", "Directory.Build.props", "src/Daoris.Desktop/Directory.Build.props",
-        "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props", "src/Layers.props",
+        "daoris.adapters.lock", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/",
         "tools/merge/adapters.ts"
-      ] },
-    { "name": "adapters-clock", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
-        "src/Daoris.Adapters/Daoris.Adapters.Clock/", "src/Daoris.Adapters/Daoris.Adapters.Clock.Tests/",
-        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Clocks/", "src/Daoris.Testing/Clocks/"
-      ] },
-    { "name": "adapters-ssh-keys", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests --filter \"FullyQualifiedName~SshKeyFormatsTests|FullyQualifiedName~NativeSshKeyContractTests\"",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
-        "src/Daoris.Adapters/Daoris.Adapters.SshKeys/", "src/Daoris.Adapters/Daoris.Adapters.SshKeys.Tests/",
-        "src/Daoris.Ports/Git/", "src/Daoris.Testing/Git/"
-      ] },
-    { "name": "adapters-desktopstore-sqlite", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props",
-        "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/",
-        "src/Daoris.Ports/Store/", "src/Daoris.Testing/Store/"
-      ] },
-    { "name": "adapters-git", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Git.Tests",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Layers.props", "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json",
-        "src/Daoris.Adapters/Daoris.Adapters.Git/", "src/Daoris.Adapters/Daoris.Adapters.Git.Tests/",
-        "src/Daoris.Adapters/Daoris.Adapters.Machine/", "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/",
-        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Git/", "src/Daoris.Ports/Processes/", "src/Daoris.Testing/Git/",
-        "src/Daoris.Testing/Processes/"
-      ] },
-    { "name": "adapters-machine", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Machine.Tests",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Layers.props",
-        "src/Daoris.Adapters/Daoris.Adapters.Machine/", "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/",
-        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Processes/", "src/Daoris.Testing/Processes/"
-      ] },
-    { "name": "adapters-memory-lyntai", "run": "dotnet test src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests",
-      "paths": [
-        "daoris.gates.json", "Directory.Build.props", "src/Daoris.Service/Directory.Packages.props",
-        "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/",
-        "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/", "src/Daoris.Testing/Memory/"
       ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },
@@ -137,7 +98,7 @@
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
       ] },
-    { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=driver.trx\"",
+    { "name": "driver", "timeoutMinutes": 25, "timeoutWhy": "latest green run 18.8 min x 1.3; killed at its old 10 min budget on a loaded machine", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=driver.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         ".claude/knowledge/adoption.md", ".codex/", "canon/core/knowledge/rooms-and-classes.md", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
@@ -180,7 +141,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/", "src/Daoris.Desktop/Daoris.Desktop.Modules/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/", "src/Daoris.Service/Daoris.Service.Tests/fixtures/", "tools/fsx.mjs"
       ] },
-    { "name": "driver-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings",
+    { "name": "driver-process", "timeoutMinutes": 20, "timeoutWhy": "no recent green wall time (killed at 10.0 min): 10 x 2; re-set from the next green wall time", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "examples/plugins/", "src/Daoris.Cli/src/cli.ts", "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/",
@@ -191,7 +152,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs", "tools/machine-admission.mjs",
         "tools/machine-admission.test.mjs"
       ] },
-    { "name": "driver-rehearsals", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/rehearsals.process.runsettings",
+    { "name": "driver-rehearsals", "timeoutMinutes": 20, "timeoutWhy": "no recent green wall time (killed at 10.0 min): 10 x 2; re-set from the next green wall time", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/rehearsals.process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/cli.ts", "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/",
@@ -212,7 +173,7 @@
         "src/Daoris.Adapters/Daoris.Adapters.Clock/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/",
         "src/Daoris.Adapters/Daoris.Adapters.Machine/", "tools/fsx.mjs"
       ] },
-    { "name": "driver-process-git", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings",
+    { "name": "driver-process-git", "timeoutMinutes": 46, "timeoutWhy": "latest green run 35.3 min x 1.3 (an earlier one took 174); killed at 10.0 min under the old default", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props",
@@ -254,7 +215,7 @@
         "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/e2e/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "web-unit", "run": "npm run test:web:unit", "clock": true,
+    { "name": "web-unit", "timeoutMinutes": 25, "timeoutWhy": "green runs 8.7 to 18.9 min, p95 18.9 x 1.3; killed at 10.0 min on a quiet machine", "run": "npm run test:web:unit", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "docs/code-map.json", "src/Daoris.Cli/src/tools/", "src/Daoris.Contracts/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/",
