@@ -23,10 +23,10 @@ internal sealed class LandingKind : ISupervisorKind
     {
         var waiting = new List<object>();
         var steps = LandingSteps.Waiting(loop.Home);
-        var runOf = steps.Count == 0 || loop.Service is not { } service ? null : RunsOf(await service.EveryQuestAsync(ct).ConfigureAwait(false));
+        var serves = LandingSessions.Serves(steps.Count == 0 || loop.Service is not { } service ? null : await service.EveryQuestAsync(ct).ConfigureAwait(false));
         foreach (var step in steps)
         {
-            if (step.GoAheadOpen || SessionOf(records, step, runOf) is not { } session) continue;
+            if (step.GoAheadOpen || LandingSessions.Of(records, step, serves) is not { } session) continue;
             if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: step.Repository)) is not { } covered) continue;
             if (step.Offered(covered.Acts) is not { Count: > 0 } acts) continue;
             var subject = SupervisorSubject.Landing(session.Session, step.Run, step.Node, step.Attempt);
@@ -53,28 +53,12 @@ internal sealed class LandingKind : ISupervisorKind
         return await SupervisorKindFacts.ComposeAsync(service, loop.Home, subject.Session, fence, facts, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The newest part of the run's work in the step's repository: the newest session whose quest is of the run's chain, an earlier part's
-    /// included, by <paramref name="runOf"/>; by the run's own quest alone where the quests are not read.
-    /// </summary>
-    internal static PriorSession? SessionOf(IReadOnlyList<PriorSession> records, LandingStep step, Func<string, string>? runOf = null) =>
-        records.LastOrDefault(record => !record.Teammate && record.Quest is { Length: > 0 } quest
-                                        && string.Equals(runOf?.Invoke(quest) ?? quest, step.Run, StringComparison.Ordinal)
-                                        && string.Equals(record.Repository, step.Repository, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>The run each quest's work is (<see cref="QuestRuns.Of"/>), its chain read up its parents among <paramref name="quests"/>.</summary>
-    private static Func<string, string> RunsOf(IReadOnlyList<QuestView> quests)
-    {
-        var byId = quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        return quest => byId.TryGetValue(quest.TrimStart('#'), out var view) ? QuestRuns.Of(view, id => byId.GetValueOrDefault(id.TrimStart('#'))) : quest;
-    }
-
     private async Task<SupervisorDecided> KeepAsync(DriverLoop loop, Keeping keeping, CancellationToken ct)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (keeping.Subject.LandingParts is not { } parts) return SupervisorDecided.Refused(SupervisorWhy.Form);
         if (await service.RecordAsync(keeping.Subject.Session, ct).ConfigureAwait(false) is not { Repository: { } repository, Quest: { Length: > 0 } quest } record
-            || !string.Equals(RunsOf(await service.EveryQuestAsync(ct).ConfigureAwait(false))(quest), parts.Run, StringComparison.Ordinal))
+            || !LandingSessions.Serves(await service.EveryQuestAsync(ct).ConfigureAwait(false))(quest, parts.Run))
         {
             return SupervisorDecided.Refused(SupervisorWhy.NotReferred);
         }

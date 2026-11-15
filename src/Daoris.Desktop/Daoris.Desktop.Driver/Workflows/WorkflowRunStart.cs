@@ -16,6 +16,9 @@ public interface IWorkflowStartWorld
     /// <summary>One ask, or null where the service holds none.</summary>
     Task<AskView?> FindAskAsync(string id, CancellationToken ct);
 
+    /// <summary>The asks' plans, read where a quest may be a part (<see cref="TeamKinds.OfPartAsync"/>); none read where a world has no service.</summary>
+    ITrainPlans Plans => NoPlans.Read;
+
     /// <summary>The machine log's line for a run bound (<see cref="WorkflowLines.Chosen"/>).</summary>
     void Chosen(LandingLine line);
 }
@@ -186,7 +189,10 @@ public static class WorkflowRunStart
         return WorkflowRunBindings.RunOf(ReviewGate.ChainOf(every.Quests, quest.Id), quest.To) ?? quest.Id;
     }
 
-    /// <summary>The binding the run's first start makes now, its task's choice read from its ask, or for a quest no ask published, its own.</summary>
+    /// <summary>
+    /// The binding the run's first start makes now, its task's choice read from its ask, or for a quest no ask published, its own; a part of its
+    /// ask's plan takes the place's choice for its kind where the ask makes none (<see cref="TeamKinds"/>).
+    /// </summary>
     private static async Task<WorkflowRunBinding> PlanAsync(
         WorkflowStarted start, string run, IWorkflowStartWorld world, IWorkflowStore store, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
         Func<DateTimeOffset> now, Every every, Func<RoleCatalog>? roles, CancellationToken ct)
@@ -196,6 +202,7 @@ public static class WorkflowRunStart
         var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
         // A quest no ask published carries its own choice, made on its page before it starts.
         var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
+        task = await TeamKinds.OfPartAsync(config, quest, askId, start.Workspace, task, world.Plans, ct).ConfigureAwait(false);
         return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles);
     }
 
