@@ -69,6 +69,14 @@ public sealed class GraphRuns(NodeRecordFiles records)
         }
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, GraphRuns> Homes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The one reader of a home for its read-only look passes: its bindings, versions and ends are read once and kept across looks
+    /// (each by its file's stamp), where a reader made at each look reads every run's files again.
+    /// </summary>
+    public static GraphRuns Of(string home) => Homes.GetOrAdd(home, key => new GraphRuns(new NodeRecordFiles(key, () => false)));
+
     private readonly object _lock = new();
 
     private readonly Dictionary<string, Kept> _bindings = new(StringComparer.Ordinal);
