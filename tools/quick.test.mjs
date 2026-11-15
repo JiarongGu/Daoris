@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { census } from './layers-census.mjs';
 import { quickSteps } from './quick/steps.mjs';
 import { checkTimes, scanRecords } from './time-ratchet.mjs';
 import { judge, readVerdicts, say, writeVerdicts } from './quick/verdicts.mjs';
+import { baseVerdicts } from './quick/base.mjs';
 import { runQuick } from './quick.mjs';
 
 const scratch = () => {
@@ -82,18 +84,53 @@ test('a red the base already stood in is said as the base\'s, and any other as n
   assert.match(text, /RED ON THE BASE +one/);
 });
 
-test('the base is recorded by --record-base and read back by a later run', () => {
+/** A repository of its own with `main` holding a green `check.mjs` and a branch whose commit turns it red; the root is the branch. */
+function branchedRepo() {
   const root = scratch();
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, stdio: 'pipe' });
+  git('init', '-q', '-b', 'main');
+  writeFileSync(join(root, '.gitignore'), 'local/\n');
+  writeFileSync(join(root, 'check.mjs'), 'process.exit(0);\n');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'main');
+  git('checkout', '-q', '-b', 'branch');
+  writeFileSync(join(root, 'check.mjs'), 'process.exit(1);\n');
+  git('commit', '-q', '-am', 'the branch breaks the check');
+  return { root, git };
+}
+
+test('a red the branch introduced is its own even where a base was recorded after the branch\'s commit', () => {
+  const { root } = branchedRepo();
   try {
-    const run = (command) => (command === 'one' ? { status: 1, output: 'no\n' } : { status: 0, output: '' });
+    writeVerdicts(join(root, 'local', 'quick-base.json'), { head: 'the branch tip', at: 't', steps: { 'node check.mjs': 'fail' } });
     const lines = [];
-    assert.equal(runQuick({ root, steps: ['one', 'two'], run, say: () => {}, now: () => 0, recordBase: true }), 1);
-    assert.deepEqual(readVerdicts(join(root, 'local', 'quick-base.json'))?.steps, { one: 'fail', two: 'pass' });
-    const later = (command) => ({ status: command === 'two' || command === 'one' ? 1 : 0, output: '' });
-    runQuick({ root, steps: ['one', 'two'], run: later, say: (line) => lines.push(line), now: () => 0 });
-    assert.match(lines.join('\n'), /NEW +two/);
-    assert.match(lines.join('\n'), /RED ON THE BASE +one/);
-    assert.deepEqual(JSON.parse(readFileSync(join(root, 'local', 'quick-base.json'), 'utf8')).steps, { one: 'fail', two: 'pass' }, 'a later run never rewrites the base');
+    assert.equal(runQuick({ root, steps: ['node check.mjs'], say: (line) => lines.push(line), now: () => 0 }), 1);
+    assert.match(lines.join('\n'), /NEW +node check\.mjs/);
+    assert.doesNotMatch(lines.join('\n'), /RED ON THE BASE/);
+    assert.equal(readVerdicts(join(root, 'local', 'quick-base.json'))?.steps['node check.mjs'], 'pass', 'the base is main at the merge base');
+    assert.equal(existsSync(join(root, 'local', 'quick-base-tree')), false, 'the base worktree is gone');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a red main stands in is the base\'s, the record is reused for the same merge base, and --record-base records every step there', () => {
+  const { root, git } = branchedRepo();
+  try {
+    git('checkout', '-q', 'main');
+    writeFileSync(join(root, 'check.mjs'), 'process.exit(1);\n');
+    git('commit', '-q', '-am', 'main is red');
+    git('checkout', '-q', 'branch');
+    git('merge', '-q', '-s', 'ours', 'main', '-m', 'merge main');
+    const lines = [];
+    assert.equal(runQuick({ root, steps: ['node check.mjs'], say: (line) => lines.push(line), now: () => 0 }), 1);
+    assert.match(lines.join('\n'), /RED ON THE BASE +node check\.mjs/);
+    const asked = [];
+    const base = baseVerdicts(root, ['node check.mjs'], { runAt: () => (command) => (asked.push(command), 0) });
+    assert.deepEqual(asked, [], 'the held verdict of the same merge base is not run again');
+    assert.equal(base?.steps['node check.mjs'], 'fail');
+    assert.equal(runQuick({ root, steps: ['node check.mjs', 'node -e 0'], say: () => {}, now: () => 0, recordBase: true }), 1);
+    assert.deepEqual(readVerdicts(join(root, 'local', 'quick-base.json'))?.steps, { 'node check.mjs': 'fail', 'node -e 0': 'pass' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
