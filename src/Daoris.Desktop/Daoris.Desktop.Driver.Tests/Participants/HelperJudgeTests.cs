@@ -124,13 +124,16 @@ public sealed class HelperJudgeTests
         Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(HelperAsk.ByPerson, "dsh"), null, Asker(), setUp, 0, true));
     }
 
-    /// <summary>A rule the person set is never read as the default: its agents stand, and an agent it does not name is walked as before.</summary>
+    /// <summary>A rule the person set stands: an agent's ask naming one it leaves out is refused, never answered by another.</summary>
     [Fact]
-    public void A_rule_the_person_set_is_not_the_default()
+    public void A_rule_the_person_set_is_not_the_default_and_refuses_an_agent_it_does_not_list()
     {
         var own = new HelperRule(HelperRules.On, ["codex-acp"]);
         Assert.Same(own, own.Over(["claude-code-acp"]));
-        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(agent: "dsh"), null, Asker(), own, 0, true));
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.NotSetUp), HelperJudge.Judge(Ask(agent: "dsh"), null, Asker(), own, 0, true));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(agent: "CODEX-ACP"), null, Asker(), own, 0, true));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(), null, Asker(), own, 0, true));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(HelperAsk.ByPerson, "dsh"), null, Asker(), own, 0, true));
     }
 
     /// <summary>A refused or answered ask is over: the judge says nothing more of it, so a look never restarts it.</summary>

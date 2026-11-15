@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agent a helper reads as: the one the ask names where the person's list allows it,
+/// The agent a helper reads as: the one the ask names, alone,
 /// else the person's list in its order, else another maker than the asker's, walked as a reviewer is (<see cref="ReviewerChoice"/>),
 /// the account by the same walk.
 /// </summary>
@@ -16,9 +16,7 @@ public static class HelperChoice
     {
         if (ask.Agent is { Length: > 0 } named)
         {
-            // Allowed where the person's list is empty or names it, in the spelling the list gives it.
-            if (rule.Agents.Count == 0) return [named];
-            if (rule.Agents.FirstOrDefault(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase)) is { } listed) return [listed];
+            return [rule.Agents.FirstOrDefault(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase)) ?? named];
         }
 
         // Another maker than the asker's.

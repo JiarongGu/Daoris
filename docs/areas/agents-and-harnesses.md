@@ -60,6 +60,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     state, because the wire's stop reason flattens failures. (D46, D53)
 11. A driven session takes no person's line on its stdin; the protocol door's stdin carries Daoris's frames, and a driven native
     prompt goes on stdin under a bare `-p` as BOM-less UTF-8, never as an argument. (D213, D49)
+    Every run of `TransportRun`, whichever harness is on it, keeps the frames of its pipe in one `FrameTape` beside its transcript
+    (`<session>.frames.jsonl`): the protocol door's both ways, the native door's what the harness says, each line with its moment,
+    flushed as said, a frame's environment, headers and credentials left out, bounded at 16 MB. A session the Lyntai layer runs
+    (`LayerRun`) keeps none yet.
 
 **The spawn**
 

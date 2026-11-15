@@ -130,6 +130,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     [
         new(Conversation, Place.Sessions, ".events.jsonl", false, bytes => HistoryBytes.None with { Conversations = bytes }),
         new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
+        new(Transcript, Place.Sessions, FrameTape.Suffix, false, bytes => HistoryBytes.None with { Transcripts = bytes }),
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),

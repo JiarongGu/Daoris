@@ -354,7 +354,7 @@
   "note.intake.transient": "The intake on {{agent}} ended: its provider kept failing through {{count}} tries, so the ask is picked again:",
   "note.partner.transient": "Partner {{agent}}'s provider kept failing; the work it left is kept.",
   "note.voice.transient": "Voice {{agent}} dropped: its provider kept failing through {{count}} tries:",
-  "note.helper.why.not-set-up": "it is not an agent Daoris has set up and signed in on this machine, and only those are asked by default",
+  "note.helper.why.not-set-up": "the agent it named is not one the rule for helpers allows: by default, an agent Daoris has set up and signed in on this machine; otherwise, one the rule lists",
   "note.helper.why.none-set-up": "no agent is set up and signed in for Daoris on this machine, and only those are asked by default",
   "note.partner.asked": "A piece was asked of {{agent}}: it works in a clone of its own and changes nothing here.",
   "note.partner.started": "Partner {{agent}} started on the piece in session {{session}}.",

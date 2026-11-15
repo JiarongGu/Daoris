@@ -58,8 +58,8 @@ public static class HelperWhy
     public const string Transient = "transient";
 
     /// <summary>
-    /// Under the default rule, the agent the asker named is not one Daoris has set up and
-    /// signed in on this machine, and only those are asked by default.
+    /// The agent the asker named is not one the rule allows: under the default, one Daoris has set up and
+    /// signed in on this machine; under the person's own rule, one it lists.
     /// </summary>
     public const string NotSetUp = "not-set-up";
 
@@ -108,7 +108,7 @@ public static class HelperWhy
         HandUncertain => "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
         Limited => "its account hit its limit before it answered, and the session no longer waits on it",
         Transient => "its provider kept failing, through every try or until its minutes ran out",
-        NotSetUp => "it is not an agent Daoris has set up and signed in on this machine, and only those are asked by default",
+        NotSetUp => "the agent it named is not one the rule for helpers allows: by default, an agent Daoris has set up and signed in on this machine; otherwise, one the rule lists",
         NoneSetUp => "no agent is set up and signed in for Daoris on this machine, and only those are asked by default",
         _ => why,
     };

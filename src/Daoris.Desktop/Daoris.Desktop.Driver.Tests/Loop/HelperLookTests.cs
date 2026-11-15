@@ -355,7 +355,7 @@ public sealed class HelperLookTests : IDisposable
         var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.refused-by"], NoteAssert.Codes(note.Parts!));
         Assert.Equal(("claude-code-acp", "not-set-up"), (note.Parts![0].Value("agent"), note.Parts![0].Value("why")));
-        Assert.Contains("not an agent Daoris has set up and signed in on this machine", note.Text);
+        Assert.Contains("an agent Daoris has set up and signed in on this machine", note.Text);
     }
 
     /// <summary>Under the default with no agent set up and signed in for Daoris here, an ask naming none is refused, never a guessed agent.</summary>
@@ -1581,15 +1581,15 @@ public sealed class HelperLookTests : IDisposable
     // ——— The choice of agent.
 
     [Fact]
-    public void The_named_agent_is_taken_if_the_rule_lists_none_or_names_it_else_the_rules_list_else_another_maker()
+    public void The_named_agent_is_the_only_one_walked_else_the_rules_list_else_another_maker()
     {
         var adapters = ProviderRegistry.Built();
         HelperAsk Ask(string? agent) => new("a1", "s1", "Why?", agent, HelperAsk.ByAgent, At);
 
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("codex-acp"), new HelperRule(HelperRules.On, []), adapters, "claude-code"));
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("CODEX-ACP"), new HelperRule(HelperRules.On, ["codex-acp", "dsh"]), adapters, "claude-code"));
-        // Named, but not one the person lets be asked: the person's list, in its order.
-        Assert.Equal(["dsh", "codex-acp"], HelperChoice.Candidates(Ask("stub"), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
+        // Named, listed or not: that agent alone.
+        Assert.Equal(["stub"], HelperChoice.Candidates(Ask("stub"), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
         Assert.Equal(["dsh", "codex-acp"], HelperChoice.Candidates(Ask(null), new HelperRule(HelperRules.On, ["dsh", "codex-acp"]), adapters, "claude-code"));
 
         // Nothing named, no list: every agent of this machine that is not the asker's own family.

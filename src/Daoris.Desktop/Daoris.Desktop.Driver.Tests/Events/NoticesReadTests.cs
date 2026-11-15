@@ -230,8 +230,35 @@ public sealed class NoticesReadTests
         Assert.Empty(standIn.Presses);
     }
 
+    /// <summary>A show of a subject goes to the running Daoris with its subject, and prints what it answers.</summary>
+    [Fact]
+    public async Task A_show_names_its_subject_to_the_instance_and_prints_the_answer()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var standIn = home.Serve();
+        standIn.Data = new { said = new TreesSaid(["memory s1 waits for your word"], [], 0).ToWire() };
+
+        Assert.Equal(0, await RunAsync(home, "--show", "s1"));
+
+        Assert.Equal($"memory s1 waits for your word{Environment.NewLine}", home.Out.ToString());
+        Assert.Equal("""{"json":false,"said":true,"show":"s1"}""", Assert.Single(standIn.Presses).GetProperty("payload").GetRawText());
+    }
+
+    /// <summary>A show is the running Daoris's to read: alone it says so and exits 2, never from the record.</summary>
+    [Fact]
+    public async Task A_show_alone_is_said_not_read()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+
+        Assert.Equal(2, await RunAsync(home, "--show", "s1"));
+        Assert.Contains("running Daoris", home.Error.ToString());
+        Assert.Equal(2, await RunAsync(home, "--show"));
+    }
+
     /// <summary>Its usage line, in the driver's usage.</summary>
     [Fact]
     public void Its_usage_line_is_in_the_driver_s_usage() =>
-        Assert.Contains("\n  notices [--json | --set-aside <kind>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  notices [--json] [--show <subject> | --set-aside <kind>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
 }
