@@ -369,7 +369,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     {
         if (_tape is { } kept) return kept;
         var sink = Sink();
-        _tape = new FrameTape(FrameTape.PathOf(TranscriptOf()), words => sink.Read(new WireReading.Shown(words)));
+        _tape = new FrameTape(FrameTape.PathOf(TranscriptOf()), words => sink.Read(new WireReading.Shown(words)), host.Clock);
         _kept.Add(_tape);
         return _tape;
     }

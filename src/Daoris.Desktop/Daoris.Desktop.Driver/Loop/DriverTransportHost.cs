@@ -11,6 +11,8 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
 {
     public string Home => driver.Context.Home;
 
+    public TimeProvider Clock => driver.RetryClock;
+
     public SessionProcesses Processes => driver.Context.Processes;
 
     public MachineLog? Log => driver.Log;

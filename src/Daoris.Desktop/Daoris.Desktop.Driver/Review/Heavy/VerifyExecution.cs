@@ -125,7 +125,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             ? new Dictionary<string, string> { [RunnerInputs.Commit] = send.Commit.ToLowerInvariant(), [RunnerInputs.Result] = answer }
             : new Dictionary<string, string>();
         var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(send.Checkout, cwd)) : send.Checkout;
-        keep(holder => holder with { Gates = [VerifyJudge.RunnerGate], Now = new HeavyGateNow(VerifyJudge.RunnerGate, 0, DateTimeOffset.UtcNow) });
+        keep(holder => holder with { Gates = [VerifyJudge.RunnerGate], Now = new HeavyGateNow(VerifyJudge.RunnerGate, 0, world.Clock.GetUtcNow()) });
         var exit = await StepAsync(runner.Run, folder, [VerifyJudge.RunnerGate], inputs, log, runner.Clock, ct).ConfigureAwait(false);
         if (exit is null) return (Ended([new VerifyGate(VerifyJudge.RunnerGate, RunnerVerdicts.Ended) { Log = log }]), false);
         var judged = runner.Result
@@ -144,7 +144,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         {
             var log = Path.Combine(_folder, "reached.log");
             var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
-            keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, DateTimeOffset.UtcNow) });
+            keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
             var wall = Stopwatch.StartNew();
             var exit = await StepAsync(command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
@@ -170,7 +170,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 var log = Path.Combine(_folder, $"gate-{at + 1:D2}-{Slug(gate.Name)}.log");
                 var folder = gate.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
                 var index = at;
-                keep(holder => holder with { Gates = [.. gates.Select(each => each.Name)], Now = new HeavyGateNow(gate.Name, index, DateTimeOffset.UtcNow) });
+                keep(holder => holder with { Gates = [.. gates.Select(each => each.Name)], Now = new HeavyGateNow(gate.Name, index, world.Clock.GetUtcNow()) });
                 var wall = Stopwatch.StartNew();
                 var rest = gates.Skip(at + 1).Select(each => new VerifyGate(each.Name, RunnerVerdicts.NotRun));
                 int? exit;

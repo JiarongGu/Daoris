@@ -54,14 +54,15 @@ public static class Orphans
     /// <param name="held">Whether a run of the sweeping loop holds a record, which that run concludes itself.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>
     public static Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default, Func<string, bool>? held = null) =>
-        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct, held);
+        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default, Func<string, bool>? held = null,
+        Func<DateTimeOffset>? now = null) =>
+        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct, held, now);
 
-    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken, Func{string, bool}?)"/>
+    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken, Func{string, bool}?, Func{DateTimeOffset}?)"/>
     /// <param name="git">How a lost done's tree is read: the review's seam, which a test stands git in at.</param>
     internal static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
         ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default,
-        Func<string, bool>? held = null)
+        Func<string, bool>? held = null, Func<DateTimeOffset>? now = null)
     {
         var ended = new List<OrphanEnded>();
         var listed = await service.ActiveSessionsAsync(ct).ConfigureAwait(false);
@@ -75,7 +76,7 @@ public static class Orphans
             // `queued` by a driver that went held the room, and every later start is refused naming it). The sweep takes one only
             // where the process that opened it is proven gone: a live opener here is still starting it.
             var claimsProcess = (session.State == "working" && (only is not null || !processes.OpenerRuns(session.Id)))
-                || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id) || NeverMarked(session, processes)));
+                || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id) || NeverMarked(session, processes, now)));
             if (!claimsProcess || processes.AliveOnThisMachine(session.Id) || (only is null && held?.Invoke(session.Id) == true)) continue;
 
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
@@ -95,9 +96,12 @@ public static class Orphans
 
     internal static readonly TimeSpan UnmarkedGrace = TimeSpan.FromMinutes(2);
 
-    /// <summary>A <c>queued</c> or <c>starting</c> record no process marks, untouched past <see cref="UnmarkedGrace"/>: its opener went first.</summary>
-    private static bool NeverMarked(SessionView session, SessionProcesses processes) =>
-        session.Updated is { } updated && DateTimeOffset.UtcNow - updated > UnmarkedGrace && !processes.HasMarker(session.Id);
+    /// <summary>
+    /// A <c>queued</c> or <c>starting</c> record no process marks, untouched past <see cref="UnmarkedGrace"/> by <paramref name="now"/>: its opener
+    /// went first. A caller that hands no clock (the person's stop of one record) judges no grace.
+    /// </summary>
+    private static bool NeverMarked(SessionView session, SessionProcesses processes, Func<DateTimeOffset>? now) =>
+        now is not null && session.Updated is { } updated && now() - updated > UnmarkedGrace && !processes.HasMarker(session.Id);
 
     /// <summary>
     /// What the record of a lost session gains as it ends: where its quest closed done and waits on its evidence, the

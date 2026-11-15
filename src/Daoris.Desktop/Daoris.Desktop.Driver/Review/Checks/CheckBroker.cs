@@ -9,8 +9,10 @@ public delegate Task<int> BrokeredRun(HeavyRunAsk ask, HeavyRunWorld world, Text
 /// (<see cref="MachineAdmission.CapacityVariable"/>) is the machine's and still holds the terminal's and the merge tool's runs beside it.
 /// A run whose state says it runs but which this broker does not hold ended with a restart, and is queued again.
 /// </remarks>
-public sealed class CheckBroker(string home, Func<string, string?> folderOf, BrokeredRun? run = null)
+public sealed class CheckBroker(string home, Func<string, string?> folderOf, BrokeredRun? run = null, TimeProvider? clock = null)
 {
+    private readonly TimeProvider _clock = clock ?? TimeProvider.System;
+
     /// <summary>The most of a log's end a verdict keeps, in characters.</summary>
     public const int TailBound = 4000;
 
@@ -33,18 +35,18 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
         var asks = _files.Asks();
         foreach (var ask in asks.Where(each => _files.ReadState(each.Id) is { State: CheckStates.Running } && each.Id != _holding))
         {
-            _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, DateTimeOffset.UtcNow));
+            _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()));
         }
 
-        if (CheckQueue.Next(asks, _files.ReadState) is not { } next) return null;
+        if (CheckQueue.Next(asks, _files.ReadState, _clock.GetUtcNow()) is not { } next) return null;
         if (folderOf(next.Session) is not { Length: > 0 } folder || !Directory.Exists(folder))
         {
-            return Keep(new CheckState(next.Id, CheckStates.Errored, DateTimeOffset.UtcNow) { Error = "its session has no tree on this machine to run in." });
+            return Keep(new CheckState(next.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = "its session has no tree on this machine to run in." });
         }
 
         var tip = await TipAsync(folder, ct).ConfigureAwait(false);
         _holding = next.Id;
-        _files.WriteState(new CheckState(next.Id, CheckStates.Running, DateTimeOffset.UtcNow) { Tip = tip });
+        _files.WriteState(new CheckState(next.Id, CheckStates.Running, _clock.GetUtcNow()) { Tip = tip });
         try
         {
             int exit;
@@ -54,18 +56,18 @@ public sealed class CheckBroker(string home, Func<string, string?> folderOf, Bro
                 exit = await _run(new HeavyRunAsk(next.Gate) { Command = next.Command }, world, log, ct).ConfigureAwait(false);
             }
 
-            return Keep(new CheckState(next.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, DateTimeOffset.UtcNow)
+            return Keep(new CheckState(next.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, _clock.GetUtcNow())
             {
                 Exit = exit, Tail = TailOf(next.Id), Tip = tip, Error = exit == 2 ? TailOf(next.Id) : null,
             });
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            return Keep(new CheckState(next.Id, CheckStates.Stopped, DateTimeOffset.UtcNow) { Tail = TailOf(next.Id), Tip = tip });
+            return Keep(new CheckState(next.Id, CheckStates.Stopped, _clock.GetUtcNow()) { Tail = TailOf(next.Id), Tip = tip });
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return Keep(new CheckState(next.Id, CheckStates.Errored, DateTimeOffset.UtcNow) { Error = error.Message, Tip = tip });
+            return Keep(new CheckState(next.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = error.Message, Tip = tip });
         }
         finally
         {

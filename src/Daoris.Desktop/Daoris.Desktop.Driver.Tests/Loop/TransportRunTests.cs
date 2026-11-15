@@ -272,6 +272,8 @@ public sealed class TransportRunTests : IDisposable
 /// </summary>
 internal sealed class RecordingTransportHost(string home, SessionProcesses processes) : ITransportHost
 {
+    public TimeProvider Clock { get; } = new MovedClock();
+
     public List<string> Asked { get; } = [];
 
     /// <summary>The process each bracket is written for, the one the spawn after it starts.</summary>

@@ -1,4 +1,5 @@
 import { readProjects } from './projects.mjs';
+import { isRealProcess } from './real-process.mjs';
 
 /**
  * The wall clock and the real wait in the application and the unit-test projects: `DateTime.Now`, `DateTime.UtcNow`,
@@ -11,14 +12,19 @@ const WALL = /\b(?:DateTime(?:Offset)?\.(?:Utc)?Now|TimeProvider\.System|Thread\
 const DELAY = /\bTask\.Delay\s*\(([^\n]*)/g;
 const HANDED = /Timeout\.Infinite|[Cc]lock|[Tt]ime[Pp]rovider|\bprovider\b|\btime\b|MovedClock|_time\b/;
 
-/** The occurrences in one source's text, comments aside. */
+/**
+ * The occurrences in one source's text, comments aside. A real-process test's wait on its process or watcher is its subject, so its
+ * `Thread.Sleep` and its `Task.Delay` naming no clock are not counted; its reads of "now" are.
+ */
 export function clockSites(text) {
+  const realWaits = !isRealProcess(text);
   let count = 0;
   for (const raw of text.split('\n')) {
     const line = raw.trim();
     if (line.startsWith('//') || line.startsWith('*') || line.startsWith('/*')) continue;
-    count += (line.match(WALL) ?? []).length;
-    for (const delay of line.matchAll(DELAY)) if (!HANDED.test(delay[1])) count += 1;
+    const wall = line.match(WALL) ?? [];
+    count += realWaits ? wall.length : wall.filter((each) => !each.startsWith('Thread.Sleep')).length;
+    if (realWaits) for (const delay of line.matchAll(DELAY)) if (!HANDED.test(delay[1])) count += 1;
   }
   return count;
 }

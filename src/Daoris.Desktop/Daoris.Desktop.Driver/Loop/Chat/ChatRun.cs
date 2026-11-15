@@ -114,7 +114,7 @@ internal sealed class ChatRun(
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record, a
             // go-on as a first start, and its process's lineage token issued, a go-on's the one issued at its move, its retry's its own.
             start = new TransportStart(info, StartClass.Person) { Moved = goOn?.Proc };
-            run = agent.Run(new ChatTransportHost(home, processes, service, Context.Conversations, Context.Output), start);
+            run = agent.Run(new ChatTransportHost(home, processes, service, Context.Conversations, Context.Output, clock()), start);
             var proc = await run.BracketAsync(sessionId, opened).ConfigureAwait(false);
 
             // The skills plugins hand this conversation's destination, composed under the home and handed by the harness's own session-only

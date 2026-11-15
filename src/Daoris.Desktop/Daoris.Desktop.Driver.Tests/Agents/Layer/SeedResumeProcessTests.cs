@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Needs, Needed.Network)]
 public sealed class SeedResumeProcessTests : IDisposable
 {
+    private static readonly DateTimeOffset Moment = new MovedClock().GetUtcNow();
+
     private const string Word = "PERIWINKLE-4721";
 
     private const string Branch = "heron-9";
@@ -68,7 +70,7 @@ public sealed class SeedResumeProcessTests : IDisposable
             ? set
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
         var conversation = Guid.NewGuid().ToString();
-        var placed = ClaudeSeeding.Seeding.Place(new SeedAsk("claude-code", home, _tree, conversation, History, Context, DateTimeOffset.UtcNow));
+        var placed = ClaudeSeeding.Seeding.Place(new SeedAsk("claude-code", home, _tree, conversation, History, Context, Moment));
         Assert.Null(placed.Refused);
         // The project folder is named after this test's own tree, so it holds this conversation alone and goes whole.
         _placed.Add(Path.Combine(home, Path.GetDirectoryName(Assert.Single(placed.Files))!));
@@ -91,7 +93,7 @@ public sealed class SeedResumeProcessTests : IDisposable
         var home = Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } set
             ? set
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
-        var placed = CodexSeeding.Seeding.Place(new SeedAsk("codex-acp", home, _tree, Guid.NewGuid().ToString(), History, Context, DateTimeOffset.UtcNow));
+        var placed = CodexSeeding.Seeding.Place(new SeedAsk("codex-acp", home, _tree, Guid.NewGuid().ToString(), History, Context, Moment));
         Assert.Null(placed.Refused);
         _placed.AddRange(placed.Files.Select(name => Path.Combine(home, name)));
 
@@ -139,7 +141,7 @@ public sealed class SeedResumeProcessTests : IDisposable
     private (ProcessStartInfo Info, string Session) DshWritten(IReadOnlyList<SessionEvent> history)
     {
         var home = Path.Combine(_tree, "dsh-home");
-        var placed = DshSeeding.Seeding.Place(new SeedAsk("dsh", home, _tree, Guid.NewGuid().ToString(), history, Context, DateTimeOffset.UtcNow));
+        var placed = DshSeeding.Seeding.Place(new SeedAsk("dsh", home, _tree, Guid.NewGuid().ToString(), history, Context, Moment));
         Assert.Null(placed.Refused);
         var recipe = new DshSpawn().Start(new SpawnRequest("test", _tree, "http://127.0.0.1:1") { Command = [LiveAgentFactAttribute.Located("dsh")!] });
         var info = new ProcessStartInfo(recipe.Program)

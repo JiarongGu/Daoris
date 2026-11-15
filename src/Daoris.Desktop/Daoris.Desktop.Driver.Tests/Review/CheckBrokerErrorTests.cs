@@ -56,17 +56,18 @@ public sealed class CheckBrokerErrorTests : IDisposable
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
+        var clock = new MovedClock();
         var broker = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
         {
             await output.WriteLineAsync("run-heavy: no declared gate could be run");
             return 2;
-        });
+        }, clock);
 
         var state = await broker.RunNextAsync(CancellationToken.None);
 
         Assert.Equal(CheckStates.Errored, state!.State);
         Assert.Contains("no declared gate", state.Error);
-        Assert.Null(CheckQueue.Next(files.Asks(), files.ReadState));
+        Assert.Null(CheckQueue.Next(files.Asks(), files.ReadState, clock.GetUtcNow()));
         Assert.Equal("a1", CheckQueue.Next(files.Asks(), files.ReadState, state.At + CheckQueue.RetryAfter)?.Id);
     }
 
@@ -92,15 +93,16 @@ public sealed class CheckBrokerErrorTests : IDisposable
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
-        var broker = new CheckBroker(_home, _ => _tree, (_, _, _, _) => throw new DriverException("no job could be made"));
+        var clock = new MovedClock();
+        var broker = new CheckBroker(_home, _ => _tree, (_, _, _, _) => throw new DriverException("no job could be made"), clock);
 
         var state = await broker.RunNextAsync(CancellationToken.None);
 
         Assert.Equal(CheckStates.Errored, state!.State);
         Assert.Contains("no job could be made", state.Error);
         var asks = files.Asks();
-        Assert.Null(CheckQueue.Next(asks, files.ReadState));
-        Assert.Equal("a1", CheckQueue.Next(asks, files.ReadState, DateTimeOffset.UtcNow + CheckQueue.RetryAfter + TimeSpan.FromSeconds(1))?.Id);
+        Assert.Null(CheckQueue.Next(asks, files.ReadState, clock.GetUtcNow()));
+        Assert.Equal("a1", CheckQueue.Next(asks, files.ReadState, clock.GetUtcNow() + CheckQueue.RetryAfter + TimeSpan.FromSeconds(1))?.Id);
     }
 
     [Fact]

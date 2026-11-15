@@ -1,4 +1,5 @@
 import { readProjects } from './projects.mjs';
+import { isRealProcess } from './real-process.mjs';
 
 /**
  * The process starts in the application and the unit-test projects: `Process.Start`, `Process.GetProcessById`,
@@ -9,8 +10,9 @@ import { readProjects } from './projects.mjs';
  */
 const STARTS = /\bProcess\.(?:Start|GetProcessById|GetProcesses|GetProcessesByName)\s*\(|\bnew\s+Process\s*(?:\(\s*\)|\{)/g;
 
-/** The starts in one source's text, comments aside. */
+/** The starts in one source's text, comments aside; a real-process test's own are its subject and are not counted. */
 export function processSites(text) {
+  if (isRealProcess(text)) return 0;
   let count = 0;
   for (const raw of text.split('\n')) {
     const line = raw.trim();

@@ -33,7 +33,7 @@ internal sealed class ChatCarry(
         var to = selection.Profile is { Length: > 0 } ? selection.ProfileHome : null;
         var seeding = ConversationSeedings.Through(registry, door.Id);
         SeedAsk Seed(string home) =>
-            new(door.Id.Value, home, tree, Guid.NewGuid().ToString(), context.Events.After(prior.Session, 0).Events, brief.Context, DateTimeOffset.UtcNow);
+            new(door.Id.Value, home, tree, Guid.NewGuid().ToString(), context.Events.After(prior.Session, 0).Events, brief.Context, context.Harnesses.Clock());
         if (prior.Adapter is { Length: > 0 } ran && !new AgentOfDoor(registry).Same(ran, door.Id.Value))
         {
             // Another agent holds no conversation of this one's to carry: it goes on in one written for it, in a home of Daoris's.

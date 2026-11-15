@@ -86,7 +86,8 @@ public static class NoticesRead
     /// The verb: through the running Daoris where one answers <c>NOTIFICATIONS</c>, else from the record alone, in the same words.
     /// </summary>
     public static async Task<int> RunAsync(
-        IReadOnlyList<string> args, string home, InstanceWorld? instance, TextWriter output, TextWriter error, CancellationToken ct = default)
+        IReadOnlyList<string> args, string home, InstanceWorld? instance, TextWriter output, TextWriter error, CancellationToken ct = default,
+        TimeProvider? clock = null)
     {
         if (args is ["--set-aside", { Length: > 0 } kind] && !kind.StartsWith('-'))
         {
@@ -117,7 +118,8 @@ public static class NoticesRead
             return 2;
         }
 
-        var said = Said(Alone(home, DateTimeOffset.UtcNow), json, DateTimeOffset.UtcNow);
+        var now = (clock ?? TimeProvider.System).GetUtcNow();
+        var said = Said(Alone(home, now), json, now);
         said.Print(output, error);
         return said.Code;
     }

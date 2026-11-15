@@ -99,7 +99,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 {
                     case null when files.Stopped(request.Id):
                     case BrainstormStates.Frozen when files.Stopped(request.Id):
-                        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, state?.Packet, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
+                        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, state?.Packet, BrainstormStates.Stopped, Clock.GetUtcNow()));
                         events.Add(_context.Said.Own("brainstorm", $"brainstorm `{request.Id}` stopped by the person before it ran: nothing went to any agent."));
                         break;
                     case null when _context.Beside:
@@ -123,7 +123,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun - held <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
-                        files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });
+                        files.WriteState(state with { State = BrainstormStates.Running, At = Clock.GetUtcNow() });
                         Beside(request, state.Packet!, RuleOf(request.Repository, snapshot), files, WorkspaceOf(request.Repository, snapshot), ct);
                         break;
                     case BrainstormStates.Running when _context.Runs.TryOpinion(Claim(request.Id)):
@@ -204,7 +204,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     {
         var packet = await AssembleAsync(request.Question, request.Repository, snapshot, ct, request.Sources).ConfigureAwait(false);
         files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
-        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, DateTimeOffset.UtcNow));
+        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, Clock.GetUtcNow()));
         var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
         return $"brainstorm `{request.Id}` frozen: packet `{packet.Digest[..19]}`, {from}. Read it with `daoris brainstorm show {request.Id}`, "
             + $"and send it with `daoris brainstorm send {request.Id}`.";
@@ -220,7 +220,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// A brainstorm a driver that stopped left running: each pass still running ends as <c>interrupted</c>, what
     /// answered is kept as the unranked document, and nothing runs again by itself.
     /// </summary>
-    private static string Interrupted(BrainstormRequest request, BrainstormState state, BrainstormFiles files)
+    private string Interrupted(BrainstormRequest request, BrainstormState state, BrainstormFiles files)
     {
         var id = request.Id;
         var passes = new List<BrainstormPassRecord>();
@@ -243,7 +243,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 id, packet, passes, BrainstormSyntheses.Number(answered), Needs(answered), BrainstormDocuments.Interrupted));
         }
 
-        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, state.Packet, BrainstormStates.Interrupted, DateTimeOffset.UtcNow));
+        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, state.Packet, BrainstormStates.Interrupted, Clock.GetUtcNow()));
         files.RemoveRooms(id);
         return $"brainstorm `{id}` was running when its driver stopped: ended as interrupted, what answered is kept, and nothing runs again by itself.";
     }
@@ -280,7 +280,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, digest, "failed", DateTimeOffset.UtcNow));
+                files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, digest, "failed", Clock.GetUtcNow()));
                 files.RemoveRooms(request.Id);
                 // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer.
                 return new StartRun($"brainstorm `{request.Id}` stopped: {error.Message}", Opened: true)
@@ -377,7 +377,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                                              && pass.Codes.Any(code => code is StartPasses.Cooling or CapFull or Limit)).ToList();
             if (answered.Count == 0 && shortOf.Count == 0)
             {
-                files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.NoAgent, DateTimeOffset.UtcNow));
+                files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.NoAgent, Clock.GetUtcNow()));
                 return Ran(LookClass.Progress, $"brainstorm `{id}` ended: no agent could answer, and its packet is kept.");
             }
 
@@ -386,7 +386,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             {
                 var why = BrainstormDocuments.ShortOfMakers(shortOf, answered.Count);
                 files.WriteDocument(id, BrainstormDocuments.Unranked(id, packet, passes, handed, needs, why));
-                files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.ShortHanded, DateTimeOffset.UtcNow));
+                files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.ShortHanded, Clock.GetUtcNow()));
                 return Ran(LookClass.Progress, $"brainstorm `{id}` ended with no synthesis: {why}. Read what answered with `daoris brainstorm show {id}`.");
             }
 
@@ -420,7 +420,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
             files.WriteDocument(id, document);
             files.WriteState(new BrainstormState(
-                id, BrainstormStates.Ended, digest, document.Unranked is null ? null : BrainstormStates.Unranked, DateTimeOffset.UtcNow));
+                id, BrainstormStates.Ended, digest, document.Unranked is null ? null : BrainstormStates.Unranked, Clock.GetUtcNow()));
             return Ran(LookClass.Progress, $"brainstorm `{id}` ended: {document.Rows.Count} {(document.Unranked is null ? "ranked" : "unranked")} rows from "
                 + $"{answered.Count} of {ran} generators. Read it with `daoris brainstorm show {id}`.");
         }
@@ -436,7 +436,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     private static StartRun Ran(LookClass @class, string line) => new(line, Opened: true) { Look = new LookClassed(@class, "brainstorm") };
 
     /// <summary>The person's stop: every pass ended, and what answered kept as the unranked document.</summary>
-    private static string Stopped(
+    private string Stopped(
         string id, BrainstormPacket packet, IReadOnlyList<BrainstormPassRecord> passes, IReadOnlyList<(BrainstormBy By, BrainstormAnswer Answer)> answered,
         IReadOnlyList<string> needs, BrainstormFiles files, string digest)
     {
@@ -445,7 +445,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             files.WriteDocument(id, BrainstormDocuments.Unranked(id, packet, passes, BrainstormSyntheses.Number(answered), needs, BrainstormDocuments.StoppedByPerson));
         }
 
-        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
+        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.Stopped, Clock.GetUtcNow()));
         return $"brainstorm `{id}` stopped by the person: {answered.Count} answers kept, and nothing runs again by itself.";
     }
 

@@ -54,10 +54,13 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         }
     }
 
+    /// <summary>The identity of the repository at <paramref name="root"/> by its common dir, or null where that folder cannot be read.</summary>
+    internal static string? RepositoryIdentity(string root) => FolderIdentity.Of(Path.Combine(root, ".git"));
+
     private async Task<int> KeepAloneAsync(string root, string repository, string workspace, string? line, CancellationToken ct, RefSnapshot? refs)
     {
         // The repository judged, by its common dir's identity: a folder that cannot be read is no repository to keep an end for.
-        if (FolderIdentity.Of(Path.Combine(root, ".git")) is not { } identity) return 0;
+        if (RepositoryIdentity(root) is not { } identity) return 0;
         refs ??= RefSnapshot.Take(root);
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
         var standing = context.Recorded.All();
@@ -231,7 +234,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         await alone.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (FolderIdentity.Of(Path.Combine(root, ".git")) is not { } identity) return false;
+            if (RepositoryIdentity(root) is not { } identity) return false;
             refs ??= RefSnapshot.Take(root);
             var subject = new EndSubject(entry.Branch, entry.Tip, EndRole.Landing, entry) { Gone = true };
             var verdict = await EndJudgement.JudgeAsync(root, EndCycle.Recorded(entry), subject, line, NoHolders, carriers: null, ct, refs)

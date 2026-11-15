@@ -16,7 +16,7 @@ public sealed class CheckoutWatchTests : FreshnessCheckout
         var checkout = Checkout();
         using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: "docs/index");
         Assert.True(freshness.Watching);
-        var service = Serve(checkout, freshness, TimeProvider.System);
+        var service = Serve(checkout, freshness, new SteppedTime(DateTimeOffset.Parse("2026-10-17T10:00:00Z")));
         Assert.False(await Finds(service));
 
         Write("served/docs/later.md", "# Zeppelins\n\nWritten while the session ran.\n");
