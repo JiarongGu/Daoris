@@ -30,7 +30,7 @@ describe("a place's plan and apply", () => {
     invoke.mockResolvedValueOnce({ asked: ASK, repositories: [], changes: [], refusals: [], terminal: 'daoris place engine', applies: true, digest: 'a'.repeat(64) });
     const { result } = renderHook(() => usePlacePlan(ASK), { wrapper });
     await waitFor(() => expect(result.current.plan?.digest).toBe('a'.repeat(64)));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLACE_PLAN', expect.objectContaining({ payload: ASK }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLACE_PLAN', expect.objectContaining({ payload: { ...ASK, held: expect.any(String) } }));
   });
 
   it('asks nothing while it is not wanted', () => {
@@ -57,7 +57,7 @@ describe('the add choosing Work in place', () => {
 
   it('plans a set-up of one and applies that plan by its digest', async () => {
     invoke
-      .mockResolvedValueOnce({ refusals: [], digest: 'd'.repeat(64) })
+      .mockResolvedValueOnce({ repositories: [], refusals: [], digest: 'd'.repeat(64) })
       .mockResolvedValueOnce({ done: true, message: 'Applied.', digest: 'd'.repeat(64), operations: [] });
 
     const applied = await chooseInPlace('reports');
@@ -71,6 +71,7 @@ describe('the add choosing Work in place', () => {
 
   it('applies nothing where the plan refuses, and says why', async () => {
     invoke.mockResolvedValueOnce({
+      repositories: [],
       refusals: [{ repository: 'reports', part: 'delivery', code: 'place-kind', sentence: '`reports` cannot follow it.' }],
       digest: 'e'.repeat(64),
     });

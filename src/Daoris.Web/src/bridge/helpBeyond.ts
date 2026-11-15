@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { readPlace } from '../help/focus';
 import type { BeyondEntry } from '../help/focus/beyond';
 import { HELP_PRESS_OUTCOMES } from '../person/standing';
-import { call } from './call';
+import { askHeld } from './state/held';
 
 const ACTS: readonly BeyondEntry['act'][] = ['search', 'read', 'propose', 'press', 'asked'];
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
@@ -33,9 +33,10 @@ export const HELP_BEYOND = ['help-beyond'] as const;
  */
 export const useHelpBeyond = (session: string | null) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
   return useQuery({
     queryKey: [...HELP_BEYOND, session],
-    queryFn: async () => beyondAnswer(await call('HELP_BEYOND', { session: session! })),
+    queryFn: () => askHeld('HELP_BEYOND', client, [...HELP_BEYOND, session], { session: session! }, beyondAnswer),
     enabled: isAvailable && session !== null,
   });
 };

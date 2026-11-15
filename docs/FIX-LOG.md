@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - A place's set-up panel crashed the window reading `plan.repositories.length` (WEBHELD1)
+
+- **Symptom:** Agents, Setup, a place, *Set up…* threw "Cannot read properties of undefined (reading 'length')"; a probe through the
+  window bridge answered `{ pending: true }` for a plan of a slower repository and for one of three, a full plan for a fast one.
+- **Root cause:** b4a0aab97d made `PLACE_PLAN` `[ByEvent]`, so `HeldAnswers.AskAsync` answers `{ pending: true }` after 100 ms and the plan
+  later as `DAORIS.ANSWERED`; `usePlacePlan` still read it with a plain `call`, so the pending answer became the plan. The same held `call`
+  stood on `ASK_PLAN`, `TOGETHER`, `HELP_BEYOND`, `HELP_READINGS` and the add's plan.
+- **Fix:** `usePlacePlan`, `useAskPlan`, `useTogether` and `useHelpBeyond` read through `askHeld` with a reader that takes the pending
+  answer as none; the paged readings and the add's plan, which no query holds, through `askSettled` (asked again while nothing is held).
+  `heldRoutes.test.ts` reads each `[ByEvent("…")]` name from the C# and fails a page's plain `call(` of one.
+- **Verified.** Red first: `setup.held.test.tsx` (the plan was `{ pending: true }`); green after, with the set-up, bridge, help and ask
+  web tests.
+
 ## 2026-11-16 - The release rehearsal and the pinned git leg each red on main 1779ac2ec4
 
 - **Symptom:** `rehearse` failed four checks (the checkpointing pack's "core row stays on" and "comes back", the move to `.agents`'s

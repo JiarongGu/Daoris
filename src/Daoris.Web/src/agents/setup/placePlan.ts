@@ -175,6 +175,10 @@ function suggestionOf(row: PlaceRepositoryPlan): { preset: string; why: Suggesti
   return { preset: row.suggested.preset, why };
 }
 
+/** The shell's answer as a plan: one that is no plan (the shell's pending among them, the plan coming by event) is none. */
+export const readPlacePlan = (answer: unknown): PlacePlanned | null =>
+  typeof answer === 'object' && answer !== null && Array.isArray((answer as { repositories?: unknown }).repositories) ? (answer as PlacePlanned) : null;
+
 export function suggestionsOf(plan: PlacePlanned | null): Suggestions | null {
   if (!plan || plan.repositories.length === 0) return null;
   const suits: Record<string, string[]> = {};

@@ -1,4 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { askHeld } from '../state/held';
 import { useShenora } from '@shenora/react';
 import type { TogetherView } from '../../work/head/TogetherDoor';
 import { call } from '../call';
@@ -17,9 +18,11 @@ const answerOf = (answer: { operation?: unknown; done?: unknown; refused?: unkno
 /** The operation `session` is in, head or member, under the sessions' key so a press's publish asks it again; null where none. */
 export const useTogether = (session: string | null | undefined): TogetherView | null => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = ['sessions', 'together', session ?? ''] as const;
   const answer = useQuery({
-    queryKey: ['sessions', 'together', session ?? ''],
-    queryFn: () => call('TOGETHER', { session: session ?? '' }) as Promise<{ operation?: TogetherView | null }>,
+    queryKey,
+    queryFn: () => askHeld('TOGETHER', client, queryKey, { session: session ?? '' }, (told) => told as { operation?: TogetherView | null }),
     enabled: isAvailable && Boolean(session),
     staleTime: 10_000,
   });

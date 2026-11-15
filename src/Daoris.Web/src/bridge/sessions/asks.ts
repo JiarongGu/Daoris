@@ -110,9 +110,11 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
  */
 export const useAskPlan = (ask: string | null, { enabled = true }: { enabled?: boolean } = {}): AskPlan | null => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.allAsks, 'plan', ask ?? 'none'] as const;
   const query = useQuery({
-    queryKey: [...keys.allAsks, 'plan', ask ?? 'none'] as const,
-    queryFn: async () => askPlanOf(await call('ASK_PLAN', { ask })),
+    queryKey,
+    queryFn: () => askHeld('ASK_PLAN', client, queryKey, { ask: ask! }, askPlanOf),
     enabled: isAvailable && enabled && ask !== null,
     refetchOnWindowFocus: false,
   });
