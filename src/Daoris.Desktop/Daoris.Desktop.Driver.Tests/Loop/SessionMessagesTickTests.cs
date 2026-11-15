@@ -79,10 +79,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     public async Task A_closed_quests_session_whose_conversation_was_lost_goes_on_as_a_conversation_where_a_runner_is(bool shell)
     {
         await using var service = SaidStandIn.Start(_repository);
-        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.DoneRunAsync(Protocol(service, "resumes"));
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
-        var handed = new List<(string Session, string Why)>();
+        var handed =new List<(string Session, string Why)>();
         Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
         {
             lock (handed) handed.Add((session, why.Code));
@@ -122,7 +122,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
 
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.DoneRunAsync(driver);
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         Assert.Equal(new HarnessConversation("acp-stub", "conv-s1"), new HarnessConversations(_home).Read("s1"));
 
@@ -281,7 +281,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "elsewhere");
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.DoneRunAsync(driver);
         await service.SayAsync("s1", "Also log the port.");
         var before = service.Record("s1");
 
@@ -315,8 +315,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var tree = TreeOf(service, "s1");
+        await service.DoneRunAsync(driver);
+        var tree = service.TreeOf("s1");
         var folders = TreeFolders();
         File.WriteAllText(Path.Combine(tree, "work.txt"), "the session's work\n");
         GitIn(tree, "add", "-A");
@@ -351,8 +351,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var tree = TreeOf(service, "s1");
+        await service.DoneRunAsync(driver);
+        var tree = service.TreeOf("s1");
         Git("worktree", "remove", "--force", tree);
         Directory.CreateDirectory(Path.Combine(tree, "node_modules"));
         File.WriteAllText(Path.Combine(tree, "node_modules", "left.txt"), "left behind\n");
@@ -380,8 +380,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var tree = TreeOf(service, "s1");
+        await service.DoneRunAsync(driver);
+        var tree = service.TreeOf("s1");
         Git("worktree", "remove", "--force", tree);
         Git("branch", "-D", $"daoris/{Path.GetFileName(tree)}");
         await service.SayAsync("s1", "Also log the port.");
@@ -402,10 +402,6 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Contains(look.Events, line => line.Contains("held", StringComparison.Ordinal) && line.Contains("are both gone", StringComparison.Ordinal));
         Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == StartNoteCodes.TreeGone.Code) == true);
     }
-
-    /// <summary>The tree the record says its session ran in.</summary>
-    private static string TreeOf(SaidStandIn service, string session) =>
-        JsonNode.Parse(service.Record(session))!["tree"]!.GetValue<string>();
 
     private string[] Branches()
     {
@@ -471,7 +467,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Null(runs[0]["resume"]);
         Assert.Equal(("native-1", "Also log the port."), (runs[1]["resume"]!.GetValue<string>(), runs[1]["prompt"]!.GetValue<string>()));
         Assert.Equal(1, service.SessionCount);
-        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+        Assert.Equal(("awaiting-step", "Done"), (service.State("s1"), service.Status("q1")));
 
         var events = Events("s1");
         Assert.Contains(events, e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "said-1", Reaches: "turn-end" });
@@ -518,6 +514,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.True(processes.InboxOf("s1")!.Hold(new ChatMessage(GoOn, [])));
         File.WriteAllText(go, "");
         await tick.WaitAsync(Poll.Patience);
+        await service.EndRunAsync();
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
 
         const string Resume = "再来一次 \U0001F600 and use 9090.";
@@ -596,7 +593,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     {
         await using var service = SaidStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.DoneRunAsync(driver);
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         service.TakeBackAtMove("s1", "w1");
@@ -622,7 +619,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     public async Task A_resumed_run_that_could_not_start_fails_as_a_start_and_its_words_wait_on_it()
     {
         await using var service = SaidStandIn.Start(_repository);
-        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.DoneRunAsync(Protocol(service, "resumes"));
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         var notAProgram = Path.Combine(_home, "not-a-program.txt");
         File.WriteAllText(notAProgram, "not a program");
@@ -710,6 +707,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         await Native().RunOnceAsync().WaitAsync(Poll.Patience);
+        await service.EndRunAsync();
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         File.WriteAllText(Path.Combine(_home, "exits.count"), exits.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -1328,14 +1326,15 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
         private JsonObject Find(string id) => _sessions.Single(s => s["id"]!.GetValue<string>() == id);
 
-        private static readonly HashSet<string> Live = ["queued", "starting", "working", "awaiting-person"];
+        private static readonly HashSet<string> Live = ["queued", "starting", "working", "awaiting-person", "awaiting-step"];
 
         private static readonly Dictionary<string, string[]> Allowed = new()
         {
             ["queued"] = ["starting", "stood-down", "failed", "stopped"],
             ["starting"] = ["working", "stood-down", "failed", "stopped"],
-            ["working"] = ["awaiting-person", "completed", "declined", "stood-down", "failed", "stopped"],
+            ["working"] = ["awaiting-person", "awaiting-step", "completed", "declined", "stood-down", "failed", "stopped"],
             ["awaiting-person"] = ["working", "completed", "declined", "stopped"],
+            ["awaiting-step"] = ["working", "awaiting-person", "completed", "declined", "stopped"],
         };
 
         private async Task ServeAsync()

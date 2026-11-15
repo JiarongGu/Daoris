@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The words ticks' sessions ended failed: their stand-in service refused the wait on a run's next step
+
+- **Symptom:** nine cases of `SessionMessagesTickTests` (a Process class) failed on main, each first look's session ending `failed` with
+  "the service refused moving session `s1` to awaiting-step" where the case wanted a closed quest's session ended `completed`; three
+  tree cases still passed, but only by going on from that failed record.
+- **Root cause:** 1c98d747e5 made an agent's done in a workflow's run end its turn waiting on the run's next step (`awaiting-step`), which
+  only the run's end ends. The class's sessions run under the isolating workflow it saves (`IsolatedPlaces.In`), a named one, so each done
+  waits; its stand-in service kept the lifecycle from before and refused working to `awaiting-step`, so the driver failed the record. The
+  class is in no quick gate, so it stayed red; it is green at 78b41d4419 and red at 1c98d747e5, before the clock change it was put on.
+- **Fix:** the stand-in moves as the service does (`awaiting-step` live, left for working, a park or an end), and a case whose session
+  the person writes to after its quest closed ends the run first (`StandInRunEnds`): the run's end through the ordinary move with its
+  note, then the tidy's let-go of the ended record's tree lock, which no look does for a record its run's end ended. The native case
+  that concludes within its first look expects `awaiting-step`.
+- **Verification:** `SessionMessagesTickTests` passes alone on the Process settings twice in a row, its 26 cases going on from a
+  completed record again.
+
 ## 2026-11-15 - A run that came to its end left its own session waiting when the person had passed its holds
 
 - **Symptom:** a run reached every step of its graph, its branch landed on its line, and its session stayed `awaiting-step` with no
