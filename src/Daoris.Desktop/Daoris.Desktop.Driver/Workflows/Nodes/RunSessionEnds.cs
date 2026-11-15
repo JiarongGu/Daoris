@@ -90,7 +90,7 @@ public static class RunSessionEnds
             : $"run   {end.Run}: {answer.Message}");
     }
 
-    private static void Quiet(RunEndPorts ports, string run, string reason, string? detail = null)
+    internal static void Quiet(RunEndPorts ports, string run, string reason, string? detail = null)
     {
         if (EmptyRunEnds.Changed(ports.Home, run, reason)) ports.Log?.Invoke(EmptyRunEnds.Event, EmptyRunEnds.Sentence(run, reason, detail));
     }
