@@ -68,12 +68,12 @@ internal static class TreePreparation
 
     /// <summary>
     /// Runs the declaration in <paramref name="tree"/>, saying each command that failed. Visited is true where a terminal's visit ended
-    /// one, which stops the stage as it does an install; Told is what the agent is told where a baseline ran and recorded.
-    /// </summary>
+    /// one, which stops the stage as it does an install; Told is what the agent is told where a baseline ran and recorded.    /// </summary>
     internal static async Task<(bool Visited, string? Told)> RunAsync(
-        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited)
+        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited, bool withBaseline = true)
     {
         var declared = TreePrepDeclared.Read(checkout);
+        if (!withBaseline) declared = declared with { Baseline = null };
         if (declared.Empty) return (false, null);
         string? told = null;
         using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);

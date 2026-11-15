@@ -142,6 +142,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
         try
         {
+            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
             var log = Path.Combine(_folder, "reached.log");
             var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
             keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
@@ -164,6 +165,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var ran = new List<VerifyGate>();
         try
         {
+            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
             for (var at = 0; at < gates.Count; at++)
             {
                 var gate = gates[at];
@@ -226,6 +228,24 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
 
         await WorkingTree.GitAsync(send.Checkout, ["worktree", "lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), tree], ct).ConfigureAwait(false);
+    }
+
+    private async Task<VerifyResult?> UnpreparedAsync(string tree, CancellationToken ct)
+    {
+        string? failed;
+        try
+        {
+            failed = await VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            failed = error.Message.Trim();
+        }
+
+        if (failed is null) return null;
+        var why = $"the verification tree's preparation did not finish: {failed}";
+        world.Said.WriteLine($"verify: {why}");
+        return Unknown(why) with { Code = VerifyResult.Unprepared };
     }
 
     /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>
