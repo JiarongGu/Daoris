@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in memory, one case each, and then run over the driver's own tree.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
+public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) : IClassFixture<DriverTreeWarm>
 {
     private static readonly StructureMap Map = new(
         [
@@ -379,7 +379,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     /// <summary>The one analysis of the driver's own tree the cases over it share: the compile is the gate's cost, measured here.</summary>
-    private static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Tree = DriverTree.Shared;
+    private static readonly Lazy<DriverTreeRead> Tree = DriverTree.Shared;
 
     [Fact]
     public void Agents_reads_no_Help_type_for_its_required_posture_marker()

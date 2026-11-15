@@ -8,9 +8,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Each held twice: on the driver's tree, and by a planted breach the structure check refuses.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class ShellStructureTests
+public sealed class ShellStructureTests : IClassFixture<DriverTreeWarm>
 {
-    private static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Tree = DriverTree.Shared;
+    private static readonly Lazy<DriverTreeRead> Tree = DriverTree.Shared;
 
     [Fact]
     public void The_shell_names_no_type_of_Workplace_Work_orders_or_Context()

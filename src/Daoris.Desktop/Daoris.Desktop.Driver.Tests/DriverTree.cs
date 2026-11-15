@@ -22,7 +22,7 @@ internal static class DriverTree
                 && !("/" + tree.FilePath[Folder.Length..]).Contains("/Layer/", StringComparison.Ordinal))]);
     });
 
-    public static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Shared = new(() =>
+    public static readonly Lazy<DriverTreeRead> Shared = new(() =>
     {
         var map = StructureMap.Read(File.ReadAllText(Path.Combine(
             WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json")));
@@ -33,6 +33,13 @@ internal static class DriverTree
         var (compilation, walked) = Compiled.Value;
         IReadOnlyList<(string Path, string Text)> sources = [.. walked.Select(tree => (tree.FilePath[Folder.Length..], tree.GetText().ToString()))];
         var analysis = StructureAnalysis.Over(compilation, walked, Folder);
-        return (map, sources, tests, analysis, clock.Elapsed);
+        return new DriverTreeRead(map, sources, tests, analysis, clock.Elapsed);
     });
+}
+
+internal sealed record DriverTreeRead(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took);
+
+public sealed class DriverTreeWarm
+{
+    public DriverTreeWarm() => _ = DriverTree.Shared.Value;
 }

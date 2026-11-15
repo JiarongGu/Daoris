@@ -167,6 +167,16 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 
 ## The desktop app
 
+- [ ] **OUTPUTPANEL1 — a session's outputs in one panel on the right** (web, modules; the person, 2026-11-15; after the session
+  foundation): what a session made or has running (its background tasks, the files and runs it wrote, previews, the run's steps
+  and checks) sits today in separate places. One panel on the right of a session, as a good desktop agent app keeps beside its
+  conversation, gathers them and updates live, with what it holds while the session works, waits on a step and has ended. Its
+  design is brainstormed first (`daoris brainstorm`, both makers), then built after the foundation rows.
+- [ ] **SESSIONROWS1 — the session list shows a session's passage without crowding its line** (web; the person, 2026-11-15; with
+  OUTPUTPANEL1): the session menu merges the workflow's current step into each session's line, which reads messy now that a session
+  holds many turns and waits on steps. Its rows say the session, where it stands and who it waits on; the passage (steps passed,
+  current, to come) and its turns go to the panel or the row's opening. Designed with OUTPUTPANEL1.
+
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
 - [ ] **SETTINGSUX1 — the Settings page made orderly** (driver, web): left the after shots and the installed window. → `docs/areas/desktop-app.md` rule 57
