@@ -18,4 +18,9 @@ internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits,
 /// (<paramref name="Person"/>, taken from the gate as it is begun), under the chain's claim, with what its ask reads.
 /// </summary>
 internal sealed record OpinionAct(
-    OpinionDue Due, string Key, string Claim, IReadOnlyList<QuestView> Chain, string Occasion, bool Person, WorkflowProcess Process) : IOpinionAct;
+    OpinionDue Due, string Key, string Claim, IReadOnlyList<QuestView> Chain, string Occasion, bool Person, WorkflowProcess Process) : IOpinionAct
+{
+    public bool Early { get; init; }
+
+    public string? Ended { get; init; }
+}

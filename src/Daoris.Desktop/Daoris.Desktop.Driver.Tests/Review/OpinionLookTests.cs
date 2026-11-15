@@ -251,11 +251,10 @@ public sealed class OpinionLookTests : IDisposable
 
     /// <summary>
     /// A pass an account's limit ended is gated <c>Unavailable</c> / <c>Cooling</c> with its account's
-    /// reset read from the cool-off its session wrote, so the look asks nothing before it and asks the pass again by itself after it,
-    /// never waiting on the person's <i>Try again</i>.
+    /// reset read from its session's cool-off, and the next look asks the opinion again of a ready holder before that reset.
     /// </summary>
     [Fact]
-    public async Task A_pass_a_limit_ended_is_asked_again_by_the_look_after_its_accounts_reset()
+    public async Task A_pass_a_limit_ended_is_asked_again_by_the_look_of_the_next_ready_holder_before_the_reset()
     {
         var (host, _, _) = await DoneAsync(required: true);
         var passes = 0;
@@ -284,16 +283,9 @@ public sealed class OpinionLookTests : IDisposable
         await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
         await driver.Running.SettledAsync();
 
-        Assert.Single(_passes);
+        // The gate read the limited pass cooling until its reset, and the same look asked the opinion of a ready holder before it.
         var gate = Assert.Single(judged).Gate;
         Assert.Equal((OpinionGateStates.Unavailable, ReviewerUnavailable.Cooling, reset), (gate.State, gate.Code, gate.Until));
-
-        // The reset passes: the next look asks the pass again by itself.
-        var passed = DateTimeOffset.UtcNow.AddMinutes(-1);
-        AccountCooling.Cool(_home, new CoolingEntry("elsewhere", null, passed, Stated: true, "weekly", seen, "r-op1"), passed.AddSeconds(-1));
-        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
-        await driver.Running.SettledAsync();
-
         Assert.Equal(2, _passes.Count);
         Assert.Equal(["op1", "op2"], new OpinionGates(_home).Read("q1", "reports").Asks.Select(ask => ask.Opinion));
     }

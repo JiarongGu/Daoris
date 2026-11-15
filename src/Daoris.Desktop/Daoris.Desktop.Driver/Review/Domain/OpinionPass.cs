@@ -94,6 +94,9 @@ public sealed record OpinionPassRun(string Line, bool Opened)
     /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c>.</summary>
     public bool NotOffered { get; init; }
 
+    /// <summary>Its account's limit or spend cap ended the pass after it opened: the account is cooling, and the next holder is asked at once.</summary>
+    public bool Limited { get; init; }
+
     /// <summary>
     /// A pass no reviewer could read: tier <c>none</c>, with the choice's code and its sentence, and nothing started.
     /// Never <i>no issues</i>: no agent read it.
