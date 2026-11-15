@@ -91,11 +91,8 @@ const TABLE: Record<string, Record<number, number>> = {
   'quest/WentChinese': { 400: 0, 544: 0, 1200: 0 },
   // Its refused edge ranks Done after Declined, so each rank holds one node and the side bar's floor draws it top to bottom.
   'quest/Refused': { 300: 0, 400: 0, 544: 0, 1200: 0 },
-  // A session's states: six ranks of one node each, the outcomes last, its skipping edges threading the ranks between and the
-  // returns (to working from waiting on you and from awaiting a step, and going on) each on a lane of their own.
-  // Top to bottom it crosses once: awaiting a step reaches both waiting on you and the outcomes, and working reaches waiting on
-  // you past it, so one of the two ways meets the other whichever side it takes (the returns' lanes keep the left of every node);
-  // left to right, its skipping edges cross each other and the returns' runs.
+  // A session's states: six ranks of one node each. Top to bottom it crosses once, two ways meeting whichever side each takes
+  // (awaiting a step and working both reach waiting on you past it); left to right, the skipping edges cross each other.
   'session/Working': { 400: 1, 544: 1, 1200: 13 },
   'session/WorkingChinese': { 400: 1, 544: 1, 1200: 13 },
   'session/WaitingOnYou': { 400: 1, 544: 1, 1200: 13 },
