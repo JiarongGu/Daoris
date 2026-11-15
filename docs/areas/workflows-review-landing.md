@@ -106,9 +106,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     sessions still end. An end that closes and ends nothing, a run a session waits on that a look skips anyway, and session records that do not read each say why once in the machine log (`run.end.empty`). Every shipped development graph that holds
     `content.holds` checks after it, `team-part` included; `documents` holds no check by design, since its work is prose no gate reaches. The
     check is a `check` with `gates` `reached` between `content` and the review or landing, and a `back` wire from it `on` `failed` to the work, so a red verdict's words go to the work's open session as
-    Daoris's word under the step's key and its next commit is checked afresh (D293): a check waits ready until the commit it binds is
-    one that has not failed it (`CheckRounds.RedAt`), so a red is never asked again before the work answers it, except by the person's new
-    attempt. A check's reds are counted from its run's record
+    Daoris's word under the step's key and its next commit is checked afresh (D293): a check waits ready at a commit that failed it
+    (`CheckRounds.RedAt`) until the work answers, so a red is never asked again before then, except by the person's new attempt; a work that
+    answers with no commit, its session waiting on the run's next step since the red was asked and none of its sessions still working
+    (`CheckRounds.Answered`), has the same commit asked again as its next round. Each exit of the check's start that leaves it ready (not
+    sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
+    `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
     red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red.
 

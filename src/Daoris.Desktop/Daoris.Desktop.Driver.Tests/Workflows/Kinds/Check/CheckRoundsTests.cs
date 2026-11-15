@@ -29,13 +29,40 @@ public sealed class CheckRoundsTests
     [Fact]
     public void A_commit_that_failed_the_check_is_not_asked_again_but_another_is()
     {
-        var record = new NodeRecord("run:r") { Attempts = [Red(1)] };
+        var record = new NodeRecord("run:r") { Attempts = [Red(1), Red(2)] };
 
-        Assert.True(CheckRounds.RedAt(record, "check", "tip"));
-        Assert.False(CheckRounds.RedAt(record, "check", "other"));
-        Assert.False(CheckRounds.RedAt(record, "opinion", "tip"));
-        Assert.False(CheckRounds.RedAt(record, "check", ""));
-        Assert.False(CheckRounds.RedAt(null, "check", "tip"));
+        Assert.Equal(2, CheckRounds.RedAt(record, "check", "tip")?.Attempt);
+        Assert.Null(CheckRounds.RedAt(record, "check", "other"));
+        Assert.Null(CheckRounds.RedAt(record, "opinion", "tip"));
+        Assert.Null(CheckRounds.RedAt(record, "check", ""));
+        Assert.Null(CheckRounds.RedAt(null, "check", "tip"));
+    }
+
+    private static readonly DateTimeOffset Asked = new(2026, 11, 15, 13, 22, 10, TimeSpan.Zero);
+
+    private static SessionRecord Waiting(string id, string run, DateTimeOffset since) =>
+        new(id, "Daoris", SessionStates.AwaitingStep) { NoteParts = new StepWait(run, "work").Note().Parts, Updated = since };
+
+    [Fact]
+    public void The_work_answered_a_red_once_its_session_waits_on_the_runs_next_step_since_the_red_and_none_of_its_sessions_still_works()
+    {
+        // Its turn ended after the red was asked, with no commit: the work answered.
+        Assert.True(CheckRounds.Answered([Waiting("s1", "r", Asked.AddMinutes(1))], "r", ["s1"], Asked));
+
+        // Waiting since before the red: the red's words have not reached a turn yet.
+        Assert.False(CheckRounds.Answered([Waiting("s1", "r", Asked.AddMinutes(-1))], "r", ["s1"], Asked));
+
+        // Waiting on another run, or on no run: not this run's answer.
+        Assert.False(CheckRounds.Answered([Waiting("s1", "other", Asked.AddMinutes(1))], "r", ["s1"], Asked));
+        Assert.False(CheckRounds.Answered([new SessionRecord("s1", "Daoris", "working") { Updated = Asked.AddMinutes(1) }], "r", ["s1"], Asked));
+
+        // Another session of the run still works, so a commit may still come.
+        Assert.False(CheckRounds.Answered(
+            [Waiting("s1", "r", Asked.AddMinutes(1)), new SessionRecord("s2", "Daoris", "working")], "r", ["s1", "s2"], Asked));
+
+        // A session working elsewhere is not the run's.
+        Assert.True(CheckRounds.Answered(
+            [Waiting("s1", "r", Asked.AddMinutes(1)), new SessionRecord("s3", "Daoris", "working")], "r", ["s1"], Asked));
     }
 
     [Theory]

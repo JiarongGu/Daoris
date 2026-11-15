@@ -1,0 +1,166 @@
+using System.Text.Json.Nodes;
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// A run's <c>check</c> on the repository's own development graph starts once the steps before it are reached, and one that stays ready says
+/// why in the machine log, once per change of reason. A red at the commit it binds holds it while the work may still answer; once the work's
+/// session waits on the run's next step since that red, with no new commit, the check is asked again at the same commit, so the check and the
+/// session never wait on each other for good.
+/// </summary>
+public sealed class CheckStartTests : NodeRunFixture
+{
+    private const string Session = "s-work";
+    private const string Branch = "daoris/s1";
+
+    private readonly List<(string Code, string Said)> _said = [];
+    private readonly Checks _checks = new();
+    private List<SessionRecord> _sessions = [];
+
+    private static string Graph() => DriverWorkflowsCommand.GraphIn(
+        JsonNode.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "tools", "workflows", "daoris-dev.json"))), out var graph)
+        ? graph!.ToJsonString()
+        : throw new InvalidOperationException("the development workflow file holds no graph");
+
+    private sealed class Checks : ICheckPort
+    {
+        public List<NodeAttempt> Sent { get; } = [];
+
+        public HashSet<string> Answers { get; } = [];
+
+        public Func<NodeAttempt, WorkReconcileAnswer> Answer { get; set; } = _ => new(ReconcileStates.Running);
+
+        public Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
+        {
+            Sent.Add(attempt);
+            return Task.CompletedTask;
+        }
+
+        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(Answer(attempt));
+
+        public bool Answered(string invocation) => Answers.Contains(invocation);
+
+        public void Stop(string invocation)
+        {
+        }
+    }
+
+    private NodeRuntimeLook RunsLook() => RunLook() with { Content = (_, _, _) => Task.FromResult<HoldContent?>(new HoldContent(null, Unlanded: 2, Ahead: 2)) };
+
+    private NodeRuntime Started(bool door = true)
+    {
+        var runtime = Runtime();
+        runtime.Doors = (door ? NodeDoors.None.With(NodeKinds.Check, _checks) : NodeDoors.None).Saying((code, said) => _said.Add((code, said)));
+        runtime.Say = (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept"));
+        runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(_sessions);
+        return runtime;
+    }
+
+    private async Task PassesAsync(NodeRuntime runtime, int count = 6)
+    {
+        for (var pass = 0; pass < count; pass++) await runtime.PassAsync(RunsLook(), CancellationToken.None);
+    }
+
+    private void Submitted(string tip)
+    {
+        _branchTips[Branch] = tip;
+        _units =
+        [
+            RunHome.QuestUnit(RunHome.Quest(RunId) with
+            {
+                Closure = "run:" + RunId, Submission = new QuestSubmissionView("m1", 1, _now, "Built.", Commit: tip),
+            }) with { Executors = [Session] },
+            RunHome.Branch("unit-b1", Branch, Opened, [RunId], []),
+        ];
+    }
+
+    private SessionRecord Working() => new(Session, "Owner", "working") { Updated = _now };
+
+    private SessionRecord AwaitingStep() =>
+        new(Session, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId, "work", Tip: Tip1).Note().Parts, Updated = _now };
+
+    private string State(string node) => Files.Read(RunUnit)?.Statuses.GetValueOrDefault(node)?.State ?? "-";
+
+    private IEnumerable<string> Waits() => _said.Where(each => each.Code == CheckStartWaits.Event).Select(each => each.Said);
+
+    [Fact]
+    public async Task A_check_red_at_its_commit_is_asked_again_there_once_the_works_session_waits_on_the_runs_next_step_since_the_red()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        _sessions = [AwaitingStep()];
+
+        // Content is reached on the branch: the check is asked of its commit at once.
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+        Assert.Equal(("unit-b1", Tip1), (first.Call.Unit, first.Call.SubjectRevision));
+
+        // Its red goes back to the work, whose session takes it as a turn: the check waits at that commit, said once over many passes.
+        _now = _now.AddMinutes(1);
+        _sessions = [Working()];
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+        await PassesAsync(runtime);
+        Assert.Single(_checks.Sent);
+        Assert.Equal(NodeStates.Ready, State("check"));
+        var wait = Assert.Single(Waits());
+        Assert.StartsWith($"run {RunId}: `check` waits ({CheckStartWaits.RedHere})", wait, StringComparison.Ordinal);
+
+        // Its turn ends with no new commit and it waits on the run's next step: the check is asked again at the same commit, its next round.
+        _now = _now.AddMinutes(1);
+        _sessions = [AwaitingStep()];
+        _checks.Answers.Clear();
+        _checks.Answer = _ => new(ReconcileStates.Running);
+        await PassesAsync(runtime);
+        Assert.Equal(2, _checks.Sent.Count);
+        Assert.Equal(("unit-b1", Tip1, 2), (_checks.Sent[1].Call.Unit, _checks.Sent[1].Call.SubjectRevision, _checks.Sent[1].Attempt));
+        Assert.Single(Waits());
+    }
+
+    [Fact]
+    public async Task A_red_whose_words_have_not_reached_a_turn_holds_the_check_and_unread_sessions_say_so()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        _sessions = [AwaitingStep()];
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+
+        // The session waits from before the red: the red's words have not reached a turn yet, so nothing is asked again.
+        _now = _now.AddMinutes(1);
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+        Assert.Single(_checks.Sent);
+
+        // The sessions stop reading: a new reason, said once.
+        runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(null);
+        await PassesAsync(runtime);
+        Assert.Single(_checks.Sent);
+        Assert.Collection(Waits(),
+            each => Assert.Contains($"({CheckStartWaits.RedHere})", each),
+            each => Assert.Contains($"({CheckStartWaits.SessionsUnread})", each));
+    }
+
+    [Fact]
+    public async Task A_check_with_no_executor_wired_stays_ready_and_says_why_once()
+    {
+        BoundTo(Graph());
+        var runtime = Started(door: false);
+        _sessions = [AwaitingStep()];
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        await PassesAsync(runtime);
+
+        Assert.Equal(NodeStates.Ready, State("check"));
+        var wait = Assert.Single(Waits());
+        Assert.StartsWith($"run {RunId}: `check` waits ({CheckStartWaits.NoDoor})", wait, StringComparison.Ordinal);
+    }
+
+    private static VerifyResult Verify(string verdict, NodeAttempt attempt) =>
+        new(attempt.Call.Invocation, Tip1, verdict, "why", [new VerifyGate("suite", "fail", 3)]) { Failed = "suite" };
+}

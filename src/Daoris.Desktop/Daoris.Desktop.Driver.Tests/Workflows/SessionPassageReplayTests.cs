@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A development day for the session lifecycle, run through the runtime on the repository's own development graph: the agent's done
-/// is a submission, the check's red goes back to the work, its green lets the opinion and the look go on, the landing is reached before
+/// is a submission, the check's red goes back to the work, its green lets the opinion go on, the landing is reached before
 /// the run's end, no check is asked of any session, and the quest's Done is written once, with the run's end.
 /// </summary>
 public sealed class SessionPassageReplayTests : NodeRunFixture
@@ -100,7 +100,7 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
     private string State(string node) => Files.Read(RunUnit)?.Statuses.GetValueOrDefault(node)?.State ?? "-";
 
     [Fact]
-    public async Task A_red_check_goes_back_to_the_work_a_green_one_lets_the_opinion_and_the_look_go_on_and_the_landing_comes_before_the_runs_end()
+    public async Task A_red_check_goes_back_to_the_work_a_green_one_lets_the_opinion_go_on_and_the_landing_comes_before_the_runs_end()
     {
         BoundTo(Graph());
         var runtime = Telling();
@@ -110,7 +110,7 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
         await PassesAsync(runtime);
         var first = Assert.Single(_checks.Sent);
         Assert.Equal(("unit-b1", Tip1), (first.Call.Unit, first.Call.SubjectRevision));
-        Assert.Equal((NodeStates.Blocked, NodeStates.Blocked), (State("opinion"), State("look")));
+        Assert.Equal((NodeStates.Blocked, NodeStates.Blocked), (State("opinion"), State("landing")));
 
         // Its red is said to the same session under the check's key and sends the work round again; the run does not end.
         _checks.Answers.Add(first.Call.Invocation);
@@ -119,7 +119,7 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
         var red = Assert.Single(_told);
         Assert.Equal(Session, red.Session);
         Assert.Contains("check", red.Key, StringComparison.Ordinal);
-        Assert.Equal((NodeStates.Blocked, NodeStates.Blocked), (State("opinion"), State("look")));
+        Assert.Equal((NodeStates.Blocked, NodeStates.Blocked), (State("opinion"), State("landing")));
         Assert.Empty(_finished);
 
         // The red is not asked again at the commit that failed it: the check waits for the fix.
@@ -141,7 +141,7 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
                 Tip = Tip2, Verdict = new QuestReviewVerdictView(ReviewVerdicts.Reviewed),
             });
         await PassesAsync(runtime);
-        Assert.Equal((NodeStates.Reached, NodeStates.Reached, NodeStates.Reached), (State("check"), State("opinion"), State("look")));
+        Assert.Equal((NodeStates.Reached, NodeStates.Reached), (State("check"), State("opinion")));
         Assert.Empty(_finished);
 
         // The landing is reached on the second tip before the run ends, and the run's end is the one write of the quest's Done.
