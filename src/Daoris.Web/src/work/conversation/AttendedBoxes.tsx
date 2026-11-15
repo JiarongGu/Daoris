@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { channelRefusal } from '../../asks/ChannelSection';
+import { channelRefusal } from '../channel';
 import { usePostChannel } from '../../bridge/shell';
 import { failure, type Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';

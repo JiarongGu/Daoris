@@ -257,7 +257,7 @@
   "work.intake.waiting": "This intake is asking you",
   "work.intake.hint": "The declarations did not settle whose this is, so the intake asked rather than guess. The answer is on the ask: publish it to a repository, or close it, and this session ends at the driver's next look. Words you write in the box below are posted on the ask's channel for its sessions and for you.",
   "work.intake.answer": "Answer ask #{{ask}}",
-  "work.intake.placeholder": "your answer — it is posted on the ask’s channel",
+  "work.intake.placeholder": "a note for the ask’s channel — the intake does not read it",
   "work.intake.post": "Post on the ask",
   "work.intake.posted": "Posted on ask #{{ask}}’s channel. The intake does not read it: publish the ask or close it to answer it.",
   "work.intake.stopMeans": "Stopping ends the intake without answering: the ask stays a proposal for you to publish or close.",

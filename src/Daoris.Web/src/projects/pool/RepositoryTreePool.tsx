@@ -1,5 +1,5 @@
 import { useShenora } from '@shenora/react';
-import { useTreePool } from '../../bridge/repositories/treePool';
+import { useTreePool } from '../../bridge/shell';
 import { TreePoolSection } from './TreePoolSection';
 
 /** The repository's machine-local pool reading, mounted only on its Details page. */

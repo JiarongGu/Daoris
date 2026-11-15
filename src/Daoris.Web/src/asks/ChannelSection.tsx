@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import {
-  type Channel, type ChannelItem, type ChannelPost, type ChannelReceipt, forEntry, forwardable, lineWords, newestAt, RECEIPT_STATES,
+  type Channel, channelRefusal, type ChannelItem, type ChannelPost, type ChannelReceipt, forEntry, forwardable, lineWords, newestAt, RECEIPT_STATES,
   repliesTo, repositoriesOf, sinceMark,
 } from '../work/channel';
 import { Refused } from '../work/InlineConfirm';
@@ -15,12 +15,6 @@ export type ChannelAnswered = { done: () => void; refused: (code: string) => voi
 
 /** Everyone, and no message: the one value of each choice that names nothing (a repository's name has no `*`). */
 const NONE = '*';
-
-/** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
-const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
-
-export const channelRefusal = (t: (key: string, options?: Record<string, unknown>) => string, code: string): string =>
-  REFUSALS.has(code) ? t(`asks.channel.refused.${code}`) : t('asks.channel.refused.other', { code });
 
 /** The codes *Send to its session* is refused with, which this page has words for; another is said as the shell wrote it. */
 const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);

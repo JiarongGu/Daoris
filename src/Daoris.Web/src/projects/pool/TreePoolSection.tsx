@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { TreePoolSlot } from '../../bridge/shell';
 import { Prose } from '../../design/ui';
 import { figure } from '../../locales/format';
 import { PageSection } from '../../work/frame/ViewMain';
-
-export type TreePoolSlot = { number: number; state: string; line: string; reason: string };
 
 /** A slot names only the line the desktop says it serves; a restoring slot's wait is worded from its reason code. */
 export function TreePoolSection({ slots, failed = false }: { slots?: readonly TreePoolSlot[] | null; failed?: boolean }) {

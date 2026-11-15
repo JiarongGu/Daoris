@@ -65,6 +65,22 @@ public sealed class PluginBriefsTests : IDisposable
         Assert.Equal([Line], PluginBriefs.At(_home, Place, [server]));
     }
 
+    [Fact]
+    public void A_steps_session_is_told_its_place_and_only_its_plugin_s_line()
+    {
+        Install();
+        Install("acme-other", "\"Other plugin guidance.\"");
+        var server = PluginToolsHand.StepEntry(_home, new("s-1", Place, "en"), "driver", "acme-report", "step-1");
+        var ask = new StepAgentAsk("i-1", "unit", "node", 1, "acme-report", "step-1", "goal", "engine", "games", null, null, null, "abc123");
+
+        var block = StandingBlock.Compose(StepStandingBlock.Of(_home, ask, server)).Text;
+
+        Assert.Contains(Line, block);
+        Assert.DoesNotContain("Other plugin guidance.", block);
+        Assert.Equal(Place.Repository, PluginToolsHand.Read(server)!.Place.Repository);
+        Assert.Null(PluginToolsHand.Read(new ServerEntry("other", "driver", ["tools", "--session", "s-1"], new Dictionary<string, string>())));
+    }
+
     [Theory]
     [InlineData("null")]
     [InlineData("42")]

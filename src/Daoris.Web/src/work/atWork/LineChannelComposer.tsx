@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelAnswered } from '../../asks/ChannelSection';
-import type { ChannelPost } from '../channel';
+import { type ChannelPost, channelRefusal } from '../channel';
 import { Refused } from '../InlineConfirm';
 import { Button, SelectField } from '../../design/ui';
 
 /** Everyone: the one value that names no repository (a repository's name has no `*`). */
 const EVERYONE = '*';
-
-/** The codes the service refuses a post on a line's own channel with, which this page has words for; another is said as it is written. */
-const REFUSALS = new Set(['empty', 'too-long', 'bad-to']);
 
 /**
  * The person's words on a line's own channel, under the channel's last words on *At work*: to everyone on
@@ -51,7 +48,7 @@ export function LineChannelComposer({ onPost, recipients }: {
     });
   };
 
-  const refusalWords = refusal === null ? null : REFUSALS.has(refusal) ? t(`asks.channel.refused.${refusal}`) : t('asks.channel.refused.other', { code: refusal });
+  const refusalWords = refusal === null ? null : channelRefusal(t, refusal);
 
   return (
     <div className="grid gap-2">

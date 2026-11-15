@@ -269,9 +269,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 35. In a session tree the agent commits on the tree's branch as it goes, and never switches or pushes. The commit rule (`commits`)
     may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which
-    advances only while its pull request can take it. A landing's branch is named for the chain's first quest in that repository: the
-    walk up a step's parents stops where a parent was asked of another repository (`BranchPatterns.SubjectAsync`), so each
-    repository's branch is named for its own quest, never for another repository's. (D82, D149)
+    advances only while its pull request can take it. A landing's branch is named for the first quest of the unbroken run of steps in that
+    repository that ends at it: the walk up a step's parents stops where a parent was asked of another repository, compared
+    without regard to case (`BranchPatterns.SubjectAsync`), so a chain that returns to a repository names the returning step's
+    branch for the step that returned, and no branch is named for another repository's quest. (D82, D149)
 37. Branches a landing made are kept in `<home>/landings.json`, traced once gone. A landing removes no tree and no other session
     branch; a session branch goes only by its own door, the look's tidy or, where a run owns its tree, that run's `release` or
     the sweep (rule 31b), behind D88's proof. A gone session branch stays traced
