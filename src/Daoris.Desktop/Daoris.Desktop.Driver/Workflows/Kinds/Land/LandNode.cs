@@ -131,13 +131,26 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding,
     /// <summary>
     /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
     /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again
-    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once.
+    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once. Where nothing starts,
+    /// the reason is said once (<see cref="LandWaits"/>).
     /// </summary>
     public void Keep(NodeKept kept)
     {
-        if (kept.Doors.Door<ILandingDoor>(Row.Kind) is not { } door || kept.Scope.Branch is not { } branch
-            || kept.Status.Binding is not { SubjectRevision: { } tip } binding)
+        if (kept.Doors.Door<ILandingDoor>(Row.Kind) is not { } door)
         {
+            SayWait(kept, LandWaits.NoDoor);
+            return;
+        }
+
+        if (kept.Scope.Branch is not { } branch)
+        {
+            SayWait(kept, LandWaits.NoBranch);
+            return;
+        }
+
+        if (kept.Status.Binding is not { SubjectRevision: { } tip } binding)
+        {
+            SayWait(kept, LandWaits.NoTip);
             return;
         }
 
@@ -147,5 +160,14 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding,
         {
             Since = kept.Status.Since, Authority = kept.Authority,
         });
+    }
+
+    /// <summary>Why the keeping started nothing, said through the loop's machine log where it changed for the node.</summary>
+    private static void SayWait(NodeKept kept, string reason)
+    {
+        if (LandWaits.Changed(kept.Home, kept.Governed.Unit.Id, kept.Node.Id, reason))
+        {
+            kept.Doors.Say(LandWaits.Event, LandWaits.Sentence(kept.Governed.Run, kept.Node.Id, reason));
+        }
     }
 }

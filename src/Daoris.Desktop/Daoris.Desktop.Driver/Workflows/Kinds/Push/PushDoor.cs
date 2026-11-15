@@ -27,7 +27,7 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
     /// <summary>The push act for the landed branch at its tip, and what it came to written: the landing record on success, the node's failure otherwise.</summary>
     internal async Task PerformAsync(PushStart start, CancellationToken ct)
     {
-        if (await PushLineRead.ReadAsync(home, start, ct).ConfigureAwait(false) is { } gone)
+        if ((UnrecordedLanding.Refusal(start) ?? await PushLineRead.ReadAsync(home, start, ct).ConfigureAwait(false)) is { } gone)
         {
             log?.Invoke($"push  {start.Unit}: `{start.Node.Id}`: {gone.Said}");
             if (!gone.Held) Fail(start, gone.Code!);

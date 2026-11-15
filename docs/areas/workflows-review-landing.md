@@ -215,7 +215,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     plan and the run view. A unit's executors are oldest first by when their records were made, and the `land` judges the newest
     with a tree by that time (`LandSessions`), so a session that went on in a tree stands for the one it went on from and a branch
     already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, its end naming the session that stands for it; a push and a plugin's `pull-request` step after it are bound at the moved tip and performed again (`ReLandingPullRequestTests`); and
-    each `landing.auto` line names the run whose `land` tried it. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
+    each `landing.auto` line names the run whose `land` tried it. A live session on the tree holds the `land` back, but never the run's
+    own part waiting on its step (`awaiting-step`, `LandTreeUse`), which waits on that landing; a look at which the `land` starts or says
+    nothing writes a coded `landing.waits` line naming why, once per change of reason (`LandWaits`). Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
     without replay, saying the proof (`LineHolds`). Where the tip no longer reads, an unbound step takes the commit its session
     branch records the line holding, so work merged outside the run ends it. `claimed` reaches at the first whole look reading its
     quest done, by any session. A merge whose tree is gone plans to the settings' line, else the one its branch grew from. (D227)
@@ -242,7 +244,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     landing's tip or its content as the same change, writes that proof on the landing (`LandedBranches.Delivered`) for the push to be
     passed over as delivered; else it fails once, `push-branch-gone` (the line lacks the work) or `push-line-unread` (origin could not be
     read), worded for the person, and a refusal fails the attempt its start is for. A delivery step past a `land` that reached on a branch
-    no record names any more (`WireRun.LandingUnread`, every record of the work read) is passed over too, saying so. A monitor is reached at the commit its own binding holds, whatever tip the
+    no record names any more (`WireRun.LandingUnread`, every record of the work read) is passed over too, saying so. Where only the
+    landing's entry is gone and the session branch's record stands (`UnrecordedLanding`), that record says: held on the line, the delivery
+    steps are passed over with words; standing off it, the `push` is started once on the branch the `land`'s evidence names; neither, it
+    fails once, `push-branch-gone`. A monitor is reached at the commit its own binding holds, whatever tip the
     landing reads (a squash merge), saying the line holds the branch where it does; a `push` and a `tidy`, which keep no attempt journal and
     leave `active` only by their reading's reach, are reached at their own binding's commit too, their evidence naming the landing's.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its

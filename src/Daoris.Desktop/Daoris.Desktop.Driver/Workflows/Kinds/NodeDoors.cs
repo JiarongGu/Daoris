@@ -10,8 +10,9 @@ namespace Daoris.Driver;
 public sealed class NodeDoors
 {
     private readonly ImmutableDictionary<string, INodeDoor> _doors;
+    private readonly Action<string, string>? _say;
 
-    private NodeDoors(ImmutableDictionary<string, INodeDoor> doors) => _doors = doors;
+    private NodeDoors(ImmutableDictionary<string, INodeDoor> doors, Action<string, string>? say = null) => (_doors, _say) = (doors, say);
 
     /// <summary>No door: nothing is started on one.</summary>
     public static NodeDoors None { get; } = new(ImmutableDictionary.Create<string, INodeDoor>(StringComparer.Ordinal));
@@ -27,11 +28,16 @@ public sealed class NodeDoors
 
         if (((IStarts)new PluginStep()).Door(wiring) is { } agents) doors = doors.SetItem(StepAgents.Door, agents);
 
-        return new NodeDoors(doors);
+        return new NodeDoors(doors, wiring.Log);
     }
 
     /// <summary>These doors with <paramref name="kind"/>'s replaced by <paramref name="door"/>, or taken away where it is null.</summary>
-    public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door));
+    public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door), _say);
+
+    public NodeDoors Saying(Action<string, string> say) => new(_doors, say);
+
+    /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>, where a keeping starts nothing and says why; nothing where no log is wired.</summary>
+    public void Say(string code, string said) => _say?.Invoke(code, said);
 
     /// <summary>The door wired for <paramref name="kind"/> where it has the shape <typeparamref name="T"/>; else null.</summary>
     public T? Door<T>(string kind) where T : class, INodeDoor => _doors.GetValueOrDefault(kind) as T;

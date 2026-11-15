@@ -36,7 +36,7 @@ internal static class NothingToDeliver
     {
         if (Empty(unit) is { } empty) return empty;
         if (!Delivers(node)) return null;
-        return NodeObserving.LandingOf(unit) is { } landing ? OnTheLineWords(landing) : null;
+        return NodeObserving.LandingOf(unit) is { } landing ? OnTheLineWords(landing) : UnrecordedLanding.HeldWords(unit);
     }
 
     /// <summary>What a delivery step past a landing whose branch no record names says: there is no branch left to push or to open a pull request for.</summary>

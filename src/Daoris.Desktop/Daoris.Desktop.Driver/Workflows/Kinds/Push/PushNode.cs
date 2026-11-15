@@ -60,11 +60,19 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 
     /// <summary>
     /// A run's <c>push</c>, active at the tip the landing recorded, started once on the door: the branch the <c>land</c> made is pushed through
-    /// the push act. The door is idempotent by node and tip, and the act is the person's press's own, so the two cannot push twice.
+    /// the push act. The door is idempotent by node and tip, and the act is the person's press's own, so the two cannot push twice. A landing no
+    /// entry names any more is read from its session branch's record (<see cref="UnrecordedLanding"/>).
     /// </summary>
     public void Keep(NodeKept kept)
     {
-        if (kept.Doors.Door<IPushDoor>(Row.Kind) is not { } door || kept.Landed is not { } landed || !PushAttempts.Due(landed, kept.Status)) return;
+        if (kept.Doors.Door<IPushDoor>(Row.Kind) is not { } door) return;
+        if (kept.Landed is not { } landed)
+        {
+            UnrecordedLanding.Keep(kept, door);
+            return;
+        }
+
+        if (!PushAttempts.Due(landed, kept.Status)) return;
         var watched = kept.Governed.Watched;
         door.Start(new PushStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip) { Authority = kept.Authority });
     }
