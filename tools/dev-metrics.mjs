@@ -160,7 +160,6 @@ async function storeCounts(home) {
   const out = { entries: missing('no memory.db in the home'), operations: missing('no knowledge.db memory_ops in the home') };
   let sqlite;
   try { sqlite = await import('node:sqlite'); } catch { return { entries: missing('node:sqlite'), operations: missing('node:sqlite') }; }
-  // The handle is closed whatever the read does: a database left open (a table missing) keeps its folder from being removed.
   const reading = (file, read) => {
     const db = new sqlite.DatabaseSync(file, { readOnly: true });
     try { return read(db); } finally { db.close(); }

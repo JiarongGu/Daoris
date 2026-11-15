@@ -195,8 +195,7 @@
  * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
  * when that worktree has no modified or staged tracked file, has no untracked file (`git worktree remove`
  * refuses those without `--force`, and one may be work), and holds nothing under its gitignored `local/`
- * but a worker's logs and scratch and the copies the worktree setup made: `local/scratch/`, a `*.log` anywhere under `local/`,
- * every `local/*.props` and the private files a gate reads go with it, and anything else there is an agent's private output, which nothing else keeps, and is named.
+ * but logs, scratch and the setup's copies (`disposableLocal`), and anything else there is named.
  *
  * A locked worktree is in use, never looked into or unlocked, but for the agent harness's own lock,
  * `claude agent <id> (pid N)`: the harness holds it for its session's whole life, not only
@@ -304,7 +303,8 @@
  *
  * node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]
  * node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]
- * node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time] * node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
+ * node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]
+ * node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
  * node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  * node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  * node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
@@ -1683,8 +1683,8 @@ function inspectWorktree(tree, root) {
   if (status.status !== 0) return { ...facts, error: gitSays(status.err || status.out) };
   for (const line of lines(status.out)) (line.startsWith('?? ') ? facts.untracked : facts.tracked).push(line.slice(3));
   try {
-    const copies = privateGateFiles(root);
-    facts.local = firstFile(join(tree.path, 'local'), (path, directory) => disposableLocal(path, directory, copies));
+    const own = privateGateFiles(root);
+    facts.local = firstFile(join(tree.path, 'local'), (path, dir) => disposableLocal(path, dir, own));
   } catch (error) {
     facts.local = `local/ itself, which could not be read: ${error?.code ?? error?.message}`;
   }

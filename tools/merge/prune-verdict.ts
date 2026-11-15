@@ -74,9 +74,7 @@ export const processSaid = (one: Proc): string => `pid ${one.pid}: ${one.command
 
 /**
  * Whether a path under `local/` (as `local/…`, `/`-separated) is an agent's disposable output: logs and scratch under
- * `local/scratch/`, a `*.log` file anywhere under `local/`, and the copies the worktree setup made there from the main checkout
- * (every `local/*.props`, and each of `setupCopies`, the private files a gate reads). Anything else there may be work, and keeps
- * its worktree.
+ * `local/scratch/`, a `*.log` file, and the worktree setup's copies (`local/*.props`, `setupCopies`). Anything else may be work.
  */
 export function disposableLocal(path: string, directory = false, setupCopies: readonly string[] = []): boolean {
   if (path === 'local/scratch' || path.startsWith('local/scratch/')) return true;

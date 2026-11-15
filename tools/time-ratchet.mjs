@@ -210,7 +210,6 @@ function main() {
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const { over: all, seen } = scanRecords(dir, root, { since });
-    // Inside a merge (`DAORIS_RATCHET_CHANGED`, the merge's changed paths as JSON), a test its paths do not reach is not the merge's.
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
     const { mine: found, others } = changed ? splitByReach(all, changed, repositoryFiles(root)) : { mine: all, others: {} };
     for (const [key, { ms, limit }] of Object.entries(others)) {

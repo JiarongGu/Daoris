@@ -28,7 +28,6 @@ export const ratchetIn = (root: string, env: NodeJS.ProcessEnv): RatchetRun => (
   if (!existsSync(tool)) return { status: 0, output: 'time-ratchet: this repository has no time ratchet, so nothing is judged\n' };
   const changed = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', 'HEAD'], { cwd: root, env, encoding: 'utf8', windowsHide: true });
   const paths = changed.status === 0 ? changed.stdout.split('\n').map((line) => line.trim()).filter(Boolean) : null;
-  // The merge's changed paths, so a slow test none of them reaches is named and never fails the merge; unreadable, every test is judged.
   const withPaths = paths ? { ...env, DAORIS_RATCHET_CHANGED: JSON.stringify(paths) } : env;
   const ran = spawnSync(process.execPath, [tool, '--since', String(since)], { cwd: root, env: withPaths, encoding: 'utf8', windowsHide: true });
   return { status: ran.status, output: `${ran.stdout}${ran.stderr}` };

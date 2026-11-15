@@ -61,8 +61,6 @@ describe('the second check in the conversation', () => {
     expect(screen.getByText('delegated, not read')).toBeTruthy();
     expect(screen.getByText(/pushed though only a commit was asked/)).toBeTruthy();
     expect(screen.getByText('on call p7 · your words w3')).toBeTruthy();
-    // The window's own slice reads land whenever the page's modules finish loading, which a loaded machine reaches before or after
-    // this line: they are no ask of what is rendered.
     expect(asksOf(invoke)).toEqual([]);
 
     await userEvent.click(screen.getByRole('button', { name: 'What was sent' }));

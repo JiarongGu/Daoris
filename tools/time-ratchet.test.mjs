@@ -30,7 +30,6 @@ test('inside a merge the tool names a slow test the merge does not reach and fai
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, 'tools'), { recursive: true });
   try {
-    // The tool reads the repository it sits in, so run it there with the records of this repository's own tracked test file.
     const file = 'tools/time-ratchet.test.mjs';
     const records = join('_fixtures', 'test-timing');
     mkdirSync(records, { recursive: true });

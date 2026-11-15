@@ -8,7 +8,6 @@ import { spawnGit } from './fsx.mjs';
 import { collect, builderTimes, render, writeSnapshot } from './dev-metrics.mjs';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
-// A folder of this run's own, so no earlier run's leftover is this run's to remove.
 mkdirSync('_fixtures', { recursive: true });
 const root = mkdtempSync(join('_fixtures', 'dev-metrics-'));
 const home = join(root, 'data');
