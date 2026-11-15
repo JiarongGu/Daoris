@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { type Attention } from './AttentionRow';
 import { AttentionList } from './AttentionList';
-import { repeatedKinds } from './attention';
+import { repeatedKinds } from './repeatedKinds';
 
 const row = (kind: Attention['kind'], id: string): Attention => ({
   id, kind, title: `Row ${id}`, where: 'engine', since: '2026-09-21T09:00:00Z', detail: 'Why it waits.',
