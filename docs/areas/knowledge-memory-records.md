@@ -157,8 +157,10 @@ one job each, checked by `verify`.
     replacement, with no session left, is a wait of its own. (from D220, D297)
 26. An end or a replacement waits for an approver other than its proposer: the person, or an appointed role that holds
     `memory.decide` for the session's repository, its answer held for the role's window with *Overrule* and posted by the driver
-    through the door's `role` form, so the row's approver reads `role:<role> · <agent>`. An end the service's sweep wrote names no
-    session and stays the person's. (from D220, D297)
+    through the door's `role` form, so the row's approver reads `role:<role> · <agent>`. A role's approval is refused, as a session's
+    is, where the record of the agent's turn that held the role is the proposer or of its lineage; that record's serving the session
+    it decides for is no lineage, and a terminal holder names no record. An end the service's sweep wrote names no session and stays
+    the person's. (from D220, D297)
 27. Only the service applies. A row is marked `applying` in one transaction and settled in another; a keyed receipt settles it
     after a crash. An outcome no receipt names is held for the person, never replayed. (from D220)
 28. An entry cites records by id, lines, commit and digest. The sweep rechecks them: holding writes a confirmation, failing an

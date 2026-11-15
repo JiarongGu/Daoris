@@ -244,6 +244,70 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.Contains("\"role\":{\"role\":\"daoris-landing\",\"agent\":\"codex-acp\",\"decision\":\"d1\",\"session\":\"t-1\"}", body);
     }
 
+    /// <summary>A service holding session s1's page and three quests: q7 held by its departure, q8 by its unread evidence, q9 by a reopened source.</summary>
+    internal sealed class Doors : HttpMessageHandler
+    {
+        public string Staged { get; set; } = """{"id":"op-1","state":"staged","change":{"kind":"write","text":"Keeper keeps a garden."}}""";
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            static string Quest(string id, string hold) => $$"""
+                {"id":"{{id}}","from":"ask #a1","to":"reports","title":"Build the weekly report","body":"Through the bridge.","status":"Done","held":true,"hold":"{{hold}}",
+                 "requirements":[{"quote":"using the common-report","check":"It is one."}],
+                 "answers":[{"requirement":1,"departed":"A type of its own.","quote":"using the common-report"}],"updated":"2026-11-16T09:00:00Z"}
+                """;
+            var body = request.RequestUri!.AbsolutePath switch
+            {
+                "/api/sessions/s1/memory" => $$$"""
+                    {"ops":[{{{Staged}}},
+                     {"id":"op-9","state":"awaiting","change":{"kind":"end","target":"e-4","revision":3,"text":"The area moved to the driving page."},"by":{"session":"s0","role":"builder"}}]}
+                    """,
+                "/api/quests" => $"[{Quest("q7", "departed")},{Quest("q8", "evidence-unread")},{Quest("q9", "source-reopened")}]",
+                _ => null,
+            };
+            return Task.FromResult(new HttpResponseMessage(body is null ? System.Net.HttpStatusCode.NotFound : System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body ?? "{}", System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    /// <summary>
+    /// 🔴 OWNERGATE1c: what a role judges is Daoris's own record of the subject: the staged rows and their texts, the end's target, reason
+    /// and proposer, the departure beside what the quest required; pinned as it stands, so a row staged since is another pin. A quest held
+    /// for its evidence or a reopened source has no facts and no pin: it is never a role's.
+    /// </summary>
+    [Fact]
+    public async Task OWNERGATE1c_a_door_subjects_facts_and_pin_are_what_the_service_holds_and_a_departure_alone_is_a_roles()
+    {
+        var doors = new Doors();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(doors));
+        SupervisorSubject Of(string kind, string id) => new(kind, "s1", id);
+
+        var staged = await SupervisorDoorSubjects.FactsAsync(service, Of(SupervisorKinds.Memory, SupervisorDoorActs.Staged), default);
+        var end = await SupervisorDoorSubjects.FactsAsync(service, Of(SupervisorKinds.Memory, "op-9"), default);
+        var departure = await SupervisorDoorSubjects.FactsAsync(service, Of(SupervisorKinds.Departure, "q7"), default);
+
+        Assert.Contains("Keeper keeps a garden.", staged!.Parts.Single().Text);
+        Assert.Contains("op-9: end of entry e-4", end!.Parts[0].Text);
+        Assert.Contains("proposed by session: s0, role builder", end.Parts[0].Text);
+        Assert.Equal("The area moved to the driving page.", end.Parts[1].Text);
+        Assert.Contains("\"using the common-report\": checked by It is one.", departure!.Parts[0].Text);
+        Assert.Contains("departed from \"using the common-report\": A type of its own.", departure.Parts[2].Text);
+        foreach (var held in new[] { "q8", "q9" })
+        {
+            Assert.Null(await SupervisorDoorSubjects.FactsAsync(service, Of(SupervisorKinds.Departure, held), default));
+            Assert.Null(await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Departure, held), default));
+        }
+
+        Assert.Equal("op-1", await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, SupervisorDoorActs.Staged), default));
+        Assert.Equal("op-9", await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, "op-9"), default));
+        Assert.StartsWith("quest:", await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Departure, "q7"), default));
+        doors.Staged += """,{"id":"op-0","state":"staged","change":{"kind":"write","text":"Staged since."}}""";
+        Assert.Equal("op-0,op-1", await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, SupervisorDoorActs.Staged), default));
+        Assert.Null(await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, "op-8"), default));
+    }
+
     private sealed class Recording(List<(string Path, string Body)> bodies) : HttpMessageHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)

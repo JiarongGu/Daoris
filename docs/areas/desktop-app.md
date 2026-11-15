@@ -86,7 +86,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     the key until the approval request puts another caller's press to the wait's party. Three of them, a departure's yes, a memory
     end's approval and a stopped session's Keep or Drop, are a workflow's accept steps and take an appointed role's answer through
     their `role` form, the driver's (`RoleAnswerDoors`): posted with the key, kept as the role's and its agent's, and never read as
-    the owner's mark on its quest. An unclassed write is refused. A refusal is a 403 with a code, never a 500. (from D156, D284,
+    the owner's mark on its quest. A role naming no role or no agent is refused, and no confirmation carries the form, so a person's
+    press never posts a role's name. An unclassed write is refused. A refusal is a 403 with a code, never a 500. (from D156, D284,
     D297)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the Confirm, default no, until answered or taken back (under the tier `act`,
