@@ -368,22 +368,27 @@ public static class DriverChoicesCommand
                 var set = clear ? null : branch;
                 var payload = Scoped(workspace, name);
                 if (branchNamed) payload["branch"] = set;
-                LandingIntegrate? policy = null;
+                LandingIntegrate? policy = null, keys = null;
                 if (policyNamed)
                 {
+                    // Only the keys named travel and are laid over the policy held when the change is made, never the whole as read now.
+                    keys = LinePolicyFlags.Named(args);
                     var own = workspace is not null ? AtName(before.WorkspaceLinePolicies, workspace) : AtName(before.LinePolicies, name);
-                    policy = LinePolicyFlags.Of(args, own);
+                    policy = keys is null ? null : LinePolicyKey.Overlay(own, keys);
                     // The judge the window's press meets, before a route is asked or a file written.
                     _ = Judged(() => workspace is not null ? before.WithWorkspaceLinePolicy(workspace, policy) : before.WithLinePolicy(name, policy));
-                    payload["policy"] = policy is null ? null : LinePolicyKey.Wire(policy);
+                    payload["policy"] = keys is null ? null : LinePolicyKey.Wire(keys);
+                    if (keys is not null) payload["merge"] = true;
                 }
 
                 return Change(ChoiceRoutes.Line, payload,
                     config =>
                     {
                         if (branchNamed) config = workspace is not null ? config.WithWorkspaceLine(workspace, set) : config.WithLine(name, set);
-                        return !policyNamed ? config
-                            : workspace is not null ? config.WithWorkspaceLinePolicy(workspace, policy) : config.WithLinePolicy(name, policy);
+                        if (!policyNamed) return config;
+                        var held = workspace is not null ? AtName(config.WorkspaceLinePolicies, workspace) : AtName(config.LinePolicies, name);
+                        var next = keys is null ? null : LinePolicyKey.Overlay(held, keys);
+                        return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, next) : config.WithLinePolicy(name, next);
                     }, () =>
                     {
                         var whose = workspace is not null ? $"repositories in the workspace `{workspace}`" : $"`{name}`";

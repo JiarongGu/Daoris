@@ -107,6 +107,17 @@ public sealed class LinePolicyKeyTests
     }
 
     [Fact]
+    public void Overlaying_a_policy_sets_the_keys_named_and_keeps_the_rest()
+    {
+        var held = new LandingIntegrate(Commit: LandingIntegrate.Squash, Batch: 4, Gates: LandingIntegrate.NoGates);
+
+        var overlaid = LinePolicyKey.Overlay(held, new LandingIntegrate(Batch: 3, Gates: LandingIntegrate.Declared));
+
+        Assert.Equal(new LandingIntegrate(Commit: LandingIntegrate.Squash, Batch: 3, Gates: LandingIntegrate.Declared), overlaid);
+        Assert.Equal(new LandingIntegrate(Batch: 3), LinePolicyKey.Overlay(null, new LandingIntegrate(Batch: 3)));
+    }
+
+    [Fact]
     public void A_pattern_expands_by_its_placeholders_and_a_bad_one_is_refused()
     {
         var names = new LandingNames("0fda18", "sample-work", "engine", "s1a2b3c4");

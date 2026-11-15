@@ -21,10 +21,11 @@ internal static class LinePolicyFlags
     internal static bool Names(IReadOnlyList<string> args) => args.Any(arg => arg == Withdraw || Valued.Contains(arg));
 
     /// <summary>
-    /// The policy the words ask for, <paramref name="own"/> (the place's own now, null where it holds none) with each key named set; null
-    /// where the words withdraw it. A value the policy does not take is refused in <see cref="LinePolicyKey"/>'s sentence, nothing done.
+    /// The keys the words name, and only those: laid over the policy the place holds when the change is made, so a key the words leave
+    /// out is never written back from an older read. Null where the words withdraw the policy. A value the policy does not take is
+    /// refused in <see cref="LinePolicyKey"/>'s sentence, nothing done.
     /// </summary>
-    internal static LandingIntegrate? Of(IReadOnlyList<string> args, LandingIntegrate? own)
+    internal static LandingIntegrate? Named(IReadOnlyList<string> args)
     {
         if (args.Contains(Withdraw))
         {
@@ -32,7 +33,7 @@ internal static class LinePolicyFlags
             return null;
         }
 
-        var policy = own ?? new LandingIntegrate();
+        var policy = new LandingIntegrate();
         if (FlagValue(args, "--request") is { } request) policy = policy with { Request = request };
         if (FlagValue(args, "--commit") is { } commit) policy = policy with { Commit = commit };
         if (FlagValue(args, "--batch") is { } batch)
@@ -49,7 +50,6 @@ internal static class LinePolicyFlags
         if (FlagValue(args, "--conflicts") is { } conflicts) policy = policy with { Conflicts = conflicts };
         if (FlagValue(args, "--integrate-line") is { } line) policy = policy with { Line = line };
 
-        // The window's press is judged the same way before anything is written (`DriverConfigEdits.Policy`).
         if (LinePolicyKey.PolicyProblem(policy, wholeSet: true) is { } problem) throw new ChoiceWords(problem);
         return policy;
     }

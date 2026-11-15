@@ -54,6 +54,21 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).LinePolicies.Count > 0);
     }
 
+    [Fact]
+    public async Task A_merged_policy_press_lays_its_keys_over_the_policy_held_when_it_is_made_and_a_whole_one_replaces_it()
+    {
+        DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Batch: 4, Order: LandingIntegrate.Apart)).Save(DriverConfigPath);
+        var module = Module();
+
+        await AnswerAsync(module, "SET_LINE", new { repository = "engine", policy = Body("""{"gates":"declared"}"""), merge = true });
+        var merged = DriverConfig.Load(DriverConfigPath).LinePolicies["engine"];
+        Assert.Equal((4, LandingIntegrate.Apart, LandingIntegrate.Declared), (merged.Batch, merged.Order, merged.Gates));
+
+        await AnswerAsync(module, "SET_LINE", new { repository = "engine", policy = Body("""{"gates":"none"}""") });
+        var whole = DriverConfig.Load(DriverConfigPath).LinePolicies["engine"];
+        Assert.Equal((null, null, LandingIntegrate.NoGates), (whole.Batch, whole.Order, whole.Gates));
+    }
+
     private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
     /// <summary>Each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>

@@ -216,6 +216,21 @@ public sealed class PipeGroundsBindingTests
         }
     }
 
+    /// <summary>A line press naming a policy is never <c>already</c>: the lines row carries a branch only, so equal branches say nothing of the policy.</summary>
+    [Fact]
+    public void A_line_press_that_names_a_policy_is_never_already_where_its_branch_is_the_same()
+    {
+        var row = Row("SET_LINE");
+        var ground = Assert.Single(row.Grounds.OfType<ReadGround>());
+        var world = JsonSerializer.SerializeToElement(new { lines = new[] { new { repository = "engine", branch = "main" } } });
+        PipeReading Read(object payload) => new(PipeGroundKind.Setting, "STATE", ground.Take(world, Payload(payload)));
+
+        Assert.True(row.Already([Read(new { repository = "engine", branch = "main" })], Payload(new { repository = "engine", branch = "main" })));
+        Assert.False(row.Already([Read(new { repository = "engine", branch = "main" })], Payload(new { repository = "engine", branch = "main", policy = new { gates = "declared" } })));
+        Assert.False(row.Already([Read(new { repository = "other" })], Payload(new { repository = "other", policy = new { gates = "declared" } })));
+        Assert.False(row.Already([Read(new { repository = "other" })], Payload(new { repository = "other", policy = (object?)null })));
+    }
+
     /// <summary>Finding 12: heavy gates set whole are <c>already</c> where the list is the same, in order, and not where it differs.</summary>
     [Fact]
     public void Heavy_gates_already_as_asked_are_already()

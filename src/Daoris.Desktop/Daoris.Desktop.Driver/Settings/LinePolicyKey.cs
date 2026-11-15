@@ -118,6 +118,18 @@ public static class LinePolicyKey
         return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
     }
 
+    /// <summary>The policy <paramref name="held"/> with each key <paramref name="named"/> sets laid over it; the keys it names not at all stay.</summary>
+    public static LandingIntegrate Overlay(LandingIntegrate? held, LandingIntegrate named)
+    {
+        var now = held ?? new LandingIntegrate();
+        return now with
+        {
+            Request = named.Request ?? now.Request, Commit = named.Commit ?? now.Commit, Batch = named.Batch ?? now.Batch,
+            Order = named.Order ?? now.Order, Gates = named.Gates ?? now.Gates, Unreached = named.Unreached ?? now.Unreached,
+            Reached = named.Reached ?? now.Reached, Conflicts = named.Conflicts ?? now.Conflicts, Line = named.Line ?? now.Line,
+        };
+    }
+
     /// <summary>A policy as <c>SET_LINE</c> takes it, the keys the file writes, each only where set.</summary>
     internal static JsonObject Wire(LandingIntegrate policy)
     {
