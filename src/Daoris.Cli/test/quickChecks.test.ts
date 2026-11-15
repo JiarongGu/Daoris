@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/platform/fsx.ts';
-import { checkSteps, quickSteps } from '../../../tools/quick/steps.mjs';
+import { checkSteps, quickSteps, TIME_JUDGED } from '../../../tools/quick/steps.mjs';
 
 const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 
@@ -22,6 +22,7 @@ test("the builder's quick checks hold every check the merge's cli gate runs", ()
   const wanted = checkSteps(repoRoot);
   assert.ok(wanted.length > 10, `the cli gate's checks emptied: ${cli.run}`);
   const quick = quickSteps(repoRoot);
-  const missing = wanted.filter((step) => !quick.includes(step));
+  const missing = wanted.filter((step) => !quick.includes(step) && !TIME_JUDGED.includes(step));
   assert.deepEqual(missing, [], `npm run quick leaves out what the merge's cli gate runs: ${missing.join(' | ')}`);
+  assert.deepEqual(quick.filter((step) => TIME_JUDGED.includes(step)), [], 'quick judges no test time');
 });

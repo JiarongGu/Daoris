@@ -89,8 +89,9 @@ during the task. Before done, run `node tools/reached-checks.mjs --base main --t
 `npm run verify:checks`, and fix what your change reddens: they are the commands `daoris.gates.json` marks `"handback"`, every brief
 names them, and a workflow's `check` step verifies them at your tip while you are open. `npm run quick` is a builder's
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
-(`npm run verify:checks`, with the universal gates on the built-in patterns) and the layers' census, so a comment, partial or
-sensitive finding is read in the builder's tree and the work is merged as handed back.
+(`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
+source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
+handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone.
 
 | Change | Additional verification |
 |---|---|

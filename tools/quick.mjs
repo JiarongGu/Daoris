@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The quick checks a builder runs before it hands back: every step of `tools/quick/steps.mjs` runs whatever an earlier one did, each
- * red is said with its output, and the end says which reds are new and which the base already stood in.
+ * red is said with its output, and the end says which reds are new and which the base already stood in. No step judges test time.
  *
  *   node tools/quick.mjs                run every step; exit 0 all green, 1 a red, 2 a tool error
  *   node tools/quick.mjs --record-base  also record these verdicts as the tree's base (`local/quick-base.json`)
@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain } from './fsx.mjs';
-import { quickSteps } from './quick/steps.mjs';
+import { quickSteps, TIME_LINE } from './quick/steps.mjs';
 import { BASE_FILE, judge, LAST_FILE, readVerdicts, say as sayRed, writeVerdicts } from './quick/verdicts.mjs';
 
 const TAIL_LINES = 40;
@@ -48,6 +48,7 @@ export function runQuick({ root, steps = quickSteps(root), run = shellStep(root)
   if (recordBase) writeVerdicts(join(root, BASE_FILE), record);
   const reds = Object.values(verdicts).filter((verdict) => verdict === 'fail').length;
   say(`quick: ${steps.length} steps, ${reds} red${recordBase ? ' (recorded as the base)' : ''}`);
+  say(TIME_LINE);
   if (reds > 0 && !recordBase) for (const line of sayRed(judge(verdicts, base))) say(line);
   return reds > 0 ? 1 : 0;
 }
