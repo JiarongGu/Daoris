@@ -14,6 +14,12 @@ public static class SupervisorKinds
     public const string Files = "files";
     public const string Landing = "landing";
 
+    /// <summary>A session's staged memory kept or dropped (<c>keep</c>), and a memory end approved or declined (<c>decide</c>).</summary>
+    public const string Memory = "memory";
+
+    /// <summary>A quest's done departing from what was required, accepted (<c>accept</c>).</summary>
+    public const string Departure = "departure";
+
     /// <summary>Ask Daoris's acts, read after its turns, observed and never decided; not the working role <c>ask-daoris</c>.</summary>
     public const string AskDaoris = "ask-daoris";
 
@@ -31,11 +37,13 @@ public static class SupervisorKinds
         [Allow] = ["once", "reject", "standing", "steward"],
         [Files] = ["allow-run", "allow-copy", "allow-share"],
         [Landing] = ["accept", "approve", "reject"],
+        [Memory] = ["keep", "decide"],
+        [Departure] = ["accept"],
         [AskDaoris] = [Report],
     };
 
     /// <summary>Every kind, in the editor's order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, AskDaoris];
+    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, Memory, Departure, AskDaoris];
 
     public static bool MachineOnly(string kind) => kind == AskDaoris;
 

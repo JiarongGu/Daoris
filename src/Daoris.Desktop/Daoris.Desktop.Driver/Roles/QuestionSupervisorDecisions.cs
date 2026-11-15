@@ -53,6 +53,7 @@ public sealed class QuestionSupervisorDecisions
     private readonly SupervisorReads _reads;
     private readonly SupervisorCourses _courses;
     private readonly SupervisorLandings _landings;
+    private readonly SupervisorDoorAnswers _doors;
     private readonly SupervisorAllows _allows;
     private readonly AskDaorisReports _readings;
     private readonly MachineLog? _log;
@@ -64,6 +65,7 @@ public sealed class QuestionSupervisorDecisions
         _keeping = new SupervisorKeeping(_book, admission, log);
         _releasing = new SupervisorReleasing(_book, admission, log);
         _landings = new SupervisorLandings(_book, admission, log);
+        _doors = new SupervisorDoorAnswers(_book, admission, log);
         _sweeps = new SupervisorSweeps(_book, log, _landings.Applied);
         _tickets = new SupervisorTickets(_book, admission);
         _reads = new SupervisorReads(_book);
@@ -102,6 +104,17 @@ public sealed class QuestionSupervisorDecisions
     public IReadOnlyList<SupervisorLandingView> LandingsOf(string session) => _landings.LandingsOf(session);
 
     public SupervisorLandingView? LandingOn(string run, string node, int attempt) => SupervisorLandingOn.Newest(_book, run, node, attempt);
+
+    /// <summary>Keep an answer at a person's door a role may answer (<see cref="SupervisorDoorAnswers.KeepAsync"/>).</summary>
+    public Task<SupervisorKept> DoorAsync(SupervisorDoorAnswer answer, string? refused, DateTimeOffset now, CancellationToken ct = default) =>
+        _doors.KeepAsync(answer, refused, now, ct);
+
+    /// <summary>Release each held door answer whose moment came, posting it to its door (<see cref="SupervisorDoorAnswers.ReleaseAsync"/>).</summary>
+    public Task<IReadOnlyList<SupervisorState>> ReleaseDoorsAsync(SupervisorDoorPost post, DateTimeOffset now, CancellationToken ct = default) =>
+        _doors.ReleaseAsync(post, now, ct);
+
+    /// <summary>Whether a door's subject waits for the holder (<see cref="SupervisorDoorAnswers.Waits"/>).</summary>
+    public bool RefersDoor(SupervisorSubject subject) => _doors.Waits(subject);
 
     /// <summary>Keep an allow decision (<see cref="SupervisorAllows.Keep"/>).</summary>
     public void AllowKept(SupervisorAllowed allow, DateTimeOffset now) => _allows.Keep(allow, now);
@@ -189,6 +202,7 @@ public sealed class QuestionSupervisorDecisions
         string session, string decision, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
         await _courses.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
         ?? await _landings.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
+        ?? await _doors.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
         ?? await _releasing.OverruleAsync(session, decision, takeBack, now, ct).ConfigureAwait(false);
 
     /// <summary>The owner's words named a question (<see cref="SupervisorReleasing.SupersedeAsync"/>).</summary>
@@ -228,7 +242,7 @@ public sealed class QuestionSupervisorDecisions
     public DateTimeOffset? HeldUntil(string session) => _reads.HeldUntil(session);
 
     /// <summary>The soonest moment a held decision or go-on goes on, across every session (<see cref="SupervisorReads.NextGoesOn"/>).</summary>
-    public DateTimeOffset? NextGoesOn() => new[] { _reads.NextGoesOn(), _courses.NextGoesOn(), _landings.NextGoesOn() }.Min();
+    public DateTimeOffset? NextGoesOn() => new[] { _reads.NextGoesOn(), _courses.NextGoesOn(), _landings.NextGoesOn(), _doors.NextGoesOn() }.Min();
 
     /// <summary>The sessions a held decision holds now (<see cref="SupervisorReads.HeldSessions"/>).</summary>
     public IReadOnlySet<string> HeldSessions() => _reads.HeldSessions();
