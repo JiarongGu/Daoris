@@ -132,7 +132,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AskDaorisReadingQueueTests.cs": 6,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AskDaorisToldDispatchTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BenchHome.cs": 1,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormBoundsTests.cs": 4,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormBoundsTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormProcessTests.cs": 7,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormStartTests.cs": 4,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormVoicePlanTests.cs": 1,

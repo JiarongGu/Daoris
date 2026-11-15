@@ -113,7 +113,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     why: "what the publish imports (the rule above), and what the rehearsals' kit ends a timed-out command's leftovers with, so all three rehearsals (FAMILYFAIL1)",
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/desktop/**'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
-  { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
+  { paths: ['src/Daoris.Devkit/**'], gates: ['devkit', 'layers'], why: 'its own suite, and the layers census, which counts its tests; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   { paths: ['src/Daoris.Desktop/git.pinned.process.runsettings'], gates: ['driver-process-git-pinned'], why: "the settings of the git library's proofs run on the pinned MinGit (GITLIB1d)" },
@@ -186,8 +186,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: ['modules'],
     why: "the modules' LandingSaysTwinTests read the landing sentences' table, the terminal's words and the card's",
   },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses', 'driver-rehearsals'], why: "the driver's tests, the fast half and the Process halves, the censuses among them, and the rehearsals, which compile its git fixtures in" },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses'], why: "the modules' tests, both halves, and the censuses among them" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses', 'driver-rehearsals', 'layers'], why: "the driver's tests, the fast half and the Process halves, the censuses among them, the rehearsals, which compile its git fixtures in, and the layers census, which counts its clock reads" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses', 'layers'], why: "the modules' tests, both halves, and the censuses among them, the layers census among them" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'],
@@ -221,7 +221,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: ['service', 'driver', 'web-unit'],
     why: "COMMS1a's sender table, read by the service's, the driver's (SendersTests) and the page's tests alike",
   },
-  { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service', 'service-process'], why: "both halves" },
+  { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service', 'service-process', 'layers'], why: "both halves, and the layers census, which counts their clock reads" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],

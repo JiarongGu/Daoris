@@ -12,7 +12,7 @@ internal static class StandInTurns
     public static void WentOn(JsonObject session)
     {
         var id = session["id"]!.GetValue<string>();
-        var turns = session["turns"] as JsonArray ?? new JsonArray(Turn(1, "start", session["created"]?.GetValue<string>(), id));
+        var turns = session["turns"] as JsonArray ?? new JsonArray(Turn(1, "start", session["created"]!.GetValue<string>(), id));
         var codes = (session["noteParts"] as JsonArray ?? []).Select(part => part?["code"]?.GetValue<string>()).OfType<string>();
         turns[^1]!["end"] = new JsonObject
         {
@@ -25,13 +25,14 @@ internal static class StandInTurns
         var cause = said.Any(word => word!["from"] is null && word["helper"] is null) ? "person"
             : said.All(word => word!["from"]?.GetValue<string>() == "daoris" && !Step(word["key"]?.GetValue<string>())) ? "daoris"
             : "step";
-        turns.Add(Turn(turns.Count + 1, cause, DateTimeOffset.UtcNow.ToString("O"), id));
+        var at = said.Select(word => word!["at"]?.GetValue<string>()).Append(session["created"]!.GetValue<string>()).OfType<string>().OrderBy(DateTimeOffset.Parse).Last();
+        turns.Add(Turn(turns.Count + 1, cause, at, id));
         session["turns"] = turns;
     }
 
     /// <summary>Whether a word's key names a workflow step: a check's, or a run's <c>&lt;unit&gt;/&lt;run&gt;/&lt;node&gt;/&lt;attempt&gt;</c>.</summary>
     private static bool Step(string? key) => key is not null && (key.StartsWith("check/", StringComparison.Ordinal) || key.Split('/').Length >= 4);
 
-    private static JsonObject Turn(int number, string cause, string? at, string part) =>
-        new() { ["number"] = number, ["cause"] = cause, ["at"] = at ?? DateTimeOffset.UtcNow.ToString("O"), ["part"] = part };
+    private static JsonObject Turn(int number, string cause, string at, string part) =>
+        new() { ["number"] = number, ["cause"] = cause, ["at"] = at, ["part"] = part };
 }
