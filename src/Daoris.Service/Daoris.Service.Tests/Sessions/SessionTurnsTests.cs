@@ -179,6 +179,72 @@ public sealed class SessionTurnsTests : IAsyncLifetime
         Assert.All(SessionTurns.Own(ended), turn => Assert.Equal((null, null), (turn.Input, turn.Output)));
     }
 
+    [Fact]
+    public async Task A_cut_record_that_goes_on_with_Daoris_s_word_keeps_its_first_turn_s_end_and_wakes_a_daoris_turn()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, tree: "/trees/s-10")).Session!;
+        await Move(opened.Id, "starting", "working");
+        await _ledger.AdvanceAsync(
+            opened.Id, "stopped", "the driver was stopped while this ran.", null, null, Now.AddMinutes(1), interrupted: true,
+            noteParts: """[{"code":"ended.driver-closed","text":"the driver was stopped while this ran."}]""");
+
+        await _ledger.SayAsync(opened.Id, "Daoris restarted while you were working. Go on where you stopped.", null, Now.AddMinutes(2),
+            from: SaidFrom.Daoris, key: $"restart/{opened.Id}/2026-11-15T10-01-00.0000000Z");
+        var woken = (await _ledger.AdvanceAsync(opened.Id, "working", null, null, null, Now.AddMinutes(3))).Session!;
+
+        var kept = SessionTurns.Own((await _sessions.FindAsync(opened.Id))!);
+        Assert.Equal([SessionTurns.Start, SessionTurns.Daoris], kept.Select(turn => turn.Cause));
+        Assert.Equal(new SessionTurnEnd("stopped", Interrupted: true, Codes: ["ended.driver-closed"]), kept[0].End);
+        Assert.Null(kept[1].End);
+        Assert.False(woken.Interrupted);
+    }
+
+    [Fact]
+    public async Task A_carry_on_reads_the_same_turns_appended_to_its_record_as_chained_in_a_new_one()
+    {
+        async Task<Session> CutAsync(string tree)
+        {
+            var quest = await _quests.PublishAsync("Asker", "Owner", $"Do the thing in {tree}", "Here is why.", Now);
+            var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, profile: "work", tree: tree)).Session!;
+            await Move(opened.Id, "starting", "working");
+            await _ledger.AdvanceAsync(opened.Id, "stopped", null, null, null, Now.AddMinutes(1), interrupted: true);
+            return opened;
+        }
+
+        var first = await CutAsync("/trees/s-12");
+        var chained = (await _ledger.OpenAsync(first.Quest!, "codex", Now.AddMinutes(2), profile: "work", tree: "/trees/s-12",
+            from: first.Id, fromWhy: "carry-on", fromBy: "daoris")).Session!;
+        var cut = await CutAsync("/trees/s-13");
+        await _ledger.SayAsync(cut.Id, "Daoris restarted while you were working. Go on where you stopped.", null, Now.AddMinutes(2),
+            from: SaidFrom.Daoris, key: $"restart/{cut.Id}/2026-11-15T10-01-00.0000000Z");
+        await _ledger.AdvanceAsync(cut.Id, "working", null, null, null, Now.AddMinutes(2));
+        var appended = (await _sessions.FindAsync(cut.Id))!;
+
+        static IEnumerable<(int, string, string?, string?)> Rows(IReadOnlyList<SessionTurn> turns) =>
+            turns.Select(turn => (turn.Number, turn.Cause, turn.Agent, turn.Account));
+        var asChain = (await SessionTurnLines.ReadAsync(_sessions, [chained]))[chained.Id];
+        var asTurns = (await SessionTurnLines.ReadAsync(_sessions, [appended]))[appended.Id];
+
+        Assert.Equal(Rows(asChain), Rows(asTurns));
+        Assert.Equal([first.Id, chained.Id], asChain.Select(turn => turn.Part!));
+        Assert.Equal([cut.Id, cut.Id], asTurns.Select(turn => turn.Part!));
+    }
+
+    [Fact]
+    public async Task A_limited_end_a_go_on_forgives_stays_on_its_turn()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
+        var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, tree: "/trees/s-11")).Session!;
+        await Move(opened.Id, "starting", "working", "failed");
+        await _ledger.SayAsync(opened.Id, "One more thing.", null, Now.AddMinutes(3));
+        await _ledger.AdvanceAsync(opened.Id, "working", null, null, null, Now.AddMinutes(4));
+
+        var kept = SessionTurns.Own((await _sessions.FindAsync(opened.Id))!);
+        Assert.Equal([new SessionTurnEnd("failed", Limit: true, Codes: []), null], kept.Select(turn => turn.End));
+        Assert.Equal(SessionTurns.Person, kept[1].Cause);
+    }
+
     [Theory]
     [InlineData("check/a1b2", "check_run", null)]
     [InlineData("changes/r/opinion/3", "opinion", 3)]

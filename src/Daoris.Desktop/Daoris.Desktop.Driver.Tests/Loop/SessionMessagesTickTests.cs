@@ -1586,12 +1586,12 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
                         if (!Live.Contains(from))
                         {
-                            // The one move out of an ended state: to working, with words waiting.
                             if (to != "working" || session["said"]!.AsArray().Count == 0)
                             {
                                 return (409, $$"""{"error":"Session `{{id}}` is {{from}} — a finished session does not move."}""");
                             }
 
+                            StandInTurns.WentOn(session);
                             session["note"] = string.Join("\n\n", new[] { "Went on with your words at 2026-10-03 09:00 UTC.", note, session["note"]?.GetValue<string>() }
                                 .Where(part => !string.IsNullOrWhiteSpace(part)));
                         }

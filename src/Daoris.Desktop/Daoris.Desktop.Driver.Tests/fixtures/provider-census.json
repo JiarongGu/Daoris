@@ -252,6 +252,8 @@
       ["tools/deployment-rehearsal.mjs", "\"acp-stub\"", "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
       ["tools/deployment-rehearsal.mjs", "\"stub\"", "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
       ["tools/desktop-publish/install-note.mjs", ".mcp.json", "-", "words", "the install note names a repository's own connector file"],
+      ["tools/dev-metrics/startup.mjs", "\"claude\"", "-", "measurement", "the startup measure runs Claude Code's program headless, one prompt per variant"],
+      ["tools/dev-metrics/startup.mjs", ".mcp.json", "-", "measurement", "the startup measure removes a checkout's connector file to weigh its share"],
       ["tools/fabric-probe/launch.mjs", "\"claude\"", "-", "measurement", "a dated probe of the fabric launches Claude Code's program"],
       ["tools/fabric-probe/launch.mjs", "\"codex\"", "-", "measurement", "a dated probe of the fabric launches Codex's program"],
       ["tools/fabric-probe/receipt.mjs", "x-codex-turn-metadata", "-", "measurement", "a dated probe reads Codex's turn header from a receipt"],

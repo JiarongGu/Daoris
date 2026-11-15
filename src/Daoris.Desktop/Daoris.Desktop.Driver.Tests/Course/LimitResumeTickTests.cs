@@ -270,10 +270,11 @@ public sealed class LimitResumeTickTests : IDisposable
         Assert.Contains("Its last reset did not lift the limit: weekly.", service.Note("s1"));
         Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
 
-        // The next attempt, long after that cool-off, says nothing of it again.
+        // The next attempt, long after that cool-off, says nothing of it again: its note, never the ended turn the go-on kept.
         _now = Until.AddDays(2);
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        Assert.DoesNotContain("limit.not-lifted", service.Record("s1"));
+        Assert.DoesNotContain(
+            JsonNode.Parse(service.Record("s1"))!["noteParts"]?.AsArray() ?? [], part => part?["code"]?.GetValue<string>() == "limit.not-lifted");
         Assert.Equal(1, service.SessionCount);
     }
 

@@ -81,7 +81,10 @@ public sealed record SessionResponse(
 /// <summary>One agent conversation's turn inside the session, answered on this machine only, since it names the account.</summary>
 public sealed record SessionTurnResponse(
     int Number, string Cause, DateTimeOffset At, string? Node, int? Attempt, string? Part, string? Agent, string? Account, string? Adapter,
-    string? Conversation, DateTimeOffset? Ended, long? Input = null, long? Output = null);
+    string? Conversation, DateTimeOffset? Ended, long? Input = null, long? Output = null, SessionTurnEndResponse? End = null);
+
+/// <summary>How a turn its record went on after ended: the record's state then, its limit flag, a stop not the person's, its note's codes.</summary>
+public sealed record SessionTurnEndResponse(string State, bool Limit, bool Interrupted, IReadOnlyList<string> Codes);
 
 /// <summary>
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer
