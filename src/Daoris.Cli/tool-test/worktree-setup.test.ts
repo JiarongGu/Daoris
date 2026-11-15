@@ -22,23 +22,26 @@ const lock = (versions: Record<string, string>) => JSON.stringify({
   lockfileVersion: 3, packages: { '': {}, ...Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) },
 });
 
-test('the local props a builder needs are the main checkout\'s local/*.props and the sensitive patterns, copied as files and never linked', () => {
+test('the local files a builder needs are what the declaration names (localInputs, then the sensitive patterns), never every local/*.props, copied as files and never linked', () => {
   const fx = makeFixture('worktree-setup-copy');
   const home = join(fx.root, 'home');
   const tree = join(fx.root, 'tree');
   mkdirSync(join(home, 'local'), { recursive: true });
   mkdirSync(tree, { recursive: true });
-  writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }] }));
+  writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], localInputs: ['local/lyntai-local.props', 'local/y.props'] }));
   writeFileSync(join(home, 'local', 'lyntai-local.props'), '<a/>\n');
-  writeFileSync(join(home, 'local', 'other-local.props'), '<b/>\n');
+  writeFileSync(join(home, 'local', 'y.props'), '<b/>\n');
+  writeFileSync(join(home, 'local', 'x.props'), '<undeclared/>\n');
   writeFileSync(join(home, 'local', 'sensitive-patterns.txt'), 'p\n');
   writeFileSync(join(home, 'local', 'notes.md'), 'private\n');
-  assert.deepEqual(setup.localFiles(home), ['local/lyntai-local.props', 'local/other-local.props', 'local/sensitive-patterns.txt', 'local/shenora-local.props']);
+  assert.deepEqual(setup.localFiles(home), ['local/lyntai-local.props', 'local/sensitive-patterns.txt', 'local/y.props']);
 
   const lines = setup.copyLocal(home, tree);
   assert.match(lines.join('\n'), /local\/lyntai-local\.props: copied/);
-  assert.match(lines.join('\n'), /local\/shenora-local\.props is missing/, 'a missing source is said, not made');
-  assert.equal(readFileSync(join(tree, 'local', 'other-local.props'), 'utf8'), '<b/>\n');
+  assert.match(lines.join('\n'), /local\/sensitive-patterns\.txt: copied/);
+  assert.equal(readFileSync(join(tree, 'local', 'y.props'), 'utf8'), '<b/>\n');
+  assert.equal(existsSync(join(tree, 'local', 'x.props')), false, 'an undeclared props file is not handed over');
+  assert.equal(existsSync(join(tree, 'local', 'shenora-local.props')), false, 'a props file the declaration does not name is not made');
   assert.equal(lstatSync(join(tree, 'local', 'lyntai-local.props')).isSymbolicLink(), false, 'a file, never a link');
   assert.equal(existsSync(join(tree, 'local', 'notes.md')), false, 'only the props and the patterns are handed over');
 

@@ -67,6 +67,11 @@ internal static class SessionsReading
             case ["reword", ..]:
                 problem = "`reword` takes one session's id, the word to reword, then the words to put in its place.";
                 return null;
+            case ["option", var id, var option, _, ..] when Id(id) && Id(option) && string.Join(' ', args.Skip(3)).Trim().Length > 0:
+                return new SessionsAsk("option") { Ids = [id], Word = option.Trim(), Text = string.Join(' ', args.Skip(3)).Trim() };
+            case ["option", ..]:
+                problem = "`option` takes one session's id, the option's id, then the value to set it to.";
+                return null;
             case ["start-from", var id] when Id(id):
                 return new SessionsAsk("start-from") { Ids = [id] };
             case ["start-from", ..]:

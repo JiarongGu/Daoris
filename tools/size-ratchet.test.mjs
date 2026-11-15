@@ -11,6 +11,14 @@ test('CODESHAPE1: a source file over the budget is found, with its LF size, and 
   assert.equal(sizeOf('a\r\nb'), 3);
 });
 
+test('a file does not pass the size main\'s list gives it, whatever its own list says', () => {
+  const own = { 'a.cs': 50500 };
+  assert.deepEqual(checkSizes({ 'a.cs': 50500 }, own, { 'a.cs': 50500 }), []);
+  assert.match(checkSizes({ 'a.cs': 50500 }, own, { 'a.cs': 50000 })[0], /grew from 50000 to 50500/);
+  assert.match(checkSizes({ 'a.cs': 50500 }, own, {})[0], /over the \d+-byte budget/);
+  assert.match(checkSizes({ 'a.cs': 49900 }, own, { 'a.cs': 50000 })[0], /shrank/);
+});
+
 test('CODESHAPE1: a listed file may not grow, a new one may not pass the budget, and the list only tightens', () => {
   assert.deepEqual(checkSizes({ 'a.cs': 50000 }, { 'a.cs': 50000 }), []);
   assert.match(checkSizes({ 'a.cs': 50001 }, { 'a.cs': 50000 })[0], /grew from 50000 to 50001/);

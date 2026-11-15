@@ -136,7 +136,7 @@ test('the gate trees are handed the same props from the main checkout', () => {
   const checkout = join(scratch, 'checkout');
   const tree = join(scratch, 'tree');
   mkdirSync(join(checkout, 'local'), { recursive: true });
-  writeFileSync(join(checkout, 'daoris.gates.json'), '{"gates":[]}');
+  writeFileSync(join(checkout, 'daoris.gates.json'), '{"gates":[],"localInputs":["local/lyntai-local.props"]}');
   writeFileSync(join(checkout, 'local', 'lyntai-local.props'), '<Project />');
   const files = privateGateFiles(checkout);
   assert.ok(files.includes('local/lyntai-local.props'));

@@ -18,7 +18,7 @@ import { word } from './sessionHelpers';
 import { sessionsComposer } from './sessionListMerge';
 import { readSlice } from '../driver';
 import { mergeKeyed, type SliceSpec, usePushedLive } from '../state/slices';
-import { askHeld } from '../state/held';
+import { askHeld, fieldsOf } from '../state/held';
 
 // A session's life on this machine: the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
@@ -202,7 +202,7 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   const answer = useQuery({
     queryKey,
     // Told by event: the shell answers what it holds, and the record's read comes as `ANSWERED`.
-    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids }, (answer) => answer as { openings?: Record<string, string> }),
+    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids }, fieldsOf<{ openings?: Record<string, string> }>),
     enabled: isAvailable && ids.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -230,7 +230,7 @@ export const useSessionBrief = (session: string | undefined): string | null => {
   const queryKey = keys.openings(session ? [session] : []);
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids: session ? [session] : [] }, (answer) => answer as { briefs?: Record<string, string> }),
+    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids: session ? [session] : [] }, fieldsOf<{ briefs?: Record<string, string> }>),
     enabled: isAvailable && !!session,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -285,7 +285,7 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
     queryKey,
     queryFn: () => askHeld('SESSION_WHERE', client, queryKey, {
       sessions: asked.map((session) => ({ id: session.id, tree: session.tree })),
-    }, (answer) => answer as { sessions?: ({ session: string } & SessionWhere)[] }),
+    }, fieldsOf<{ sessions?: ({ session: string } & SessionWhere)[] }>),
     enabled: isAvailable && asked.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -304,7 +304,7 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
   const queryKey = keys.sessionRecord(id ?? '');
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld('SESSION_RECORD', client, queryKey, { id: id ?? '' }, (answer) => answer as { record?: SessionRecord | null }),
+    queryFn: () => askHeld('SESSION_RECORD', client, queryKey, { id: id ?? '' }, fieldsOf<{ record?: SessionRecord | null }>),
     enabled: isAvailable && id !== null && treeGone,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -322,7 +322,7 @@ export const useSessionMemory = (session: string | null | undefined): MemoryRow[
   const queryKey = ['sessions', 'memory', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld('SESSION_MEMORY', client, queryKey, { session: session ?? '' }, (answer) => answer as { ops?: MemoryRow[] }),
+    queryFn: () => askHeld('SESSION_MEMORY', client, queryKey, { session: session ?? '' }, fieldsOf<{ ops?: MemoryRow[] }>),
     enabled: isAvailable && Boolean(session),
     staleTime: 30_000,
   });
@@ -354,7 +354,7 @@ export const useSessionRelatedRead = (session: string | null | undefined, enable
   const queryKey = ['sessions', 'related', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld('SESSION_RELATED', client, queryKey, { session: session ?? '' }, (answer) => answer as { related?: RelatedRow[]; own?: { readAt?: string | null } | null }),
+    queryFn: () => askHeld('SESSION_RELATED', client, queryKey, { session: session ?? '' }, fieldsOf<{ related?: RelatedRow[]; own?: { readAt?: string | null } | null }>),
     enabled: isAvailable && enabled && Boolean(session),
     staleTime: 30_000,
   });

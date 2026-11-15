@@ -156,7 +156,7 @@ public sealed class PipeGroundsCensusTests
     }
 
     private static readonly System.Text.RegularExpressions.Regex PipeMark =
-        new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
+        new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says|NoTwin)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
 
     /// <summary>Every method of <paramref name="files"/> that takes a request or a payload, by its name: its bodies, indexed once.</summary>
     private static Dictionary<string, List<string>> Methods(IEnumerable<string> files) => Indexed.GetValue(files, each =>

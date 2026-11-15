@@ -51,7 +51,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 4. A press declares the scopes it changed with `[Publishes]`. `StatePublisher` raises `STATE_CHANGED {scopes, sessions?}`
    after a successful answer, including a refusal answered as data. No handler raises it by hand; a read declares nothing. (from D169)
 5. The dispatcher runs `RefusalLog`, `UiStallWatch`, `OffTheWindow`, then `StatePublisher`. A route leaves the window's
-   thread at its first wait, so no git fan-out runs on it. (from D169, D56)
+   thread at its first wait, so no git fan-out runs on it. A read told by event (`[ByEvent]`) answers `{ pending: true }`
+   while nothing is held and tells its answer as `DAORIS.ANSWERED`: the page reads it through `askHeld` or `askSettled`
+   with a reader that takes nothing held for empty, a numbered one (each answer carrying `at`, a failure `failed`) only
+   beside `heldNumbered`'s number rule, and a terminal's verb asks again or reads it as no answer; the censuses beside
+   `heldRoutes.test.ts` hold each caller to its mark. (from D169, D56)
 6. .NET judges each slice of machine state once and pushes it with its data. There are 16 slices. A partition carries
    `{epoch, seq, status, data}`, a delta names its `baseSeq`, and a periodic manifest repairs a dropped push. (from D182)
 7. A window subscribes, asks its snapshot (`STATE_SLICE`), then applies newer pushes; a late push never moves it back. A
@@ -183,7 +187,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits
-    and a verb in the command table; an Ask Daoris door and a terminal twin only where one is wanted. (from D185, D150, D233)
+    and a verb in the command table. Every setting the window writes (a person's press resting on a setting's value, or a
+    `SET_…` route) has a `daoris` verb Ask Daoris and a session can run, sending its route (a verb table: `ChoiceRoutes`,
+    `PersonPresses` and the rest) or writing the same file through the route's own judge (`SettingTwins.Alone`), or says beside
+    its route why it has none (`[NoTwin]`); the modules' `SettingDoorsCensusTests` holds each. (from D185, D150, D233)
 35. A setting has one home, on the thing it is about. Elsewhere it is read-only with a door. Settings holds only the
     machine's and the person's domains. (from D150)
 36. The scope is always named in the command center and status bar. The word is *workspace* / 工作区 everywhere. (from D75)
