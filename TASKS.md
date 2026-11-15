@@ -177,6 +177,11 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
   opinion goes to another family where one is free (the work workspace gets the second opinions Daoris has), and when every
   Claude account is out of allowance or a plan changes, work moves to another family with its context, never stops. DeepSeek is
   spent from its prepaid balance only, as the reviews' different source.
+- [ ] **MOVEAPPEND2 — every move appends a turn to its one session record** (driver, service; D293; the brainstorm `moveappend1`):
+  after the cut's go-on (MOVEAPPEND1), each turn gets its own key for its process, event log and transcript, so a move to another
+  account, another agent, the curve and a hand-over append a turn instead of opening a record linked by `from`; then the `from`
+  chains migrate onto one record each, with the older read's end stated. Also a failed or quiet end Daoris carries on, and a cut
+  record with words waiting.
 
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
