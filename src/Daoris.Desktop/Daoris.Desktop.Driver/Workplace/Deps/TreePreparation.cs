@@ -48,10 +48,10 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
 }
 
 /// <summary>
-/// A new tree made like its checkout before a session gets it: once its dependencies and machine-local files stand, each declared
-/// <c>regenerate</c> makes a generated input current, then the declared <c>treeBaseline</c> runs one fast gate whose verdicts the tree
-/// keeps as its base, so a later run says which reds are the session's and which the base stood in. A red base is the point of the
-/// run, never a failure; a command that could not run, or ran past its bound, is said and the start goes on.
+/// What a repository declares to make a tree like its checkout, once its dependencies and machine-local files stand: each <c>regenerate</c>
+/// makes a generated input current, and the <c>treeBaseline</c> records the base a later check reads its reds against. A session's tree
+/// is handed without either and told them (<see cref="Told"/>): run before the hand they held its open minutes with its agent idle, for
+/// work only its later checks read. A verification tree, which no session prepares, runs each <c>regenerate</c>, never the baseline.
 /// </summary>
 /// <remarks>
 /// Run as a gate's command is (<see cref="IInstallRunner.GateEnvironment"/>), inside the machine's admission, and ended with all it started at the
@@ -60,38 +60,41 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
 /// </remarks>
 internal static class TreePreparation
 {
-    /// <summary>How long one command may run: a baseline builds and tests, as a gate does.</summary>
+    /// <summary>How long one command may run: a regenerate may build, as a gate does.</summary>
     internal static readonly TimeSpan Bound = TimeSpan.FromMinutes(30);
 
-    /// <summary>What the exit of a baseline command means: 0 green and 1 reds recorded are both a base; any other did not record one.</summary>
-    internal static bool Recorded(int code) => code is 0 or 1;
-
     /// <summary>
-    /// Runs the declaration in <paramref name="tree"/>, saying each command that failed. Visited is true where a terminal's visit ended
-    /// one, which stops the stage as it does an install; Told is what the agent is told where a baseline ran and recorded.    /// </summary>
-    internal static async Task<(bool Visited, string? Told)> RunAsync(
-        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited, bool withBaseline = true)
+    /// Runs each declared <c>regenerate</c> in <paramref name="tree"/>, saying each that failed. True where a terminal's visit ended one,
+    /// which stops the stage as it does an install.
+    /// </summary>
+    internal static async Task<bool> RegenerateAsync(
+        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited)
     {
         var declared = TreePrepDeclared.Read(checkout);
-        if (!withBaseline) declared = declared with { Baseline = null };
-        if (declared.Empty) return (false, null);
-        string? told = null;
+        if (declared.Regenerate.Count == 0) return false;
         using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
         var environment = InstallRunner.Current.GateEnvironment();
-        foreach (var command in declared.Regenerate.Concat(declared.Baseline is { } baseline ? [baseline] : []))
+        foreach (var command in declared.Regenerate)
         {
             var ran = await DependencyCommands.RunAsync(home, tree, command, tree, environment, Bound, ct, visited).ConfigureAwait(false);
-            if (ran.Code == DependencyCommands.Visited) return (true, null);
-            if (command == declared.Baseline && Recorded(ran.Code))
-            {
-                told = $"Daoris ran `{command}` in this tree before you began, and the repository recorded its base there: a check that is red at the base was red before your work.";
-                continue;
-            }
-
+            if (ran.Code == DependencyCommands.Visited) return true;
             if (ran.Code == 0) continue;
             said.Add(Noted.Of(StartNoteCodes.StartedPrepFailed, $"The tree's preparation `{command}` did not finish: {ran.Tail}.", ("command", command), ("why", ran.Tail)));
         }
 
-        return (false, told);
+        return false;
+    }
+
+    /// <summary>What a session handed a fresh tree is told of its checkout's declaration; null where it declares nothing.</summary>
+    internal static string? Told(string checkout)
+    {
+        var declared = TreePrepDeclared.Read(checkout);
+        if (declared.Empty) return null;
+        var commands = string.Join(", then ", declared.Regenerate.Concat(declared.Baseline is { } named ? [named] : []).Select(command => $"`{command}`"));
+        return $"This tree is fresh and Daoris ran none of the preparation its repository declares, so you started at once: run {commands} "
+            + (declared.Baseline is null
+                ? "before you change a file, so its generated inputs are current."
+                : "before you change a file: the last records the base, so a check that is red at the base reads as red before your work.")
+            + " They take minutes and change no tracked file, so you may read and plan while they run.";
     }
 }

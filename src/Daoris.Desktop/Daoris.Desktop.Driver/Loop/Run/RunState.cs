@@ -248,6 +248,10 @@ internal sealed class RunState(Action<long>? giveBack = null) : IDisposable, IAs
         set => _setUp.Set(value);
     }
 
+    public LookStages Steps { get; } = new();
+
+    public long Began { get; } = System.Diagnostics.Stopwatch.GetTimestamp();
+
     /// <summary>What the files stage did in the session's tree: none where the session runs outside Daoris's trees.</summary>
     public TreeFilesOutcome Files
     {

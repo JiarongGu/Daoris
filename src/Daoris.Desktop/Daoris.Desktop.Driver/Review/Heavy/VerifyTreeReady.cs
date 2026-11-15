@@ -4,8 +4,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What makes a verification tree ready, as a session's tree is made ready (the files stage and <see cref="TreePreparation"/>): its
-/// dependencies installed or placed by the lockfiles that key them, then the gates' declared <c>regenerate</c> commands. A seam so a
+/// What makes a verification tree ready, by the files stage a session's tree is made ready by: its dependencies installed or placed by
+/// the lockfiles that key them, then the gates' declared <c>regenerate</c> commands (<see cref="TreePreparation"/>). A seam so a
 /// test asks it without a build: <see cref="Real"/> is the stage itself.
 /// </summary>
 internal interface IVerifyPreparation
@@ -36,7 +36,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
     {
         TreeFilesRecord.Mark(home, tree);
         var said = new List<Noted>();
-        var outcome = await TreeFilesStep.RunAsync(home, checkout, tree, repository, said.Add, ct, baseline: false).ConfigureAwait(false);
+        var outcome = await TreeFilesStep.RunAsync(home, checkout, tree, repository, said.Add, ct, regenerate: true).ConfigureAwait(false);
         TreeFilesStep.Hand(home, tree);
         var failed = outcome.Said.Where(line => outcome.Stopped || line.Parts.Any(part => part.Code is { } code
             && (code == StartNoteCodes.StartedFilesFailed.Code || code == StartNoteCodes.StartedPrepFailed.Code || code == StartNoteCodes.StartedDepsUnplaced.Code))).ToList();
