@@ -37,16 +37,21 @@ export const terminalSources = once(() => desktopSources().filter(({ file }) => 
 export const pageSources = once(() => read(join(SRC, 'Daoris.Web', 'src'), (name) => /\.(ts|tsx)$/.test(name) && !/\.(test|stories)\.tsx?$/.test(name))
   .filter(({ file }) => !file.startsWith('Daoris.Web/src/test/')));
 
-/** The reads the shell tells by event (`[ByEvent("…")]`), `numbered` the ones its mark numbers (`Numbered = true`), or the rest. */
-export function heldRoutes(numbered: boolean, sources = desktopSources()): string[] {
+const marksOf = (sources: readonly Source[]) => {
   const marks = new Map<string, boolean>();
   for (const { text } of sources) {
     for (const found of text.matchAll(/\[ByEvent\("([A-Z0-9_]+)"(.*)$/gm)) {
       marks.set(found[1]!, marks.get(found[1]!) === true || /\bNumbered\s*=\s*true\b/.test(found[2]!));
     }
   }
-  return [...marks].filter(([, each]) => each === numbered).map(([route]) => route).sort();
-}
+  return marks;
+};
+
+const desktopMarks = once(() => marksOf(desktopSources()));
+
+/** The reads the shell tells by event (`[ByEvent("…")]`), `numbered` the ones its mark numbers (`Numbered = true`), or the rest. */
+export const heldRoutes = (numbered: boolean, sources?: readonly Source[]): string[] =>
+  [...(sources ? marksOf(sources) : desktopMarks())].filter(([, each]) => each === numbered).map(([route]) => route).sort();
 
 /** The page's plain doors onto a route: the bridge's `call`, and a driver `invoke` that goes round it. */
 export const PLAIN = String.raw`\bcall(?:<[^>(]*>)?\(\s*(?:/\*[^*]*\*/\s*)?|\.invoke(?:<[^>(]*>)?\(\s*'DAORIS\.DRIVER',\s*`;
