@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The release rehearsal and the pinned git leg each red on main 1779ac2ec4
+
+- **Symptom:** `rehearse` failed four checks (the checkpointing pack's "core row stays on" and "comes back", the move to `.agents`'s
+  region line, the declared-documents rows); `driver-process-git-pinned` failed `GitLibraryRefsTests.The_library_lists_what_git_lists_in_every_folder_of_a_repository`
+  and two of `GitLibraryEndsTests` (`Strings differ` at the listing's last character).
+- **Root cause:** (1) 29de907ca2 (BRIEF1, merged 6ace47a315) made the region a list: no linked knowledge row, a code-quoted index
+  pointer, bulleted document lines; the rehearsal still matched the old table and links. (2) 129b90bdc1 put the refs read behind the
+  repository port, and `RefSnapshot.ReadAsync` joined the facts with `\n`, losing git's closing newline; the tests compare it with
+  git's own listing, so the read was the side wrong (`Parse` ignores blank rows, no consumer cared).
+- **Fix:** the rehearsal reads the region as it is (a core knowledge row is its file under the target); `ReadAsync` ends each row with
+  a newline as git does.
+- **Verified.** Red first: the rehearsal's four checks and the three git tests above; green after, the rehearsal 116/116 and the two
+  git classes on the pinned leg twice.
+
 ## 2026-11-16 - The web's measured specs failed fifteen: four causes, one a load
 
 - **Symptom:** `web-measured` red on main 1779ac2ec4: `session/*` at 400 px (one crossing, ceiling 0), `parts/WithTheLandingPlan(+Chinese)`

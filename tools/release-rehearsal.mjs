@@ -305,21 +305,21 @@ const writeManifest = (change) => {
   change(current);
   writeFileSync(join(consumer, 'daoris.json'), `${JSON.stringify(current, null, 2)}\n`);
 };
-// A rule read on demand: its row in the region links its file.
-const coreRow = /\[`persist-working-state`\]\(\.claude\/knowledge\/persist-working-state\.md\)/;
+// Knowledge read on demand has no row in the region now (the index lists it): its file is the row.
+const coreRow = () => has('.claude/knowledge/persist-working-state.md');
 
 writeManifest((m) => { m.packs = [...m.packs, 'checkpointing']; });
 const offered = withV2('sync');
 check('a pack offering to switch a core row off installs, and the offer is named', offered.code === 0
   && /offered\s+knowledge\/persist-working-state\.md/.test(offered.out), offered.out);
-check('...while the core row stays on until the repository confirms it', coreRow.test(read('AGENTS.md')));
+check('...while the core row stays on until the repository confirms it', coreRow());
 
 writeManifest((m) => { m.switchedOff = { 'knowledge/persist-working-state.md': 'checkpointing' }; });
 const switched = withV2('sync');
 check('a confirmed switch takes the core row out, and sync names it', switched.code === 0
   && /off\s+knowledge\/persist-working-state\.md/.test(switched.out), switched.out);
 check('...the rule is gone from the region and its file with it',
-  !coreRow.test(read('AGENTS.md')) && !has('.claude/knowledge/persist-working-state.md'));
+  !coreRow());
 check(
   '...and the roster says so, naming the pack',
   /Switched off here[^\n]*`persist-working-state` \(by `checkpointing`\)/.test(read('AGENTS.md')),
@@ -334,7 +334,7 @@ check('`status` names it with its pack and reason',
 
 writeManifest((m) => { delete m.switchedOff; });
 const withdrawn = withV2('sync');
-check('withdrawing the confirmation brings the core row back', withdrawn.code === 0 && coreRow.test(read('AGENTS.md')),
+check('withdrawing the confirmation brings the core row back', withdrawn.code === 0 && coreRow(),
   withdrawn.out);
 check('`check` is clean after the withdrawal', withV2('check').code === 0);
 
@@ -411,7 +411,7 @@ check('...re-roots the lock and records the mirrors',
 check('...and the index moves to .agents, listing the skills there, and the region says the mirror sentence',
   !has('.claude/INDEX.md') && has('.agents/INDEX.md')
   && /\| `\.agents\/skills\/change\/SKILL\.md` \|/.test(read('.agents/INDEX.md'))
-  && /\[\.agents\/INDEX\.md\]\(\.agents\/INDEX\.md\)/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
+  && /: `\.agents\/INDEX\.md`/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
 const movedCheck = withV2('check');
 check('`check` is clean after the move', movedCheck.code === 0, movedCheck.out);
 
@@ -525,9 +525,9 @@ const declaredSync = withV2('sync');
 check('`sync` renders Where things are into the region', declaredSync.code === 0
   && /## Where things are/.test(read('AGENTS.md')), declaredSync.out);
 check('...one row per declared path, in the roles\' order, with each role\'s job',
-  /\| decisions \| `docs\/DECISIONS\.md` \| history: why each rule was chosen[^\n]*\n\| backlog \| `TASKS\.md` \|[^\n]*\n\| changelog \| `CHANGELOG\.md` \|/
+  /\n- decisions `docs\/DECISIONS\.md`: the library\n- backlog `TASKS\.md`[^\n]*\n- changelog `CHANGELOG\.md`/
     .test(read('AGENTS.md')));
-check('...and no row for the brief, which is the file the region sits in', !/\| brief \|/.test(read('AGENTS.md')));
+check('...and no row for the brief, which is the file the region sits in', !/- brief `/.test(read('AGENTS.md')));
 const declaredCheck = withV2('check');
 check('`check` is clean with the documents declared', declaredCheck.code === 0, declaredCheck.out);
 
