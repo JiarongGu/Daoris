@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run whose work was done in place, on the checkout's line with no session branch, has nothing for its branch steps to read or land:
+/// A run whose work is done in place, on the checkout's line with no session branch, has nothing for its branch steps to read or land:
 /// once its work step has reached and nothing waits, the run ends, so its set-up quest is not held in <c>awaiting-step</c> for good.
 /// </summary>
 public sealed class InPlaceRunEndTests

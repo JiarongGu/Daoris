@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a run whose work was done in place ends with steps still standing: the work was made in the checkout, on the line, with no session
-/// branch, so the steps that read a run's branch (<c>content.holds</c>, the <c>land</c> and what follows it) have nothing to read and nothing to
-/// land, and no step the person or an agent can take is left. A run's end is otherwise judged on a closed quest, which only the run's own end
-/// closes, so without this such a run would wait for good. A run with a branch is never ended here: its branch steps read it.
+/// Why a run whose work is done in place ends with steps still standing: the work is made in the checkout, on the line, with no session
+/// branch, so the steps that read a run's branch (<c>content.holds</c>, the <c>land</c> and what follows it) have nothing to read or land.
+/// A run's end is otherwise judged on a closed quest, which only the run's own end closes. A run with a branch is never ended here.
 /// </summary>
 internal static class InPlaceRunEnds
 {

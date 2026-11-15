@@ -26,6 +26,5 @@ internal static class PushReading
         };
     }
 
-    /// <summary>What a push says while the remote does not hold the commit it recorded as pushed; <see cref="PushAttempts.Due"/> pushes again on it.</summary>
     public const string NotOnRemote = "the remote-tracking ref does not hold the pushed commit";
 }

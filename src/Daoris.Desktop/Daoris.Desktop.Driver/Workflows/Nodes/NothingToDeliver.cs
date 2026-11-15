@@ -33,7 +33,8 @@ internal static class NothingToDeliver
         return NodeObserving.LandingOf(unit) is { } landing ? OnTheLineWords(landing) : null;
     }
 
-    /// <summary>The sentence for a landing the line holds already, which a step past it and the watch of its request say; null where the line does not hold it.</summary>
+    internal static bool SkipsWhileActive(NodeDeclaration node) => node.Kind == NodeKinds.Push;
+
     internal static string? OnTheLineWords(LandedBranch landing) =>
         PullRequestReading.OnTheLine(landing) is { } held
             ? $"nothing left to deliver: `{landing.Branch}` is on `{held.On}` already ({WorkInventory.ProofSaid(held.By, held.On)}), "

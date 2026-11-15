@@ -17,8 +17,6 @@ internal static class MonitorReading
         if (read.Unknown) return NodeObserving.Seen(reading, NodeStates.Unknown, read.Said);
         if (read.State is not { } state) return NodeObserving.Seen(reading, null, read.Said);
 
-        // The watch is accepted at the commit its own binding holds: the request's state is the landing's, and the landing's tip may read
-        // another commit than the one the watch bound (a squash merge), which the one table would refuse for good.
         var said = NodeObserving.LandingOf(reading.Unit) is { } landing && NothingToDeliver.OnTheLineWords(landing) is { } delivered ? delivered : read.Said;
         var reached = NodeObserving.ReachedAt(reading, NodeSource.Watched, reading.Binding.SubjectRevision, read.Revision, read.Record, read.Artifact, said);
         return reached with { Acceptance = reached.Acceptance! with { Outcome = state } };
