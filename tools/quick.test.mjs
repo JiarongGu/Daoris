@@ -84,10 +84,9 @@ test('a red the base already stood in is said as the base\'s, and any other as n
   assert.match(text, /RED ON THE BASE +one/);
 });
 
-/** A repository of its own with `main` holding a green `check.mjs` and a branch whose commit turns it red; the root is the branch. */
 function branchedRepo() {
   const root = scratch();
-  const git = (...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, stdio: 'pipe' });
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, stdio: 'pipe', windowsHide: true });
   git('init', '-q', '-b', 'main');
   writeFileSync(join(root, '.gitignore'), 'local/\n');
   writeFileSync(join(root, 'check.mjs'), 'process.exit(0);\n');

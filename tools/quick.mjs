@@ -6,8 +6,7 @@
  *   node tools/quick.mjs                run every step; exit 0 all green, 1 a red, 2 a tool error
  *   node tools/quick.mjs --record-base  run every step at the base instead and record it (`local/quick-base.json`)
  *
- * The base is main at the merge base of HEAD with main, never the tree as it stands: a red of the tree is said `RED ON THE BASE` only
- * where the step is red there too (`tools/quick/base.mjs` runs the red steps in a worktree of that commit, once per merge base).
+ * The base is main at the merge base of HEAD with main (`tools/quick/base.mjs`), never the tree as it stands.
  */
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -54,7 +53,7 @@ export function runQuick({ root, steps = quickSteps(root), run = shellStep(root)
   return red.length > 0 ? 1 : 0;
 }
 
-/** Records the base verdicts of every step at the merge base with main (`--record-base`), its own tree's steps not run; 1 where the base is red. */
+/** `--record-base`: every step run at the base, the tree's own not; 1 where the base is red. */
 function recordTheBase(root, steps, say) {
   const base = baseVerdicts(root, steps);
   if (!base) say('quick: no merge base with main, no base recorded');
