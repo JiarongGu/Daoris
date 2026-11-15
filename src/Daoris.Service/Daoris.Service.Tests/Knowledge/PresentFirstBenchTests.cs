@@ -8,8 +8,10 @@ namespace Daoris.Service.Tests;
 /// The read-path bench's questions (<c>tools/read-path-bench-questions.json</c>) asked of this repository as it is,
 /// through the deployment a workspace's own server is: one checkout, its <c>docs/</c> a section each, its index,
 /// SQLite, words only. A present question's area document answers first for most of them, and a history question's
-/// record is still within its first three. Each run writes its scorecard, the words' own rank beside it.
+/// record is still within its first three. Each run writes its scorecard, the words' own rank beside it. A real tree is what
+/// it reads, so it is Process.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class PresentFirstBenchTests(PresentFirstBenchTests.Checkout checkout, ITestOutputHelper output)
     : IClassFixture<PresentFirstBenchTests.Checkout>
 {

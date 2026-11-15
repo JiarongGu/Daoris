@@ -186,6 +186,17 @@ test('LAYERS1: a gate\'s trx is read as its tests with their milliseconds, and a
   assert.match(checkBudget([unit], clean)[0], /Ns\.Theory\.Row/);
 });
 
+test('LAYERS1: a test is judged by its latest run, so an older record of a loaded or since-fixed run does not outvote it', () => {
+  const records = [
+    { gate: 'service', tier: 'unit', at: 100, tests: [{ class: 'Ns.A', test: 'old_slow', ms: 9000 }, { class: 'Ns.A', test: 'both', ms: 9000 }] },
+    { gate: 'reached-service-3', tier: 'unit', at: 300, tests: [{ class: 'Ns.A', test: 'both', ms: 40 }] },
+    { gate: 'service-other', tier: 'unit', at: 200, tests: [{ class: 'Ns.A', test: 'both', ms: 5000 }] },
+  ];
+  const problems = checkBudget(records, clean);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /Ns\.A\.old_slow took 9000 ms/);
+});
+
 test('LAYERS1: no duration records is a clean run that says so', () => {
   assert.deepEqual(checkBudget([], clean), []);
 });

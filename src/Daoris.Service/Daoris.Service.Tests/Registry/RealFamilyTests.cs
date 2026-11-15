@@ -9,8 +9,10 @@ namespace Daoris.Service.Tests;
 /// decision logs, logs in three different locations, repositories that never adopted daoris, and
 /// entries whose headings are not what a fixture author would have guessed. Skipped when the
 /// siblings are not present, so this is a signal on a development machine and never a failure
-/// somewhere else. xunit v2 has no dynamic skip, so an absent family returns early instead.
+/// somewhere else. xunit v2 has no dynamic skip, so an absent family returns early instead. The family's own trees are
+/// what it reads, so it is Process.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public class RealFamilyTests
 {
     private static string? FamilyRoot()

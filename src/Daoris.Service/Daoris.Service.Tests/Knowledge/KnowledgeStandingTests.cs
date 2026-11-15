@@ -9,8 +9,9 @@ namespace Daoris.Service.Tests;
 /// taken at, <c>+ uncommitted</c> where the root's record folders differ from it, <c>fed at</c> where a feed gave the
 /// reading, and for a decision the notes that follow it and the mark a later note of its own record puts on it, read from the
 /// note entries so a fed reading derives the same. The reading is taken once, so the cost is one <c>git status</c> a root and
-/// never one a hit.
+/// never one a hit. Each test commits a real checkout and asks real git for its status, so the class is Process.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class KnowledgeStandingTests : IDisposable
 {
     private readonly string _root = Path.Combine(

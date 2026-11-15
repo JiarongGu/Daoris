@@ -594,9 +594,11 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
     /// <summary>
     /// An observer that could not open at the start still issues cursors; once it opens, the epoch is new,
-    /// so what moved meanwhile is answered every family and never taken as the baseline.
+    /// so what moved meanwhile is answered every family and never taken as the baseline. The observer's own reopen on
+    /// the real clock is what it proves, so it is Process.
     /// </summary>
     [Fact]
+    [Trait(Category.Name, Category.Process)]
     public async Task A_first_open_that_failed_begins_a_new_epoch_once_it_opens()
     {
         var later = Path.Combine(Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");

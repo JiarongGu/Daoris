@@ -22,9 +22,10 @@ public sealed class SchemaRebuildTests : IDisposable
     /// <summary>
     /// A rebuild that drops the entries but keeps `feed_provenance` judges the same
     /// commit's re-feed already held, and the shared index stays empty until that
-    /// repository's next commit.
+    /// repository's next commit. Two starts of the whole service over one real store file are what it proves, so it is Process.
     /// </summary>
     [Fact]
+    [Trait(Category.Name, Category.Process)]
     public async Task A_rebuilt_index_takes_the_same_commit_again()
     {
         var options = new ServiceOptions(Path.Combine(_root, "unread"), Path.Combine(_root, "knowledge.db"));
