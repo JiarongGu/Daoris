@@ -75,10 +75,7 @@ public static class SessionTurns
         return kept with { Cause = Step, Node = node, Attempt = attempt };
     }
 
-    /// <summary>
-    /// The turns of an ended record that goes on: its last turn sealed with how the record ended, then the turn the wake adds, so a later
-    /// reader of the turns still finds the end the go-on forgives on the record.
-    /// </summary>
+    /// <summary>An ended record's turns as it goes on: its last sealed with the end the go-on forgives on the record, then the wake's.</summary>
     public static IReadOnlyList<SessionTurn> WentOn(Session ended, DateTimeOffset at)
     {
         var own = Own(ended).OrderBy(turn => turn.Number).ToList();

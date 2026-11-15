@@ -79,12 +79,11 @@ public sealed record SessionResponse(
     string? Line = null, IReadOnlyList<SessionTurnResponse>? Turns = null);
 
 /// <summary>One agent conversation's turn inside the session, answered on this machine only, since it names the account.</summary>
-/// <param name="End">How it ended, where its record went on after it; null for a record's last turn, whose end is the record's.</param>
 public sealed record SessionTurnResponse(
     int Number, string Cause, DateTimeOffset At, string? Node, int? Attempt, string? Part, string? Agent, string? Account, string? Adapter,
     string? Conversation, DateTimeOffset? Ended, long? Input = null, long? Output = null, SessionTurnEndResponse? End = null);
 
-/// <summary>How a turn ended: its record's state then, its limit flag, whether the stop was not the person's, and its note's codes.</summary>
+/// <summary>How a turn its record went on after ended: the record's state then, its limit flag, a stop not the person's, its note's codes.</summary>
 public sealed record SessionTurnEndResponse(string State, bool Limit, bool Interrupted, IReadOnlyList<string> Codes);
 
 /// <summary>

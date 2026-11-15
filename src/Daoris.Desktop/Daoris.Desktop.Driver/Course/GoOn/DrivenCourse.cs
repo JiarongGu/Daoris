@@ -128,9 +128,9 @@ internal static class DrivenCourse
         CourseDecision.Decide(new CourseFacts(HeadOf(record, questStatus), CourseBoundary.ProcessExited, Policy: policy), CourseTrigger.CarryOn);
 
     /// <summary>
-    /// The limit resume's first step: a record an account's limit, an update or a released transient end cut off, on a
-    /// door known to fail closed and a judge that passed. Its own account ready is the resume; another the move to it, held while a move
-    /// still stands to this record as its destination.
+    /// The limit resume's first step: a record an account's limit, a cut of Daoris's (<see cref="CarryOnResume"/>) or a released transient
+    /// end cut off, on a door known to fail closed and a judge that passed. Its own account ready is the resume; another the move to it, held
+    /// while a move still stands to this record as its destination.
     /// </summary>
     internal static LineCourse LimitOwn(PriorSession limited, LineAnswer? account, CourseStanding? standing) =>
         CourseDecision.Decide(
@@ -139,6 +139,6 @@ internal static class DrivenCourse
                 CourseBoundary.ProcessExited, account is null ? null : new CourseAccount(account),
                 Failure: LimitResume.EndedTransient(limited) ? new CourseFailure(PastBound: true) : null,
                 Standing: standing,
-                Limit: new CourseLimit(Until: LimitResume.Until(limited), Build: LimitResume.UpdateBuild(limited), Ended: limited.Updated)),
+                Limit: new CourseLimit(Until: LimitResume.Until(limited), Build: CarryOnResume.Close(limited), Ended: limited.Updated)),
             CourseTrigger.LimitEnd);
 }

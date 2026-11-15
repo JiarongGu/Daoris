@@ -56,7 +56,7 @@ of everything it handed, section by section.
 | `ConversationRules`, `TransientMove`, `LimitRuled` | `Course/Chat/` | A conversation's line as the supervisor's rules read it; executor `transient-move`, the rules' move or hold past its episode; the limits rule's wait and ask and the moves bound before the limit's walk |
 | `HandOver`, `ChatHandOver`, `QuestHandOver`, `PartLeftovers`, `QuestPartStop` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions; what the old part left running, ended and waited for |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
-| `DrivenCourse`, `LimitResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs` | A driven line's carry-ons, and its resume after a limit or update |
+| `DrivenCourse`, `LimitResume`, `CarryOnResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs`, `Course/GoOn/CarryOnResume.cs` | A driven line's carry-ons, and its resume in its own record after a limit or a cut of Daoris's (its close, an update's, the sweep) |
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
 | `ContinuationAdmissions`, `AnswersAloneHold` | `Course/ContinuationAdmissions.cs`, `Course/GoOn/` | A line's serialized go-on admission; the answers-alone bound |
 | `SaidDoor`, `DrivenInbox` | `Course/SaidDoor.cs`, `Course/DrivenInbox.cs` | Words kept on a record's `said`, and their delivery to a running session |
@@ -109,8 +109,12 @@ of everything it handed, section by section.
 6. The agent's own conversation is the working context. It lives in the account's home, and Daoris never reads or writes it;
    a driven line's limit move copies its files whole to the next account's home of the same agent (rule 24). Daoris's record is
    the portable context. (from D189, D175, D206)
-7. Same agent, account and tree, a kept id and a door that resumes: the same part goes on. Otherwise a new part of the entry
-   opens in the same tree. The old part ends at its turn's end before the new one opens. (from D189, D131)
+7. Same agent, account and tree, a kept id and a door that resumes: the same part goes on, its next turn in its own record.
+   A driven line Daoris cut (its close, an update's included, or the sweep of a run nothing here runs any more) is carried on so
+   at the next start on a door known to fail closed whose own account is ready (`CarryOnResume`, the limit resume's step 1):
+   Daoris's restart word, keyed by an update's build or the moment the cut ended it, goes on in the record's own conversation, the
+   quest never released and no part opened beside it. Otherwise a new part of the entry opens in the same tree, linked by `from`.
+   The old part ends at its turn's end before the new one opens. (from D189, D131, D293)
 8. A conversation that was left is never resumed again. Going back to its agent or account opens another new part.
    (from D189)
 
@@ -135,7 +139,7 @@ of everything it handed, section by section.
     pending, words held, never one waiting on its limit, whose wake carries its words), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
     (`stopped-daoris`). The next start takes it up as words kept: its own conversation resumes with the word, or a lost one goes on
     briefed (rule 14), its line saying *Daoris restarted* (`resumed.opening`, why `restart`). One between turns ends `chat.closed`,
-    or `chat.restarted` at an update (a driven session's end at an update is `update.closed`, class `stopped-update`, which tells the person nothing), and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
+    or `chat.restarted` at an update (a driven session's end at an update is `update.closed`, class `stopped-update`, which tells the person nothing; at any other close `ended.driver-closed`, a strike; either goes on in its own record by rule 7), and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
 14. A conversation whose own conversation is lost (`gone`, `unkept`, `unable`, `offered`) goes on by itself in a new part
     handed the brief, why `resume`. Refused as `elsewhere`, or for a reason that is not loss: it waits for the person.
     (from D189)

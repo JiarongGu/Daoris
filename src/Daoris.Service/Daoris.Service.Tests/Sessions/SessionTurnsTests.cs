@@ -201,6 +201,37 @@ public sealed class SessionTurnsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_carry_on_reads_the_same_turns_appended_to_its_record_as_chained_in_a_new_one()
+    {
+        async Task<Session> CutAsync(string tree)
+        {
+            var quest = await _quests.PublishAsync("Asker", "Owner", $"Do the thing in {tree}", "Here is why.", Now);
+            var opened = (await _ledger.OpenAsync(quest.Id, "codex", Now, profile: "work", tree: tree)).Session!;
+            await Move(opened.Id, "starting", "working");
+            await _ledger.AdvanceAsync(opened.Id, "stopped", null, null, null, Now.AddMinutes(1), interrupted: true);
+            return opened;
+        }
+
+        var first = await CutAsync("/trees/s-12");
+        var chained = (await _ledger.OpenAsync(first.Quest!, "codex", Now.AddMinutes(2), profile: "work", tree: "/trees/s-12",
+            from: first.Id, fromWhy: "carry-on", fromBy: "daoris")).Session!;
+        var cut = await CutAsync("/trees/s-13");
+        await _ledger.SayAsync(cut.Id, "Daoris restarted while you were working. Go on where you stopped.", null, Now.AddMinutes(2),
+            from: SaidFrom.Daoris, key: $"restart/{cut.Id}/2026-11-15T10-01-00.0000000Z");
+        await _ledger.AdvanceAsync(cut.Id, "working", null, null, null, Now.AddMinutes(2));
+        var appended = (await _sessions.FindAsync(cut.Id))!;
+
+        static IEnumerable<(int, string, string?, string?)> Rows(IReadOnlyList<SessionTurn> turns) =>
+            turns.Select(turn => (turn.Number, turn.Cause, turn.Agent, turn.Account));
+        var asChain = (await SessionTurnLines.ReadAsync(_sessions, [chained]))[chained.Id];
+        var asTurns = (await SessionTurnLines.ReadAsync(_sessions, [appended]))[appended.Id];
+
+        Assert.Equal(Rows(asChain), Rows(asTurns));
+        Assert.Equal([first.Id, chained.Id], asChain.Select(turn => turn.Part!));
+        Assert.Equal([cut.Id, cut.Id], asTurns.Select(turn => turn.Part!));
+    }
+
+    [Fact]
     public async Task A_limited_end_a_go_on_forgives_stays_on_its_turn()
     {
         var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);

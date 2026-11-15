@@ -70,6 +70,9 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// </summary>
     public bool Stays { get; set; }
 
+    /// <summary>Whether the stub resumes the first run's conversation, its resumed turn closing the quest; set before the first driver is made.</summary>
+    public bool Resumes { get; set; }
+
     public string Log => Path.Combine(Home, "agent.log");
 
     private string ConfigPath => DaorisHome.Entry(Home, HomeEntry.DriverConfig);
@@ -135,6 +138,23 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         await Driver().RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(Service.State("s1") == "failed", Service.Record("s1"));
         if (word) Assert.Equal("w1", await Service.SayAsync("s1", Word));
+    }
+
+    /// <summary>The first run cut mid-turn, its quest taken: by the driver's close, or by the sweep, the dead loop's close then finding it ended.</summary>
+    public async Task CutAsync(bool sweep)
+    {
+        using var stop = new CancellationTokenSource();
+        var first = Driver().RunOnceAsync(stop.Token);
+        await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt") && Service.Status("q1") == "Taken", Seen);
+        if (sweep)
+        {
+            var swept = await Orphans.EndAsync(new ServiceClient(Service.Url, null), new SessionProcesses());
+            Assert.Equal(["s1"], swept.Select(ended => ended.Id));
+        }
+
+        stop.Cancel();
+        await first.WaitAsync(Poll.Patience);
+        Assert.True(Service.State("s1") == "stopped", Service.Record("s1"));
     }
 
     /// <summary>
@@ -491,6 +511,9 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         var stays = Path.Combine(Home, "stays.flag");
         if (Stays) File.WriteAllText(stays, "");
         else File.Delete(stays);
+        var resumes = Path.Combine(Home, "resumes.flag");
+        if (Resumes) File.WriteAllText(resumes, "");
+        else File.Delete(resumes);
         File.WriteAllText(script, """
             import { createInterface } from 'node:readline';
             import { appendFileSync, existsSync } from 'node:fs';
@@ -502,6 +525,8 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
             const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
             let conversation = null;
+            let resumed = false;
+            const resumes = existsSync(log.replace(/agent\.log$/, 'resumes.flag'));
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             const lines = createInterface({ input: process.stdin });
@@ -516,16 +541,17 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
               } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
                 heard({ method: frame.method, conversation: frame.params?.sessionId });
-                if (frame.params?.sessionId === 'conv-s1') {
+                if (frame.params?.sessionId === 'conv-s1' && !resumes) {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the thread could not be loaded' } });
                 } else {
                   conversation = frame.params.sessionId;
+                  resumed = true;
                   send({ jsonrpc: '2.0', id: frame.id, result: {} });
                 }
               } else if (frame.method === 'session/prompt') {
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, blocks });
-                if (session === 's1') {
+                if (session === 's1' && !resumed) {
                   await respond({ action: 'take' });
                   const go = log.replace(/agent\.log$/, 'go.flag');
                   for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));

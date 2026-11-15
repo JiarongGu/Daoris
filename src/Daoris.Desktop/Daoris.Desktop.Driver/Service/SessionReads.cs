@@ -39,10 +39,6 @@ internal static class SessionReads
 
     private static DateTimeOffset? MomentOf(DateTimeOffset moment) => moment == default ? null : moment;
 
-    /// <summary>Whether a record's note says its account is refused, by an account's line's code and never its words.</summary>
-    private static bool AccountRefused(SessionResponse session) =>
-        PartsOf(session) is { } parts && parts.Any(part => part.Code is { } code && RecordNotes.AccountsOwn.Contains(code));
-
     /// <summary>
     /// Whether a record ended <c>choice-not-offered</c>, by its end code: its agent refused the choice at the
     /// open, before any prompt, so it is no strike, no last run and no start the walk counts.
@@ -105,19 +101,7 @@ internal static class SessionReads
             .Select(session => new LiveSession(session.Id ?? "", MomentOf(session.Created), session.Resolved is { } resolved ? [.. resolved.OfType<string>()] : null))];
 
     /// <summary>
-    /// An end that is another count's or no end of the work: a limit, a refused account, a choice not offered, a transient end, an update's
-    /// close, or the quiet end (the <c>quiet</c> rule's own). It is no failure and breaks no run of them.
-    /// </summary>
-    private static bool IsNeutral(SessionResponse session) =>
-        session.Limit || AccountRefused(session) || NotOffered(session)
-        || PartsOf(session)?.Any(part => part.Code is RecordNotes.EndedTransient or RecordNotes.UpdateClosed or RecordNotes.EndedQuiet) == true;
-
-    /// <summary>The one definition of a failure, for the quest's count and its run on one choice: a <c>failed</c> end or a cut-off, never a neutral one.</summary>
-    private static bool IsFailure(SessionResponse session) =>
-        !IsNeutral(session) && (IsState(session, "failed") || (IsState(session, "stopped") && session.Interrupted));
-
-    /// <summary>
-    /// How often each quest has failed. Only <c>failed</c> counts, and a stop that is not the person's: a
+    /// How often each quest has failed, every end of each record read (<see cref="RecordEnds"/>). Only <c>failed</c> counts, and a stop that is not the person's: a
     /// <c>stood-down</c> session means somebody else took the quest first, a <c>declined</c> one closes it, a <c>stopped</c> one the person
     /// stopped is theirs. A failure that says <c>limit</c> is not a strike, nor is one whose account is refused, whose
     /// end is past a transient bound, whose update closed (<see cref="RecordNotes.UpdateClosed"/>) or whose choice its agent
@@ -129,10 +113,9 @@ internal static class SessionReads
         foreach (var session in listed)
         {
             // A strike is this driver's own judgement of its own attempts: a teammate's failure there says nothing about this machine's next try.
-            if (IsTeams(session) || !IsFailure(session)) continue;
-            if (session.Quest is not { Length: > 0 } quest) continue;
-
-            strikes[quest] = strikes.TryGetValue(quest, out var seen) ? seen + 1 : 1;
+            if (IsTeams(session) || session.Quest is not { Length: > 0 } quest) continue;
+            var failed = RecordEnds.Of(session).Count(RecordEnds.IsFailure);
+            if (failed > 0) strikes[quest] = strikes.GetValueOrDefault(quest) + failed;
         }
 
         return strikes;
@@ -145,19 +128,23 @@ internal static class SessionReads
     /// </summary>
     internal static IReadOnlyDictionary<string, int> FailedRuns(IEnumerable<SessionResponse> listed)
     {
-        var runs = new List<(string Quest, DateTimeOffset At, string State, string Choice)>();
+        var runs = new List<(string Quest, DateTimeOffset At, int Turn, string State, string Choice)>();
         foreach (var session in listed)
         {
             if (IsTeams(session) || session.Quest is not { Length: > 0 } quest) continue;
-            var state = session.State ?? "";
-            if (state is "stood-down" or "" || IsNeutral(session)) continue;
             var asked = Wired<ActorAsked>(session.Asked);
-            runs.Add((quest, session.Created, IsFailure(session) ? "failed" : state, $"{session.Door}|{asked?.NamedModel}|{asked?.Effort.Value}"));
+            var ends = RecordEnds.Of(session);
+            for (var turn = 0; turn < ends.Count; turn++)
+            {
+                var end = ends[turn];
+                if (end.State is "stood-down" or "" || RecordEnds.IsNeutral(end)) continue;
+                runs.Add((quest, session.Created, turn, RecordEnds.IsFailure(end) ? "failed" : end.State, $"{session.Door}|{asked?.NamedModel}|{asked?.Effort.Value}"));
+            }
         }
 
         var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var choices = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var run in runs.OrderBy(each => each.At))
+        foreach (var run in runs.OrderBy(each => each.At).ThenBy(each => each.Turn))
         {
             if (!string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase))
             {

@@ -215,11 +215,11 @@ public sealed record CourseRules(
 
 /// <summary>
 /// What Daoris's own word on a resume is keyed by: a conversation's wake keys its limit word by the wake's clock, a
-/// driven line by the cool-off's <c>until</c> as its note said it, an update's restart by its build, a released transient end by when it ended.
+/// driven line by the cool-off's <c>until</c> as its note said it, a cut's restart by its build or end, a released transient end by when it ended.
 /// </summary>
 /// <param name="Until">The cool-off's <c>until</c> as the driven record's limit line says it (<see cref="LimitResume.Until"/>); null for unsaid.</param>
 /// <param name="Woke">The wake's clock, which a conversation's limit word is keyed by.</param>
-/// <param name="Build">The build an update closed the record for, whose restart word resumes it.</param>
+/// <param name="Build">The key of Daoris's cut of the record, whose restart word resumes it (<see cref="CarryOnResume.Close"/>).</param>
 /// <param name="Ended">When the record ended past its transient bound, which <i>Try again</i>'s go-on is keyed by.</param>
 public sealed record CourseLimit(string? Until = null, DateTimeOffset? Woke = null, string? Build = null, DateTimeOffset? Ended = null);
 

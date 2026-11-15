@@ -41,7 +41,7 @@ internal sealed class ContinuationLimits(LoopContext context)
         // A record Try again released from its transient hold takes the same step, with the
         // episode's go-on under the key of the end released.
         var (text, key) = Planner.EndedTransient(limited) ? LimitResume.TransientWord(limited)
-            : LimitResume.UpdateBuild(limited) is { } build ? (ShellClose.Words, DaorisKeys.Restart(limited.Session, build))
+            : CarryOnResume.Close(limited) is { } close ? (ShellClose.Words, DaorisKeys.Restart(limited.Session, close))
             : (LimitResume.Words, DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)));
         try
         {

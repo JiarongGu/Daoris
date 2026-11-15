@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <param name="State">The state its record ended in, as the doors spell it.</param>
 /// <param name="Limit">An account's limit made its failure.</param>
-/// <param name="Interrupted">A stop that was not the person's.</param>
+/// <param name="Interrupted">A stop not the person's.</param>
 /// <param name="Codes">Its end's note codes, in order, by which a reader judges the end and never by its English.</param>
 public sealed record SessionTurnEnd(string State, bool Limit = false, bool Interrupted = false, IReadOnlyList<string>? Codes = null)
 {
