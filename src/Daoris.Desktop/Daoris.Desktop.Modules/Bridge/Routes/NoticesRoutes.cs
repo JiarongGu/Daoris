@@ -71,15 +71,22 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// read as the slice reads it.</para>
     /// </remarks>
     [DriverRoute("NOTIFICATIONS", PipeClass.Open)]
-    private Task<object?> NotificationsAsync(NotificationsRead press, CancellationToken cancellationToken)
+    private async Task<object?> NotificationsAsync(NotificationsRead press, CancellationToken cancellationToken)
     {
+        if (press.Show is { Length: > 0 } show)
+        {
+            var shown = await NoticesShown.SaidAsync(_loop.Slices.Find(AttentionStateSlice.Name)?.Snapshot(), show, _loop.Service, cancellationToken)
+                .ConfigureAwait(false);
+            return new { Said = shown.ToWire() };
+        }
+
         var now = DateTimeOffset.UtcNow;
         var notices = Notices.Read(_loop.Home, now);
         var look = notices is null
             ? null
             : Look(_loop.Pipe?.Confirmations.Now(), _loop.ServiceConfirmations.Now(), _loop.Slices.Find(AttentionStateSlice.Name)?.Snapshot(),
                 _loop.Slices.Find(NoticesStateSlice.Name)?.Snapshot(), notices);
-        return Task.FromResult<object?>(new { Said = NoticesRead.Said(look, press.Json, now).ToWire() });
+        return new { Said = NoticesRead.Said(look, press.Json, now).ToWire() };
     }
 
     /// <summary>

@@ -72,8 +72,9 @@ public static class HelperJudge
         if (ask.AskedBy == HelperAsk.ByAgent)
         {
             if (rule.Mode == HelperRules.Off) return HelperVerdict.Refuse(HelperWhy.Off);
-            // The default asks Daoris's own agents alone, those set up and signed in here.
-            if (rule.SetUp && ask.Agent is { Length: > 0 } named
+            // The default asks Daoris's own agents alone, those set up and signed in here, and a rule the person set asks those it
+            // lists: an agent named outside either is refused, never answered by another.
+            if ((rule.SetUp || rule.Agents.Count > 0) && ask.Agent is { Length: > 0 } named
                            && !rule.Agents.Any(agent => string.Equals(agent, named, StringComparison.OrdinalIgnoreCase)))
             {
                 return HelperVerdict.Refuse(HelperWhy.NotSetUp);

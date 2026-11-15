@@ -354,7 +354,7 @@
   "note.intake.transient": "{{agent}} 上的受理已结束：它的服务方在 {{count}} 次重试中一直出错，所以这项需求会被重新接起：",
   "note.partner.transient": "搭档 {{agent}} 的服务方一直出错；它留下的工作已保留。",
   "note.voice.transient": "声音 {{agent}} 已退出：它的服务方在 {{count}} 次重试中一直出错：",
-  "note.helper.why.not-set-up": "它不是 Daoris 在本机上设置好并已登录的智能体，而默认只请这些智能体",
+  "note.helper.why.not-set-up": "它指名的智能体不在助手规则允许之列：默认只请 Daoris 在本机上设置好并已登录的智能体，否则只请规则所列的智能体",
   "note.helper.why.none-set-up": "本机上没有为 Daoris 设置好并已登录的智能体，而默认只请这些智能体",
   "note.partner.asked": "已请 {{agent}} 做一个分项：它在自己的克隆中工作，不改动这里的任何内容。",
   "note.partner.started": "搭档 {{agent}} 已在会话 {{session}} 中开始做这个分项。",

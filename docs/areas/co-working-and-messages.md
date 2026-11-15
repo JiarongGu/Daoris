@@ -141,7 +141,9 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     the Scout role in that part's repository at the line's commit, and its answer is a pack kept with the plan and recorded as a team
     member, never a word to the lead. (from D163, D203, D285)
 29. The `helpers` rule is per repository, else its workspace: `ask`, `on` or `off`. With none set, an agent's ask is `on` for
-    agents Daoris has set up and signed in here; one naming none goes to another maker than the asker's. (from D163)
+    agents Daoris has set up and signed in here; one naming none goes to another maker than the asker's. An ask naming an agent
+   the rule does not allow (outside the default's set-up agents, or the person's list) is refused `not-set-up`; a named agent is
+   the only one walked, so where it cannot run the ask waits with the walk's reason and never goes to another. (from D163)
 30. A driven lead that ends its turn on its own helper ask, with no question or go-ahead on the person, ends `completed`
     (`ended.awaits-helper`), held and unparked; the answer reopens it once. An answer kept on a part the line moved on from (a
     resume or a new part) goes with the line, said there as the helper's (`HelperAnswersCarried`). A helper ending with no answer brings it to the

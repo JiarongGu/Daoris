@@ -97,9 +97,11 @@ internal static class DriveUsageRecords
               at the line's tip. read writes its found rules again; set and remove edit your own; none acts in a tree.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
-          notices [--json]
+          notices [--json] [--show <subject>]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed, as the running Daoris holds them; without
               it, the notices' record alone, and the rest said not read. The window's Notifications is the other door.
+              --show prints what the window shows for the memory change waiting on a session or operation (its rows,
+              their text and who proposed them); approving, declining, keeping or dropping stays your press in the window.
         """;
 }

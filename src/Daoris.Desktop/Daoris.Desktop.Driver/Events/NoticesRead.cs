@@ -41,13 +41,15 @@ public sealed record NoticesLook(
 /// confirmation channel, the <c>attention</c> and <c>notices</c> slices), so the terminal says what the bell counts. <b>Alone</b>, the
 /// notices' record is all there is: the presses, what needs the person and the asks' messages are judged in the running Daoris, and are
 /// said not read rather than judged here.</para>
-/// <para><b>It changes nothing</b>: nothing is marked read, dismissed or answered. A notice read in a window is listed as read.</para>
+/// <para><b>It changes nothing</b>: nothing is marked read, dismissed or answered. A notice read in a window is listed as read.
+/// <c>--show &lt;subject&gt;</c> prints what the window shows for a memory wait on that session or operation
+/// (<see cref="MemoryWaitShown"/>), from the running Daoris alone; the decision stays the person's press in the window.</para>
 /// </remarks>
 [CommandGroup("notices", Whole = true)]
 public static class NoticesRead
 {
     /// <summary>The verb's usage line.</summary>
-    public const string Usage = "usage: daoris notices [--json]";
+    public const string Usage = "usage: daoris notices [--json] [--show <subject>]";
 
     /// <summary>The groups of <i>What needs you</i> in the order the view shows them, with their words.</summary>
     public static IReadOnlyList<(string Group, string Words)> Groups { get; } =
@@ -86,18 +88,28 @@ public static class NoticesRead
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args, string home, InstanceWorld? instance, TextWriter output, TextWriter error, CancellationToken ct = default)
     {
-        if (args.Any(arg => arg != "--json"))
+        var json = args.Contains("--json");
+        var at = args.ToList().IndexOf("--show");
+        var show = at >= 0 && at + 1 < args.Count ? args[at + 1] : null;
+        var rest = args.Where((arg, index) => arg != "--json" && arg != "--show" && !(show is not null && index == at + 1)).ToList();
+        if (rest.Count > 0 || (at >= 0 && (show is null || show.StartsWith("--", StringComparison.Ordinal))))
         {
             error.WriteLine($"notices: {Usage}");
             return 2;
         }
 
-        var json = args.Contains("--json");
+        object payload = show is null ? new { json, said = true } : new { json, said = true, show };
         if (instance is not null && await InstanceDoor.TryReadAsync(
-                OpenRoutes.Notifications, new { json, said = true }, TreesSaid.ReadWords(output, instance.Error), instance, ct)
+                OpenRoutes.Notifications, payload, TreesSaid.ReadWords(output, instance.Error), instance, ct)
             .ConfigureAwait(false) is { } viaInstance)
         {
             return viaInstance;
+        }
+
+        if (show is not null)
+        {
+            error.WriteLine($"notices: `--show {show}` is read from the running Daoris, which holds what waits for you; none answers here, so nothing is shown.");
+            return 2;
         }
 
         var said = Said(Alone(home, DateTimeOffset.UtcNow), json, DateTimeOffset.UtcNow);
