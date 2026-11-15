@@ -62,7 +62,10 @@ public static class WorkflowPresets
         if (gates.Count == 0) wires.Add(new JsonObject { ["id"] = lead["id"]!.DeepClone(), ["kind"] = "after", ["from"] = from, ["to"] = into });
         foreach (var gate in gates)
         {
-            nodes.Add(new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" });
+            var added = new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" };
+            // The second opinion reads as the shipped opinion role, so it starts wherever its place declares reviewers.
+            if (gate == WorkflowKinds.Opinion) added["options"] = new JsonObject { [NodeOptionFields.Role] = JsonValue.Create("opinion") };
+            nodes.Add(added);
             wires.Add(new JsonObject { ["id"] = $"{gate}-in", ["kind"] = "after", ["from"] = from, ["to"] = gate });
             wires.Add(new JsonObject { ["id"] = $"{gate}-out", ["kind"] = "after", ["from"] = gate, ["to"] = into });
             if (review is not null) wires.Add(new JsonObject { ["id"] = $"{gate}-land", ["kind"] = "after", ["from"] = gate, ["to"] = landing });
