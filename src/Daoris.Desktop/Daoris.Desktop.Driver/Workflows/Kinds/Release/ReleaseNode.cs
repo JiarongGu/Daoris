@@ -18,7 +18,7 @@ internal sealed class ReleaseNode : BuiltInNode, IStarts
 
     public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Release);
 
-    public override string? Title => "End the tree";
+    public override string? Title => "Close the tree";
 
     public override NodeLook Look => NodeLook.Line;
 

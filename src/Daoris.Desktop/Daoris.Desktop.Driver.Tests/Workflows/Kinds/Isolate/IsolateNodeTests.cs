@@ -77,6 +77,7 @@ public sealed class IsolateNodeTests
     {
         Assert.Equal([NodeKinds.Isolate, NodeKinds.Claimed], NodeKit.Built.Order.Take(2).Select(part => part.Name));
         Assert.Equal(["at-once", "overlap"], Assert.IsAssignableFrom<BuiltInNode>(NodeKit.Of(NodeKinds.Isolate)).Waits);
-        Assert.Equal("Work apart", NodeKit.Of(NodeKinds.Isolate)!.Title);
+        Assert.Equal("Open a tree", NodeKit.Of(NodeKinds.Isolate)!.Title);
+        Assert.Equal("Close the tree", NodeKit.Of(NodeKinds.Release)!.Title);
     }
 }

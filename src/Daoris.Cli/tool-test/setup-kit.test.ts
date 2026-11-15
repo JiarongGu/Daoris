@@ -64,8 +64,8 @@ const REFUSED = [
   'changes, each said once:',
   CHANGE,
   'refused:',
-  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Start the workflow it follows with '
-    + '*Work apart* (its `isolate` step) in the workflow\'s editor.',
+  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Start its workflow with '
+    + '*Open a tree* (its `isolate` step) in the workflow\'s editor.',
   '--plan: nothing was written, and nothing was asked.',
   '',
 ];

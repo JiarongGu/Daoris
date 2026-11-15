@@ -417,7 +417,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(["billing", "cargo", "docs"], Asked(world));
         var skip = Plan().Skipped["atlas"];
         Assert.Equal(SetupRefusals.NoOwnTree, skip.Code);
-        Assert.Contains("*Work apart*", skip.Said, StringComparison.Ordinal);
+        Assert.Contains("*Open a tree", skip.Said, StringComparison.Ordinal);
         Assert.Contains(said, line => line.StartsWith("setup  work: skipped `atlas`", StringComparison.Ordinal));
         Assert.Equal(judged, world.LinesRead.Count(read => read == "atlas"));
         var logged = Assert.Single(world.Logged, line => line.Event == "setup.skipped");

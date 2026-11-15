@@ -229,8 +229,8 @@ public static class SetupPress
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,
                 $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
-                + "every later session there reads, so it lands on a branch of its own. Start the workflow it follows with "
-                + "*Work apart* (its `isolate` step) in the workflow's editor, or choose a set-up preset whose workflow holds one."));
+                + "every later session there reads, so it lands on a branch of its own. Start its workflow with "
+                + "*Open a tree* (its `isolate` step) in the workflow's editor, or choose a set-up preset whose workflow holds one."));
         }
 
         return refusals;

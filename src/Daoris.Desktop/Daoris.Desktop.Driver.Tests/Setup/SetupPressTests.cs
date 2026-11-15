@@ -336,7 +336,7 @@ public sealed class SetupPressTests : IDisposable
     {
         var plan = await PlanAsync(new World { Apart = ["billing"] });
 
-        Refused(plan, SetupRefusals.NoOwnTree, "*Work apart*");
+        Refused(plan, SetupRefusals.NoOwnTree, "*Open a tree*");
         Assert.Contains("its `isolate` step", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
 
@@ -348,7 +348,7 @@ public sealed class SetupPressTests : IDisposable
 
         Assert.Empty(fresh.Refusals);
         Assert.True(fresh.Pressable);
-        Refused(worked, SetupRefusals.NoOwnTree, "*Work apart*");
+        Refused(worked, SetupRefusals.NoOwnTree, "*Open a tree*");
     }
 
     [Fact]
@@ -547,7 +547,7 @@ public sealed class SetupPressTests : IDisposable
         var plan = await PlanAsync(new World { Apart = [] });
 
         Assert.False(plan.Pressable);
-        Assert.Contains("*Work apart*", plan.Refusals[0].Sentence);
+        Assert.Contains("*Open a tree*", plan.Refusals[0].Sentence);
     }
 
     private Task<SetupPlan> PlanAsync(

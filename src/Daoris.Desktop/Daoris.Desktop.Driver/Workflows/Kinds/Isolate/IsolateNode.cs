@@ -42,7 +42,7 @@ internal sealed class IsolateNode : BuiltInNode, IObserves
 
     public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Isolate);
 
-    public override string? Title => "Work apart";
+    public override string? Title => "Open a tree";
 
     public override NodeLook Look => NodeLook.Work;
 

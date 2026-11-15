@@ -85,7 +85,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     first. (D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a conversation the
     person holds. It is at least one. (D130, D181)
-12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*, `Workflows/Kinds/Isolate/`): its
+12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Open a tree*, closed by `release`'s *Close the tree*, `Workflows/Kinds/Isolate/`): its
     `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any` under the cap; a full count sits a start `apart`)
     and its `overlap` (`go`, `wait`: rule 14). A start carries the step it was planned under (`Consideration.Isolate`), so a save
     between plan and start never moves it; no other verb or key sets a repository apart.
