@@ -160,23 +160,25 @@ async function storeCounts(home) {
   const out = { entries: missing('no memory.db in the home'), operations: missing('no knowledge.db memory_ops in the home') };
   let sqlite;
   try { sqlite = await import('node:sqlite'); } catch { return { entries: missing('node:sqlite'), operations: missing('node:sqlite') }; }
-  const open = (file) => { const db = new sqlite.DatabaseSync(file, { readOnly: true }); return db; };
+  // The handle is closed whatever the read does: a database left open (a table missing) keeps its folder from being removed.
+  const reading = (file, read) => {
+    const db = new sqlite.DatabaseSync(file, { readOnly: true });
+    try { return read(db); } finally { db.close(); }
+  };
   const memory = homeEntry(home, 'memory');
   if (existsSync(memory)) {
     try {
-      const db = open(memory);
-      const count = (t) => db.prepare(`select count(*) c from ${t}`).get().c;
-      out.entries = count('lyntai_memory_entry');
-      try { out.nodes = count('lyntai_memory_node'); } catch { /* an older schema */ }
-      db.close();
+      reading(memory, (db) => {
+        const count = (t) => db.prepare(`select count(*) c from ${t}`).get().c;
+        out.entries = count('lyntai_memory_entry');
+        try { out.nodes = count('lyntai_memory_node'); } catch { /* an older schema */ }
+      });
     } catch { out.entries = missing('memory.db readable Lyntai tables through node:sqlite'); }
   }
   const knowledge = homeEntry(home, 'knowledge');
   if (existsSync(knowledge)) {
     try {
-      const db = open(knowledge);
-      out.operations = Object.fromEntries(db.prepare('select state, count(*) c from memory_ops group by state order by state').all().map((r) => [r.state, r.c]));
-      db.close();
+      out.operations = reading(knowledge, (db) => Object.fromEntries(db.prepare('select state, count(*) c from memory_ops group by state order by state').all().map((r) => [r.state, r.c])));
     } catch { out.operations = missing('knowledge.db memory_ops readable through node:sqlite'); }
   }
   return out;
