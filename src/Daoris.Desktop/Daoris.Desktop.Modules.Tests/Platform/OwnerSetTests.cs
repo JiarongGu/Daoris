@@ -128,10 +128,7 @@ public sealed class OwnerSetTests : IDisposable
 
     // ——— By the record: the service's person doors.
 
-    /// <summary>
-    /// A quest published this run, and its ask's own words, mark nothing; a person's word or move after its publication marks it. An
-    /// appointed role's yes is the role's, never the owner's mark: the moves door names it by (D297).
-    /// </summary>
+    /// <summary>A quest published this run, its ask's own words and a role's yes mark nothing; a person's word or move after its publication marks it.</summary>
     [Theory]
     [InlineData("published", null)]
     [InlineData("added", null)]

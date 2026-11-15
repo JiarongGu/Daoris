@@ -24,7 +24,6 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
 
     public ConcurrentDictionary<string, SupervisorLandingDecision> Landings { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Every answer at a person's door a role may answer, by id (<see cref="SupervisorDoorAnswers"/>).</summary>
     public ConcurrentDictionary<string, SupervisorDoorDecision> Doors { get; } = new(StringComparer.Ordinal);
 
     /// <summary>Subjects a decision closed as the owner's, by kind and subject, with the state that closed them, across a restart too.</summary>

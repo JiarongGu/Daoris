@@ -182,7 +182,8 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(files.FileOf(session, id)));
+            if (SupervisorDecisionFiles.Read(files.FileOf(session, id)) is not { } text) return null;
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             var kind = Json.Text(root, "kind");
             if (kind is not (SupervisorKinds.Memory or SupervisorKinds.Departure)
@@ -191,7 +192,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 return null;
             }
 
-            var last = File.Exists(files.StatesOf(session, id)) ? File.ReadLines(files.StatesOf(session, id)).LastOrDefault(line => line.Length > 0) : null;
+            var last = (SupervisorDecisionFiles.Read(files.StatesOf(session, id)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
             var state = last is null ? null : SupervisorStates.Parse(Json.Text(JsonDocument.Parse(last).RootElement, "state"));
             return (subject, state ?? SupervisorState.Held);
         }

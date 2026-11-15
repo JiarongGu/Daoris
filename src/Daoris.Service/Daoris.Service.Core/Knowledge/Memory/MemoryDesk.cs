@@ -15,25 +15,19 @@ public sealed record MemoryDecisionOutcome(MemoryDecisionRefusal Refusal, string
 
 /// <summary>
 /// What the person decides through a memory row: an awaiting end, approved or
-/// declined, kept on its row as a go-ahead is; an ended session's staged rows, kept or dropped. Until a second opinion may approve,
-/// the person is every end's approver, and a session of the proposer's lineage is refused by name.
+/// declined, kept on its row as a go-ahead is; an ended session's staged rows, kept or dropped. The person, or a role appointed to it,
+/// is every end's approver, and a session of the proposer's lineage is refused by name.
 /// </summary>
 public sealed class MemoryDesk(MemoryOpStore ops)
 {
     /// <summary>The approver a row names when the person decided it.</summary>
     public const string Person = "person";
 
-    /// <summary>
-    /// The approver a row names: the person, or an appointed role and the agent that held it (<c>role:&lt;role&gt; · &lt;agent&gt;</c>), whose
-    /// answer the driver posts with the key through the role's form of the door.
-    /// </summary>
+    /// <summary>The approver a row names: the person, or an appointed role and the agent that held it, <c>role:&lt;role&gt; · &lt;agent&gt;</c>.</summary>
     public static string ApproverOf(string? role, string? agent) =>
         role is not { Length: > 0 } ? Person : agent is { Length: > 0 } ? $"role:{role} · {agent}" : $"role:{role}";
 
-    /// <summary>
-    /// An awaiting end decided: by <paramref name="approver"/> (the person, or an appointed role) where <paramref name="session"/> is null,
-    /// else refused, its proposer's lineage as its own.
-    /// </summary>
+    /// <summary>An awaiting end decided by <paramref name="approver"/> where <paramref name="session"/> is null, else refused, its proposer's lineage as its own.</summary>
     public async Task<MemoryDecisionOutcome> DecideAsync(
         string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default, string approver = Person)
     {
@@ -59,10 +53,7 @@ public sealed class MemoryDesk(MemoryOpStore ops)
             : new(MemoryDecisionRefusal.NotFound, $"No end awaits its approver as operation `{id}`. Nothing was decided.");
     }
 
-    /// <summary>
-    /// An ended session's staged rows, and those of the sessions it continues, kept to apply or dropped: by the person, or by an appointed
-    /// role, which its answer's words name.
-    /// </summary>
+    /// <summary>An ended session's staged rows, and those of the sessions it continues, kept to apply or dropped, by the person or a role.</summary>
     public async Task<MemoryDecisionOutcome> KeepAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default, string by = Person) =>
         await ops.KeepStagedAsync(session, keep, now, ct).ConfigureAwait(false) is { } moved
             ? new(MemoryDecisionRefusal.None, $"{moved} staged change(s) of session `{session}` {(keep ? "kept" : "dropped")}{(by == Person ? "" : $" by {by}")}.", Moved: moved)

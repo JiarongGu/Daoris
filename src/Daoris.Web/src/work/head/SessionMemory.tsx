@@ -35,7 +35,6 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
   said?: string | null;
   onDecide: (op: string, approve: boolean) => void;
   onKeep: (keep: boolean) => void;
-  /** Counted up each time a door opens the session here (What needs you's memory row): the section is brought into view, once drawn. */
   seek?: number;
 }) {
   const { t } = useTranslation();

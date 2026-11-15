@@ -81,9 +81,8 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// The person's decision on a session's memory: an awaiting end approved or declined by its row where
+    /// The person's or a role's (<paramref name="role"/>) decision on a session's memory: an awaiting end approved or declined by its row where
     /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
-    /// With <paramref name="role"/>, the appointed role's answer, released through its door and kept as the role's.
     /// </summary>
     public async Task<(bool Ok, string Message)> DecideMemoryAsync(
         string session, string? op, bool yes, CancellationToken ct = default, RoleAnswerWire? role = null)

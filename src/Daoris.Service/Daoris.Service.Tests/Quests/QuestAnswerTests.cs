@@ -320,10 +320,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Contains(quest.Id, (await _quests.ListAsync()).Select(listed => listed.Id));
     }
 
-    /// <summary>
-    /// 🔴 An appointed role's yes is kept on its move as the role's and its agent's, so the owner's mark never reads it as theirs; the
-    /// person's own names no one (D297).
-    /// </summary>
+    /// <summary>🔴 A role's yes is kept on its move as the role's, so the owner's mark never reads it as theirs; the person's names no one.</summary>
     [Fact]
     public async Task A_roles_yes_is_kept_on_its_move_as_the_roles()
     {

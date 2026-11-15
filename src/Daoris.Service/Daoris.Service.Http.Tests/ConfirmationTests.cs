@@ -700,7 +700,7 @@ public sealed class ConfirmationTests
     /// 🔴 A card must never show one act while the request made does another. A body is asked for
     /// only with the names its door binds, each once, so the card shows only what binds: a property the binder would ignore (an empty
     /// name above a dismissal's fields, or a near spelling) leaves the door's own fields unbound, and a dismissal that names none
-    /// dismisses every conflict. So is a query, and a body on a door that binds none.
+    /// dismisses every conflict. So is a query, and a body where a door binds none.
     /// </summary>
     [Fact]
     public async Task A_request_is_asked_for_only_with_the_names_its_door_binds()

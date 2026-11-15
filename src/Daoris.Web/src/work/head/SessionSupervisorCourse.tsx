@@ -7,10 +7,7 @@ import { SupervisorAllowCard } from './SupervisorAllowCard';
 import { SupervisorLandingCard } from './SupervisorLandingCard';
 import { SupervisorDoorCard } from './SupervisorDoorCard';
 
-/**
- * The newest decision the supervisor made on `session`'s referred points or on its run's waiting step, and each answer a role holds at
- * one of its doors that wait on the person, with *Overrule* where this machine holds the record.
- */
+/** The supervisor's newest decision on `session`'s points or its run's step, and each answer a role holds at its doors, with *Overrule* where this machine holds the record. */
 export function SessionSupervisorCourse({ session, supervision, here }: { session: string; supervision: LineSupervision; here: boolean }) {
   const { t } = useTranslation();
   const overrule = useOverruleSupervisor(session);

@@ -32,7 +32,6 @@ export function AttendedPane({
   t, notify, session, record, work, boxState, waitsState, headState, roster, nameOf, agentRoster, following, atWorkHeld, heavy, partRows,
   onShowPart, openAtWork, attend, onOpenQuest, onAnswerAsk, onOpenBranch, memorySeek = null,
 }: {
-  /** The session a door opened at its Memory section, and how many times. */
   memorySeek?: { session: string; n: number } | null;
   t: TFunction;
   notify: Notify;

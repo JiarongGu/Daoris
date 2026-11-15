@@ -86,7 +86,6 @@ export type FrameIntent =
 export const outputsOfIntent = (intent: FrameIntent | null | undefined): string | null =>
   intent?.startsWith('outputs/') ? intent.slice('outputs/'.length) || null : null;
 
-/** The session whose Memory section a door opens it at (`memory/<session>`), or null for any other intent. */
 export const memoryOfIntent = (intent: FrameIntent | null | undefined): string | null =>
   intent?.startsWith('memory/') ? intent.slice('memory/'.length) || null : null;
 

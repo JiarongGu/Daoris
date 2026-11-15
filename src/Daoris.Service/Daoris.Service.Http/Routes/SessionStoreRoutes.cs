@@ -29,7 +29,6 @@ public sealed class SessionStoreRoutes(HostWiring host) : IRouteModule
                     wait.Session, wait.Ends, wait.Replacements, wait.Staged, wait.Since,
                     wait.End is { } end ? new MemoryEndWaitResponse(end.Op, end.Repository, end.Target, end.Revision, end.Reason) : null))]));
         routes.Map<ReadLineMemory, MemoryReadResponse>(ReadLineMemoryAsync);
-        // The person's, or an appointed role's through the driver (`role`), which the row's approver names; keyless, refused either way.
         routes.Map<DecideMemory, MemoryDecisionResponse>(async (request, http, ct) =>
             !host.MachineLocal(http) ? Answer<MemoryDecisionResponse>.Else(StatusCodes.Status404NotFound, null)
             : host.Gate.Refused(http, RoleAnswerDoors.Decide, form: request.Role is not null) is { } refused ? refused

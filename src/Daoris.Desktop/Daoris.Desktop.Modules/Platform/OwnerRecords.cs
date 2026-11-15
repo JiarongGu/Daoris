@@ -38,8 +38,7 @@ public sealed record OwnerRecordFacts(
 /// owner's from birth.
 /// </summary>
 /// <remarks>
-/// Evidence is spelled <c>move:&lt;kind&gt;</c> (a move of that kind, as the moves door spells it, that names no <c>by</c>: an appointed
-/// role's answer names the role and is never the owner's), <c>note:&lt;code&gt;</c> (the quest's
+/// Evidence is spelled <c>move:&lt;kind&gt;</c> (a move of that kind naming no role's <c>by</c>), <c>note:&lt;code&gt;</c> (the quest's
 /// note part with that code, its status moved since), <c>session-note:&lt;code&gt;</c> (a note part on one of its sessions, its record
 /// moved since), <c>said:person</c> (a person's word waiting on one of its sessions), <c>word:&lt;kind&gt;</c> (an ask's word naming it),
 /// or <c>instance:&lt;ROUTE&gt;</c> (the person's press at the instance's door, which marks it in memory as it runs).
@@ -92,7 +91,6 @@ public static class OwnerRecords
         {
             using var document = JsonDocument.Parse(moves);
             var list = document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("moves", out var named) ? named : document.RootElement;
-            // A move that names who made it (`by`) is an appointed role's answer, the role's and never the owner's mark (D297).
             foreach (var move in Each(list))
             {
                 if (Text(move, "by") is null && Text(move, "kind") is { } kind && Moment(move, "at") is { } at) movesRead.Add((kind, at));

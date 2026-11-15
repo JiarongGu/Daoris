@@ -14,10 +14,9 @@ public static class SupervisorKinds
     public const string Files = "files";
     public const string Landing = "landing";
 
-    /// <summary>A session's staged memory kept or dropped (<c>keep</c>), and a memory end approved or declined (<c>decide</c>).</summary>
+    /// <summary>A session's staged memory kept or dropped (<c>keep</c>), a memory end decided (<c>decide</c>); and a done's departure accepted.</summary>
     public const string Memory = "memory";
 
-    /// <summary>A quest's done departing from what was required, accepted (<c>accept</c>).</summary>
     public const string Departure = "departure";
 
     /// <summary>Ask Daoris's acts, read after its turns, observed and never decided; not the working role <c>ask-daoris</c>.</summary>

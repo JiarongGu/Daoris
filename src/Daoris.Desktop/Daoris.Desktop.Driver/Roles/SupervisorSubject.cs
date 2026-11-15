@@ -20,7 +20,6 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Course] = "point",
         [SupervisorKinds.Limit] = "point",
         [SupervisorKinds.Landing] = "landing",
-        // A session's staged changes (`staged`) or one memory end's row by its operation's id; a quest's departure by the quest.
         [SupervisorKinds.Memory] = "memory",
         [SupervisorKinds.Departure] = "quest",
         [SupervisorKinds.Allow] = "request",

@@ -83,11 +83,7 @@ export type AllowRead = {
   stateAt: string;
 };
 
-/**
- * An appointed role's answer at a door that waits on the person, as `SESSION_SUPERVISOR` answers it: the session's staged memory kept or
- * dropped (`memory`, subject `staged`), a memory end approved or declined (`memory`, its operation), a quest's departure accepted
- * (`departure`, the quest), with the role and its agent, where it stands and when it goes on.
- */
+/** A role's answer at a door that waits on the person (`memory` on `staged` or an end, `departure` on a quest), as `SESSION_SUPERVISOR` answers it. */
 export type DoorRead = {
   id: string;
   kind: string;

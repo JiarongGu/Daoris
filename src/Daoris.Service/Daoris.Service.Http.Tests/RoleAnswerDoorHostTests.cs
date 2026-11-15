@@ -12,6 +12,8 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
 {
     private const string Key = KeyedHost.Key;
 
+    private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-16T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+
     private static readonly object Role = new { role = "daoris-landing", agent = "codex-acp", decision = "d1" };
 
     private static void AssertRefused(Answer answer, string code, string act, string what)
@@ -28,7 +30,7 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
         var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var each in new[] { "starting", "working" }) Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state = each }, person: Key)).Status);
         var op = await host.Composed.Sessions.Memory.StageAsync(
-            "Keeper", change, new MemoryAuthor(session, "default", null, "stub", null, null, null, DateTimeOffset.UtcNow));
+            "Keeper", change, new MemoryAuthor(session, "default", null, "stub", null, null, null, At));
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state }, person: Key)).Status);
         return (session, op);
     }

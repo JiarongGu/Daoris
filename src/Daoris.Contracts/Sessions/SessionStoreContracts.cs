@@ -65,19 +65,17 @@ public sealed record ReadLineMemory(string Id) : IRoute<MemoryReadResponse>
     public static string Path => "/api/sessions/{id}/memory/read";
 }
 
-/// <summary>The person's approval or decline of an awaiting end, kept on its row.</summary>
+/// <summary>The person's approval or decline of an awaiting end, kept on its row, or with <c>Role</c> an appointed role's, which the row names.</summary>
 /// <param name="Id">The row's.</param>
 /// <param name="Approve">True approves the end, false declines it; required.</param>
-/// <param name="Role">The appointed role that answered instead of the person, posted by the driver alone; the row's approver names it.</param>
 public sealed record DecideMemory(string Id, bool? Approve, RoleAnswerWire? Role = null) : IRoute<MemoryDecisionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/memory/{id}/decide";
 }
 
-/// <summary>The person's keep or drop of an ended session's staged memory changes.</summary>
+/// <summary>The person's keep or drop of an ended session's staged memory changes, or with <c>Role</c> an appointed role's.</summary>
 /// <param name="Keep">True keeps the staged changes, false drops them; required.</param>
-/// <param name="Role">The appointed role that answered instead of the person, posted by the driver alone.</param>
 public sealed record KeepSessionMemory(string Id, bool? Keep, RoleAnswerWire? Role = null) : IRoute<MemoryDecisionResponse>
 {
     public static string Method => "POST";

@@ -452,6 +452,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Helpers/HelperSettling.cs": 6,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Helpers/HelperTurn.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Look/CourseReleaseLook.cs": 1,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Look/DoorReleaseLook.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Look/LandingReleaseLook.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Look/LoopRuns.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Look/SuperviseLook.cs": 1,

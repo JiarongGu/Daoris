@@ -147,7 +147,6 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         view.Earlier,
     };
 
-    /// <summary>One answer at a person's door a role gave, as the page reads it: its subject, act and choice, the role and its agent, where it stands.</summary>
     internal static object SupervisorDoorRow(SupervisorDoorView view) => new
     {
         view.Id,

@@ -11,7 +11,7 @@ internal sealed class QuestAcceptOperation : IQuestOperation
 {
     public QuestOperationKind Kind => QuestOperationKind.Accepted;
 
-    /// <summary>A yes carries a note a row from another machine may say, and the appointed role whose yes it was; an older build reads neither.</summary>
+    /// <summary>A yes carries a note a row from another machine may say, and the appointed role that said it; an older build reads neither.</summary>
     public void WritePayload(Utf8JsonWriter writer, QuestOperation operation)
     {
         writer.WriteStartObject();

@@ -46,7 +46,7 @@ public sealed record QuestMoveReading(
     /// </summary>
     public string? Hold { get; init; }
 
-    /// <summary>An accepted's: the appointed role whose yes it was and its agent (<see cref="QuestOperation.By"/>); null for the person's own.</summary>
+    /// <summary>An accepted's: the appointed role that said the yes and its agent (<see cref="QuestOperation.By"/>); null for the person's own.</summary>
     public string? By { get; init; }
 }
 

@@ -6,7 +6,7 @@ import { type DoorRead, readSupervision } from './lineSupervision';
 import { SupervisorDoorCard } from './SupervisorDoorCard';
 
 // An appointed role's answer at a door that waits on the person, held for the role's window: what it answered, by which role and
-// agent as configured, when it takes effect, and *Overrule* while it is held, in each shipped language (D297).
+// agent as configured, when it takes effect, and *Overrule* while it is held, in each shipped language.
 
 const door = (over: Partial<DoorRead> = {}): DoorRead => ({
   id: 'd1', kind: 'memory', subject: 'staged', do: 'keep', choice: 'keep', role: 'daoris-landing', agent: 'codex-acp · gpt-5 · high',
