@@ -17,11 +17,23 @@ public static class CheckRounds
             .GroupBy(attempt => attempt.Node, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    /// <summary>Whether <paramref name="node"/> already failed at <paramref name="tip"/>: asking again there spends a round the work never had, so the check waits for a commit.</summary>
-    public static bool RedAt(NodeRecord? record, string node, string? tip) =>
-        !string.IsNullOrEmpty(tip) && record?.Attempts.Any(attempt =>
+    /// <summary>The newest attempt failing <paramref name="node"/> at <paramref name="tip"/>: asked again there before the work answers (<see cref="Answered"/>), it spends a round the work never had.</summary>
+    public static NodeAttempt? RedAt(NodeRecord? record, string node, string? tip) =>
+        string.IsNullOrEmpty(tip) ? null : record?.Attempts.LastOrDefault(attempt =>
             attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed }
-            && attempt.Node == node && attempt.Call.SubjectRevision == tip) == true;
+            && attempt.Node == node && attempt.Call.SubjectRevision == tip);
+
+    /// <summary>
+    /// Whether the work answered a red asked at <paramref name="asked"/> with no commit: a session waits on the run's next step (<see cref="RunWaiters"/>)
+    /// since after it, and none of the run's <paramref name="sessions"/> still works. The check then asks the same commit again as a round the bound counts.
+    /// </summary>
+    public static bool Answered(IReadOnlyList<SessionRecord> records, string run, IReadOnlyCollection<string> sessions, DateTimeOffset asked)
+    {
+        var waiting = RunWaiters.Of(run, records).ToHashSet(StringComparer.Ordinal);
+        var working = records.Any(record => record is { Teammate: false, Live: true } && !waiting.Contains(record.Id)
+            && sessions.Contains(record.Id, StringComparer.Ordinal));
+        return !working && records.Any(record => waiting.Contains(record.Id) && record.Updated > asked);
+    }
 
     /// <summary>
     /// Whether a <c>back</c> wire from <paramref name="source"/> is taken on its failure: always but from a check, and from a check only while

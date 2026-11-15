@@ -165,7 +165,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding,
     /// <summary>Why the keeping started nothing, said through the loop's machine log where it changed for the node.</summary>
     private static void SayWait(NodeKept kept, string reason)
     {
-        if (LandWaits.Changed(kept.Home, kept.Governed.Unit.Id, kept.Node.Id, reason))
+        if (NodeWaits.Changed(kept.Home, kept.Governed.Unit.Id, kept.Node.Id, reason))
         {
             kept.Doors.Say(LandWaits.Event, LandWaits.Sentence(kept.Governed.Run, kept.Node.Id, reason));
         }

@@ -19,6 +19,21 @@ repository.
 - **Fix:** the session rows hold 1 top to bottom and 13 left to right, their comment saying why; the plan's rows are gone; the editor's
   dark decorator takes no padding; the head's budget test is an expected failure again with its reason. No ceiling or budget was loosened
   where the design set it: the session life's is the one that moved, by a state the lifecycle added.
+## 2026-11-16 - A run's `check` red at its commit and the work's waiting session each waited on the other
+
+- **Symptom:** a run of Daoris's own development workflow held its `check` ready at attempt 1 for over twenty minutes after `content`
+  was reached on its branch, its session `awaiting-step`; no gate ran again and the machine log named no check, executor or reason.
+- **Root cause:** a54f8d81c1 made a check wait ready at a commit that already failed it until the work's next commit (`CheckRounds.RedAt`).
+  The red's words went back while the session's turn was still running; the turn ended on its earlier hand-back with no new commit, and
+  the session waited on the run's next step, which was the check waiting on a commit that would never come. The start's exits returned
+  nothing and wrote nothing.
+- **Fix:** the wait ends once the work answers with no commit: a session waits on the run's next step since the red was asked and none of
+  the run's sessions still works (`CheckRounds.Answered`), so the same commit is asked again as the next round, which the rounds bound
+  counts. Every exit of the check's start that leaves it ready writes a coded `check.waits` line once per change of reason
+  (`CheckStartWaits`), through the memory the landing's waits now share (`NodeWaits`).
+- **Verification:** `CheckStartTests` asks a red commit again on the development graph once its session waits since the red, holds it
+  while the session works or waits from before the red, and says `red-here`, `sessions-unread` and `no-door` once each; the first case
+  failed at one send before the fix. `CheckRoundsTests` holds the answer's rule.
 
 ## 2026-11-16 - The words ticks' sessions ended failed: their stand-in service refused the wait on a run's next step
 

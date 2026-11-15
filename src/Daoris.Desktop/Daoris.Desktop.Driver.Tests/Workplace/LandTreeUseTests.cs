@@ -38,12 +38,12 @@ public sealed class LandTreeUseTests
     {
         var home = Guid.NewGuid().ToString("N");
 
-        Assert.True(LandWaits.Changed(home, "run:q1", "landing", LandWaits.InUse));
-        Assert.False(LandWaits.Changed(home, "run:q1", "landing", LandWaits.InUse));
-        Assert.True(LandWaits.Changed(home, "run:q1", "landing", LandWaits.Unchanged));
-        Assert.True(LandWaits.Changed(home, "run:q1", "other", LandWaits.Unchanged));
-        LandWaits.Tried(home, "run:q1", "landing");
-        Assert.True(LandWaits.Changed(home, "run:q1", "landing", LandWaits.Unchanged));
+        Assert.True(NodeWaits.Changed(home, "run:q1", "landing", LandWaits.InUse));
+        Assert.False(NodeWaits.Changed(home, "run:q1", "landing", LandWaits.InUse));
+        Assert.True(NodeWaits.Changed(home, "run:q1", "landing", LandWaits.Unchanged));
+        Assert.True(NodeWaits.Changed(home, "run:q1", "other", LandWaits.Unchanged));
+        NodeWaits.Tried(home, "run:q1", "landing");
+        Assert.True(NodeWaits.Changed(home, "run:q1", "landing", LandWaits.Unchanged));
     }
 
     [Fact]
