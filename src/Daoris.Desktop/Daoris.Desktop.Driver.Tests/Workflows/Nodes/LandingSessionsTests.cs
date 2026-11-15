@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A landing supervisor's decision is kept against the newest session of the step's run's work: a chain's quests serve its run, and the quests an
-/// ask gave a repository serve that ask's delivery run there, so the ask's one review is answerable by an appointed supervisor (D296).
+/// ask gave a repository serve that ask's delivery run there, so the ask's one review is answerable by an appointed supervisor.
 /// </summary>
 public sealed class LandingSessionsTests
 {

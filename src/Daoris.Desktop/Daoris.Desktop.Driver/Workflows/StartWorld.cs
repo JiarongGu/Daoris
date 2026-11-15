@@ -9,7 +9,6 @@ internal sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld, I
 
     public ITrainPlans Plans => this;
 
-    /// <summary>An ask's plan, read strictly: one the service would not answer throws, so the start's bind is tried again, never made on a guess.</summary>
     public async Task<TrainPlan?> OfAsync(string ask, CancellationToken ct) => TrainPlan.Of(await service.AskPlanAsync(ask, ct).ConfigureAwait(false));
 
     public void Chosen(LandingLine line) => service.LandingSaid(line);

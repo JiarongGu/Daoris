@@ -189,10 +189,7 @@ public static class WorkflowRunStart
         return WorkflowRunBindings.RunOf(ReviewGate.ChainOf(every.Quests, quest.Id), quest.To) ?? quest.Id;
     }
 
-    /// <summary>
-    /// The binding the run's first start makes now, its task's choice read from its ask, or for a quest no ask published, its own; a part of its
-    /// ask's plan takes the place's choice for its kind where the ask makes none (<see cref="TeamKinds"/>).
-    /// </summary>
+    /// <summary>The binding the run's first start makes now, its task's choice read from its ask, or for a quest no ask published, its own.</summary>
     private static async Task<WorkflowRunBinding> PlanAsync(
         WorkflowStarted start, string run, IWorkflowStartWorld world, IWorkflowStore store, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
         Func<DateTimeOffset> now, Every every, Func<RoleCatalog>? roles, CancellationToken ct)

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The session a landing supervisor's decision on a step is kept against: the newest of the step's run's work in its repository. A chain's run is
 /// served by the sessions of its quests; an ask's delivery run, which has no quest of its own, by those of the quests its ask gave that
 /// repository, its review's handbacks (<see cref="AskRunScopes"/>), so an appointed supervisor answers the ask's one review as it answers a
-/// chain's (D296).
+/// chain's.
 /// </summary>
 public static class LandingSessions
 {

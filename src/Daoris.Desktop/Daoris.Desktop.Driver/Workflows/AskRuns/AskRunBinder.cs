@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Binds the delivery run of each planned ask: for every repository on this machine the ask's plan gives a part to, one run, keyed by the ask
-/// (<see cref="AskRunKey"/>) and bound once, the plan's parts read from the service. It follows the place's workflow for the kind
-/// <see cref="TeamKinds.Delivery"/> where the place maps one, else the home's saved copy of the shipped <c>ask-delivery</c>.
+/// Binds the delivery run of each planned ask, once per repository here its plan gives a part to, keyed by the ask (<see cref="AskRunKey"/>): the
+/// place's workflow for <see cref="TeamKinds.Delivery"/> where it maps one, else the home's saved copy of the shipped <c>ask-delivery</c>.
 /// </summary>
 public sealed class AskRunBinder(string home, IWorkflowStore store, IWorkflowRunStore runs, ITrainPlans plans, Func<DateTimeOffset> clock)
 {
@@ -51,7 +50,6 @@ public sealed class AskRunBinder(string home, IWorkflowStore store, IWorkflowRun
         if (runs.Bound(run)) return (true, null);
         try
         {
-            // The place's choice for the delivery's kind, where it makes one (D296); else the home's saved copy of the shipped workflow.
             var task = TeamKinds.Chosen(config, at.Repository, at.Workspace, TeamKinds.Delivery) ?? new WorkflowTaskChoice(null, SavedWorkflow());
             var binding = WorkflowRunBindings.Plan(
                 config, store, run, at.Repository, at.Workspace, ask, task, plugins, clock(), () => RoleCatalog.ReadHome(home));

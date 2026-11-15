@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A planned ask's part and its delivery each follow the workflow their place maps to the kind Daoris gives them (D296): a part's run binds the
+/// A planned ask's part and its delivery each follow the workflow their place maps to the kind Daoris gives them: a part's run binds the
 /// place's <c>team-part</c>, the ask's delivery its <c>ask-delivery</c>; where the place maps none, each binds as it did without the kind.
 /// </summary>
 public sealed class TeamKindsTests : IDisposable
