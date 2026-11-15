@@ -63,6 +63,9 @@ internal static class HelpDoorRowsMachine
             Setup + "Reach; a workspace's reading, " + Ws + "Setup → Defaults → Read by agents outside",
             "`daoris place across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris place across <repository> write-to <other> [--clear]`"),
+        // Whether Daoris may change files in a repository's registered checkout; off unless the person says.
+        ("let Daoris change files in a repository's registered checkout, or not (off unless you say)",
+            Setup + "Reach", "`daoris place checkout <repository> on|off`"),
         // What the person says holds for every session in one repository, kept on this machine.
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             Setup + "Sessions", "`daoris place standing <repository> \"…\"|--clear`"),

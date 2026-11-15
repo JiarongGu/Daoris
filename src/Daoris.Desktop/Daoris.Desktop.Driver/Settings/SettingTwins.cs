@@ -14,7 +14,8 @@ public static class SettingTwins
     [
         ("place access <repository>|--workspace <name> full|<pause>=<value>…|--clear", Driver("SET_ACCESS"), $"{nameof(AccessRules)}.{nameof(AccessRules.Apply)}"),
         ("place checks <repository> light|heavy-at-end|--clear", Driver("SET_SESSION_CHECKS"), $"{nameof(SessionChecks)}.{nameof(SessionChecks.Apply)}"),
-        ("place heavy <repository> <name>=<command>…|--clear", Driver("SET_HEAVY_GATES"), $"{nameof(HeavyMapping)}.{nameof(HeavyMapping.Apply)}"),
+        ("place checkout <repository> on|off", Driver("SET_CHECKOUT_WRITES"), $"{nameof(DriverConfig)}.{nameof(DriverConfig.WithCheckoutWrites)}"),
+        ("place heavy<repository> <name>=<command>…|--clear", Driver("SET_HEAVY_GATES"), $"{nameof(HeavyMapping)}.{nameof(HeavyMapping.Apply)}"),
         ("ask-daoris mode restricted|full", Driver("SET_HELP_MODE"), $"{nameof(DriverConfig)}.{nameof(DriverConfig.WithHelpMode)}"),
         ("gate verify <repository> [--branch <name>|--commit <sha>]", Driver("WORKFLOW_VERIFY"), $"{nameof(VerifyCommand)}.{nameof(VerifyCommand.BindAsync)}"),
         ("remote add <workspace> --url <url> [--key <key>]", new("DAORIS.REMOTES", "SET", RouteClass.Person), $"{nameof(RemoteOperations)}.{nameof(RemoteOperations.Set)}"),
