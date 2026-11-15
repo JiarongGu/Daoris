@@ -6,7 +6,7 @@ import { en, zh } from '.';
  * close a tree, show and hide a list). Each language declares its two verbs and the object they share, and the
  * check holds that both keys exist in both catalogues, the first begins with the first verb (English) or holds it
  * (Chinese), the second the second, and both name the object. A pair that reads as an activity and an object,
- * or as two verb families, fails here (GAPPAIRS1).
+ * or as two verb families, fails here.
  */
 type Side = { verbs: [string, string]; object?: string };
 type Pair = { pair: string; keys: [string, string]; en: Side; zh: Side };
