@@ -9,7 +9,6 @@ import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
   `<UnitTestResult executionId="x" testName="${name}" duration="${duration}" outcome="${outcome}" />`).join('')}</Results></TestRun>`;
 
-// A census world by hand: each unit reads the paths it names, whatever the files are called.
 const worldOf = (reads) => ({
   units: new Map(Object.keys(reads).map((unit) => [unit, { unit }])),
   reaches: (unit, path) => reads[unit.unit].includes(path),

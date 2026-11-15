@@ -21,11 +21,8 @@
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
  * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
  *
- * `--measure --classes <name>[,…]` runs the classes again alone for their time (the time ratchet's measuring of a reached test over its
- * limit), replaying no standing pass and recording none.
- *
- * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes; each pass is recorded for the merge
- * to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
+ * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
+ * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
  * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
  * one the merge queue's gates take, and says what it waits for; a light group runs at once. The place is let go as the group ends,
@@ -131,7 +128,6 @@ async function main(argv) {
   const named = valueOf(argv, '--paths');
   const paths = named !== null ? named.split(',').filter(Boolean) : changedPaths(root, base);
   // One store for every worktree, the main checkout's, so a builder's passes are the ones its merge replays.
-  // `--measure` runs the named classes whatever a standing pass says, to time them: it reads no pass and records none.
   const measure = argv.includes('--measure');
   const store = new PassedClasses(measure ? join(root, '_fixtures', 'no-standing-passes.json') : storeFile(verdictsHome(root)));
   // A store is warmed by running every class the paths reach, which no merge does: its bound is the suite's size.
