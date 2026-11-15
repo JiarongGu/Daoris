@@ -170,6 +170,13 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
   OUTPUTPANEL1): the session menu merges the workflow's current step into each session's line, which reads messy now that a session
   holds many turns and waits on steps. Its rows say the session, where it stands and who it waits on; the passage (steps passed,
   current, to come) and its turns go to the panel or the row's opening. Designed with OUTPUTPANEL1.
+- [ ] **AGENTMIX1 — agent families ranked per role, mixed in for the wide view and as backup** (driver, tools; the person,
+  2026-11-15): Claude stays the primary family for all work, the work workspace included. Codex and DeepSeek are tried on roles
+  and ranked from measurement (a second opinion's findings verified real or not, their time and spend, a work turn's Stage 0
+  measures and first pass), in one report a person reads. A mix of families stays in the roles: the wide-scope review or second
+  opinion goes to another family where one is free (the work workspace gets the second opinions Daoris has), and when every
+  Claude account is out of allowance or a plan changes, work moves to another family with its context, never stops. DeepSeek is
+  spent from its prepaid balance only, as the reviews' different source.
 
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
