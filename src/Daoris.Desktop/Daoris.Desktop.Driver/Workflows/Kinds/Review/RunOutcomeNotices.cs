@@ -18,7 +18,7 @@ public static class RunOutcomeNotices
     {
         var failing = new List<NewsOccurrence>();
         var records = new NodeRecordFiles(home, () => false);
-        foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null))
+        foreach (var run in GraphRuns.Of(home).Read().Where(run => run.Line is null))
         {
             if (run.Version.Graph is not { } graph || records.Read(run.Unit) is not { } record) continue;
             foreach (var step in RunReviews.Follows(graph, record).Where(step => step.State == NodeStates.Failed))

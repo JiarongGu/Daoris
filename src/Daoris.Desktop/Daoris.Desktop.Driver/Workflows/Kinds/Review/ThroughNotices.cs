@@ -20,7 +20,7 @@ public static class ThroughNotices
     {
         var occurrences = new List<NewsOccurrence>();
         var records = new NodeRecordFiles(home, () => false);
-        foreach (var run in new GraphRuns(records).Read().Where(run => run.Line is null && run.Version.Graph is not null))
+        foreach (var run in GraphRuns.Of(home).Read().Where(run => run.Line is null && run.Version.Graph is not null))
         {
             if (records.Read(run.Unit) is not { } record) continue;
             foreach (var node in run.Version.Graph!.Nodes)
