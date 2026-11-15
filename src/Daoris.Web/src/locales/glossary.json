@@ -1,5 +1,5 @@
 {
-  "_why": "The authority names are checked against (NAME1, D116; docs/archive/2026-10-01-naming-design.md). A name is part of its element, designed in each language: `terms` holds one name per concept in each language, chosen as a name rather than translated, with what it must not be called; `kinds` holds the fourteen kinds of element with their budgets and the keys of each kind, the most specific entry winning and a key no kind names a sentence; `doors` pairs each door with the key naming its destination; `accepted` keeps each budget judgement looked at and kept, with the name it accepted and why (NAME2). It sits beside the language folders and in neither, so it is never merged into a catalogue. scripts/names-check.mjs reads it and reports; NAME1b turns the facts' half to a gate.",
+  "_why": "The authority names are checked against (NAME1, D116; docs/archive/2026-10-01-naming-design.md). A name is part of its element, designed in each language: `terms` holds one name per concept in each language, chosen as a name rather than translated, with what it must not be called; `kinds` holds the fourteen kinds of element with their budgets and the keys of each kind, the most specific entry winning and a key no kind names a sentence; `doors` pairs each door with the key naming its destination; `pairs` names two keys that must read as one pair, an act and its counterpart on one object, with each language's two verbs and the object they share (held by glossaryPairs.test.ts, GAPPAIRS1); `accepted` keeps each budget judgement looked at and kept, with the name it accepted and why (NAME2). It sits beside the language folders and in neither, so it is never merged into a catalogue. scripts/names-check.mjs reads it and reports; NAME1b turns the facts' half to a gate.",
 
   "measure": {
     "_why": "English is counted in characters; Chinese in units, a Chinese character or full-width mark 1 and anything else 1/2, since the system's Latin face averages half an em. A placeholder counts as its typical value.",
@@ -522,6 +522,29 @@
       { "en": "Copy to its registry", "zh": "复制到它的登记目录" }
     ]
   },
+
+  "pairs": [
+    { "pair": "tree step", "keys": ["workflow.step.isolate", "workflow.step.release"], "en": { "verbs": ["Open", "Close"], "object": "tree" }, "zh": { "verbs": ["打开", "关闭"], "object": "工作树" } },
+    { "pair": "tree edit", "keys": ["workflow.edit.kind.isolate", "workflow.edit.kind.release"], "en": { "verbs": ["Open", "Close"], "object": "tree" }, "zh": { "verbs": ["打开", "关闭"], "object": "工作树" } },
+    { "pair": "agent list", "keys": ["agents.list.open", "agents.list.close"], "en": { "verbs": ["Show", "Hide"], "object": "agent list" }, "zh": { "verbs": ["展开", "收起"], "object": "智能体列表" } },
+    { "pair": "plugin list", "keys": ["plugin.list.open", "plugin.list.close"], "en": { "verbs": ["Show", "Hide"], "object": "plugin list" }, "zh": { "verbs": ["展开", "收起"], "object": "插件列表" } },
+    { "pair": "repository list", "keys": ["projects.list.open", "projects.list.close"], "en": { "verbs": ["Show", "Hide"], "object": "repository list" }, "zh": { "verbs": ["展开", "收起"], "object": "仓库列表" } },
+    { "pair": "quest list", "keys": ["quests.list.open", "quests.list.close"], "en": { "verbs": ["Show", "Hide"], "object": "quest list" }, "zh": { "verbs": ["展开", "收起"], "object": "委托列表" } },
+    { "pair": "finding list", "keys": ["convergence.list.open", "convergence.list.close"], "en": { "verbs": ["Show", "Hide"], "object": "finding list" }, "zh": { "verbs": ["展开", "收起"], "object": "发现列表" } },
+    { "pair": "steward acts", "keys": ["notifications.steward.show", "notifications.steward.hide"], "en": { "verbs": ["Show", "Hide"], "object": "steward's acts" }, "zh": { "verbs": ["显示", "隐藏"], "object": "管家的操作" } },
+    { "pair": "steward desk", "keys": ["notifications.steward.desk.show", "notifications.steward.desk.hide"], "en": { "verbs": ["Show", "Hide"], "object": "steward's desk" }, "zh": { "verbs": ["显示", "隐藏"], "object": "管家的待办" } },
+    { "pair": "help pressed", "keys": ["notifications.helpPressed.show", "notifications.helpPressed.hide"], "en": { "verbs": ["Show", "Hide"], "object": "what was pressed for you" }, "zh": { "verbs": ["显示", "隐藏"], "object": "为你代按的操作" } },
+    { "pair": "terminal pressed", "keys": ["notifications.terminalTier.show", "notifications.terminalTier.hide"], "en": { "verbs": ["Show", "Hide"], "object": "what a terminal pressed" }, "zh": { "verbs": ["显示", "隐藏"], "object": "终端执行的操作" } },
+    { "pair": "findings", "keys": ["opinion.findingsShow", "opinion.findingsHide"], "en": { "verbs": ["Show", "Hide"], "object": "findings" }, "zh": { "verbs": ["显示", "隐藏"], "object": "发现" } },
+    { "pair": "plugin switch", "keys": ["plugin.enable", "plugin.disable"], "en": { "verbs": ["Turn on", "Turn off"] }, "zh": { "verbs": ["启用", "停用"] } },
+    { "pair": "quest pause", "keys": ["quests.detail.pause", "quests.detail.resume"], "en": { "verbs": ["Pause", "Resume"] }, "zh": { "verbs": ["暂缓", "恢复"] } },
+    { "pair": "ask pause", "keys": ["asks.record.pause", "asks.record.resume"], "en": { "verbs": ["Pause", "Resume"] }, "zh": { "verbs": ["暂缓", "恢复"] } },
+    { "pair": "repository hold", "keys": ["agents.setup.page.hold", "agents.setup.page.resume"], "en": { "verbs": ["Hold", "Resume"] }, "zh": { "verbs": ["暂停", "恢复"] } },
+    { "pair": "pin", "keys": ["harness.pin.action", "harness.pin.unpin"], "en": { "verbs": ["Pin", "Unpin"] }, "zh": { "verbs": ["固定", "取消固定"] } },
+    { "pair": "fold", "keys": ["projects.list.fold", "projects.list.unfold"], "en": { "verbs": ["Fold", "Unfold"] }, "zh": { "verbs": ["收起", "展开"] } },
+    { "pair": "curve row", "keys": ["harness.curve.add", "harness.curve.remove"], "en": { "verbs": ["Add", "Remove"], "object": "row" }, "zh": { "verbs": ["添加", "移除"], "object": "行" } },
+    { "pair": "wiring", "keys": ["settings.wiring.add", "settings.wiring.remove"], "en": { "verbs": ["Wire", "Unwire"] }, "zh": { "verbs": ["接线", "解除接线"] } }
+  ],
 
   "terms": [
     { "term": "role", "en": "role", "zh": "角色", "means": "A configured position Daoris fills: a working role takes work, with its staffing, its ordered choices of agent, model and effort, 工作角色 where that must be said; an appointed role holds acts the owner appoints it to (D208, D209), 任命的角色 where that must be said. The Agents place's Roles mode holds both (COMPANYVIEW1b). *Actor* is a code name for a working role's staffing and a stored shape's word (`actor.chose`, `ActorChoice`), never a word on the window or in the room.", "why": "One concept in two shapes takes one word on the page, which the page already says for a working role; 职务 would show one record under two Chinese words on two screens, and 职责 is what a role is charged with, not the role (FOUNDATION1, D212). The window and the room say role in every word, verb, route and key (D228), so *actor* is a word they never say.", "match": "\\broles?\\b", "avoid": { "en": ["actor", "actors"], "zh": ["职务", "岗位", "演员", "人设", "执行者", "职责"] } },

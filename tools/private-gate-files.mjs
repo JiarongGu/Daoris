@@ -6,24 +6,22 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { writeAtomic } from './fsx.mjs';
 
-/** The local sibling builds' props: their feed paths are absolute, the main checkout's, so a tree restores the same versions. */
-const SIBLING_PROPS = ['local/lyntai-local.props', 'local/shenora-local.props'];
-
 /**
- * The private files a gate reads under `local/`, as the declaration names them: today the sensitive scan's
- * patterns file (`sensitive.patternsFile`, the devkit's default where undeclared), and the sibling builds' props. A path not
- * under `local/` is not one of these (a tracked file is in the tree already), and none may climb out of it.
+ * The private files a tree is handed, read as the driver's `TreeLocalInputs.Declared` reads them: `localInputs` in order, then
+ * `sensitive.patternsFile` (the devkit's default where undeclared), each once. Only paths under `local/`, none climbing out.
  */
 export function privateGateFiles(checkout) {
-  let declared = 'local/sensitive-patterns.txt';
+  let declared = [];
+  let patterns = 'local/sensitive-patterns.txt';
   try {
     const parsed = JSON.parse(readFileSync(join(checkout, 'daoris.gates.json'), 'utf8'));
-    if (typeof parsed?.sensitive?.patternsFile === 'string') declared = parsed.sensitive.patternsFile;
+    if (Array.isArray(parsed?.localInputs)) declared = parsed.localInputs.filter((each) => typeof each === 'string' && each.length > 0);
+    if (typeof parsed?.sensitive?.patternsFile === 'string' && parsed.sensitive.patternsFile.length > 0) patterns = parsed.sensitive.patternsFile;
   } catch {
     // No readable declaration: the plan's own reading refuses it, with its reason.
   }
-  const path = declared.replace(/\\/g, '/');
-  return path.startsWith('local/') && !path.split('/').includes('..') ? [path, ...SIBLING_PROPS] : [...SIBLING_PROPS];
+  const paths = [...declared, patterns].map((each) => each.replace(/\\/g, '/')).filter((path) => path.startsWith('local/') && !path.split('/').includes('..'));
+  return [...new Set(paths)];
 }
 
 /** A digest of what the tree at `tree` holds of each private file a gate reads, `missing` where absent: a replay's key holds it. */

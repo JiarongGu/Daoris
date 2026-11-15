@@ -366,7 +366,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
     run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
-    gates' declared `regenerate`, never the `treeBaseline`), again only where those keys or the declared commands moved; a
+    gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
     preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 

@@ -26,7 +26,7 @@ namespace Daoris.Driver;
 /// the usage among them.</para>
 /// </remarks>
 [CommandGroup("session", "list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword",
-    "start-from", "hand-over", "helper", "pass", "partner", "handback", "opinion", "supervise", "at-work", Nested = ["opinion: ask show stop anyway myself"])]
+    "start-from", "hand-over", "helper", "pass", "partner", "handback", "opinion", "supervise", "at-work", "option", Nested = ["opinion: ask show stop anyway myself"])]
 public static class SessionsCommand
 {
     public const string Usage =
@@ -36,7 +36,7 @@ public static class SessionsCommand
                daoris session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>
                daoris session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
                daoris session take-back <id> [<word>]  ·  session reword <id> <word> "…"
-               daoris session start-from <id>
+               daoris session start-from <id>  ·  session option <id> <option> <value>
                daoris session hand-over <id> [--agent <adapter> [--account <name>]]
                daoris session hand-over <id> --approve|--decline
                daoris session helper <id> "<question>" [--agent <name>] [--after <ask>] [--to-me]
@@ -102,6 +102,7 @@ public static class SessionsCommand
                 SessionsPresses.Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "at-work" => await AtWorkVerb.RunAsync(world, ask, output, ct).ConfigureAwait(false),
+            "option" => await SessionsOption.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
             // A file for the look to act on, written the same with or without a running Daoris.
             "partner-discard" => await SessionsPartnerCommand.ActAsync(world, ask.Ids[0], PartnerPersonActs.Discard, output).ConfigureAwait(false),

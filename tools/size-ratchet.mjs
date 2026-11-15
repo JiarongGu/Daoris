@@ -12,7 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
+import { execGit, isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 
 /** The budget a source file is held under, in bytes with LF endings. */
 export const BUDGET = 40 * 1024;
@@ -34,15 +34,16 @@ export function scanSizes(root, { files = repositoryFiles(root), read = (path) =
   return Object.fromEntries(Object.entries(over).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-/** The breaches of `list` (path -> bytes) against `found` (the same, from the tree). */
-export function checkSizes(found, list) {
+/** The breaches of `list` (path -> bytes) against `found` (the same, from the tree), no file past its size in `base` (main's list) where given. */
+export function checkSizes(found, list, base = null) {
   const problems = [];
   for (const [path, size] of Object.entries(found)) {
     const listed = list[path];
-    if (listed === undefined) {
+    const limit = base ? base[path] : listed;
+    if (listed === undefined || limit === undefined) {
       problems.push(`${path} is ${size} bytes, over the ${BUDGET}-byte budget: put the new behaviour in a unit of its own`);
-    } else if (size > listed) {
-      problems.push(`${path} grew from ${listed} to ${size} bytes: a file over the budget does not grow, so move the new behaviour into a unit of its own`);
+    } else if (size > limit) {
+      problems.push(`${path} grew from ${limit} to ${size} bytes: a file over the budget does not grow, so move the new behaviour into a unit of its own`);
     } else if (size < listed) {
       problems.push(`${path} shrank from ${listed} to ${size} bytes: write the list again (node tools/size-ratchet.mjs --write) so it holds the new size`);
     }
@@ -51,6 +52,13 @@ export function checkSizes(found, list) {
     if (found[path] === undefined) problems.push(`${path} is under the budget now or gone: write the list again (node tools/size-ratchet.mjs --write)`);
   }
   return problems;
+}
+
+/** The list as main holds it at the merge-base. */
+export function baseList(root) {
+  const git = (args) => execGit(args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const base = git(['merge-base', 'main', 'HEAD']).trim();
+  return JSON.parse(git(['show', `${base}:tools/size-ratchet.json`]));
 }
 
 function main() {
@@ -63,7 +71,7 @@ function main() {
       console.log(`size-ratchet: wrote ${Object.keys(found).length} files over the budget to tools/size-ratchet.json`);
       return 0;
     }
-    const problems = checkSizes(found, JSON.parse(readFileSync(listFile, 'utf8')));
+    const problems = checkSizes(found, JSON.parse(readFileSync(listFile, 'utf8')), baseList(root));
     for (const p of problems) console.error(`size-ratchet: ${p}`);
     if (problems.length) return 1;
     console.log(`size-ratchet: clean (${Object.keys(found).length} files over the budget, none grown)`);

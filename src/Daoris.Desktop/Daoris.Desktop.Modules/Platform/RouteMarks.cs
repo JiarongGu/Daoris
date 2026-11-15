@@ -7,11 +7,11 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What a route's marks tell the pipe, read once at start: its class (<see cref="Rule"/>, a whole class or a look and a press
 /// told apart by a field), what an update's drain does with it, what it marks <c>owner-set</c>, why its setting is never
-/// <c>already</c>, and for a person's press what it rests on and the values its card's sentence names.
+/// <c>already</c>, for a person's press what it rests on and the values its card's sentence names, and why no verb writes it.
 /// </summary>
 public sealed record RouteMark(
     string Module, string Route, PipeRule Rule, PipeDrain? Drain, OwnerTarget? Owner, string? NotAlready, PipeGroundRow? Grounds,
-    IReadOnlyList<PipeWord>? Words)
+    IReadOnlyList<PipeWord>? Words, string? NoTwin = null)
 {
     /// <summary>Whether a form of it is <paramref name="class"/>.</summary>
     public bool Takes(params PipeClass[] @class) => @class.Contains(Rule.Class) || @class.Contains(Rule.Otherwise);
@@ -40,9 +40,11 @@ public static class RouteMarks
         var grounds = member.GetCustomAttributes<RouteGroundAttribute>().ToList();
         var timeless = member.GetCustomAttributes<TimelessAttribute>().ToList();
         var says = member.GetCustomAttributes<SaysAttribute>().ToList();
+        var noTwin = member.GetCustomAttributes<NoTwinAttribute>().ToList();
         var answered = routes.Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
         if (classedBy.Select(each => each.Route).Concat(owners.Select(each => each.Route)).Concat(notAlready.Select(each => each.Route))
                 .Concat(grounds.Select(each => each.Route)).Concat(timeless.Select(each => each.Route)).Concat(says.Select(each => each.Route))
+                .Concat(noTwin.Select(each => each.Route))
                 .FirstOrDefault(route => !answered.Contains(route)) is { } stray)
         {
             throw new InvalidOperationException($"{where} marks `{stray}` for the pipe, and answers no such route.");
@@ -57,7 +59,13 @@ public static class RouteMarks
             var mark = new RouteMark(module, route, rule, drain, Owner(owners.Where(each => each.Route == route).ToList(), where, route),
                 notAlready.SingleOrDefault(each => each.Route == route)?.Why,
                 Row([.. grounds.Where(each => each.Route == route).SelectMany(each => each.Grounds())], timeless.SingleOrDefault(each => each.Route == route), where, route),
-                says.SingleOrDefault(each => each.Route == route)?.Words().ToList());
+                says.SingleOrDefault(each => each.Route == route)?.Words().ToList(),
+                noTwin.SingleOrDefault(each => each.Route == route)?.Why);
+            if (mark.NoTwin is not null && !mark.Takes(PipeClass.Person))
+            {
+                throw new InvalidOperationException($"{where} says why no verb writes `{route}`, and it is no person's press.");
+            }
+
             if (mark.Takes(PipeClass.Person) != (mark.Grounds is not null))
             {
                 throw new InvalidOperationException(mark.Grounds is not null

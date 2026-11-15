@@ -368,6 +368,11 @@ describe('a malformed glossary', () => {
 
 describe('the real glossary and catalogues', () => {
   const { glossary, en, zh } = load();
+  const scans = new Map<boolean, ReturnType<typeof check>>();
+  const scanned = (all = false) => {
+    if (!scans.has(all)) scans.set(all, all ? check(glossary, en, zh, { all: true }) : check(glossary, en, zh));
+    return scans.get(all)!;
+  };
 
   it('read without a problem', () => {
     expect(validate(glossary, en, zh)).toEqual([]);
@@ -378,7 +383,7 @@ describe('the real glossary and catalogues', () => {
  * translated, a door had a third name, and a heading named another act than the press under it.
  */
   it("name the owner's examples as approved, and the check finds nothing in them", () => {
-    const found = check(glossary, en, zh);
+    const found = scanned();
     const approved: Record<string, [string, string]> = {
       'settings.domain.ai': ['AI features', 'AI 功能'],
       // Agents left Settings for a place of its own, keeping its approved name; *Agent settings* went with its domain.
@@ -405,7 +410,7 @@ describe('the real glossary and catalogues', () => {
     const lane = glossary.terms.find((term) => term.term === 'lane');
     expect([lane?.en, lane?.zh]).toEqual(['lane', '泳道']);
     expect(kindOf(glossary)('quests.detail.lanes')).toBe('field');
-    const found = check(glossary, en, zh, { all: true });
+    const found = scanned(true);
     for (const key of ['quests.detail.lanes', 'quests.card.lanes', 'quests.card.lanes_other', 'quests.card.lanesHint']) {
       expect(zh[key], key).toMatch(/泳道/);
       expect(rules(found, key), key).toEqual([]);
@@ -432,7 +437,7 @@ describe('the real glossary and catalogues', () => {
     for (const [key, [english, chinese]] of Object.entries(named)) expect([en[key], zh[key]], key).toEqual([english, chinese]);
     expect(zh['plugin.enabled']).toMatch(/^\{\{id\}\} 已启用。/);
     expect(zh['plugin.disabled']).toMatch(/^\{\{id\}\} 已停用。/);
-    const found = check(glossary, en, zh, { all: true });
+    const found = scanned(true);
     for (const key of [...Object.keys(named), 'plugin.enabled', 'plugin.disabled']) {
       expect(rules(found, key).filter((rule) => !rule.startsWith('budget')), key).toEqual([]);
     }
@@ -456,7 +461,7 @@ describe('the real glossary and catalogues', () => {
   });
 
   it('leave on the report only the budget judgements the window must make', () => {
-    const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
+    const left = scanned().filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
     expect(left).toEqual(BUDGET_LEFT);
   });
 
@@ -466,7 +471,7 @@ describe('the real glossary and catalogues', () => {
  * gate: a character count estimates a width, and the window is where a width is a fact.
  */
   it('find no glossary, form or door finding, so --strict passes, while the budgets still report', () => {
-    const found = check(glossary, en, zh);
+    const found = scanned();
     expect(found.filter((finding) => finding.rule !== 'budget' && finding.rule !== 'reword').map(({ key, rule, language }) => `${key} ${rule}:${language}`))
       .toEqual([]);
     expect(report(found)).toMatch(/budget/);
@@ -492,7 +497,7 @@ describe('the real glossary and catalogues', () => {
       .filter((finding) => finding.rule === 'glossary' && finding.language === 'zh')
       .map(({ key }) => key).filter((key) => [...labels, sentence].includes(key)).sort();
     expect(found).toEqual([...labels, sentence].sort());
-    expect(check(glossary, en, zh, { all: true }).filter((finding) => [...labels, sentence].includes(finding.key))).toEqual([]);
+    expect(scanned(true).filter((finding) => [...labels, sentence].includes(finding.key))).toEqual([]);
   });
 
   /**
@@ -562,7 +567,7 @@ describe('the real glossary and catalogues', () => {
       const unsaid = ['打开设置', '搁置', '委任', '范围', '关卡', '检查', '关口', '交付', '当前', '回到前面的步骤'];
       const held = new Set(glossary.terms.flatMap((term) => term.avoid.zh));
       expect(unsaid.filter((word) => !held.has(word))).toEqual([]);
-      const wording = check(glossary, en, zh, { all: true })
+      const wording = scanned(true)
         .filter((finding) => finding.rule === 'glossary' && finding.language === 'zh' && unsaid.some((word) => finding.message.startsWith(`says ${word} for`)));
       expect(wording).toEqual([]);
 
@@ -608,7 +613,7 @@ describe('the real glossary and catalogues', () => {
         'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已交接',
         'Find a pending release | 查找待发版本', 'Record the release | 记录发版', 'Copy to its registry | 复制到它的登记目录',
       ]));
-      expect(check(glossary, en, zh).filter((finding) => finding.rule === 'distinct')).toEqual([]);
+      expect(scanned().filter((finding) => finding.rule === 'distinct')).toEqual([]);
     });
 
     it('fails --strict on a planted name that holds another kind\'s, in either language', () => {
@@ -627,7 +632,7 @@ describe('the real glossary and catalogues', () => {
       // A step whose English is a delivery's whole name.
       expect(keys(plant({ en: 'A pull request', zh: '一步' }))).toEqual(['distinct:delivery:A pull request en', 'distinct:step:A pull request en']);
       expect(verdict(check(plant({ en: 'Plain', zh: '拉取请求' }), en, zh), { strict: true })).toBe(1);
-      expect(verdict(check(glossary, en, zh), { strict: true })).toBe(0);
+      expect(verdict(scanned(), { strict: true })).toBe(0);
     });
   });
 
@@ -645,7 +650,7 @@ describe('the real glossary and catalogues', () => {
  * helper is its own term, so a note that says it and git's credential helper are no stray word for Ask Daoris.
  */
   it("say in sentences only what the audit found to be another thing's word", () => {
-    const stray = check(glossary, en, zh, { all: true })
+    const stray = scanned(true)
       .filter((finding) => finding.rule === 'glossary' && finding.kind === 'sentence')
       .map(({ key, language }) => `${key}:${language}`).sort();
     expect(stray).toEqual(STRAY_AUDITED);
