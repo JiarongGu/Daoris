@@ -152,7 +152,7 @@ finishes first and the whole set runs once.
     case is held against it section by section, the sentence that makes a section differ asserted and every other section equal.
     (from TESTDIET1)
 21. The development cycle keeps main green and the install current within the hour: a builder runs `node tools/worktree-setup.mjs`
-    first (the main checkout's `local/*.props` copied as files, never linked; dependencies from the lockfiles through
+    first (what the main checkout's `daoris.gates.json` declares, its `localInputs` and the sensitive-patterns file, and nothing else under `local/`, copied as files, never linked, by `tools/private-gate-files.mjs`, the one reading the merge's gate tree and the driver's `TreeLocalInputs` share; dependencies from the lockfiles through
     `tools/merge-branch/dependencies.mjs`, shared with the gate tree; the merge drivers, the index, each gate's declared `regenerate`
     command and the restore primed; then the declared `treeBaseline` run, `node tools/quick.mjs --record-base`, which records the
     tree's base verdicts, a red base being no failure of the setup). A session's tree is handed without it, its session told the
