@@ -7,11 +7,8 @@ import { dirname, join } from 'node:path';
 import { writeAtomic } from './fsx.mjs';
 
 /**
- * The private files a tree is handed from the main checkout, as the declaration names them, read as the driver's
- * `TreeLocalInputs.Declared` reads it: `localInputs` in order (the sibling builds' props, whose feed paths are absolute, the
- * main checkout's), then `sensitive.patternsFile` (the devkit's default where undeclared), each once. A path not under `local/`
- * is not one of these (a tracked file is in the tree already), and none may climb out of it. A builder's worktree, the
- * merge's gate tree and a session's tree all take these and nothing else.
+ * The private files a tree is handed, read as the driver's `TreeLocalInputs.Declared` reads them: `localInputs` in order, then
+ * `sensitive.patternsFile` (the devkit's default where undeclared), each once. Only paths under `local/`, none climbing out.
  */
 export function privateGateFiles(checkout) {
   let declared = [];
