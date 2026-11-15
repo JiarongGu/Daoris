@@ -7,7 +7,7 @@
   "settings.wiring.keyBody": "密钥由部署自己的控制台签发，一人一机一份。它只存入本机文件，不纳入版本库，不回显，也不会送往那个部署之外的任何地方。",
   "settings.wiring.keyTip": "密钥的审计前缀——与部署自己的密钥列表所示相同",
   "settings.wiring.add": "接线",
-  "settings.wiring.remove": "断开",
+  "settings.wiring.remove": "解除接线",
   "settings.wiring.wired": "{{workspace}} 已在本机接线。",
   "settings.wiring.unwired": "{{workspace}} 从此不再向外同步。部署那边什么都没变。",
   "settings.wiring.wiredButOverridden": "{{workspace}} 已写入映射——但本机的远端由环境变量指定，文件并非当前生效的那份。取消该环境变量后，刚才接的线才会生效。"
