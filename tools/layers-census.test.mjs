@@ -9,6 +9,8 @@ import {
   scanProcesses,
 } from './layers-census.mjs';
 import { clockSites } from './layers-census/clock.mjs';
+import { gitSites } from './layers-census/git.mjs';
+import { processSites } from './layers-census/processes.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -221,6 +223,17 @@ test('LAYERSRED2: an over-budget test is a finding only if its class, measured a
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('D294: a Process class\'s real waits, starts and git are not counted, and its reads of now still are', () => {
+  const marked = '[Trait(Category.Name, Category.Process)]\npublic sealed class A {\n';
+  const body = 'await Task.Delay(500);\nThread.Sleep(5);\nvar p = Process.Start(x);\nvar g = ".git";\nvar n = DateTimeOffset.UtcNow;\n}';
+  assert.equal(clockSites(`${marked}${body}`), 1);
+  assert.equal(clockSites(`public sealed class A {\n${body}`), 3);
+  assert.equal(processSites(`${marked}${body}`), 0);
+  assert.equal(processSites(`public sealed class A {\n${body}`), 1);
+  assert.equal(gitSites(`${marked}${body}`), 0);
+  assert.equal(gitSites(`public sealed class A {\n${body}`), 1);
 });
 
 test('LAYERS1: no duration records is a clean run that says so', () => {
