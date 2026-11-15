@@ -23,6 +23,7 @@ import { readHome, missing } from './dev-metrics/records.mjs';
 import { sessionLinks, caseScope, askOf } from './dev-metrics/scope.mjs';
 import { lifecycleRows } from './dev-metrics/lifecycle.mjs';
 import { landingsMode } from './dev-metrics/landings-mode.mjs';
+import { familiesMode } from './dev-metrics/families-mode.mjs';
 import { startupMode } from './dev-metrics/startup-mode.mjs';
 import { workflowRows, personQueue } from './dev-metrics/workflow.mjs';
 import { communicationRows } from './dev-metrics/communication.mjs';
@@ -435,6 +436,7 @@ export function renderBuilders(rows) {
 async function main() {
   const o = parse(process.argv.slice(2));
   if (o.landings) return landingsMode(o);
+  if (o.families) return familiesMode(o);
   if (o.startup) return startupMode(o);
   if (o.transcripts) {
     if (!o.ids || !existsSync(o.transcripts)) { console.error('dev-metrics: --transcripts <dir> needs --ids <a,b,...>'); return 2; }

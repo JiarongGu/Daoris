@@ -5,6 +5,7 @@ export function parse(argv) {
     const flag = argv[i];
     if (flag === '--json') { options.json = true; continue; }
     if (flag === '--landings') { options.landings = true; continue; }
+    if (flag === '--families') { options.families = true; continue; }
     if (flag === '--startup') { options.startup = true; continue; }
     if (flag === '--plan') { options.plan = true; continue; }
     const name = flag.replace(/^--/, '');
