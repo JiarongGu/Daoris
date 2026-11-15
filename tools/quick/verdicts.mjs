@@ -1,6 +1,6 @@
 /**
- * The verdicts of quick steps, kept under `local/` (git ignores it): the last run's, and the base's (`node tools/quick.mjs
- * --record-base`, run as the tree is prepared, before it is changed). A later run reads which of its reds the base stood in.
+ * The verdicts of quick steps, kept under `local/` (git ignores it): the last run's, and the base's (main at the merge base with
+ * main, `tools/quick/base.mjs`). A run reads which of its reds the base stood in.
  */
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
