@@ -33,7 +33,7 @@ export function planOf(models = MODELS) {
   return models.flatMap(model => VARIANTS.map(variant => ({ model, variant: variant.id })));
 }
 
-/** One headless run's JSON result to the first turn's input: what was sent as new, written to the cache, read from it. */
+/** One headless run's JSON result to the first turn's input: sent new, written to the cache, read from it. */
 export function usageOf(text) {
   let result;
   try { result = JSON.parse(text); } catch { return null; }

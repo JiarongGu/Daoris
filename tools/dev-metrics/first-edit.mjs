@@ -7,7 +7,7 @@ const lengthOf = content => typeof content === 'string'
   ? Buffer.byteLength(content)
   : Array.isArray(content) ? content.reduce((n, part) => n + Buffer.byteLength(typeof part?.text === 'string' ? part.text : ''), 0) : 0;
 
-/** The bytes every tool result returned before the first edit of the work, in all and by the class of what was read, and its timestamp: null where no edit came. */
+/** The bytes every tool result returned before the first edit of the work, in all and by the class of the file read, and its timestamp: null where no edit came. */
 export function preEditContext(lines) {
   let bytes = 0;
   let libraryReads = 0;

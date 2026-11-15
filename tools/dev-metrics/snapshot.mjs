@@ -15,7 +15,6 @@ export function writeLandingsSnapshot(measures, { directory = 'docs/metrics', da
   return file;
 }
 
-/** A window's figures as the dated receipt `<date>-<name>.json`: counts and statistics only, no branch names of the person's. */
 export function writeLandingsReceipt(measures, name, { directory = 'docs/metrics', date = new Date().toISOString().slice(0, 10), since = null, before = null } = {}) {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('--receipt needs a lowercase name of letters, digits and dashes');
   const { withoutBuilder, ...rest } = measures;

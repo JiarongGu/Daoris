@@ -39,7 +39,7 @@ export function readLandings(home, { since } = {}) {
     .filter(r => !since || r.at.slice(0, 10) >= since);
 }
 
-/** A schema-1 record has no classes: its builder's transcript, where it still stands, gives them; otherwise the record is as it was written. */
+/** A schema-1 record has no classes: its builder's transcript, where it stands, gives them. */
 function reread(record, home, options) {
   if (record.schema !== 1 || !record.builder || record.builder.preEditBytes === null) return record;
   const built = builderOf(record.branch, home, options);
@@ -65,7 +65,6 @@ const median = values => {
 };
 const spread = values => ({ mean: mean(values), median: median(values) });
 
-/** Mean and median bytes read before the first edit, per class, and the count of library reads, over the records that carry classes (schema 2). */
 function byClassOf(edited) {
   const classed = edited.filter(r => r.builder.preEditByClass);
   if (!classed.length) return missing('no landing in the range has a transcript read by class');

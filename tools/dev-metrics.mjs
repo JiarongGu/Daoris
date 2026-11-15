@@ -4,8 +4,6 @@
  *
  *   node tools/dev-metrics.mjs --home <data> --logs <logs> --since YYYY-MM-DD --until YYYY-MM-DD
  *        [--service <url> | --quests <file>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--case <ask-or-quest-ids>] [--json]
- *   node tools/dev-metrics.mjs --landings [--since D] [--receipt <name>] [--repo <checkout>] [--json]
- *   node tools/dev-metrics.mjs --startup [--plan] [--models a,b] [--repo <checkout>] [--json]
  *   node tools/dev-metrics.mjs --transcripts <subagents dir> --ids <a,b,...> [--json]
  *
  * `--home` is an install's `data` folder, `--logs` its `logs` folder. A quest's record comes from the running
