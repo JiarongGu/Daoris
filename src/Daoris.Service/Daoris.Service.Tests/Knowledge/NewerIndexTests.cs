@@ -86,8 +86,7 @@ public sealed class NewerIndexTests : IDisposable
     /// <summary>
     /// The whole composition, as each host opens it: it starts, and what is not derived works as it does over an index
     /// of this build's own. Each operation on the index refuses, the index's tables and the fed commit stay as they were,
-    /// and nothing forgets which commit the index holds (nothing is rebuilt). Three starts over one real store file are what it
-    /// proves, so it is Process.
+    /// and nothing forgets which commit the index holds (nothing is rebuilt).
     /// </summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
@@ -263,7 +262,7 @@ public sealed class NewerIndexTests : IDisposable
     /// <summary>
     /// The connector a session's harness starts, as it starts it: over a newer index the real executable starts and
     /// stays up, says the refusal once on its standard error with the folder it runs from, and writes it once to its
-    /// machine log as <c>index.refused</c>, by the two versions and never a path. The real executable is what it proves, so it is Process.
+    /// machine log as <c>index.refused</c>, by the two versions and never a path.
     /// </summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]

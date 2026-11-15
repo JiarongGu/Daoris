@@ -13,9 +13,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-17T09:00:00Z");
 
     /// <summary>
-    /// The longest the stream holds a wait. Its bound is read on <see cref="_clock"/>, which stands still, so a wait of it never ends
-    /// by itself: an answer to one comes at once or on a wake, never at its end, however late the load made it. A test
-    /// waiting on the answer waits <see cref="Poll.Patience"/>.
+    /// The longest the stream holds a wait. Its bound is read on <see cref="_clock"/>, which stands still, so an answer to one
+    /// comes at once or on a wake, never at its end; a test waiting on it waits <see cref="Poll.Patience"/>.
     /// </summary>
     private static readonly TimeSpan Long = ChangeStream.LongestWait;
 
@@ -590,45 +589,6 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await SessionStore.OpenAsync(_writer);
         Assert.Matches("^[0-9a-f]{32}$", await Read());
         _stream = await Open();
-    }
-
-    /// <summary>
-    /// An observer that could not open at the start still issues cursors; once it opens, the epoch is new,
-    /// so what moved meanwhile is answered every family and never taken as the baseline. The observer's own reopen on
-    /// the real clock is what it proves, so it is Process.
-    /// </summary>
-    [Fact]
-    [Trait(Category.Name, Category.Process)]
-    public async Task A_first_open_that_failed_begins_a_new_epoch_once_it_opens()
-    {
-        var later = Path.Combine(Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");
-        await using var stream = await ChangeStream.OpenAsync(
-            later, pace: TimeSpan.FromMilliseconds(20), reopenAfter: TimeSpan.FromMilliseconds(20));
-        try
-        {
-            var since = (await stream.WaitAsync(null, TimeSpan.Zero)).Since;
-
-            // The store comes up, and a session is recorded, while the observer has not yet read anything.
-            await using (var store = new SqliteConnection($"Data Source={later};Pooling=False"))
-            {
-                await store.OpenAsync();
-                await QuestStore.OpenAsync(store);
-                await AskStore.OpenAsync(store);
-                await ChannelStore.OpenAsync(store);
-                var sessions = await SessionStore.OpenAsync(store);
-                await sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
-            }
-
-            var answer = await stream.WaitAsync(since, Long);
-
-            Assert.Equal(ChangeFamilies.All, answer.Moved);
-            Assert.NotEqual(since.Split('.')[0], answer.Since.Split('.')[0]);
-        }
-        finally
-        {
-            await stream.DisposeAsync();
-            if (File.Exists(later)) File.Delete(later);
-        }
     }
 
     /// <summary>

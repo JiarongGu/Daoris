@@ -351,8 +351,7 @@ public sealed class ManagedRegistryTests : IAsyncLifetime
 /// Back-compat with no silent magic. The scan is gone as an authority, so a machine that has been
 /// running on `DAORIS_KNOWLEDGE_ROOT` would otherwise come up to an empty family — and an empty family
 /// after an upgrade is indistinguishable from a broken one. It runs ONCE, marked in the store, because
-/// the second run would resurrect every repository the person deliberately retired. Each test composes the whole service over a
-/// real store file and real checkouts, which is what it proves, so the class is Process.
+/// the second run would resurrect every repository the person deliberately retired.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class FirstRunImportTests : IDisposable

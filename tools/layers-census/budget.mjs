@@ -36,10 +36,7 @@ export function readRecords(dir) {
     }));
 }
 
-/**
- * The latest run of each unit-tier test across `records`, by `Class.test`, with the gate that ran it. The records pile up (a gate
- * per run of a branch, a loaded machine's among them), so a test is judged by the newest run of it, not the worst run ever kept.
- */
+/** The newest run of each unit-tier test across `records`, by `Class.test`, with the gate that ran it: not the worst run ever kept. */
 export function latestRuns(records) {
   const found = new Map();
   for (const record of records.filter((each) => each.tier === 'unit')) {
