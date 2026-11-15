@@ -1,32 +1,31 @@
 {
   "schema": 2,
-  "why":"The development workflow of this repository, in the session lifecycle's shape: the work is checked after its content holds, a red goes back to the work, and the second opinion and the person's look come before it merges.",
+  "why":"The development workflow of this repository, in the session lifecycle's shape: each session works apart in its own tree on its own branch, the work is checked after its content holds, a red goes back to the work, and a second opinion from another agent comes before it merges. The person's own look is opt-in, never a default step.",
   "graph": {
     "schemaVersion": 2,
-    "entries": ["work"],
+    "entries": ["apart"],
     "end": "line",
     "nodes": [
+      { "id": "apart", "kind": "isolate", "version": 1, "reach": "observed", "options": { "kind": "worktree" } },
       { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
       { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
       { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
       { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
-      { "id": "look", "kind": "look", "version": 1, "reach": "observed" },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
       { "id": "tree", "kind": "release", "version": 1, "reach": "performed" }
     ],
     "wires": [
+      { "id": "apart>work", "kind": "after", "from": "apart", "to": "work" },
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
       { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
       { "id": "i", "kind": "after", "from": "holds", "to": "content" },
       { "id": "ck", "kind": "after", "from": "content", "to": "check" },
       { "id": "cb", "kind": "back", "from": "check", "on": "failed", "to": "work" },
       { "id": "o", "kind": "after", "from": "check", "to": "opinion" },
-      { "id": "l", "kind": "after", "from": "opinion", "to": "look" },
       { "id": "ol", "kind": "after", "from": "opinion", "to": "landing" },
-      { "id": "ll", "kind": "after", "from": "look", "to": "landing" },
       { "id": "c", "kind": "after", "from": "landing", "to": "line" },
       { "id": "r", "kind": "after", "from": "line", "to": "tree" }
     ]

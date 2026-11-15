@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
+import { INSTALL_DATA, INSTALL_MARKER, homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { parse } from './dev-metrics/options.mjs';
 import { MIN_SAMPLES, familyOf, rankFamilies, readOpinions, summarizeFamilies, tokensBySession } from './dev-metrics/families.mjs';
 
@@ -29,16 +30,17 @@ function opinionRow({ id, door, session, pass = 'first', n = 0, findings = 0, ha
 }
 
 function homeWith(name, rows, turns = []) {
-  const home = join(root, name);
-  mkdirSync(join(home, 'data'), { recursive: true });
-  write(join(home, 'INSTALLED.md'), 'a marker');
-  const db = new DatabaseSync(join(home, 'data', 'knowledge.db'));
+  const install = join(root, name);
+  const data = join(install, INSTALL_DATA);
+  mkdirSync(data, { recursive: true });
+  write(join(install, INSTALL_MARKER), 'a marker');
+  const db = new DatabaseSync(homeEntry(data, 'knowledge'));
   db.exec('CREATE TABLE opinions (id TEXT PRIMARY KEY, repository TEXT, working TEXT, session TEXT, occasion TEXT, pass TEXT, rechecks TEXT, asked TEXT, asking TEXT, given TEXT, handed_to TEXT, handed_word TEXT, handed_at TEXT, answers TEXT)');
   const insert = db.prepare('INSERT INTO opinions (id, repository, working, session, occasion, pass, asked, asking, given, handed_to, answers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   for (const r of rows) insert.run(r.id, 'r', 'w', r.session, 'landing', r.pass, r.asked, r.asking, r.given, r.handed, r.answers);
   db.close();
-  if (turns.length) write(join(home, 'data', 'usage-history', 'turns-2026-11.jsonl'), jl(turns));
-  return join(home, 'data');
+  if (turns.length) write(join(homeEntry(data, 'usage-history'), 'turns-2026-11.jsonl'), jl(turns));
+  return data;
 }
 
 test('a door, model or product names its family, and an unknown one names none', () => {
