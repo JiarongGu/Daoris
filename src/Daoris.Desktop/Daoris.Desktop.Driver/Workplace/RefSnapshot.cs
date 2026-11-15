@@ -142,7 +142,7 @@ internal sealed class RefSnapshot
     internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
     {
         return await MachinePorts.Repository.RefFactsAsync(root, ct).ConfigureAwait(false) is { } facts
-            ? string.Join('\n', facts.Select(each => $"{each.Name} {each.Object} {each.Type} {each.Upstream} {each.UpstreamShort} {each.Tree}"))
+            ? string.Concat(facts.Select(each => $"{each.Name} {each.Object} {each.Type} {each.Upstream} {each.UpstreamShort} {each.Tree}\n"))
             : null;
     }
 
