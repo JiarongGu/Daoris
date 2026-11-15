@@ -68,10 +68,11 @@ public sealed class LandPerformer(
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         var record = LandSessions.Of(start, records);
-        if (record is null) return null;
+        if (record is null) return Quiet(start, LandWaits.NoSession);
         var entry = EntryOf(record.Id, record.Quest!, start, record.Tree!);
-        if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
+        if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null) ?? Quiet(start, LandWaits.Partner);
         var (said, choice) = await JudgeAsync(entry, fresh, new Records(fresh), start, ct).ConfigureAwait(false);
+        if (said is not null || choice is not null) LandWaits.Tried(home, start.Unit, start.Node);
         if (choice is null) return said;
         var landed = await LandOneAsync(choice, fresh, ct).ConfigureAwait(false);
         // A repair outlives nothing that ended the landing: a landing or a refusal spends it.
@@ -133,7 +134,7 @@ public sealed class LandPerformer(
     private async Task<(string? Said, Choice? Choice)> JudgeAsync(
         LandEntry entry, IWorkplaceLandingWorld world, Records looked, LandStart run, CancellationToken ct)
     {
-        if (LandTries.Landed(entry, run.Tip)) return (null, null);
+        if (LandTries.Landed(entry, run.Tip)) return (Quiet(run, LandWaits.Landed), null);
 
         // The review's word stands for the person's Accept, and its carry-on is a repair kept beside it on the run's record.
         var carried = CarriedOf(entry, run);
@@ -148,17 +149,18 @@ public sealed class LandPerformer(
         }
 
         var placed = new LinePlaces(home).Of(entry.Tree);
-        if (placed.Stand == LineStand.CanBeBroughtBack) return (null, null);
+        if (placed.Stand == LineStand.CanBeBroughtBack) return (Quiet(run, LandWaits.Away), null);
         if (placed.GoneForGood) return (Closed(entry, LandingCode.Gone), null);
 
-        // A live session in the tree is using it, and a newer session on it stands for it now: said once, since nothing makes it newest again.
+        // A live session in the tree is using it, but never the run's own part waiting on this landing (LandTreeUse); a newer session on it
+        // stands for it now: said once, since nothing makes it newest again.
         var records = await looked.ReadAsync(ct).ConfigureAwait(false);
         var onTree = records.Where(record => !record.Teammate && record.Tree is { } tree && SameTree(tree, entry.Tree)).ToList();
-        if (onTree.Any(record => record.Live)) return (null, null);
+        if (onTree.Any(record => LandTreeUse.Uses(record, run, entry.Quest))) return (Quiet(run, LandWaits.InUse), null);
         var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
         if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
         {
-            if (entry.Last?.Code == LandingCode.Superseded) return (null, null);
+            if (entry.Last?.Code == LandingCode.Superseded) return (Quiet(run, LandWaits.Superseded), null);
             var standsFor = new TreeLanding(false, $"a newer session, `{newest.Id}`, went on in its tree, which stands for it now.") { Refusal = LandingCode.Superseded };
             return (Tried(entry, LandingCode.Superseded, tip: null, status: null, standsFor), null);
         }
@@ -177,11 +179,14 @@ public sealed class LandPerformer(
         // Held for the person's yes or evidence's verdict, said once; a graph with a `land` judges them as its `quest.holds` step instead.
         if (process.JudgesHolds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
         {
-            return (entry.Last?.Code != LandingCode.Held ? Tried(entry, LandingCode.Held, tip: null, status: null) : null, null);
+            return (entry.Last?.Code != LandingCode.Held ? Tried(entry, LandingCode.Held, tip: null, status: null) : Quiet(run, LandWaits.Held), null);
         }
 
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-        if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false), run.Tip)) return (null, null);
+        if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false), run.Tip))
+        {
+            return (Quiet(run, LandWaits.Unchanged), null);
+        }
 
         if (!string.Equals(tip, run.Tip, StringComparison.OrdinalIgnoreCase))
         {
@@ -199,13 +204,13 @@ public sealed class LandPerformer(
         var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
 
         // The run's own part, kept with no tip and no status, so the next pass reads the gate again whatever the tree does.
-        if (held is { Refusal: LandingCode.Refused }) return (Workflow(entry, held, line), null);
+        if (held is { Refusal: LandingCode.Refused }) return (Workflow(entry, held, line) ?? Quiet(run, LandWaits.Refused), null);
 
         // The second opinion or the review waits, said once and read again at every pass.
         if (held is { Refusal: { } waiting })
         {
             if (waiting == LandingCode.Opinion) Owe(entry, entry.Session, entry.Quest, entry.Tree, since: entry.DueAt);
-            if (entry.Last?.Code == waiting) return (null, null);
+            if (entry.Last?.Code == waiting) return (Quiet(run, LandWaits.Waiting), null);
             var waits = Tried(entry, waiting, tip, status, held);
             if (line is not null) log?.Invoke(line);
             return (waits, null);
@@ -404,6 +409,13 @@ public sealed class LandPerformer(
     private void Ended(TreeLanding end)
     {
         if (_start is { } start) LandOutcomes.Kept(start.Unit, start.Tip, end);
+    }
+
+    /// <summary>A judgement that starts and says nothing: null, its reason written to the machine log once per change (<see cref="LandWaits"/>).</summary>
+    private string? Quiet(LandStart run, string reason)
+    {
+        if (LandWaits.Changed(home, run.Unit, run.Node, reason)) log?.Invoke(LandWaits.Line(run, reason));
+        return null;
     }
 
     private string Closed(LandEntry entry, string code, string? branch = null) =>

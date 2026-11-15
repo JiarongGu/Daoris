@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-15 - A run's `land` and its own waiting session each waited on the other
+
+- **Symptom:** a run's `land` stayed active for hours, its attempt unreconciled, while its session sat in `awaiting-step`; neither moved
+  and the machine log said nothing.
+- **Root cause:** 1c98d747e5 made an agent's done in a workflow's run wait on the run's next step (`awaiting-step`, a live state) instead of
+  ending. The landing's tree guard (`LandPerformer`'s judgement) refused to land while any live session was on the tree, so it waited for
+  the run's own session to end, which ends only with the run, which waited on the landing. The guard's exit returned nothing and wrote nothing.
+- **Fix:** `LandTreeUse` counts a session on the tree as using it unless it is the run's own part (an executor of the run's branch or a
+  session of its quest) waiting on its step; every exit of the land's keeping and judgement that does nothing writes a coded
+  `landing.waits` line once per change of reason (`LandWaits`).
+- **Verification:** `AwaitingStepLandingTests` lands a run whose only session on the tree waits on its step, and keeps a tree another
+  working session holds, said once; `LandTreeUseTests` and `LandKeepWaitsTests` hold the rule and the once-per-reason lines.
+
 ## 2026-11-14 - A failed check reopened work whose quest was done
 
 - **Root cause:** 8ccdbdab0f handed every failed broker verdict to its asking session through the say door, without reading whether its quest was already `Done`.
