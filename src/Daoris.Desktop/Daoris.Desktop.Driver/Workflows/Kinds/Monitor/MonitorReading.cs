@@ -17,7 +17,8 @@ internal static class MonitorReading
         if (read.Unknown) return NodeObserving.Seen(reading, NodeStates.Unknown, read.Said);
         if (read.State is not { } state) return NodeObserving.Seen(reading, null, read.Said);
 
-        var reached = NodeObserving.Reached(reading, NodeSource.Watched, read.Revision, read.Record, read.Artifact, read.Said);
+        var said = NodeObserving.LandingOf(reading.Unit) is { } landing && NothingToDeliver.OnTheLineWords(landing) is { } delivered ? delivered : read.Said;
+        var reached = NodeObserving.ReachedAt(reading, NodeSource.Watched, reading.Binding.SubjectRevision, read.Revision, read.Record, read.Artifact, said);
         return reached with { Acceptance = reached.Acceptance! with { Outcome = state } };
     }
 

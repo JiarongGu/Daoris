@@ -30,11 +30,16 @@ internal static class NothingToDeliver
     {
         if (Empty(unit) is { } empty) return empty;
         if (node.Kind != NodeKinds.Push && PullRequestKind.PluginOf(node.Kind) is null) return null;
-        return NodeObserving.LandingOf(unit) is { } landing && PullRequestReading.OnTheLine(landing) is { } held
+        return NodeObserving.LandingOf(unit) is { } landing ? OnTheLineWords(landing) : null;
+    }
+
+    internal static bool SkipsWhileActive(NodeDeclaration node) => node.Kind == NodeKinds.Push;
+
+    internal static string? OnTheLineWords(LandedBranch landing) =>
+        PullRequestReading.OnTheLine(landing) is { } held
             ? $"nothing left to deliver: `{landing.Branch}` is on `{held.On}` already ({WorkInventory.ProofSaid(held.By, held.On)}), "
                 + "its pull request completed on the platform or the work merged by hand."
             : null;
-    }
 
     /// <summary>Why a landing on <paramref name="unit"/> delivers nothing: no branch made, and its session branch held <c>empty</c>; else null.</summary>
     internal static string? Empty(WorkUnit unit) =>

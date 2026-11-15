@@ -293,6 +293,10 @@ public static class NodeLifecycle
         // A delivery step that failed, its branch then held by the line (its pull request merged another way), has nothing left to
         // deliver: the same path skip (NothingToDeliver), which only that rule makes.
         rows.Add(new(NodeStates.Failed, NodeStates.Skipped, daoris, "a failed delivery step whose branch the line holds: nothing left to deliver (NothingToDeliver)"));
+        foreach (var from in new[] { NodeStates.Active, NodeStates.Unknown })
+        {
+            rows.Add(new(from, NodeStates.Skipped, daoris, "a push whose branch the line holds, its attempt lost or unread: nothing left to deliver (NothingToDeliver)"));
+        }
 
         // An opinion's gate passes its attempt over where nothing is asked of it, as the run reads it; never the person's.
         rows.Add(new(NodeStates.Active, NodeStates.Skipped, authority,
@@ -428,7 +432,7 @@ public static class NodeLifecycle
                 if (move.Source != NodeSource.Path) return Refuse(NodeRefusal.NotAuthority);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
                 if (move.Scope is null) return Refuse(NodeRefusal.NoScope);
-                return To(next with { By = NodeSource.Path, Words = move.Words, Code = null, Needs = null, Transient = false, Scope = move.Scope });
+                return To(next with { By = NodeSource.Path, Words = move.Words, Code = null, Needs = null, Transient = false, Unreconciled = null, Scope = move.Scope });
 
             case NodeStates.Skipped:
                 if (status.State == NodeStates.Failed ? node.Kind != NodeKinds.Request : !authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
