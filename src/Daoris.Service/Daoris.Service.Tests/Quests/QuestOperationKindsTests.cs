@@ -93,7 +93,7 @@ public sealed class QuestOperationKindsTests
         },
         [QuestOperationKind.Waited] = s => Op(QuestOperationKind.Waited, s) with { Note = "fedcbafedcba" },
         [QuestOperationKind.Deleted] = s => Op(QuestOperationKind.Deleted, s),
-        [QuestOperationKind.Accepted] = s => Op(QuestOperationKind.Accepted, s),
+        [QuestOperationKind.Accepted] = s => Op(QuestOperationKind.Accepted, s) with { By = "role:daoris-landing · codex-acp" },
         [QuestOperationKind.Evidenced] = s => Op(QuestOperationKind.Evidenced, s) with
         {
             Evidence = new QuestEvidenceVerdict(Commit, "session-end",
@@ -455,7 +455,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Dismissed] = [nameof(QuestMoveReading.Dismisses)],
         [QuestOperationKind.Waited] = [nameof(QuestMoveReading.WaitsOn)],
         [QuestOperationKind.Deleted] = [],
-        [QuestOperationKind.Accepted] = [],
+        [QuestOperationKind.Accepted] = [nameof(QuestMoveReading.By)],
         [QuestOperationKind.Evidenced] = [nameof(QuestMoveReading.Evidence)],
         [QuestOperationKind.SetUp] = [nameof(QuestMoveReading.SetUp)],
         [QuestOperationKind.Verdict] = [nameof(QuestMoveReading.Verdict)],
@@ -500,7 +500,7 @@ internal static class QuestMovesFields
     [
         nameof(QuestMoveReading.Attempted), nameof(QuestMoveReading.Dismisses), nameof(QuestMoveReading.WaitsOn),
         nameof(QuestMoveReading.Session), nameof(QuestMoveReading.Evidence), nameof(QuestMoveReading.SetUp),
-        nameof(QuestMoveReading.Verdict),
+        nameof(QuestMoveReading.Verdict), nameof(QuestMoveReading.By),
     ];
 
     /// <summary>What every move answers: what it is, when and where it is made, its name, its number, whether it applied, from where, and the hold it left.</summary>
