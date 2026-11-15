@@ -13,13 +13,10 @@ internal sealed class RunEnds(QuestStore quests, SessionStore sessions, SessionA
 {
     /// <summary>
     /// Ends run <paramref name="run"/>: where it came to its graph's end (<c>completed</c>), each of <paramref name="named"/>, its chain's
-    /// quests here in order with the submission each stands on, is closed Done through the close door, under a key no other end shares; then
-    /// each of <paramref name="ended"/> still awaiting a step moves to <paramref name="state"/>. A close refused moves no session.
+    /// quests here in order with the submission each stands on, is closed Done through the close door, under a key no other end shares, each
+    /// of <paramref name="passed"/> (its holds passed over by the person, their yes) accepted first; then each of <paramref name="ended"/>
+    /// still awaiting a step moves to <paramref name="state"/>. A close refused moves no session.
     /// </summary>
-    /// <param name="passed">
-    /// The named quests whose holds the person passed over at the run's own step for them: their yes, kept on each through the one
-    /// accept before the close, so a departure or its evidence the person let through holds the close no longer.
-    /// </param>
     public Task<RunEndOutcome> EndAsync(
         string run, IReadOnlyList<(string Id, QuestOperationRef Submission)> named, IReadOnlyList<string> ended, string state, string? note,
         string? noteParts, DateTimeOffset now, CancellationToken ct, IReadOnlyCollection<string> passed) =>

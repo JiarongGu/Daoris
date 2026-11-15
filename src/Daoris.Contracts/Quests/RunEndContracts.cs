@@ -44,8 +44,7 @@ public sealed record ReopenRunSessions(string Run, IReadOnlyList<string>? Sessio
 /// <summary>What the reopen moved: the sessions now waiting on the run's next step.</summary>
 public sealed record RunReopenResponse(string Message, IReadOnlyList<string> Reopened);
 
-/// <summary>A quest a run's end closes, with the submission (its machine and sequence) it closes on.</summary>
-/// <param name="Passed">Whether the person passed over its holds at the run's step for them, which is their yes to what holds it.</param>
+/// <summary>A quest a run's end closes, with the submission (its machine and sequence) it closes on, and whether the person passed its holds.</summary>
 public sealed record RunEndQuest(string Id, string Machine, long Sequence, bool Passed = false);
 
 /// <summary>What the end writes: the refusal's name where the close is refused, the quests closed and the sessions ended.</summary>

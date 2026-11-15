@@ -71,7 +71,6 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
             _finished.Add(end);
             return Task.FromResult<RunEndResponse?>(new RunEndResponse(null, "ended", [.. end.Quests.Select(quest => quest.Id)], end.Sessions));
         };
-        // The work's session waits on the run, as its note says, and the run's end finds it by that run.
         runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
             [
                 new SessionRecord(Session, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId, "work").Note().Parts },
