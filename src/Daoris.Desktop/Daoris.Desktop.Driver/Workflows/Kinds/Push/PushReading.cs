@@ -22,7 +22,10 @@ internal static class PushReading
             null => NodeObserving.Seen(reading, NodeStates.Unknown, "git could not read the remote-tracking ref"),
             var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => NodeObserving.Reached(reading, NodeSource.Git, pushed,
                 LandedBranches.FileName, landing.Branch, $"pushed at {TextBounds.ShortCommit(pushed, 8)}, and the remote-tracking ref holds it"),
-            _ => NodeObserving.Seen(reading, null, "the remote-tracking ref does not hold the pushed commit"),
+            _ => NodeObserving.Seen(reading, null, NotOnRemote) with { Holds = NotOnRemote },
         };
     }
+
+    /// <summary>What a push says while the remote does not hold the commit it recorded as pushed; <see cref="PushAttempts.Due"/> pushes again on it.</summary>
+    public const string NotOnRemote = "the remote-tracking ref does not hold the pushed commit";
 }

@@ -210,7 +210,10 @@ public static class WireEvaluation
                 continue;
             }
 
-            if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated or NodeStates.Failed && Undelivered(node) is { } nothing)
+            // A push is passed over too while active or unknown: its attempt may be lost, and the line holding the branch says what became of it.
+            var undelivered = status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated or NodeStates.Failed
+                || status.State is NodeStates.Active or NodeStates.Unknown && node.Kind == NodeKinds.Push;
+            if (undelivered && Undelivered(node) is { } nothing)
             {
                 Make(node, nothing, WireWhy.Path, null);
                 continue;

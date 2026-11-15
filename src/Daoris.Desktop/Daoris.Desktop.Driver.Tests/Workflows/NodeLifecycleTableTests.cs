@@ -25,7 +25,7 @@ public sealed class NodeLifecycleTableTests
             "failed>skipped:person",
             "failed>stopped:person",
             // A failed delivery step whose branch the line holds has nothing left to deliver.
-            "failed>skipped:daoris",
+            "failed>skipped:daoris", "active>skipped:daoris", "unknown>skipped:daoris",
             // An opinion's gate passes it over where nothing is asked of it.
             "active>skipped:authority",
             "blocked>skipped:daoris", "ready>skipped:daoris", "invalidated>skipped:daoris",

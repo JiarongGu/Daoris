@@ -102,17 +102,25 @@ internal sealed class NodeRunKeeping(
         string? why = null;
         IReadOnlySet<string> held = new HashSet<string>();
         var stands = ClosedRunEnds.BranchStands(scope);
+        bool InPlace(NodeRecord at) =>
+            InPlaceRunEnds.Ends(governed.Graph, at, scope.Branch is not null || scope.Branches.Count > 0, scope.Attributed, Waits(governed.Graph, at));
         if (!Over(governed, record))
         {
-            if (!ClosedRunEnds.Closed(newest.Status) || Waits(governed.Graph, record)) return;
-            held = await ClosedRunEnds.OnLineAsync(ClosedRunEnds.Bound(governed.Graph, record), onLine, ct).ConfigureAwait(false);
-            if ((why = ClosedRunEnds.Why(governed.Graph, record, false, stands, held)) is null) return;
+            if (ClosedRunEnds.Closed(newest.Status) && !Waits(governed.Graph, record))
+            {
+                held = await ClosedRunEnds.OnLineAsync(ClosedRunEnds.Bound(governed.Graph, record), onLine, ct).ConfigureAwait(false);
+                why = ClosedRunEnds.Why(governed.Graph, record, false, stands, held);
+            }
+
+            // Work done in place leaves its quest open, which only the run's own end closes, so it is judged without waiting on the quest.
+            if (why is null && InPlace(record)) why = InPlaceRunEnds.Why;
+            if (why is null) return;
         }
 
         var at = clock();
         RunEnd? ended = null;
         var (refused, kept) = records.Edit<bool>(unit, current =>
-            (why is null ? Over(governed, current) : ClosedRunEnds.Why(governed.Graph, current, Waits(governed.Graph, current), stands, held) == why)
+            (why is null ? Over(governed, current) : why == InPlaceRunEnds.Why ? InPlace(current) : ClosedRunEnds.Why(governed.Graph, current, Waits(governed.Graph, current), stands, held) == why)
                 ? (current with { Ended = ended = why == ClosedRunEnds.QuestClosed ? RunOutcomes.OfClosedQuest(governed.Graph, current, newest.Id, at)
                     : RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
@@ -123,6 +131,9 @@ internal sealed class NodeRunKeeping(
         said.Add(why is null
             ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "
               + "again; it is judged again once its chain comes back here."
+            : why == InPlaceRunEnds.Why
+                ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: its work was done in place, on the line, so no branch of it stands for "
+                  + "its standing steps to read or land, and they stay as they are."
             : $"work  {unit}: its run ended at #{newest.Id}, {outcome}, its quest closed: "
               + (why switch
               {

@@ -135,6 +135,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands
     (a monitor, a plugin's release), since that reads the landing, which a tidied branch and the line's holding the commit leave readable;
+    or, with its quest still open, when its work step reached and no branch of it was ever recorded (work done in place, on the line: a
+    set-up asked in the checkout): nothing is left for `content.holds` or the `land` to read, so it ends (`in-place`, `InPlaceRunEnds`);
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check that came back unknown with the code `unrun` (Daoris could not run it) settles with no verdict and is asked again as a new
@@ -231,7 +233,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `merged` once its plugin says completed into the work's line (a squash counts), or unanswered once the keeper proves the line
     holds it, and `closed` once abandoned. A landing with nothing to deliver passes over the steps after it not yet started, said;
     a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
-    after its step failed), so the run goes on to its monitor and the held list clears.
+    after its step failed), so the run goes on to its monitor and the held list clears. A `push` the line comes to hold is passed over
+    the same way while active or unknown, its lost attempt cleared; one the line does not hold whose remote's ref lacks the commit it
+    recorded as pushed is pushed again (`PushAttempts.Due`). A monitor is reached at the commit its own binding holds, whatever tip the
+    landing reads (a squash merge), saying the line holds the branch where it does.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its
     branch deleted through the journal with its Undo, or kept where a tree has it checked out (a run's own tree then goes at the
     look's sweep, rule 31b), `tidied` written when every part ended, else `partly` for the next pass; nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
