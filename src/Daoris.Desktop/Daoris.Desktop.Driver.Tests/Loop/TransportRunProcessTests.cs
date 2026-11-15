@@ -219,6 +219,8 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.StartsWith("started on `scripted`", transcript, StringComparison.Ordinal);
         Assert.Contains("Logged the port.", transcript);
         Assert.Single(Heard(), e => e.Text == "started on `scripted`");
+        // What the harness said, each line as a frame, is on the tape beside the transcript.
+        Assert.Contains(File.ReadAllLines(FrameTape.PathOf(Transcript)), line => line.Contains("\"subtype\":\"init\"") && line.Contains("\"dir\":\"in\""));
     }
 
     /// <summary>
@@ -504,6 +506,10 @@ public sealed class TransportRunProcessTests : IDisposable
         // The transcript is the run's until it is let go, as a session's is open until its capture ends.
         await run.DisposeAsync();
         Assert.Contains("heard: Go on.", File.ReadAllText(Transcript));
+        // Its frames, both ways, are kept beside the transcript by the one recorder every door's run has.
+        var tape = File.ReadAllLines(FrameTape.PathOf(Transcript)).Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement).ToList();
+        Assert.Contains(tape, each => each.GetProperty("dir").GetString() == "out" && each.GetProperty("frame").GetProperty("method").GetString() == "session/prompt");
+        Assert.Contains(tape, each => each.GetProperty("dir").GetString() == "in");
     }
 
     /// <summary>

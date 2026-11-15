@@ -364,6 +364,18 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
 
     private string SessionOf() => _start.Session ?? throw new InvalidOperationException("the run's start names no session: it is handed before the open.");
 
+    /// <summary>The sitting's one tape of frames, beside its transcript, kept for as long as the run is.</summary>
+    private FrameTape Tape()
+    {
+        if (_tape is { } kept) return kept;
+        var sink = Sink();
+        _tape = new FrameTape(FrameTape.PathOf(TranscriptOf()), words => sink.Read(new WireReading.Shown(words)));
+        _kept.Add(_tape);
+        return _tape;
+    }
+
+    private FrameTape? _tape;
+
     private string TranscriptOf() =>
         _start.Transcript ?? throw new InvalidOperationException("the run's start names no transcript: it is handed before the open.");
 
@@ -431,14 +443,14 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             // Told once the sink kept the conversation it named: it opened the conversation its input carried the person's words to, so the
             // words went.
             var structured = HarnessCapture.CaptureStructuredAsync(
-                host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
+                Tape().Hearing(host.Hearing(process.StandardOutput, id)), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
                 preamble, observed: _start.Observed, opened: opening, append: append, named: named, own: _own, echoed: _start.Echoed);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }
 
         var plain = HarnessCapture.CaptureAsync(
-            host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), ct, preamble);
+            Tape().Hearing(host.Hearing(process.StandardOutput, id)), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), ct, preamble);
         _captures.Add(plain);
         return new Leg(process, proc, plain);
     }
@@ -482,7 +494,8 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         }
 
         var session = new AcpSession(
-            host.Hearing(process.StandardOutput, id), process.StandardInput, Line, closeTimeout: null, protocol.Posture, protocol.Meta, Event,
+            Tape().Hearing(host.Hearing(process.StandardOutput, id)), Tape().Speaking(process.StandardInput), Line, closeTimeout: null, protocol.Posture,
+            protocol.Meta, Event,
             streams: ReadingStreams.Of(sink), onOptions: protocol.Options,
             onConversation: named => sink.Read(new WireReading.ConversationNamed(named)))
         {
