@@ -45,6 +45,13 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: '*',
     why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)',
   },
+  // Before the merge tool's own rule, which would place it there alone: the driver's twin reads the attribution contract too.
+  {
+    paths: ['tools/merge/attribution-contract.json'],
+    gates: ['tool-tests', 'driver'],
+    why: "the merge tool's commit attribution and the driver's CommitAttributionContractTests read the one contract",
+  },
+  { paths: ['tools/workflows/**'], gates: ['driver'], why: "the driver's tests read this repository's own workflow files and apply them as the install does" },
   // The tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {

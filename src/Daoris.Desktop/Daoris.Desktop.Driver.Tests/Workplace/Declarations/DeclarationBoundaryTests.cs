@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// bans a symbol of a test's own compilation.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class DeclarationBoundaryTests
+public sealed class DeclarationBoundaryTests : IClassFixture<DesktopCompilationsWarm>
 {
     private const string Names = "Daoris.Desktop.Driver/Workplace/Declarations/PlantedNames.cs";
     private const string Reader = "Daoris.Desktop.Driver/Planted/Reader.cs";

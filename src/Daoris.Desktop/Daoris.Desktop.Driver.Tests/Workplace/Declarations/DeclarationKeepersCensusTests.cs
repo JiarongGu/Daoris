@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// listed holder, said with the one flow it lives for. Shown red on round 3's planted keepers and green on a field holding a version.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class DeclarationKeepersCensusTests
+public sealed class DeclarationKeepersCensusTests : IClassFixture<DesktopCompilationsWarm>
 {
     private const string What = "keeps an answer of the store";
 

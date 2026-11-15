@@ -13,6 +13,7 @@ vi.mock('@shenora/react', async () => ({
   useShenoraEvent: () => undefined,
 }));
 
+import { asksOf } from '../../test/sliceShell';
 import i18n from '../../locales/i18n';
 import { type Reading, readingsAnswer } from '../../bridge/helpReadings';
 import { ReadingLine, readingsBeneath } from './ReadingLine';
@@ -60,7 +61,7 @@ describe('the second check in the conversation', () => {
     expect(screen.getByText('delegated, not read')).toBeTruthy();
     expect(screen.getByText(/pushed though only a commit was asked/)).toBeTruthy();
     expect(screen.getByText('on call p7 · your words w3')).toBeTruthy();
-    expect(invoke).not.toHaveBeenCalled();
+    expect(asksOf(invoke)).toEqual([]);
 
     await userEvent.click(screen.getByRole('button', { name: 'What was sent' }));
     expect(await screen.findByText('the packet as sent')).toBeTruthy();

@@ -15,7 +15,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain, writeAtomic } from './fsx.mjs';
+import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
+import { splitByReach } from './time-reach.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -208,7 +209,12 @@ function main() {
   const dir = join(root, '_fixtures', 'test-timing');
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
-    const { over: found, seen } = scanRecords(dir, root, { since });
+    const { over: all, seen } = scanRecords(dir, root, { since });
+    const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
+    const { mine: found, others } = changed ? splitByReach(all, changed, repositoryFiles(root)) : { mine: all, others: {} };
+    for (const [key, { ms, limit }] of Object.entries(others)) {
+      console.log(`time-ratchet: slow, not this merge's: ${key} took ${ms} ms, over its ${limit} ms limit, and no path the merge changes reaches it`);
+    }
     if (process.argv.includes('--write')) {
       const next = tighten(found, list, seen);
       writeAtomic(listFile, JSON.stringify(next, null, 2) + '\n');
@@ -226,7 +232,7 @@ function main() {
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
     for (const p of problems) console.error(`time-ratchet: ${p}`);
     if (problems.length) return 1;
-    console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower)`);
+    console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower${Object.keys(others).length ? `; ${Object.keys(others).length} slow but not this merge's` : ''})`);
     return 0;
   } catch (e) {
     console.error(`time-ratchet: ${e.message}`);

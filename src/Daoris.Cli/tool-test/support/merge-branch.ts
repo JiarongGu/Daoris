@@ -200,7 +200,7 @@ export const tool = await import(
   newestWrite: (path: string) => number;
   parseProcesses: (text: string, platform?: string) => Proc[];
   processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];
-  disposableLocal: (path: string, directory?: boolean) => boolean;
+  disposableLocal: (path: string, directory?: boolean, setupCopies?: readonly string[]) => boolean;
   firstFile: (dir: string, skip?: (path: string, directory: boolean) => boolean) => string | null;
   folderVerdict: (folder: Folder) => { remove: boolean; why: string };
   BASELINE: readonly string[];

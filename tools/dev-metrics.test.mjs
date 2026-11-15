@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -8,7 +8,8 @@ import { spawnGit } from './fsx.mjs';
 import { collect, builderTimes, render, writeSnapshot } from './dev-metrics.mjs';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
-const root = join('_fixtures', 'dev-metrics-fixture');
+mkdirSync('_fixtures', { recursive: true });
+const root = mkdtempSync(join('_fixtures', 'dev-metrics-'));
 const home = join(root, 'data');
 const logs = join(root, 'logs');
 const questsFile = join(root, 'quests.json');
@@ -20,7 +21,6 @@ const quest = (id, filed, accepted, answers, requirements = 2) => ({
 });
 
 before(() => {
-  rmSync(root, { recursive: true, force: true });
   mkdirSync(homeEntry(home, 'usage-history'), { recursive: true });
   mkdirSync(homeEntry(home, 'sessions'), { recursive: true });
   mkdirSync(join(root, 'work', 'trees', 'ws', 'widget-app', 's-aaaa1111'), { recursive: true });
@@ -74,6 +74,13 @@ before(() => {
 });
 
 after(() => rmSync(root, { recursive: true, force: true }));
+
+test('a collect leaves no database of the home open, so its folder can be removed at once', async () => {
+  const o = await matrixHome('matrix-release');
+  await collect(o);
+  rmSync(join(root, 'matrix-release'), { recursive: true });
+  assert.equal(existsSync(join(root, 'matrix-release')), false);
+});
 
 const options = () => ({ home, logs, quests: questsFile, since: '2026-01-02', until: '2026-01-02', mergeQueue: join(root, 'merge-queue.json') });
 

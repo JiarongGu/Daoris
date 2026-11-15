@@ -4,15 +4,6 @@
     "why": "3 s alone; inside the census gate it waits for the shared source reading while the gate's other cases bind the driver's trees on every core, so its wall time is the gate's load",
     "row": "TESTSLOW1"
   },
-  "Daoris.Desktop.Driver.Tests.DeclarationKeepersCensusTests.Each_holder_left_out_turns_the_census_red_naming_it": {
-    "ms": 45000,
-    "why": "binds every shipping desktop project through the shared compilation once and walks each file's fields; the first to ask pays the binding, the rest of the gate's cases wait on the same cores",
-    "row": "TESTSLOW1"
-  },
-  "Daoris.Desktop.Driver.Tests.DeclarationLiteralsCensusTests.Each_row_left_out_turns_the_census_red_naming_it": {
-    "ms": 78820,
-    "why": "the first case of its class to ask pays the one binding of every shipping desktop project's semantic model, which the other cases of the run then share; alone the compile is the cost"
-  },
   "Daoris.Desktop.Driver.Tests.DependencyStoreTests": {
     "ms": 120000,
     "why": "real git (a worktree open and a commit or two a case) and a real node install script run by the tree-files stage, and one real npm ci; sealing an install and placing it in the next tree is what it proves, and the repository is already a copy of a seed per lock",

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the names. Shown red on each planted name and on a row left out.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class DeclarationLiteralsCensusTests
+public sealed class DeclarationLiteralsCensusTests : IClassFixture<DesktopCompilationsWarm>
 {
     private const string What = "names a declaration";
 

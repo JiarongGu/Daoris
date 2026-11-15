@@ -6,6 +6,8 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]',
   '       node tools/merge-branch.mjs --commit [--no-prune]',
   '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time] [--no-timeout]',
+  '         with no merge open it runs the named gates and every gate the stage calls stale on this tree: after new commits that is',
+  '         most of the full set, about an hour; the lines it prints before it runs say why each gate does',
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',

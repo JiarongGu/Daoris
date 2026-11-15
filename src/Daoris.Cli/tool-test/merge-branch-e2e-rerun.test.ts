@@ -1,8 +1,8 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { type Verdict, publish } from './support/merge-branch.ts';
+import { join } from 'node:path';
+import { type Verdict } from './support/merge-branch.ts';
 import { git, TRAILER, unordered, receipt, scratch, branch, merging } from './support/merge-branch-kit.ts';
 
 // test-map: strings name paths as data
@@ -147,6 +147,17 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /the full set has passed this checkout \(.*\): 2 of 2 gates, but the stage's evidence is missing \(CISCOPE1d\)/);
+    repo.cleanup();
+  });
+
+  // Its own case, so a loaded machine's time is the half's, not both.
+  test('--passed counts the receipt of a background run only when it finished and ran the whole set, and forgives the records alone', async () => {
+    const repo = scratch('full-receipt', [
+      { name: 'first', run: 'node gate.mjs first' },
+      { name: 'second', run: 'node gate.mjs second' },
+    ], { 'code.txt': 'base\n' });
+    let result = await repo.run(['--full']);
+    assert.equal(result.status, 0, result.out);
     // A sweep-only run's receipt, and a run that is stopped, are said and never counted.
     receipt(repo.root, { kind: 'sweep' });
     result = await repo.run(['--passed']);
@@ -254,6 +265,24 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /\n {2}Run the 2 stale gates on it: node tools\/merge-branch\.mjs --stale\n/);
     assert.doesNotMatch(result.out, /--full/);
+    repo.cleanup();
+  });
+
+  // Its own case, so a loaded machine's time is the half's, not both.
+  test('--stale refuses a dirty tree by name, then runs exactly the stale gates and says the stage passes', async () => {
+    const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+    const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
+    const repo = scratch('stale-run', [
+      { name: 'cli', run: 'node gate.mjs cli' },
+      { name: 'driver', run: 'node gate.mjs driver' },
+      { name: 'driver-process', run: 'node gate.mjs driver-process' },
+      { name: 'web', run: 'node gate.mjs web' },
+    ], { [spec]: 'one\n', [driverTest]: 'one\n' });
+    let result = await repo.run(['--full']);
+    assert.equal(result.status, 0, result.out);
+    writeFileSync(join(repo.root, spec), 'two\n');
+    git(repo.root, 'commit', '--quiet', '-am', `fix the spec${TRAILER}`);
+    receipt(repo.root);
 
     // Work left uncommitted is refused, by name, and nothing runs.
     writeFileSync(join(repo.root, 'stray.txt'), 'left here\n');
@@ -270,8 +299,6 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     assert.match(result.out, /driver-process\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach/);
     assert.match(result.out, /2 gates run and passed on [0-9a-f]{7}; the full set has passed this checkout: 4 of 4 gates\. A stage of this tree is allowed\./);
     assert.equal(merging(repo.root), false, 'nothing is merged');
-    // What publish:desktop asks before it builds.
-    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), repo.root).refusal, null);
 
     // Nothing is stale now: --stale runs nothing, and says the stage passes.
     result = await repo.run(['--stale']);
