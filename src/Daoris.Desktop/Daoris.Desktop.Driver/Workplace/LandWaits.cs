@@ -63,7 +63,7 @@ public static class LandWaits
         return true;
     }
 
-    /// <summary>The node came to a try, which says itself: its next wait is said again, whatever it was before.</summary>
+    /// <summary>The node came to a try, which says itself: its next wait is said again, of any reason.</summary>
     public static void Tried(string home, string unit, string node) => Last.TryRemove(Key(home, unit, node), out _);
 
     /// <summary>A judgement's wait, in codes: the run, its node, where, and the reason.</summary>

@@ -16,10 +16,7 @@ public sealed record PushStart(string Unit, NodeDeclaration Node, string Reposit
     /// <summary>Once per node and commit.</summary>
     public override string Key => $"{Unit}\n{Node.Id}\n{Tip}";
 
-    /// <summary>
-    /// Why nothing is pushed, where no record names the landing any more and its session branch neither stands nor is held on the line
-    /// (<see cref="UnrecordedLanding"/>): the sentence the door fails the attempt with. Null for every push that goes on.
-    /// </summary>
+    /// <summary>The sentence the door fails the attempt with, unpushed (<see cref="UnrecordedLanding"/>); null for a push that goes on.</summary>
     public string? Unrecorded { get; init; }
 }
 

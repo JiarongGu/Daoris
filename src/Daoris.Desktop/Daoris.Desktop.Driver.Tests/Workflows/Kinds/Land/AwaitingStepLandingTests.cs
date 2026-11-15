@@ -54,7 +54,7 @@ public sealed class AwaitingStepLandingTests : GraphRunFixture
     public async Task Another_session_working_in_the_tree_still_holds_it_and_is_said_once()
     {
         var (root, tree, start) = await WaitingAsync();
-        _world.Records.Add(new SessionRecord("s9", "engine", "working") { Quest = "q9", Tree = tree, Created = DateTimeOffset.UtcNow });
+        _world.Records.Add(new SessionRecord("s9", "engine", "working") { Quest = "q9", Tree = tree, Created = _world.Records[0].Created.AddMinutes(1) });
 
         Assert.Null(await Performer().PerformAsync(start));
         Assert.Null(await Performer().PerformAsync(start));

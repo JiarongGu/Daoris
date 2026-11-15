@@ -34,7 +34,6 @@ public sealed class NodeDoors
     /// <summary>These doors with <paramref name="kind"/>'s replaced by <paramref name="door"/>, or taken away where it is null.</summary>
     public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door), _say);
 
-    /// <summary>These doors telling the machine log through <paramref name="say"/>, as a loop's wiring tells it.</summary>
     public NodeDoors Saying(Action<string, string> say) => new(_doors, say);
 
     /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>, where a keeping starts nothing and says why; nothing where no log is wired.</summary>
