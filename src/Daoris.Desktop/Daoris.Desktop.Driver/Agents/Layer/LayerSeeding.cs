@@ -6,11 +6,10 @@ namespace Daoris.Driver;
 /// <summary>
 /// A provider's seeding through the layer: the session's events as the history, its context entries as Lyntai's context, rendered in
 /// the Seed form by Lyntai's rendering with the provider's own writer, and its files written under the account's home, each beside its place
-/// first and then moved over it. What the provider states for each door is the rendering's: the writer's word and the door's resume.
+/// first and then moved over it, in the form <c>physical</c> gives it where the agent keeps another than a writer's text. A door's statement is the rendering's.
 /// </summary>
 /// <param name="provider">The provider's doors as the layer reads them.</param>
 /// <param name="writer">The provider's writer for a conversation run in a tree, written at a moment.</param>
-/// <param name="physical">Where the agent keeps its files in another form than the text a writer returns (compressed, say): the file as it is placed.</param>
 internal sealed class LayerSeeding(
     AgentProviderDescriptor provider, Func<string, DateTimeOffset, IConversationSeedWriter> writer, Func<ContextFile, PhysicalSeedFile>? physical = null)
     : IConversationSeeding

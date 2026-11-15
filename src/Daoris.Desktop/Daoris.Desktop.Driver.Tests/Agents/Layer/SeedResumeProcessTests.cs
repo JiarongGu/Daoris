@@ -136,7 +136,6 @@ public sealed class SeedResumeProcessTests : IDisposable
         Assert.True(answer.Contains(Word, StringComparison.Ordinal) && answer.Contains(Branch, StringComparison.Ordinal), $"answered: {answer}");
     }
 
-    /// <summary>The seeded session placed in a home of its own and dsh's start in it, by the recipe Daoris's spawn makes.</summary>
     private (ProcessStartInfo Info, string Session) DshWritten(IReadOnlyList<SessionEvent> history)
     {
         var home = Path.Combine(_tree, "dsh-home");
@@ -173,10 +172,7 @@ public sealed class SeedResumeProcessTests : IDisposable
         return (await output, await error);
     }
 
-    /// <summary>
-    /// The protocol's three steps on the conversation: the opening, its load (or resume, where the agent advertises that), one prompt; the
-    /// agent's words to that prompt, every request of its refused. With no prompt it stops once the conversation is taken and answers nothing.
-    /// </summary>
+    /// <summary>The protocol's steps on the conversation: the opening, its load or resume, one prompt (none: stop once taken); the agent's words to it.</summary>
     private static async Task<string> AskAsync(ProcessStartInfo info, string conversation, string method = "session/load", bool prompt = true)
     {
         using var process = Process.Start(info)!;
