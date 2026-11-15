@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { census } from './layers-census.mjs';
 import { quickSteps } from './quick/steps.mjs';
+import { checkTimes, scanRecords } from './time-ratchet.mjs';
 import { judge, readVerdicts, say, writeVerdicts } from './quick/verdicts.mjs';
 import { runQuick } from './quick.mjs';
 
@@ -11,13 +13,41 @@ const scratch = () => {
   return mkdtempSync(join('_fixtures', 'quick-'));
 };
 
-test('the steps are the index, the contracts, each check of verify:checks once, and the census', () => {
+test('the steps are the index, the contracts, each check of verify:checks once but the time ratchet, and the census\'s counts', () => {
   const root = scratch();
   try {
-    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { 'verify:checks': 'node a.mjs &&npm run b && node c.mjs && node a.mjs' } }));
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { 'verify:checks': 'node a.mjs &&npm run b && node tools/time-ratchet.mjs && node c.mjs && node a.mjs' } }));
     assert.deepEqual(quickSteps(root), [
-      'node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale', 'node a.mjs', 'npm run b', 'node c.mjs', 'node tools/layers-census.mjs',
+      'node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale', 'node a.mjs', 'npm run b', 'node c.mjs', 'node tools/layers-census.mjs --counts',
     ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a red time record on disk leaves quick green, and the gates that judge time still read it red', async () => {
+  const root = scratch();
+  try {
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { 'verify:checks': 'node tools/time-ratchet.mjs && node fine.mjs' } }));
+    mkdirSync(join(root, 'tools'), { recursive: true });
+    writeFileSync(join(root, 'tools', 'layers-census.json'), '{}');
+    const records = join(root, '_fixtures', 'test-timing');
+    mkdirSync(records, { recursive: true });
+    writeFileSync(join(records, 'driver.trx'), '<TestRun><Results><UnitTestResult testName="Ns.Loaded.slow" duration="00:01:40.0000000" outcome="Passed" /></Results></TestRun>');
+    const tree = { files: [], read: () => '' };
+    const exits = {
+      'node tools/time-ratchet.mjs': () => (checkTimes(scanRecords(records, root).over, {}).length > 0 ? 1 : 0),
+      'node tools/layers-census.mjs': () => census({ root, argv: ['--records', records], tree }),
+      'node tools/layers-census.mjs --counts': () => census({ root, argv: ['--counts'], tree }),
+    };
+    const steps = async (list) => Object.fromEntries(await Promise.all(list.map(async (step) => [step, (await exits[step]?.()) ?? 0])));
+    const ran = await steps(quickSteps(root));
+    const run = (command) => ({ status: ran[command], output: '' });
+    const lines = [];
+    assert.equal(runQuick({ root, steps: quickSteps(root), run, say: (line) => lines.push(line), now: () => 0 }), 0, lines.join('\n'));
+    assert.match(lines.join('\n'), /judges no test time/);
+    const gates = await steps(['node tools/time-ratchet.mjs', 'node tools/layers-census.mjs']);
+    assert.deepEqual(gates, { 'node tools/time-ratchet.mjs': 1, 'node tools/layers-census.mjs': 1 }, 'the record is red to both time judgements');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

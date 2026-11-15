@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
 import {
-  checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanGit,
-  scanProcesses,
+  census, checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock,
+  scanGit, scanProcesses,
 } from './layers-census.mjs';
 import { clockSites } from './layers-census/clock.mjs';
 import { gitSites } from './layers-census/git.mjs';
@@ -234,6 +234,28 @@ test('D294: a Process class\'s real waits, starts and git are not counted, and i
   assert.equal(processSites(`public sealed class A {\n${body}`), 1);
   assert.equal(gitSites(`${marked}${body}`), 0);
   assert.equal(gitSites(`public sealed class A {\n${body}`), 1);
+});
+
+test('--counts reddens on a real clock read in a unit test and reads no duration record', async () => {
+  mkdirSync('_fixtures', { recursive: true });
+  const root = mkdtempSync(join('_fixtures', 'census-counts-'));
+  try {
+    mkdirSync(join(root, 'tools'), { recursive: true });
+    writeFileSync(join(root, 'tools', 'layers-census.json'), '{}');
+    const records = join(root, '_fixtures', 'test-timing');
+    mkdirSync(records, { recursive: true });
+    writeFileSync(join(records, 'driver.trx'), '<TestRun><Results><UnitTestResult testName="Ns.Loaded.slow" duration="00:01:40.0000000" outcome="Passed" /></Results></TestRun>');
+    const sources = {
+      [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+      [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/WaitsTests.cs`]: 'public sealed class WaitsTests { void Go() { var now = DateTime.UtcNow; } }',
+    };
+    assert.equal(await census({ root, argv: ['--counts'], tree: tree(sources) }), 1, 'a clock read in a unit test is red');
+    const clean = { ...sources, [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/WaitsTests.cs`]: 'public sealed class WaitsTests { }' };
+    assert.equal(await census({ root, argv: ['--counts'], tree: tree(clean) }), 0, 'a test over the budget on disk is not the counts\' to judge');
+    assert.equal(await census({ root, argv: ['--records', records], tree: tree(clean) }), 1, 'the full census still judges the budget');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('LAYERS1: no duration records is a clean run that says so', () => {
