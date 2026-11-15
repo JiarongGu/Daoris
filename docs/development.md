@@ -169,7 +169,7 @@ is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
 Main is the development branch, and the cycle's aim is main green and the install current within the hour.
 
 1. **Set up.** A builder runs `node tools/worktree-setup.mjs` from its worktree first (`--plan` says what it would do, `--build`
-   builds the driver's and the modules' test projects too): `local/*.props` of the main checkout copied as files, never linked;
+   builds the driver's and the modules' test projects too): the `localInputs` and sensitive-patterns file the main checkout's gates file declares copied as files, never linked, as a gate tree and a session's tree take them;
    dependencies installed from the lockfiles where missing or not from the lockfile as it stands; the merge drivers set, the
    index written, each gate's declared `regenerate` command run and the test projects restored, then the base recorded: `npm run quick`
    runs once (`--record-base`) and its verdicts are kept in `local/quick-base.json`, so a later `npm run quick` says which reds are

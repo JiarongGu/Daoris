@@ -5,8 +5,8 @@
  *
  *   node tools/worktree-setup.mjs [--plan] [--build]
  *
- * - **Local props.** Each `local/*.props` of the main checkout (the sibling builds' feed paths, absolute and the main
- *   checkout's) and the sensitive-patterns file are copied into the worktree's `local/` as files, refreshed on every run, and
+ * - **Local inputs.** Exactly what the main checkout's `daoris.gates.json` declares: each `localInputs` path (the sibling
+ *   builds' props, absolute feed paths) and the sensitive-patterns file, never a glob of `local/`, are copied into the worktree's `local/` as files, refreshed on every run, and
  *   never linked: a junction into the main checkout is followed by git and by an install, and emptied what it names. A
  *   `local/` or a `node_modules` that is a link is refused.
  * - **Dependencies.** Each folder of `DEPENDENCY_FOLDERS` whose `node_modules` is missing, or not from its lockfile as it stands,
@@ -19,7 +19,7 @@
  * `--plan` says what would run and runs nothing. Exit codes: 0 done · 1 a step failed or a refusal · 2 a tool error.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
@@ -37,10 +37,9 @@ const TEST_PROJECTS = [
   'src/Daoris.Service/Daoris.Service.Tests', 'src/Daoris.Service/Daoris.Service.Http.Tests',
 ];
 
-/** The files a builder is handed from the main checkout: every `local/*.props`, and what a gate's private files are. */
+/** The files a builder is handed from the main checkout: what its gates file declares (`localInputs`, the patterns file), as a gate tree is. */
 export function localFiles(home) {
-  const props = existsSync(join(home, 'local')) ? readdirSync(join(home, 'local')).filter((name) => name.endsWith('.props')).map((name) => `local/${name}`) : [];
-  return [...new Set([...props, ...privateGateFiles(home)])].sort();
+  return [...privateGateFiles(home)].sort();
 }
 
 /** Copies `localFiles` into the tree, as files; a `local/` that is a link there is refused, since a copy would write through it. */

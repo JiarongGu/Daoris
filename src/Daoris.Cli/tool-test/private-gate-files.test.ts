@@ -16,17 +16,21 @@ test('the private files a gate reads come from the declaration, only under local
   const tree = join(fx.root, 'tree');
   mkdirSync(join(home, 'local'), { recursive: true });
   mkdirSync(tree, { recursive: true });
-  const declare = (sensitive?: unknown) => writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], ...(sensitive ? { sensitive } : {}) }));
   const siblings = ['local/lyntai-local.props', 'local/shenora-local.props'];
+  const declare = (sensitive?: unknown, inputs: string[] = siblings) => writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], localInputs: inputs, ...(sensitive ? { sensitive } : {}) }));
 
   declare();
-  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt', ...siblings], 'the default, and the sibling builds\' props');
+  assert.deepEqual(tool.privateGateFiles(home), [...siblings, 'local/sensitive-patterns.txt'], 'the declared inputs, then the default patterns file');
   declare({ patternsFile: 'local/own.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt', ...siblings]);
+  assert.deepEqual(tool.privateGateFiles(home), [...siblings, 'local/own.txt']);
   declare({ patternsFile: 'private/patterns.txt' });
   assert.deepEqual(tool.privateGateFiles(home), siblings, 'not under local/: nothing copied');
   declare({ patternsFile: 'local/../secret.txt' });
   assert.deepEqual(tool.privateGateFiles(home), siblings, 'no way out of local/');
+  declare(undefined, ['local/../up.props', 'private/x.props', 'local\\a.props', 'local/a.props']);
+  assert.deepEqual(tool.privateGateFiles(home), ['local/a.props', 'local/sensitive-patterns.txt'], 'only under local/, once each, git\'s slashes');
+  writeFileSync(join(home, 'daoris.gates.json'), '{"gates":[]}');
+  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt'], 'nothing declared: no props');
 
   const files = ['local/sensitive-patterns.txt'];
   assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /local\/sensitive-patterns\.txt.*missing/);
