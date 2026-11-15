@@ -146,28 +146,13 @@ the person's browser on their real account. Take the words from the code, or run
 actions refuse the agent's binary from PATH where the home lies under `_fixtures/` or the OS's temporary folder, with nothing
 started, and `node tools/live-logins.mjs` finds a test that names a real login command or lets an agent's command fall back to PATH.
 
-A branch that runs only its own classes still owes the censuses that read every source, since no merge runs them
-before the CI beside: each is quick. Run the ones a change can reach before handing it back:
-
-| A change that… | The census to run |
-|---|---|
-| makes a page test read a file outside the page (a C# source, a fixture) | `node --test src/Daoris.Cli/tool-test/merge-branch.test.ts --test-name-pattern SESSDEL1c` (read a C# source through `src/Daoris.Web/src/test/driverSource.ts`, and name it in `tools/merge-branch.mjs`'s MOD9e row) |
-| adds or renames a CLI verb | `node --test src/Daoris.Cli/test/cli/cli-usage.test.ts` (the refusals fixture) |
-| names a `DAORIS_` variable in a source | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~SystemWiringTests` |
-| joins a home path in a test or a source | `node --test src/Daoris.Cli/test/platform/home-census.test.ts` (ask `DaorisHome.Entry` or `homeEntry`) |
-| opens a listener in a test | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~LoopbackListensTests` |
-| writes a string that names a workspace, or a `partial` class | `node --test src/Daoris.Cli/test/one-word.test.ts`, and `node tools/partials.mjs` |
-| reads or writes a file in the driver | `node tools/read-shares.mjs` (read a file `AtomicFile` writes through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead`) |
-| changes a component's code more than `docs.graceDays` (seven) days after its README last changed (a path `daoris.gates.json`'s `docs.tracked` says that README describes) | `dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only`, its `docs` line (the universal gate's documents check, `DocsGate`, compares the day of each side's last commit, a code commit of type `docs` or `style` not counting, so commit the README's update describing the change on the branch) |
-| moves, splits or renames a driver, host or modules file that says a word to the service under a key (`SayAsync(…, key: …)`), hands a helper's or a partner's answer, or keeps a word through the dispatchers' door | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~SettledReadersCensusTests` (the census names each reader by its file name with how it reads a settled answer: move or add its entry in `First` or `AsKept` with the code) |
-| moves, splits or renames a driver file that reads a session's marks (its participant work) | `dotnet test` with `--filter FullyQualifiedName~ParticipantWorkReadersTests` in `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` and `src/Daoris.Service/Daoris.Service.Tests` (the shared `src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json` keys each reader by its path: move its entry with the code) |
-| adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
-| asks git for a `status` or a `diff` in the driver or in a tool (the merge tool and its helpers) | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree or the main checkout) |
-| touches a source file (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`) | `node tools/comment-gate.mjs` (its comment share does not rise, and an added comment names no row id, decision number, or `was`, `used to`, `formerly`, `previously`; `--tip <branch>` reads a merge's diff; `--all` holds every source file to the naming rule, and `verify` runs it; `quick` and the `comments` gate run the change mode) |
-| names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
-| adds a wait, a bound or a timeout to a TypeScript test (`src/Daoris.Cli/test`, `tool-test`, `tools/*.test.mjs`) | `node tools/test-patience.mjs` (a wait on a signal reads `PATIENCE` from `src/Daoris.Cli/test/_fixture.ts`; a short one that is a claim, a staging delay or a product input marks its line `// patience: claim\|staging\|input — why`; TESTPATIENCE3) |
-| gives a driver or modules test a fixed wait or a private bound shorter than two minutes (`WaitAsync(TimeSpan.From…)`, `TimeSpan Bound = TimeSpan.From…`) | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~ShortWaitsCensusTests` (a wait on a signal reads `Poll.Patience`; a bound that is the claim, a window of nothing, a staging delay or an input the product honours is listed in the census with its reason) |
-| adds a `tools/*.test.mjs` or a test under `src/Daoris.Cli/tool-test/` | `node tools/tool-test-census.mjs` (name the `.mjs` file in the root `verify` script's `node --test` list, or, for a slow test of the merge tool, in `src/Daoris.Cli`'s `tooltests` script as `../../tools/<file>`, as `as-merged.test.mjs` is; a `tool-test/` file is run by the `tool-tests` gate's glob; each file is in exactly one gate) |
+A branch that runs only its own classes still owes the censuses that read every source. No list of them is kept here: a
+census that reads sources by text is a test that names what it reads, and the selector reaches it from a changed path. The
+desktop's carry `[Trait("Category","Census")]` and are the `censuses` gate; a CLI or tool census names its reads as
+`// reaches: <glob> — <why>` lines (the home census and the provider census name `tools/**`), so `node tools/reached-checks.mjs
+--base main` (a builder's checks and the merge's `reached` gate) runs it for a diff that touches those paths; the scripts
+(`partials`, `read-shares`, `optional-locks`, `live-logins`, `test-patience`, `tool-test-census`) are steps of `verify:checks`,
+which `npm run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line.
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen

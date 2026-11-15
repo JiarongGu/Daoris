@@ -21,3 +21,13 @@ test('the tool reads the census of this repository: a changed module reaches the
   assert.equal(none.status, 0, none.stderr);
   assert.match(none.stdout, /no reached unit/);
 });
+
+test('a tool added under tools/ reaches the censuses that read every tool by text: the home census and the provider census', () => {
+  const planned = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'tools/dev-metrics/actors.mjs'], {
+    cwd: repoRoot, encoding: 'utf8', windowsHide: true,
+    env: { ...process.env, DAORIS_REACHED_STORE: join(repoRoot, '_fixtures', 'reached-test-none', 'passes.json') },
+  });
+  assert.equal(planned.status, 0, planned.stderr);
+  assert.match(planned.stdout, /cli: node .*test\/platform\/home-census\.test\.ts/);
+  assert.match(planned.stdout, /tool-tests: node .*tool-test\/provider-census\.test\.ts/);
+});

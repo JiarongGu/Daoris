@@ -4,6 +4,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// reaches: tools/** — the census counts every tool's sites that name a provider
+
 /**
  * The tools' twin of the driver's `ProviderCensusTests` (the agent-provider design §9). Every site
  * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
@@ -12,7 +14,7 @@ import { fileURLToPath } from 'node:url';
  * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types, the one
  * table the four censuses share; nothing here copies a word of it. The census runs the contracts' generator first (`--if-stale`, under
  * its run lock, into its own build output), so it reads no file another step awaits: a fresh checkout and this file run alone
- * read the same table. Run by the `tool-tests` gate (the merge tool's `REACH` rows send the fixture here).
+ * read the same table.
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
