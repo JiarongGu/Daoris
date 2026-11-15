@@ -41,7 +41,7 @@ public sealed class PushLineReadTests : LandedFixture
         var tip = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
         await GitAsync(root, "push", "--quiet", "origin", Branch);
         await GitAsync(root, "checkout", "--quiet", "main");
-        var entry = new LandedBranch("engine", "aurora", Branch, "main", tip, "s-0001", "q1", "Work", DateTimeOffset.UtcNow) { Units = [Unit] };
+        var entry = new LandedBranch("engine", "aurora", Branch, "main", tip, "s-0001", "q1", "Work", new MovedClock().GetUtcNow()) { Units = [Unit] };
         new LandedBranches(Home).Record(entry);
         new LandedBranches(Home).Pushed("engine", Branch, tip);
         await SquashOnPlatformAsync(origin, Branch);

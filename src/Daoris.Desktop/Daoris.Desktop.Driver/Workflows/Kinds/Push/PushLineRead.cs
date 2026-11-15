@@ -24,7 +24,7 @@ internal static class PushLineRead
     }
 
     /// <summary>The answer for <paramref name="start"/>, or null where its branch stands and the push goes on.</summary>
-    public static async Task<Answer?> ReadAsync(string home, PushStart start, CancellationToken ct)
+    public static async Task<Answer?> ReadAsync(string home, PushStart start, Func<DateTimeOffset> now, CancellationToken ct)
     {
         if (await TreeRefs.CommitOfAsync(start.Root, $"refs/heads/{start.Branch}", ct).ConfigureAwait(false) is not null) return null;
 
@@ -48,12 +48,12 @@ internal static class PushLineRead
         var refs = RefSnapshot.Take(start.Root);
         var subject = new EndSubject(entry.Branch, entry.Tip, EndRole.Landing, entry) { Gone = true };
         var verdict = await EndJudgement.JudgeAsync(start.Root, EndCycle.Recorded(entry), subject, line, NoHolders, null, ct, refs).ConfigureAwait(false);
-        if (verdict is { Ended: true, Where: { } where } && FolderIdentity.Of(Path.Combine(start.Root, ".git")) is { } identity)
+        if (verdict is { Ended: true, Where: { } where } && EndKeeping.RepositoryIdentity(start.Root) is { } identity)
         {
             var forms = await LandedProofs.LineFormsAsync(start.Root, line, ct, refs).ConfigureAwait(false);
             var on = forms.FirstOrDefault(form => string.Equals(form.Name, where, StringComparison.Ordinal))?.Ref;
             var onAt = on is null ? null : await TreeRefs.CommitOfAsync(start.Root, on, ct, refs).ConfigureAwait(false);
-            if (EndKeeping.Next(null, verdict, onAt, identity, DateTimeOffset.UtcNow) is { } held)
+            if (EndKeeping.Next(null, verdict, onAt, identity, now()) is { } held)
             {
                 landed.Delivered(entry, held);
                 return new(null, $"`{start.Branch}` no longer stands, and `{where}` holds its work ({WorkInventory.ProofSaid(held.By, where)}), so nothing is pushed.");

@@ -4,8 +4,11 @@ namespace Daoris.Driver;
 /// person's press pushes it. A push that ends is written on the landing record; one the act refuses fails the node with the act's sentence in the machine log,
 /// so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.</summary>
 /// <param name="home">The Daoris home whose journal, landing record and node records the push is kept in.</param>
-public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null) : IPushDoor, IDoorRuns
+public sealed class PushDoor(
+    string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null, Func<DateTimeOffset>? clock = null) : IPushDoor, IDoorRuns
 {
+    private readonly Func<DateTimeOffset> _now = clock ?? (() => DateTimeOffset.UtcNow);
+
     /// <summary>The code a push the act refused fails its node with.</summary>
     public const string Refused = "push-refused";
 
@@ -27,7 +30,7 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
     /// <summary>The push act for the landed branch at its tip, and what it came to written: the landing record on success, the node's failure otherwise.</summary>
     internal async Task PerformAsync(PushStart start, CancellationToken ct)
     {
-        if ((UnrecordedLanding.Refusal(start) ?? await PushLineRead.ReadAsync(home, start, ct).ConfigureAwait(false)) is { } gone)
+        if ((UnrecordedLanding.Refusal(start) ?? await PushLineRead.ReadAsync(home, start, _now, ct).ConfigureAwait(false)) is { } gone)
         {
             log?.Invoke($"push  {start.Unit}: `{start.Node.Id}`: {gone.Said}");
             if (!gone.Held) Fail(start, gone.Code!);
@@ -69,7 +72,7 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
             if (status.State != NodeStates.Active || start.Authority is { } authority && authority.Attempt != status.Attempt) return (null, false);
             var moved = NodeLifecycle.Apply(start.Node, status,
                 new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Attempt = status.Attempt, Code = code });
-            return (moved.Moved ? WorkPerformer.Kept(record, moved, code, DateTimeOffset.UtcNow) : null, moved.Moved);
+            return (moved.Moved ? WorkPerformer.Kept(record, moved, code, _now()) : null, moved.Moved);
         });
     }
 }

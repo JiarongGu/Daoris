@@ -391,7 +391,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         await holding.Task;
 
         var retry = Task.Run(() => SayAsync(record.Id, "producer/paused"));
-        await Task.Delay(400);
         Assert.False(retry.IsCompleted, "the retry waits for the write lock the other dispatcher holds");
 
         release.SetResult();
@@ -450,7 +449,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         Assert.Single((await _sessions.FindAsync(successor.Id))!.Said);
         Assert.Single((await _sessions.FindAsync(old.Id))!.Said);
 
-        // 🔴 Row d-ii: a settlement on a later part is read from an earlier one, by the head walk's records forward.
         var later = await EndedAsync(from: successor.Id);
         var onLater = await SayAsync(later.Id, "producer/own");
         await _sessions.TakeSaidAsync(later.Id, [onLater.Word!.Id]);
@@ -476,7 +474,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
 
         var say = Task.Run(() => SayAsync(a.Id, "producer/race"));
-        await Task.Delay(400);
         Assert.False(say.IsCompleted, "the say waits for the open's step");
         release.SetResult();
         var opened = await open;
@@ -505,7 +502,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
 
         var open = Task.Run(() => otherLedger.OpenChatAsync("Owner", "stub", Now, from: a.Id, opens: "race/say-first"));
-        await Task.Delay(400);
         Assert.False(open.IsCompleted, "the open waits for the say's step");
         release.SetResult();
         var kept = await say;
@@ -659,7 +655,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
 
         var open = Task.Run(() => MoveAsync(a.Id, "race/say-first-moves", [], [], otherLedger));
-        await Task.Delay(400);
         Assert.False(open.IsCompleted, "the open waits for the say's step");
         release.SetResult();
         var kept = await say;
@@ -697,7 +692,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
         await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
 
         var say = Task.Run(() => PersonSayAsync(a.Id, "press/late"));
-        await Task.Delay(400);
         Assert.False(say.IsCompleted, "the say waits for the open's step");
         release.SetResult();
         var opened = await open;
@@ -861,6 +855,10 @@ public sealed class SaidSettledTests : IAsyncLifetime
         Assert.Empty(await RowsAsync());
     }
 
+    [Fact]
+    public void The_settlements_walk_is_bounded_by_the_lines_bound_unless_a_test_sets_it_small() =>
+        Assert.Equal(Lines.Bound, _sessions.SettlementBound);
+
     /// <summary>
     /// 🔴 Row d-ii, the walk's bound on the settlement: a retry whose walk back along <c>from</c> would pass <see cref="Lines.Bound"/> records is
     /// refused <c>Unplaced</c> with its sentence, nothing kept, rather than read over a line cut short, which could keep a taken word twice;
@@ -871,13 +869,14 @@ public sealed class SaidSettledTests : IAsyncLifetime
     [InlineData(true)]
     public async Task A_settlement_walk_past_the_bound_is_refused_with_its_sentence_and_one_at_it_reads_the_far_end(bool past)
     {
+        _sessions.SettlementBound = 6;
         var parts = new List<Session> { await EndedAsync() };
         var first = await SayAsync(parts[0].Id, "producer/far");
         await _sessions.TakeSaidAsync(parts[0].Id, [first.Word!.Id]);
         // The links in one step, as a batch of opens would commit them, so the file's syncs stay few.
         await _sessions.ExclusiveAsync(async inside =>
         {
-            for (var link = 0; link < Lines.Bound + (past ? 1 : 0); link++)
+            for (var link = 0; link < _sessions.SettlementBound + (past ? 1 : 0); link++)
             {
                 var next = await _sessions.CreateAsync(
                     quest: null, "Owner", "stub", Now, kind: SessionKind.Chat, from: parts[^1].Id, fromWhy: "limit", fromBy: "daoris", ownEntry: true, ct: inside);
@@ -897,7 +896,7 @@ public sealed class SaidSettledTests : IAsyncLifetime
 
         Assert.Equal(SessionSayRefusal.Unplaced, retry.Refusal);
         Assert.Null(retry.SettledOn);
-        Assert.Contains(Lines.Bound.ToString(CultureInfo.InvariantCulture), retry.Message, StringComparison.Ordinal);
+        Assert.Contains(_sessions.SettlementBound.ToString(CultureInfo.InvariantCulture), retry.Message, StringComparison.Ordinal);
         Assert.Empty((await _sessions.FindAsync(parts[^1].Id))!.Said);
         // An older client asks no settlement, so the door reads no walk back and keeps its word at the head, as today.
         Assert.Equal(SessionSayRefusal.None, (await SayAsync(parts[^1].Id, "producer/far", settled: false)).Refusal);

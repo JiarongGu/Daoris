@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <param name="path">The tape's file (<see cref="PathOf"/>); appended to, so a resumed sitting goes on in the one tape.</param>
 /// <param name="say">Told once the tape cannot keep a line or is full.</param>
 /// <param name="cap">The most bytes one tape holds.</param>
-internal sealed class FrameTape(string path, Action<string> say, long cap = FrameTape.DefaultCap) : IDisposable
+internal sealed class FrameTape(string path, Action<string> say, TimeProvider clock, long cap = FrameTape.DefaultCap) : IDisposable
 {
     /// <summary>The suffix a tape carries after its session's name, as <see cref="SessionHomeFiles"/> counts it.</summary>
     internal const string Suffix = ".frames.jsonl";
@@ -92,7 +92,7 @@ internal sealed class FrameTape(string path, Action<string> say, long cap = Fram
         file.Write(Encoding.UTF8.GetBytes(text + "\n"));
     }
 
-    private static string Entry(string direction, string line)
+    private string Entry(string direction, string line)
     {
         var entry = new JsonObject { ["at"] = Now(), ["dir"] = direction };
         try
@@ -107,7 +107,7 @@ internal sealed class FrameTape(string path, Action<string> say, long cap = Fram
         return entry.ToJsonString();
     }
 
-    private static string Now() => DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+    private string Now() => clock.GetUtcNow().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     private static JsonNode? Redacted(JsonNode? node)
     {

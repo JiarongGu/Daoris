@@ -36,6 +36,8 @@ public sealed class SessionStore
 
     internal ConnectionGate Db => _db;
 
+    internal int SettlementBound { get; set; } = Lines.Bound;
+
     public SessionOpens Opens { get; }
 
     /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step.</summary>

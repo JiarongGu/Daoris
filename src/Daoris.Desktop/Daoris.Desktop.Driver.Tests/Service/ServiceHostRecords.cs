@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a host is stale only where it still runs as the process recorded and its owner no longer runs: a host of a run still going, in
 /// this checkout or beside it, is never touched, and an id since handed to another process is told apart by its start time.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 internal static class ServiceHostRecords
 {
     /// <summary>The folder the records of the host built under <paramref name="artifacts"/> are kept in.</summary>

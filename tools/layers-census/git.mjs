@@ -1,4 +1,5 @@
 import { readProjects } from './projects.mjs';
+import { isRealProcess } from './real-process.mjs';
 
 /**
  * Git reached around its port in the application and the unit-test projects: a git's start composed by hand (`GitStart(`), a read
@@ -9,8 +10,9 @@ import { readProjects } from './projects.mjs';
  */
 const SITES = /\bGitStart\s*\(|\bRefFiles\.\w+|"\.git"|\bLibGit2Sharp\b/g;
 
-/** The sites in one source's text, comments aside. */
+/** The sites in one source's text, comments aside; a real-process test's real git is its subject and is not counted. */
 export function gitSites(text) {
+  if (isRealProcess(text)) return 0;
   let count = 0;
   for (const raw of text.split('\n')) {
     const line = raw.trim();

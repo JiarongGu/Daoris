@@ -1,10 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
 import {
   checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanGit,
   scanProcesses,
 } from './layers-census.mjs';
 import { clockSites } from './layers-census/clock.mjs';
+import { gitSites } from './layers-census/git.mjs';
+import { processSites } from './layers-census/processes.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -195,6 +201,39 @@ test('a test is judged by its latest run, so an older record of a loaded or sinc
   const problems = checkBudget(records, clean);
   assert.equal(problems.length, 1, problems.join('\n'));
   assert.match(problems[0], /Ns\.A\.old_slow took 9000 ms/);
+});
+
+test('an over-budget test is a finding only if its class, measured again alone, is still over', async () => {
+  const loaded = [{ gate: 'driver', tier: 'unit', at: 1, tests: [{ class: 'Ns.Loaded', test: 'a', ms: 5000 }, { class: 'Ns.Slow', test: 'b', ms: 5000 }] }];
+  const world = async () => ({ units: new Map([['Ns.Loaded', { unit: 'Ns.Loaded' }], ['Ns.Slow', { unit: 'Ns.Slow' }]]) });
+  const measured = [];
+  const again = '<TestRun><Results><UnitTestResult testName="Ns.Loaded.a" duration="00:00:00.0300000" />'
+    + '<UnitTestResult testName="Ns.Slow.b" duration="00:00:04.0000000" /></Results></TestRun>';
+  const dir = join(tmpdir(), `census-alone-${process.pid}`);
+  mkdirSync(dir, { recursive: true });
+  try {
+    const { problems } = await checkBudgetAlone({
+      records: loaded, list: { slowTests: {} }, dir, world,
+      measure: (units) => { measured.push(...units); writeFileSync(join(dir, 'again.trx'), again); },
+    });
+    assert.deepEqual(measured, ['Ns.Loaded', 'Ns.Slow']);
+    assert.equal(problems.length, 1, problems.join('\n'));
+    assert.match(problems[0], /Ns\.Slow\.b took 4000 ms/);
+    assert.deepEqual(overBudgetOf(loaded, { slowTests: { 'Ns.Slow.b': 5000 } }), { 'Ns.Loaded.a': 5000 });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('D294: a Process class\'s real waits, starts and git are not counted, and its reads of now still are', () => {
+  const marked = '[Trait(Category.Name, Category.Process)]\npublic sealed class A {\n';
+  const body = 'await Task.Delay(500);\nThread.Sleep(5);\nvar p = Process.Start(x);\nvar g = ".git";\nvar n = DateTimeOffset.UtcNow;\n}';
+  assert.equal(clockSites(`${marked}${body}`), 1);
+  assert.equal(clockSites(`public sealed class A {\n${body}`), 3);
+  assert.equal(processSites(`${marked}${body}`), 0);
+  assert.equal(processSites(`public sealed class A {\n${body}`), 1);
+  assert.equal(gitSites(`${marked}${body}`), 0);
+  assert.equal(gitSites(`public sealed class A {\n${body}`), 1);
 });
 
 test('LAYERS1: no duration records is a clean run that says so', () => {

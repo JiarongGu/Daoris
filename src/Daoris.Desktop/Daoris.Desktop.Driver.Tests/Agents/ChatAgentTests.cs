@@ -91,7 +91,7 @@ public sealed class ChatAgentTests : IDisposable
         Assert.False(run.GoesOn);
         Assert.False(run.Started);
         using var service = new ServiceClient("http://127.0.0.1:9", null);
-        ITransportHost bare = new ChatTransportHost(_home, _processes, service, new HarnessConversations(_home), null);
+        ITransportHost bare = new ChatTransportHost(_home, _processes, service, new HarnessConversations(_home), null, new MovedClock());
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
         Assert.Throws<NotSupportedException>(() => bare.Prepared(adapters, adapters.Door(door), target, new HarnessSelection(null), start.Info));
     }

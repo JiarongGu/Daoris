@@ -10,8 +10,17 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class NoticesReadTests
 {
+    private static readonly MovedClock Clock = StoodAt24th();
+
+    private static MovedClock StoodAt24th()
+    {
+        var clock = new MovedClock();
+        clock.Advance(TimeSpan.FromDays(4));
+        return clock;
+    }
+
     private static async Task<int> RunAsync(InstanceTestHome home, params string[] args) =>
-        await NoticesRead.RunAsync(args, home.Home, home.World("notices"), home.Out, home.Error);
+        await NoticesRead.RunAsync(args, home.Home, home.World("notices"), home.Out, home.Error, clock: Clock);
 
     [Theory]
     [InlineData(false)]
@@ -45,7 +54,7 @@ public sealed class NoticesReadTests
     {
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
-        var now = DateTimeOffset.UtcNow;
+        var now = Clock.GetUtcNow();
         Assert.Null(Notices.Add(home.Home, new Notice("ended-s1", Notices.Ended, now.AddMinutes(-40.5), Read: true, Workspace: "games",
             Session: "s1", Repository: "Engine", State: "failed"), now));
         Assert.Null(Notices.Add(home.Home, new Notice("expired-p1", Notices.Expired, now.AddMinutes(-5.5), Route: "SESSION_INPUT"), now));
@@ -76,7 +85,7 @@ public sealed class NoticesReadTests
     {
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
-        var now = DateTimeOffset.UtcNow;
+        var now = Clock.GetUtcNow();
         Assert.Null(Notices.Add(home.Home, new Notice("look-lost-claim-s2", Notices.Look, now, Read: true, Session: "s2", Code: "lost-claim"), now));
 
         var exit = await RunAsync(home, "--json");
@@ -126,7 +135,7 @@ public sealed class NoticesReadTests
     {
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
-        var now = DateTimeOffset.UtcNow;
+        var now = Clock.GetUtcNow();
         Assert.Null(Notices.Add(home.Home, new Notice("ended-s1", Notices.Ended, now.AddMinutes(-5), Session: "s1", State: "failed"), now));
         Assert.Null(Notices.Renew(home.Home, Notices.SetAsideOf("check-failed", "q1", "2026-10-22T08:00:00.000Z", "games", now.AddMinutes(-3)), now));
 

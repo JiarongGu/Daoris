@@ -36,7 +36,7 @@ public sealed class IntegrationResumeMemoryTests : IDisposable
         var store = _fixture.Store("run-a");
         Assert.Null(store.Add(new IntegrationRequest(
             request, repository, "aurora", "feature/q1-fix", tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card,
-            new LandingIntegrate().Resolved(), DateTimeOffset.UtcNow)));
+            new LandingIntegrate().Resolved(), new MovedClock().GetUtcNow())));
         var formed = store.Form(new IntegrationForming(repository, "aurora", "main", @base, [request]));
         store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
         {

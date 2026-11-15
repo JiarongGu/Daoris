@@ -233,9 +233,11 @@ finishes first and the whole set runs once.
     locator, counted per subdomain by the census's ratchet, which only tightens and starts at zero, and one a root sets once. The
     set is named for what it holds, not `Machine`, which names the adapter that implements the processes. A unit test over one
     second fails the census, named, unless it is on its list of slower tests, which only shrinks; it reads the duration records
-    of rule 22, each test by its newest record, so a loaded or since-fixed older run does not outvote it. A test whose claim is
+    of rule 22, each test by its newest record, and a test over the second is a finding only once its class, run again alone
+    through the time ratchet's own `measureAlone`, is still over, so a loaded or since-fixed run does not outvote it. A test whose claim is
     a real dependency (git on a checkout, the machine's file watchers, a started executable, the whole service over a store
-    file) is a Process class or test (`Category.cs` of the service's tests), not a slow unit test. The store's engine types (`SqliteConnection`, `SqliteCommand`, `SqliteDataReader`) are banned by symbol in the driver
+    file) is a Process class or test (`Category.cs` of the service's tests), not a slow unit test; a type carrying that trait is
+    exempt from the census's real-wait, process-start and git counts (D294), while its reads of "now" still take a `TimeProvider`. The store's engine types (`SqliteConnection`, `SqliteCommand`, `SqliteDataReader`) are banned by symbol in the driver
     (`src/BannedSymbols.Store.txt`, taken by `DaorisBannedStore`, apart from the effects so a project takes the list its uses allow);
     each adapter row takes its own symbols to zero for the code it moved. SSH import's `SshKeyConverter` is a delegate port:
     `Daoris.Adapters.SshKeys` owns its cryptography dependency and format tests; `ScriptedSshKeys` scripts the driver's and

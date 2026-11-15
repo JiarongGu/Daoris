@@ -16,6 +16,8 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
 {
     private const string Trailer = "\n\nCo-Authored-By: Claude (Anthropic, fixture) <noreply@anthropic.com>";
 
+    private static readonly DateTimeOffset Moment = new MovedClock().GetUtcNow();
+
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "heavy-handback", Guid.NewGuid().ToString("N")[..8]);
     private readonly List<HeavyExecutor> _executors = [];
     private string Home => Path.Combine(_folder, "home");
@@ -107,8 +109,8 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         var files = new CheckFiles(Home);
         foreach (var (id, gate) in new[] { ("k1", "fast-docs"), ("k2", "fast-src") })
         {
-            files.WriteAsk(new CheckAsk(id, "s1", gate, null, DateTimeOffset.UtcNow));
-            files.WriteState(new CheckState(id, CheckStates.Reached, DateTimeOffset.UtcNow) { Tip = tip });
+            files.WriteAsk(new CheckAsk(id, "s1", gate, null, Moment));
+            files.WriteState(new CheckState(id, CheckStates.Reached, Moment) { Tip = tip });
         }
 
         var result = await RunAsync(blob);
@@ -124,8 +126,8 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         var blob = await RepositoryAsync();
         await CommitAsync("docs/a.txt", "work" + Trailer);
         var files = new CheckFiles(Home);
-        files.WriteAsk(new CheckAsk("k1", "s1", "fast-docs", null, DateTimeOffset.UtcNow));
-        files.WriteState(new CheckState("k1", CheckStates.Reached, DateTimeOffset.UtcNow) { Tip = "0000000000000000000000000000000000000000" });
+        files.WriteAsk(new CheckAsk("k1", "s1", "fast-docs", null, Moment));
+        files.WriteState(new CheckState("k1", CheckStates.Reached, Moment) { Tip = "0000000000000000000000000000000000000000" });
 
         var result = await RunAsync(blob);
 

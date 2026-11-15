@@ -189,13 +189,14 @@ public sealed class OrphanedSessionTests : IDisposable
     public async Task The_sweep_ends_a_queued_record_no_driver_ever_marked_once_it_is_old()
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        service.Seed("old", "queued", updated: DateTimeOffset.UtcNow.AddMinutes(-10));
-        service.Seed("young", "queued", updated: DateTimeOffset.UtcNow.AddSeconds(-5));
-        service.Seed("held", "queued", updated: DateTimeOffset.UtcNow.AddMinutes(-10));
+        var clock = new MovedClock();
+        service.Seed("old", "queued", updated: clock.GetUtcNow().AddMinutes(-10));
+        service.Seed("young", "queued", updated: clock.GetUtcNow().AddSeconds(-5));
+        service.Seed("held", "queued", updated: clock.GetUtcNow().AddMinutes(-10));
         new SessionProcesses(Markers).MarkOpening("held");
 
         using var client = new ServiceClient(service.Url, null);
-        var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers));
+        var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers), now: clock.GetUtcNow);
 
         Assert.Equal(["old"], ended.Select(e => e.Id));
         Assert.Equal(("stopped", "queued", "queued"), (service.State("old"), service.State("young"), service.State("held")));

@@ -19,7 +19,7 @@ public sealed class PlaceHomeMarkerTests : IDisposable
     [Fact]
     public void A_second_home_is_refused_an_in_place_start_on_a_checkout_the_first_works_in()
     {
-        Directory.CreateDirectory(Path.Combine(Place, ".git"));
+        CheckoutMarks.Mark(Place);
         Directory.CreateDirectory(First);
         Directory.CreateDirectory(Second);
 
@@ -48,7 +48,7 @@ public sealed class PlaceHomeMarkerTests : IDisposable
     [Fact]
     public void A_conversation_in_the_checkout_is_asked_the_marker_and_one_in_a_tree_of_its_own_is_not()
     {
-        Directory.CreateDirectory(Path.Combine(Place, ".git"));
+        CheckoutMarks.Mark(Place);
         Directory.CreateDirectory(First);
         Directory.CreateDirectory(Second);
         Assert.Null(ChatStarts.PlaceHeld(First, Place, "reports", isolated: false, tree: null));

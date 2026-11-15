@@ -247,6 +247,8 @@ public sealed class LayerHoldProcessTests : IDisposable
     /// <summary>The host's steps, recorded: each bracket's token on the start's environment, the wait killing on a bound or the watch's quiet.</summary>
     private sealed class HeldHost(SessionProcesses processes) : ITransportHost
     {
+        public TimeProvider Clock { get; } = new MovedClock();
+
         private int _tokens;
 
         private int _heard;

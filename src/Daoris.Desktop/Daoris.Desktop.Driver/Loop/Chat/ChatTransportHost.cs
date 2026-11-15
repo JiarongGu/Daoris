@@ -8,10 +8,12 @@ namespace Daoris.Driver;
 /// no watch hears it, so its exit is waited for and its capture read to their ends, and its streams are read as they are.
 /// </summary>
 internal sealed class ChatTransportHost(
-    string home, SessionProcesses processes, ServiceClient service, HarnessConversations conversations, SessionOutput? output)
+    string home, SessionProcesses processes, ServiceClient service, HarnessConversations conversations, SessionOutput? output, TimeProvider clock)
     : ITransportHost
 {
     public string Home => home;
+
+    public TimeProvider Clock => clock;
 
     public SessionProcesses Processes => processes;
 

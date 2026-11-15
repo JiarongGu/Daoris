@@ -32,7 +32,7 @@ public sealed class FrameTapeTests : IDisposable
     [Fact]
     public async Task Each_line_read_and_written_is_kept_in_order_as_it_goes()
     {
-        using var tape = new FrameTape(Tape, _ => { });
+        using var tape = new FrameTape(Tape, _ => { }, new MovedClock());
         var heard = tape.Hearing(new StringReader("""{"jsonrpc":"2.0","id":1,"result":{}}""" + "\nnot a frame\n"));
         var said = new StringWriter();
         var speaking = tape.Speaking(said);
@@ -55,7 +55,7 @@ public sealed class FrameTapeTests : IDisposable
     [Fact]
     public async Task A_secret_a_frame_carries_is_left_out_where_it_sits()
     {
-        using var tape = new FrameTape(Tape, _ => { });
+        using var tape = new FrameTape(Tape, _ => { }, new MovedClock());
         var speaking = tape.Speaking(new StringWriter());
 
         await speaking.WriteLineAsync(
@@ -71,7 +71,7 @@ public sealed class FrameTapeTests : IDisposable
     public async Task A_tape_past_its_bound_stops_and_says_so_once()
     {
         var said = new List<string>();
-        using var tape = new FrameTape(Tape, said.Add, cap: 200);
+        using var tape = new FrameTape(Tape, said.Add, new MovedClock(), cap: 200);
         var heard = tape.Hearing(new StringReader(string.Join('\n', Enumerable.Range(0, 20).Select(n => $$"""{"n":{{n}}}""")) + "\n"));
         while (await heard.ReadLineAsync(CancellationToken.None) is not null)
         {
@@ -82,7 +82,7 @@ public sealed class FrameTapeTests : IDisposable
         Assert.Equal("cap", kept[^1].GetProperty("stopped").GetString());
         Assert.Single(said);
 
-        using var unwritable = new FrameTape(_root, said.Add);
+        using var unwritable = new FrameTape(_root, said.Add, new MovedClock());
         var read = unwritable.Hearing(new StringReader("{}\n"));
         Assert.Equal("{}", await read.ReadLineAsync(CancellationToken.None));
         Assert.Equal(2, said.Count);

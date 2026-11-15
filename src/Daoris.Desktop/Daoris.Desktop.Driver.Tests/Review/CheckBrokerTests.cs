@@ -32,11 +32,11 @@ public sealed class CheckBrokerTests : IDisposable
     {
         var asks = new[] { Ask("a1", minute: 0), Ask("a2", minute: 5), Ask("a3", minute: 1) };
 
-        Assert.Equal("a1", CheckQueue.Next(asks, _ => null)?.Id);
-        Assert.Null(CheckQueue.Next(asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null));
-        Assert.Equal(0, CheckQueue.Ahead(asks[0], asks, _ => null));
-        Assert.Equal(2, CheckQueue.Ahead(asks[1], asks, _ => null));
-        Assert.Equal(1, CheckQueue.Ahead(asks[2], asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null));
+        Assert.Equal("a1", CheckQueue.Next(asks, _ => null, At)?.Id);
+        Assert.Null(CheckQueue.Next(asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null, At));
+        Assert.Equal(0, CheckQueue.Ahead(asks[0], asks, _ => null, At));
+        Assert.Equal(2, CheckQueue.Ahead(asks[1], asks, _ => null, At));
+        Assert.Equal(1, CheckQueue.Ahead(asks[2], asks, id => id == "a1" ? new CheckState("a1", CheckStates.Running, At) : null, At));
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class CheckBrokerTests : IDisposable
     {
         var asks = new[] { Ask("a1"), Ask("a2") };
 
-        Assert.Equal("a2", CheckQueue.Next(asks, id => id == "a1" ? new CheckState("a1", CheckStates.Reached, At) : null)?.Id);
+        Assert.Equal("a2", CheckQueue.Next(asks, id => id == "a1" ? new CheckState("a1", CheckStates.Reached, At) : null, At)?.Id);
     }
 
     [Fact]

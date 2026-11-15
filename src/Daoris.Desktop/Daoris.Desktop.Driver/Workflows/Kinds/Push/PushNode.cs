@@ -53,7 +53,7 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
     public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 
     /// <summary>The push act of the act journal, under the loop's lease and drain rules.</summary>
-    public INodeDoor? Door(NodeDoorWiring wiring) => new PushDoor(wiring.Home, said => wiring.Say("push.run", said), wiring.MayStart);
+    public INodeDoor? Door(NodeDoorWiring wiring) => new PushDoor(wiring.Home, said => wiring.Say("push.run", said), wiring.MayStart, clock: wiring.Clock);
 
     /// <summary>Begun in the pass and read from the landing record; its door takes it after the rounds.</summary>
     public Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) => Task.FromResult<WorkPerformed?>(starting.Begin());

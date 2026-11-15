@@ -27,7 +27,7 @@ internal sealed class PlaceMemory : IDisposable
     /// <summary>The place made a git place holding <paramref name="files"/>, committed as one.</summary>
     internal async Task MakeAsync(params (string Path, string Text)[] files)
     {
-        Directory.CreateDirectory(Path.Combine(Place, ".git"));
+        CheckoutMarks.Mark(Place);
         foreach (var (path, text) in files) Put(path, text);
         await CommitAsync("one");
     }

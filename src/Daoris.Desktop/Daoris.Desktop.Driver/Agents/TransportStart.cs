@@ -175,6 +175,9 @@ internal interface ITransportHost
     /// <summary>The home whose launcher and machine log a start uses.</summary>
     string Home { get; }
 
+    /// <summary>The clock the run's own stamps are read on: the machine's, and a held one in a test.</summary>
+    TimeProvider Clock { get; }
+
     /// <summary>The sessions' processes, which each run's is tracked in.</summary>
     SessionProcesses Processes { get; }
 

@@ -45,6 +45,8 @@ public sealed class RepositoryCreateTests : IDisposable
 
     private string Work(params string[] parts) => Path.Combine([_scratch, "aurora", .. parts]);
 
+    private string GitFolder(string name) => Work(name, ".git");
+
     private static CreateAsk Ask(string name = "ledger", string workspace = "aurora") => new(name, "keeps the books") { Workspace = workspace };
 
     /// <summary>Two repositories of workspace <c>aurora</c> side by side, each a real checkout on <c>main</c>.</summary>
@@ -543,7 +545,7 @@ public sealed class RepositoryCreateTests : IDisposable
 
         Assert.False(stopped.Done);
         Assert.Contains("the registry door answered 500", stopped.Message);
-        Assert.True(Directory.Exists(Work("ledger", ".git")));
+        Assert.True(Directory.Exists(GitFolder("ledger")));
         var kept = new CreateReceipts(Home).Read(first.Digest)!;
         Assert.Equal(
             [PlaceOutcomes.Done, PlaceOutcomes.Done, PlaceOutcomes.Failed, PlaceOutcomes.Pending, PlaceOutcomes.Pending],
@@ -595,7 +597,7 @@ public sealed class RepositoryCreateTests : IDisposable
 
         Assert.False(again.Applies);
         Assert.Contains(Work("ledger"), Refused(again, CreateRefusals.FolderExists));
-        Assert.True(Directory.Exists(Work("ledger", ".git")));
+        Assert.True(Directory.Exists(GitFolder("ledger")));
     }
 
     [Fact]
@@ -605,7 +607,7 @@ public sealed class RepositoryCreateTests : IDisposable
         var ask = Ask();
         await Apply(stand, ask);
         GitSeed.Remove(Work("ledger"));
-        Directory.CreateDirectory(Work("ledger", ".git"));
+        Directory.CreateDirectory(GitFolder("ledger"));
         _host.Drop(Work("ledger"));
         var other = _host.Add(new MemoryRepository(Work("ledger")));
         other.Write(Work("ledger"), "README.md", "# ledger\n");
@@ -713,7 +715,7 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.Contains("repository create: folder made", said);
         Assert.Contains("  quest  #q-1 for `ledger`", said);
         Assert.Contains("  commit ", said);
-        Assert.True(Directory.Exists(Work("ledger", ".git")));
+        Assert.True(Directory.Exists(GitFolder("ledger")));
     }
 
     /// <summary>The verb hands its result to the caller that asked for it, which is how the window's press says what it made.</summary>

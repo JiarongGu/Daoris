@@ -32,6 +32,8 @@ internal sealed class WatchRun(
 
     // What is said and not yet in a report: the sweep's lines, and what a look that failed or is closed had said. The next report
     // opens with them, or `said` has them as the failure is heard.
+    private static DateTimeOffset Now() => DateTimeOffset.UtcNow;
+
     private readonly List<string> _carried = [];
     private readonly List<SessionEnded> _carriedEnded = [];
 
@@ -139,7 +141,7 @@ internal sealed class WatchRun(
         {
             ConfigPath = ConfigPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = watch.Processes, Events = watch.Events,
             Caches = watch.Browser as IBrowserCaches, Volume = SpaceVolumes.Read, Copies = new OrphanCopies(Home),
-            PluginOutput = new PluginOutputKeeping(() => DateTimeOffset.UtcNow),
+            PluginOutput = new PluginOutputKeeping(Now),
         };
 
         _counted = wakes.Count;
@@ -333,7 +335,7 @@ internal sealed class WatchRun(
         // A home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
         _staffing?.Check(StaffingCheckAt.Look);
 
-        var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct, held: Running.Holds)).ConfigureAwait(false);
+        var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct, held: Running.Holds, now: Now)).ConfigureAwait(false);
         // An end nobody pressed and nobody must answer: news.
         foreach (var ended in orphans)
         {
@@ -346,7 +348,7 @@ internal sealed class WatchRun(
             _swept = true;
             // The decisions an earlier run left closed before this first look's carry-ons, held
             // and released ones stale and admitted ones interrupted; their waiting words the look takes back.
-            Supervisor.SweepAtStart(DateTimeOffset.UtcNow);
+            Supervisor.SweepAtStart(Now());
             FileAllowSweep.AtStart(Home, Log);
             // A loop that died with a carry-on's move standing is taken up here, at the slot
             // where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and the

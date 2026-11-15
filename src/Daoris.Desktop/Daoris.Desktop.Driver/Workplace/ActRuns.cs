@@ -118,17 +118,17 @@ public sealed class ActRuns(ActJournal journal)
     private static readonly TimeSpan Polls = TimeSpan.FromMilliseconds(200);
 
     /// <summary>The checkout held alone for <paramref name="plan"/>, tried again while it is held for the plan's wait; null where it still is.</summary>
-    private static async Task<TreeLock?> HoldWaitingAsync(string home, ActPlan plan, CancellationToken ct)
+    private async Task<TreeLock?> HoldWaitingAsync(string home, ActPlan plan, CancellationToken ct)
     {
         var held = Hold(home, plan.Checkout, plan.Repository);
         // No wait while this flow holds a checkout: a cycle of waits could begin there.
         if (held is not null || plan.Waits <= TimeSpan.Zero || LockWaits.Holding is not null) return held;
-        var until = DateTimeOffset.UtcNow + plan.Waits;
-        while (held is null && DateTimeOffset.UtcNow < until && !ct.IsCancellationRequested)
+        var until = journal.Clock.GetUtcNow() + plan.Waits;
+        while (held is null && journal.Clock.GetUtcNow() < until && !ct.IsCancellationRequested)
         {
             try
             {
-                await Task.Delay(Polls, ct).ConfigureAwait(false);
+                await Task.Delay(Polls, journal.Clock, ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
