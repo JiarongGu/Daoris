@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The web's measured specs failed fifteen: four causes, one a load
+
+- **Symptom:** `web-measured` red on main 1779ac2ec4: `session/*` at 400 px (one crossing, ceiling 0), `parts/WithTheLandingPlan(+Chinese)`
+  (no frame drawn), `editor/ReleaseDarkHalf` (the rail where the chart is drawn), the six `head/*` budget tests, `large/Hundred` (p95 frame).
+- **Root cause:** (1) 5bbdf3b701 drew `awaiting-step` in the session life: a sixth state with its skipping edge to the outcomes meets
+  working's edge to waiting on you past it, whichever side either takes, so top to bottom crosses once (left to right 13, not 7).
+  (2) 66e77f5ed6 removed the landing plan's parts stories and left their table rows. (3) The editor's dark story wrapped the chart in the
+  theme decorator's own 8 px padding, so the half frame held 560 px where the page gives 576, under what the chart needs since the release
+  step joined it (8d5a66a5d2). (4) 2e6880c692 took the expected-failure mark off the head's 200 px budget as if the head with every block
+  fit; its eight blocks alone come to over 200 px (268 at wide) and the typical record's stories hold the budget. (5) `large/Hundred` is
+  load: its p95 was 21.3 ms alone on a quiet run beside a passing median of 16.7, and the spec passes there.
+- **Fix:** the session rows hold 1 top to bottom and 13 left to right, their comment saying why; the plan's rows are gone; the editor's
+  dark decorator takes no padding; the head's budget test is an expected failure again with its reason. No ceiling or budget was loosened
+  where the design set it: the session life's is the one that moved, by a state the lifecycle added.
 ## 2026-11-16 - A run's `check` red at its commit and the work's waiting session each waited on the other
 
 - **Symptom:** a run of Daoris's own development workflow held its `check` ready at attempt 1 for over twenty minutes after `content`
