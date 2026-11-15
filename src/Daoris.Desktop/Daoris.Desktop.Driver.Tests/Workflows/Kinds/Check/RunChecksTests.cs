@@ -36,6 +36,7 @@ public sealed class RunChecksTests : IDisposable
         Assert.NotNull(send);
         Assert.Equal((Run, "inv-1", "engine", Path.GetFullPath("checkout-engine"), Tip), (send.Run, send.Invocation, send.Repository, send.Checkout, send.Commit));
         Assert.False(send.Reached);
+        Assert.True(send.AsMerged);
     }
 
     [Fact]

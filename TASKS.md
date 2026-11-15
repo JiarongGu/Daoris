@@ -33,7 +33,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 
 Gap patterns (the owner, 2026-11-16: a discrepancy found is a pattern; each row closes the class with a check, then sweeps it):
 
-- [ ] **CHECKCHASE1 — a run's check judges the work as merged onto the line's tip** (driver; found 2026-11-16): quest #82406c797e18's check failed `hand-back` each time main moved under it ("N commits behind `origin/main`… rebase and commit again"), so on a busy line the run chases main and the steward held pushes to let it land. The check merges the line's tip into its verification tree (as `merge-branch` judges the merge) and sends back only a conflict.
 - [ ] **GAPGATES1 — a door is the owner's by a decision, never by default** (service, modules; after OWNERGATE1): an unclassed write is the person's (`PersonDoors.cs`), so memory Keep, a memory end and a departure's Accept were hard gates no decision weighed (OWNERGATE1, D297, makes them a role's). Every other default-person route is judged against the owner's risk decision: kept the owner's with its reason, or a role's act.
 - [ ] **GAPWAITS1 — whatever waits on the owner is in What needs you** (web, modules; after OWNERGATE1): staged memory showed only on its session's page, and the steward's watch and the window disagreed on it. A census: each state that waits on the owner has a What-needs-you row with a door.
 
