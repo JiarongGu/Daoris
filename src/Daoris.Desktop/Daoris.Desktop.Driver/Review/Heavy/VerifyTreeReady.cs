@@ -32,11 +32,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
         return Of(keys, declared.Regenerate, TreeLocalInputs.Declared(checkout), checkout);
     }
 
-    /// <summary>
-    /// The stamp over every input the preparation reads: the dependency keys, the declared <c>regenerate</c> commands, and each declared
-    /// local input (its path and the checkout file's content hash, or <c>absent</c>), which the files stage copies into the tree. A new
-    /// input the preparation reads goes in here, and the stamp test moves it.
-    /// </summary>
+    /// <summary>The stamp over every input the preparation reads; a new input goes in here, and the stamp test moves it.</summary>
     internal static string Of(IReadOnlyList<string> keys, IReadOnlyList<string> regenerate, IReadOnlyList<LocalInput> localInputs, string checkout)
     {
         var words = new List<string>(keys);
@@ -49,7 +45,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
     {
         try
         {
-            return File.Exists(file) ? Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file))) : "absent";
+            return File.Exists(file) ? Convert.ToHexString(SHA256.HashData(AtomicFile.ReadBytes(file))) : "absent";
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

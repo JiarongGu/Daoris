@@ -16,13 +16,11 @@ import { makeFixture } from '../_fixture.ts';
  * A join by hand is a `Path.Combine(…)` (C#) or a `join(…)` or `resolve(…)` (the CLI's TypeScript) whose first part is a home:
  * a variable, field or property called `home`, `_home` or `Home`, alone or a member's. In the code every such join is one; in a
  * test, one that names an entry (a literal whose first part is a place the table holds, or a constant naming a folder or a
- * file), since a test's home is also its scratch. Each join kept is owed below with its reason; one fixed is a row this test
- * refuses until it is dropped. A test's own names for the root it hands as `DAORIS_HOME` count as homes.
- */
+ * file), since a test's home is also its scratch. Each join kept is owed below with its reason (a fixed one is refused until
+ * dropped); a test's own names for its `DAORIS_HOME` root count as homes. */
 
 const SRC = join(DESKTOP, '..');
 
-/** The twins themselves, which alone join a home to a place: the table's own reading. */
 const TWINS = new Set(['DaorisHome.cs', 'home.ts']);
 
 /**
