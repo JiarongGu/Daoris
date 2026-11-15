@@ -224,6 +224,7 @@ test('logs and scratch under local/ are an agent\'s disposable output; anything 
   assert.equal(tool.disposableLocal('local/sensitive-patterns.txt'), false, 'a private gate file is a copy only where the declaration names it');
   assert.equal(tool.disposableLocal('local/sensitive-patterns.txt', false, ['local/sensitive-patterns.txt']), true);
   assert.equal(tool.disposableLocal('local/deep/x.props'), false, 'the setup copies only the props directly under local/');
+  for (const path of ['local/quick-base.json', 'local/quick-verdicts.json']) assert.equal(tool.disposableLocal(path), true, `${path} is quick's own`);
 
   const fx = makeFixture('merge-branch-local');
   try {

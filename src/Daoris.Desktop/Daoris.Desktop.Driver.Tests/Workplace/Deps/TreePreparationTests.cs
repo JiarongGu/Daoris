@@ -4,8 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A new tree is made like its checkout before a session gets it: the gates' declared <c>regenerate</c> commands run in it, then the
-/// declared <c>treeBaseline</c> once, whose red is the base and no failure. Real git and real commands; fixtures live under the
+/// What a repository declares to prepare a tree: a session's tree is handed without it, its session told the commands; a verification
+/// tree runs each gate's <c>regenerate</c> once, never the <c>treeBaseline</c>. Real git and real commands; fixtures live under the
 /// repository's gitignored <c>_fixtures/</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -56,29 +56,47 @@ public sealed class TreePreparationTests : IDisposable
     }
 
     [Fact]
-    public async Task A_new_tree_regenerates_once_then_runs_the_baseline_and_a_red_one_is_no_failure()
+    public async Task A_sessions_tree_is_handed_without_waiting_on_the_declared_preparation_and_is_told_it()
+    {
+        var tree = await MakeTreeAsync(Declared, "0");
+        var said = new List<Noted>();
+        var clock = 0L;
+        var steps = new LookStages(clock: () => clock += 20);
+
+        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None, steps: steps);
+
+        Assert.False(File.Exists(Path.Combine(tree, "local", "regen.txt")));
+        Assert.False(File.Exists(Path.Combine(tree, "local", "base.txt")));
+        Assert.Contains("`node regen.cjs`, then `node base.cjs`", outcome.Told);
+        Assert.Contains("before you change a file", outcome.Told);
+        var line = steps.Take()!;
+        Assert.All(["files.read=", "files.deps=", "files.hook=", "files.setup=", "files.shares=", "files.local="], step => Assert.Contains(step, line));
+        Assert.DoesNotContain("files.prep", line);
+    }
+
+    [Fact]
+    public async Task A_verification_tree_regenerates_once_and_never_runs_the_baseline()
     {
         var tree = await MakeTreeAsync(Declared, "1");
         var said = new List<Noted>();
 
-        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None);
+        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None, regenerate: true);
 
         Assert.Equal("x", await File.ReadAllTextAsync(Path.Combine(tree, "local", "regen.txt")));
-        Assert.Equal("recorded", await File.ReadAllTextAsync(Path.Combine(tree, "local", "base.txt")));
+        Assert.False(File.Exists(Path.Combine(tree, "local", "base.txt")));
         Assert.DoesNotContain(StartNoteCodes.StartedPrepFailed.Code, said.SelectMany(each => each.Parts).Select(part => part.Code));
-        Assert.Contains("recorded its base", outcome.Told);
+        Assert.Null(outcome.Told);
     }
 
     [Fact]
-    public async Task A_baseline_that_could_not_run_is_said_and_the_start_goes_on()
+    public async Task A_regenerate_that_could_not_run_is_said_and_the_preparation_goes_on()
     {
-        var tree = await MakeTreeAsync(Declared, "2");
+        var tree = await MakeTreeAsync("""{ "gates": [ { "name": "a", "run": "x", "regenerate": "node -e \"process.exit(2)\"" } ] }""", "0");
         var said = new List<Noted>();
 
-        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None);
+        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None, regenerate: true);
 
         Assert.Contains(StartNoteCodes.StartedPrepFailed.Code, said.SelectMany(each => each.Parts).Select(part => part.Code));
         Assert.False(outcome.Stopped);
-        Assert.DoesNotContain("recorded its base", outcome.Told ?? "");
     }
 }

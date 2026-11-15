@@ -6,7 +6,7 @@
  *   node tools/quick.mjs                run every step; exit 0 all green, 1 a red, 2 a tool error
  *   node tools/quick.mjs --record-base  also record these verdicts as the tree's base (`local/quick-base.json`)
  *
- * The base is recorded where a session's tree is prepared, before the session gets it; a run never rewrites it.
+ * The base is recorded as a tree is prepared, by its builder or its session before it changes a file; a run never rewrites it.
  */
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';

@@ -41,6 +41,26 @@ repository.
 - **Verified.** Red first: `setup.held.test.tsx` (the plan was `{ pending: true }`); green after, with the set-up, bridge, help and ask
   web tests.
 
+## 2026-11-16 - A driven session of this repository sat about five minutes before its agent started
+
+- **Symptom:** on the install, `session.opened` took 281 s for c69733ec (claude-code-acp, this repository): its record noted the
+  account, then nothing for 270 s, then its dependency and local-copy lines together; earlier opens of the same repository 92-590 s,
+  while opens with no tree took 2-22 s.
+- **Root cause:** the files stage ran, before the hand, what the checkout's gates file declares to prepare a tree, `node
+  tools/contracts.mjs --if-stale` (a cold build of the contracts generator in a fresh tree) then `node tools/quick.mjs --record-base`
+  (every quick step), serially, with the agent not yet started: ccdfd8fb52 (TREEPREP1). The tree's own files time it: the two
+  `node_modules` placed by 18:10:13 (26 s), the hook's index by 18:10:24 (11 s), the generated contracts at 18:12:05 (~101 s), the
+  base at 18:14:16.9 (~131 s), the prompt at 18:14:28 (the hand, 11 s). The machine's admission and the abandoned quest's retries were
+  not the cause; nothing timed the steps, so nothing named it. The 2026-11-13 and -14 opens were the root `npm ci` installing in each
+  tree (its scripts wrote git's hooks and `docs/index/` beside it, so it was never stored), not this.
+- **Fix:** a session's tree is handed without the declared preparation, its session told the commands to run before it changes a file
+  (`TreePreparation.Told`); a verification tree still runs each `regenerate`, never the baseline. Each run stage, each files-stage step
+  (`files.read`, `files.deps`, `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`) and the hand are timed in one
+  `session.opening` line written at the spawn.
+- **Verified.** Red first: `TreePreparationTests.A_sessions_tree_is_handed_without_waiting_on_the_declared_preparation_and_is_told_it`
+  (the regenerate's file stood in the session's tree); green after, with `OpeningLineTests`. Before, 281 s for c69733ec; after, the
+  same open less its ~232 s of preparation, about 49 s, which the next open's `session.opening` measures on the install.
+
 ## 2026-11-16 - The release rehearsal and the pinned git leg each red on main 1779ac2ec4
 
 - **Symptom:** `rehearse` failed four checks (the checkpointing pack's "core row stays on" and "comes back", the move to `.agents`'s

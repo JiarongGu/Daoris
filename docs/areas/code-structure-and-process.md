@@ -155,8 +155,8 @@ finishes first and the whole set runs once.
     first (the main checkout's `local/*.props` copied as files, never linked; dependencies from the lockfiles through
     `tools/merge-branch/dependencies.mjs`, shared with the gate tree; the merge drivers, the index, each gate's declared `regenerate`
     command and the restore primed; then the declared `treeBaseline` run, `node tools/quick.mjs --record-base`, which records the
-    tree's base verdicts, a red base being no failure of the setup). A session's tree is prepared by the same declaration
-    (`tools/tree-prep.mjs` here, `TreePreparation` in the driver): one way, whoever the tree is for; a branch lands through the merge tool, never a plain `git merge`. A merge whose `package-lock.json` moved runs `npm
+    tree's base verdicts, a red base being no failure of the setup). A session's tree is handed without it, its session told the
+    declaration (`tools/tree-prep.mjs` reads it here), which it runs as a builder does, so its open waits on none of it (OPENSLOW1); a branch lands through the merge tool, never a plain `git merge`. A merge whose `package-lock.json` moved runs `npm
     ci` in that folder once before its first gate, and every gate waits for it (`tools/merge/lock-install.ts`). A merge runs the fast
     tier alone, in under five minutes for a typical branch: the light gates, the CLI's checks (`cli`, `npm run verify:checks`,
     `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast` runs the
