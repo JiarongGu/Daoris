@@ -2,7 +2,6 @@
 name: skills-workflow
 applies_when: starting any change, and whenever a follow-up changes its scope
 enforces: start at the area document of the part you change, and read again when the scope moves
-rule: true
 ---
 <!-- daoris: core/core/knowledge/skills-workflow.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 

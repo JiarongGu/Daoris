@@ -15,8 +15,7 @@ import { writeLock } from '../../src/doctrine/config.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 const INDEX = '.claude/INDEX.md';
-const pointer = (path: string) => `The knowledge and the skills, each with when it applies, are listed in [${path}](${path}), `
-  + 'generated from the files: read it before a non-trivial task, and search it when it is long.';
+const pointer = (path: string) => `- knowledge and skills, each with when it applies: \`${path}\`, searched for your kind of change`;
 const TEXT = /looks like a link checked out as text/;
 
 test('index cell: not in the lock, absent — written, with both tables, and the lock names it', () => {
@@ -41,18 +40,17 @@ test('index cell: not in the lock, absent — written, with both tables, and the
   fx.cleanup();
 });
 
-test('the region keeps the rules table and points at the index, and lists no document of either tier', () => {
+test('the region points at the index above the rules, and lists no document of either tier', () => {
   const fx = layoutFixture('index-region');
   fx.repoFx.write('.claude/knowledge/ours.md', doc('ours'));
   fx.repoFx.write('.claude/skills/house/SKILL.md', skill('house'));
   fx.sync();
 
   const region = fx.repoFx.region()!;
-  assert.ok(region.includes(`## Read on demand\n\n${pointer(INDEX)}\n`), region);
-  assert.doesNotMatch(region, /## Invoke by name/);
+  assert.ok(region.includes(`## Where things are\n\n${pointer(INDEX)}\n`), region);
+  assert.doesNotMatch(region, /## Invoke by name|## Rules\n/);
   assert.doesNotMatch(region, /storage|finder|ours|house/, 'no knowledge or skill row is left in the region');
-  assert.ok(region.indexOf('| `sensitive-info` |') < region.indexOf('## Read on demand'));
-  assert.ok(region.indexOf('## Read on demand') < region.indexOf('<!-- daoris: core/core/rules/'));
+  assert.ok(region.indexOf(pointer(INDEX)) < region.indexOf('<!-- daoris: core/core/rules/'));
   fx.cleanup();
 });
 

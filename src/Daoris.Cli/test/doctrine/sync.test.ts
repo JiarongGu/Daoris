@@ -456,8 +456,7 @@ test('sync writes the roster into the region and the index beside the tiers, so 
 
   const region = fx.repoFx.region()!;
   assert.match(region, /sensitive-info/);
-  assert.match(region, /## Read on demand/);
-  assert.match(region, /\[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/);
+  assert.match(region, /^- knowledge and skills, each with when it applies: `\.claude\/INDEX\.md`/m);
   const index = fx.repoFx.read('.claude/INDEX.md');
   assert.match(index, /storage/);
   // A document the repository wrote itself is listed and marked, never synced.
@@ -467,22 +466,16 @@ test('sync writes the roster into the region and the index beside the tiers, so 
 });
 
 /**
- * A canon knowledge document marked `rule: true` is a rule read on demand: a file like any knowledge,
- * locked as one, and a row in the region's table linked to it. A repository's own document so marked is not the canon's
- * and gets no row; the `change` line comes with the canon's skill.
+ * Knowledge is read on demand whatever its frontmatter says: a file like any knowledge, locked as one, and absent from
+ * the region, which names only the index.
  */
-test('a rule read on demand lands as a knowledge file with a linked row in the region, and only the canon gets a row', () => {
+test('knowledge lands as a file and stays out of the region, whatever its frontmatter says', () => {
   const fx = seed();
   fx.canonFx.write('core/knowledge/no-tmp.md', doc('no-tmp').replace('enforces: e\n', 'enforces: e\nrule: true\n'));
-  fx.canonFx.write('core/skills/change/SKILL.md', '---\nname: change\ndescription: Make a change.\n---\n\nSteps.\n');
-  fx.repoFx.write('.claude/knowledge/ours.md', doc('ours').replace('enforces: e\n', 'enforces: e\nrule: true\n'));
   run(fx);
 
   const region = fx.repoFx.region()!;
-  assert.match(region, /^\| \[`no-tmp`\]\(\.claude\/knowledge\/no-tmp\.md\) \| w \| e \|$/m);
-  assert.doesNotMatch(region, /Body of no-tmp/);
-  assert.doesNotMatch(region, /`ours`/);
-  assert.match(region, /^Make every change through the `change` skill\.$/m);
+  assert.doesNotMatch(region, /no-tmp/);
   assert.match(fx.repoFx.read('.claude/knowledge/no-tmp.md'), /Body of no-tmp/);
   const entry = readLock(fx.repoFx.root)!.entries.find((e) => e.target === 'knowledge/no-tmp.md')!;
   assert.equal(entry.in, undefined);

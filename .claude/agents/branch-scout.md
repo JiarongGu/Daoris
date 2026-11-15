@@ -1,6 +1,6 @@
 ---
 name: branch-scout
-description: Read-only orientation for one backlog row of this repository, run before a branch-worker is dispatched. Reads the area as the change skill does, locates the contract, the code, the exemplar and the tests, and returns an orientation pack of file:line ranges. Changes nothing. Use before every branch-worker dispatch (the dispatch-subagent skill).
+description: Read-only orientation for one backlog row before a branch-worker is dispatched: finds the area, contract, code, exemplar and tests, and returns file:line ranges. Changes nothing. Use before every dispatch.
 tools: Read, Glob, Grep, Bash, PowerShell, Skill
 model: sonnet
 skills:

@@ -102,10 +102,23 @@ for (const [index, row] of MANIFEST_ROWS.entries()) {
     const fields: Record<string, unknown> = { source: 's', packs: [] };
     if (row.documents !== undefined) fields.documents = row.documents;
     const fx = manifestAt(`read-${index}`, JSON.stringify(fields));
-    assert.deepEqual(readManifest(fx.root).documents, row.read);
+    // The rows are the service's to match too, so a ceiling in bytes and `fails` are read in the test below.
+    assert.deepEqual(readManifest(fx.root).documents?.map(({ bytes: _bytes, fails: _fails, ...rest }) => rest), row.read);
     fx.cleanup();
   });
 }
+
+test('documents in the manifest: a ceiling in bytes, and one declared failing', () => {
+  const fx = manifestAt('read-bytes', JSON.stringify({ source: 's', packs: [], documents: { brief: { words: 1300, bytes: 8600, fails: true }, backlog: 'TASKS.md' } }));
+  assert.deepEqual(readManifest(fx.root).documents, [
+    { role: 'brief', path: null, words: 1300, bytes: 8600, fails: true },
+    { role: 'backlog', path: 'TASKS.md', words: null, bytes: null, fails: false },
+  ]);
+  fx.cleanup();
+  const refused = manifestAt('refused-fails', JSON.stringify({ source: 's', packs: [], documents: { brief: { fails: 'yes' } } }));
+  assert.throws(() => readManifest(refused.root), /documents\.brief has fails "yes" — it is true or false/);
+  refused.cleanup();
+});
 
 for (const [index, row] of REFUSED_ROWS.entries()) {
   test(`documents in the manifest, refused: ${row.name}`, () => {

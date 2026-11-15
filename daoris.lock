@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "b13f19a66aa2bd6f114dce48ee4473ffa42f73bdb434596c3a0c265cc03a66ea",
+  "canonDigest": "c6ba0b81e034c0454613ed75a05be048e9c190d819dea95924372f0d694b66aa",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -9,7 +9,7 @@
       "source": "core/knowledge/autonomous-development.md",
       "target": "knowledge/autonomous-development.md",
       "canonVersion": "0.0.1",
-      "sha256": "47411656d63ca1159327af2b2d9611f2d348ecf6b279b8176b835e35f87e93bf"
+      "sha256": "364b06fd7ece723d584030b0218cbd722026b413a085381bdfdbbfa87cf70b04"
     },
     {
       "pack": "core",
@@ -30,14 +30,28 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "7c947e6723b4a46c106c5e0c4c9e3fa2d5b40ad089ba9144e37f2c08f1e228ae"
+      "sha256": "fc2509dee304209224a58c76953f940a941caf4d56788041e46dba20dc2b71ce"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/file-tools.md",
+      "target": "knowledge/file-tools.md",
+      "canonVersion": "0.0.1",
+      "sha256": "da3297cb727ef04962f8c51bbce6f40769bd158dc08b63c7dd303191c79a0fb7"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/fresh-design-pass.md",
+      "target": "knowledge/fresh-design-pass.md",
+      "canonVersion": "0.0.1",
+      "sha256": "95779abc526cdd1922d239db2d3f850f2072362b36665f1fe1ba63cb0be925f2"
     },
     {
       "pack": "core",
       "source": "core/knowledge/leak-repair.md",
       "target": "knowledge/leak-repair.md",
       "canonVersion": "0.0.1",
-      "sha256": "c4173572d9160f00489cde8823f7f0337ebf1e05f2fa4bb394e6e7deda1bcbda"
+      "sha256": "8491ef75f861c7fb8b7102aee6daad293339de94ddfcdccb6b23a015cfad731d"
     },
     {
       "pack": "core",
@@ -51,28 +65,28 @@
       "source": "core/knowledge/no-global-memory.md",
       "target": "knowledge/no-global-memory.md",
       "canonVersion": "0.0.1",
-      "sha256": "3a4c10fef60d5d8d9f776e5988cd078d61f1e7b9e5ece82ca64065a92afc2ab8"
+      "sha256": "172e841f72c07bda60cf5459bd7fb94e449e3b66cd1d4e3e97d40e392da0977e"
     },
     {
       "pack": "core",
       "source": "core/knowledge/no-tmp-for-repo-files.md",
       "target": "knowledge/no-tmp-for-repo-files.md",
       "canonVersion": "0.0.1",
-      "sha256": "6fbe55d672a69faa294149b3d12bb15147d38a61d6a3ddc44a37e73f2d3f0efc"
+      "sha256": "2677e652c2e9a33b30352212600e09efd28a945b66aac22157c32fd9f23cc790"
     },
     {
       "pack": "core",
       "source": "core/knowledge/persist-working-state.md",
       "target": "knowledge/persist-working-state.md",
       "canonVersion": "0.0.1",
-      "sha256": "c691dbab33973ec04fd1a0b20bee60feeeec1ad9542bf65dd5902980cd95959a"
+      "sha256": "6e870c0a1cb98ea619c4c7a4b045074c20330f5862e4bcbdf3ddf7a23d7cf2be"
     },
     {
       "pack": "core",
       "source": "core/knowledge/reaching-in.md",
       "target": "knowledge/reaching-in.md",
       "canonVersion": "0.0.1",
-      "sha256": "ed1f7729783fe48b4feee772e54478262be4fe0c41eab9f5e0f62cbb52494f20"
+      "sha256": "6ff8fea4ebf4c4388d1358ab48d0106c1fbbfddb3177bc87426fc34e289aeb9e"
     },
     {
       "pack": "core",
@@ -86,14 +100,14 @@
       "source": "core/knowledge/skills-workflow.md",
       "target": "knowledge/skills-workflow.md",
       "canonVersion": "0.0.1",
-      "sha256": "a600e5b44629d6209954e2552762e1ad38c6eb40b325a470750ae49df46f0aa4"
+      "sha256": "33ceca5e33f30474298a5131721d8b275f18d8bc321d8a9b64944ca0f78ca018"
     },
     {
       "pack": "core",
       "source": "core/knowledge/task-lifecycle.md",
       "target": "knowledge/task-lifecycle.md",
       "canonVersion": "0.0.1",
-      "sha256": "a7879b6b672102d923079791380906fbe2f0a819eb7c9dc4a1ad2ada2e735116"
+      "sha256": "845e9dc6bcf5d7ca0183ed05fc27b2618b09e8613f2d7cc8c15d55ac26e406eb"
     },
     {
       "pack": "localized-ui",
@@ -104,26 +118,18 @@
     },
     {
       "pack": "core",
-      "source": "core/rules/file-tool-discipline.md",
-      "target": "rules/file-tool-discipline.md",
+      "source": "core/rules/every-session.md",
+      "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
-      "sha256": "c2a4d895d800a2fa13e645fdf69e37dcd0488deb5ad29f11ac4f8c517463100f",
+      "sha256": "3e5002df0780bd5e175eafe99fc0ddbf8a6ae4aed36c78f6a38140bf13a44c64",
       "in": "AGENTS.md"
     },
     {
       "pack": "core",
-      "source": "core/rules/repository-owns-its-work.md",
-      "target": "rules/repository-owns-its-work.md",
+      "source": "core/rules/how-a-change-goes.md",
+      "target": "rules/how-a-change-goes.md",
       "canonVersion": "0.0.1",
-      "sha256": "cc924b1c1ba6c956c03f2544244ed162e637db8bcf057026b09e970da5cd2357",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/sensitive-info.md",
-      "target": "rules/sensitive-info.md",
-      "canonVersion": "0.0.1",
-      "sha256": "0f3cc22db1926dffade146112ba53c6cf21fe1969254e480817e39dbae41f315",
+      "sha256": "1eaed8f804cee42062a0801bb9f286f6bc30e2e0f130bca4a1537f438b678687",
       "in": "AGENTS.md"
     },
     {
@@ -131,28 +137,28 @@
       "source": "core/skills/caveman/SKILL.md",
       "target": "skills/caveman/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "696cae3e4e1b9282e0c6e2864c0c82cb4aad668e7695511c84e26e796be61079"
+      "sha256": "d8123c81c244044e35f4205f4350a045c4c2bad79e282bc9cdd8a922ddbb10fe"
     },
     {
       "pack": "core",
       "source": "core/skills/change/SKILL.md",
       "target": "skills/change/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "ac732ba3f044aca7e83e9c2980b709b198251f21550f5a1a5bf3769ce7332940"
+      "sha256": "f99a14bbd50e9aeae7b74c9e2641147f11b7e2aa207a74e021fc817838e8ea7b"
     },
     {
       "pack": "co-working",
       "source": "packs/co-working/skills/co-working/SKILL.md",
       "target": "skills/co-working/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "b55b19467c8d6074358ba80b7f29e68258fe202862b5516668c5f3bdbc2260e2"
+      "sha256": "46856268dfbab600d39d910f901575033cf588e401d20cf3a304011d41a332bd"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "71d1c028d5125ef7d24eb3d16a35656603fc1785712741580b3b9ef726b797a5"
+      "sha256": "f119740c2d1aed23b51351638718e79e9a49ae3d2b0f330afcd6858f924006da"
     },
     {
       "pack": "core",

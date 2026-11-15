@@ -110,6 +110,13 @@ public static class RepositoryDocuments
                     words = Ceiling(field.Value);
                     if (words is null) return null;
                     break;
+                // A ceiling in bytes, and whether it fails `check`: the CLI's to measure, read here only to accept the role.
+                case "bytes":
+                    if (Ceiling(field.Value) is null) return null;
+                    break;
+                case "fails":
+                    if (field.Value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return null;
+                    break;
                 default:
                     return null;
             }

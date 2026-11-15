@@ -88,8 +88,8 @@ export function reconcileItems(
       + 'part, or move a long section to a document read on demand.', false));
   }
   if (report.overBudget) {
-    items.push(item(manifest.target, 'gap', `holds ${report.coreBytes} bytes of always-loaded doctrine, over the `
-      + `${manifest.coreBudgetBytes} that \`daoris.json\` allows: split detail to the on-demand tier, or raise the budget `
+    items.push(item(manifest.target, 'gap', `holds ${report.coreWords} words of always-loaded doctrine, over the `
+      + `${manifest.coreBudget.words} that \`daoris.json\` allows: split detail to the on-demand tier, or raise the budget `
       + 'deliberately.', false));
   }
   for (const path of report.roomsWithoutInstructions) {

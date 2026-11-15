@@ -15,29 +15,39 @@ const LOCK_VERSION = 1;
 // manifest written before harnesses existed must keep working: absent is `claude-code`, the older
 // layout, and `agents` is chosen by name.
 /**
- * `coreBudgetBytes` is what a repository is willing to pay, in always-loaded bytes, on every task.
+ * `coreBudget.words` is what a repository is willing to pay, in always-loaded doctrine, on every task: the
+ * region's words, which `check` measures. The whole root instruction file has its own ceiling, the brief's.
  *
- * 30000 rather than the original 24000, and the reason is a design error the release rehearsal caught:
- * at 24000, core plus ONE pack already measured 24061, so a clean adopter's very first `check` failed
- * before they had written a single rule of their own. Worse, the gate then fired on the CANON — adding
- * a core rule broke a consumer — which is backwards. The budget exists to constrain what a repository
- * chooses to carry, not to cap what the doctrine may contain.
- *
- * 30000 leaves core, an index and two packs comfortably inside, so the gate fires on the case that
- * actually matters: a repository's OWN always-loaded material getting fat. That is the case it has
- * earned its keep on — it caught a 45% overage on first contact with one adopter, and forced the
- * retirement of an 8.3 KB duplicated rule in another.
- *
- * 🔴 **That is not quite what is measured.** The always-loaded tier is Daoris's region
- * of `AGENTS.md`, and `inspect` counts that region's body alone — the canon's rules and the index. A
- * repository's own always-loaded material (the rest of `AGENTS.md`, `CLAUDE.md`, a local
- * `.claude/rules/` file) is not counted, and `analyze` still projects the whole-tier quantity. What the
- * number should cap is open in `TASKS.md`.
+ * The default leaves the core and a few packs' rules inside, so it fires on what matters: a repository's
+ * own always-loaded choice getting fat. It reports; a repository that declares `"fails": true` holds it.
  */
-export const DEFAULT_CORE_BUDGET_BYTES = 30000;
+export const DEFAULT_CORE_BUDGET_WORDS = 4500;
 
-const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudgetBytes'> & { target: string | null } =
-  { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudgetBytes: DEFAULT_CORE_BUDGET_BYTES };
+const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudget'> & { target: string | null } =
+  { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudget: { words: DEFAULT_CORE_BUDGET_WORDS, fails: false } };
+
+/**
+ * `coreBudget` as `check` reads it, or a refusal. The byte ceiling it replaced is refused with the line that replaces
+ * it, because a ceiling silently ignored is one nobody knows has stopped applying.
+ */
+function checkCoreBudget(parsed: Record<string, unknown>): Manifest['coreBudget'] {
+  if ('coreBudgetBytes' in parsed) {
+    throw new DaorisError(`${MANIFEST_FILE} has coreBudgetBytes, which is retired: the always-loaded doctrine's ceiling `
+      + `is in words — replace it with "coreBudget": { "words": ${DEFAULT_CORE_BUDGET_WORDS} }`);
+  }
+  const value = parsed.coreBudget;
+  if (value === undefined) return DEFAULTS.coreBudget;
+  const words = (value as Record<string, unknown> | null)?.words;
+  const fails = (value as Record<string, unknown> | null)?.fails;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)
+    || Object.keys(value).some((key) => key !== 'words' && key !== 'fails')
+    || !(typeof words === 'number' && Number.isInteger(words) && words > 0)
+    || (fails !== undefined && typeof fails !== 'boolean')) {
+    throw new DaorisError(`${MANIFEST_FILE}'s coreBudget is ${JSON.stringify(value)} — it is { "words": <a whole number above `
+      + 'zero>, "fails": true or false }');
+  }
+  return { words, fails: fails === true };
+}
 
 /**
  * JSON.parse behind the exit-code contract: a corrupt manifest or lock is a TOOL error (2), and a bare
@@ -62,7 +72,7 @@ export function readManifest(root: string): Manifest {
   // A JSON `"remote": null` means what absence means — local, silently — not a crash on the
   // dereference below. The type says the field is never null; the file is under no such obligation.
   if ((parsed as Record<string, unknown>).remote === null) delete parsed.remote;
-  const manifest = { ...DEFAULTS, ...parsed } as Manifest;
+  const manifest = { ...DEFAULTS, ...parsed, coreBudget: checkCoreBudget(parsed as Record<string, unknown>) } as Manifest;
   if (!manifest.source) throw new DaorisError(`${MANIFEST_FILE} has no 'source'`);
 
   // Knowledge feeds only from a joined repository: a manifest saying "share my knowledge but

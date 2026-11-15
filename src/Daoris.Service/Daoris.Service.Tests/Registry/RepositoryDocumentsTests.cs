@@ -315,6 +315,12 @@ public sealed class RepositoryDocumentsTests : IDisposable
         """{"decisions":"docs/decisions","index":"docs/index/README.md","router":"docs/README.md"}""",
         null, false,
         "router docs/README.md -|index docs/index/README.md -|decisions docs/decisions -")]
+    // The CLI's own test beside its rows: a ceiling in bytes and `fails` are accepted, and only the words are read here.
+    [InlineData(
+        "a ceiling in bytes, and one declared failing",
+        """{"brief":{"words":1300,"bytes":8600,"fails":true},"backlog":"TASKS.md"}""",
+        null, false,
+        "brief - 1300|backlog TASKS.md -")]
     // REFUSED_ROWS: the CLI refuses the manifest; this side reads the role as undeclared.
     [InlineData("a list", """["docs/DECISIONS.md"]""", null, false, "")]
     [InlineData("an unknown role, naming the known ones", """{"roadmap":"ROADMAP.md"}""", null, false, "")]

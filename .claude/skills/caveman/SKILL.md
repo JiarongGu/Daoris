@@ -1,6 +1,6 @@
 ---
 name: caveman
-description: Terse output mode — strips prose to essentials while keeping every technical detail exact, and stops compressing where compression is dangerous. Use when asked to be brief, concise, or token-efficient, or when invoked directly. Not a style preference; it carries safety carve-outs.
+description: Terse output: strips prose to essentials, keeps every technical detail exact, stops compressing where compression is dangerous. Use when asked to be brief or token-efficient, or invoked directly.
 ---
 <!-- daoris: core/core/skills/caveman/SKILL.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 

@@ -5,10 +5,15 @@
     "localized-ui"
   ],
   "target": ".claude",
-  "coreBudgetBytes": 26000,
+  "coreBudget": {
+    "words": 780,
+    "fails": true
+  },
   "documents": {
     "brief": {
-      "words": 1300
+      "words": 1300,
+      "bytes": 8600,
+      "fails": true
     },
     "router": {
       "path": "docs/README.md",

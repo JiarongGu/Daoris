@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { writeBytesAtomic, writeTextAtomic } from '../platform/fsx.ts';
 import { writeLock } from './config.ts';
 import { rosterExtras } from './indexgen.ts';
-import { onDemandExtras, renderTier } from './tierrender.ts';
+import { renderTier } from './tierrender.ts';
 import { ensureImport, writeRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import { contained, layoutFields, pruneEmpty } from '../layout/layout.ts';
@@ -324,7 +324,6 @@ function writeSpans(
         // Carried from `planSync`, where the canon is in hand — a span holds its body alone.
         ...(write.meta ? { meta: write.meta } : {}),
       })),
-      ...onDemandExtras(writes),
       version: canonVersion,
       target: manifest.target,
       // The rows this repository switched off: the session loading the region learns what is

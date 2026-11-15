@@ -1,6 +1,6 @@
 ---
 name: add-pack
-description: Use when adding a new pack to the Daoris canon (a stack-specific set of rules and knowledge, e.g. desktop-app, web-webview, durable-jobs). Covers the layout, the project-agnostic constraint, frontmatter, and the adoption gate.
+description: Add a pack to the canon (a stack-specific set of rules and knowledge): its layout, the project-agnostic constraint, frontmatter and the adoption gate. Use when adding a pack.
 ---
 
 # Add a pack to the canon

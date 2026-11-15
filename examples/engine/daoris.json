@@ -2,7 +2,10 @@
   "source": "daoris@0.0.1",
   "packs": [],
   "target": ".claude",
-  "coreBudgetBytes": 30000,
+  "coreBudget": {
+    "words": 4500,
+    "fails": false
+  },
   "domain": {
     "summary": "The example engine: the runtime half of the example family — simulation, rendering, and the asset pipeline the game builds on.",
     "owns": [
