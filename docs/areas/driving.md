@@ -129,7 +129,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 
 19. The record opens before the spawn, naming the quest, repository, door, tree, access setup and the actor's choice. The tree,
     profile and waiting words are machine-local and never travel. A throw or cancel between the open and the hand ends the record,
-    failed (stopped where the driver is closing), and lets its tree lock go. (D47, D49, D184, D205)
+    failed (stopped where the driver is closing), and lets its tree lock go. Each run stage, each step of the files stage
+    (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`) and
+    the hand's own preparation are timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
 20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)
@@ -140,7 +142,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). It
     seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
-    the machine-local files the `reach: copy` rules name and the checkout's declared `localInputs` and sensitive-patterns file (`TreeLocalInputs`, read-only, copied after the dependencies and still copied where a dependency step fails on the disk, so a tree's checks read what the merge's read). Last, in an unworked tree, `TreePreparation` runs what the checkout's gates file declares, never the tree's: each gate's `regenerate` command, then the top-level `treeBaseline` (here `node tools/quick.mjs --record-base`), as a gate's command is (`GateEnvironment`, the machine's admission, a 30-minute bound), so the tree has current generated inputs and its base verdicts recorded before the session gets it. A red base is the point and no failure; a command that could not run is said once as `started.prep-failed` and the start goes on; the session is told a base was recorded. A `reach: read` or `write` path naming one place that git ignores is
+    the machine-local files the `reach: copy` rules name and the checkout's declared `localInputs` and sensitive-patterns file (`TreeLocalInputs`, read-only, copied after the dependencies and still copied where a dependency step fails on the disk, so a tree's checks read what the merge's read). An unworked session's tree is handed without what the checkout's gates file declares to prepare a tree (each gate's `regenerate`, then the `treeBaseline`, here `node tools/quick.mjs --record-base`): its session is told those commands, to run before it changes a file, since run before the hand they held every open of this repository about four minutes with its agent idle (OPENSLOW1). A verification tree runs each `regenerate` (`TreePreparation`, as a gate's command is: `GateEnvironment`, the machine's admission, a 30-minute bound), never the baseline, a command that could not run said once as `started.prep-failed`. A `reach: read` or `write` path naming one place that git ignores is
     linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
     while it reads as its link (`TreeShares`). In a worked tree the stage only keeps. The hand, an open, a go-on and a terminal's
     visit take the mark off first. A folder is placed under a name beside its place and renamed into it, asked again up to twelve

@@ -1,7 +1,8 @@
 /**
  * What a repository declares a prepared tree runs, read from its `daoris.gates.json`: the `regenerate` command of each gate (each
  * distinct one, in the gates' order) and the top-level `treeBaseline`, one fast gate run whose verdicts are the tree's base. A
- * builder's worktree (`tools/worktree-setup.mjs`) and a session's tree (the driver's `TreePreparation`) run this one declaration.
+ * builder's worktree (`tools/worktree-setup.mjs`) runs this one declaration; a session is handed its tree without it and told it, and
+ * a verification tree runs its `regenerate` commands alone (the driver's `TreePreparation`).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

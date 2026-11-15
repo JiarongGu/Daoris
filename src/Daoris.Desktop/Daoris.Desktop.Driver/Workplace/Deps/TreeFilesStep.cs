@@ -4,13 +4,16 @@ namespace Daoris.Driver;
 internal static class TreeFilesStep
 {
     /// <summary>The stage in <paramref name="tree"/>, one of Daoris's trees of <paramref name="root"/>; a failure of git or the disk said, never thrown.</summary>
+    /// <param name="regenerate">Whether the gates' declared <c>regenerate</c> commands run (<see cref="TreePreparation"/>): a verification tree's,
+    /// which no session prepares; a session's tree is handed without them, its session told the declaration.</param>
+    /// <param name="steps">Where each step of the stage is timed, as <c>files.*</c>; null times none.</param>
     internal static async Task<TreeFilesOutcome> RunAsync(
-        string home, string root, string tree, string repository, Action<Noted> say, CancellationToken ct, bool baseline = true)
+        string home, string root, string tree, string repository, Action<Noted> say, CancellationToken ct, bool regenerate = false, LookStages? steps = null)
     {
         TreeFilesOutcome outcome;
         try
         {
-            outcome = await new TreeFilesStage(home, root, tree, repository, baseline).RunAsync(ct).ConfigureAwait(false);
+            outcome = await new TreeFilesStage(home, root, tree, repository, regenerate, steps).RunAsync(ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {

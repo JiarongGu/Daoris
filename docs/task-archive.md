@@ -3,6 +3,7 @@
 Completed work, with the date it closed and what shipped. `TASKS.md` holds only open items; this file is
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
+- **OPENSLOW1 (2026-11-16):** a driven session's open no longer waits on the tree preparation its repository declares (TREEPREP1's `regenerate` and `treeBaseline` before the hand, about 232 of the 281 s the slow open took); its session is told the commands to run before it changes a file, and a verification tree still regenerates. Each run stage, each files-stage step and the hand are timed in one `session.opening` line (`OpeningLine`).
 - **GATEBUDGET1 (2026-11-16):** the eight gates a CI run killed at ten minutes (tool-tests, web-unit, layers, service-process, driver, driver-process, driver-rehearsals, driver-process-git) declare `timeoutMinutes` with a `timeoutWhy` in `daoris.gates.json`; the full set runs only `adapters-lock` of the adapters, whose fingerprint no longer reads the shared build files (six rows re-stamped by green suites).
 
 - **CIRED2 (2026-11-16):** the release rehearsal reads the region as BRIEF1 left it (a core knowledge row is its file; the index pointer and document lines are bullets) and passes 116/116; `RefSnapshot.ReadAsync` ends each row with git's newline, so the pinned git leg's refs and ends classes pass.

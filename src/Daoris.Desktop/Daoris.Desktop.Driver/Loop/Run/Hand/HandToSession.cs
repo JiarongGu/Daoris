@@ -18,6 +18,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var home = context.Home;
         var config = context.Config;
         var state = run.State;
+        // The hand's own preparation up to the spawn, the open's last step (`session.opening`).
+        using var hand = state.Steps.Begin("hand");
         var quest = run.Quest;
         var registry = run.Registry;
         var (start, fellBack, answerKept, written, switched) = (state.GoneOn.Start, state.GoneOn.FellBack, state.GoneOn.AnswerKept, state.GoneOn.Written, state.GoneOn.Switched);
@@ -272,6 +274,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
 
             // A carried resume the door refuses before any prompt is the brief's start instead, the copy taken out of the account's home.
             var arranged = Arrange(target, conversation, brief);
+            OpeningLine.Say(service.AccountSaid, state.Steps, state.Began, hand, sessionId, agent);
             try
             {
                 return await HoldAsync(arranged, target, carriedAsk);

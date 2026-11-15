@@ -22,9 +22,12 @@ internal sealed record TreeFilesOutcome(IReadOnlyList<Noted> Said, bool Stopped,
 /// through each write, never while an install or the hook runs: once a terminal's visit has taken it, which ends a running install or
 /// hook, the stage stops, takes its <c>installing</c> mark away and leaves what it had not finished as the line's own.
 /// </remarks>
-internal sealed class TreeFilesStage(string home, string root, string tree, string repository, bool baseline = true)
+internal sealed class TreeFilesStage(string home, string root, string tree, string repository, bool regenerate = false, LookStages? steps = null)
 {
     private const string Zeros = "0000000000000000000000000000000000000000";
+
+    // The step timed now, ended as the next begins or the stage ends.
+    private IDisposable? _step;
 
     private readonly List<Noted> _said = [];
     private readonly List<string> _ready = [];
@@ -47,9 +50,21 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
             _said.Add(Failed(error));
+            At("files.local");
             await CopyLocalAsync(ct).ConfigureAwait(false);
             return new([.. _said], false, null);
         }
+        finally
+        {
+            _step?.Dispose();
+        }
+    }
+
+    /// <summary>The step that begins now, by its name alone; the one before it ends here.</summary>
+    private void At(string step)
+    {
+        _step?.Dispose();
+        _step = steps?.Begin(step);
     }
 
     internal static Noted Failed(Exception error)
@@ -60,6 +75,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
     private async Task<TreeFilesOutcome> StagesAsync(CancellationToken ct)
     {
+        At("files.read");
         var head = await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false);
         if (head is null) return TreeFilesOutcome.None;
         using var watch = TreeVisit.Watch(tree);
@@ -79,6 +95,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
 
         if (!Groups(unworked)) return Stop();
+        At("files.deps");
         var waiting = 0;
         var standing = true;
         foreach (var dependency in deps.Each)
@@ -103,21 +120,27 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         if (waiting > 0) _said.Add(Noted.Of(StartNoteCodes.StartedFilesWaiting, $"{waiting} of Daoris's acts on files git does not manage in `{repository}` wait for an allow under a restriction set for it, so this tree was not handed what they give.", ("count", waiting), ("repository", repository)));
         if (unworked)
         {
+            At("files.hook");
             if (!await HookAsync(head, ct).ConfigureAwait(false)) return Stop();
+            At("files.setup");
             if (!await OthersAsync(ct).ConfigureAwait(false)) return Stop();
             if (!await RepositorySetup.RunAsync(home, repository, tree, head, deps.Each, _said, ct, _visited).ConfigureAwait(false)) return Stop();
             if (!TreeFilesRecord.Holding(home, tree, () => { })) return Stop();
         }
 
+        At("files.shares");
         var shared = await TreeSharing.RunAsync(home, root, tree, repository, deps.Rules, deps.Floor, ct).ConfigureAwait(false);
         _said.AddRange(shared.Said);
         var based = TreeBaseWords.Say(home, tree, deps.Rules, deps.Floor);
         _said.AddRange(based.Said);
+        At("files.local");
         await CopyLocalAsync(ct).ConfigureAwait(false);
-        var prepared = unworked ? await TreePreparation.RunAsync(home, repository, root, tree, _said, ct, _visited, baseline).ConfigureAwait(false) : (Visited: false, Told: null);
-        if (prepared.Visited) return Stop();
+        // A verification tree regenerates; a session's is handed now and told the declaration, which it runs itself (OPENSLOW1).
+        if (unworked && regenerate) At("files.prep");
+        if (unworked && regenerate && await TreePreparation.RegenerateAsync(home, repository, root, tree, _said, ct, _visited).ConfigureAwait(false)) return Stop();
+        var prepared = unworked && !regenerate ? TreePreparation.Told(root) : null;
         var outcome = Outcome();
-        var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told, prepared.Told }.OfType<string>());
+        var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told, prepared }.OfType<string>());
         return told.Length == 0 ? outcome : outcome with { Told = told };
     }
 
@@ -355,7 +378,10 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     /// </summary>
     private async Task InstallAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
-        using var admitted = await InstallAdmission.TakeAsync(home, repository, tree, dependency, key, ct).ConfigureAwait(false);
+        IDisposable admitted;
+        // The wait for its key's lock and the machine's admission, timed apart within the install's step.
+        using (steps?.Begin("files.admit")) admitted = await InstallAdmission.TakeAsync(home, repository, tree, dependency, key, ct).ConfigureAwait(false);
+        using var admission = admitted;
         if (Placeable(dependency) && await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return;
         if (_stopped) return;
         if (!TreeFilesRecord.WhileUnworked(home, tree, record => record.With(new TreePlacement(dependency.Path, key, "installed", null) { Installing = true })))

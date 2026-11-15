@@ -465,9 +465,13 @@ public sealed class Driver(
         {
             foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
             {
-                foreach (var stage in RunStages.In(phase))
+                // Each timed by its name for the open's line (`session.opening`), which the hand writes.
+                foreach (var (name, stage) in RunStages.NamedIn(phase))
                 {
-                    if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+                    using (state.Steps.Begin(name))
+                    {
+                        if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+                    }
                 }
             }
         }
