@@ -209,8 +209,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
             run ?? WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
         var closes = run is null
-            ? await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process).ConfigureAwait(false)
-            : await OpinionLook.RunClosesAsync(due, _context.Trees.Recorded, process, ct).ConfigureAwait(false);
+            ? await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, _context.Trees).ConfigureAwait(false)
+            : await OpinionLook.RunClosesAsync(due, _context.Trees.Recorded, process, ct, _context.Trees).ConfigureAwait(false);
         if (closes is { } closed)
         {
             dues.Close(due.Session, due.Occasion, closed, now);

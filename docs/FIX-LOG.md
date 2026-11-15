@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - An opinion owed on a replayed landing never closed (OPINIONDUE1)
+
+- **Symptom:** on the install the due for session 4a9b01af (quest ba5c8968fdf5, landed as main's fd9baed4c3) stayed open with no
+  `closed`, and every look logged `look.slow` stage `opinions` for it at the 5 s bound.
+- **Root cause:** `OpinionLook.ClosesAsync` (and `RunClosesAsync`) judged "landed" by the commits' own ids
+  (`TreeFollows.UnlandedInTreeAsync`) and a landing record; the merge tool replays the tree's commit under a new id
+  (3df0d1d742 became f9108f50d7) and merges it, and wrote no landing record for the session, so one commit stayed unlanded
+  by id for ever. The tree's work reader (`TreeWork`, which the review and the clean-up use) already reads a replay by patch.
+- **Fix:** both closes ask `SessionTrees.WorkAsync` when ids leave commits unlanded, and close as `landed` where it counts none or
+  holds them on the line; entries already stuck close at the next look. **Verified:** `OpinionDueLandedTests` (real git: a
+  cherry-picked replay merged with `--no-ff`; stays owed before, `landed` after; red first on the second assert).
+
 ## 2026-11-16 - A check's verification tree kept a stale stamp and lacked a declared local input (STAMPINPUTS1)
 
 - **Symptom:** after 7e689f9074 declared `localInputs` in `daoris.gates.json`, the install's line verification tree for a quest still
