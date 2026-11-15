@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "c6ba0b81e034c0454613ed75a05be048e9c190d819dea95924372f0d694b66aa",
+  "canonDigest": "7bb08d97df143b7f7a186069defcefd933d175cec2985851deafb1803c33769b",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -186,7 +186,7 @@
       "source": "core/skills/set-up-documents/templates/brief.md",
       "target": "skills/set-up-documents/templates/brief.md",
       "canonVersion": "0.0.1",
-      "sha256": "4e73c6bc4c15441a06621251894788cc16ee0f3c0752bbfde5b7f899936cfd3c"
+      "sha256": "3334d688c77a65c7aa36e5d9eda9c1904d36d50119d8b1c390f9531cacbca89f"
     },
     {
       "pack": "core",

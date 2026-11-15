@@ -154,10 +154,10 @@ check('`sync` exits 0 once the collision is resolved', sync.code === 0, sync.out
 // The always-loaded tier lands as a span in the file every harness reads, with the pointer
 // beside it for the one that reads another name.
 check('the doctrine region is materialized', /<!-- daoris:rules /.test(read('AGENTS.md')));
-check('...carrying the rules themselves', /sensitive-info/.test(read('AGENTS.md')));
+check('...carrying the rules themselves', /rules\/every-session\.md @/.test(read('AGENTS.md')));
 // The pointer above them names the index of the on-demand tiers, and lists no document.
 check('...and the pointer to the index above them',
-  /## Read on demand\n\nThe knowledge and the skills, each with when it applies, are listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/
+  /^- knowledge and skills, each with when it applies: `\.claude\/INDEX\.md`, searched for your kind of change$/m
     .test(read('AGENTS.md')) && !/house-deploy|## Invoke by name/.test(read('AGENTS.md')));
 check('the pointer is written', /@AGENTS\.md/.test(read('CLAUDE.md')));
 check('on-demand knowledge is still a file', has('.claude/knowledge/reaching-in.md'));
@@ -179,7 +179,7 @@ check('the index lists canonical skills unmarked', /\| `\.claude\/skills\/change
 
 const checkRun = daoris('check');
 check('`check` exits 0 on a freshly synced repo', checkRun.code === 0, checkRun.out);
-check('`check` reports the always-loaded budget', /bytes/.test(checkRun.out), checkRun.out);
+check('`check` reports the always-loaded budget', /words of always-loaded core/.test(checkRun.out), checkRun.out);
 
 const doctor = daoris('doctor');
 check('`doctor` exits 0 (advisory, never fails)', doctor.code === 0, doctor.out);
@@ -192,12 +192,12 @@ section('4. Drift, and the return path');
 const regionFile = join(consumer, 'AGENTS.md');
 const editRule = (from, to) =>
   writeFileSync(regionFile, readFileSync(regionFile, 'utf8').replace(from, to));
-const ruleHeading = '# Never write into another repository';
+const ruleHeading = '## Rules for every session';
 editRule(ruleHeading, `${ruleHeading}\n\nA local improvement.`);
 
 const drifted = daoris('check');
 check('`check` catches a local edit', drifted.code === 1, drifted.out);
-check('...naming the file', /repository-owns-its-work/.test(drifted.out), drifted.out);
+check('...naming the file', /every-session/.test(drifted.out), drifted.out);
 
 const refused = daoris('sync');
 check('`sync` refuses rather than discarding the edit', refused.code === 1, refused.out);
@@ -207,8 +207,8 @@ check('...and points at `upstream`', /upstream/.test(refused.out), refused.out);
 // writes nothing. Point at a writable copy, which plays the canon's repository, and take the request there as its
 // maintainer would.
 copyTree(join(consumer, 'node_modules', 'daoris', 'canon'), canonV2);
-const edited = join(canonV2, 'core/rules/repository-owns-its-work.md');
-const upstreamed = withV2('upstream repository-owns-its-work.md');
+const edited = join(canonV2, 'core/rules/every-session.md');
+const upstreamed = withV2('upstream every-session.md');
 check('`upstream` composes the request, carrying the edit', upstreamed.code === 0
   && /nothing was written; the request below is for the repository that keeps the shared doctrine/.test(upstreamed.out)
   && upstreamed.out.includes('A local improvement.'), upstreamed.out);
@@ -232,10 +232,10 @@ const setChangelog = (body) =>
 
 // (a) The canon ships as a new version, carrying the edit promoted in step 4,
 //     and the repo adopts a pack at the same time.
-const sensitive = join(canonV2, 'core/rules/sensitive-info.md');
+const sensitive = join(canonV2, 'core/rules/how-a-change-goes.md');
 setCanonVersion('0.0.2');
 writeFileSync(sensitive, `${readFileSync(sensitive, 'utf8')}\nAlso: never paste a token into an issue.\n`);
-setChangelog('## 0.0.2\n\n- `sensitive-info` now covers tokens pasted into issues.\n\n');
+setChangelog('## 0.0.2\n\n- `how-a-change-goes` now covers tokens pasted into issues.\n\n');
 const manifest = JSON.parse(read('daoris.json'));
 manifest.packs = ['windows-machine'];
 writeFileSync(join(consumer, 'daoris.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -269,11 +269,11 @@ check('a pure version bump reports no document change', /version only/.test(bump
 // (d) A real change, with its reason.
 setCanonVersion('0.0.5');
 writeFileSync(sensitive, `${readFileSync(sensitive, 'utf8')}\nAnd never in a screenshot.\n`);
-setChangelog('## 0.0.5\n\n- `sensitive-info` extended to screenshots.\n\n');
+setChangelog('## 0.0.5\n\n- `how-a-change-goes` extended to screenshots.\n\n');
 
 const status = withV2('status');
 check('`status` reports an available update', /update/.test(status.out), status.out);
-check('...names the changed file', /changed\s+rules\/sensitive-info\.md/.test(status.out), status.out);
+check('...names the changed file', /changed\s+rules\/how-a-change-goes\.md/.test(status.out), status.out);
 check('...and prints why it changed', /why 0\.0\.5/.test(status.out), status.out);
 check('...quoting the canon changelog', /extended to screenshots/.test(status.out), status.out);
 
@@ -519,7 +519,7 @@ writeManifest((m) => {
 });
 const undeclaredTable = withV2('check');
 check('`check` fails on a declaration the region does not list yet, naming the table', undeclaredTable.code === 1
-  && /Where things are table differs/.test(undeclaredTable.out), undeclaredTable.out);
+  && /Where things are list differs/.test(undeclaredTable.out), undeclaredTable.out);
 
 const declaredSync = withV2('sync');
 check('`sync` renders Where things are into the region', declaredSync.code === 0
@@ -573,9 +573,9 @@ writeManifest((m) => { delete m.documents.roadmap; });
 writeManifest((m) => { delete m.documents; });
 const withdrawnTable = withV2('check');
 check('`check` fails on a table the manifest no longer declares', withdrawnTable.code === 1
-  && /Where things are table differs/.test(withdrawnTable.out), withdrawnTable.out);
+  && /Where things are list differs/.test(withdrawnTable.out), withdrawnTable.out);
 const unDeclared = withV2('sync');
-check('`sync` takes the table out of the region', unDeclared.code === 0 && !/## Where things are/.test(read('AGENTS.md')),
+check('`sync` takes the declared places out of the region', unDeclared.code === 0 && !/Declared in `daoris\.json`/.test(read('AGENTS.md')),
   unDeclared.out);
 check('`check` is clean with nothing declared', withV2('check').code === 0);
 

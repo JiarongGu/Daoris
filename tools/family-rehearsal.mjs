@@ -683,9 +683,9 @@ check(
 // count is not enough: an entry that is indexed under the wrong kind, or whose body came back empty,
 // passes a count and fails a reader.
 const canonical = await api(
-  'GET', `/api/search?q=${encodeURIComponent('never write into another repository')}&localOnly=false`);
+  'GET', `/api/search?q=${encodeURIComponent('ownership is local change only this repository')}&localOnly=false`);
 const rule = (canonical.json ?? []).find(
-  (hit) => hit.kind === 'Rule' && hit.title === 'repository-owns-its-work');
+  (hit) => hit.kind === 'Rule' && hit.title === 'every-session');
 check(
   'a canonical RULE is searchable, wherever the tier keeps it',
   canonical.status === 200 && Boolean(rule),

@@ -43,9 +43,11 @@ an ignored rule still costs context on every single session.
     always-loaded text, what its own on-demand document already said better.
 - **No product names, no build commands, no repository-specific layouts.** Say "the always-loaded rules
   directory", not a specific path; say "a scan run by the pre-commit hook", not a script name.
-- **Lead with the failure that motivated it.** Every rule worth canonizing exists because something went
-  wrong; the `## Why` section is what lets a reader judge an edge case instead of following blindly. A
-  rule with no reason gets deleted by the first person who finds it inconvenient.
+- **A rule's reason lives in its knowledge file, never beside the rule.** Every rule worth canonizing
+  exists because something went wrong, and a rule with no reason gets deleted by the first person who
+  finds it inconvenient; but the always-loaded rule is paid for by every session, so it carries one line
+  and names its file in one word (`reaching-in`, `leak-repair`, `file-tools`). The knowledge file leads
+  with the failure, and its `## Why` is what lets a reader judge an edge case instead of following blindly.
 - **Prefer the trap that succeeds wrongly.** Rules that prevent a loud failure are worth little — the
   failure teaches the same lesson. Rules that prevent a *silent* wrong result are worth a great deal.
 
@@ -72,13 +74,12 @@ the frontmatter fails the build.
 - **`rules/` is always-loaded — and since D59 it does not land as a file.** What you write here is
   rendered into a region of the adopter's `AGENTS.md`, the one instruction file every harness this
   family drives actually reads; `.claude/rules/` reached exactly one of the three. Every session in
-  every adopting repository pays for it, so put a document here only if nearly every task needs it. The
-  core budget measures exactly this span and **reports** it rather than failing on it
-  (`docs/decisions/D54.md`) — a fact gates, a judgement reports.
-  Every rule there is written in full, so keep each one short: the region stays under 6 KB.
-- **`knowledge/` is read on demand** — the right home for anything long, or anything that only matters
-  when touching one area. A knowledge document marked `rule: true` in its frontmatter is a rule whose
-  body is read on demand: its row stays in the region's always-loaded table, linked to its file.
+  every adopting repository pays for it, so it holds two files, the rules for every session and the
+  change path, each a numbered list of one-line rules; a new rule there takes a line out. The core
+  budget measures this span in words (`coreBudget`), and fails where a repository declares it failing
+  (`docs/decisions/D295.md`).
+- **`knowledge/` is read on demand** — the right home for anything long, anything that only matters
+  when touching one area, and every rule's reason. The index lists it; the region names only the index.
 - **`skills/` is invoked by name** — a procedure, not a rule. Only its `description` is ever loaded
   unasked, so a skill's body is cheap and its description is not.
 - There is no `tier` field; the **location** *is* the tier (`docs/decisions/D7.md`, as amended by D59) —
