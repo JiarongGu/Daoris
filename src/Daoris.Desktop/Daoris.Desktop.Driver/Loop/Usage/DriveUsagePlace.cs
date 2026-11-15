@@ -47,6 +47,9 @@ internal static class DriveUsagePlace
               which checks a repository's sessions run under Current: light, the gates its daoris.gates.json does not
               mark heavy and the checks a change reaches, its heavy gates refused to them and left to the verification;
               heavy-at-end, those gates once, at a session's end; none, as they did. Alone, lists each repository's.
+          place checkout <repository> on|off
+              whether Daoris may change files in a repository's registered checkout (Setup's Reach): off, the default,
+              leaves it read; on lets a session's change reach it.
           plugin list  ·  plugin add <folder>  ·  plugin add --offer <id>  ·  plugin update <id> [--yes]  ·  plugin remove <id>  ·  plugin enable|disable <id>
               this machine's plugins: a change a route takes goes to the running Daoris's window to confirm where one
               runs, and is made here where none does; an add over an installed plugin replaces it here alone.

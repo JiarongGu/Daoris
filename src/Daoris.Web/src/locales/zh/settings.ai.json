@@ -164,6 +164,7 @@
   "settings.ai.roles.use.why.over-budget": "已超每日预算",
   "settings.ai.roles.use.why.moved-off": "刚从它改用其他选择",
   "settings.ai.roles.use.why.not-answering": "其服务没有响应",
+  "settings.ai.roles.use.why.capped": "其账户已达上限",
   "settings.ai.policy.how": "选择方式",
   "settings.ai.policy.preset.first": "第一个能运行的",
   "settings.ai.policy.preset.even": "平均分配",
