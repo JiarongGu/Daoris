@@ -61,7 +61,12 @@ const rows = [
   { ...REGISTRY[0]!, repository: 'site', workspace: 'aurora' },
 ];
 
-const sent = (route: string) => invoke.mock.calls.filter(([, type]) => type === route).map(([, , options]) => (options as { payload: Record<string, unknown> }).payload);
+const sent = (route: string) => invoke.mock.calls.filter(([, type]) => type === route).map(([, , options]) => {
+  const payload = (options as { payload: Record<string, unknown> }).payload;
+  if (route !== 'PLACE_PLAN') return payload;
+  const { held: _held, ...ask } = payload;
+  return ask;
+});
 
 describe('Set up…, on a place\'s page', () => {
   let apply: PlaceApplied = APPLIED;
@@ -101,7 +106,8 @@ describe('Set up…, on a place\'s page', () => {
       if (type === 'WORKFLOW_LIST') return { workflows: [], presets: SETUP_PRESETS };
       if (type === 'PLACE_PLAN') {
         if (gate) await gate;
-        const plan = planOf(options!.payload as unknown as PlaceAsk, mix);
+        const { held: _held, ...planned } = options!.payload as unknown as PlaceAsk & { held?: string };
+        const plan = planOf(planned, mix);
         const refusals = named ? plan.refusals.filter((each) => each.code !== 'no-reviewers') : plan.refusals;
         const moved = blob === null
           ? plan.repositories

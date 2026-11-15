@@ -1,10 +1,10 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import type { PlaceApplied, PlaceApplyAsk, PlaceAsk, PlacePlanned } from '../../agents/setup/placePlan';
+import { type PlaceApplied, type PlaceApplyAsk, type PlaceAsk, readPlacePlan } from '../../agents/setup/placePlan';
 import { type ReconcileApplied, readReconcilePlan } from '../../agents/setup/reconcilePlan';
 import { IN_PLACE } from '../../projects/inPlace';
 import { call } from '../call';
-import { askHeld } from '../state/held';
+import { askHeld, askSettled } from '../state/held';
 
 export type { ReconcileApplied, ReconcilePlanned } from '../../agents/setup/reconcilePlan';
 
@@ -29,9 +29,10 @@ export const placePlanKey = (ask: PlaceAsk) => ['place-plan', ask] as const;
  */
 export const usePlacePlan = (ask: PlaceAsk | null, { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
   const query = useQuery({
     queryKey: ask ? placePlanKey(ask) : ['place-plan', 'none'],
-    queryFn: () => call('PLACE_PLAN', ask!, { timeoutMs: SETUP_BOUND }) as Promise<PlacePlanned>,
+    queryFn: () => askHeld('PLACE_PLAN', client, placePlanKey(ask!), ask!, readPlacePlan),
     enabled: isAvailable && enabled && ask !== null,
     refetchOnWindowFocus: false,
     staleTime: 0,
@@ -67,7 +68,8 @@ export const usePlaceApply = () => {
  */
 export async function chooseInPlace(repository: string): Promise<PlaceApplied> {
   const ask: PlaceAsk = { repositories: [repository], preset: IN_PLACE, opinion: false, look: false, adoption: false, drive: false };
-  const plan = await (call('PLACE_PLAN', ask, { timeoutMs: SETUP_BOUND }) as Promise<PlacePlanned>);
+  const plan = await askSettled('PLACE_PLAN', ask, readPlacePlan, SETUP_BOUND, SETUP_BOUND);
+  if (!plan) return { done: false, refused: 'unplanned', message: 'The plan was not answered in time.', digest: '', operations: [] };
   if (plan.refusals.length > 0) {
     return { done: false, refused: plan.refusals[0]!.code, message: plan.refusals.map((each) => each.sentence).join(' '), digest: plan.digest, operations: [] };
   }

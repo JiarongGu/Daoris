@@ -40,6 +40,25 @@ export async function askHeld<T>(
   return kept === undefined ? read(answer) : kept;
 }
 
+/**
+ * A held read made where no query holds its answer (an action's own step, a paged read): asked again while the shell says nothing is
+ * held yet, its work joined each time, until `boundMs` has passed, then the pending answer read as the reader reads it.
+ */
+export async function askSettled<R extends TypedRoute, T>(
+  route: R, payload: Payload<R>, read: (answer: unknown) => T, boundMs: number, timeoutMs?: number,
+): Promise<T>;
+export async function askSettled<T>(
+  route: DriverRoute, payload: Record<string, unknown>, read: (answer: unknown) => T, boundMs: number, timeoutMs?: number,
+): Promise<T> {
+  const until = Date.now() + boundMs;
+  for (;;) {
+    const answer = await (call as (type: DriverRoute, payload: Record<string, unknown>, options?: { timeoutMs: number }) => Promise<unknown>)(
+      route, payload, timeoutMs === undefined ? undefined : { timeoutMs });
+    if (!isPending(answer) || Date.now() >= until) return read(answer);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+}
+
 // A numbered read's own handling of its events, by the query's hash: every other held read keeps the handling below.
 const numbered = new Map<string, (answer: unknown) => void>();
 

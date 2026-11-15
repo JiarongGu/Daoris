@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { call } from './call';
+import { askSettled } from './state/held';
 
 import { READING_STATES, type Reading, type ReadingFinding, type ReadingReader, type ReadingState, type ReadingsCheck } from '../help/secondCheck/readingTypes';
 
@@ -63,6 +64,7 @@ export function readingsAnswer(raw: unknown): ReadingsPage {
 
 /** A page of readings: the driver's own size, asked by name. */
 const READINGS_PAGE = 20;
+const READINGS_BOUND = 30_000;
 
 /** The readings' key: a conversation's pages under it. Asked again as the help scope is told: a report written, a flag seen. */
 export const HELP_READINGS = ['help-readings'] as const;
@@ -75,7 +77,7 @@ export const useHelpReadings = (session: string | null) => {
   const { isAvailable } = useShenora();
   return useInfiniteQuery({
     queryKey: [...HELP_READINGS, session],
-    queryFn: async ({ pageParam }) => readingsAnswer(await call('HELP_READINGS', { session: session!, before: pageParam, limit: READINGS_PAGE })),
+    queryFn: ({ pageParam }) => askSettled('HELP_READINGS', { session: session!, before: pageParam, limit: READINGS_PAGE }, readingsAnswer, READINGS_BOUND),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.next,
     enabled: isAvailable && session !== null,
@@ -87,7 +89,7 @@ export const useReadingPacket = (session: string, range: string, open: boolean) 
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...HELP_READINGS, session, 'packet', range],
-    queryFn: async () => readingsAnswer(await call('HELP_READINGS', { session, range, limit: 1 })).packet ?? null,
+    queryFn: async () => (await askSettled('HELP_READINGS', { session, range, limit: 1 }, readingsAnswer, READINGS_BOUND)).packet ?? null,
     enabled: isAvailable && open,
   });
 };
