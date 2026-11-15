@@ -1,9 +1,9 @@
 /**
  * The adapters' fingerprint pin and `daoris.adapters.lock` (the ports-and-adapters design, §4). An adapter's version is its fingerprint:
  * one hash over its folder's tree, its dependency suite's tree, the contract cases it is held to, the tree of each Ports folder it
- * implements, the fingerprint of each adapter it is built over, the pinned version of each outside thing it drives, and the build files
- * that reach every project. A row of the lock is written only by a green run of the package's suite at that fingerprint, and the merge's
- * gate `adapters-lock` reads it in milliseconds: equal runs nothing, different names the run the package needs.
+ * implements, the fingerprint of each adapter it is built over and the pinned version of each outside thing it drives; no shared build
+ * file, since an adapter is a completed package tested only in its own development. A row is written only by a green run of the
+ * package's suite at that fingerprint; the gate `adapters-lock` reads it: equal runs nothing, different names the run the package needs.
  *
  *   node tools/merge/adapters.ts check              the gate: every package's row holds its fingerprint (exit 0 kept, 1 stale)
  *   node tools/merge/adapters.ts release <name>     run the package's suite and, green, write its row
@@ -20,9 +20,6 @@ import { fileURLToPath } from 'node:url';
 export const ADAPTERS_ROOT = 'src/Daoris.Adapters';
 export const LOCK_FILE = 'daoris.adapters.lock';
 export const PORTS_ROOT = 'src/Daoris.Ports';
-
-/** The build files that reach every project: a move in one runs every suite, the price of a fingerprint that never misses one. */
-export const BUILD_FILES = ['Directory.Build.props', 'src/Daoris.Desktop/Directory.Build.props', 'src/Layers.props'];
 
 /** Where each kind of outside pin is written; a package names another versions file in its manifest's `pins`. */
 const NUGET_PINS = 'src/Daoris.Desktop/Directory.Packages.props';
@@ -115,8 +112,7 @@ export function fingerprintOf(name: string, sight: Sight, seen: string[] = []): 
   for (const other of [...(manifest.over ?? [])].sort()) over[other] = fingerprintOf(other, sight, [...seen, name]).fingerprint;
   const suite = need(sight.tree(manifest.tests), manifest.tests);
   const contract = Object.fromEntries([...manifest.contract].sort().map((path) => [path, need(sight.tree(path), path)]));
-  const builds = Object.fromEntries(BUILD_FILES.map((path) => [path, need(sight.blob(path), path)]));
-  const fingerprint = sha(JSON.stringify({ name, tree, suite, contract, ports, over, outside, builds }));
+  const fingerprint = sha(JSON.stringify({ name, tree, suite, contract, ports, over, outside }));
   return { fingerprint, tree, ports, outside };
 }
 
@@ -219,7 +215,7 @@ export function check(root: string, sight: Sight = gitSight(root)): number {
 /** Runs the package's suite at the commit and, only on a complete green run, writes its row. */
 export function release(root: string, name: string, sight: Sight = gitSight(root)): number {
   const manifest = manifestOf(name, sight);
-  const dirty = sight.dirty([`${ADAPTERS_ROOT}/${name}`, manifest.tests, ...manifest.contract, ...BUILD_FILES, ...manifest.ports.map((port) => `${PORTS_ROOT}/${port}`)]);
+  const dirty = sight.dirty([`${ADAPTERS_ROOT}/${name}`, manifest.tests, ...manifest.contract, ...manifest.ports.map((port) => `${PORTS_ROOT}/${port}`)]);
   if (dirty.length > 0) {
     console.error(`adapters-lock: ${name}'s inputs hold uncommitted changes, and a row names a commit:\n${dirty.join('\n')}`);
     return 1;

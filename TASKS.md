@@ -185,7 +185,9 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
   their own, if a room cannot hold the boundary) with their own workflow: a change there is checked by that adapter's suite and
   released into `daoris.adapters.lock`; this repository's workflow consumes them by their released version and runs none of their
   suites. GATEBUDGET1 takes the first step (adapter suites out of the full CI; the fingerprint narrowed to the adapter's own sources
-  and port).
+  and port). The rest is dogfood: the boundary is declared with Daoris's own place features (a room or a kind whose paths are
+  `src/Daoris.Adapters/`, mapped for `Daoris` on the install to an adapter workflow whose check runs the changed adapter's suite and
+  whose landing runs `adapters.ts release`), and each gap that declaration meets is fixed in the product, not worked around.
 
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon`'s double-click to `ShowWindow` with Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skipping a framed window's caption, which `SecondaryChrome` sets through DWM.
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.

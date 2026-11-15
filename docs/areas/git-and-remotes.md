@@ -225,7 +225,7 @@ process, the scheduler's place, and the count and timing the launch is kept in. 
 test root's `FlowGit`: `ScriptedGit` answers or watches it, and nothing in the driver stands in for git. Starts and reads around the
 port (a git start composed by hand, git's own files, the library) are counted per file by the layers census (`git`), an allowance
 that only falls, and the port's contract runs on `ScriptedGit` in the unit tier and on `GitProcessRuns` in the adapter's own suite,
-which a merge runs only when the adapter's fingerprint differs from its row of `daoris.adapters.lock`.
+which runs only in the adapter's own development (`node tools/merge/adapters.ts release <name>` after its sources or port change), never in a merge or the full set.
 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
