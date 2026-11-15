@@ -114,6 +114,18 @@ test("the page's scan reads through node:fs from the page, the repository or the
   assert.equal(reached(REACH).includes(webUnit), true);
 });
 
+test('a diff in a unit-test project or the fakes reaches the layers census, which counts its clock reads', () => {
+  const layers = declared('layers')[0]!;
+  for (const path of [
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BrainstormBoundsTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Windows/SomeTests.cs',
+    'src/Daoris.Service/Daoris.Service.Tests/SomeTests.cs',
+    'src/Daoris.Service/Daoris.Service.Http.Tests/SomeTests.cs',
+    'src/Daoris.Devkit/Daoris.Devkit.Tests/SomeTests.cs',
+    'src/Daoris.Testing/Clocks/MovedClock.cs',
+  ]) assert.ok(runs([path]).includes(layers), `${path} must run the layers gate`);
+});
+
 test("the module that builds the lane table's rows reaches the tool-tests that hold the table", () => {
   assert.ok(reaches(['tools/merge/reach-rows.ts']).includes(toolTests));
 });
