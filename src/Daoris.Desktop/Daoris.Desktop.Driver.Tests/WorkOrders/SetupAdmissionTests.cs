@@ -67,8 +67,8 @@ public sealed class SetupAdmissionTests
     }
 
     /// <summary>
-    /// 🔴 The admission ends with the quest: closed, words written to its last session no longer carry it on where it is not driven,
-    /// as they do where it is; and an abandon's tidy, which drops a closed quest's entries, drops it.
+    /// 🔴 The admission ends with the quest: done, words written to its last session no longer carry it on where it is not driven,
+    /// as they do where it is; declined, they carry it on nowhere (its line ended); and an abandon's tidy drops its entries.
     /// </summary>
     [Fact]
     public void The_admission_ends_with_its_quest()
@@ -88,8 +88,14 @@ public sealed class SetupAdmissionTests
             };
 
             Assert.False(Admitted.Admits(ended));
-            Assert.Equal(StartVerdict.NotDrivable, VerdictOf(Plan(snapshot, Admitted), "qs"));
             Assert.Equal(StartVerdict.NotDrivable, VerdictOf(Plan(snapshot, Admitted), "q1"));
+            if (closed == "Declined")
+            {
+                Assert.DoesNotContain(Plan(snapshot, Admitted.WithDrivable("atlas", true)), each => each.Quest.Id == "qs");
+                continue;
+            }
+
+            Assert.Equal(StartVerdict.NotDrivable, VerdictOf(Plan(snapshot, Admitted), "qs"));
             Assert.True(Assert.Single(Plan(snapshot, Admitted.WithDrivable("atlas", true)), each => each.Quest.Id == "qs").GoesOn);
         }
 

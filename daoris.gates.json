@@ -14,6 +14,8 @@
 
   "treeBaseline": "node tools/quick.mjs --record-base",
 
+  "localInputs": ["local/lyntai-local.props", "local/shenora-local.props"],
+
   "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "gates": [
@@ -75,7 +77,7 @@
       ] },
     { "name": "adapters-lock", "run": "node tools/merge/adapters.ts check",
       "paths": [
-        "daoris.adapters.lock", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
+        "daoris.adapters.lock", "daoris.gates.json", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/",
         "tools/merge/adapters.ts"
       ] },

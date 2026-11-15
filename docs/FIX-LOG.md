@@ -5,13 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-11-16 - Three CLI doctrine classes failed under four merges' load and passed alone (FLAKE1)
+## 2026-11-16 - Three reds main carried past their merges' reached gates (GATEBUDGET1, WEBHELD1, LINEEND1)
+
+- **Symptom:** OPENSLOW1's merge failed `reached` on `GateReachTests`, `DriverModuleRoutesTests` and `SetupAdmissionTests`; each
+  failed on main without OPENSLOW1 too.
+- **Root cause:** (1) 1b4d60d7c6 (GATEBUDGET1) took `daoris.gates.json` out of `adapters-lock`'s paths, but a change to the gates
+  declaration reaches every gate. (2) 1cad681598 (WEBHELD1) added `askSettled`, a helper that passes a route on, unnamed in the
+  routes census's forwarders. (3) e97ed746e1 (LINEEND1) ended a declined quest's line, and the set-up admission test still asked a
+  declined quest's words to carry it on where it is driven. None of the three merges' reached sets ran the class it broke; GATEBUDGET1's
+  also removed the adapter gates `dogfood.test.ts` holds every .NET test project to.
+- **Fix:** `adapters-lock` reads `daoris.gates.json` again; `askSettled` is a forwarder; a declined quest's words carry it on nowhere;
+  a test project an adapter's `adapter.json` names as its `tests` counts as run (by `adapters.ts release`).
+- **Verified:** the four classes pass filtered.
+
+## 2026-11-16 - Three CLI doctrine classes "failed under load" in four merges: the junit reader lost cases (FLAKE1, FLAKEDOC1)
 
 - **Sighting:** the `reached` gate of GATEBUDGET1's, PERFSPEED1's, LINEEND1's and WEBHELD1's merges (493f0a5dc0, 8d2432db19,
-  c3bec16d7c, and WEBHELD1's) each
-  failed `src/Daoris.Cli/test/doc-shapes.test.ts`, `doctrine/tierrender.test.ts` and `doctrine/markdown-fence.test.ts` (PERFSPEED1's
-  six classes, LINEEND1's four), every one passing when run again alone; the machine also carried a driven session's start.
-- **Cause:** none found; load-shaped by the alone pass. Kept as a sighting; nothing changed for it.
+  c3bec16d7c, 8d86d7298c) each failed `src/Daoris.Cli/test/doc-shapes.test.ts`, `doctrine/tierrender.test.ts` and
+  `doctrine/markdown-fence.test.ts`, every one passing when run again alone.
+- **Root cause:** not load. `junitPasses` (`tools/merge/file-passes.ts`) read a case as `<testcase [^>]*>`; node writes a raw `>` in a
+  title (`D<n>.md`), which ended the tag early, so the reader ran to the next `</testcase>` (main's one red case) and every case
+  between was lost, which files depending on completion order.
+- **Fix:** the reader reads a case's attributes as quoted values. **Verified:** red first, a title holding `>` before a failure.
 
 ## 2026-11-16 - A place's set-up panel crashed the window reading `plan.repositories.length` (WEBHELD1)
 

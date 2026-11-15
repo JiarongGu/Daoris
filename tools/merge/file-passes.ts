@@ -9,7 +9,7 @@ const unescape = (text: string): string => text.replace(/&quot;/g, '"').replace(
 export function junitPasses(xml: string): Set<string> {
   const seen = new Set<string>();
   const spoiled = new Set<string>();
-  for (const [, attributes, body] of xml.matchAll(/<testcase\b([^>]*?)(?:\/>|>([\s\S]*?)<\/testcase>)/g)) {
+  for (const [, attributes, body] of xml.matchAll(/<testcase\b((?:\s+[^\s=/>]+="[^"]*")*)\s*(?:\/>|>([\s\S]*?)<\/testcase>)/g)) {
     const file = /\bfile="([^"]*)"/.exec(attributes as string)?.[1];
     if (!file) continue;
     seen.add(unescape(file));

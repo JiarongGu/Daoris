@@ -13,6 +13,15 @@ test('a node file passed when it has test cases and none failed, errored or skip
   assert.deepEqual([...junitPasses(xml)].sort(), ['C:\\r\\a.test.ts', 'C:\\r\\d & e.test.ts']);
 });
 
+test('a raw > in a case title does not end its tag, so the cases after it and a later failure are each read', () => {
+  const xml = `<testsuites>
+	<testcase name="D<n>.md reads" file="C:\\r\\a.test.ts"/>
+	<testcase name="b" file="C:\\r\\b.test.ts"/>
+	<testcase name="c" file="C:\\r\\c.test.ts"><failure message="x"/></testcase>
+</testsuites>`;
+  assert.deepEqual([...junitPasses(xml)].sort(), ['C:\\r\\a.test.ts', 'C:\\r\\b.test.ts']);
+});
+
 test('a page file passed when vitest says so, and a report that does not read names none', () => {
   const json = JSON.stringify({ testResults: [{ name: '/r/a.test.ts', status: 'passed' }, { name: '/r/b.test.ts', status: 'failed' }] });
   assert.deepEqual([...vitestPasses(json)], ['/r/a.test.ts']);
