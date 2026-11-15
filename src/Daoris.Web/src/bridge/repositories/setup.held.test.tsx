@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-// WEBHELD1: PLACE_PLAN is told by event, so the shell may answer `{ pending: true }` before the plan; the page reads that as no plan yet.
+// PLACE_PLAN is told by event, so the shell may answer `{ pending: true }` before the plan; the page reads that as no plan yet.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@shenora/react', () => ({
@@ -23,7 +23,7 @@ function wrapper() {
   return ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-describe('a place’s plan read by event (WEBHELD1)', () => {
+describe('a place’s plan read by event', () => {
   afterEach(() => invoke.mockReset());
 
   it('reads the shell’s pending answer as no plan, which the page’s reads take as none', async () => {

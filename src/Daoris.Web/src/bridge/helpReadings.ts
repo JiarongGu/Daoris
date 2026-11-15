@@ -64,7 +64,6 @@ export function readingsAnswer(raw: unknown): ReadingsPage {
 
 /** A page of readings: the driver's own size, asked by name. */
 const READINGS_PAGE = 20;
-/** The reading is told by event, and a page of the list is no query's own answer, so it is asked again while nothing is held, for this long. */
 const READINGS_BOUND = 30_000;
 
 /** The readings' key: a conversation's pages under it. Asked again as the help scope is told: a report written, a flag seen. */

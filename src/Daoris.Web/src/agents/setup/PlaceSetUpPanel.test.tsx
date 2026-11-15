@@ -61,7 +61,6 @@ const rows = [
   { ...REGISTRY[0]!, repository: 'site', workspace: 'aurora' },
 ];
 
-// The held read's own `held` (the query's hash, which the shell's event names) is the bridge's, not the ask's.
 const sent = (route: string) => invoke.mock.calls.filter(([, type]) => type === route).map(([, , options]) => {
   const payload = (options as { payload: Record<string, unknown> }).payload;
   if (route !== 'PLACE_PLAN') return payload;

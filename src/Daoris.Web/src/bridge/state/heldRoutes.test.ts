@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// WEBHELD1: a route the shell tells by event (`[ByEvent("NAME")]`) answers `{ pending: true }` when its work is slow, and the plan comes
+// A route the shell tells by event (`[ByEvent("NAME")]`) answers `{ pending: true }` when its work is slow, and the plan comes
 // later as an event. A page that reads one with a plain `call(` takes the pending answer for the answer, so every page read of such a route
 // goes through `askHeld` (a query's own) or `askSettled` (a read with no query of its own). The numbered read keeps its own fence.
 
@@ -31,7 +31,7 @@ const plainCalls = (routes: string[]): string[] => {
     [...readFileSync(file, 'utf8').matchAll(calls)].map((found) => `${file.slice(process.cwd().length + 1)}: ${found[1]}`));
 };
 
-describe('the routes the shell tells by event (WEBHELD1)', () => {
+describe('the routes the shell tells by event', () => {
   it('are found in the desktop modules', () => {
     const routes = heldRoutes();
     expect(routes.length).toBeGreaterThan(20);
