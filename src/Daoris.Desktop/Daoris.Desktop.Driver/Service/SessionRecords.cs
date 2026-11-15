@@ -73,6 +73,7 @@ public static class SessionRecords
                 // A reviewer's opinion, which At work lists by the line it serves.
                 Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 AwaitsHelper = Text(session, "state") == "completed" && Carries(session, RecordNotes.EndedAwaitsHelper),
+                NoteParts = NotePart.Read(session),
                 // An account's limit made its failure; absent from an older host.
                 Limit = session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True,
             };

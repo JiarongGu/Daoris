@@ -255,8 +255,8 @@ public sealed class SessionLedger(
     /// <summary>End a workflow's run: its quests Done and its waiting sessions ended in one write; see <see cref="RunEnds.EndAsync"/>.</summary>
     public Task<RunEndOutcome> EndRunAsync(
         string run, IReadOnlyList<(string Id, QuestOperationRef Submission)> named, IReadOnlyList<string> ended, string state, string? note,
-        string? noteParts, DateTimeOffset now, CancellationToken ct = default) =>
-        new RunEnds(quests, sessions, advances).EndAsync(run, named, ended, state, note, noteParts, now, ct);
+        string? noteParts, DateTimeOffset now, CancellationToken ct = default, IReadOnlyCollection<string>? passed = null) =>
+        new RunEnds(quests, sessions, advances).EndAsync(run, named, ended, state, note, noteParts, now, ct, passed ?? []);
 
     /// <summary>A run's records ended done under the older meaning, waiting on its next step once; see <see cref="RunReopens.ReopenAsync"/>.</summary>
     public Task<RunReopenOutcome> ReopenForRunAsync(

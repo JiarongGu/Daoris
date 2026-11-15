@@ -13,17 +13,23 @@ internal sealed class RunEnds(QuestStore quests, SessionStore sessions, SessionA
 {
     /// <summary>
     /// Ends run <paramref name="run"/>: where it came to its graph's end (<c>completed</c>), each of <paramref name="named"/>, its chain's
-    /// quests here in order with the submission each stands on, is closed Done through the close door, under a key no other end shares; then
-    /// each of <paramref name="ended"/> still awaiting a step moves to <paramref name="state"/>. A close refused moves no session.
+    /// quests here in order with the submission each stands on, is closed Done through the close door, under a key no other end shares, each
+    /// of <paramref name="passed"/> (its holds passed over by the person, their yes) accepted first; then each of <paramref name="ended"/>
+    /// still awaiting a step moves to <paramref name="state"/>. A close refused moves no session.
     /// </summary>
     public Task<RunEndOutcome> EndAsync(
         string run, IReadOnlyList<(string Id, QuestOperationRef Submission)> named, IReadOnlyList<string> ended, string state, string? note,
-        string? noteParts, DateTimeOffset now, CancellationToken ct) =>
+        string? noteParts, DateTimeOffset now, CancellationToken ct, IReadOnlyCollection<string> passed) =>
         sessions.ExclusiveAsync(async inside =>
         {
             IReadOnlyList<Quest> closed = [];
             if (named.Count > 0 && state == Session.Spell(SessionState.Completed))
             {
+                foreach (var (id, _) in named.Where(each => passed.Contains(each.Id, StringComparer.Ordinal)))
+                {
+                    await quests.AcceptAsync(id, now, inside).ConfigureAwait(false);
+                }
+
                 var at = named[^1].Id;
                 var closing = await quests.CloseAsync(at, named, new QuestClose($"run-end/{run}/{now.UtcTicks}", run), now, inside)
                     .ConfigureAwait(false);

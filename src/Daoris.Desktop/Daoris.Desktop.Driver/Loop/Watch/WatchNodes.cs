@@ -72,6 +72,19 @@ internal sealed class WatchNodes
             }
         };
 
+        // The records a run's end finds the sessions waiting on it among, read at each write it sends.
+        nodes.SessionsRead = async ct =>
+        {
+            try
+            {
+                return await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            {
+                return null;
+            }
+        };
+
         // A run's records ended done under the older meaning wait on its next step, asked once at its first look.
         nodes.Reopen = async (reopen, ct) =>
         {

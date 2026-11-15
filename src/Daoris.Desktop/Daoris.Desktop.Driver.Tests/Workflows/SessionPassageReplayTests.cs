@@ -71,6 +71,11 @@ public sealed class SessionPassageReplayTests : NodeRunFixture
             _finished.Add(end);
             return Task.FromResult<RunEndResponse?>(new RunEndResponse(null, "ended", [.. end.Quests.Select(quest => quest.Id)], end.Sessions));
         };
+        runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
+            [
+                new SessionRecord(Session, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId, "work").Note().Parts },
+                new SessionRecord("s-other", "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait("q-other").Note().Parts },
+            ]);
         return runtime;
     }
 

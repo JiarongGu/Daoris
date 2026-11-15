@@ -44,9 +44,10 @@ public sealed class RunEndRoutes(HostWiring host) : IRouteModule
     {
         if (string.IsNullOrWhiteSpace(request.State)) return Refusal.BadRequest("A run's end names the state its sessions end in.");
         var named = (request.Quests ?? []).Select(each => (each.Id.TrimStart('#'), new QuestOperationRef(each.Machine, each.Sequence))).ToList();
+        var passed = (request.Quests ?? []).Where(each => each.Passed).Select(each => each.Id.TrimStart('#')).ToList();
         var outcome = await Service.Ledger.EndRunAsync(
             request.Run, named, request.Sessions ?? [], request.State.Trim(), request.Note,
-            request.Note is null ? null : NoteParts.Normalize(request.NoteParts), DateTimeOffset.UtcNow, ct);
+            request.Note is null ? null : NoteParts.Normalize(request.NoteParts), DateTimeOffset.UtcNow, ct, passed);
         return new RunEndResponse(
             outcome.Refusal == QuestCloseRefusal.None ? null : outcome.Refusal.ToString(), outcome.Message,
             [.. outcome.Closed.Select(quest => quest.Id)], [.. outcome.Ended.Select(session => session.Id)]);

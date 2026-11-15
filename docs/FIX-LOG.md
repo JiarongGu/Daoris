@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-15 - A run that came to its end left its own session waiting when the person had passed its holds
+
+- **Symptom:** a run reached every step of its graph, its branch landed on its line, and its session stayed `awaiting-step` with no
+  `session.ended`; the machine log said nothing.
+- **Root cause:** cc457c5451 made the run's end close its quests before it ends its sessions, and a close the service refuses moves no
+  session. The person had passed over the run's `quest.holds` with words, which lets the run go on but leaves the quest's departure held,
+  so the close was refused `Held`; the end is written once on the run's record and a refusal is an answer, not owed, so nothing asked
+  again. The refusal was said only to the pass's output.
+- **Fix:** the end names a held quest only where the person passed the run's `quest.holds` with words, and the service keeps that pass as
+  their yes through the one accept before the close (`RunEndQuests`, `RunEndQuest.Passed`); any other held quest is left out, so the
+  sessions still end. The sessions are those whose note names the run, found at each write (`RunWaiters`), and an end that closes and
+  ends nothing writes a coded `run.end.empty` line once per reason (`EmptyRunEnds`).
+- **Verification:** `RunEndsTests` refuses the held close and closes it Done with the session once passed; `RunQuestEndsTests` names
+  the passed quest with the session found by its run, leaves an unpassed or review-held quest, says an empty end once and finds the
+  sessions afresh on the owed retry; `RunWaitersTests` reads the run from a record's note.
+
 ## 2026-11-15 - A run's `land` and its own waiting session each waited on the other
 
 - **Symptom:** a run's `land` stayed active for hours, its attempt unreconciled, while its session sat in `awaiting-step`; neither moved

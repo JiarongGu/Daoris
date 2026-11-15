@@ -129,6 +129,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// <summary>Whether it ended waiting on its own helper: completed by <see cref="EndNoteCodes.EndedAwaitsHelper"/>, read by its code.</summary>
     public bool AwaitsHelper { get; init; }
 
+    /// <summary>Its note's lines by code, as the service answers them: what says the run a record awaiting a step waits on. Null without parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
     /// <summary>
     /// Whether an account's limit made its failure: the ledger's <c>limit</c> flag, which a row says as
     /// <see cref="ShownState.Limited"/>. False from an older host.
