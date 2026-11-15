@@ -11,6 +11,7 @@ namespace Daoris.Service.Tests;
 /// siblings are not present, so this is a signal on a development machine and never a failure
 /// somewhere else. xunit v2 has no dynamic skip, so an absent family returns early instead.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public class RealFamilyTests
 {
     private static string? FamilyRoot()

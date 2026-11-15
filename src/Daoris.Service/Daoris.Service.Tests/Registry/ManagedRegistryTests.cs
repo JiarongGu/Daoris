@@ -353,6 +353,7 @@ public sealed class ManagedRegistryTests : IAsyncLifetime
 /// after an upgrade is indistinguishable from a broken one. It runs ONCE, marked in the store, because
 /// the second run would resurrect every repository the person deliberately retired.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class FirstRunImportTests : IDisposable
 {
     private readonly string _root = Path.Combine(

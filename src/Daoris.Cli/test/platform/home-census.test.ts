@@ -61,7 +61,7 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
   },
   {
     file: 'LayerSeeding.cs',
-    join: 'Path.Combine(ask.Home, file.Name)',
+    join: 'Path.Combine(ask.Home, name)',
     why: '`ask.Home` is the agent’s own home (where its conversations are kept), into which a seed is written, no Daoris home',
   },
   {
