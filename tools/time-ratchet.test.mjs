@@ -4,49 +4,65 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, scanRecords, slowestClasses, tighten } from './time-ratchet.mjs';
-import { reaches, splitByReach } from './time-reach.mjs';
+import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
   `<UnitTestResult executionId="x" testName="${name}" duration="${duration}" outcome="${outcome}" />`).join('')}</Results></TestRun>`;
 
-test('a slow test no path of the merge reaches is not the merge\'s, and one a path reaches is', () => {
-  const files = ['src/D/Tests/LineAccountTests.cs', 'src/D/Tests/Other.cs', 'src/D/Line/LineAccount.cs', 'src/D/Line/Unrelated.cs', 'src/Web/a/Box.test.tsx'];
-  const found = {
-    'D.Tests.LineAccountTests.A_recorded_pick(x: 1)': { ms: 54_000, limit: 30_000 },
-    'src/Web/a/Box.test.tsx::opens': { ms: 11_000, limit: 10_000 },
-  };
-  const unrelated = splitByReach(found, ['docs/areas/x.md', 'src/D/Line/Unrelated.cs'], files);
-  assert.deepEqual(Object.keys(unrelated.others).sort(), Object.keys(found).sort(), 'no path reaches either');
-  assert.deepEqual(unrelated.mine, {});
-  assert.deepEqual(Object.keys(splitByReach(found, ['src/D/Line/LineAccount.cs'], files).mine), ['D.Tests.LineAccountTests.A_recorded_pick(x: 1)'], 'the class\'s subject');
-  assert.deepEqual(Object.keys(splitByReach(found, ['src/Web/a/Box.test.tsx'], files).mine), ['src/Web/a/Box.test.tsx::opens'], 'the test\'s own file');
-  assert.equal(Object.keys(splitByReach(found, ['package.json'], files).mine).length, 2, 'a file every test reads');
-  assert.equal(reaches('Nowhere.Unknown.Case', ['docs/x.md'], files), true, 'a test whose file is not found is judged');
+// A census world by hand: each unit reads the paths it names, whatever the files are called.
+const worldOf = (reads) => ({
+  units: new Map(Object.keys(reads).map((unit) => [unit, { unit }])),
+  reaches: (unit, path) => reads[unit.unit].includes(path),
+});
+const DOTNET_KEY = 'D.Tests.LineAccountTests.A_recorded_pick(x: 1)';
+const WEB_KEY = 'src/Web/a/Box.test.tsx::opens';
+
+test('a slow test is the merge\'s where the census says a changed path reaches it, whatever the path is named', () => {
+  const world = worldOf({ 'D.Tests.LineAccountTests': ['src/D/Ports/Driver.cs'], 'src/Web/a/Box.test.tsx': ['src/Web/a/Box.test.tsx'] });
+  const found = { [DOTNET_KEY]: { ms: 54_000, limit: 30_000 }, [WEB_KEY]: { ms: 11_000, limit: 10_000 } };
+  const named = splitByReach(found, ['src/D/Ports/Driver.cs'], world);
+  assert.deepEqual(Object.keys(named.mine), [DOTNET_KEY], 'a file named for another subject, which the class reads');
+  assert.deepEqual(Object.keys(named.others), [WEB_KEY]);
+  const unrelated = splitByReach(found, ['docs/areas/x.md', 'src/D/Line/LineAccount.cs'], world);
+  assert.deepEqual(unrelated.mine, {}, 'a file named for the class\'s subject, which it does not read, is not reached');
+  assert.equal(Object.keys(splitByReach(found, [WEB_KEY.split('::')[0]], world).mine)[0], WEB_KEY, 'the test\'s own file');
+  assert.equal(Object.keys(splitByReach({ 'Nowhere.Unknown.Case': { ms: 1, limit: 0 } }, ['docs/x.md'], world).mine).length, 1, 'a test the census holds no unit for is judged');
+  assert.deepEqual(unitsOf(found, world), ['D.Tests.LineAccountTests', 'src/Web/a/Box.test.tsx']);
 });
 
-test('inside a merge the tool names a slow test the merge does not reach and fails only on one it does', () => {
-  const dir = join('_fixtures', 'time-ratchet-reach');
-  let kept = null;
+test('a reached test over its limit is measured again alone and its alone time decides; nothing over reads no census', async () => {
+  const world = worldOf({ 'D.Tests.LineAccountTests': ['src/D/Ports/Driver.cs'] });
+  const over = (ms) => ({ over: { [DOTNET_KEY]: { ms, limit: 30_000 } }, seen: new Set([DOTNET_KEY]) });
+  const run = async (scans, changed) => {
+    const asked = { world: 0, measured: [] };
+    const result = await judgeByReach({ scan: () => scans.shift(), changed, world: async () => { asked.world += 1; return world; }, measure: (units) => asked.measured.push(units) });
+    return { ...asked, result };
+  };
+  const fast = await run([over(54_000), { over: {}, seen: new Set([DOTNET_KEY]) }], ['src/D/Ports/Driver.cs']);
+  assert.deepEqual(fast.measured, [['D.Tests.LineAccountTests']]);
+  assert.deepEqual(fast.result.mine, {}, 'fast alone: the load was the machine\'s');
+  const slow = await run([over(54_000), over(41_000)], ['src/D/Ports/Driver.cs']);
+  assert.deepEqual(slow.result.mine, { [DOTNET_KEY]: { ms: 41_000, limit: 30_000 } }, 'slow alone: its alone time is judged');
+  const unreached = await run([over(54_000)], ['docs/areas/x.md']);
+  assert.deepEqual(unreached.measured, [], 'a test no path reaches is not measured');
+  assert.deepEqual(Object.keys(unreached.result.others), [DOTNET_KEY]);
+  const none = await run([{ over: {}, seen: new Set() }], ['src/D/Ports/Driver.cs']);
+  assert.equal(none.world, 0);
+});
+
+test('a reached command\'s record, written when a class is measured again alone, is read against its suite\'s limit', () => {
+  assert.equal(limitFor('reached-driver-1.trx'), LIMITS.unit);
+  assert.equal(limitFor('reached-driver-process-git-2-again.trx'), LIMITS.process);
+  assert.equal(limitFor('reached-web-unit-1.json'), LIMITS.web);
+  assert.equal(limitFor('reached-tool-tests-1.json'), LIMITS.tool);
+  assert.equal(limitFor('reached-cli-1.json'), LIMITS.toolUnit);
+  const dir = join('_fixtures', 'time-ratchet-reached');
   rmSync(dir, { recursive: true, force: true });
-  mkdirSync(join(dir, 'tools'), { recursive: true });
+  mkdirSync(dir, { recursive: true });
   try {
-    const file = 'tools/time-ratchet.test.mjs';
-    const records = join('_fixtures', 'test-timing');
-    mkdirSync(records, { recursive: true });
-    const record = join(records, 'tool-unit.json');
-    kept = existsSync(record) ? readFileSync(record) : null;
-    writeFileSync(record, JSON.stringify({ testResults: [{ name: join(process.cwd(), file), assertionResults: [{ fullName: 'slow one', duration: 99_000, status: 'passed' }] }] }));
-    const run = (paths) => spawnSync(process.execPath, ['tools/time-ratchet.mjs', '--since', String(Date.now() - 60_000)], { encoding: 'utf8', env: { ...process.env, MERGE_GATES_RUN: '', DAORIS_RATCHET_CHANGED: JSON.stringify(paths) } });
-    const unrelated = run(['docs/areas/x.md']);
-    assert.equal(unrelated.status, 0, unrelated.stderr);
-    assert.match(unrelated.stdout, /slow, not this merge's: tools\/time-ratchet\.test\.mjs::slow one took 99000 ms/);
-    const reached = run([file]);
-    assert.equal(reached.status, 1, 'a test the merge reaches is judged as before');
-    assert.match(reached.stderr, /the list takes no new test/);
+    writeFileSync(join(dir, 'reached-web-unit-1.json'), JSON.stringify({ testResults: [{ name: join(process.cwd(), 'a.test.ts'), assertionResults: [{ fullName: 'slow', duration: 12_000, status: 'passed' }] }] }));
+    assert.deepEqual(Object.keys(scanRecords(dir, process.cwd()).over), ['a.test.ts::slow']);
   } finally {
-    const record = join('_fixtures', 'test-timing', 'tool-unit.json');
-    if (kept === null) rmSync(record, { force: true });
-    else writeFileSync(record, kept);
     rmSync(dir, { recursive: true, force: true });
   }
 });

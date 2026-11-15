@@ -12,19 +12,28 @@
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
  */
+import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
-import { splitByReach } from './time-reach.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
+import { judgeByReach, loadWorld } from './time-reach.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
 
 const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
 
+/** The suite a reached command's record (`reached-<suite>-<n>[-again].<ext>`, written when a class is measured again alone) is of, or null. */
+const reachedSuite = (file) => /^reached-(.+?)-\d+(-again)?\.(trx|json|xml)$/.exec(file)?.[1] ?? null;
+
 /** The limit for a record file by its name. */
 export function limitFor(file) {
+  const suite = reachedSuite(file);
+  if (suite !== null) {
+    if (file.endsWith('.trx')) return /process/i.test(suite) ? LIMITS.process : LIMITS.unit;
+    return suite === 'web-unit' ? LIMITS.web : suite === 'tool-tests' ? LIMITS.tool : LIMITS.toolUnit;
+  }
   if (file === 'web-unit.json') return LIMITS.web;
   if (file === 'tool-unit.json') return LIMITS.toolUnit;
   if (file === 'tool-tests.xml' || file === 'tool-e2e.json') return LIMITS.tool;
@@ -92,7 +101,10 @@ export function readRecords(dir, root, { since = null } = {}) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).sort().map((file) => ({ file, at: statSync(join(dir, file)).mtimeMs })).filter(({ at }) => since === null || at >= since).map(({ file, at }) => {
     const text = () => readFileSync(join(dir, file), 'utf8');
-    const tests = file.endsWith('.trx') ? readTrx(text()) : VITEST_REPORTS.includes(file) ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
+    const reached = reachedSuite(file);
+    const vitest = VITEST_REPORTS.includes(file) || (reached !== null && file.endsWith('.json'));
+    const junit = file === 'tool-tests.xml' || (reached === 'tool-tests' && file.endsWith('.xml'));
+    const tests = file.endsWith('.trx') ? readTrx(text()) : vitest ? readVitest(text(), root) : junit ? readJunit(text(), root) : [];
     return { file, at, tests };
   });
 }
@@ -197,7 +209,13 @@ export function tighten(found, list, seen = new Set()) {
   return next;
 }
 
-function main() {
+/** The census classes `units` run again alone, once the merge's other gates have ended, so each writes a newer record of its own time. */
+function measureAlone(root, units) {
+  console.log(`time-ratchet: measured again alone: ${units.join(', ')}`);
+  spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
+}
+
+async function main() {
   const at = process.argv.indexOf('--since');
   const since = at >= 0 ? Number(process.argv[at + 1]) : null;
   if (since === null && process.env.MERGE_GATES_RUN === '1') {
@@ -209,9 +227,12 @@ function main() {
   const dir = join(root, '_fixtures', 'test-timing');
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
-    const { over: all, seen } = scanRecords(dir, root, { since });
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
-    const { mine: found, others } = changed ? splitByReach(all, changed, repositoryFiles(root)) : { mine: all, others: {} };
+    const scan = () => scanRecords(dir, root, { since });
+    const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
+    const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
+    const found = judged ? judged.mine : all;
+    const others = judged ? judged.others : {};
     for (const [key, { ms, limit }] of Object.entries(others)) {
       console.log(`time-ratchet: slow, not this merge's: ${key} took ${ms} ms, over its ${limit} ms limit, and no path the merge changes reaches it`);
     }
@@ -240,4 +261,4 @@ function main() {
   }
 }
 
-if (isMain(import.meta.url)) process.exitCode = main();
+if (isMain(import.meta.url)) main().then((code) => { process.exitCode = code; });
