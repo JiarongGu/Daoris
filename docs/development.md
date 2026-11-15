@@ -185,7 +185,9 @@ Main is the development branch, and the cycle's aim is main green and the instal
 1. **Set up.** A builder runs `node tools/worktree-setup.mjs` from its worktree first (`--plan` says what it would do, `--build`
    builds the driver's and the modules' test projects too): `local/*.props` of the main checkout copied as files, never linked;
    dependencies installed from the lockfiles where missing or not from the lockfile as it stands; the merge drivers set, the
-   index written, the contracts generated and the test projects restored. It refuses a `local/` or a `node_modules` that is a link.
+   index written, each gate's declared `regenerate` command run and the test projects restored, then the base recorded: `npm run quick`
+   runs once (`--record-base`) and its verdicts are kept in `local/quick-base.json`, so a later `npm run quick` says which reds are
+   new and which the base already stood in. It refuses a `local/` or a `node_modules` that is a link.
 2. **Land.** A finished branch lands through `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. Its default runs
    the blocking checks, the CLI's verify and the reached checks: the test units the merge's paths reach in the driver's, modules',
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
