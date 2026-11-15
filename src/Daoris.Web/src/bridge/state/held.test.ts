@@ -6,7 +6,7 @@ import { hashKey, QueryClient } from '@tanstack/react-query';
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@shenora/react', () => ({ getBridge: () => ({ isAvailable: true, invoke }) }));
 
-import { answered, askHeld, isPending } from './held';
+import { answered, askHeld, fieldsOf, isPending } from './held';
 
 const key = ['sessions', 'where', 'a1'] as const;
 
@@ -18,18 +18,19 @@ describe('a read told by event (NOBLOCK1)', () => {
     client.setQueryData(key, { sessions: [{ session: 'a1', treeGone: false }] });
     invoke.mockResolvedValue({ pending: true });
 
-    const kept = await askHeld('SESSION_WHERE', client, key, { sessions: [] });
+    const kept = await askHeld('SESSION_WHERE', client, key, { sessions: [] }, fieldsOf);
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_WHERE', { payload: { sessions: [], held: hashKey(key) } });
     expect(kept).toEqual({ sessions: [{ session: 'a1', treeGone: false }] });
   });
 
-  it('reads nothing held as the pending answer itself, and an answer as the answer', async () => {
+  it('hands nothing held to its reader as the pending answer itself, and an answer as the answer', async () => {
     const client = new QueryClient();
-    invoke.mockResolvedValueOnce({ pending: true }).mockResolvedValueOnce({ sessions: [] });
+    invoke.mockResolvedValueOnce({ pending: true }).mockResolvedValueOnce({ sessions: [] }).mockResolvedValueOnce({ pending: true });
 
-    expect(isPending(await askHeld('SESSION_WHERE', client, key, {}))).toBe(true);
-    expect(await askHeld('SESSION_WHERE', client, key, {})).toEqual({ sessions: [] });
+    expect(isPending(await askHeld('SESSION_WHERE', client, key, {}, (answer) => answer))).toBe(true);
+    expect(await askHeld('SESSION_WHERE', client, key, {}, fieldsOf)).toEqual({ sessions: [] });
+    expect(await askHeld('SESSION_WHERE', client, ['sessions', 'where', 'c3'], {}, fieldsOf)).toEqual({});
   });
 
   it('writes an event’s answer into the query it names, and only that one', () => {

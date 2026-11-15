@@ -8,7 +8,7 @@ import { useViewedMarks } from '../review/run/viewedMarks';
 import { OutputsView } from './OutputsView';
 
 /** The attempt to read next: the one asked, or, asked for the newest, the one first answered, so a newer one is never swapped in. */
-export function pinnedAttempt(asked: number, answer: RunReviewAnswer | undefined): number {
+export function pinnedAttempt(asked: number, answer: RunReviewAnswer | null | undefined): number {
   return asked !== 0 ? asked : answer?.record?.attempt ?? 0;
 }
 
@@ -19,7 +19,7 @@ function RecordFileDiff({ run, attempt, row }: { run: string; attempt: number; r
   const after = useRunReviewFile(run, attempt, row.path, 'after', { enabled: Boolean(row.after) });
   const refused = (row.before ? before.data?.refused : null) ?? (row.after ? after.data?.refused : null);
   if (refused) return <p className="m-0 px-3 pb-2 text-small text-ink-faint">{t(`work.outputs.fileRefused.${refused}`, { defaultValue: refused })}</p>;
-  if ((row.before && before.isPending) || (row.after && after.isPending)) {
+  if ((row.before && (before.isPending || before.data === null)) || (row.after && (after.isPending || after.data === null))) {
     return <p className="m-0 px-3 pb-2 text-small text-ink-faint">{t('work.outputs.fileReading')}</p>;
   }
   return <RecordFileView path={row.path} before={before.data?.text ?? null} after={after.data?.text ?? null} />;

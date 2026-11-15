@@ -226,6 +226,9 @@ public static class PersonPresses
     /// <summary><c>git answer &lt;ask&gt; allow|refuse</c>: a git go-ahead answered, as its row in What needs you answers it.</summary>
     public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
 
+    /// <summary><c>session option &lt;id&gt; &lt;option&gt; &lt;value&gt;</c>: one of a running conversation's options set, as its page's picker sets it.</summary>
+    public static InstanceRoute SessionOption { get; } = Person("SET_SESSION_OPTION");
+
     /// <summary><c>browser favorite add|remove &lt;address&gt;</c>: a page kept on, or dropped from, Daoris's browser's bookmarks bar.</summary>
     public static InstanceRoute BrowserFavorite { get; } = Person("BROWSER_FAVORITE");
 
@@ -367,6 +370,10 @@ public static class PersonPresses
         ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
         ("git revert <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
         ("git rebase <repository> <branch> <onto> --yes", GitHistoryEdit),
+        ("git identity add-ssh … --import | test … --trust-host | read-only … off | remove …", GitIdentity),
+        ("git use … own", GitUse),
+        ("git access … (a widening)", SetGitAccess),
+        ("git answer <ask> allow|refuse", GitAnswer),
         ("ask --pause <id>", WorkPause),
         ("quest pause <id>", WorkPause),
         ("ask --resume <id>", WorkResume),
@@ -440,6 +447,7 @@ public static class PersonPresses
         ("sessions pass <ask>", SessionHelperPass),
         ("sessions partner <id> \"…\" --agent <name>", SessionPartnerAsk),
         ("sessions partner <piece> --stop", SessionStop),
+        ("sessions option <id> <option> <value>", SessionOption),
     ];
 }
 
