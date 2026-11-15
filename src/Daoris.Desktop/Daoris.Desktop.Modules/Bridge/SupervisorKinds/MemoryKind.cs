@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 /// The memory kind: an ended session's staged changes, its subject <c>{ session, memory: "staged" }</c>, kept or dropped under
 /// <c>memory.keep</c>; and a session's memory end or replacement awaiting its approver, <c>{ session, memory: &lt;operation&gt; }</c>, approved or
 /// declined under <c>memory.decide</c>. Each is listed with its facts (the staged rows and their texts; the end's target, reason and
-/// proposer, <see cref="SupervisorDoorSubjects.FactsAsync"/>), composed for an agent as for a terminal, and kept pinned to what was
+/// proposer, <see cref="SupervisorDoorSubjects.FactsAsync"/>), composed for an agent as for a terminal, and kept pinned to what it
 /// judged; held for the role's window with <i>Overrule</i>, then posted to the service's own door as the role's answer
 /// (<see cref="SupervisorDoorAnswers"/>); its leave is the person's at once. An end the service's sweep wrote names no session and stays the person's.
 /// </summary>

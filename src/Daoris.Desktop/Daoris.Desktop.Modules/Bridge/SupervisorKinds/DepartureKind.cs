@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 /// The departure kind: a quest closed done departing from what the person required, held by that departure alone for their yes, its
 /// subject <c>{ session, quest }</c> naming the quest's newest session here. Listed with its facts (what the quest required beside how the
 /// done answered it, <see cref="SupervisorDoorSubjects.FactsAsync"/>) and accepted under <c>departure.accept</c>, pinned to the quest as it
-/// was judged, held for the role's window with <i>Overrule</i>, then posted to the service's accept door as the role's yes
+/// stood when judged, held for the role's window with <i>Overrule</i>, then posted to the service's accept door as the role's yes
 /// (<see cref="SupervisorDoorAnswers"/>); its leave is the person's at once. A done held for its evidence, a set-up step's review or a
 /// reopened source is the person's, so it is never listed here.
 /// </summary>
@@ -72,7 +72,7 @@ internal sealed class DepartureKind : ISupervisorKind
         }
 
         if (SupervisorDecisionDoor.Covers(loop, generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
-        // The quest as it stands, pinned: a done redone, answered again or held for anything but its departure is no longer what was judged.
+        // The quest as it stands, pinned: a done redone, answered again or held for anything but its departure is no longer what the role judged.
         var pin = await SupervisorDoorSubjects.PinAsync(service, subject, ct).ConfigureAwait(false);
         var answer = new SupervisorDoorAnswer(subject, repository, generation, act, null, reasons, holder) { Pin = pin };
         var kept = await loop.Supervisor.DoorAsync(answer, pin is null ? SupervisorWhy.Answered : null, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);

@@ -100,7 +100,6 @@ public static class SupervisorWhy
     public const string NoQuest = "no-quest";
     public const string QuestionChanged = "question-changed";
 
-    /// <summary>What a held door answer judged changed before it went on (<see cref="SupervisorDoorSubjects.PinAsync"/>): it is not posted.</summary>
     public const string SubjectChanged = "subject-changed";
     public const string NotOfferedChoice = "not-offered-choice";
     public const string NoSource = "no-source";

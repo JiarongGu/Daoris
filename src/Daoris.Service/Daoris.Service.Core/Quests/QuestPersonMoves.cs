@@ -28,8 +28,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     /// The person accepts a done's departure from what they required, or a done held for its evidence
     /// as it stands: what it held goes on — the chain's next step is published now, and a quest waiting
     /// on it resumes at the driver's next look. Only a held quest takes a yes; any other is refused saying why, as a
-    /// state, not a malformed ask. With <paramref name="by"/>, an appointed role's yes, kept on its move as the role's and said as theirs.
-    /// </summary>
+    /// state, not a malformed ask.    /// </summary>
     public async Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? by = null)
     {
         var quest = id.TrimStart('#');

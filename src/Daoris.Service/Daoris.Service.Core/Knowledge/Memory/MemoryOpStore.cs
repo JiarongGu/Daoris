@@ -139,8 +139,7 @@ public sealed class MemoryOpStore
 
     /// <summary>
     /// Whether <paramref name="session"/> is <paramref name="proposer"/> or of its lineage (§4): a session it continues or serves, as a
-    /// helper or a partner serves, followed up to the root. A subagent calls as its session, so it is the proposer here. With
-    /// <paramref name="deciding"/>, a supervisor's record (its <c>decides</c> set) serves the session it decides for as no part of it.
+    /// helper or a partner serves, to the root; a subagent is the proposer. <paramref name="deciding"/>: a supervisor serves nothing it decides for.
     /// </summary>
     public Task<bool> InLineageAsync(string session, string proposer, CancellationToken ct = default, bool deciding = false) => _db.RunAsync(async () =>
     {

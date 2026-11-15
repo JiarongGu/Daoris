@@ -162,7 +162,7 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
     private string States(string session) => string.Concat(Directory.EnumerateFiles(
         DaorisHome.Entry(_home, HomeEntry.Sessions, session + QuestionSupervisorDecisions.DecisionsSuffix), "*.states*").Select(File.ReadAllText));
 
-    /// <summary>🔴 OWNERGATE1c: a keep is tied to the staged rows it judged; a row staged since makes it stale at its release, nothing posted, and the subject the person's.</summary>
+    /// <summary>🔴 A keep is tied to the staged rows it judged; a row staged since makes it stale at its release, nothing posted, and the subject the person's.</summary>
     [Fact]
     public async Task A_held_answer_whose_subject_changed_since_it_was_judged_goes_stale_and_posts_nothing()
     {
@@ -181,7 +181,7 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.Equal(SupervisorWhy.Answered, (await decisions.DoorAsync(Staged() with { Pin = null, Subject = new(SupervisorKinds.Memory, "s3", SupervisorDoorActs.Staged) }, null, At)).Why);
     }
 
-    /// <summary>🔴 OWNERGATE1c: a grant taken away after the keep and before its moment refuses the release: nothing is posted.</summary>
+    /// <summary>🔴 A grant taken away after the keep and before its moment refuses the release: nothing is posted.</summary>
     [Fact]
     public async Task A_grant_removed_after_the_keep_refuses_the_release()
     {
@@ -197,7 +197,7 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 OWNERGATE1c: a post a restart cut off after its <c>released</c> line is settled by what the service shows: applied, it is
+    /// 🔴 A post a restart cut off after its <c>released</c> line is settled by what the service shows: applied, it is
     /// <c>went-on</c> and nothing is posted again; not applied, <c>stale</c> as restarted. A held one the restart finds goes stale.
     /// </summary>
     [Theory]
@@ -224,7 +224,7 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.False(after.RefersDoor(new SupervisorSubject(SupervisorKinds.Departure, "s2", "q8")));
     }
 
-    /// <summary>🔴 OWNERGATE1c: the release posts a keep and an approve as a yes and a drop and a decline as a no, with the role, its agent and its turn.</summary>
+    /// <summary>🔴 The release posts a keep and an approve as a yes and a drop and a decline as a no, with the role, its agent and its turn.</summary>
     [Theory]
     [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Keep, "/api/sessions/s1/memory", "\"keep\":true")]
     [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Drop, "/api/sessions/s1/memory", "\"keep\":false")]
@@ -273,12 +273,12 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 OWNERGATE1c: what a role judges is Daoris's own record of the subject: the staged rows and their texts, the end's target, reason
+    /// 🔴 What a role judges is Daoris's own record of the subject: the staged rows and their texts, the end's target, reason
     /// and proposer, the departure beside what the quest required; pinned as it stands, so a row staged since is another pin. A quest held
     /// for its evidence or a reopened source has no facts and no pin: it is never a role's.
     /// </summary>
     [Fact]
-    public async Task OWNERGATE1c_a_door_subjects_facts_and_pin_are_what_the_service_holds_and_a_departure_alone_is_a_roles()
+    public async Task A_door_subjects_facts_and_pin_are_what_the_service_holds_and_a_departure_alone_is_a_roles()
     {
         var doors = new Doors();
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(doors));

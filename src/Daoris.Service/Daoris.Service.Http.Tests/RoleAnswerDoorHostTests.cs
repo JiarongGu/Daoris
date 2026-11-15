@@ -75,7 +75,7 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
     /// record, which serves the session it decides for, is no part of that lineage, so its approval is kept.
     /// </summary>
     [Fact]
-    public async Task OWNERGATE1c_a_roles_approval_is_refused_where_its_holder_is_of_the_proposers_lineage()
+    public async Task A_roles_approval_is_refused_where_its_holder_is_of_the_proposers_lineage()
     {
         var (session, op) = await StagedAsync(new MemoryChange(MemoryOpKind.End, Text: "Keeper moved its area.", Target: "1", Revision: 1), "completed");
         var own = new { role = "daoris-landing", agent = "codex-acp", decision = "d1", session };
@@ -132,7 +132,7 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
 
     /// <summary>🔴 A keyed role's yes to a departure is kept on its move as the role's and its agent's; the person's own yes names no one.</summary>
     [Fact]
-    public async Task OWNERGATE1c_a_keyed_roles_yes_to_a_departure_is_kept_on_its_move_by_the_role()
+    public async Task A_keyed_roles_yes_to_a_departure_is_kept_on_its_move_by_the_role()
     {
         var quest = await DepartedAsync();
 
@@ -151,7 +151,7 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
 
     /// <summary>🔴 A role form naming no role or no agent is refused at each of the three doors, so a blank role never stores the person's name as a role's.</summary>
     [Fact]
-    public async Task OWNERGATE1c_a_role_form_naming_no_role_is_refused_and_nothing_moves()
+    public async Task A_role_form_naming_no_role_is_refused_and_nothing_moves()
     {
         var quest = await DepartedAsync();
         var blank = new { role = "", agent = "codex-acp", decision = "d1" };
@@ -165,7 +165,7 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
 
     /// <summary>🔴 A keyless session may not ask the person to confirm a press carrying the role form: that form is the driver's alone.</summary>
     [Fact]
-    public async Task OWNERGATE1c_a_confirmation_carrying_the_role_form_is_refused()
+    public async Task A_confirmation_carrying_the_role_form_is_refused()
     {
         const string text = """{"role":{"role":"daoris-landing","agent":"codex-acp","decision":"d1"}}""";
         var asked = await host.PostAsync("/api/confirmations", new { method = "POST", path = "/api/quests/7/accept", body = text, session = "s-role" });

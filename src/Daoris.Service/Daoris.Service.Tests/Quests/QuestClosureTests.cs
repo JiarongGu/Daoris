@@ -10,7 +10,7 @@ namespace Daoris.Service.Tests;
 /// sealed by it; and the graph's close door writes every quest's Done in one transaction, fenced by the submissions it names
 /// and by its key, so a stale close writes nothing and the same close twice writes once.
 /// </summary>
-public sealed class QuestClosureTests : IAsyncLifetime
+public sealed partial class QuestClosureTests: IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-closure-" + Guid.NewGuid().ToString("N")[..8]);
@@ -124,22 +124,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
         _exchange.CloseAsync(quests[^1].Id, key, "token-" + key, [.. quests.Select(Named)], Now);
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
-
-    /// <summary>🔴 A role's yes accepts a departure alone: a submission held for its unread evidence refuses it, and the person's yes still accepts it.</summary>
-    [Fact]
-    public async Task OWNERGATE1c_a_roles_yes_never_accepts_a_done_held_for_its_evidence()
-    {
-        var quest = await Bound();
-        Assert.Equal(QuestHold.EvidenceUnread, (await Ready(quest)).Quest!.Hold);
-
-        var role = await _exchange.AcceptAsync(quest.Id, Now, by: "role:daoris-landing · codex-acp");
-
-        Assert.Equal(QuestRespondRefusal.NotHeld, role.Refusal);
-        Assert.Contains("a role's yes does not accept", role.Message, StringComparison.Ordinal);
-        Assert.Equal(QuestHold.EvidenceUnread, (await Find(quest.Id)).Hold);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(quest.Id, Now)).Refusal);
-    }
-
 
     [Fact]
     public async Task Ready_keeps_the_quest_taken_with_its_submission_and_holds_it_as_a_done_would_be()
