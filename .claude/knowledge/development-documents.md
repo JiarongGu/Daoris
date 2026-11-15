@@ -123,14 +123,15 @@ the size it was on the first day; a record read by lookup has none.
 - **Bytes, for the root instruction file as a whole**: the brief and the doctrine together, under the
   smallest limit among the agents the repository serves. What is lost is the tail, and the tail is the
   doctrine.
-- **Words, for attention.** Starting ceilings: the brief, 1,500 words and 200 lines; an area document or
+- **Words, for attention.** Starting ceilings: the brief, its doctrine included, 1,300 words; an area document or
   a room, 600 words; the backlog, 3,000 words; a backlog row or an archive line, 60 words.
 
-**A ceiling reports and never fails**, because whether a document says too much is a judgement. When one
-goes over, the read path has grown: move its history to the record that keeps it and what belongs in
-another tier there, then condense, and only then raise the number,
-deliberately and with the reason. What fails is a fact: a named document missing, or a list of places
-that no longer matches the files.
+**The brief's ceiling fails; another reports until it is declared failing.** A reporting ceiling was
+tried and the documents it held grew past it anyway, because nothing pulled them back. The brief is paid
+for by every session, so its ceiling fails a check, and at the ceiling a line in takes a line out. A
+document already over a ceiling is held where it stands: it may shrink and may not grow. When one goes
+over, the read path has grown: move its history to the record that keeps it and what belongs in another
+tier there, then condense, and only then raise the number, deliberately and with the reason.
 
 ### What may run unasked is a declaration
 
@@ -139,8 +140,9 @@ person accepts it once: the checks that are a session's to run, the build and te
 install from the lockfile. The brief says only where it is.
 
 - **Exact commands, one per entry.** A pattern that admits any argument to a runner admits anything.
-- **The carve-outs never enter it**: a push, a publish, a release, a history rewrite, a discard, a
-  recursive delete, a path outside the repository (`autonomous-development`).
+- **The owner calls never enter it** (`autonomous-development`): money and budgets, sign-ins and
+  credentials, releases the owner marked, a history rewrite, deleting the owner's data, publishing to
+  people outside beyond what it grants. It names them as excluded, so a reader sees the boundary.
 - **It takes effect once it has landed and a person has accepted it.** One a session can edit and have
   obeyed in the same run is an agent granting itself permission.
 - **Not every check is a session's to run.** One that needs the machine quiet, opens windows or runs

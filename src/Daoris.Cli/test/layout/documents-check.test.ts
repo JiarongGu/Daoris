@@ -36,32 +36,27 @@ const WHERE_TABLE = [
   '',
   'Declared in `daoris.json`; look here before searching.',
   '',
-  '| Role | Where | Its job |',
-  '|---|---|---|',
-  '| decisions | `docs/DECISIONS.md` | history: why each rule was chosen and what it rejected, read for the reasoning only |',
-  '| backlog | `TASKS.md` | open work only |',
-  '| changelog | `CHANGELOG.md` | what a user of a release sees changed |',
+  '- decisions `docs/DECISIONS.md`: the library',
+  '- backlog `TASKS.md`',
+  '- changelog `CHANGELOG.md`',
+  '- knowledge and skills, each with when it applies: `.claude/INDEX.md`, searched for your kind of change',
 ].join('\n');
 
-test('sync renders Where things are into the region: one row per declared path, in the roles\' order', () => {
+test('sync renders Where things are into the region: one line per declared path, in the roles\' order', () => {
   const fx = declaring('documents-table');
 
   const region = fx.repoFx.region()!;
   assert.ok(region.includes(WHERE_TABLE), region);
-  // The brief has a ceiling and no path: it is the file this region sits in, so it has no row.
-  assert.doesNotMatch(region, /\| brief \|/);
-  // After the pointer to the index, before the first rule.
-  assert.ok(region.indexOf('## Read on demand') < region.indexOf('## Where things are'));
+  // The brief has a ceiling and no path: it is the file this region sits in, so it has no line.
+  assert.doesNotMatch(region, /^- brief /m);
+  // Before the first rule.
   assert.ok(region.indexOf('## Where things are') < region.indexOf('<!-- daoris: core/core/rules/'));
   assert.equal(fx.cli('check').code, 0, fx.cli('check').out);
   fx.cleanup();
 });
 
-/**
- * The index of where things are is the row that
- * sends a session there before it searches, so it sits after the router and says so in its job.
- */
-test('sync renders a declared index after the router, saying to open it before searching', () => {
+/** The index of where things are sits after the router, in the roles' order, and the library shares one line. */
+test('sync renders a declared index after the router', () => {
   const fx = layoutFixture('documents-index');
   fx.repoFx.write('docs/README.md', '# The documents\n');
   fx.repoFx.write('docs/index/README.md', '# Where things are\n');
@@ -71,9 +66,9 @@ test('sync renders a declared index after the router, saying to open it before s
 
   const region = fx.repoFx.region()!;
   assert.ok(region.includes([
-    '| router | `docs/README.md` | every document, its kind and its standing |',
-    '| index | `docs/index/README.md` | where things are in the code and the records, generated: open it before searching |',
-    '| decisions | `docs/decisions` |',
+    '- router `docs/README.md`',
+    '- index `docs/index/README.md`',
+    '- decisions `docs/decisions`: the library',
   ].join('\n')), region);
   assert.equal(fx.cli('check').code, 0, fx.cli('check').out);
   fx.cleanup();
@@ -95,7 +90,7 @@ test('check fails on a declared index that is absent, naming the role', () => {
   fx.cleanup();
 });
 
-test('a repository that declares nothing gets no table, and its region is byte for byte what it was', () => {
+test('a repository that declares nothing gets the index line alone, and its region is byte for byte what it was', () => {
   const fx = layoutFixture('documents-none');
   fx.sync();
   const before = fx.repoFx.read('AGENTS.md');
@@ -104,23 +99,24 @@ test('a repository that declares nothing gets no table, and its region is byte f
   fx.sync();
 
   assert.equal(fx.repoFx.read('AGENTS.md'), before);
-  assert.doesNotMatch(before, /Where things are/);
+  assert.doesNotMatch(before, /Declared in/);
+  assert.match(before, /^- knowledge and skills, each with when it applies:/m);
   fx.cleanup();
 });
 
-test('a declaration with only ceilings renders no table', () => {
+test('a declaration with only ceilings lists no declared place', () => {
   const fx = declaring('documents-ceilings', { brief: { words: 1500 }, room: { words: 600 } });
-  assert.doesNotMatch(fx.repoFx.region()!, /Where things are/);
+  assert.doesNotMatch(fx.repoFx.region()!, /Declared in/);
   fx.cleanup();
 });
 
 /** Rendered from the manifest, so no such file is made: Windows refuses a pipe in a name, and Linux does not. */
-test('a path with a pipe in it is escaped, so the table stays a table', () => {
+test('a path with a pipe in it is listed as written', () => {
   const fx = layoutFixture('documents-pipe');
   fx.manifest({ documents: { glossary: 'docs/a|b.md' } });
   fx.sync();
-  assert.match(fx.repoFx.region()!, /\| glossary \| `docs\/a\\\|b\.md` \| the names people and code use/);
-  assert.doesNotMatch(fx.cli('check').out, /Where things are table differs/, 'check rebuilds the same escaped row');
+  assert.match(fx.repoFx.region()!, /^- glossary `docs\/a\|b\.md`$/m);
+  assert.doesNotMatch(fx.cli('check').out, /Where things are list differs/, 'check rebuilds the same line');
   fx.cleanup();
 });
 
@@ -135,7 +131,7 @@ test('sync names a declared document that is absent, and still writes the table'
   const run = fx.cli('sync');
   assert.equal(run.code, 0, run.out);
   assert.match(run.out, /docs\/DECISIONS\.md \(decisions\)/);
-  assert.match(fx.repoFx.region()!, /\| decisions \| `docs\/DECISIONS\.md` \|/);
+  assert.match(fx.repoFx.region()!, /^- decisions `docs\/DECISIONS\.md`: the library$/m);
   fx.cleanup();
 });
 
@@ -178,7 +174,7 @@ test('a declared folder is a document too: a folder of decision records', () => 
   const { code, out } = fx.cli('check');
 
   assert.equal(code, 0, out);
-  assert.match(fx.repoFx.region()!, /\| decisions \| `docs\/adr` \|/);
+  assert.match(fx.repoFx.region()!, /^- decisions `docs\/adr`: the library$/m);
   fx.cleanup();
 });
 
@@ -218,35 +214,35 @@ test('check fails on a declared document that is a real link, where this runner 
   fx.cleanup();
 });
 
-test('check fails when the table differs from the manifest, and names the table', () => {
+test('check fails when the list differs from the manifest, and names the list', () => {
   const fx = declaring('documents-check-stale');
   fx.repoFx.write('docs/FIX-LOG.md', '# Fixes\n');
   fx.manifest({ documents: { ...DECLARED, fixes: 'docs/FIX-LOG.md' } });
 
   const stale = fx.cli('check');
   assert.equal(stale.code, 1, stale.out);
-  assert.match(stale.out, /where\s+the region's Where things are table differs from daoris\.json's documents — run 'daoris sync'/);
+  assert.match(stale.out, /where\s+the region's Where things are list differs from daoris\.json's documents — run 'daoris sync'/);
   assert.doesNotMatch(stale.out, /roster|index /, 'the pointer, the rooms and the index did not move');
 
   fx.sync();
   assert.equal(fx.cli('check').code, 0);
 
-  // A hand edit to the generated table is the same fact.
-  fx.repoFx.write('AGENTS.md', fx.repoFx.read('AGENTS.md').replace('| backlog | `TASKS.md`', '| backlog | `TODO.md`'));
-  assert.match(fx.cli('check').out, /Where things are table differs/);
+  // A hand edit to the generated list is the same fact.
+  fx.repoFx.write('AGENTS.md', fx.repoFx.read('AGENTS.md').replace('- backlog `TASKS.md`', '- backlog `TODO.md`'));
+  assert.match(fx.cli('check').out, /Where things are list differs/);
   fx.cleanup();
 });
 
-test('check fails when a declaration is withdrawn and the table is left behind', () => {
+test('check fails when a declaration is withdrawn and the list is left behind', () => {
   const fx = declaring('documents-check-withdrawn');
   fx.manifest({});
 
   const { code, out } = fx.cli('check');
 
   assert.equal(code, 1, out);
-  assert.match(out, /Where things are table differs/);
+  assert.match(out, /Where things are list differs/);
   fx.sync();
-  assert.doesNotMatch(fx.repoFx.region()!, /Where things are/);
+  assert.doesNotMatch(fx.repoFx.region()!, /Declared in/);
   assert.equal(fx.cli('check').code, 0);
   fx.cleanup();
 });
@@ -266,19 +262,20 @@ test('check reports a document over its ceiling in words, and does not fail on i
   fx.cleanup();
 });
 
-test('check reports the brief over its ceiling: the root file\'s own part, outside the region', () => {
+/** The brief's ceiling holds the whole root file, its region included: every session pays for both together. */
+test('check reports the brief over its ceiling: the whole root file, its region included', () => {
   const fx = declaring('documents-report-brief');
   fx.repoFx.write('AGENTS.md', `# Our brief\n\n${'word '.repeat(45)}\n\n${fx.repoFx.read('AGENTS.md')}`);
 
   const { code, out } = fx.cli('check');
 
   assert.equal(code, 0, out);
-  assert.match(out, /words\s+the brief \(AGENTS\.md, outside the region\) is 48 words of 40 — over by 8/);
+  assert.match(out, /words\s+the brief \(AGENTS\.md\) is \d+ words of 40 — over by \d+.*advisory/);
   fx.cleanup();
 });
 
-test('a brief within its ceiling is not reported, however long the region is', () => {
-  const fx = declaring('documents-report-brief-ok');
+test('a brief within its ceiling is not reported', () => {
+  const fx = declaring('documents-report-brief-ok', { ...DECLARED, brief: { words: 5000, bytes: 50000 } });
   fx.repoFx.write('AGENTS.md', `# Our brief\n\nShort.\n\n${fx.repoFx.read('AGENTS.md')}`);
 
   const { out } = fx.cli('check');
@@ -337,7 +334,7 @@ test('check reports no backlog or decisions declared, and does not fail on it', 
 test('a repository that declares nothing hears nothing about records', () => {
   const fx = layoutFixture('documents-report-silent');
   fx.sync();
-  assert.doesNotMatch(fx.cli('check').out, /records|words|Where things are/);
+  assert.doesNotMatch(fx.cli('check').out, /records|^\s+words\s|Where things are/m);
   fx.cleanup();
 });
 

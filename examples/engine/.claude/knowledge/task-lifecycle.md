@@ -2,7 +2,6 @@
 name: task-lifecycle
 applies_when: adding or finishing a task, or editing the backlog
 enforces: the backlog holds open work only; a finished task leaves it for one archive line
-rule: true
 ---
 <!-- daoris: core/core/knowledge/task-lifecycle.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 

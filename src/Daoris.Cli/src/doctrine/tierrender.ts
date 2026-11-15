@@ -1,21 +1,15 @@
 // What goes inside the region: the always-loaded tier, rendered once.
 //
-// `.claude/rules/` is read by only one of three harnesses, so the tier moves into the file all
-// three read. Eight files become one span, and three content decisions follow from that — each a
-// consequence of concatenating rather than a preference:
+// `.claude/rules/` is read by only one of three harnesses, so the tier lives in the file all three
+// read. Each rule file becomes one span, and three content decisions follow from concatenating:
 //
-//   1. FRONTMATTER IS STRIPPED. Frontmatter is only frontmatter at byte 0. Eight
-//      rules concatenated would put seven `---` blocks mid-document, where a reader sees horizontal
-//      rules and stray key-value prose. What it carried becomes the table.
-//   2. PROVENANCE STAYS, per rule. It is what keeps drift and `upstream` per RULE inside one region,
-//      which design §4 rests on — without it a person improving one sentence has drifted all eight.
-//   3. THE TABLE KEEPS THE RULES, AND POINTS AT THE REST. The rules rows are
-//      cheap and carry the `applies_when`/`enforces` the stripped frontmatter held. Knowledge and
-//      skills grow with the repository, so their tables live in `<target>/INDEX.md`, read on demand,
-//      and the region says where: a row per document put the pilot's first rule past the byte at which
-//      one agent stops reading.
-//   4. ONLY THE RULES TIER IS IN FULL. A knowledge document marked `rule: true` is a rule
-//      whose body is read on demand: its row is in the table, linked to its file, and its body is not.
+//   1. FRONTMATTER IS STRIPPED. Frontmatter is only frontmatter at byte 0; concatenated, it would put
+//      `---` blocks mid-document, where a reader sees horizontal rules and stray key-value prose.
+//   2. PROVENANCE STAYS, per rule file. It is what keeps drift and `upstream` per file inside one
+//      region; without it a person improving one sentence has drifted every rule at once.
+//   3. THE REGION LISTS PLACES, THEN THE RULES IN FULL. Every session pays for the region, so it holds
+//      what every session needs: where the records are, one line pointing at `<target>/INDEX.md` (the
+//      knowledge and skills, read on demand), and the rules themselves.
 
 import type { CanonFile, Harness, LockEntry } from './records.ts';
 import { existsSync } from 'node:fs';
@@ -41,10 +35,6 @@ export interface TierDocument {
 /** What the region renders: the rules, the pointer to the index, and what the manifest declares. */
 export interface TierInput {
   rules: TierDocument[];
-  /** The rules read on demand: knowledge documents marked `rule: true`, each a linked row and no body. */
-  onDemand?: readonly TierDocument[];
-  /** Whether the `change` skill is installed, for the line that sends every change through it. */
-  change?: boolean;
   version: string;
   /** Where the on-demand tiers live, for the pointer to their index. */
   target?: string;
@@ -54,8 +44,8 @@ export interface TierInput {
   mirror?: { source: string; root: string };
   /** Each declared room and its first heading. */
   rooms?: readonly { path: string; heading: string | null }[];
-  /** Each declared document with a path, in the roles' order, and its role's job. */
-  documents?: readonly { role: string; path: string; job: string }[];
+  /** Each declared document with a path, in the roles' order. */
+  documents?: readonly { role: string; path: string }[];
 }
 
 /** What the index renders: the on-demand tiers as they are on disk. */
@@ -66,37 +56,26 @@ export interface IndexInput {
   target?: string;
 }
 
-const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
 const KNOWLEDGE_HEAD = '| Document | Applies when | Enforces |\n|---|---|---|';
 const BARE_HEADING = '## Knowledge without frontmatter';
 const BARE_HEAD = '| Document | Its first heading |\n|---|---|';
 const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
 const ROOM_HEAD = '| Room | About |\n|---|---|';
-const WHERE_HEAD = '| Role | Where | Its job |\n|---|---|---|';
 
-/** The skill every change goes through, by its canon target. */
-export const CHANGE_SKILL = 'skills/change/SKILL.md';
-
-/** Whether a document is a rule read on demand: a knowledge document whose frontmatter says `rule: true`. */
-export const isOnDemandRule = (text: string): boolean => parseFrontmatter(text, []).meta?.rule === 'true';
-
-/**
- * What the region says beyond its spans, from everything a sync writes: the canon's rules read on demand, whose rows come
- * from their files' own frontmatter, and whether the `change` skill is installed.
- */
-export function onDemandExtras(
-  writes: readonly (CanonFile & { content: string; in?: string })[],
-): Pick<TierInput, 'onDemand' | 'change'> {
-  return {
-    onDemand: writes
-      .filter((write) => !write.in && write.target.startsWith('knowledge/') && isOnDemandRule(write.content))
-      .map(({ pack, source, target, content }) => ({ file: { pack, source, target }, text: content })),
-    change: writes.some((write) => write.target === CHANGE_SKILL),
-  };
-}
-
-/** The heading of the roster's last table, which `check` compares on its own. */
+/** The heading the region's places start under, from which `check` compares the roster offline. */
 export const WHERE_HEADING = '## Where things are';
+
+/** The sentence above the declared places, rendered only when the manifest declares any. */
+export const DECLARED_LINE = 'Declared in `daoris.json`; look here before searching.';
+
+/** The places list's last item, the pointer to the index of the knowledge and skills, always rendered. */
+export const INDEX_ITEM = '- knowledge and skills, each with when it applies:';
+
+/** The roles read by lookup and never to orient: one line, named the library. */
+const LIBRARY: readonly string[] = ['decisions', 'archive', 'fixes'];
+
+/** The roles whose line says more than its path. */
+const NOTES: Readonly<Record<string, string>> = { gates: 'the checks, and what may run unasked' };
 
 /** The index's file name, at the target's root beside the tiers rather than inside one. */
 export const INDEX_FILE = 'INDEX.md';
@@ -107,11 +86,6 @@ export const INDEX_FILE = 'INDEX.md';
  * cannot collide with it.
  */
 export const indexPath = (target: string): string => (target === '' ? INDEX_FILE : `${target}/${INDEX_FILE}`);
-
-/** A document's name — the filename, which is what every rule's frontmatter `name` must match. */
-function nameOf(file: CanonFile): string {
-  return file.target.replace(/^.*\//, '').replace(/\.md$/, '');
-}
 
 function metaOf(document: TierDocument, required: readonly string[] = ['applies_when', 'enforces']) {
   if (document.meta) return required.every((field) => document.meta![field]) ? document.meta : null;
@@ -153,72 +127,58 @@ export function renderTier(input: TierInput): string {
 }
 
 /**
- * The roster half: the rules table, the pointer to the index, the rooms and where the records are.
+ * The roster half: the header, then where the records are, the pointer to the index, the mirror and
+ * the rooms.
  *
  * @remarks
- * Split out because `check` rebuilds everything below the rules table from the disk and the manifest to
- * tell whether the region has gone stale, and it does that offline, with no canon. The rules rows are
- * not rebuildable offline, because the frontmatter they come from is stripped on the way in; a canon
- * change is `status`'s report and `sync`'s job, which is where a canon change belongs.
+ * Split out because `check` rebuilds everything from {@link WHERE_HEADING} to the first rule from the
+ * disk and the manifest to tell whether the region has gone stale, offline and with no canon. The
+ * switched-off line sits above that heading, because only `sync` holds the lock's knowledge of who
+ * switched a row off.
  *
- * 🔴 Nothing here grows with the repository's documents. The knowledge and
- * skill tables did, and on the first real set-up they put the first rule past byte 32,768 of the file,
- * where one agent stops reading. They are `renderIndex`'s now, and the region carries one sentence
- * naming the file, with no count in it: a count would change the region with every document.
+ * 🔴 Nothing here grows with the repository's documents. The knowledge and skill tables did, and on
+ * the first real set-up they put the first rule past byte 32,768 of the file, where one agent stops
+ * reading. They are `renderIndex`'s, and the region carries one line naming the file, with no count in
+ * it: a count would change the region with every document.
  */
 export function renderRoster(input: TierInput): string {
   const target = input.target ?? HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
-  // 🔴 The region's own headings sit at the SAME level the rule bodies use, and the bodies are not
-  // touched. Nesting them under a `## Doctrine` wrapper reads better in a table of contents and
-  // requires demoting every `#` inside eight rules — a transformation that has to be exactly
-  // reversible over arbitrary markdown, including inside fenced blocks, or a rule is silently
-  // corrupted on its way back out through `upstream`. A body rewritten on the way in cannot be
-  // compared on the way out, so the document is flat: a concatenation of documents, which is what it
-  // is. Seen by rendering the real canon and reading it.
+  // 🔴 The region's own headings sit at the level the rule bodies use, and the bodies are not
+  // touched: demoting every heading inside a rule has to be exactly reversible over arbitrary markdown,
+  // or a rule is silently corrupted on its way back out through `upstream`.
   const lines: string[] = [
     '# Doctrine',
     '',
-    'Generated by daoris from the shared canon. Edit the canon, not this — a local edit here is'
-    + ' reported as drift, and `daoris reconcile` says how to keep one with its reason or propose it upstream.',
-    '',
-    ...(input.change ? ['Make every change through the `change` skill.', ''] : []),
-    '## Rules',
-    '',
-    'Every row is always loaded. A rule named in code is in full below; open a linked one when it applies.',
-    '',
-    RULE_HEAD,
+    'Generated from the shared canon; edit the canon, not this. `daoris reconcile` says how to keep a local edit.',
   ];
 
-  const row = (document: TierDocument, name: string) => {
-    const meta = metaOf(document);
-    return meta
-      ? `| ${name} | ${meta.applies_when} | ${meta.enforces} |`
-      : `| ${name} | ⚠ needs frontmatter | ⚠ needs frontmatter |`;
-  };
-  // Named, not linked. The rule is a few lines down in the same document, and a link would have to
-  // guess the anchor its heading produces — which is the canon's sentence, not its filename.
-  for (const document of input.rules) lines.push(row(document, `\`${nameOf(document.file)}\``));
-  // Linked, because its body is a file the reader has to go and open.
-  for (const document of input.onDemand ?? []) {
-    const path = target === '' ? document.file.target : `${target}/${document.file.target}`;
-    lines.push(row(document, `[\`${nameOf(document.file)}\`](${path})`));
-  }
-
-  // 🔴 What is NOT here, said here. A core row a pack switched off is absent from every table
-  // below, and a session that meets a doctrine with a hole in it cannot tell the hole from a canon
-  // that never had the rule. Under the rules table, because that half is `sync`'s alone: `check`
-  // rebuilds only the on-demand half offline, and this line needs the lock's knowledge of who did it.
+  // 🔴 What is NOT here, said here. A core rule a pack switched off is absent, and a session that meets a
+  // doctrine with a hole in it cannot tell the hole from a canon that never had the rule.
   if (input.off?.length) {
     const rows = input.off.map((row) =>
       `\`${row.target.replace(/^.*\//, '').replace(/\.md$/, '')}\` (by \`${row.by}\`)`);
     lines.push('', `Switched off here, by a pack and confirmed in \`daoris.json\`: ${rows.join(', ')}.`);
   }
 
-  // The pointer, linked because it names a real file the reader has to go and open.
-  const index = indexPath(target);
-  lines.push('', '## Read on demand', '',
-    `The knowledge and the skills, each with when it applies, are listed in [${index}](${index}), generated `
-    + 'from the files: read it before a non-trivial task, and search it when it is long.');
+  // 🔴 Where the records are, as data rather than prose: the search each session would otherwise make.
+  // From the manifest alone, so `check` rebuilds it offline and fails when it differs. The roles read by
+  // lookup share one line, so the list itself says they are not read to orient.
+  lines.push('', WHERE_HEADING, '');
+  const documents = input.documents ?? [];
+  if (documents.length) {
+    lines.push(DECLARED_LINE, '');
+    const library = documents.filter((document) => LIBRARY.includes(document.role));
+    for (const document of documents) {
+      if (!LIBRARY.includes(document.role)) {
+        const note = NOTES[document.role];
+        lines.push(`- ${document.role} \`${document.path}\`${note ? `: ${note}` : ''}`);
+      } else if (document === library[library.length - 1]) {
+        lines.push(`- ${library.map((each) => `${each.role} \`${each.path}\``).join(', ')}: the library`);
+      }
+    }
+  }
+  lines.push(`${INDEX_ITEM} \`${indexPath(target)}\`, searched for your kind of change`);
+
   // Said once, beside the pointer: the copy exists for the agent that reads only there, and an edit
   // made to it is refused, so the reader learns which file to open before editing.
   if (input.mirror) {
@@ -226,26 +186,13 @@ export function renderRoster(input: TierInput): string {
       + 'that reads only there — edit the source.');
   }
 
-  // 🔴 Telling, not loading. Telling is rejected for the RULES, which every task needs; a
-  // room is on-demand material like knowledge, and no harness is measured loading a nested file for a
-  // session started at the root, so the roster is what makes each one reachable. Only when a
-  // room is declared, so a region without rooms is byte for byte unchanged.
+  // 🔴 Telling, not loading. A room is on-demand material like knowledge, and no harness is measured
+  // loading a nested file for a session started at the root, so the roster is what makes each one
+  // reachable. Only when a room is declared.
   if (input.rooms?.length) {
     lines.push('', '## Rooms', '', "Read a folder's room before changing anything in it.", '', ROOM_HEAD);
     for (const room of input.rooms) {
       lines.push(`| [${room.path}](${room.path}/AGENTS.md) | ${room.heading ?? '⚠ no heading'} |`);
-    }
-  }
-
-  // 🔴 Where the records are, as data rather than prose: the one part of the standard every
-  // task needs, and the search each session would otherwise make. From the manifest alone, so `check`
-  // rebuilds it offline and fails when it differs. Only when a path is declared, so a region whose
-  // repository declares nothing is byte for byte unchanged. A path is a code span with its pipes
-  // escaped, which is what keeps a table a table.
-  if (input.documents?.length) {
-    lines.push('', WHERE_HEADING, '', 'Declared in `daoris.json`; look here before searching.', '', WHERE_HEAD);
-    for (const document of input.documents) {
-      lines.push(`| ${document.role} | \`${document.path.replace(/\|/g, '\\|')}\` | ${document.job} |`);
     }
   }
 

@@ -242,7 +242,7 @@ test('the index lists skills at .agents, and the region says the mirror sentence
   assert.match(index, /\| `\.agents\/skills\/finder\/SKILL\.md` \|/);
   assert.match(index, /\| `\.agents\/knowledge\/storage\.md` \|/);
   assert.doesNotMatch(index, /\.claude\/skills/, 'a mirror is a copy, listed once as its source');
-  assert.match(region, /listed in \[\.agents\/INDEX\.md\]\(\.agents\/INDEX\.md\)/);
+  assert.match(region, /^- knowledge and skills, each with when it applies: `\.agents\/INDEX\.md`/m);
   assert.match(region, /Skills live in `\.agents\/skills\/`; `\.claude\/skills\/` mirrors them for the agent that reads only there — edit the source\./);
   assert.equal(region.match(/mirrors them/g)!.length, 1);
   fx.cleanup();

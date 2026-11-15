@@ -6,9 +6,15 @@ enforces: stop and report rather than repair; treat a tree-state observation as 
 
 # What happens when you reach into another repository
 
-The rule is `repository-owns-its-work`: never write into a repository that is not the one you are
-working in. This is the incident it was written from, kept because the failure was not the first edit —
-it was everything that followed from it.
+The always-loaded rule is that ownership is local: never write into a repository that is not the one you
+are working in, and send what it needs as a request. This is the incident it was written from, kept because
+the failure was not the first edit — it was everything that followed from it.
+
+Why a request and never an edit: the knowledge is not portable but the request is. Why a rule there is
+worded as it is, and what was tried and rejected, live with that repository, and an outside edit skips its
+review. So say what is needed and why, with the evidence, not the change you would make; a change spanning
+two repositories is two changes and a request. Writing across anyway is the person's explicit call, never an
+agent's judgement. Initializing a repository that has no owner yet is setup, until it has anything of its own.
 
 ## What happened
 

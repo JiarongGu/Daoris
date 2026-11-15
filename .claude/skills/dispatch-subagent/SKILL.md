@@ -1,6 +1,6 @@
 ---
 name: dispatch-subagent
-description: The parent's half of dispatching a subagent to work a branch of this repository — orienting the row with a branch-scout, sizing it, choosing each role's model, reserving the decision number, naming the lane, running at most five workers at once (a CI run beside lowers that never), merging with tools/merge-branch.mjs, and measuring what the dispatch cost. The subagent's half is the branch-worker agent's own definition. Use when dispatching a subagent.
+description: The parent's half of dispatching a subagent: orient with a scout, size the row, pick models, reserve a decision, run up to five, merge, measure. Use when dispatching a subagent.
 ---
 
 # dispatch-subagent
@@ -30,6 +30,9 @@ unit is a feature a person can see working; the rows it covers become one block 
   the next prune takes it as merged.
 
 ## The briefs
+
+A brief carries state the parent has just verified, with when it was read (the commit it was read at); a parent reads a
+live state again before acting on a stale one.
 
 The scout, read-only and outside any worktree:
 

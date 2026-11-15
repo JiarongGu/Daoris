@@ -100,7 +100,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and its changes. It proposes no workflow and never chooses or runs one. (D223, D261)
 14. The shipped defaults hold no `quest.close`: a run's quest is bound to its run, its agent's done is a submission `claimed` and
     `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). That end ends every session of this machine
-    awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included. A held quest is
+    awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session still waits on is ended again at each look through the same end (`RunReEnds`), whatever answered its first. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
     the quest through the one accept before the close (`RunEndQuests`); any other held quest is left as the person left it, and the
     sessions still end. An end that closes and ends nothing says why once in the machine log (`run.end.empty`). Every shipped development graph that holds

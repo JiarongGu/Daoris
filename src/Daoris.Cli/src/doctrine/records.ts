@@ -198,7 +198,10 @@ export interface DriftReport {
   drifted: string[];
   missing: string[];
   stalePacks: string[];
-  coreBytes: number;
+  factsOk: boolean;
+  sizeFails: boolean;
+  /** The always-loaded doctrine's words: the region's body, or the always-loaded directory's files. */
+  coreWords: number;
   overBudget: boolean;
   /** Where the index of the on-demand tiers is, at the lock's root. */
   index: string;
@@ -244,8 +247,8 @@ export interface DriftReport {
   documentsMissing: { role: string; path: string }[];
   /** Declared documents that are a link, or a link held as text: a fact, and never read through. */
   documentLinks: DocumentLinkProblem[];
-  /** Declared documents over their ceiling in words, a folder's ceiling measuring each document in it: reported, never failed on. */
-  documentsOver: { label: string; words: number; ceiling: number }[];
+  /** Declared documents over a ceiling, a folder's measuring each document in it; failed on where declared failing. */
+  documentsOver: { label: string; measured: number; ceiling: number; unit: 'words' | 'bytes'; fails: boolean }[];
   /** The canon's most-named records with no path declared, when the repository declares any: reported. */
   recordsUndeclared: string[];
   ok: boolean;
@@ -293,7 +296,7 @@ export interface Manifest {
   packs: string[];
   harness: string;
   target: string;
-  coreBudgetBytes: number;
+  coreBudget: { words: number; fails: boolean };
   /** Absent until a repository registers itself; a quest can still be addressed, less usefully. */
   domain?: Domain;
   /** Absent until a repository opts into a remote deployment; silence means local. */
@@ -347,8 +350,12 @@ export interface DeclaredDocument {
   role: string;
   /** Repository-relative, as a declared path is spelled; null for `brief` and `room`, which take a ceiling alone. */
   path: string | null;
-  /** The ceiling in words, reported against and never failed on; null when none is declared. */
+  /** The ceiling in words; null when none is declared. */
   words: number | null;
+  /** The ceiling in bytes; null when none is declared. */
+  bytes: number | null;
+  /** Whether going over a ceiling fails `check`, rather than only reporting. */
+  fails: boolean;
 }
 
 /** One row of `daoris.lock`: what is written, from where, and what it hashes to. */

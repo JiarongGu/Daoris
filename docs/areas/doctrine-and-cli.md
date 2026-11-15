@@ -9,8 +9,8 @@ hash in `daoris.lock`. `check` fails a build when a copy drifted from the lock. 
 canon would change, and the repository's own session adopts, keeps or proposes each item. Every other `daoris` word is
 handed to the desktop's program. Set-up of a repository is a quest that the driver's set-up press publishes to that
 repository's own session. The devkit is a .NET binary that runs the universal gates and delegates doctrine to `daoris check`.
-The canon is lean (CONSOLIDATE1): three rules in full, five rules read on demand, one `change` skill, and `co-working`
-as a pack.
+The canon is lean: two rule files in full (`every-session`, `how-a-change-goes`), knowledge read on demand, one `change`
+skill, and `co-working` as a pack.
 
 ## Its parts
 
@@ -29,7 +29,7 @@ as a pack.
 | Upstream | `src/Daoris.Cli/src/doctrine/upstream.ts` | Writes into the canon in its own checkout; elsewhere composes a request's words |
 | Newer lock, notes | `src/Daoris.Cli/src/doctrine/lockversion.ts`, `notes.ts` | Refuses a lock a newer canon wrote; the canon changelog entries between two versions |
 | Region | `src/Daoris.Cli/src/doctrine/region.ts` | The marked region in `AGENTS.md` and the import region in `CLAUDE.md`: find, write, remove, refuse damage |
-| Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The rules table, the on-demand rows, *Where things are*, and `<target>/INDEX.md`; frontmatter and the provenance header |
+| Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The region's header, *Where things are* as a list ending at the index line, and `<target>/INDEX.md`; frontmatter and the provenance header |
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
@@ -52,9 +52,9 @@ as a pack.
    its own copy. (from D10, D11, D20)
 2. Three layers: core installs everywhere; packs are named in `daoris.json`'s `packs`; the repository's own documents are
    never synced or touched. (from D4)
-3. The tier is the location, and there is no tier field. A `rules/` document renders into the region in full. A
-   `knowledge/` document marked `rule: true` is a rule read on demand: a linked row in the region, its body in its file.
-   `knowledge/` and `skills/` are folders under the target. (from D7, D59, CONSOLIDATE1)
+3. The tier is the location, and there is no tier field. A `rules/` document renders into the region in full; a
+   `knowledge/` document is read on demand, whatever its frontmatter says. `knowledge/` and `skills/` are folders under
+   the target. (from D7, D59, CONSOLIDATE1)
 4. Core today holds three rules (`file-tool-discipline`, `repository-owns-its-work`, `sensitive-info`), five on-demand
    rules, and the skills `caveman`, `change` and `set-up-documents`. Every change goes through `change`. (from CONSOLIDATE1)
 5. A canon document carries `name` (its filename), `applies_when` and `enforces`; a skill carries `name` and `description`
@@ -104,8 +104,10 @@ as a pack.
 20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, and a switch the
     manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. What `check`,
     `status` and a sync plan list is in code-unit order (`compareOrdinal`), never the machine's collation. (from D8, D71)
-21. The always-loaded budget (`coreBudgetBytes`, default 30000, 26000 here) measures the region's bytes. It reports and
-    never fails. Kept rows are reported on every run. (from D28, D54, D230)
+21. The always-loaded budget (`coreBudget.words`, default 4500, 780 here) measures the region's words; `coreBudgetBytes`
+    is refused with its replacement. The brief's ceiling (`documents.brief`: words and bytes, 1300 and 8600 here) measures
+    the whole root instruction file. A ceiling declared `"fails": true` fails `check` (`ceilings.ts`, `check.test.ts`);
+    another reports. Kept rows are reported on every run. (D295) (from D28, D54, D230)
 
 **Status, the update check and the digest**
 
@@ -138,9 +140,9 @@ as a pack.
 29. The always-loaded tier is the `daoris:rules` region of `AGENTS.md`. `CLAUDE.md` holds a `daoris:import` region with
     `@AGENTS.md`. Daoris owns only the regions; a damaged marker, a reordered pair, a second region or a root file that is
     a link is refused, never guessed. (from D59, D117)
-30. The region holds a header line, the `change` line when that skill is installed, the rules table (in-file rules named,
-    on-demand rules linked), the switched-off rows, the pointer to `<target>/INDEX.md`, rooms and the mirror line only
-    when there are any, and *Where things are*; then each rules-tier body in full. (from D59, D71, D128, CONSOLIDATE1)
+30. The region holds a header line, the switched-off rows, *Where things are* (the declared places as a list, the library
+    roles on one line, then the line naming `<target>/INDEX.md`), the mirror line and rooms only when there are any; then
+    each rules-tier body in full. `check` rebuilds everything from *Where things are* to the first rule offline. (from D59, D71, D128, CONSOLIDATE1)
 31. The knowledge and skill tables live in `<target>/INDEX.md`, which `sync` writes, the lock names and `check` keeps
     fresh. A knowledge document with no frontmatter is listed by its first heading, and counted once. (from D128)
 32. Two layouts, chosen by `harness`: `claude-code` (the default; knowledge and skills under `.claude/`) and `agents`
@@ -234,7 +236,7 @@ as a pack.
 
 **Which subdomain a new behaviour belongs in**
 
-- New doctrine: `canon/`. Core only if nearly every task needs it; a long rule goes to `knowledge/` with `rule: true`; a
+- New doctrine: `canon/`. Core only if nearly every task needs it, as one line of a rule file whose reason is a `knowledge/` file; a
   concern only some repositories have is a pack. Read `.claude/knowledge/canon-authoring.md`, add a `canon/CHANGELOG.md`
   entry, then `daoris sync` here and in both examples.
 - A new sync cell: `planSync` in `syncplan.ts`. Write the cell into rule 13 to 16 above before building it.

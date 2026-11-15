@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "date": "2026-11-15",
+  "name": "brief-baseline",
+  "since": null,
+  "before": "2026-11-15T08:13:03Z",
+  "landings": 20,
+  "withBuilder": 17,
+  "preEdit": {
+    "meanBytes": 137498.7,
+    "meanTokens": 76670.1,
+    "meanStartupTokens": 29350.8
+  },
+  "preEditByClass": {
+    "records": 17,
+    "bytes": {
+      "mean": 137498.7,
+      "median": 116456
+    },
+    "brief": {
+      "mean": 0,
+      "median": 0
+    },
+    "area": {
+      "mean": 10134.4,
+      "median": 5146
+    },
+    "index": {
+      "mean": 1789.4,
+      "median": 0
+    },
+    "backlog": {
+      "mean": 4288.5,
+      "median": 0
+    },
+    "library": {
+      "mean": 3645.1,
+      "median": 0
+    },
+    "code": {
+      "mean": 117641.4,
+      "median": 97836
+    },
+    "libraryReads": {
+      "mean": 0.8,
+      "median": 0
+    }
+  },
+  "change": {
+    "meanWallMinutes": 60.2,
+    "tokens": {
+      "input": 4552,
+      "output": 1248851,
+      "cacheRead": 374114683,
+      "cacheWrite": 5151204
+    }
+  },
+  "main": {
+    "redRate7d": {
+      "rate": 0.143,
+      "landings": 21,
+      "red": 3
+    },
+    "redRate30d": {
+      "rate": 0.143,
+      "landings": 21,
+      "red": 3
+    },
+    "daysSinceGreen": 12.8,
+    "lastGreen": "2026-11-02T14:36:31Z"
+  },
+  "withoutBuilder": 3
+}

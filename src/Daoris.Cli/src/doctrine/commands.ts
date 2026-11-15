@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown } from '../platform/fsx.ts';
 import { canonDigest, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_WORDS, MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { newerLock } from './lockversion.ts';
@@ -82,7 +82,7 @@ export function commandInit(
     target: harness.defaultTarget,
     // Declared, never found: a folder with an AGENTS.md of its own is named here.
     ...(older ? {} : { rooms: [] }),
-    coreBudgetBytes: 30000,
+    coreBudget: { words: DEFAULT_CORE_BUDGET_WORDS, fails: false },
     // Scaffolded empty and deliberately so. Filling it in is how a repository registers what it is and
     // what it can be asked for; a guess written by the tool would be worse than a blank someone
     // notices, because nobody edits a field that already looks answered.
@@ -262,8 +262,8 @@ export function commandStatus(
       canonVersion: lock?.canonVersion ?? null,
       canonDigest: lock?.canonDigest ?? null,
       files: lock?.entries.length ?? 0,
-      coreBytes: inspection?.coreBytes ?? null,
-      coreBudgetBytes: manifest.coreBudgetBytes,
+      coreWords: inspection?.coreWords ?? null,
+      coreBudget: manifest.coreBudget,
       drifted: inspection?.drifted ?? [],
       missing: inspection?.missing ?? [],
       stalePacks: inspection?.stalePacks ?? [],
@@ -317,7 +317,7 @@ export function commandStatus(
 
 
   if (inspection) {
-    write(`  core budget   ${inspection.coreBytes} / ${manifest.coreBudgetBytes} bytes`);
+    write(`  core budget   ${inspection.coreWords} / ${manifest.coreBudget.words} words`);
     if (inspection.drifted.length) write(`  drifted       ${inspection.drifted.join(', ')}`);
     if (inspection.missing.length) write(`  missing       ${inspection.missing.join(', ')}`);
     if (inspection.stalePacks.length) write(`  stale packs   ${inspection.stalePacks.join(', ')}`);

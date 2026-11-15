@@ -7,6 +7,12 @@ enforces: repair history rather than the working tree; scrub blobs, paths and me
 
 # Repairing a leak that is already committed
 
+The always-loaded rule keeps machine paths, private repository, employer and customer names, and
+credentials out of tracked files and commit messages, because once committed a value lives in the history,
+where deleting the line does not remove it, and a commit message is history too. Name a sibling project
+neutrally unless it is public under that name; credentials belong in the environment or a secret store,
+and tests use a deterministic stub.
+
 **Editing the file fixes the checkout and nothing else.** The value is still in every commit that
 carried it, in every path that file ever had, and possibly in a commit message. A leak that has been
 pushed is worse again: there are copies you no longer control, and the only complete response includes

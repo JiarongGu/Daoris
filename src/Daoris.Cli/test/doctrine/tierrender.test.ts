@@ -1,25 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CHANGE_SKILL, onDemandExtras, renderIndex, renderTier, tierRuleBody } from '../../src/doctrine/tierrender.ts';
+import { renderIndex, renderTier, tierRuleBody } from '../../src/doctrine/tierrender.ts';
 import type { CanonFile } from '../../src/doctrine/records.ts';
 
 /**
  * What goes INSIDE the region — the always-loaded tier, rendered once, for the file
  * every harness reads.
  *
- * Four content decisions live here, and each is a consequence of the move rather than a preference:
- *
- * 1. **Frontmatter is stripped.** Frontmatter is only frontmatter at byte 0; eight
- *    rules concatenated would put seven `---` blocks mid-document, where they render as horizontal
- *    rules and stray key-value prose. What it carries — `applies_when` and `enforces` — becomes the
- *    table.
- * 2. **Provenance stays.** The per-rule header is what keeps drift and `upstream` per RULE inside one
- *    region, which design §4 rests on.
- * 3. **The rules rows stay in the table** — cheap, and they carry the `applies_when`/`enforces` the
- *    stripped frontmatter held. The knowledge and skills rows live in `<target>/INDEX.md`, which the
- *    region names: they grow with the repository, and would push the rules down.
- * 4. **Only the rules tier is in full.** A knowledge document marked `rule: true` is a
- *    row linked to its file, and its body is read when it applies.
+ * 1. **Frontmatter is stripped.** Frontmatter is only frontmatter at byte 0; concatenated rules would
+ *    put `---` blocks mid-document, where they render as horizontal rules and stray key-value prose.
+ * 2. **Provenance stays.** The per-file header is what keeps drift and `upstream` per rule file inside
+ *    one region.
+ * 3. **The region lists places, then the rules in full.** No table of rules: every session pays for the
+ *    region, so it holds where the records are, one line naming `<target>/INDEX.md`, and the rules.
  */
 
 const file = (name: string): CanonFile => ({
@@ -51,10 +44,11 @@ test('each rule arrives with its frontmatter gone and its provenance kept', () =
   assert.doesNotMatch(region, /^applies_when:/m);
 });
 
-test('the table carries what the stripped frontmatter held', () => {
+test('the region carries the rules in full and no table of them, nor a line sending changes to a skill', () => {
   const region = renderTier({ rules: two, version: '0.0.1' });
 
-  assert.match(region, /\| `sensitive-info` \| writing any tracked file \| no machine paths \|/);
+  assert.doesNotMatch(region, /\| `sensitive-info` \||## Rules\n|## Read on demand|`change` skill/);
+  assert.ok(region.indexOf('## Where things are') < region.indexOf('# Sensitive info'));
 });
 
 /**
@@ -102,58 +96,44 @@ test('the region points at the index, and the index lists knowledge and skills b
     }],
   });
 
-  assert.match(region, /listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\), generated from the files/);
+  assert.match(region, /^- knowledge and skills, each with when it applies: `\.claude\/INDEX\.md`, searched for your kind of change$/m);
+  assert.doesNotMatch(region, /before a non-trivial task/);
   assert.doesNotMatch(region, /reaching-in|fix-log/);
   assert.match(index, /^\| `\.claude\/knowledge\/reaching-in\.md` \| you have written into another repository \| stop and report \|$/m);
   // A skill is named by its entry file: an agent whose skill roots hold nothing activates it by reading it.
   assert.match(index, /^\| `\.claude\/skills\/fix-log\/SKILL\.md` \| Record a fix after landing it\. \|$/m);
 });
 
-const onDemand = (name: string, applies: string, enforces: string, body: string) => ({
-  file: { pack: 'core', source: `core/knowledge/${name}.md`, target: `knowledge/${name}.md` },
-  text: `---\nname: ${name}\napplies_when: ${applies}\nenforces: ${enforces}\nrule: true\n---\n\n${body}\n`,
-});
-
 /**
- * A rule read on demand keeps its row in the always-loaded table, linked to the file that holds its body, and its
- * body stays out of the region: that is what keeps the region small while every rule's trigger is still loaded.
+ * The places are a list, a role and its path per line: the roles read by lookup share one line named the library,
+ * the gates say what they hold, and the index line is last whether anything is declared or not.
  */
-test('a rule read on demand is a linked row, and its body stays in its file', () => {
-  const region = renderTier({
-    rules: two,
-    onDemand: [onDemand('no-tmp-for-repo-files', 'composing a repository file', 'never OS temp', '# No temp\n\nScratch here.')],
-    version: '0.0.1',
-  });
-
-  assert.match(region, /^\| \[`no-tmp-for-repo-files`\]\(\.claude\/knowledge\/no-tmp-for-repo-files\.md\) \| composing a repository file \| never OS temp \|$/m);
-  assert.doesNotMatch(region, /Scratch here\.|# No temp/);
-  // The rules in full come first, and the on-demand rows after them, all in the one table.
-  assert.ok(region.indexOf('| `task-lifecycle` |') < region.indexOf('[`no-tmp-for-repo-files`]'));
-  assert.ok(region.indexOf('[`no-tmp-for-repo-files`]') < region.indexOf('## Read on demand'));
-});
-
-test('the region sends every change through the change skill only where that skill is installed', () => {
-  assert.match(renderTier({ rules: two, change: true, version: '0.0.1' }), /^Make every change through the `change` skill\.$/m);
-  assert.doesNotMatch(renderTier({ rules: two, version: '0.0.1' }), /`change` skill/);
-});
-
-/**
- * What a sync writes decides the extras: only the canon's knowledge files marked `rule: true` become rows (a span, a
- * skill or an unmarked document never does), and the `change` line follows the skill's own target.
- */
-test('the extras come from the canon writes: the marked knowledge files, and the change skill', () => {
-  const marked = onDemand('task-lifecycle', 'finishing a task', 'open work only', '# Task lifecycle');
-  const writes = [
-    { ...marked.file, content: marked.text },
-    { pack: 'core', source: 'core/knowledge/reaching-in.md', target: 'knowledge/reaching-in.md', content: '---\nname: reaching-in\napplies_when: w\nenforces: e\n---\n\nbody\n' },
-    { pack: 'core', source: 'core/rules/sensitive-info.md', target: 'rules/sensitive-info.md', content: 'body', in: 'AGENTS.md' },
-    { pack: 'core', source: `core/${CHANGE_SKILL}`, target: CHANGE_SKILL, content: '---\nname: change\ndescription: d\nrule: true\n---\n' },
+test('the places list groups the library, notes the gates, and ends at the index', () => {
+  const documents = [
+    { role: 'router', path: 'docs/README.md' },
+    { role: 'decisions', path: 'docs/decisions' },
+    { role: 'backlog', path: 'TASKS.md' },
+    { role: 'archive', path: 'docs/task-archive.md' },
+    { role: 'fixes', path: 'docs/FIX-LOG.md' },
+    { role: 'gates', path: 'daoris.gates.json' },
   ];
+  const region = renderTier({ rules: two, documents, version: '0.0.1' });
 
-  const extras = onDemandExtras(writes);
-  assert.deepEqual(extras.onDemand!.map((document) => document.file.target), ['knowledge/task-lifecycle.md']);
-  assert.equal(extras.change, true);
-  assert.equal(onDemandExtras(writes.slice(0, 3)).change, false);
+  assert.ok(region.includes([
+    '## Where things are',
+    '',
+    'Declared in `daoris.json`; look here before searching.',
+    '',
+    '- router `docs/README.md`',
+    '- backlog `TASKS.md`',
+    '- decisions `docs/decisions`, archive `docs/task-archive.md`, fixes `docs/FIX-LOG.md`: the library',
+    '- gates `daoris.gates.json`: the checks, and what may run unasked',
+    '- knowledge and skills, each with when it applies: `.claude/INDEX.md`, searched for your kind of change',
+  ].join('\n')), region);
+
+  const bare = renderTier({ rules: two, version: '0.0.1' });
+  assert.ok(bare.includes('## Where things are\n\n- knowledge and skills, each with when it applies:'), bare);
+  assert.doesNotMatch(bare, /Declared in/);
 });
 
 /** Deterministic, or every sync is a diff and every drift check is a lie. */

@@ -103,7 +103,17 @@ internal sealed class NodeRunKeeping(
             return;
         }
 
-        if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
+        if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record) return;
+        if (record.Ended?.Quest == newest.Id)
+        {
+            if (holdsLease())
+            {
+                await RunReEnds.AgainAsync(Ends, scope.Run.Run, record.Ended, scope.Quests, RunEndQuests.Passed(governed.Graph, record), said, ct).ConfigureAwait(false);
+            }
+
+            return;
+        }
+
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
         string? why = null;

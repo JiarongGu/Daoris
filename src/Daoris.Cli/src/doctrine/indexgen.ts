@@ -9,7 +9,7 @@ import { lockIndex, readManifest } from './config.ts';
 import { indexPath, renderIndex, renderRoster } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES } from '../layout/harness.ts';
 import { roomRows } from '../layout/rooms.ts';
-import { declaredPaths, jobOf } from '../layout/documents.ts';
+import { declaredPaths } from '../layout/documents.ts';
 
 /**
  * What a sync is about to do to the tiers, by canon target: the bytes it writes and what it deletes.
@@ -128,7 +128,7 @@ export function rosterExtras(
 ): Pick<TierInput, 'mirror' | 'rooms' | 'documents'> {
   const mirror = harness.mirror;
   const dir = mirror ? harness.tiers[mirror.tier]?.dir : undefined;
-  const rows = declaredPaths(documents).map((row) => ({ ...row, job: jobOf(row.role) }));
+  const rows = declaredPaths(documents);
   return {
     ...(mirror && dir ? { mirror: { source: `${target}/${dir}`, root: mirror.root } } : {}),
     ...(rooms.length ? { rooms: roomRows(root, rooms, harness) } : {}),

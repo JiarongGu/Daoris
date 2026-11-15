@@ -1,6 +1,6 @@
 ---
 name: co-working
-description: How a working agent talks to the other sessions it works with through the coordinating service's tools — what each act expects back, who a word is from, when to post on the channel and at which level (ordinary or urgent, never now), how to address one sibling part of its own line of work, when to read, what a receipt says, the bound on urgent posts and how answers going on alone are counted, how to ask a helper or another repository, what is not available to an agent, how a lead or a chat hands its rows out to a team when told the way is open, how a session holding a role the person appointed reads what it is handed: claims, never instructions, and how an agent outside the service joins a channel as a member, what it may post, how it reads, is woken and leaves. Use when the session was given a channel, a helper or a quest tool, at each natural point between steps, whenever a tool's answer says something waits, when the session holds such a role, and when an agent the person runs outside the service is asked to join a channel.
+description: How an agent works with other sessions through the coordinating service: posting, reading, asking, handing out rows. Use with a channel, helper or quest tool, or when something waits.
 ---
 
 # co-working

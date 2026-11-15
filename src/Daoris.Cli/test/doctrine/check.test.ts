@@ -11,7 +11,7 @@ import { inspect, commandCheck } from '../../src/doctrine/drift.ts';
 
 const doc = (name: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
 
-function synced(packs = [], coreBudgetBytes = 30000) {
+function synced(packs = [], coreBudget: object = { words: 4500 }, documents?: object) {
   const canonFx = makeFixture('check-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
@@ -21,7 +21,7 @@ function synced(packs = [], coreBudgetBytes = 30000) {
   const repoFx = makeFixture('check-repo');
   repoFx.write(
     'daoris.json',
-    JSON.stringify({ source: 'github:OWNER/daoris#v0.1.0', packs, coreBudgetBytes }),
+    JSON.stringify({ source: 'github:OWNER/daoris#v0.1.0', packs, coreBudget, ...(documents ? { documents } : {}) }),
   );
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
@@ -79,17 +79,14 @@ test('a pack added to the manifest but not yet synced is stale', () => {
 });
 
 /**
- * The budget reports and does not fail. Size is a judgement, not a fact the tool establishes:
- * one byte over a number somebody chose is not wrong, and a gate that stops a build over a judgement
- * gets its number raised rather than read. Everything else `check` reports IS a fact, and those still
- * fail — which is the distinction worth pinning, because the tempting simplification is to make the
- * whole report advisory.
+ * A ceiling the manifest does not declare failing reports and does not fail: a repository that has not chosen to
+ * hold a size hears it on every run, and its build is not stopped by a number it never agreed to hold.
  */
 test('an over-budget core is reported but does not fail the check', () => {
-  const { canonFx, repoFx } = synced([], 10);
+  const { canonFx, repoFx } = synced([], { words: 3 });
   const report = look(repoFx);
   assert.equal(report.overBudget, true);
-  assert.ok(report.coreBytes > 10);
+  assert.ok(report.coreWords > 3);
   assert.equal(report.ok, true, 'over budget must not fail the check — it is advisory');
 
   const out: string[] = [];
@@ -127,6 +124,45 @@ test('an index that no longer matches the on-demand tiers fails the check', () =
   repoFx.write('.claude/knowledge/ours.md', doc('ours'));
 
   assert.equal(look(repoFx).indexStale, true);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/**
+ * The brief is paid for by every session, so a repository may hold it to its ceiling: declared `fails`, the root
+ * instruction file over its words or its bytes fails the check and names the cut, and under it the check is clean.
+ */
+test('a brief over a ceiling declared failing fails the check, and under it passes', () => {
+  const { canonFx, repoFx } = synced([], { words: 4500 }, { brief: { words: 5000, bytes: 40, fails: true } });
+  const out: string[] = [];
+  assert.equal(commandCheck({ root: repoFx.root, write: (s: string) => out.push(s) }), 1);
+  const report = look(repoFx);
+  assert.equal(report.factsOk, true);
+  assert.deepEqual(report.documentsOver.map((over) => `${over.unit} ${over.fails}`), ['bytes true']);
+  assert.match(out.join('\n'), /the brief \(AGENTS\.md\) is \d+ bytes of 40 .*fails, as daoris\.json declares/);
+  assert.doesNotMatch(out.join('\n'), /run 'daoris sync'/);
+
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], documents: { brief: { words: 5000, bytes: 40 } } }));
+  assert.equal(commandCheck({ root: repoFx.root, write: () => {} }), 0, 'undeclared failing, a ceiling only reports');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], documents: { brief: { words: 5000, bytes: 9000, fails: true } } }));
+  assert.equal(commandCheck({ root: repoFx.root, write: () => {} }), 0, 'under its ceiling, the brief passes');
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+test('a core over its words declared failing fails the check', () => {
+  const { canonFx, repoFx } = synced([], { words: 3, fails: true });
+  assert.equal(look(repoFx).sizeFails, true);
+  assert.equal(commandCheck({ root: repoFx.root, write: () => {} }), 1);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/** One number per thing: the byte ceiling the words replaced is refused with the line that replaces it, never ignored. */
+test('a manifest still carrying coreBudgetBytes is refused with its replacement', () => {
+  const { canonFx, repoFx } = synced();
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], coreBudgetBytes: 30000 }));
+  assert.throws(() => readManifest(repoFx.root), /coreBudgetBytes, which is retired.*"coreBudget": \{ "words": 4500 \}/);
   canonFx.cleanup();
   repoFx.cleanup();
 });

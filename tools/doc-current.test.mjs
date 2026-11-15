@@ -229,11 +229,64 @@ test('findings name the home and the line, and only declared homes are read', ()
   assert.deepEqual(result.findings.map((f) => `${f.home}:${f.line}`), ['docs/README.md:2']);
 });
 
-test('AGENTS.md is read only above its generated doctrine region', () => {
+test('AGENTS.md is read outside its generated doctrine region, above and below it', () => {
   const result = audit({
-    'AGENTS.md': 'brief `Ghost`\n<!-- daoris:rules — generated -->\n# Doctrine\n`Phantom`\n',
+    'AGENTS.md': 'brief `Ghost`\n<!-- daoris:rules — generated -->\n# Doctrine\n`Phantom`\n<!-- /daoris:rules -->\n\n`Wraith`\n',
   }, { homes: ['AGENTS.md'] });
-  assert.deepEqual(said(result), ['symbol-absent Ghost']);
+  assert.deepEqual(said(result), ['symbol-absent Ghost', 'symbol-absent Wraith']);
+  assert.deepEqual(result.findings.map((f) => f.line), [1, 7]);
+});
+
+const GATES = { gates: [
+  { name: 'cli', run: 'npm run verify:checks', handback: true },
+  { name: 'reached', run: 'node tools/reached-checks.mjs --tier fast', handback: 'node tools/reached-checks.mjs --base main --tier fast' },
+  { name: 'web', run: 'npm run web' },
+] };
+const BRIEF_DONE = '- Before done:\n  `node tools/reached-checks.mjs --base main --tier fast` and `npm run verify:checks`.\n';
+
+/** The brief every session reads fails on what it names that is not there; another present home only reports. */
+test('the brief fails on a path or name that does not exist, and a test-only name is no failure', () => {
+  const result = auditCurrent({
+    manifest: { target: '.claude', documents: { present: { homes: ['AGENTS.md', 'docs/README.md'] } } },
+    files: ['AGENTS.md', 'docs/README.md', 'src/a.test.ts'],
+    read: (file) => {
+      const text = ({
+        'AGENTS.md': `\`src/gone.ts\` and \`Ghost\` and \`OnlyTested\`\n${BRIEF_DONE}`,
+        'docs/README.md': '`Phantom`\n',
+        'src/a.test.ts': 'const OnlyTested = 1;\n',
+      })[file];
+      if (text === undefined) throw new Error(`missing ${file}`);
+      return text;
+    },
+    ignored: () => new Set(),
+    gates: GATES,
+  });
+  assert.deepEqual(result.brief.failing.map((f) => `${f.kind} ${f.span}`).sort(), ['path-missing src/gone.ts', 'symbol-absent Ghost']);
+  assert.equal(result.findings.some((f) => f.span === 'Phantom'), true, 'another home still reports');
+  assert.equal(result.brief.handback.differs, false);
+});
+
+/** The before-done line is the declared hand-back gates, so a brief and the gates file cannot drift apart. */
+test("the brief's before-done commands are compared with the hand-back gates, both ways", () => {
+  const brief = (text) => auditCurrent({
+    manifest: { target: '.claude', documents: { present: { homes: ['AGENTS.md'] } } },
+    files: ['AGENTS.md'],
+    read: (file) => {
+      if (file !== 'AGENTS.md') throw new Error(`missing ${file}`);
+      return text;
+    },
+    ignored: () => new Set(),
+    gates: GATES,
+  }).brief.handback;
+  assert.deepEqual(brief(BRIEF_DONE), {
+    said: ['node tools/reached-checks.mjs --base main --tier fast', 'npm run verify:checks'],
+    declared: ['npm run verify:checks', 'node tools/reached-checks.mjs --base main --tier fast'],
+    missing: [], extra: [], differs: false,
+  });
+  const short = brief('- Before done: `npm run verify:checks`.\n- Next: `npm run web`.\n');
+  assert.deepEqual([short.missing, short.extra, short.differs], [['node tools/reached-checks.mjs --base main --tier fast'], [], true]);
+  const none = brief('No such line.\n');
+  assert.equal(none.differs, true, 'a brief that names no before-done commands differs from gates that declare some');
 });
 
 test('a home folder is the files the repository owns, not those the canon writes', () => {

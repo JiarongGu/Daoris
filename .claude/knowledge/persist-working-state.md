@@ -2,7 +2,6 @@
 name: persist-working-state
 applies_when: any multi-step task, at each decision, finding or milestone
 enforces: the commit and the area document are the durable state, written as each piece lands
-rule: true
 ---
 <!-- daoris: core/core/knowledge/persist-working-state.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 

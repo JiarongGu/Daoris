@@ -1,15 +1,14 @@
 import type { Canon, CanonFile, Harness, Survey } from './records.ts';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from '../platform/fsx.ts';
 import { parseFrontmatter } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
-
-const bytesOf = (text: string): number => Buffer.byteLength(text, 'utf8');
+import { wordCount } from '../layout/documents.ts';
 
 /**
- * Bytes of always-loaded context after adopting — the number that is paid every session.
+ * Words of always-loaded doctrine after adopting, the unit `check` holds `coreBudget` to.
  *
  * Where the rules tier is a span, its body lives in the region, so that is measured (as `inspect` measures it, beside any
  * rule file the repository keeps of its own) and a selected rule the region already holds adds only what its text changes
@@ -26,7 +25,9 @@ export function projectBudget(
     held = found.kind === 'present' ? found.body : null;
   }
 
-  const current = existing.rules.reduce((sum, f) => sum + f.bytes, 0) + (held === null ? 0 : bytesOf(held));
+  const wordsAt = (path: string): number => (existsSync(path) ? wordCount(readText(path)) : 0);
+  const current = existing.rules.reduce((sum, f) => sum + wordsAt(join(root, target, f.target)), 0)
+    + (held === null ? 0 : wordCount(held));
   const collided = new Set(collisions);
 
   let added = 0;
@@ -37,15 +38,14 @@ export function projectBudget(
     const inRegion = held === null ? null : tierRuleBody(held, `${file.pack}/${file.source}`);
     if (inRegion !== null) {
       const { meta, body } = parseFrontmatter(text, []);
-      added += bytesOf((meta ? body : text).trim()) - bytesOf(inRegion);
+      added += wordCount((meta ? body : text).trim()) - wordCount(inRegion);
       continue;
     }
 
     const abs = join(root, target, file.target);
     // A collision replaces rather than adds; an existing identical file changes nothing.
     if (existsSync(abs) && !collided.has(file.target)) continue;
-    added += bytesOf(text);
-    if (existsSync(abs)) added -= statSync(abs).size;
+    added += wordCount(text) - wordsAt(abs);
   }
 
   return { current, projected: current + added };
