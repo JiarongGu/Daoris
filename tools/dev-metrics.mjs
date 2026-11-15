@@ -22,6 +22,7 @@ import { MERGE_RECORD, readRecords, summarize } from './merge/merge-record.ts';
 import { readHome, missing } from './dev-metrics/records.mjs';
 import { sessionLinks, caseScope, askOf } from './dev-metrics/scope.mjs';
 import { lifecycleRows } from './dev-metrics/lifecycle.mjs';
+import { landingsMode } from './dev-metrics/landings-mode.mjs';
 import { workflowRows, personQueue } from './dev-metrics/workflow.mjs';
 import { communicationRows } from './dev-metrics/communication.mjs';
 import { actorRows, replyRows } from './dev-metrics/actors.mjs';
@@ -432,6 +433,7 @@ export function renderBuilders(rows) {
 
 async function main() {
   const o = parse(process.argv.slice(2));
+  if (o.landings) return landingsMode(o);
   if (o.transcripts) {
     if (!o.ids || !existsSync(o.transcripts)) { console.error('dev-metrics: --transcripts <dir> needs --ids <a,b,...>'); return 2; }
     const rows = builderTimes(o.transcripts, o.ids.split(','));

@@ -8,6 +8,7 @@
 import { spawn } from 'node:child_process';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { landedOf, measureAfterLanding } from './landing-measure.ts';
 import type { ClassOutcome } from './reached-classify.ts';
 
 export const HEAVY_RUNS = 'local/heavy-runs.jsonl';
@@ -79,9 +80,10 @@ export function startDetached(home: string, args: string[], log: string): number
 /** The run's runner exists in this repository: a scratch repository the tool's own tests merge in holds none, and starts no run. */
 export const hasRunner = (home: string): boolean => existsSync(join(home, HEAVY_RUNNER));
 
-/** The landing's own start of the run on the tip just promoted; the lines to say, none where the repository holds no runner (a scratch one). */
+/** The queue landing's after-steps on the tip just promoted: its measure, then the run; the lines to say, none where the repository holds no runner (a scratch one). */
 export function startAfterLanding(home: string, candidate: { tip: string; base: string; members: { branch: string }[] }): string[] {
   if (!hasRunner(home)) return [];
+  measureAfterLanding(home, landedOf(candidate));
   return startHeavy(
     { commit: candidate.tip, base: candidate.base, branches: candidate.members.map((each) => each.branch), log: `local/scratch/heavy-${candidate.tip.slice(0, 7)}.log` },
     { start: (args, file) => startDetached(home, args, file), append: (record) => appendHeavy(home, record), now: () => new Date().toISOString() },

@@ -49,6 +49,8 @@ export const editsThroughShell = command =>
 const isShellEdit = block =>
   (block.name === 'Bash' || block.name === 'PowerShell') && editsThroughShell(String(block.input?.command ?? ''));
 
+export const isWorkEdit = block => block.type === 'tool_use' && (isEdit(block) || isShellEdit(block));
+
 /** One transcript's text (JSON lines) to its turns, its contexts and its token totals. */
 export function readTranscript(text) {
   const usage = new Map();

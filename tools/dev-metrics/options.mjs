@@ -4,6 +4,7 @@ export function parse(argv) {
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     if (flag === '--json') { options.json = true; continue; }
+    if (flag === '--landings') { options.landings = true; continue; }
     const name = flag.replace(/^--/, '');
     if (!flag.startsWith('--') || !values.has(name)) throw new Error(`unknown argument ${flag}`);
     const value = argv[++i];

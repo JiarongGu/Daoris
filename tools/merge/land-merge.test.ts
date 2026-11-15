@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { landMerge, landMessage, notReadyLines, readiness } from './land-merge.ts';
 import type { HeavyRun } from './heavy-after.ts';
+import { landedOf, measureLanding, type LandedCommit } from './landing-measure.ts';
+import { startAfterLanding } from './heavy-after.ts';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const pass = { verdict: 'PASS' };
 
@@ -20,7 +24,7 @@ describe('what a merge needs before the tool commits it', () => {
 });
 
 describe('the landing a --commit makes', () => {
-  const run = (over: { unbudgeted: boolean; prune?: boolean }) => {
+  const run = (over: { unbudgeted: boolean; prune?: boolean; measure?: (landed: LandedCommit[]) => void; measured?: LandedCommit[][] }) => {
     const said: string[] = [];
     const records: HeavyRun[] = [];
     const started: string[][] = [];
@@ -29,6 +33,7 @@ describe('the landing a --commit makes', () => {
     const landed = landMerge({ branch: 'feature', gates: 7, trailer: 'Co-Authored-By: X <x@example.com>', prune: over.prune ?? true, heavy: true, unbudgeted: over.unbudgeted }, {
       commit: (message) => { messages.push(message); return { tip: 'abcdef0123456789', base: '0123456789abcdef' }; },
       prune: () => { pruned.push(1); },
+      measure: over.measure ?? ((landed) => { over.measured?.push(landed); }),
       start: (args) => { started.push(args); return 77; },
       append: (record) => records.push(record),
       now: () => '2026-11-14T10:00:00.000Z',
@@ -47,6 +52,32 @@ describe('the landing a --commit makes', () => {
     expect(started[0]).toEqual(expect.arrayContaining(['--commit', 'abcdef0123456789']));
     expect(pruned).toHaveLength(1);
     expect(said.join('\n')).toContain('committed feature as abcdef0');
+  });
+
+  it('records the landing once after the commit, and still lands when the measure throws', () => {
+    const measured: LandedCommit[][] = [];
+    run({ unbudgeted: false, measured });
+    expect(measured).toEqual([[{ commit: 'abcdef0123456789', branch: 'feature' }]]);
+    const failing = run({ unbudgeted: false, measure: () => { throw new Error('transcript unreadable'); } });
+    expect(failing.landed.tip).toBe('abcdef0123456789');
+    expect(failing.pruned).toHaveLength(1);
+  });
+
+  it('writes the queue promotion\'s members through the same function the --commit route uses', () => {
+    const through: LandedCommit[] = [];
+    measureLanding(landedOf({ tip: 'tip1', members: [{ branch: 'a' }, { branch: 'b' }] }), (each) => { through.push(each); });
+    expect(through).toEqual([{ commit: 'tip1', branch: 'a' }, { commit: 'tip1', branch: 'b' }]);
+    const home = mkdtempSync(join('_fixtures', 'landing-measure-'));
+    try {
+      mkdirSync(join(home, 'tools'));
+      writeFileSync(join(home, 'tools', 'heavy-run.mjs'), '');
+      startAfterLanding(home, { tip: 'tip1', base: 'base1', members: [{ branch: 'steward/q' }] });
+      const rows = readFileSync(join(home, 'local', 'metrics', 'landings.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ schema: 1, commit: 'tip1', branch: 'steward/q', builder: null });
+    } finally {
+      try { rmSync(home, { recursive: true, force: true }); } catch { /* the runner just started holds the folder */ }
+    }
   });
 
   it('says nothing of budgets for a normal run and leaves the prune off only when asked', () => {
