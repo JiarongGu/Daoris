@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a run's ready <c>check</c> was not started at a look, by a code: each exit of its start (<see cref="CheckNode.StartAsync"/>) that leaves
-/// it ready. Written to the machine log once per change of reason for its node (<see cref="NodeWaits"/>), never at every pass, so a check
-/// that waits shows why without filling the log.
+/// Why a run's ready <c>check</c> stays ready at a look, by a code: each exit of its start (<see cref="CheckNode.StartAsync"/>) that starts
+/// nothing, said in the machine log once per change of reason (<see cref="NodeWaits"/>).
 /// </summary>
 public static class CheckStartWaits
 {

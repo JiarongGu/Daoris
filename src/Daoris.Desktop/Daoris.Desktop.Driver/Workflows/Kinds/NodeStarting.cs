@@ -34,10 +34,8 @@ internal sealed record NodeStarting
 
     public required WorkPerformer Performer { get; init; }
 
-    /// <summary>The home the runtime keeps its records in: what a start's wait is said once for (<see cref="NodeWaits"/>).</summary>
     public string Home { get; init; } = "";
 
-    /// <summary>This machine's session records, read where a start judges on what the run's work is doing; null where none are wired.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? Sessions { get; init; }
 
     public required IWorkRuntimePort Port { get; init; }

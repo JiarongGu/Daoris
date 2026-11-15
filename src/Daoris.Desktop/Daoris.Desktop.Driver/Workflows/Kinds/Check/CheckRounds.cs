@@ -17,22 +17,16 @@ public static class CheckRounds
             .GroupBy(attempt => attempt.Node, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    /// <summary>
-    /// The newest attempt with which <paramref name="node"/> already failed at <paramref name="tip"/>, or null: asking again there before the work
-    /// answers it spends a round the work never had, so the check waits for a commit, or for the work's answer (<see cref="Answered"/>).
-    /// </summary>
+    /// <summary>The newest attempt failing <paramref name="node"/> at <paramref name="tip"/>: asked again there before the work answers (<see cref="Answered"/>), it spends a round the work never had.</summary>
     public static NodeAttempt? RedAt(NodeRecord? record, string node, string? tip) =>
         string.IsNullOrEmpty(tip) ? null : record?.Attempts.LastOrDefault(attempt =>
             attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed }
             && attempt.Node == node && attempt.Call.SubjectRevision == tip);
 
     /// <summary>
-    /// Whether the run's work answered a red asked at <paramref name="asked"/> without moving its commit: a session of this machine waits on
-    /// the run's next step (<see cref="RunWaiters"/>) and began that wait after the red was asked, and none of the run's other sessions still
-    /// works. Its turn ended with the red told to it as its next turn, so no commit is coming, and the check is asked again at the same commit
-    /// as a new round, which the bound counts; waiting on would leave the check and the session each waiting on the other for good.
+    /// Whether the work answered a red asked at <paramref name="asked"/> with no commit: a session waits on the run's next step (<see cref="RunWaiters"/>)
+    /// since after it, and none of the run's <paramref name="sessions"/> still works. The check then asks the same commit again as a round the bound counts.
     /// </summary>
-    /// <param name="sessions">The run's sessions (<see cref="RunScope.Sessions"/>), the executors of its quests.</param>
     public static bool Answered(IReadOnlyList<SessionRecord> records, string run, IReadOnlyCollection<string> sessions, DateTimeOffset asked)
     {
         var waiting = RunWaiters.Of(run, records).ToHashSet(StringComparer.Ordinal);

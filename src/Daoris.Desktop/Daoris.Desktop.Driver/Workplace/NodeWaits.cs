@@ -3,9 +3,8 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The last reason each run's node was said to wait for, so a node that does nothing at a look says why in the machine log once per change
-/// of reason, never at every pass: the landing's (<see cref="LandWaits"/>) and the check's start's. Kept in memory, as the tries are: a
-/// restart says each once more.
+/// The last wait said for each run's node, so a node that does nothing at a look says why once per change of reason, never at every pass:
+/// the landing's (<see cref="LandWaits"/>) and the check's start's. Kept in memory: a restart says each once more.
 /// </summary>
 public static class NodeWaits
 {

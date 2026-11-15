@@ -46,21 +46,12 @@ public sealed class CheckRoundsTests
     [Fact]
     public void The_work_answered_a_red_once_its_session_waits_on_the_runs_next_step_since_the_red_and_none_of_its_sessions_still_works()
     {
-        // Its turn ended after the red was asked, with no commit: the work answered.
         Assert.True(CheckRounds.Answered([Waiting("s1", "r", Asked.AddMinutes(1))], "r", ["s1"], Asked));
-
-        // Waiting since before the red: the red's words have not reached a turn yet.
         Assert.False(CheckRounds.Answered([Waiting("s1", "r", Asked.AddMinutes(-1))], "r", ["s1"], Asked));
-
-        // Waiting on another run, or on no run: not this run's answer.
         Assert.False(CheckRounds.Answered([Waiting("s1", "other", Asked.AddMinutes(1))], "r", ["s1"], Asked));
         Assert.False(CheckRounds.Answered([new SessionRecord("s1", "Daoris", "working") { Updated = Asked.AddMinutes(1) }], "r", ["s1"], Asked));
-
-        // Another session of the run still works, so a commit may still come.
         Assert.False(CheckRounds.Answered(
             [Waiting("s1", "r", Asked.AddMinutes(1)), new SessionRecord("s2", "Daoris", "working")], "r", ["s1", "s2"], Asked));
-
-        // A session working elsewhere is not the run's.
         Assert.True(CheckRounds.Answered(
             [Waiting("s1", "r", Asked.AddMinutes(1)), new SessionRecord("s3", "Daoris", "working")], "r", ["s1"], Asked));
     }

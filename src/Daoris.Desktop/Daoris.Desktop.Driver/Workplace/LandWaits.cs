@@ -1,13 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a run's <c>land</c> did nothing at a look, by a code: each exit of its node's keeping and of its judgement
-/// (<see cref="LandPerformer"/>) that starts and says nothing else. Written to the machine log once per change of reason for its node
-/// (<see cref="NodeWaits"/>), never at every pass, so a landing that waits shows why without filling the log.
+/// Why a run's <c>land</c> did nothing at a look, by a code: each exit of its keeping and its judgement (<see cref="LandPerformer"/>) that
+/// says nothing else, written to the machine log once per change of reason (<see cref="NodeWaits"/>).
 /// </summary>
 public static class LandWaits
 {
-    /// <summary>The machine log's event a wait is written under.</summary>
     public const string Event = "landing.waits";
 
     /// <summary>No landing door is wired in this loop.</summary>
@@ -49,11 +47,9 @@ public static class LandWaits
     /// <summary>A second opinion or a review it waits on, said already.</summary>
     public const string Waiting = "waiting";
 
-    /// <summary>A judgement's wait, in codes: the run, its node, where, and the reason.</summary>
     public static LandingLine Line(LandStart start, string reason) => new(Event,
         [("run", start.Run), ("node", start.Node), ("repository", start.Repository), ("workspace", start.Workspace), ("reason", reason)]);
 
-    /// <summary>The keeping's wait as the machine log's sentence: the run, its node, the reason's code and its words.</summary>
     public static string Sentence(string run, string node, string reason) => $"run {run}: `{node}` waits ({reason}): {Words(reason)}";
 
     private static string Words(string reason) => reason switch
