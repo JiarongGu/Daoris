@@ -8,7 +8,7 @@ import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { DEFAULT_CORE_BUDGET_BYTES, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_WORDS, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
 import { projectBudget } from './budget.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
@@ -248,7 +248,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   const manifest = existsSync(join(root, MANIFEST_FILE)) ? readManifest(root) : null;
 
   const target = manifest?.target ?? DEFAULT_TARGET;
-  const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
+  const budgetLimit = manifest?.coreBudget.words ?? DEFAULT_CORE_BUDGET_WORDS;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
   // Confirmations belong to the manifest's own pack list: packs named on the command line are a "what if", which a
@@ -361,7 +361,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   const verdict = projected > limit
     ? `OVER by ${projected - limit} — advisory, not a gate`
     : `${limit - projected} to spare`;
-  write(`  always-loaded   ${current} bytes now -> ~${projected} after (limit ${limit}; ${verdict})`);
+  write(`  always-loaded   ${current} words now -> ~${projected} after (limit ${limit}; ${verdict})`);
   write('');
   write(packs.length ? `  then: daoris init && daoris sync` : `  then: daoris init  (choose packs first)`);
   return 0;

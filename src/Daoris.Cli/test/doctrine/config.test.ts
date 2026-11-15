@@ -19,7 +19,7 @@ test('the manifest fills in defaults for everything but source', () => {
   const manifest = readManifest(fx.root);
   assert.deepEqual(manifest.packs, []);
   assert.equal(manifest.target, '.claude');
-  assert.equal(manifest.coreBudgetBytes, 30000);
+  assert.deepEqual(manifest.coreBudget, { words: 4500, fails: false });
   fx.cleanup();
 });
 
@@ -157,7 +157,7 @@ test('a lock of an unknown version, or with no entries, is refused where it is r
 
 test('writeManifest produces re-readable JSON', () => {
   const fx = makeFixture('config-write');
-  writeManifest(fx.root, { source: 's', packs: ['p'], target: '.claude', coreBudgetBytes: 100 });
+  writeManifest(fx.root, { source: 's', packs: ['p'], target: '.claude', coreBudget: { words: 100, fails: false } });
   assert.deepEqual(readManifest(fx.root).packs, ['p']);
   fx.cleanup();
 });
@@ -166,7 +166,7 @@ test('writeManifest produces re-readable JSON', () => {
 test('a remote declaration survives writeManifest and readManifest intact', () => {
   const fx = makeFixture('config-remote-roundtrip');
   writeManifest(fx.root, {
-    source: 's', packs: [], target: '.claude', coreBudgetBytes: 100,
+    source: 's', packs: [], target: '.claude', coreBudget: { words: 100, fails: false },
     remote: { join: true, knowledge: true },
   });
   assert.deepEqual(readManifest(fx.root).remote, { join: true, knowledge: true });

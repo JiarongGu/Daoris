@@ -1,48 +1,24 @@
-# <Repository> — the brief
+# <Repository>: the brief
 
-## What this is
+<Two to four sentences: what it is for, who uses it, and its parts, each with its folder.>
 
-<Three to five sentences: what it is for, who uses it, and the one constraint every change serves.>
+Every change keeps these:
 
-## Before changing anything
+- <A product constraint true in every session, in one line. Three to five of them; a rule with a tool behind it is one
+  clause naming the tool.>
 
-- <A non-negotiable, in one line, with a link to where its reason lives.>
-- <Three to seven of them. A rule with no home is a rule nobody can judge an edge case by.>
+<!-- The doctrine region goes here: the doctrine tool writes it, rules first, between its markers. -->
 
-## Layout
+## This repository
 
-<Only what reading the tree would not tell: which folders are generated, which are copies of another,
-which have instructions of their own, and what must never be edited by hand. Not a tour of the folders.>
+- <Install and set-up, one line each, with the exact commands.>
+- While working: <the quick checks>. Before done: <the hand-back commands, exactly as the gates declaration names them>.
+- <How work lands, and where the declaration of what may run unasked is.>
+- Areas (`<the area documents' folder>`): <each area's name, one list>.
+- Written by tools, never by hand: <each generated file or folder, with the command that writes it>.
 
-## Areas
+## Read when
 
-<One row per area document. A change starts at its area's document.>
-
-| Area | Document |
+| When you | Read first |
 |---|---|
-| <the part of the code> | `<path>` |
-
-## Build, test, verify
-
-- Quick checks, after every change: `<the commands>`.
-- Done means: `<the one command>`.
-- <The rest are in the gates declaration, at `<path>`. What never to run, and why: a check that needs
-  the machine quiet, a command that publishes.>
-
-## Conventions
-
-<Only those that differ from the language's and the tools' defaults.>
-
-## Where things are
-
-<One row per record this repository keeps. Where a tool generates this list from a declaration, declare
-the records there and let it write the list.>
-
-| Role | Where |
-|---|---|
-| decisions | `<path>` |
-| backlog | `<path>` |
-| archive | `<path>` |
-| fixes | `<path>` |
-| changelog | `<path>` |
-| gates | `<path>` |
+| <the kind of change> | `<the document whose rule applies>` |

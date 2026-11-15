@@ -176,7 +176,7 @@ findings are advisory and adoption still requires a read-through.
   "source": "daoris@<version>",
   "packs": ["dotnet-library"],
   "target": ".claude",
-  "coreBudgetBytes": 30000,
+  "coreBudget": { "words": 4500, "fails": false },
   "domain": {
     "summary": "One line: what this repository is, for someone who has never opened it.",
     "owns": ["the areas where a change belongs here rather than anywhere else"],

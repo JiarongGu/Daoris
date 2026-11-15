@@ -28,7 +28,7 @@ test('an edit through the shell is refused, and the refusal names the tools that
     const answered = run(bash(command));
     statusIs(answered, 2, command);
     assert.match(answered.stderr, /Edit or Write/);
-    assert.match(answered.stderr, /file-tool-discipline/);
+    assert.match(answered.stderr, /file-tools/);
   }
   statusIs(run({ tool_name: 'PowerShell', tool_input: { command: 'Set-Content -Path a.ts -Value x' } }), 2, 'PowerShell edit');
 });

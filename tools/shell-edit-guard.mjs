@@ -9,7 +9,7 @@
  *
  * ## Why
  *
- * `file-tool-discipline` is always loaded and every worker's prompt restates it, and still workers edit through the
+ * The file-tools rule is always loaded and every worker's prompt restates it, and still workers edit through the
  * shell, some by deleting lines at computed offsets. A rule an agent drops, a transcript shows it dropping, belongs in
  * a mechanism, not a sentence. A call the guard cannot read passes, so a broken input never blocks the work.
  */
@@ -24,7 +24,7 @@ export function judge(call) {
   if ((name !== 'Bash' && name !== 'PowerShell') || !editsThroughShell(command)) return { exit: 0 };
   return {
     exit: 2,
-    says: 'Refused (file-tool-discipline, D161): this command writes a file through the shell. Change the file with the '
+    says: 'Refused (file-tools, D161): this command writes a file through the shell. Change the file with the '
       + 'Edit or Write tool instead: a scripted edit passes your text through another language\'s escaping, and a pattern '
       + 'that stops matching changes nothing and says nothing. Reading, searching, gates, logs and local/scratch stay open.',
   };

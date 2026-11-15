@@ -1,6 +1,6 @@
 ---
 name: change
-description: The one way to make a change in this repository, from reading the area to the commit. Use for every change that is more than a typo, before reading any code.
+description: The change path step by step, with its reasons; the brief carries the steps themselves. Use when a step of the brief's change path is unclear.
 ---
 
 # change

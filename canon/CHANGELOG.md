@@ -12,6 +12,20 @@ network.
 
 ## Unreleased
 
+- **The always-loaded doctrine is two rule files and a list of places.** `every-session` (ten rules: the closed list of
+  owner calls, local ownership, delivery as the repository declares it, one way per job, no private names, act on what
+  you read now, done is not the work's end, stop only what you start, the file tools, project facts in the repository)
+  and `how-a-change-goes` (six steps) replace `file-tool-discipline`, `repository-owns-its-work` and `sensitive-info`, whose
+  reasons move to `file-tools` (new), `reaching-in` and `leak-repair`. The five knowledge files marked `rule: true` lose
+  the mark and stay read on demand; the region carries no rule table, no `change` line and no "read the index before a
+  non-trivial task", and its places are a list ending at the index. `autonomous-development` is cut to the owner at
+  the ends and one declaration of unasked work; `development-documents` lets the brief's ceiling fail; `fresh-design-pass`
+  is new; the skill descriptions are cut to thirty words. `daoris check` measures the brief as the whole root
+  instruction file, in words and bytes, fails a ceiling declared `"fails": true`, and holds the region to
+  `coreBudget.words`, which replaces `coreBudgetBytes`. **Adopting repositories:** replace `coreBudgetBytes` in
+  `daoris.json` with `"coreBudget": { "words": 4500 }`; run `daoris sync`; rewrite your own part of `AGENTS.md` from the
+  brief template, and declare the brief's ceiling failing once it fits.
+
 - **What a change reads stays the size it was on the first day.** `development-documents` names the read path (the brief,
   the area document, the backlog row, the index) as what a ceiling holds, says to search the present for a present question
   and look history up by identifier, and moves a design nothing open names to the folder kept for history; `change` step 1

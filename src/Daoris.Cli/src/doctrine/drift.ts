@@ -7,7 +7,8 @@ import { compareOrdinal, digestBytes, listMarkdown, readText, sha256 } from '../
 import { readLock, readManifest } from './config.ts';
 import { indexInput, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';
-import { indexPath, renderIndex, spanBody, WHERE_HEADING, withoutFrontmatter as bare } from './tierrender.ts';
+import { DECLARED_LINE, INDEX_ITEM, indexPath, renderIndex, spanBody, WHERE_HEADING, withoutFrontmatter as bare } from './tierrender.ts';
+import { overCeilings } from './ceilings.ts';
 import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from '../layout/documents.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from '../layout/harness.ts';
 import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from '../layout/layout.ts';
@@ -15,15 +16,15 @@ import { canonicalOnDisk, mirrorDigest, mirrorSources } from '../layout/mirror.t
 import { linkProblems, shortLink } from '../layout/links.ts';
 
 /**
- * The roster's on-demand half — everything from the pointer to the index to the first rule.
+ * The roster's half `check` rebuilds: everything from the places heading to the first rule.
  *
  * @remarks
- * Comparing only this half is what keeps the staleness check offline and canon-free. The rules rows
- * above it are built from frontmatter the span strips, so nothing without the canon can say what they
- * ought to be; the rules themselves are covered per rule by the lock.
+ * Comparing only this half is what keeps the staleness check offline and canon-free: the rules
+ * themselves are covered per rule file by the lock, and the switched-off line above the heading needs the
+ * lock's knowledge of who switched a row off.
  */
-function onDemandHalf(text: string): string {
-  const start = text.indexOf('\n## Read on demand');
+function rosterHalf(text: string): string {
+  const start = text.indexOf(`\n${WHERE_HEADING}\n`);
   if (start === -1) return '';
   const end = text.indexOf('\n<!-- daoris: ', start);
   return (end === -1 ? text.slice(start) : text.slice(start, end)).trim();
@@ -48,12 +49,13 @@ function largestRules(body: string, count: number): { name: string; bytes: numbe
 }
 
 /**
- * The on-demand half split at the *Where things are* table, its last section: the tiers'
- * tables are rebuilt from disk, the records' table from the manifest, and a stale one says which.
+ * The roster half split into the declared places, rebuilt from the manifest, and the rest (the index
+ * line, the mirror sentence, the rooms), rebuilt from disk, so a stale one says which.
  */
 function splitWhere(half: string): { tiers: string; where: string } {
-  const at = half.indexOf(`\n${WHERE_HEADING}\n`);
-  return at === -1 ? { tiers: half, where: '' } : { tiers: half.slice(0, at).trim(), where: half.slice(at).trim() };
+  const lines = half.split('\n');
+  const declared = (line: string) => line === DECLARED_LINE || (line.startsWith('- ') && !line.startsWith(INDEX_ITEM));
+  return { tiers: lines.filter((line) => !declared(line)).join('\n'), where: lines.filter(declared).join('\n') };
 }
 
 /**
@@ -221,20 +223,19 @@ export function inspect(
   ];
 
   // The tier is the LOCATION, so the always-loaded footprint is still measurable — a region has a
-  // byte count exactly as a directory has. Which tiers
-  // those are is the harness's answer, not a constant here.
-  let coreBytes = 0;
+  // word count exactly as a directory has. Which tiers those are is the harness's answer, not a constant here.
+  let coreWords = 0;
   for (const name of alwaysLoadedTiers(harness)) {
     const tier = harness.tiers[name]!;
     if (tier.region) {
       const body = regionBody(tier.region.file, tier.region.name);
-      coreBytes += body === null ? 0 : Buffer.byteLength(body, 'utf8');
+      coreWords += body === null ? 0 : wordCount(body);
     } else if (tier.dir) {
       const dir = join(root, target, tier.dir);
-      coreBytes += listMarkdown(dir).reduce((sum, file) => sum + statSync(join(dir, file)).size, 0);
+      coreWords += listMarkdown(dir).reduce((sum, file) => sum + wordCount(readText(join(dir, file))), 0);
     }
   }
-  const overBudget = coreBytes > manifest.coreBudgetBytes;
+  const overBudget = coreWords > manifest.coreBudget.words;
 
   // 🔴 The KNOWLEDGE and SKILLS rows, rebuilt from disk and compared with `<target>/INDEX.md`.
   // Offline and canon-free, which is what `check` inside a build gate requires. What
@@ -264,66 +265,57 @@ export function inspect(
       rosterStale = true;
       continue;
     }
-    const held = splitWhere(onDemandHalf(body));
-    const wanted = splitWhere(onDemandHalf(rosterFromDisk({ root, target, harness, rooms: manifest.rooms ?? [], documents })));
+    const held = splitWhere(rosterHalf(body));
+    const wanted = splitWhere(rosterHalf(rosterFromDisk({ root, target, harness, rooms: manifest.rooms ?? [], documents })));
     if (held.tiers !== wanted.tiers) rosterStale = true;
     if (held.where !== wanted.where) documentsStale = true;
   }
 
   // The declared documents. Facts: one absent, or a link, or a link held as text, which is
-  // never read through. Judgements, reported: a document over its ceiling in words, and the canon's
-  // most-named records declared nowhere. A repository that declares nothing hears none of it.
+  // never read through. Judgements, reported unless declared failing: a document over a ceiling, and the
+  // canon's most-named records declared nowhere. A repository that declares nothing hears none of it.
   const documentLinksFound = documentLinks(root, documents);
   const linked = new Set(documentLinksFound.map((link) => link.declared));
   const documentsMissing = declaredPaths(documents).filter((doc) => !linked.has(doc.path) && present(root, doc.path) === null);
-  const documentsOver: { label: string; words: number; ceiling: number }[] = [];
-  const measure = (label: string, text: string, ceiling: number) => {
-    const words = wordCount(text);
-    if (words > ceiling) documentsOver.push({ label, words, ceiling });
-  };
-  for (const doc of documents) {
-    if (doc.words === null) continue;
-    if (doc.role === 'brief') {
-      // The repository's own part of the root instruction file: everything outside Daoris's region.
+  const documentsOver = overCeilings(documents, (each) => {
+    if (each.role === 'brief') {
+      // The whole root instruction file: the brief and the doctrine region, which every session pays for together.
       const region = Object.values(harness.tiers).find((tier) => tier.region)?.region;
       const text = region ? fileText(region.file) : null;
-      if (region && text !== null && !links.some((problem) => problem.path === region.file)) {
-        measure(`the brief (${region.file}, outside the region)`, removeRegion(text, region.name) ?? '', doc.words);
-      }
-    } else if (doc.role === 'room') {
-      for (const room of manifest.rooms ?? []) {
-        const path = `${room}/${instructions}`;
-        if (isFile(join(root, path)) && !links.some((problem) => problem.path === path)) {
-          measure(`${path} (room)`, readText(join(root, path)), doc.words);
-        }
-      }
-    } else if (doc.path !== null && !linked.has(doc.path)) {
-      const kind = present(root, doc.path);
-      if (kind === 'file') measure(`${doc.path} (${doc.role})`, readText(join(root, doc.path)), doc.words);
-      else if (kind === 'folder') {
-        const names = readdirSync(join(root, doc.path), { withFileTypes: true })
-          .filter((entry) => entry.isFile() && entry.name.endsWith('.md')).map((entry) => entry.name).sort(compareOrdinal);
-        for (const name of names) measure(`${doc.path}/${name} (${doc.role})`, readText(join(root, doc.path, name)), doc.words);
-      }
+      return region && text !== null && !links.some((problem) => problem.path === region.file)
+        ? [{ label: `the brief (${region.file})`, text }]
+        : [];
     }
-  }
+    if (each.role === 'room') {
+      return (manifest.rooms ?? []).map((room) => `${room}/${instructions}`)
+        .filter((path) => isFile(join(root, path)) && !links.some((problem) => problem.path === path))
+        .map((path) => ({ label: `${path} (room)`, text: readText(join(root, path)) }));
+    }
+    if (each.path === null || linked.has(each.path)) return [];
+    const kind = present(root, each.path);
+    if (kind === 'file') return [{ label: `${each.path} (${each.role})`, text: readText(join(root, each.path)) }];
+    if (kind !== 'folder') return [];
+    return readdirSync(join(root, each.path), { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.md')).map((entry) => entry.name).sort(compareOrdinal)
+      .map((name) => ({ label: `${each.path}/${name} (${each.role})`, text: readText(join(root, each.path!, name)) }));
+  });
   const recordsUndeclared = documents.length
     ? RECORD_ROLES.filter((role) => !documents.some((doc) => doc.role === role && doc.path !== null))
     : [];
 
-  // The budget REPORTS; it does not fail (the owner's call). Everything else here is a FACT the
-  // tool established — a file drifted, one is missing, a pack is never synced, the index is behind.
-  // Size is a JUDGEMENT: one byte over a number somebody chose is not wrong, and a gate that stops a
-  // build over a judgement gets its number raised rather than read — the usual failure of noise.
-  // The number stays and is stated on every run, because a
-  // signal nobody can see is not a signal.
-  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
+  // A size fails only where the repository declared its ceiling failing: everything else here is a FACT the
+  // tool established — a file drifted, one is missing, a pack is never synced, the index is behind. A
+  // reporting ceiling stays and is stated on every run, because a signal nobody can see is not a signal.
+  const factsOk = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
     && !staleSwitches.length
     && !staleLayout && !mirrorsDrifted.length && !mirrorsMissing.length && !mirrorsBehind.length
     && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length
     && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
+  const sizeFails = documentsOver.some((over) => over.fails) || (overBudget && manifest.coreBudget.fails);
+  const ok = factsOk && !sizeFails;
   return {
-    drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
+    factsOk, sizeFails,
+    drifted, missing, stalePacks, coreWords, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
     links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, recordsUndeclared,
@@ -347,9 +339,9 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const keep of report.kept) write(`  kept      ${keep.target} — this repository's own text: ${keep.reason}`);
   if (report.overBudget) {
     write(
-      `  budget    ${manifest.target} always-loaded is ${report.coreBytes} of ` +
-        `${manifest.coreBudgetBytes} declared bytes — advisory, not a gate: split principle from ` +
-        'detail into the on-demand tier, or raise it deliberately in daoris.json',
+      `  budget    the always-loaded doctrine is ${report.coreWords} of ${manifest.coreBudget.words} declared words — `
+        + `${manifest.coreBudget.fails ? 'fails, as daoris.json declares' : 'advisory, not a gate'}: split principle from `
+        + 'detail into the on-demand tier, or raise it deliberately in daoris.json',
     );
   }
   if (report.indexStale) {
@@ -387,11 +379,12 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const doc of report.documentsMissing) write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent`);
   for (const link of report.documentLinks) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
   if (report.documentsStale) {
-    write("  where     the region's Where things are table differs from daoris.json's documents — run 'daoris sync'");
+    write("  where     the region's Where things are list differs from daoris.json's documents — run 'daoris sync'");
   }
   for (const over of report.documentsOver) {
-    write(`  words     ${over.label} is ${over.words} words of ${over.ceiling} — over by ${over.words - over.ceiling}; `
-      + 'the read path has grown: move its history to its record, condense, then raise — advisory, not a gate');
+    write(`  ${over.unit.padEnd(9)} ${over.label} is ${over.measured} ${over.unit} of ${over.ceiling} — over by `
+      + `${over.measured - over.ceiling}; the read path has grown: move its history to its record, condense, then raise — `
+      + `${over.fails ? 'fails, as daoris.json declares; at the ceiling a line in takes a line out' : 'advisory, not a gate'}`);
   }
   if (report.recordsUndeclared.length) {
     write(`  records   ${report.recordsUndeclared.map((role) => `no ${role}`).join(' and ')} declared in daoris.json's `
@@ -410,12 +403,16 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   if (report.ok) {
     // "clean" would be the wrong word while the core is over its own declared budget, even though
     // nothing here failed — so the over case says what is true instead of reusing the happy sentence.
+    const { words } = manifest.coreBudget;
     write(report.overBudget
-      ? `daoris: no drift — always-loaded core is ${report.coreBytes} of `
-        + `${manifest.coreBudgetBytes} declared bytes, over by ${report.coreBytes - manifest.coreBudgetBytes}`
-      : `daoris: clean — ${report.coreBytes} of ${manifest.coreBudgetBytes} bytes of always-loaded core`);
+      ? `daoris: no drift — always-loaded core is ${report.coreWords} of ${words} declared words, over by ${report.coreWords - words}`
+      : `daoris: clean — ${report.coreWords} of ${words} words of always-loaded core`);
     return 0;
   }
-  write("daoris: run 'daoris sync' to take the canon's text, or 'daoris reconcile' to decide each difference");
+  // A failing ceiling is no drift: the mend is this repository's own text, which no sync takes.
+  if (report.sizeFails) write('daoris: over a ceiling daoris.json declares failing — cut the text named above');
+  if (!report.factsOk) {
+    write("daoris: run 'daoris sync' to take the canon's text, or 'daoris reconcile' to decide each difference");
+  }
   return 1;
 }

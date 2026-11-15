@@ -63,7 +63,14 @@ const TIER_ROLES: Record<string, string> = { knowledge: 'knowledge', skill: 'ski
 /** The roles whose absence `check` reports: the records the canon's rules name most. */
 export const RECORD_ROLES = ['backlog', 'decisions'] as const;
 
-const FIELDS = new Set(['path', 'words']);
+const FIELDS = new Set(['path', 'words', 'bytes', 'fails']);
+
+/** A ceiling's value as `check` reads it: a whole number above zero, or absent. */
+function ceilingOf(name: string, field: 'words' | 'bytes', value: unknown): number | null {
+  if (value === undefined) return null;
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value;
+  throw new DaorisError(`${name} has ${field} ${JSON.stringify(value)} — a ceiling is a whole number of ${field} above zero`);
+}
 
 /** The member of `documents` that declares a repository's present records for its own freshness report: no role, never listed. */
 const PRESENT = 'present';
@@ -119,7 +126,7 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
           : "the rooms are daoris.json's rooms, each with its own instruction file"}: ${shape}`);
     }
     if (typeof value === 'string') {
-      found.set(role, { role, path: checkPath(name, value, target, harness), words: null });
+      found.set(role, { role, path: checkPath(name, value, target, harness), words: null, bytes: null, fails: false });
       continue;
     }
     if (!isObject(value)) {
@@ -130,14 +137,15 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
     if (spec.binding === 'path' && typeof value.path !== 'string') {
       throw new DaorisError(`${name} has no path — a document is its path, or ${shape}`);
     }
-    const words = value.words;
-    if (words !== undefined && !(typeof words === 'number' && Number.isInteger(words) && words > 0)) {
-      throw new DaorisError(`${name} has words ${JSON.stringify(words)} — a ceiling is a whole number of words above zero`);
+    if (value.fails !== undefined && typeof value.fails !== 'boolean') {
+      throw new DaorisError(`${name} has fails ${JSON.stringify(value.fails)} — it is true or false`);
     }
     found.set(role, {
       role,
       path: spec.binding === 'path' ? checkPath(name, value.path as string, target, harness) : null,
-      words: words === undefined ? null : words as number,
+      words: ceilingOf(name, 'words', value.words),
+      bytes: ceilingOf(name, 'bytes', value.bytes),
+      fails: value.fails === true,
     });
   }
   return ROLES.flatMap((row) => (found.has(row.role) ? [found.get(row.role)!] : []));
@@ -258,9 +266,6 @@ export function duplicateMembers(text: string): string | null {
 /** The declared roles that carry a path: the rows of the region's table. */
 export const declaredPaths = (documents: readonly DeclaredDocument[]): { role: string; path: string }[] =>
   documents.flatMap((doc) => (doc.path === null ? [] : [{ role: doc.role, path: doc.path }]));
-
-/** A role's job, in the CLI's fixed words. */
-export const jobOf = (role: string): string => ROLES.find((row) => row.role === role)?.job ?? '';
 
 /** Whitespace-separated tokens: `tools/doc-budgets.mjs`'s count, duplicated deliberately (twins). */
 export const wordCount = (text: string): number => text.split(/\s+/).filter(Boolean).length;

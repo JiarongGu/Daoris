@@ -134,18 +134,16 @@ test('output is deterministic', () => {
 });
 
 /**
- * 🔴 The region's roster read from disk has NO rules rows and NO document rows. The rules' frontmatter
- * is stripped on the way in, so nothing offline can rebuild those rows; the documents are the index's.
- * What is left is what `check` compares: the pointer, and what the manifest
- * declares.
+ * 🔴 The region's roster read from disk has NO rules and NO document rows: the rules come from the canon,
+ * and the documents are the index's. What is left is what `check` compares: the pointer, and what the
+ * manifest declares.
  */
 test('the region\'s disk half is the pointer and what the manifest declares, which is what keeps check offline', () => {
   const fx = seedRepo();
   const roster = rosterFromDisk({ root: fx.root, target: '.claude' });
 
-  assert.match(roster, /## Read on demand/);
-  assert.match(roster, /listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/);
-  // The rules table's header is there; its rows are not, because the canon is not.
+  assert.match(roster, /^## Where things are$/m);
+  assert.match(roster, /^- knowledge and skills, each with when it applies: `\.claude\/INDEX\.md`/m);
   assert.equal(/sensitive-info|storage|doc-loader/.test(roster), false);
   fx.cleanup();
 });

@@ -1,6 +1,6 @@
 ---
 name: set-up-documents
-description: Set a repository's development documents up to the lean standard, or repair ones that drifted — the brief, the area documents, the few records and the declaration of safe work — from the templates beside this skill. Use when a repository is set up for agents, when a request asks for it, or when a session could not find where something is written.
+description: Set up or repair a repository's development documents (brief, area documents, records, declaration of unasked work) from the templates beside it. Use when setting a repository up for agents.
 ---
 
 # set-up-documents
