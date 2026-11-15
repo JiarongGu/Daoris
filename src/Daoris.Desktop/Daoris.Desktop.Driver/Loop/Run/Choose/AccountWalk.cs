@@ -22,6 +22,7 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
         // carry-on's own start, never beside the look: the same look would plan the carry-on and walk it onto the account just freed.
         // A hand-over made from it is the person's press and decides the start instead.
         var limitedLine = LimitResume.Line(start.Quest, start.Resumes, state.HandedFrom);
+        var ownLine = limitedLine ?? CarryOnResume.Line(start.Quest, start.Resumes, state.HandedFrom);
 
         // A line a limit cut off takes its agent from the role's order, never the machine's adapter key, which the order does not keep
         // in step: its own agent where the role lists it, else the role's first. Where the role lists more than one choice, or its one
@@ -119,13 +120,13 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                     }
                 }
             }
-            else if (policyMove is null && !start.GoesOn && limitedLine is not null && wiring.GoOns.LimitResumes(limitedLine, state.Agent)
+            else if (policyMove is null && !start.GoesOn && ownLine is not null && wiring.GoOns.LimitResumes(ownLine, state.Agent)
                      && await context.Harnesses
                              .ResumeAsync(
-                                 state.Agent, context.Config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit,
-                                 ct: ct, limited: true, model: state.CarriedModel(limitedLine))
+                                 state.Agent, context.Config, start.Workspace, ownLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit,
+                                 ct: ct, limited: true, model: state.CarriedModel(ownLine))
                              .ConfigureAwait(false) is { } own
-                     && await wiring.DecideLimitOwnAsync(limitedLine, own, ct).ConfigureAwait(false) is LineCourse.Resume)
+                     && await wiring.DecideLimitOwnAsync(ownLine, own, ct).ConfigureAwait(false) is LineCourse.Resume)
             {
                 // Its own account ready, its maker's reading asked, the judge passing and a door known to fail closed: its own
                 // conversation resumes there, asked before the walk, so its own account wins where another is ready too.

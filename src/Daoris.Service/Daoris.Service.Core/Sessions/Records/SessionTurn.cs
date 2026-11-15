@@ -41,4 +41,7 @@ public sealed record SessionTurn(int Number, string Cause, DateTimeOffset At)
 
     /// <summary>When it ended: the next turn's start, or its record's end; null while it runs.</summary>
     public DateTimeOffset? Ended { get; init; }
+
+    /// <summary>How it ended, kept where its record went on after it; null for the record's last turn, whose end is the record's own.</summary>
+    public SessionTurnEnd? End { get; init; }
 }

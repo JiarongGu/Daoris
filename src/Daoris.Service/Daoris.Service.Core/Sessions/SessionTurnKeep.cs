@@ -6,9 +6,9 @@ namespace Daoris.Knowledge;
 /// </summary>
 internal static class SessionTurnKeep
 {
-    /// <summary>Add <paramref name="turn"/> to the turns of this machine's record <paramref name="record"/>, and answer it as it now reads.</summary>
-    public static Task<Session> AddAsync(SessionStore store, Session record, SessionTurn turn, CancellationToken ct) =>
-        KeepAsync(store, record, [.. SessionTurns.Own(record), turn], ct);
+    /// <summary>Keep <paramref name="turns"/>, a go-on's (<see cref="SessionTurns.WentOn"/>), on this machine's record <paramref name="record"/>, and answer it as it now reads.</summary>
+    public static Task<Session> WentOnAsync(SessionStore store, Session record, IReadOnlyList<SessionTurn> turns, CancellationToken ct) =>
+        KeepAsync(store, record, turns, ct);
 
     /// <summary>Keep on the last turn <paramref name="spent"/> less what the turns before it kept; a count its door never gave stays unset.</summary>
     public static Task<Session> UsageAsync(SessionStore store, Session record, TurnSpent spent, CancellationToken ct)

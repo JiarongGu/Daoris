@@ -62,7 +62,7 @@ public enum CourseDaorisWord
     /// <summary>The transient retry's instruction, keyed by the episode (<c>TransientRetry</c>).</summary>
     TransientRetry,
 
-    /// <summary>The restart's word after an update closed the record, keyed by the build (<c>Restart</c>).</summary>
+    /// <summary>The restart's word after Daoris cut the record, keyed by an update's build or the moment it ended (<c>Restart</c>).</summary>
     Restart,
 }
 
