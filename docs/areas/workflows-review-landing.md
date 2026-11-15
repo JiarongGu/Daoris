@@ -318,7 +318,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     landed branch. A folder's review is the turn's change set from its manifests; it names no base, and says that branches,
     history, integration and landing are git's. (D113, D148, D254)
 39. Integration is one run per line, outside every run, with fixed steps; `done` and `steward` requests need declared, accepted
-    gates. The line's policy is `linePolicies`; who requests and where a conflict goes are the `integrate` step's (the bound
+    gates. The line's policy is `linePolicies`, edited beside the branch by `SET_LINE` and, over the same file, by `daoris place line
+    <repository>|--workspace <name>` with the policy's keys (`--commit`, `--batch`, `--order`, `--gates`, `--unreached`, `--reached`,
+    `--integrate-line`, each judged by `LinePolicyKey` as the press is; they merge into the place's own policy, and with no branch
+    the line stays; `--no-policy` withdraws it); who requests and where a conflict goes are the `integrate` step's (the bound
     version's, or outside a run the newest of the place's default workflow, else the owner's). A failure is confirmed once before
     it is blamed; a gate that would not start is an unknown run. A `request` under `start: you` waits for the person's *Send*.
     (D215, D227, D232)

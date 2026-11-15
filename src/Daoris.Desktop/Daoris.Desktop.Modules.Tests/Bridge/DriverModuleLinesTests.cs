@@ -42,6 +42,21 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Lines.Count > 0);
     }
 
+    /// <summary>
+    /// A policy the terminal's `daoris place line` keys refuse (a batch past eight, the workflow's own `request`) is refused by the press in
+    /// the same sentence: one judge, <c>LinePolicyKey</c>, for both doors, and nothing written.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"batch":9}""", "`integrate.batch` is how many members a candidate holds, 1 to 8.")]
+    [InlineData("""{"request":"steward"}""", "who requests and where a conflict goes are the workflow's `integrate` step's.")]
+    public async Task A_policy_the_terminals_keys_refuse_is_refused_by_the_press_in_the_same_sentence(string policy, string said)
+    {
+        var refused = await RefusalAsync(Module(), "SET_LINE", new { repository = "engine", policy = Body(policy) });
+
+        Assert.Contains(said, refused);
+        Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).LinePolicies.Count > 0);
+    }
+
     private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
     /// <summary>Each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>

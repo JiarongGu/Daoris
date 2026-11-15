@@ -93,6 +93,20 @@ public sealed class LinePolicyKeyTests
         Assert.Contains(says, problem);
     }
 
+    /// <summary>What a terminal sends the press (<c>Wire</c>) reads back as the policy it was made from, each key set once.</summary>
+    [Fact]
+    public void A_policy_on_the_wire_reads_back_as_itself()
+    {
+        var policy = new LandingIntegrate(
+            Commit: LandingIntegrate.Squash, Batch: 3, Order: LandingIntegrate.Apart, Gates: LandingIntegrate.Declared,
+            Unreached: LandingIntegrate.Hold, Reached: LandingIntegrate.Split, Line: "release");
+
+        using var document = JsonDocument.Parse(LinePolicyKey.Wire(policy).ToJsonString());
+
+        Assert.Equal(policy, LinePolicyKey.IntegrateOf(document.RootElement, out _));
+        Assert.Equal("{}", LinePolicyKey.Wire(new LandingIntegrate()).ToJsonString());
+    }
+
     [Fact]
     public void A_pattern_expands_by_its_placeholders_and_a_bad_one_is_refused()
     {

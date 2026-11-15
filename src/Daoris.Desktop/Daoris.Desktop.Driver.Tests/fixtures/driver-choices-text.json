@@ -827,9 +827,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver line` needs <repository>|--workspace <name>, then <branch>|--clear — e.g. `daoris place line aurora-engine develop`."
+        "daoris: `driver line` needs <repository>|--workspace <name>, then <branch>|--clear and/or the policy's keys (--commit merge|rebase|squash, --batch <1 to 8>, --order arrival|apart, --gates declared|none, --unreached|--reached split|hold|land, --integrate-line <branch>), or --no-policy — e.g. `daoris place line aurora-engine develop` or `daoris place line aurora-engine --gates declared`."
       ],
-      "after": null
+      "after": null,
+      "changed": "the line policy's keys joined the verb, so its usage names them."
     },
     {
       "name": "line, no branch git would take",
@@ -859,6 +860,110 @@
         "daoris: --workspace needs a name — e.g. `--workspace aurora`"
       ],
       "after": null
+    },
+    {
+      "name": "line policy, a key alone leaves the line",
+      "argv": ["line", "engine", "--gates", "declared"],
+      "before": "{\n  \"lines\": {\n    \"engine\": \"develop\"\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: the line of `engine` is integrated with gates declared; a key left out reads its default.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\"lines\":{\"engine\":\"develop\"},\"linePolicies\":{\"engine\":{\"gates\":\"declared\"}}}",
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin); the terminal merges a key into the place's own policy, the window's press sends it whole."
+    },
+    {
+      "name": "line policy, a key merges into the policy held",
+      "argv": ["line", "engine", "--gates", "declared", "--unreached", "hold"],
+      "before": "{\"linePolicies\":{\"engine\":{\"batch\":4,\"order\":\"apart\"}}}",
+      "exit": 0,
+      "out": [
+        "daoris: the line of `engine` is integrated with batch 4, order apart, gates declared, unconfirmed unreached hold; a key left out reads its default.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\"linePolicies\":{\"engine\":{\"batch\":4,\"order\":\"apart\",\"gates\":\"declared\",\"unconfirmed\":{\"unreached\":\"hold\"}}}}",
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin)."
+    },
+    {
+      "name": "line policy, a workspace beside its branch",
+      "argv": ["line", "--workspace", "aurora", "develop", "--commit", "squash", "--batch", "3", "--integrate-line", "release"],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: work in repositories in the workspace `aurora` grows from `develop` and lands on it.",
+        "  A repository with a line of its own keeps it — `daoris place line <repository> --clear` hands it back.",
+        "  A session already running keeps the line it started from.",
+        "daoris: the line of repositories in the workspace `aurora` is integrated with commit squash, batch 3, line release; a key left out reads its default.",
+        "  A repository with a policy of its own keeps it — `daoris place line <repository> --no-policy` hands it back.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\"workspaceLines\":{\"aurora\":\"develop\"},\"workspaceLinePolicies\":{\"aurora\":{\"commit\":\"squash\",\"batch\":3,\"line\":\"release\"}}}",
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin)."
+    },
+    {
+      "name": "line policy, no-policy withdraws it and keeps the line",
+      "argv": ["line", "engine", "--no-policy"],
+      "before": "{\"lines\":{\"engine\":\"develop\"},\"linePolicies\":{\"engine\":{\"gates\":\"declared\"}}}",
+      "exit": 0,
+      "out": [
+        "daoris: `engine` takes its workspace's line policy, else the defaults, again.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\"lines\":{\"engine\":\"develop\"}}",
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin)."
+    },
+    {
+      "name": "line policy, a batch past eight",
+      "argv": ["line", "engine", "--batch", "9"],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `integrate.batch` is how many members a candidate holds, 1 to 8."
+      ],
+      "after": null,
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin), judged by LinePolicyKey as the window's press is."
+    },
+    {
+      "name": "line policy, a value no key takes",
+      "argv": ["line", "engine", "--gates", "maybe"],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `integrate.gates` is `declared` or `none`, and `maybe` is none."
+      ],
+      "after": null,
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin), judged by LinePolicyKey as the window's press is."
+    },
+    {
+      "name": "line policy, the workflow's keys are refused",
+      "argv": ["line", "engine", "--request", "steward"],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a line's policy says how the line is integrated; who requests and where a conflict goes are the workflow's `integrate` step's."
+      ],
+      "after": null,
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin), judged by LinePolicyKey as the window's press is."
+    },
+    {
+      "name": "line policy, no-policy beside a key",
+      "argv": ["line", "engine", "--no-policy", "--gates", "declared"],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--no-policy` withdraws the policy, so it names no key beside it."
+      ],
+      "after": null,
+      "changed": "the line policy's keys joined the verb (D215: SET_LINE's twin)."
     },
     {
       "name": "across read off",

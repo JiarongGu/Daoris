@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
@@ -115,6 +116,31 @@ public static class LinePolicyKey
         }
 
         return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
+    }
+
+    /// <summary>
+    /// A policy as <c>SET_LINE</c> takes it on the wire, the keys the file writes, each only where set: what a terminal sends the running
+    /// Daoris so the press and the file hold one policy, <see cref="IntegrateOf"/> reading it back.
+    /// </summary>
+    internal static JsonObject Wire(LandingIntegrate policy)
+    {
+        var wire = new JsonObject();
+        if (policy.Request is not null) wire["request"] = policy.Request;
+        if (policy.Commit is not null) wire["commit"] = policy.Commit;
+        if (policy.Batch is { } batch) wire["batch"] = batch;
+        if (policy.Order is not null) wire["order"] = policy.Order;
+        if (policy.Gates is not null) wire["gates"] = policy.Gates;
+        if (policy.Unreached is not null || policy.Reached is not null)
+        {
+            var unconfirmed = new JsonObject();
+            if (policy.Unreached is not null) unconfirmed["unreached"] = policy.Unreached;
+            if (policy.Reached is not null) unconfirmed["reached"] = policy.Reached;
+            wire["unconfirmed"] = unconfirmed;
+        }
+
+        if (policy.Conflicts is not null) wire["conflicts"] = policy.Conflicts;
+        if (policy.Line is not null) wire["line"] = policy.Line;
+        return wire;
     }
 
     internal static IReadOnlyDictionary<string, LandingIntegrate> PolicyMap(JsonElement root, string name)
