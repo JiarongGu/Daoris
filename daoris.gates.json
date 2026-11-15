@@ -30,7 +30,7 @@
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",
       "paths": [
-        "daoris.gates.json", "package.json", "src/", "tools/comment-gate.mjs", "tools/fsx.mjs"
+        "daoris.gates.json", "package.json", "src/", "tools/comment-gate.mjs", "tools/comment-names.mjs", "tools/fsx.mjs"
       ] },
     { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=service.trx\"",
       "paths": [

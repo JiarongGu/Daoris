@@ -91,9 +91,9 @@ const deletedIn = (repo) => new Set(git(repo, ['ls-files', '--deleted']).out.spl
 
 /**
  * Removes the worktree at `path` of the repository at `repo`. `force` is passed to git only where the caller asks.
- * `removeLink` and `afterRemove` are seams for tests. Returns `{ ok, why, links }`.
+ * `removeLink` and `afterRemove` are seams for tests; `seen` hands the deleted-files list on to the next removal. Returns `{ ok, why, links }`.
  */
-export function removeWorktree(repo, path, { force = false, removeLink = removeLinkOnly, afterRemove = () => {} } = {}) {
+export function removeWorktree(repo, path, { force = false, removeLink = removeLinkOnly, afterRemove = () => {}, seen = {} } = {}) {
   const links = [];
   if (existsSync(path) || lstatSyncSafe(path)) {
     for (const link of findLinks(path)) {
@@ -111,10 +111,12 @@ export function removeWorktree(repo, path, { force = false, removeLink = removeL
       links.push(link);
     }
   }
-  const deletedBefore = deletedIn(repo);
+  const deletedBefore = seen.deleted ?? deletedIn(repo);
   const run = git(repo, ['worktree', 'remove', ...(force ? ['--force'] : []), path]);
   // Git can drop the registration yet leave the folder where a delete failed; what it left goes by the link-safe walk.
-  const registered = git(repo, ['worktree', 'list', '--porcelain']).out.split('\n').some((line) => samePath(line.replace(/^worktree /, ''), path));
+  const registered = run.status === 0 && !lstatSyncSafe(path)
+    ? false
+    : git(repo, ['worktree', 'list', '--porcelain']).out.split('\n').some((line) => samePath(line.replace(/^worktree /, ''), path));
   let leftover = '';
   if (!registered && lstatSyncSafe(path)) {
     const longRoot = longPath(path);
@@ -126,7 +128,9 @@ export function removeWorktree(repo, path, { force = false, removeLink = removeL
     }
   }
   afterRemove();
-  const lost = [...deletedIn(repo)].filter((file) => !deletedBefore.has(file));
+  const deletedNow = deletedIn(repo);
+  seen.deleted = deletedNow;
+  const lost = [...deletedNow].filter((file) => !deletedBefore.has(file));
   if (lost.length) {
     return { ok: false, links, why: `the main checkout lost tracked files: ${lost.slice(0, 10).join(', ')}${lost.length > 10 ? ` and ${lost.length - 10} more` : ''}; restore them with git checkout` };
   }

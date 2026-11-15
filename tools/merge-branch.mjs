@@ -1864,8 +1864,8 @@ function gateTreeLine(entry, applied) {
   return `  ${pad(verb, 8)} ${pad(GATE_TREE, 34)} ${text}`;
 }
 
-/** One removal: the worktree, unlocked first when the harness's lock is lifted, then the branch. What git refuses is kept, with git's own reason. */
-function removeOne(root, entry) {
+/** One removal: the worktree, unlocked when the harness's lock is lifted, then the branch. What git refuses is kept. */
+function removeOne(root, entry, seen) {
   const tree = entry.worktree;
   let left = '';
   if (tree) {
@@ -1875,7 +1875,7 @@ function removeOne(root, entry) {
       const unlocked = git(root, ['worktree', 'unlock', tree.path], { allowFail: true });
       if (unlocked.status !== 0) return { ...entry, remove: false, why: `git refused to unlock its worktree: ${gitSays(unlocked.err || unlocked.out)}` };
     }
-    const removed = removeWorktree(root, tree.path);
+    const removed = removeWorktree(root, tree.path, { seen });
     if (!removed.ok) {
       const still = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, tree.path));
       if (still) {
@@ -1898,11 +1898,11 @@ function removeOne(root, entry) {
 /**
  * The plan, applied: `git worktree remove`, never forced (ignored build output does not stop it, and
  * whatever does is work to keep), then `git branch -d`, never `-D`, then one `git worktree prune`.
- * `onEach` hears each entry as it ends, so a long removal is not a silence.
+ * `onEach` hears each entry as it ends.
  */
-export function applyPrune(root, entries, onEach = () => {}) {
+export function applyPrune(root, entries, onEach = () => {}, seen = {}) {
   const done = entries.map((entry) => {
-    const outcome = entry.remove ? removeOne(root, entry) : entry;
+    const outcome = entry.remove ? removeOne(root, entry, seen) : entry;
     onEach(outcome);
     return outcome;
   });

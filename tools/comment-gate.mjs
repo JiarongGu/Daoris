@@ -16,13 +16,14 @@
  * 2. No comment it adds names a backlog row id (capitals then digits), a decision number (the letter D and
  *    digits) or a history note (the words for what the code once did). The commit or the decision holds those. A comment is
  *    added where its trimmed text stands on the new side more often than on the old, so a moved or untouched comment is not.
- *
+ *    Nor does a test name it adds (`comment-names.mjs`); `--all` leaves the names there before.
  * A comment on a code line counts for the second rule, not the first. Strings, templates (their expressions read as code),
  * regular expressions and C#'s verbatim and raw strings are not comments. A capitals-and-digits tool or standard name (`UTF8`) is no id. */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain, repositoryFiles } from './fsx.mjs';
+import { KNOWN, ROW, addedRowNames } from './comment-names.mjs';
 import { jsxEnd } from './js-jsx.mjs';
 import { templateEnd } from './js-template.mjs';
 
@@ -34,8 +35,6 @@ const TEMPLATE = /^src\/.*\.template$/;
 /** Whether `path` is source: a source file, or a template under `src/` whose extension before `.template` is a source one. */
 export const isSource = (path) => SOURCE.test(TEMPLATE.test(path) ? path.slice(0, -'.template'.length) : path);
 
-const ROW = /\b[A-Z]{2,}\d+[a-z]?\b/g;
-const KNOWN = /^(?:UTF|SHA|MD|HTTP|HS|RS|ES|PS|AES|X|ISO|RFC|TLS|SSL|CRC|BASE|GB|PBKDF|SSH|IPV|WIN|MP|H|OS)\d+$/;
 const DECISION = /\bD\d{1,4}\b/g;
 const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
 
@@ -196,8 +195,8 @@ export function namings(text) {
   return names;
 }
 
-/** The breaches of one file: `before` is its old text, or null where it is new. */
-export function judge(path, before, after) {
+/** The breaches of one file: `before` is its old text, or null where it is new; `names` holds the test names it adds to the row-id rule too (a change's, not the whole tree's). */
+export function judge(path, before, after, { names = true } = {}) {
   const problems = [];
   const options = { jsx: path.endsWith('.tsx') || path.endsWith('.tsx.template') };
   if (before !== null) {
@@ -212,6 +211,9 @@ export function judge(path, before, after) {
     for (const [kind, word] of namings(text)) {
       problems.push(`${path}:${line}: a comment names ${kind} (${word}): the commit or the decision holds that, so say only why the code is as it is`);
     }
+  }
+  if (names) {
+    for (const name of addedRowNames(path, before, after)) problems.push(`${path}: a test name names a row id (${name}): name what the test shows, and leave the row to the commit`);
   }
   return problems;
 }
@@ -267,7 +269,7 @@ export function checkAll(root) {
   let checked = 0;
   for (const path of repositoryFiles(root)) {
     if (!isSource(path) || SKIPPED.test(path)) continue;
-    problems.push(...judge(path, null, readFileSync(join(root, path), 'utf8')));
+    problems.push(...judge(path, null, readFileSync(join(root, path), 'utf8'), { names: false }));
     checked++;
   }
   return { problems, checked };

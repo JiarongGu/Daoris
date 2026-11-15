@@ -68,7 +68,8 @@ export function trackedFiles(): string[] {
   return listed.stdout.split('\n').filter(Boolean);
 }
 
+const TRACKED_AT_LOAD = trackedFiles();
 export const PAGE_PARSED = PAGE_PARSED_NAMES
-  .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
+  .map((name) => TRACKED_AT_LOAD.find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
 /** The page-parsed rule, by the names it holds wherever the driver keeps them. */
 export const isPageParsedRule = (rule: Rule): boolean => rule.paths?.some((path) => PAGE_PARSED_NAMES.some((name) => path === `${DRIVER_FOLDER}**/${name}`)) ?? false;

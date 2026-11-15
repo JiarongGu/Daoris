@@ -106,6 +106,19 @@ test('a tracked file of the main checkout deleted by the removal is reported', (
   assert.match(result.why, /tracked\.txt/);
 });
 
+test('removals in a row read the list of deleted files once each: what the last one left is the next one\'s before', () => {
+  const { repo, tree } = fixture();
+  const seen = {};
+  assert.equal(removeWorktree(repo, tree, { seen }).ok, true);
+  assert.deepEqual([...seen.deleted], []);
+  const second = join(repo, '..', 'tree2');
+  git(repo, 'worktree', 'add', '-q', '-b', 'side2', second);
+  rmSync(join(repo, 'tracked.txt'));
+  const handed = removeWorktree(repo, second, { seen });
+  assert.equal(handed.ok, false, 'the list handed on is the before: a file deleted since it is the removal\'s to report');
+  assert.match(handed.why, /tracked\.txt/);
+});
+
 test('a worktree holding a path past 260 characters is removed whole, its link as a link', () => {
   const { repo, tree, shared } = fixture();
   link(shared, join(tree, 'node_modules'));

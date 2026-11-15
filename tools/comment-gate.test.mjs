@@ -115,6 +115,21 @@ test('a change that adds a row id is refused, in a trailing comment too', () => 
   assert.match(problems[0], /tools\/x\.mjs:2: a comment names a row id \(LANDAUTO1\)/);
 });
 
+test('a test name that names a row id is refused where it is added, in C# and in TS, and one already there is not', () => {
+  const cs = (...names) => `public class T\n{\n${names.map((n) => `    [Fact]\n    public void ${n}() { }\n`).join('')}}\n`;
+  const refused = judge('src/T.cs', cs('Keeps_one'), cs('Keeps_one', 'LANDAUTO1_is_kept'));
+  assert.equal(refused.length, 1, refused.join('\n'));
+  assert.match(refused[0], /src\/T\.cs: a test name names a row id \(LANDAUTO1_is_kept\)/);
+  assert.deepEqual(judge('src/T.cs', cs('LANDAUTO1_is_kept'), cs('LANDAUTO1_is_kept').replace('{ }', '{ var x = 1; }')), [], 'a name already there stays');
+  assert.deepEqual(judge('src/T.cs', null, cs('Utf8_is_no_row', 'UTF8_is_a_standard')), []);
+  const ts = (name) => `import { test } from 'node:test';\ntest('${name}', () => {});\ndescribe("${name} group", () => {});\n`;
+  const added = judge('tools/t.test.mjs', ts('keeps one'), ts('LANDAUTO1: keeps one'));
+  assert.equal(added.length, 2, added.join('\n'));
+  assert.match(added[0], /a test name names a row id \(LANDAUTO1: keeps one\)/);
+  assert.deepEqual(judge('tools/t.test.mjs', ts('LANDAUTO1: keeps one'), ts('LANDAUTO1: keeps one')), []);
+  assert.deepEqual(judge('tools/t.test.mjs', null, ts('LANDAUTO1: kept'), { names: false }), [], 'the whole tree is held to the comments alone');
+});
+
 test('a history note is refused, and a rise in the share is refused', () => {
   const { dir } = repo({ 'src/Reads.cs': BASE });
   put(dir, { 'src/Reads.cs': BASE.replace('// Reads the file once.', '// Reads the file once.\n// It used to read twice.\n// More words.\n// Still more.') });
