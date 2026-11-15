@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed partial class DriverModuleRoutesTests
 {
     /// <summary>The bridge's helpers that send their route argument on to <c>call</c>, besides <c>call</c> itself.</summary>
-    private static readonly string[] Forwarders = ["useDriverChange", "askHeld"];
+    private static readonly string[] Forwarders = ["useDriverChange", "askHeld", "askSettled"];
 
     /// <summary>
     /// Where a send names its route: <c>call</c> or a forwarder, then its type arguments or its call; or <c>call</c> cast to the
