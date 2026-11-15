@@ -240,7 +240,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         lock (_gate)
         {
             var policy = Policy(role);
-            var facts = Facts(role, policy, line ?? new StaffFacts());
+            var facts = Facts(role, policy, line ?? new StaffFacts(), order);
             var arranged = StaffJudge.Arrange(policy.Applied, work, order, facts);
             StaffReservation? reservation = null;
             if (reserve && policy.Applied is not null && arranged.Walk.Count > 0)
@@ -404,7 +404,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// The facts of a look, under the lock: <paramref name="line"/>'s tokens and moves off, the window since the policy's <c>since</c> and
     /// today's starts where a set policy reads them, this process's reservations and marks, and now.
     /// </summary>
-    private StaffFacts Facts(string role, StaffPolicyRead policy, StaffFacts line)
+    private StaffFacts Facts(string role, StaffPolicyRead policy, StaffFacts line, IReadOnlyList<ActorEffective> order)
     {
         var now = Clock.GetUtcNow();
         IReadOnlyList<StaffKey> window = [];
@@ -436,7 +436,38 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             Today = today,
             Tokens = tokens,
             NotAnswering = Holds.Marks(now),
+            Capped = policy.Applied is null ? new Dictionary<string, DateTimeOffset>() : CappedAgents(order, now),
         };
+    }
+
+    /// <summary>The agent whose accounts own their agents' (<see cref="StaffRoster.StaffFor"/> sets the roster's); a name stands for itself without it.</summary>
+    internal Func<string, string>? Owner { get; init; }
+
+    /// <summary>
+    /// The agents <paramref name="order"/> names whose every account a whole-account limit or spend cap holds at <paramref name="now"/>, each
+    /// until its first account reopens: read from the account cool-offs (<see cref="AccountCooling"/>), the one record of them. An agent with no
+    /// account of its own is held by its own sign-in's cool-off.
+    /// </summary>
+    private Dictionary<string, DateTimeOffset> CappedAgents(IReadOnlyList<ActorEffective> order, DateTimeOffset now)
+    {
+        var capped = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
+        IReadOnlyList<CoolingEntry> cooling;
+        try { cooling = AccountCooling.Read(home, now).Where(entry => entry.Model is null).ToList(); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException) { return capped; }
+        if (cooling.Count == 0) return capped;
+        foreach (var agent in order.Select(entry => entry.Agent).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var owner = Owner?.Invoke(agent) ?? agent;
+            var held = cooling.Where(entry => string.Equals(entry.Agent, owner, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (held.Count == 0) continue;
+            var accounts = HarnessSettings.Profiles(home, owner);
+            var all = accounts.Count == 0
+                ? held.Any(entry => string.IsNullOrEmpty(entry.Account))
+                : accounts.All(account => held.Any(entry => string.Equals(entry.Account, account, StringComparison.OrdinalIgnoreCase)));
+            if (all) capped[agent] = held.Where(entry => accounts.Count == 0 || accounts.Contains(entry.Account ?? "", StringComparer.OrdinalIgnoreCase)).Min(entry => entry.Until);
+        }
+
+        return capped;
     }
 
     /// <summary>

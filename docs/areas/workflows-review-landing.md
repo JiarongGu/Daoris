@@ -204,7 +204,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     whether one is needed, the environment still the `reviews` rule's, and `SET_REVIEW required` is refused. (D154, D227)
 26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. Under a saved graph the
+    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
+    said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. Under a saved graph the
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the
     reviewers are named once, by the place (`daoris place opinion <repository> --agents …`), and choosing the workflow for a
@@ -364,7 +366,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
-    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). The verification tree is prepared as a
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A run's check (`RunChecks`, `AsMerged`) judges the work
+    as merged onto its line's tip (the remote's head, else `main` or `master`): the verification tree takes the work where it holds that tip,
+    else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
+    session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands
+    then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
+    saying so; a line's own run and a declaration's runner judge their commit as it stands (D299). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
     gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
     preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.

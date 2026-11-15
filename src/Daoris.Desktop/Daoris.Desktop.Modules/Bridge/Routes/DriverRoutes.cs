@@ -20,9 +20,7 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
     private object? GetUnderWay(NoPayload _) => _loop.UnderWay.Now();
 
-    /// <summary>
-    /// A slice's snapshot, read from memory as last judged, never judged for the asking, so a second window judges nothing.
-    /// </summary>
+    /// <summary>A slice's snapshot, read from memory as last judged, never judged for the asking, so a second window judges nothing.</summary>
     [DriverRoute("STATE_SLICE", PipeClass.Open)]
     private object? GetStateSlice(StateSliceRead press) =>
         _loop.Slices.Find(press.Slice)?.Snapshot();
@@ -55,7 +53,6 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
     [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
     [GroundListed("SET_CHECKOUT_WRITES", "checkoutWrites", "allow")]
-    [NoTwin("SET_CHECKOUT_WRITES", "no verb yet: a repository's switch for changing its registered checkout's files is the setup page's alone until `daoris place` takes it")]
     [Says("SET_CHECKOUT_WRITES", "repository:repository")]
     [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
     private object? SetCheckoutWrites(SetCheckoutWrites press)

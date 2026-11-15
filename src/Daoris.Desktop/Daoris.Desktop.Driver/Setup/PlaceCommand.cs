@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// prints the plan it applies, and the window's card pins that plan between its ask and its Confirm (<c>PipeGrounds</c>), refusing a plan that moved.</para>
 /// </remarks>
 [CommandGroup("place", "list", "drive", "undrive", "hold", "resume", "line", "across", "standing", "language",
-    "review", "opinion", "helpers", "commits", "access", "heavy", "checks", Takes = "<repository>…")]
+    "review", "opinion", "helpers", "commits", "access", "heavy", "checks", "checkout", Takes = "<repository>…")]
 public static class PlaceCommand
 {
     public const string Usage =

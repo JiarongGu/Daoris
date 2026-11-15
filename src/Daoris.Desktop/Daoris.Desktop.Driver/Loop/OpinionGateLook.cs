@@ -244,14 +244,18 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: true, process);
         }
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                  || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
+                  || gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null })
                  // One opinion reads a chain's whole work here: an earlier step's is its last step's to ask.
                  && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
                  // A run bound to a graph version is asked its opinion only once its record has begun
                  // the node, so what its graph places before the opinion comes first. The person's own ask above is theirs, and goes.
                  && GraphGate.Begun(Home, process, NodeKinds.Opinion))
         {
-            act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process);
+            act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process)
+            {
+                Early = gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } before } && before > now,
+                Ended = gate.Opinion?.Id,
+            };
         }
         // A delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
         else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && !Config.Draining
@@ -286,7 +290,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         var occasion = request?.Occasion ?? act.Occasion;
-        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token), ct, SettledNews(act.Due));
+        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token, act.Early ? act.Ended ?? "" : null), ct, SettledNews(act.Due));
         return true;
     }
 
@@ -385,7 +389,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// <param name="process">The run's process: a named workflow's opinion step names which declared reviewers read it.</param>
     private async Task<string> AskPassAsync(
         OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request,
-        WorkflowProcess process, CancellationToken ct)
+        WorkflowProcess process, CancellationToken ct, string? early = null)
     {
         var gates = new OpinionGates(Home);
         var named = $"`{due.Repository}` for session {due.Session}";
@@ -426,6 +430,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed,
                 catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home), role: stepRole, repository: due.Repository);
         var choice = await Walk(null).ConfigureAwait(false);
+        if (early is not null && !choice.Chosen) return $"held  second opinion on {named}: every holder is cooling, and the reset is asked again.";
+        if (early is not null) Service.LandingSaid(OpinionLines.HandedOn(due.Session, occasion, early, ""));
+
         var reading = choice;
 
         var watch = Stopwatch.StartNew();

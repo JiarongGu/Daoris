@@ -48,6 +48,9 @@ public static class OpinionLines
             ("required", gate.Required), ("door", door),
         ]);
 
+    public static LandingLine HandedOn(string working, string occasion, string opinion, string session) =>
+        new("opinion.handed-on", [("session", working), ("occasion", occasion), ("opinion", opinion), ("ended", session)]);
+
     /// <summary>No opinion could be had: the working session, the occasion and the code.</summary>
     public static LandingLine Unavailable(string session, string occasion, string code) =>
         new("opinion.unavailable", [("session", session), ("occasion", occasion), ("code", code)]);

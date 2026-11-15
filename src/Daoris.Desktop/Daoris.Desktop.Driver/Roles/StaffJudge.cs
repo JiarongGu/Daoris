@@ -25,6 +25,12 @@ public sealed record StaffFacts
     /// <summary>Each agent marked not answering, until when.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> NotAnswering { get; init; } = new Dictionary<string, DateTimeOffset>();
 
+    /// <summary>
+    /// Each agent whose accounts a limit or a spend cap holds all of, until when (the earliest account to reopen), by the agent a choice names: the
+    /// cool-offs the account record keeps, never a second store. A weight does not change; the walk passes the choice until then.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateTimeOffset> Capped { get; init; } = new Dictionary<string, DateTimeOffset>();
+
     /// <summary>Each choice this line moved off, when.</summary>
     public IReadOnlyDictionary<StaffKey, DateTimeOffset> MovedOff { get; init; } = new Dictionary<StaffKey, DateTimeOffset>();
 
@@ -98,7 +104,10 @@ public static class StaffPasses
     /// <summary>This line moved off it within <see cref="StaffJudge.Hold"/>, where the role moves on <c>transient</c>.</summary>
     public const string MovedOff = "moved-off";
 
-    public static IReadOnlyList<string> Codes { get; } = [OverBudget, NotAnswering, MovedOff];
+    /// <summary>Every account of its agent is held by a limit or a spend cap, until its reset; a weight stays as written.</summary>
+    public const string Capped = "capped";
+
+    public static IReadOnlyList<string> Codes { get; } = [OverBudget, NotAnswering, MovedOff, Capped];
 }
 
 /// <summary>
@@ -174,6 +183,16 @@ public static class StaffJudge
         }
 
         var remaining = served.Where(each => passed.All(pass => pass.Entry != each)).ToList();
+        // A capped holder is skipped until its account's reset, while another remains; its weight is left as written.
+        foreach (var each in remaining.ToList())
+        {
+            if (remaining.Count > 1 && facts.Capped.TryGetValue(each.Effective.Agent, out var until) && until > facts.Now)
+            {
+                remaining.Remove(each);
+                passed.Add((each, StaffPasses.Capped, $"its account is capped until {until.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC"));
+            }
+        }
+
         // An ask is a move the person's yes releases, so the choice it leaves is passed on that walk as a move's is.
         static bool MovesOn(StaffPolicy policy, string condition) =>
             policy.Moves.TryGetValue(condition, out var move) && (StaffActions.Moves(move.Do) || move.Do == StaffActions.Ask);
@@ -201,7 +220,7 @@ public static class StaffJudge
             }
         }
 
-        var ranked = spread.Rank(served, withShare: true);
+        var ranked = spread.Rank(served, withShare: true).ToList();
         var walk = new List<StaffArranged>();
         foreach (var each in ranked.Where(remaining.Contains))
         {
@@ -216,6 +235,14 @@ public static class StaffJudge
             [.. left.Select(each => each.Effective)]);
 
         (string By, string Said) Reason(Entry each)
+        {
+            var (by, said) = Why(each);
+            var skipped = passed.Where(pass => pass.Code == StaffPasses.Capped && ranked.IndexOf(pass.Entry) < ranked.IndexOf(each))
+                .OrderBy(pass => pass.Entry.Index).Select(pass => $"choice {pass.Entry.Effective.From} skipped: {pass.Why}");
+            return (by, string.Join("; ", skipped.Append(said)));
+        }
+
+        (string By, string Said) Why(Entry each)
         {
             if (served.Count == 1 && left.Count > 0) return (StaffBy.Work, $"the only choice taking {work}");
             var ahead = ranked.TakeWhile(other => other != each).ToList();
