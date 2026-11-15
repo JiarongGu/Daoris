@@ -186,7 +186,6 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     gates: ['modules'],
     why: "the modules' LandingSaysTwinTests read the landing sentences' table, the terminal's words and the card's",
   },
-  // A unit-test project's source is read by the layers census (the wall clock, process starts and git per file), so every one names `layers`.
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses', 'driver-rehearsals', 'layers'], why: "the driver's tests, the fast half and the Process halves, the censuses among them, the rehearsals, which compile its git fixtures in, and the layers census, which counts its clock reads" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses', 'layers'], why: "the modules' tests, both halves, and the censuses among them, the layers census among them" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.

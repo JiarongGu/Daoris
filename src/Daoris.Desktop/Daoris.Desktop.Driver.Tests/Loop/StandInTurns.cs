@@ -25,7 +25,6 @@ internal static class StandInTurns
         var cause = said.Any(word => word!["from"] is null && word["helper"] is null) ? "person"
             : said.All(word => word!["from"]?.GetValue<string>() == "daoris" && !Step(word["key"]?.GetValue<string>())) ? "daoris"
             : "step";
-        // The wake's turn starts when the words that woke it were said: the latest of them, or the record's making, never the machine's clock.
         var at = said.Select(word => word!["at"]?.GetValue<string>()).Append(session["created"]!.GetValue<string>()).OfType<string>().OrderBy(DateTimeOffset.Parse).Last();
         turns.Add(Turn(turns.Count + 1, cause, at, id));
         session["turns"] = turns;
