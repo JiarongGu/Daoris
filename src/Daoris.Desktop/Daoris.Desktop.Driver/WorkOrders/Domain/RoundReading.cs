@@ -148,15 +148,13 @@ internal sealed class RoundReading(Snapshot snapshot, DriverConfig config, IRole
     /// The record the person's words wait on for this quest, parked or ended, and not all words a reopen already found it could not
     /// take: its last session here, or null. A taken quest waiting on a question waits with them: the resume is its next start, which
     /// is handed them. Once that resume began (<see cref="ResumedOnAnswer"/>), the quest waits on nothing, and words to its session go
-    /// on in it as any record's do. A closed quest waits on nothing, whatever question the service still keeps for it; a declined one has ended its line, so no words go on in it. The session a
+    /// on in it as any record's do. A closed quest waits on nothing, whatever question the service still keeps for it; a declined one ended its line. The session a
     /// taken quest's reopen names, where a later one is its last here, goes first with the words it is told; not while the person's
     /// stop of the last session holds the quest: the reopen's words are Daoris's, and release no stop the person made.
     /// </summary>
     internal PriorSession? WordsOn(QuestView quest)
     {
         if (quest.Awaits is { Length: > 0 } && !ResumedOnAnswer(quest)) return null;
-        // A declined quest (an abandon declines it) has ended its line: words kept on its last session, a limited record's among
-        // them, go on in nothing, so no hold keeps the line pending and its sessions archive at the next look.
         if (quest.Status == "Declined") return null;
         if (snapshot.NamedByReopen.TryGetValue(quest.Id, out var named) && Waits(named) && StopHolding(quest) is null) return named;
         return snapshot.LastRun.TryGetValue(quest.Id, out var written) && Waits(written) ? written : null;

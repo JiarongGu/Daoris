@@ -48,10 +48,7 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal("going on in `Game` — you wrote to session `s1`: Also log the port.", only.Reason);
     }
 
-    /// <summary>
-    /// 🔴 LINEEND1: a declined quest (an abandon declines it) ends its line. Words kept on its last session, a limited
-    /// record's among them, plan no go-on, so no hold keeps the line pending and its sessions archive at the next look.
-    /// </summary>
+    /// <summary>🔴 A declined quest ends its line: words kept on its limited record plan no go-on.</summary>
     [Fact]
     public void A_declined_quests_line_ends_so_words_kept_on_its_limited_record_plan_nothing()
     {

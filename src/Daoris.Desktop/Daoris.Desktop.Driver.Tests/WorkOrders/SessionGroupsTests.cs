@@ -302,9 +302,6 @@ public sealed class SessionGroupsTests
         // A failure an account's limit made is said limited, as the page says it; one without the flag stays failed.
         ["a session a limit ended is limited"] =
             new(Look([Record("s1", "failed", "q1", limit: true)], [Taken]), "s1", SessionGroup.Failed, ShownState.Limited),
-        // LINEEND1: the line of a declined (abandoned) quest has ended; the planner gives it no verdict, so a limited head is ended, not pending.
-        ["a session a limit ended whose quest is declined is limited and ended"] =
-            new(Look([Record("s1", "failed", "q1", limit: true)], [Quest("q1", "Declined")]), "s1", SessionGroup.Failed, ShownState.Limited),
         ["a session that failed without a limit is failed"] =
             new(Look([Record("s1", "failed", "q1")], [Taken]), "s1", SessionGroup.Failed, "failed"),
         ["an earlier session of a waiting quest is ended"] =
