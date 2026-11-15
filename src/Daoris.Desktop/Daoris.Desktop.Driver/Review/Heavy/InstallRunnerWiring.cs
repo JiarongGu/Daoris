@@ -18,6 +18,10 @@ internal sealed class HeavyInstallRunner : IInstallRunner
     public IRunningInstall Start(ProcessJob? job, string command, string directory, IReadOnlyDictionary<string, string> environment, string log) =>
         new Running(HeavyStep.Start(job, command, directory, new Dictionary<string, string>(), new StepOptions(environment, log)));
 
+    public IReadOnlyDictionary<string, string> GateEnvironment() =>
+        Daoris.Driver.GateEnvironment.Compose(System.Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
+            .Select(each => KeyValuePair.Create((string)each.Key, (string?)each.Value ?? ""))).ToDictionary(each => each.Key, each => each.Value);
+
     private sealed class Running(HeavyStep step) : IRunningInstall
     {
         public Task<int> ExitAsync(CancellationToken ct) => step.ExitAsync(ct);

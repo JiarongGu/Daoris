@@ -17,6 +17,8 @@ internal interface IInstallRunner
     /// </summary>
     /// <exception cref="DriverException">It would not start, or could not be held in the job, so it did not run.</exception>
     IRunningInstall Start(ProcessJob? job, string command, string directory, IReadOnlyDictionary<string, string> environment, string log);
+
+    IReadOnlyDictionary<string, string> GateEnvironment();
 }
 
 /// <summary>An install's command as it runs.</summary>

@@ -12,6 +12,8 @@
     }
   },
 
+  "treeBaseline": "node tools/quick.mjs --record-base",
+
   "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "gates": [
@@ -25,7 +27,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
         "tools/ci-background.mjs", "tools/desktop-publish.mjs", "tools/doc-duplicates.mjs", "tools/fsx.mjs",
         "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
-        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
+        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/tree-prep.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
         "tools/stand-ins.mjs", "tools/team-briefs.mjs", "tools/team-briefs.test.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",

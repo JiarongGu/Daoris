@@ -11,20 +11,25 @@
  *   `local/` or a `node_modules` that is a link is refused.
  * - **Dependencies.** Each folder of `DEPENDENCY_FOLDERS` whose `node_modules` is missing, or not from its lockfile as it stands,
  *   is installed with `npm ci`; one current by its stamp, or by npm's own record of the versions, is left alone.
- * - **The build primed.** The orientation index (written in each checkout), the contracts' generated types, and the restore of
- *   the desktop's and the service's test projects, so a builder's first build and test run starts from a warm tree. `--build`
- *   also builds the driver's and the modules' test projects.
+ * - **The build primed.** The orientation index (written in each checkout), the gates' declared `regenerate` commands, and the
+ *   restore of the desktop's and the service's test projects, so a builder's first build and test run starts from a warm tree.
+ *   `--build` also builds the driver's and the modules' test projects.
+ * - **The base recorded.** The declared `treeBaseline` runs last, as a session's tree runs it (`tools/tree-prep.mjs`); a red base is no failure.
  *
  * `--plan` says what would run and runs nothing. Exit codes: 0 done · 1 a step failed or a refusal · 2 a tool error.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 import { dependencyState, DEPENDENCY_FOLDERS, stampDependencies } from './merge-branch/dependencies.mjs';
 
 export { dependencyState };
 import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
+import { declaredPrep } from './tree-prep.mjs';
+
+const TOOL_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /** The test projects the restore and `--build` take. */
 const TEST_PROJECTS = [
@@ -49,7 +54,7 @@ export function copyLocal(home, tree) {
 }
 
 /** The commands the setup runs, from each dependency folder's state: its installs, then the priming. A link is refused. */
-export function setupCommands(states, { build = false } = {}) {
+export function setupCommands(states, { build = false, prep = declaredPrep(TOOL_ROOT) } = {}) {
   const commands = [];
   for (const folder of DEPENDENCY_FOLDERS) {
     const state = states[folder];
@@ -59,10 +64,11 @@ export function setupCommands(states, { build = false } = {}) {
   commands.push(
     { label: 'drivers', command: 'node tools/merge-rows.mjs --install && node tools/merge-backlog.mjs --install && node tools/index-hook.mjs --install', cwd: '.' },
     { label: 'index', command: 'node tools/orient-index.mjs', cwd: '.' },
-    { label: 'contracts', command: 'node tools/contracts.mjs --if-stale', cwd: '.' },
+    ...prep.regenerate.map((command) => ({ label: 'regenerate', command, cwd: '.' })),
     { label: 'restore', command: TEST_PROJECTS.map((project) => `dotnet restore ${project}`).join(' && '), cwd: '.' },
   );
   if (build) commands.push(...TEST_PROJECTS.slice(0, 2).map((project) => ({ label: 'build', command: `dotnet build ${project} -nodeReuse:false`, cwd: '.' })));
+  if (prep.baseline) commands.push({ label: 'baseline', command: prep.baseline, cwd: '.', okCodes: [0, 1] });
   return commands;
 }
 
@@ -93,7 +99,7 @@ async function main(argv) {
   for (const each of commands) {
     console.log(`${each.label}: ${each.command}`);
     const ran = spawnSync(each.command, { cwd: join(tree, each.cwd), shell: true, stdio: 'inherit', windowsHide: true });
-    if (ran.error || ran.status !== 0) {
+    if (ran.error || !(each.okCodes ?? [0]).includes(ran.status)) {
       console.error(`worktree-setup: ${each.label} failed (${ran.error?.message ?? `exit ${ran.status}`})`);
       return 1;
     }

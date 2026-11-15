@@ -10,9 +10,13 @@ const setup = await import(
   localFiles: (home: string) => string[];
   copyLocal: (home: string, tree: string) => string[];
   dependencyState: (tree: string, folder: string) => 'current' | 'missing' | 'stale' | 'linked';
-  setupCommands: (states: Record<string, string>) => { label: string; command: string; cwd: string }[];
+  setupCommands: (
+    states: Record<string, string>, options?: { build?: boolean; prep?: { regenerate: string[]; baseline: string | null } },
+  ) => { label: string; command: string; cwd: string }[];
   refuseHome: (home: string, tree: string) => void;
 };
+
+import { declaredPrep } from '../../../tools/tree-prep.mjs';
 
 const lock = (versions: Record<string, string>) => JSON.stringify({
   lockfileVersion: 3, packages: { '': {}, ...Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) },
@@ -69,16 +73,31 @@ test('a folder\'s dependencies are current by the stamp its install left or by n
   fx.cleanup();
 });
 
-test('the setup installs what is missing or stale from the lockfile, refuses a link, and always sets the merge drivers and primes the index, the generated contracts and the restore', () => {
+test('the setup installs what is missing or stale from the lockfile, refuses a link, and always sets the merge drivers and primes the index, the declared regenerate steps, the restore and the base', () => {
   const commands = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'stale' });
   assert.deepEqual(commands.map((each) => each.label), [
-    'install src/Daoris.Web', 'drivers', 'index', 'contracts', 'restore',
+    'install src/Daoris.Web', 'drivers', 'index', 'regenerate', 'restore', 'baseline',
   ]);
+  assert.equal(commands.find((each) => each.label === 'regenerate')!.command, 'node tools/contracts.mjs --if-stale', 'the gates file declares it, as the driver reads it');
+  assert.equal(commands.find((each) => each.label === 'baseline')!.command, 'node tools/quick.mjs --record-base');
   assert.equal(commands[0]!.command, 'npm ci --no-audit --no-fund');
   assert.equal(commands[0]!.cwd, 'src/Daoris.Web');
   assert.match(commands.find((each) => each.label === 'restore')!.command, /^dotnet restore src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\b/);
   assert.throws(() => setup.setupCommands({ '.': 'linked' }), /node_modules is a link/);
-  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }).map((each) => each.label), ['drivers', 'index', 'contracts', 'restore']);
+  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }).map((each) => each.label), ['drivers', 'index', 'regenerate', 'restore', 'baseline']);
+  const bare = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, { prep: { regenerate: ['a', 'b'], baseline: null } });
+  assert.deepEqual(bare.map((each) => each.label), ['drivers', 'index', 'regenerate', 'regenerate', 'restore'], 'nothing declared, no base run');
+});
+
+test('the declared preparation is each gate\'s regenerate once and the top-level baseline, nothing where the file does not read', () => {
+  const fx = makeFixture('tree-prep-declared');
+  writeFileSync(join(fx.root, 'daoris.gates.json'), JSON.stringify({
+    gates: [{ name: 'a', run: 'x', regenerate: 'one' }, { name: 'b', run: 'y', regenerate: 'one' }, { name: 'c', run: 'z', regenerate: 'two' }, { name: 'd', run: 'w' }],
+    treeBaseline: 'base',
+  }));
+  assert.deepEqual(declaredPrep(fx.root), { regenerate: ['one', 'two'], baseline: 'base' });
+  assert.deepEqual(declaredPrep(join(fx.root, 'absent')), { regenerate: [], baseline: null });
+  fx.cleanup();
 });
 
 test('the main checkout is never set up: the setup is a builder\'s worktree\'s', () => {

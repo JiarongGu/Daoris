@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/platform/fsx.ts';
+import { checkSteps, quickSteps } from '../../../tools/quick/steps.mjs';
 
 const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 
@@ -15,12 +16,12 @@ test("the builder's quick checks hold every check the merge's cli gate runs", ()
   const scripts = (JSON.parse(readText(join(repoRoot, 'package.json'))) as { scripts: Record<string, string> }).scripts;
   const cli = gates.gates.find((gate) => gate.name === 'cli');
   assert.ok(cli, 'the cli gate is no longer declared — that is not a pass');
+  assert.equal(cli.run, 'npm run verify:checks', 'the quick steps read the script the cli gate runs');
+  assert.equal(scripts.quick, 'node tools/quick.mjs', 'quick is the one runner that runs every step, never a chain that stops at a red');
 
-  const steps = (command: string) => command.split('&&').map((step) => step.trim()).filter((step) => step.length > 0);
-  const quick = steps(scripts.quick ?? '');
-  const checks = cli.run.replace(/^npm run /, '');
-  const wanted = steps(scripts[checks] ?? '');
+  const wanted = checkSteps(repoRoot);
   assert.ok(wanted.length > 10, `the cli gate's checks emptied: ${cli.run}`);
-  const missing = wanted.filter((step) => !quick.includes(step) && !quick.includes(`npm run ${checks}`));
+  const quick = quickSteps(repoRoot);
+  const missing = wanted.filter((step) => !quick.includes(step));
   assert.deepEqual(missing, [], `npm run quick leaves out what the merge's cli gate runs: ${missing.join(' | ')}`);
 });
