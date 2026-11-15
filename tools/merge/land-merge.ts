@@ -4,6 +4,7 @@
  * ends the same: the commit, the heavy tier started on the new tip, and the prune of what is merged.
  */
 import { startHeavy, type StartSeams } from './heavy-after.ts';
+import { measureLanding, type LandedCommit } from './landing-measure.ts';
 
 /** A gate's recorded result, as the batch record keeps it. */
 export type Result = { verdict: string };
@@ -39,6 +40,7 @@ export type LandSeams = StartSeams & {
   commit: (message: string) => { tip: string; base: string };
   /** The prune of what is merged, with the batch's remaining branches held. */
   prune: () => void;
+  measure: (landed: LandedCommit[]) => void;
   log: string;
   say: (line: string) => void;
 };
@@ -54,6 +56,7 @@ export function landMerge(
   // A scratch repository holds no runner (`hasRunner`), and starts no run.
   const started = input.heavy ? startHeavy({ commit: tip, base, branches: [input.branch], log: seams.log }, seams) : null;
   for (const line of started?.lines ?? []) seams.say(line);
+  measureLanding([{ commit: tip, branch: input.branch }], (each) => seams.measure([each]));
   if (input.prune) seams.prune();
   else seams.say('prune: skipped (--no-prune)');
   return { tip, heavy: started?.run.id ?? null };

@@ -381,6 +381,7 @@ import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { appendHeavy, hasRunner, heavyStanding, readHeavy, startAfterLanding, startDetached } from './merge/heavy-after.ts';
+import { measureAfterLanding } from './merge/landing-measure.ts';
 import { landMerge, notReadyLines, readiness } from './merge/land-merge.ts';
 import { madeCommit } from './merge/ended-agent.ts';
 import { disposableLocal, folderVerdict, harnessLock, listed, newestWrite, processSaid, pruneVerdict } from './merge/prune-verdict.ts';
@@ -2895,8 +2896,7 @@ function judgedResults(root, state, plan, branch) {
 }
 
 /**
- * `--commit`: the open merge committed by the tool once every gate chosen for it passed and none is stale, then the heavy
- * tier started on the new tip and the prune run, so no landing waits on a hand-made commit. Gates owed are named.
+ * `--commit`: commits the open merge once its gates passed, none stale; then the heavy tier, the measure, the prune.
  */
 function commitVerb(root, options) {
   const state = readState(root);
@@ -2931,6 +2931,7 @@ function commitVerb(root, options) {
     prune: () => pruneAround(root, state.branches.slice(state.at + 1)),
     start: (args, file) => startDetached(home, args, file),
     append: (record) => appendHeavy(home, record),
+    measure: measureAfterLanding.bind(null, home),
     now: nowIso,
     log: `local/scratch/heavy-${branch.replace(/[^\w.-]+/g, '-')}.log`,
     say: console.log,
