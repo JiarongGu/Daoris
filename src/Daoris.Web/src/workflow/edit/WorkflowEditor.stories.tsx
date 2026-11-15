@@ -15,7 +15,8 @@ import { WorkflowEditor } from './WorkflowEditor';
 
 const nothing = () => {};
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+// No padding of the story's own: the page has none inside its gutters, and 16 px of it took the half width under the chart's need.
+const dark: Decorator = (Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>;
 
 const meta: Meta<typeof WorkflowEditor> = {
   title: 'Workflow/WorkflowEditor',

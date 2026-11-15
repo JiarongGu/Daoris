@@ -91,22 +91,22 @@ const TABLE: Record<string, Record<number, number>> = {
   'quest/WentChinese': { 400: 0, 544: 0, 1200: 0 },
   // Its refused edge ranks Done after Declined, so each rank holds one node and the side bar's floor draws it top to bottom.
   'quest/Refused': { 300: 0, 400: 0, 544: 0, 1200: 0 },
-  // A session's states: five ranks of one node each, the outcomes last, its three skipping edges threading the
-  // ranks between and the working ⇄ awaiting-person return and going on each on a lane of their own.
-  // Top to bottom it crosses nothing; left to right, its three skipping edges cross each other and the returns' runs.
-  'session/Working': { 400: 0, 544: 0, 1200: 7 },
-  'session/WorkingChinese': { 400: 0, 544: 0, 1200: 7 },
-  'session/WaitingOnYou': { 400: 0, 544: 0, 1200: 7 },
-  'session/Completed': { 400: 0, 544: 0, 1200: 7 },
-  'session/StoodDown': { 400: 0, 544: 0, 1200: 7 },
-  // A session's parts: the strip is the rail at the side bar's floor. A retry and an asked part, and with the landing
-  // plan's dashed node, draw top to bottom from 400 px; a fork's six parts need a rank of three, so its 400 px frame is the rail.
+  // A session's states: six ranks of one node each, the outcomes last, its skipping edges threading the ranks between and the
+  // returns (to working from waiting on you and from awaiting a step, and going on) each on a lane of their own.
+  // Top to bottom it crosses once: awaiting a step reaches both waiting on you and the outcomes, and working reaches waiting on
+  // you past it, so one of the two ways meets the other whichever side it takes (the returns' lanes keep the left of every node);
+  // left to right, its skipping edges cross each other and the returns' runs.
+  'session/Working': { 400: 1, 544: 1, 1200: 13 },
+  'session/WorkingChinese': { 400: 1, 544: 1, 1200: 13 },
+  'session/WaitingOnYou': { 400: 1, 544: 1, 1200: 13 },
+  'session/Completed': { 400: 1, 544: 1, 1200: 13 },
+  'session/StoodDown': { 400: 1, 544: 1, 1200: 13 },
+  // A session's parts: the strip is the rail at the side bar's floor. A retry and an asked part
+  // draw top to bottom from 400 px; a fork's six parts need a rank of three, so its 400 px frame is the rail.
   'parts/Retry': { 400: 0, 544: 0, 1200: 0 },
   'parts/RetryChinese': { 400: 0, 544: 0, 1200: 0 },
   'parts/Fork': { 544: 0, 1200: 0 },
   'parts/ForkChinese': { 544: 0, 1200: 0 },
-  'parts/WithTheLandingPlan': { 400: 0, 544: 0, 1200: 0 },
-  'parts/WithTheLandingPlanChinese': { 400: 0, 544: 0, 1200: 0 },
   // How a landed branch landed: its tries and its advances stacked, the push, the pull request and the first advance
   // hung side by side from the landing, a rank of three, so it is the rail below 544 px; top to bottom from there, being too long
   // for left to right. A landing from before the advances is two nodes, left to right from 400 px; a merge's is one node a rank.
