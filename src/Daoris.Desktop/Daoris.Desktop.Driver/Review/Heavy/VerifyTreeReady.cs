@@ -1,0 +1,80 @@
+using System.Security.Cryptography;
+using System.Text;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// What makes a verification tree ready, as a session's tree is made ready (the files stage and <see cref="TreePreparation"/>): its
+/// dependencies installed or placed by the lockfiles that key them, then the gates' declared <c>regenerate</c> commands. A seam so a
+/// test asks it without a build: <see cref="Real"/> is the stage itself.
+/// </summary>
+internal interface IVerifyPreparation
+{
+    /// <summary>The words that say which inputs the tree stands on (each dependency's key and the declared commands), or null where git cannot say.</summary>
+    Task<string?> StampAsync(string home, string checkout, string tree, string repository, CancellationToken ct);
+
+    /// <summary>Prepares <paramref name="tree"/> from <paramref name="checkout"/>'s declaration: the sentence of what did not finish, or null.</summary>
+    Task<string?> RunAsync(string home, string checkout, string tree, string repository, CancellationToken ct);
+}
+
+internal sealed class VerifyPreparation : IVerifyPreparation
+{
+    internal static readonly VerifyPreparation Real = new();
+
+    public async Task<string?> StampAsync(string home, string checkout, string tree, string repository, CancellationToken ct)
+    {
+        var head = await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false);
+        if (head is null) return null;
+        var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
+        var keys = new List<string>();
+        foreach (var dependency in deps.Each) keys.Add(await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, keys, ct).ConfigureAwait(false));
+        var declared = TreePrepDeclared.Read(checkout);
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', [.. keys, .. declared.Regenerate]))));
+    }
+
+    public async Task<string?> RunAsync(string home, string checkout, string tree, string repository, CancellationToken ct)
+    {
+        TreeFilesRecord.Mark(home, tree);
+        var said = new List<Noted>();
+        var outcome = await TreeFilesStep.RunAsync(home, checkout, tree, repository, said.Add, ct, baseline: false).ConfigureAwait(false);
+        TreeFilesStep.Hand(home, tree);
+        var failed = outcome.Said.Where(line => outcome.Stopped || line.Parts.Any(part => part.Code is { } code
+            && (code == StartNoteCodes.StartedFilesFailed.Code || code == StartNoteCodes.StartedPrepFailed.Code || code == StartNoteCodes.StartedDepsUnplaced.Code))).ToList();
+        return failed.Count == 0 && !outcome.Stopped ? null : string.Join(' ', failed.Select(line => line.Note));
+    }
+}
+
+/// <summary>
+/// A check's verification tree prepared before its gates run: the preparation asked once for the tree, then again only where the
+/// inputs it stands on moved (the stamp is the dependency keys the stage itself reads, and the declared commands).
+/// </summary>
+internal static class VerifyTreeReady
+{
+    /// <summary>The sentence a failed preparation ends its attempt with; null where the tree stands ready.</summary>
+    internal static async Task<string?> EnsureAsync(string home, VerifySend send, string tree, IVerifyPreparation preparation, CancellationToken ct)
+    {
+        var stamp = await preparation.StampAsync(home, send.Checkout, tree, send.Repository, ct).ConfigureAwait(false);
+        var file = Path.Combine(VerifyFiles.LinesFolder(home), "prepared", Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(tree)))[..16] + ".stamp");
+        if (stamp is not null && ReadStamp(file) == stamp) return null;
+        if (await preparation.RunAsync(home, send.Checkout, tree, send.Repository, ct).ConfigureAwait(false) is { } failed) return failed.Length == 0 ? "it did not finish" : failed;
+        if (stamp is not null)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            AtomicFile.WriteText(file, stamp);
+        }
+
+        return null;
+    }
+
+    private static string? ReadStamp(string file)
+    {
+        try
+        {
+            return File.Exists(file) ? AtomicFile.ReadText(file) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+}

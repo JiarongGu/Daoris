@@ -23,6 +23,8 @@ public sealed record VerifyWorld
     /// <summary>This machine's heavy gates for a repository that declares none (HEAVYRUN1b2a), by its name.</summary>
     public Func<string, IReadOnlyList<HeavyGate>?> Mapping { get; init; } = _ => null;
 
+    internal IVerifyPreparation Preparation { get; init; } = VerifyPreparation.Real;
+
     /// <summary>Where the executor says what it waits for and runs.</summary>
     public TextWriter Said { get; init; } = TextWriter.Null;
 
