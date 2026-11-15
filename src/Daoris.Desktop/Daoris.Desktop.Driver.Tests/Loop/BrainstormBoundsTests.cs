@@ -96,6 +96,17 @@ public sealed class BrainstormBoundsTests : IDisposable
         return new BrainstormTurnRun(true, "work", null, $"completed  brainstorm turn {turn.Turn}");
     }
 
+    /// <summary>The driver's poll interval at this test's minute: a clock moved by it fires each wait the driver paces itself by.</summary>
+    private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(20);
+
+    /// <summary>Spends the moved clock a tick at a time, paced by the poll, until the look has ended: the waits the code reads on the clock are spent, not slept.</summary>
+    private static Task SpendAsync(MovedClock clock, Task look) =>
+        Poll.Until(() =>
+        {
+            clock.Advance(Tick);
+            return look.IsCompleted;
+        }, () => "the look never ended");
+
     private static string Give(params string[] ideas) =>
         new JsonObject
         {
@@ -334,18 +345,21 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_full_cap_waits_and_the_next_pass_runs_when_a_slot_is_free()
     {
-        var (driver, script) = Start(cap: 1, rule: Rule(request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(cap: 1, rule: Rule(request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Behaviours["g1"] = async (turn, ct) =>
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(150), ct);
+            await Task.Delay(TimeSpan.FromMilliseconds(150), clock, ct);
             return script.Answer(turn);
         };
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Answers["g2"] = Give("Cache the report");
         script.Answers["s1"] = Synthesize("P1", "P2");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(1, script.Most);
         Assert.Equal("answered", Of(Pass(id, "g2")).State);
@@ -398,15 +412,18 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_pass_that_cooled_then_found_no_slot_is_said_as_the_cap()
     {
-        var (driver, script) = Start(cap: 1, rule: Rule(pass: 10, synthesis: 2, challenge: 2, request: 6));
+        var clock = new MovedClock();
+        var (driver, script) = Start(cap: 1, rule: Rule(pass: 10, synthesis: 2, challenge: 2, request: 6), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         var asked = 0;
         script.Behaviours["g1"] = (_, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
-            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(100))
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", clock.GetUtcNow() + TimeSpan.FromMilliseconds(100))
             : throw new InvalidOperationException("g1 must not start again"));
         script.Behaviours["g2"] = Hang;
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(("unavailable", "cooling,cap-full"), (Of(Pass(id, "g1")).State, Of(Pass(id, "g1")).Codes));
         var text = Files.DocumentText(id)!;
@@ -422,17 +439,20 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_maker_whose_accounts_cool_is_waited_for_when_the_first_lifts_within_the_deadline()
     {
-        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         var asked = 0;
         script.Behaviours["g2"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
-            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(150))
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its account cools", clock.GetUtcNow() + TimeSpan.FromMilliseconds(150))
             : script.Answer(turn));
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Answers["g2"] = Give("Cache the report");
         script.Answers["s1"] = Synthesize("P1", "P2");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(2, asked);
         Assert.Equal(("answered", 1), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Turns));
@@ -449,10 +469,11 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_maker_cooling_past_the_deadline_is_said_before_a_synthesis_and_the_wait_is_offered()
     {
-        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Behaviours["g2"] = (_, _) => Task.FromResult(
-            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its one account cools for an hour", DateTimeOffset.UtcNow + TimeSpan.FromHours(1)));
+            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "its one account cools for an hour", clock.GetUtcNow() + TimeSpan.FromHours(1)));
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Answers["s1"] = Synthesize("P1");
 
@@ -496,10 +517,11 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task Where_nobody_answered_and_a_maker_cooled_the_wait_is_still_offered()
     {
-        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Behaviours["g1"] = (_, _) => Task.FromResult(
-            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", DateTimeOffset.UtcNow + TimeSpan.FromHours(1)));
+            new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "its account cools", clock.GetUtcNow() + TimeSpan.FromHours(1)));
         script.Behaviours["g2"] = script.Behaviours["g1"];
 
         await LookAsync(driver);
@@ -513,17 +535,20 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_cooling_pass_lets_its_slot_go_while_it_waits()
     {
-        var (driver, script) = Start(cap: 1, rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(cap: 1, rule: Rule(pass: 100, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         var asked = 0;
         script.Behaviours["g1"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
-            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(300))
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g1: cooling", "cools", clock.GetUtcNow() + TimeSpan.FromMilliseconds(300))
             : script.Answer(turn));
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Answers["g2"] = Give("Cache the report");
         script.Answers["s1"] = Synthesize("P1", "P2");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(["g1", "g2", "g1"], script.Started.Where(turn => turn is "g1" or "g2").ToList());
         Assert.Equal(1, script.Most);
@@ -534,17 +559,20 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_pass_s_own_minutes_start_again_when_the_cool_off_lifts()
     {
-        var (driver, script) = Start(rule: Rule(pass: 5, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 5, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         var asked = 0;
         script.Behaviours["g2"] = (turn, _) => Task.FromResult(Interlocked.Increment(ref asked) == 1
-            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(800))
+            ? new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", clock.GetUtcNow() + TimeSpan.FromMilliseconds(800))
             : script.Answer(turn));
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Answers["g2"] = Give("Cache the report");
         script.Answers["s1"] = Synthesize("P1", "P2");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(("answered", 1), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Turns));
         Assert.True(Document(id)["ranked"]!.GetValue<bool>());
@@ -554,16 +582,19 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task The_person_s_stop_during_a_cooling_wait_ends_the_pass_stopped()
     {
-        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Behaviours["g2"] = (_, _) =>
         {
-            _ = Task.Delay(150).ContinueWith(_ => Files.WriteStop(id, At), TaskScheduler.Default);
-            return Task.FromResult(new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10)));
+            _ = Task.Delay(TimeSpan.FromMilliseconds(150), clock).ContinueWith(_ => Files.WriteStop(id, At), TaskScheduler.Default);
+            return Task.FromResult(new BrainstormTurnRun(false, null, "cooling", "held  brainstorm turn g2: cooling", "cools", clock.GetUtcNow() + TimeSpan.FromSeconds(10)));
         };
         script.Answers["g1"] = Give("Make the window inclusive");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal("stopped", Of(Pass(id, "g2")).State);
         Assert.DoesNotContain("s1", script.Started);
@@ -580,17 +611,20 @@ public sealed class BrainstormBoundsTests : IDisposable
     {
         // The stop is pressed after 100 ms, so the pass's own deadline is held far past it; at the default ten minutes of
         // 100 ms a loaded machine can let the deadline end the pass first, `failed`/`deadline` in place of the person's stop.
-        var (driver, script) = Start(rule: Rule(pass: 100, request: 300));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 100, request: 300), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Behaviours["g2"] = async (turn, ct) =>
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(100), ct);
+            await Task.Delay(TimeSpan.FromMilliseconds(100), clock, ct);
             Files.WriteStop(id, At);
             return await Hang(turn, ct);
         };
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await SpendAsync(clock, look);
+        await look;
 
         Assert.Equal(("stopped", "stopped"), (Of(Pass(id, "g2")).State, Of(Pass(id, "g2")).Codes));
         Assert.DoesNotContain("s1", script.Started);
