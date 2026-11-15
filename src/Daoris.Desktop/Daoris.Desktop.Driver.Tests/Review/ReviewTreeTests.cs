@@ -350,6 +350,96 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
+    /// A reviewer whose account's limit or spend cap ends its pass after it opened (the refusal answers its prompt) is not waited out to the
+    /// reset: the account is cooling, so the pass's own call asks the walk for the next holder at once, in the same copy, and says the hand-on
+    /// once; the capped record stays as the failed pass it was, and the replacement's is the pass the gate reads.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_its_account_s_cap_ends_is_asked_of_the_next_holder_at_once_and_said_once()
+    {
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "alt-stub", account));
+        new HarnessSettings().WithDefault("alt-stub", "account-1").WithRotation("alt-stub", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        await using var service = OpinionStandIn.Start();
+        var config = ActorChoices.With(
+            DriverConfig.Empty with
+            {
+                Actors = StaffedRoles.On("claude-code"),
+                TestBound = 4,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { ["alt-acp-stub"] = ["node", CappedReviewer(), "account-1"] },
+            },
+            "opinion", [new ActorChoice("alt-acp-stub", "opus")]);
+        var adapters = ProviderRegistry.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var client = new ServiceClient(service.Url, null);
+        var said = new List<string>();
+        client.LandingLined += line => said.Add(line.Event);
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, harnesses: roster);
+        var rule = new OpinionRule(["alt-acp-stub"], [OpinionRules.Landing], Minutes: 30);
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            ReviewerChoice.ChooseAsync(roster, rule, ["claude-code"], config, "work", passed: passed);
+        var choice = await Walk(null);
+        Assert.Equal("account-1", choice.Selection!.Profile);
+        var told = new List<string?>();
+
+        var run = await driver.PassAsync(
+            new OpinionPassAsk(OpinionRules.Landing, "w1", "reports", _repository.Root, _base, "daoris/s-1a2b3c4d", rule)
+            {
+                Workspace = "work",
+                Reask = Walk,
+                Replaced = next => told.Add(next.Selection!.Profile),
+            },
+            choice);
+
+        Assert.Equal(("op2", "r2", "completed"), (run.Opinion, run.Session, run.State));
+        Assert.False(run.Limited);
+        Assert.Equal(["account-2"], told);
+        Assert.Equal(["failed"], service.States("r1").Skip(2));
+        Assert.Equal(["starting", "working", "completed"], service.States("r2"));
+        Assert.Single(said, code => code == "opinion.handed-on");
+        Assert.NotNull(AccountCooling.Of(_home, "alt-stub", "account-1", DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>The refusing reviewer's twin whose first account's prompt is refused with the stand-in's spent-quota sentence.</summary>
+    private string CappedReviewer()
+    {
+        var script = Path.Combine(_home, "capped-reviewer.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            import { basename } from 'node:path';
+            const capped = process.argv[2] ?? '';
+            const home = process.env.ALT_STUB_CONFIG_HOME ?? '';
+            const account = home ? basename(home) : '(own)';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let model = 'default';
+            const options = () => [{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
+              options: [{ value: 'default', name: 'Default' }, { value: 'opus', name: 'Opus' }, { value: 'sonnet', name: 'Sonnet' }] }];
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1', configOptions: options() } });
+              } else if (frame.method === 'session/set_config_option') {
+                model = frame.params.value;
+                send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
+              } else if (frame.method === 'session/prompt') {
+                if (account === capped) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
+                    data: { details: 'alt-stub: quota spent (session) · refills 7am (UTC)' } } });
+                } else {
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// A stop made while the reviewer's protocol handshake is still open is the person's end, not a failed wire. An agent
     /// that never answers makes that moment certain.
     /// </summary>

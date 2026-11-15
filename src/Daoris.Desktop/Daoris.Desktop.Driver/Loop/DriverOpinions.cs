@@ -75,13 +75,22 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             // Its agent refused the entry's model at the open, so the record has ended `choice-not-offered` and this call
             // asks its walk again, the refused (entry, account) passed, before it publishes an ordinary outcome: the replacement's record
             // opens in the same copy, which nothing read; with none left, the walk's own "no reviewer could run", its pass reasons said.
-            while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
+            // A pass its account's limit or spend cap ended is asked of the next holder at once, said once on the run, and not
+            // waited out to the reset: the account is cooling, so the walk passes it. With no holder left, the limited pass stands
+            // as the outcome and the gate waits for the reset.
+            while (run is { NotOffered: true } or { Limited: true } && reask is not null && !ct.IsCancellationRequested)
             {
+                var limitedPass = run is { Limited: true } ? run : null;
                 var next = await reask.NextAsync().ConfigureAwait(false);
                 if (next is not { Chosen: true, Selection: { Allowed: true } nextSelection, Reviewer: { } nextReviewer, Label: { } nextLabel })
                 {
-                    run = OpinionPassRun.Unavailable(next);
+                    if (limitedPass is null) run = OpinionPassRun.Unavailable(next);
                     break;
+                }
+
+                if (limitedPass is { Opinion: { } capped, Session: { } cappedSession })
+                {
+                    _context.Service.LandingSaid(OpinionLines.HandedOn(ask.Working, ask.Occasion, capped, cappedSession));
                 }
 
                 try
@@ -272,7 +281,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
-                    return Ended(conclusion.State, conclusion.Note);
+                    return Ended(conclusion.State, conclusion.Note) with { Limited = limited };
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

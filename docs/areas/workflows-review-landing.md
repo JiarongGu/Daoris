@@ -204,7 +204,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     whether one is needed, the environment still the `reviews` rule's, and `SET_REVIEW required` is refused. (D154, D227)
 26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. Under a saved graph the
+    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
+    said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. Under a saved graph the
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the
     reviewers are named once, by the place (`daoris place opinion <repository> --agents …`), and choosing the workflow for a

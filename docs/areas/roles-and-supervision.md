@@ -103,7 +103,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     two starts in one look reserved apart, a reservation given back when its walk refuses or throws or its start ends before the
     record opens; a weight is 0 to 10. (D226)
 24. A choice may take only some of the role's works, hold a share of the window (1 to 99%), and keep a daily budget of starts or
-    reported tokens in the machine's local day. A budget acts at a start only. (D226)
+    reported tokens in the machine's local day. A budget acts at a start only. (D226) A choice whose agent's every account a limit or
+    spend cap holds (the account record's cool-offs, no second store) is passed `capped` until the earliest reset while another
+    choice remains, its weight left as written; the next choice's reason says `choice 1 skipped: its account is capped until …`.
 25. Presets fill the form and never save: *First that can run*, *Spread evenly* and *Spread by weight*; the two spreads write
     their moves (by weight, at most 3) as rules naming the role, beside the policy. (D226, D229)
 26. One pure judge, `StaffJudge.Arrange`, orders the role's own entries inside the one walk. The account walk inside a choice is

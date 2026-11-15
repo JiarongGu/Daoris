@@ -164,6 +164,7 @@
   "settings.ai.roles.use.why.over-budget": "over its daily budget",
   "settings.ai.roles.use.why.moved-off": "moved off it just now",
   "settings.ai.roles.use.why.not-answering": "its service not answering",
+  "settings.ai.roles.use.why.capped": "its account is capped",
   "settings.ai.policy.how": "How it chooses",
   "settings.ai.policy.preset.first": "First that can run",
   "settings.ai.policy.preset.even": "Spread evenly",
