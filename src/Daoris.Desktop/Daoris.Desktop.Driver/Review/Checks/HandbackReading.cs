@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A hand-back as a check step reads it from git, never from the session's note: the commit judged, the merge base with the line, how
-/// many commits the line moved past it, the paths touched since, the commits without a maker's trailer, and the work merged onto the
-/// line's tip. A commit with no maker's trailer, or a merge that conflicts, is a fault only the session can put right, and the step's
-/// verdict; a line that moved is none on its own.
+/// A hand-back as a check step reads it from git, never from the session's note: the commit judged, its base on the line, how far the line
+/// moved past it, the paths touched since, the commits without a maker's trailer and its <see cref="Merge"/> onto the line's tip. An
+/// unsigned commit, or a merge that conflicts, is a fault only the session can put right and the step's verdict; a moved line is none.
 /// </summary>
 internal sealed record HandbackReading(string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<UnsignedCommit> Unsigned)
 {
@@ -14,7 +13,6 @@ internal sealed record HandbackReading(string Tip, string? Base, int Behind, IRe
     /// <summary>The line the reading is made against, named in <see cref="Words"/>.</summary>
     internal string Line { get; init; } = "the line";
 
-    /// <summary>The work merged onto the line's tip, where the check judges it so; null where it is judged as it stands.</summary>
     internal LineMerge? Merge { get; init; }
 
     public bool Faulty => Unsigned.Count > 0 || Merge is { Conflicts.Count: > 0 };

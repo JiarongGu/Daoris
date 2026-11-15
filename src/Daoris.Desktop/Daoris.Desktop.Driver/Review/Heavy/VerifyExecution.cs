@@ -22,7 +22,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
 
-    /// <summary>The commit the verification tree takes: the send's, or the work merged onto its line's tip (<see cref="OntoAsync"/>).</summary>
     private string _at = send.Commit;
 
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
@@ -85,7 +84,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             kept = [.. plan.Kept.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept))];
         }
 
-        // A run's check takes the work merged onto its line's tip; a conflict sends it back, and no line leaves it as it stands.
         LineMerge? merge = null;
         if (send.AsMerged && await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is { } line)
         {
@@ -97,10 +95,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return (Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), merge?.Words()), false);
     }
 
-    /// <summary>
-    /// The work merged onto <paramref name="line"/>'s tip where the send judges it so (<see cref="VerifySend.AsMerged"/>): the verification
-    /// tree then takes the merge, never the session's branch rebased; null where the commit is judged as it stands.
-    /// </summary>
     private async Task<LineMerge?> OntoAsync(string line, CancellationToken ct)
     {
         if (!send.AsMerged) return null;
@@ -109,11 +103,9 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return merge;
     }
 
-    /// <summary>The work sent back for a fault only its session can put right: gate <c>hand-back</c> failed, and no gate run.</summary>
     private VerifyResult Back(string why) =>
         new(send.Invocation, send.Commit, VerifyVerdicts.Failed, why, [new VerifyGate(HandbackReading.Gate, RunnerVerdicts.Fail)]) { Failed = HandbackReading.Gate, Declaration = send.Accepted };
 
-    /// <summary><paramref name="result"/> with <paramref name="words"/> after its own why, where there are any.</summary>
     private static VerifyResult Told(VerifyResult result, string? words) =>
         words is null ? result : result with { Why = result.Why is { } why ? $"{why}\n{words}" : words };
 
@@ -133,7 +125,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var seen = read with { Merge = await OntoAsync(line, ct).ConfigureAwait(false) };
         if (seen.Faulty) return (Back(seen.Words()), false);
 
-        // A broker check's green keeps a gate only at the very commit the tree takes, so a merge runs each one again.
         var files = new CheckFiles(home);
         var required = declared.Where(gate => gate.Handback && GateReach.Reaches(gate, seen.Touched)).ToList();
         var verified = required.Where(gate => HandbackGates.Verified(files, gate, _at)).ToList();

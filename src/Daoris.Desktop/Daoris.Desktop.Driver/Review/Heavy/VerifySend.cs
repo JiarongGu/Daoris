@@ -27,9 +27,6 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The verification tree its direct gates run in; null for one under the lines folder, by the repository's slot key.</summary>
     public string? Tree { get; init; }
 
-    /// <summary>
-    /// Whether the check judges the work as merged onto its line's tip (<see cref="LineMerge"/>; a run's check, <see cref="RunChecks"/>), so a
-    /// line that moved is no fault and a conflict sends the work back; false where the commit is judged as it stands (a line's own run).
-    /// </summary>
+    /// <summary>Whether a run's check (<see cref="RunChecks"/>) judges the work merged onto its line's tip (<see cref="LineMerge"/>); false judges the commit as it stands.</summary>
     public bool AsMerged { get; init; }
 }

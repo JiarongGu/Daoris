@@ -81,7 +81,6 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
 
     private async Task<string> TipAsync(string at = "work") => (await GitFixture.GitAsync(Checkout, "rev-parse", at)).Trim();
 
-    /// <summary>A run's check of the work at <c>HEAD</c>: its <c>reached</c> choice, or the gates <paramref name="gates"/> names.</summary>
     private async Task<VerifyResult> RunAsync(string blob, IReadOnlyList<string>? gates = null, string invocation = "i-a")
     {
         var commit = await TipAsync("HEAD");
@@ -93,7 +92,6 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
 
-    /// <summary>The work on <c>work</c> with <paramref name="path"/> changed, and then the line moved past it changing <paramref name="moved"/>: the work's commit and the line's tip.</summary>
     private async Task<(string Work, string Line)> BehindAsync(string path, string moved)
     {
         await CommitAsync(path, "work" + Trailer);
