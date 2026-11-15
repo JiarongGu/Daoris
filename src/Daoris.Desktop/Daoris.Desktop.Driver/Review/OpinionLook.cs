@@ -47,7 +47,7 @@ public static class OpinionLook
     /// <summary>
     /// Why an opinion owed is closed now, or null where it is still owed: its quest not done, its rule not reading at
     /// its occasion, its tree gone, its work landed (a landing recorded for it after it fell due, or nothing in its
-    /// tree that no branch of the person's, nor an older landing's squash, nor the line by patch (a replay), holds, where no automatic landing holds that branch's push
+    /// tree that no branch of the person's, nor an older landing's squash, holds, where no automatic landing holds that branch's push
     /// back), or, under <c>steps</c>, no next step of its chain left to hold.
     /// </summary>
     /// <param name="process">
@@ -90,11 +90,7 @@ public static class OpinionLook
         return await HeldByPatchAsync(due.Tree, trees, ct).ConfigureAwait(false) ? OpinionDueClosed.Landed : null;
     }
 
-    /// <summary>
-    /// Whether the line holds the tree's commits under ids of their own: a landing that replayed them (a rebase, a cherry-pick)
-    /// and merged the replay leaves the tree's own ids on no branch, though each patch is on the line. The tree's work
-    /// reader finds it, as the review and the clean-up do, so the due is judged as they judge the tree.
-    /// </summary>
+    /// <summary>Whether the line holds the tree's commits under ids of their own (a replay), as the review reads the tree.</summary>
     private static async Task<bool> HeldByPatchAsync(string tree, SessionTrees? trees, CancellationToken ct) =>
         trees is not null && await trees.WorkAsync(tree, ct).ConfigureAwait(false) is { } work && (work.Commits == 0 || work.Landed);
 

@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// OPINIONDUE1: an opinion owed on a landing closes as <c>landed</c> once the line holds the tree's work, whether by the
-/// commits' own ids or by their patches, as a landing that replayed them and merged the replay leaves them. Before, only
-/// the ids were read, so a due on a replayed run stayed owed and the look re-read it at every look.
+/// An opinion owed on a landing closes as <c>landed</c> once the line holds the tree's work by its patches, as a landing that
+/// replayed the commits and merged the replay leaves them.
 /// </summary>
 /// <remarks>Real git in a scratch repository: the replay is made by hand as the landing makes it, a cherry-pick and a merge.</remarks>
 [Trait(Category.Name, Category.Process)]
