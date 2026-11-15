@@ -232,6 +232,27 @@ public sealed class LandedBranches(string home)
         return wrote;
     }
 
+    /// <summary>
+    /// The line's proof written on a landing whose branch no longer stands and whose push therefore never ran (<see cref="PushLineRead"/>):
+    /// the fact the line's read proved, on that landing alone, whatever its trace says of why it went. One with a fact already keeps it.
+    /// </summary>
+    /// <returns>Whether it is written.</returns>
+    internal bool Delivered(LandedBranch entry, HeldFact held)
+    {
+        var wrote = false;
+        Edit(all =>
+        {
+            wrote = false;
+            return [.. all.Select(each =>
+            {
+                if (!SameLanding(each, entry) || each.Held is not null) return each;
+                wrote = true;
+                return each with { Held = held };
+            })];
+        });
+        return wrote;
+    }
+
     /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip observed.</summary>
     private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
         SameEntry(each, entry) && string.Equals(each.Tip, entry.Tip, StringComparison.OrdinalIgnoreCase);

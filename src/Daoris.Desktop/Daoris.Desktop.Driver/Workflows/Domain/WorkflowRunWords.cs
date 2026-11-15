@@ -263,6 +263,10 @@ public static class WorkflowRunWords
                 "The repository it asked declined the quest: ask again, or go on without it with your words.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Apply && step.Code == ApplyDoor.ChangedWhileApplying =>
                 "Changed while applying: something else wrote to the system as it applied, so the work plans again from the system as it stands.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.BranchGone =>
+                "Its branch no longer stands and the line's remote does not hold its work, so nothing was pushed: restore the branch, or go on without this step if the work is delivered.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
+                "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",

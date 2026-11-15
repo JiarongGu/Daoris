@@ -15,6 +15,12 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// <summary>The run's own branch where it has one: the work the line may already hold, which the quest's holds read before they wait.</summary>
     public WorkUnit? RunBranch { get; init; }
 
+    /// <summary>
+    /// Whether the run's <c>land</c> reached on a branch no record of this look names (every record of the work read), so the steps past it have no
+    /// landing to read or push: <see cref="NothingToDeliver"/> passes its delivery steps over.
+    /// </summary>
+    public bool LandingUnread { get; init; }
+
     /// <summary>The clock a start is stamped with, so a node says since when it waits; null stamps none.</summary>
     public Func<DateTimeOffset>? Clock { get; init; }
 

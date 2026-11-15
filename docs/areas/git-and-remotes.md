@@ -149,7 +149,8 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 **The line**
 
 34. Daoris's own fetch of a line is `fetch origin <line>` through the doors: refused on an old git, held on `own-input` or a
-    standing hold, counted for the pull request minute, moving only origin's refs. (D109, D198, D148)
+    standing hold, counted for the pull request minute, moving only origin's refs; a workflow `push` whose branch no longer stands
+    makes it once, to read whether the line holds the work (`PushLineRead`). (D109, D198, D148)
 35. Bring up to date is listed, then pressed: fast-forward only, replays in Daoris's own trees, local deletes of what merged;
     never a merge commit, a force or a push. (D109, D112)
 
