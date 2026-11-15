@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A door kind keeps no attempt journal, so its node leaves <c>active</c> only by its reading's reach, which the one table accepts only on the
-/// node's own binding. A <c>push</c> or a <c>tidy</c> bound at the commit its unit read, where its landing's recorded tip reads another, was read
-/// as reached at the landing's tip and refused for good: the reach is made at the binding's commit and its evidence names the landing's.
+/// node's own binding. A <c>push</c> or a <c>tidy</c> bound at the commit its unit read, where its landing's recorded tip reads another, is
+/// reached at the binding's commit with its evidence naming the landing's.
 /// </summary>
 public sealed class ObservedReachBindingTests
 {

@@ -84,8 +84,7 @@ public static class NodeObserving
 
     /// <summary>
     /// A reach, its acceptance on the binding at <paramref name="revision"/> and its evidence naming <paramref name="evidenced"/>: apart only where
-    /// a run's <c>handed</c> keeps its bound tip, and a step reading the landing record (<c>push</c>, <c>tidy</c>, <c>monitor</c>) whose binding's
-    /// commit is not the landing's tip. A reach's acceptance carries that binding's graph, attempt, inputs and
+    /// a run's <c>handed</c> keeps its bound tip. A reach's acceptance carries that binding's graph, attempt, inputs and
     /// prerequisite receipts, so invalidating anything it rests on reaches it; where its revision is not the binding's, the one table refuses it.
     /// </summary>
     internal static NodeObservation ReachedAt(NodeReading reading, string source, string? revision, string? evidenced, string record, string artifact, string said)
