@@ -100,10 +100,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and its changes. It proposes no workflow and never chooses or runs one. (D223, D261)
 14. The shipped defaults hold no `quest.close`: a run's quest is bound to its run, its agent's done is a submission `claimed` and
     `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). That end ends every session of this machine
-    awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session still waits on is ended again at each look through the same end (`RunReEnds`), whatever answered its first. A held quest is
+    awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session of this machine still waits on is governed at each look while one waits, the first after a start included, for its end alone: nothing else on it is judged, and the same end ends that session again (`RunReEnds`), whatever answered its first. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
     the quest through the one accept before the close (`RunEndQuests`); any other held quest is left as the person left it, and the
-    sessions still end. An end that closes and ends nothing says why once in the machine log (`run.end.empty`). Every shipped development graph that holds
+    sessions still end. An end that closes and ends nothing, a run a session waits on that a look skips anyway, and session records that do not read each say why once in the machine log (`run.end.empty`). Every shipped development graph that holds
     `content.holds` checks after it, `team-part` included; `documents` holds no check by design, since its work is prose no gate reaches. The
     check is a `check` with `gates` `reached` between `content` and the review or landing, and a `back` wire from it `on` `failed` to the work, so a red verdict's words go to the work's open session as
     Daoris's word under the step's key and its next commit is checked afresh (D293): a check waits ready until the commit it binds is
