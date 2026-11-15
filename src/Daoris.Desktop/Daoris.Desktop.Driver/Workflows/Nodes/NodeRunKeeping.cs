@@ -36,10 +36,47 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>
+    /// The runs a fresh look read, each at its end marked where a session of this machine still waits on it (<see cref="RunWaiters"/>), so the
+    /// pass governs it and its end reaches that session again (<see cref="RunReEnds"/>): at the first look after a start, and at every look
+    /// while one waits. The sessions are read once, and only where a run is at its end; where they do not read, that is said once.
+    /// </summary>
+    public async Task<List<GraphRun>> WaitedAsync(List<GraphRun> runs, CancellationToken ct)
+    {
+        var ports = Ends;
+        if (ports.Sessions is null || !runs.Any(run => run.Ended is not null && run.Line is null)) return runs;
+        if (await ports.Sessions(ct).ConfigureAwait(false) is not { } read)
+        {
+            RunSessionEnds.Quiet(ports, "", EmptyRunEnds.SessionsUnread);
+            return runs;
+        }
+
+        // Read again, so the next time they do not read is said once more.
+        EmptyRunEnds.Changed(ports.Home, "", "read");
+        var waited = RunWaiters.Runs(read);
+        return [.. runs.Select(run => run.Ended is not null && waited.Contains(run.Run) ? run with { Waited = true } : run)];
+    }
+
+    /// <summary>A run a session waits on that the pass did not govern, and why: said once per reason (<see cref="EmptyRunEnds"/>).</summary>
+    public void Skipped(string run, string reason) => RunSessionEnds.Quiet(Ends, run, reason);
+
+    /// <summary>
+    /// What a run's rounds leave to keep before its end is judged: its reviews' records, its carried-on repairs, the accepts it earns through,
+    /// its doors started and its pull requests kept. None of it is kept for a run still at its end (<see cref="AtEnd"/>).
+    /// </summary>
+    public async Task AfterRoundsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
+    {
+        KeepReviews(governed, scope);
+        await AcceptRepairsAsync(governed, scope, ct).ConfigureAwait(false);
+        if (holdsLease() && ThroughAccepts.Keep(records, governed, scope, config, clock) is { } through) said.Add(through);
+        StartDoors(governed, scope);
+        KeepPullRequests(governed);
+    }
+
+    /// <summary>
     /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
     /// <c>land</c>, and the steps past it Daoris performs. Each door is idempotent by node and tip, so a node kept again starts nothing twice.
     /// </summary>
-    public void StartDoors(GovernedUnit governed, RunScope scope)
+    private void StartDoors(GovernedUnit governed, RunScope scope)
     {
         if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
         var wired = doors();
@@ -51,7 +88,7 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>A run's reviews begun on an attempt with no record yet, each given its review record (<see cref="ReviewRecords.KeepActive"/>).</summary>
-    public void KeepReviews(GovernedUnit governed, RunScope scope)
+    private void KeepReviews(GovernedUnit governed, RunScope scope)
     {
         if (holdsLease() && records.Read(governed.Unit.Id) is { } record) ReviewRecords.KeepActive(records.Home, governed, scope, record, clock());
     }
@@ -66,7 +103,7 @@ internal sealed class NodeRunKeeping(
     /// A review whose Accept waits on a carried-on session (<see cref="RunRepairs"/>), begun again at a tip that only continues the one the person
     /// accepted: the Accept is kept on it once more, for the next pass to apply, and the repair is spent.
     /// </summary>
-    public async Task AcceptRepairsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
+    private async Task AcceptRepairsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
     {
         if (!holdsLease() || records.Read(governed.Unit.Id) is not { Repairs.Count: > 0 } record) return;
         foreach (var repair in record.Repairs)
@@ -88,6 +125,15 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>
+    /// Whether a run is still at its end, its record's end naming its newest quest here: nothing on it is judged or kept, and only its end reaches
+    /// it again (<see cref="EndAsync"/>). An ask's run ends its own way, and is never at its end here.
+    /// </summary>
+    public bool AtEnd(GovernedUnit governed, RunScope scope) =>
+        !AskRunKey.Is(scope.Run.Binding) && scope.Quest?.Records.Quest is { } newest && records.Read(governed.Unit.Id) is { } record && HoldsEnd(record, newest);
+
+    private static bool HoldsEnd(NodeRecord record, QuestView newest) => record.Ended?.Quest == newest.Id;
+
+    /// <summary>
     /// A run's end, judged once its pass's rounds are kept: its newest quest here names no step still to come here, and no node of its graph
     /// can move again, with no attempt unsettled; or its quest closed and none of the steps still standing can move again
     /// (<see cref="ClosedRunEnds"/>), its steps kept as they stand. Kept on its record with how it came out (<see cref="RunOutcomes"/>), said
@@ -104,7 +150,7 @@ internal sealed class NodeRunKeeping(
         }
 
         if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record) return;
-        if (record.Ended?.Quest == newest.Id)
+        if (HoldsEnd(record, newest))
         {
             if (holdsLease())
             {

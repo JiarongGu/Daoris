@@ -334,9 +334,10 @@ public sealed class NodeRuntime(
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
-                // which judges every bound run once, so a restart loses nothing.
-                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) }).ToList();
-                (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
+                // which judges every bound run once, so a restart loses nothing; one at its end, while a session still waits on it.
+                var runs = await Keeping.WaitedAsync([.. _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) })], ct)
+                    .ConfigureAwait(false);
+                (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings, Keeping.Skipped)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _restarted = false;
                 foreach (var run in asks) _returned.TryRemove(run, out _);
@@ -495,16 +496,18 @@ public sealed class NodeRuntime(
         var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
 
         // A run's branch-side nodes bind its branch's tip read in the pass, and its gates are read there; an end its record holds from before
-        // its chain came back here lapses, and the run goes on.
+        // its chain came back here lapses, and the run goes on. One still at its end is judged no further: only its end reaches it again.
+        var atEnd = false;
         if (governed.Scope is { } scope)
         {
-            tip = scope.Branch is not null ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             Keeping.Reopen(governed, scope);
+            atEnd = Keeping.AtEnd(governed, scope);
+            tip = scope.Branch is not null && !atEnd ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             await Keeping.ReopenSessionsAsync(governed, scope, said, ct).ConfigureAwait(false);
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
         }
 
-        for (var round = 0; round <= governed.Graph.Nodes.Count; round++)
+        for (var round = 0; !atEnd && round <= governed.Graph.Nodes.Count; round++)
         {
             if (records.Read(unit) is not { } record)
             {
@@ -569,11 +572,7 @@ public sealed class NodeRuntime(
 
         if (governed.Scope is { } run)
         {
-            Keeping.KeepReviews(governed, run);
-            await Keeping.AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
-            if (_holdsLease() && ThroughAccepts.Keep(records, governed, run, _config, clock) is { } through) said.Add(through);
-            Keeping.StartDoors(governed, run);
-            Keeping.KeepPullRequests(governed);
+            if (!atEnd) await Keeping.AfterRoundsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
             await Keeping.EndAsync(governed, run, said, (commit, token) => git.OnLine(run.Root, run.Run.Binding.Repository, run.Run.Binding.Workspace, commit, token), ct)
                 .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);

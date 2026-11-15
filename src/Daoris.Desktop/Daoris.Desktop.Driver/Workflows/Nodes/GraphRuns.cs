@@ -23,6 +23,12 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
     public bool Recorded { get; init; }
 
+    /// <summary>
+    /// Whether a session of this machine still waits on the run's steps (<see cref="RunWaiters"/>), as the pass that read the runs found it: a run
+    /// at its end that one waits on is governed, so its end reaches that session again (<see cref="RunReEnds"/>).
+    /// </summary>
+    public bool Waited { get; init; }
+
     /// <summary>A conversation's run: the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
     public ChatCandidateFile? Candidate { get; init; }
 
