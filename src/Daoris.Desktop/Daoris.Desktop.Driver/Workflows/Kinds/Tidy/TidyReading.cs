@@ -16,14 +16,14 @@ public static class TidyReading
         var landing = NodeObserving.LandingOf(reading.Unit);
         if (TidiedByTheLook.Of(landing, reading.Unit))
         {
-            return NodeObserving.Reached(reading, NodeSource.Landing, landing!.Tip, LandedBranches.FileName, landing.Branch, TidiedByTheLook.Said(landing));
+            return NodeObserving.ReachedAt(reading, NodeSource.Landing, reading.Binding.SubjectRevision, landing!.Tip, LandedBranches.FileName, landing.Branch, TidiedByTheLook.Said(landing));
         }
 
         if (!Tidied(landing)) return NodeObserving.Seen(reading, null, "its chain's parts were not tidied yet");
 
         var parts = landing!.Tidied!.Parts;
         var kept = parts.Count(part => part.Kept is not null);
-        return NodeObserving.Reached(reading, NodeSource.Landing, landing.Tip, LandedBranches.FileName, landing.Branch,
+        return NodeObserving.ReachedAt(reading, NodeSource.Landing, reading.Binding.SubjectRevision, landing.Tip, LandedBranches.FileName, landing.Branch,
             $"{parts.Count} part(s) of its chain ended on the line" + (kept == 0 ? "" : $", {kept} of their branches kept"));
     }
 }

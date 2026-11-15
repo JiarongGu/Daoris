@@ -26,7 +26,7 @@ public sealed class PushNodeTests
         var observation = NodeObserving.Observe(unit, Push, Graph, 1, git);
         Assert.Null(observation.Refused);
         Assert.NotNull(observation.Move);
-        var started = new NodeStatus(unit.Id, Push.Id, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = new NodeAcceptance(unit.Id, "t1", Graph, Push.Id, 1, 1) };
+        var started = new NodeStatus(unit.Id, Push.Id, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = new NodeAcceptance(unit.Id, unit.Subject.Revision, Graph, Push.Id, 1, 1) };
         return NodeLifecycle.Apply(Push, started, observation.Move);
     }
 

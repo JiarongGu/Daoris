@@ -27,7 +27,6 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
     /// <summary>The push act for the landed branch at its tip, and what it came to written: the landing record on success, the node's failure otherwise.</summary>
     internal async Task PerformAsync(PushStart start, CancellationToken ct)
     {
-        // A branch that no longer stands is never pushed: the line's remote is read once, and the node settles on what it says.
         if (await PushLineRead.ReadAsync(home, start, ct).ConfigureAwait(false) is { } gone)
         {
             log?.Invoke($"push  {start.Unit}: `{start.Node.Id}`: {gone.Said}");
@@ -61,7 +60,6 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
         Fail(start);
     }
 
-    // The attempt the start is for is the one failed: a node's binding names the unit's revision, which is not always the landing's tip.
     private void Fail(PushStart start, string code = Refused)
     {
         var records = new NodeRecordFiles(home, holdsLease);

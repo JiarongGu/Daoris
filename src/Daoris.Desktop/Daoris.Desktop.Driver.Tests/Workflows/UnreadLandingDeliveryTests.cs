@@ -24,7 +24,7 @@ public sealed class UnreadLandingDeliveryTests
         WireEvaluationTests.After("d", "push", "pull-request"),
     ];
 
-    /// <summary>A push started while its landing was read, whose landing's branch no record names by the later look.</summary>
+    /// <summary>A push started on its landing's branch, then judged at a look that no longer reads that branch.</summary>
     private static WireEvaluationTests.Graph Stuck(bool unread)
     {
         var g = new WireEvaluationTests.Graph(Nodes, Wires)
