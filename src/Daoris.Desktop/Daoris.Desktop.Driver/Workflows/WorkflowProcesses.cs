@@ -228,10 +228,22 @@ public static class WorkflowProcesses
     public static (string Name, IReadOnlyList<NamedStep>? Steps) Otherwise(
         IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
     {
+        var (name, graph) = OtherwiseGraph(store, config, repository, workspace, kind);
+        return (name, graph is null ? null : Involvement.StepsOf(graph));
+    }
+
+    /// <summary>
+    /// The workflow a run would follow without its task's kind, as <see cref="Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>
+    /// reads it, with its newest graph version whole, which the kind's paths compare checks and the person's part by (<see cref="KindLowering"/>).
+    /// </summary>
+    /// <returns>Its name as said, and its newest graph, or null where none is chosen or it does not read.</returns>
+    public static (string Name, NodeGraph? Graph) OtherwiseGraph(
+        IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
+    {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, kind is null ? null : new WorkflowTaskChoice(kind, null));
         if (selected.Workflow == WorkflowSelection.Current) return ("no workflow", null);
         var found = WorkflowNamed.IsId(selected.Workflow) ? store.Load(selected.Workflow) : null;
         var newest = found?.Read.Versions.LastOrDefault(each => each.Graph is not null);
-        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", Involvement.StepsOf(newest.Graph!));
+        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", newest.Graph);
     }
 }
