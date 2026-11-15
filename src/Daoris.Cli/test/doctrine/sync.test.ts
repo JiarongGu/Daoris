@@ -465,10 +465,7 @@ test('sync writes the roster into the region and the index beside the tiers, so 
   fx.repoFx.cleanup();
 });
 
-/**
- * Knowledge is read on demand whatever its frontmatter says: a file like any knowledge, locked as one, and absent from
- * the region, which names only the index.
- */
+/** Knowledge is read on demand whatever its frontmatter says: a locked file, absent from the region. */
 test('knowledge lands as a file and stays out of the region, whatever its frontmatter says', () => {
   const fx = seed();
   fx.canonFx.write('core/knowledge/no-tmp.md', doc('no-tmp').replace('enforces: e\n', 'enforces: e\nrule: true\n'));

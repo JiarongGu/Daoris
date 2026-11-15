@@ -326,8 +326,7 @@ function writeSpans(
       })),
       version: canonVersion,
       target: manifest.target,
-      // The rows this repository switched off: the session loading the region learns what is
-      // not there, and which pack said so, rather than meeting a doctrine with a silent hole in it.
+      // The rows switched off, so a session learns what is not there rather than meeting a silent hole.
       off,
       // The mirror sentence, the rooms and where the records are, rendered by the
       // function `check` rebuilds them with.

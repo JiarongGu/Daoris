@@ -198,9 +198,7 @@ export interface DriftReport {
   drifted: string[];
   missing: string[];
   stalePacks: string[];
-  /** Whether every fact `check` establishes holds, whatever the sizes. */
   factsOk: boolean;
-  /** Whether a ceiling the manifest declares failing is over. */
   sizeFails: boolean;
   /** The always-loaded doctrine's words: the region's body, or the always-loaded directory's files. */
   coreWords: number;
@@ -249,10 +247,7 @@ export interface DriftReport {
   documentsMissing: { role: string; path: string }[];
   /** Declared documents that are a link, or a link held as text: a fact, and never read through. */
   documentLinks: DocumentLinkProblem[];
-  /**
-   * Declared documents over a ceiling, a folder's ceiling measuring each document in it: reported, and failed on where
-   * the ceiling is declared failing.
-   */
+  /** Declared documents over a ceiling, a folder's measuring each document in it; failed on where declared failing. */
   documentsOver: { label: string; measured: number; ceiling: number; unit: 'words' | 'bytes'; fails: boolean }[];
   /** The canon's most-named records with no path declared, when the repository declares any: reported. */
   recordsUndeclared: string[];
@@ -301,7 +296,6 @@ export interface Manifest {
   packs: string[];
   harness: string;
   target: string;
-  /** The always-loaded doctrine's ceiling in words; it fails `check` only where declared failing. */
   coreBudget: { words: number; fails: boolean };
   /** Absent until a repository registers itself; a quest can still be addressed, less usefully. */
   domain?: Domain;

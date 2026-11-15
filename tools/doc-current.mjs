@@ -8,10 +8,8 @@
  *                                               renamed, and show only the findings in the homes the diff touched
  *   node tools/doc-current.mjs --json           the report as data
  *
- * Reports, and fails only on the brief (`AGENTS.md`, outside its generated region, which every session reads whole): a path
- * or name there that does not exist, or a before-done line that is not the hand-back gates of `daoris.gates.json`. Exit 0
- * clean or reporting, 1 on the brief, 2 on a tool error (a bad declaration, a base git cannot read). The declaration is
- * `documents.present` in `daoris.json`: `homes` (a file, or a folder whose `.md`
+ * Reports, and fails only on the brief (`doc-current/brief.mjs`). Exit 0 clean or reporting, 1 on the brief, 2 on a tool
+ * error (a bad declaration, a base git cannot read). The declaration is `documents.present` in `daoris.json`: `homes` (a file, or a folder whose `.md`
  * files this repository owns, not those `daoris.lock` says the canon writes), `bases` (per home: folders its short paths
  * follow), `runtime` (roots a path under is machine state, never checked) and `allow` (a span with the reason it is let through).
  *
@@ -370,8 +368,6 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null, gate
   findings.sort((a, b) => (a.home < b.home ? -1 : a.home > b.home ? 1 : a.line - b.line));
   quoting.sort((a, b) => (a.home < b.home ? -1 : a.home > b.home ? 1 : a.line - b.line));
   const result = { homes, counts, findings, unusedAllow: Object.keys(allow).filter((span) => !hit.has(span)) };
-  // The brief every session reads fails on what it names that is not there, and on before-done commands that are not the
-  // declared hand-back gates; a name only test source has asks for a look, as elsewhere.
   if (homes.includes(BRIEF)) {
     result.brief = {
       failing: findings.filter((finding) => finding.home === BRIEF && !finding.kind.endsWith('test-only')),

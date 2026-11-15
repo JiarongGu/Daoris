@@ -8,8 +8,7 @@ import { tierRuleBody } from './tierrender.ts';
 import { wordCount } from '../layout/documents.ts';
 
 /**
- * Words of always-loaded doctrine after adopting — the number that is paid every session, in the unit `check` holds
- * `coreBudget` to.
+ * Words of always-loaded doctrine after adopting, the unit `check` holds `coreBudget` to.
  *
  * Where the rules tier is a span, its body lives in the region, so that is measured (as `inspect` measures it, beside any
  * rule file the repository keeps of its own) and a selected rule the region already holds adds only what its text changes
