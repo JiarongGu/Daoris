@@ -27,8 +27,8 @@ public sealed class RunWaitersTests
             Record("s-bare", "awaiting-step", null, null),
             Record("origin/s-team", "awaiting-step", "waits.step", "q1")) + "]");
 
-        Assert.Equal("q1", records.Single(record => record.Id == "s-wait").WaitsOn);
-        Assert.Null(records.Single(record => record.Id == "s-check").WaitsOn);
+        Assert.Equal("q1", StepWaits.From(records.Single(record => record.Id == "s-wait").NoteParts)?.Run);
+        Assert.Null(StepWaits.From(records.Single(record => record.Id == "s-check").NoteParts));
         Assert.Equal(["s-wait"], RunWaiters.Of("q1", records));
         Assert.Equal(["s-other"], RunWaiters.Of("q2", records));
     }

@@ -46,7 +46,7 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
             return Task.FromResult<RunEndResponse?>(new RunEndResponse(null, "ended", [], end.Sessions));
         };
         runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
-            [.. runs.Select(run => new SessionRecord("s-" + run, "Owner", SessionStates.AwaitingStep) { WaitsOn = run })]);
+            [.. runs.Select(run => new SessionRecord("s-" + run, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(run).Note().Parts })]);
         runtime.Reopen = (reopen, _) =>
         {
             reopened.Add(reopen);

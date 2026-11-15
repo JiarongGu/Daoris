@@ -20,7 +20,8 @@ public sealed class RunQuestEndsTests
 
     private static QuestView Held(string id, string hold) => Quest(id, "Taken", 3) with { Held = true, Hold = hold };
 
-    private static SessionRecord Waiting(string id, string run) => new(id, "Owner", SessionStates.AwaitingStep) { WaitsOn = run };
+    private static SessionRecord Waiting(string id, string run, string state = SessionStates.AwaitingStep) =>
+        new(id, "Owner", state) { NoteParts = new StepWait(run, "work").Note().Parts };
 
     private static RunEnd Completed(string quest) => new(quest, At) { Outcome = RunOutcomes.Completed };
 
@@ -49,7 +50,7 @@ public sealed class RunQuestEndsTests
     [Fact]
     public async Task A_completed_run_s_end_closes_its_submitted_quests_and_ends_the_sessions_found_waiting_on_it()
     {
-        var ends = new Ends([Waiting("s1", "q1"), Waiting("s2", "q9"), new SessionRecord("s3", "Owner", "completed") { WaitsOn = "q1" }]);
+        var ends = new Ends([Waiting("s1", "q1"), Waiting("s2", "q9"), Waiting("s3", "q1", "completed")]);
         var quests = new[] { Quest("q1", "Taken", 3), Quest("q2", "Taken", 5), Quest("q3", "Done", null), Quest("q4", "Taken", null) };
 
         await RunSessionEnds.FinishAsync(ends.Ports(), "q1", Completed("q2"), quests, passed: false, ends.Said, CancellationToken.None);
