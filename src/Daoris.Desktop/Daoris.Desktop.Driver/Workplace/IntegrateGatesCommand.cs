@@ -14,7 +14,6 @@ public static class IntegrateGatesCommand
 
     private static InstanceRoute Look { get; } = new(InstanceRoute.DriverModule, "WORKFLOW_CURRENT", RouteClass.Open);
 
-    /// <summary>The set-up page's acceptance it presses, the window's twin (<c>SettingDoorsCensusTests</c>).</summary>
     public static InstanceRoute Press { get; } = new(InstanceRoute.DriverModule, "INTEGRATION_GATES", RouteClass.Person);
 
     /// <summary>What a terminal says where no Daoris runs to take the press: the acceptance is the person's, pressed in its window.</summary>
