@@ -21,12 +21,17 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>Commit dates the fixture sets, so a verdict never depends on the day the test runs.</summary>
     private string GitOn(int? day, params string[] arguments)
     {
-        var at = day is { } d ? $"2026-01-{d:00}T10:00:00Z" : null;
-        var ran = Process.Run("git", arguments, _fx.Path, at is null ? null : new Dictionary<string, string>
+        // The identity travels in the environment: two `git config` starts bought nothing more. The line-ending setting stays in the
+        // repository's own config, where the gate's git reads it too: an environment only these calls carry made the gate's index differ.
+        var environment = new Dictionary<string, string>
         {
-            ["GIT_AUTHOR_DATE"] = at,
-            ["GIT_COMMITTER_DATE"] = at,
-        });
+            ["GIT_AUTHOR_NAME"] = "Fixture",
+            ["GIT_COMMITTER_NAME"] = "Fixture",
+            ["GIT_AUTHOR_EMAIL"] = "fixture@example.invalid",
+            ["GIT_COMMITTER_EMAIL"] = "fixture@example.invalid",
+        };
+        if (day is { } d) environment["GIT_AUTHOR_DATE"] = environment["GIT_COMMITTER_DATE"] = $"2026-01-{d:00}T10:00:00Z";
+        var ran = Process.Run("git", arguments, _fx.Path, environment);
         Assert.True(ran.ExitCode == 0, $"git {string.Join(' ', arguments)}: {ran.Error}");
         return ran.Output.Trim();
     }
@@ -40,15 +45,10 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>Commits what is already tracked and changed: one git start fewer than <see cref="Commit"/>, for a commit that adds no file.</summary>
     private void CommitTracked(int day, string message) => GitOn(day, "commit", "-q", "-a", "-m", message);
 
-    /// <summary>
-    /// A fresh repository on main with its identity and line-ending setting written to its config file: each git start
-    /// costs seconds on a scanned machine, and three `git config` starts bought nothing a file write does not.
-    /// </summary>
     private void InitMain()
     {
         Git("init", "-q", "-b", "main");
-        File.AppendAllText(Path.Combine(_fx.Path, ".git", "config"),
-            "[user]\n\tname = Fixture\n\temail = fixture@example.invalid\n[core]\n\tautocrlf = false\n");
+        Git("config", "core.autocrlf", "false");
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>What git says of the checkout, and what its git folder holds: judging a merge leaves all of it.</summary>
     private string State()
     {
-        var gitDir = Path.Combine(_fx.Path, ".git");
+        var gitDir = Git("rev-parse", "--absolute-git-dir");
         var mergeHead = Path.Combine(gitDir, "MERGE_HEAD");
         // `status --branch` carries HEAD's id (branch.oid), so HEAD needs no start of its own.
         return string.Join("\n--\n",
