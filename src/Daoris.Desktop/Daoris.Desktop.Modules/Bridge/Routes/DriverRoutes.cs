@@ -55,6 +55,7 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
     [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
     [GroundListed("SET_CHECKOUT_WRITES", "checkoutWrites", "allow")]
+    [NoTwin("SET_CHECKOUT_WRITES", "no verb yet: a repository's switch for changing its registered checkout's files is the setup page's alone until `daoris place` takes it")]
     [Says("SET_CHECKOUT_WRITES", "repository:repository")]
     [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
     private object? SetCheckoutWrites(SetCheckoutWrites press)
@@ -480,6 +481,7 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_ROLES", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_ROLES", nameof(PipeReads.RoleRows))]
     [NotAlready("SET_ROLES", "edits several roles' rows of the catalogue in place, each revision moving, in one transaction")]
+    [NoTwin("SET_ROLES", "the window's batch of SET_ROLE changes made as one; `daoris role` presses each change as SET_ROLE")]
     [Publishes("SET_ROLES", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetRoles(SetRolesPress sent)
     {
@@ -522,6 +524,7 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("SET_HELP_GRANT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_GRANT", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_HELP_GRANT", nameof(PipeReads.HelpGrant))]
+    [NoTwin("SET_HELP_GRANT", "a helper never widens its own access: restricted mode's grants are set on Ask Daoris's screen alone")]
     [Publishes("SET_HELP_GRANT", StateScopes.Driver)]
     private object? SetHelpGrant(SetHelpGrant press)
     {

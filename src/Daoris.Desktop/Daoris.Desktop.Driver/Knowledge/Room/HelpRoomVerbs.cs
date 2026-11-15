@@ -88,6 +88,8 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         // The person's helper doors, as the page's Ask another agent…, Ask again… and Pass to the lead are.
         text.Append("  `daoris sessions helper <id> \"…\"` asks another agent, read-only, one question about one session's work, and\n");
         text.Append("  `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.\n");
+        // A conversation page's option picker; the route refuses an option never offered and a value the agent does not take.
+        text.Append("  `daoris sessions option <id> <option> <value>` sets one of a running conversation's options, as its page's picker does.\n");
         // The pages' Pause… and Resume. Abandon is exempt: it declines quests with the person's reason, which is their answer.
         text.Append("- One ask's work, or one quest's, is paused on this machine or resumed by pressing:\n");
         text.Append("  `daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`. A pause stops what of the work runs\n");
