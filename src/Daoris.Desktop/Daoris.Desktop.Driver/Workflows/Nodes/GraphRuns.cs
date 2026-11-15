@@ -69,6 +69,10 @@ public sealed class GraphRuns(NodeRecordFiles records)
         }
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, GraphRuns> Homes = new(StringComparer.OrdinalIgnoreCase);
+
+    public static GraphRuns Of(string home) => Homes.GetOrAdd(home, key => new GraphRuns(new NodeRecordFiles(key, () => false)));
+
     private readonly object _lock = new();
 
     private readonly Dictionary<string, Kept> _bindings = new(StringComparer.Ordinal);

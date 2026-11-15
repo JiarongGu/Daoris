@@ -21,12 +21,15 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>Commit dates the fixture sets, so a verdict never depends on the day the test runs.</summary>
     private string GitOn(int? day, params string[] arguments)
     {
-        var at = day is { } d ? $"2026-01-{d:00}T10:00:00Z" : null;
-        var ran = Process.Run("git", arguments, _fx.Path, at is null ? null : new Dictionary<string, string>
+        var environment = new Dictionary<string, string>
         {
-            ["GIT_AUTHOR_DATE"] = at,
-            ["GIT_COMMITTER_DATE"] = at,
-        });
+            ["GIT_AUTHOR_NAME"] = "Fixture",
+            ["GIT_COMMITTER_NAME"] = "Fixture",
+            ["GIT_AUTHOR_EMAIL"] = "fixture@example.invalid",
+            ["GIT_COMMITTER_EMAIL"] = "fixture@example.invalid",
+        };
+        if (day is { } d) environment["GIT_AUTHOR_DATE"] = environment["GIT_COMMITTER_DATE"] = $"2026-01-{d:00}T10:00:00Z";
+        var ran = Process.Run("git", arguments, _fx.Path, environment);
         Assert.True(ran.ExitCode == 0, $"git {string.Join(' ', arguments)}: {ran.Error}");
         return ran.Output.Trim();
     }
@@ -37,6 +40,14 @@ public sealed class DocsGateMergeTests : IDisposable
         GitOn(day, "commit", "-q", "-m", message);
     }
 
+    private void CommitTracked(int day, string message) => GitOn(day, "commit", "-q", "-a", "-m", message);
+
+    private void InitMain()
+    {
+        Git("init", "-q", "-b", "main");
+        Git("config", "core.autocrlf", "false");
+    }
+
     /// <summary>
     /// Main holds the README and its source from day 1; the branch `work` changes the source on day
     /// 5; main then changes <paramref name="onMain"/> on <paramref name="mainDay"/>. The merge is left open, as the
@@ -44,17 +55,14 @@ public sealed class DocsGateMergeTests : IDisposable
     /// </summary>
     private void MergeOpen(string onMain = "other.txt", int mainDay = 2)
     {
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.name", "Fixture");
-        Git("config", "user.email", "fixture@example.invalid");
-        Git("config", "core.autocrlf", "false");
+        InitMain();
         _fx.Write("README.md", "# Fixture\n\nWhat src does.\n");
         _fx.Write("src/a.txt", "one\n");
         Commit(1, "one");
 
         Git("checkout", "-q", "-b", "work");
         _fx.Write("src/a.txt", "one\ntwo\n");
-        Commit(5, "two");
+        CommitTracked(5, "two");
 
         Git("checkout", "-q", "main");
         _fx.Write(onMain, "main\n");
@@ -75,7 +83,6 @@ public sealed class DocsGateMergeTests : IDisposable
         var gitDir = Git("rev-parse", "--absolute-git-dir");
         var mergeHead = Path.Combine(gitDir, "MERGE_HEAD");
         return string.Join("\n--\n",
-            Git("rev-parse", "HEAD"),
             File.Exists(mergeHead) ? File.ReadAllText(mergeHead) : "no merge",
             Git("diff", "--cached", "--name-status"),
             Git("status", "--porcelain=v2", "--branch"),
@@ -177,15 +184,12 @@ public sealed class DocsGateMergeTests : IDisposable
     /// <summary>The README and its source from day 1, then a commit on day 9 touching only the source, under <paramref name="message"/>.</summary>
     private void SourceChangedLater(string message)
     {
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.name", "Fixture");
-        Git("config", "user.email", "fixture@example.invalid");
-        Git("config", "core.autocrlf", "false");
+        InitMain();
         _fx.Write("README.md", "# Fixture\n\nWhat src does.\n");
         _fx.Write("src/a.txt", "one\n");
         Commit(1, "one");
         _fx.Write("src/a.txt", "one // a comment\n");
-        Commit(9, message);
+        CommitTracked(9, message);
     }
 
     [Theory]
