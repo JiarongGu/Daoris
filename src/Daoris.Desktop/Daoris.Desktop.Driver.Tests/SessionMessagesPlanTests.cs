@@ -48,6 +48,20 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal("going on in `Game` — you wrote to session `s1`: Also log the port.", only.Reason);
     }
 
+    /// <summary>🔴 A declined quest ends its line: words kept on its limited record plan no go-on.</summary>
+    [Fact]
+    public void A_declined_quests_line_ends_so_words_kept_on_its_limited_record_plan_nothing()
+    {
+        var record = Written("failed") with { Limit = true };
+        var snapshot = new Snapshot([], [Repo], [])
+        {
+            Closed = [Quest("q1", "Declined")],
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = record },
+        };
+
+        Assert.Empty(Planner.Plan(snapshot, Config()));
+    }
+
     /// <summary>
     /// The person's *End and carry on* ends a quiet run as their stop released in the
     /// same press, and the words they wrote to it go to the part that carries it on, never to a resume of the run that hung. Without the
