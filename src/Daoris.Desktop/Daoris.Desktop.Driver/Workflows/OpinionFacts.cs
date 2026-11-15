@@ -20,12 +20,7 @@ internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits,
 internal sealed record OpinionAct(
     OpinionDue Due, string Key, string Claim, IReadOnlyList<QuestView> Chain, string Occasion, bool Person, WorkflowProcess Process) : IOpinionAct
 {
-    /// <summary>
-    /// Asked before its cooling pass's reset: it goes only where the walk finds a holder that is ready (an account's cap does not hold the work
-    /// for the others), else it waits for the reset as before and writes nothing.
-    /// </summary>
     public bool Early { get; init; }
 
-    /// <summary>The limited pass's opinion this ask goes on from, where the gate read one.</summary>
     public string? Ended { get; init; }
 }

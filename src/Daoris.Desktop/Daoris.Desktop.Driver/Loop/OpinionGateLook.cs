@@ -244,7 +244,6 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: true, process);
         }
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                  // A cooling pass is asked again at its reset, and before it where the walk finds another holder that is ready.
                   || gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null })
                  // One opinion reads a chain's whole work here: an earlier step's is its last step's to ask.
                  && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
@@ -431,9 +430,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed,
                 catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home), role: stepRole, repository: due.Repository);
         var choice = await Walk(null).ConfigureAwait(false);
-        // Before the reset, only a holder that is ready is asked; none is the wait the gate already says, written nowhere.
         if (early is not null && !choice.Chosen) return $"held  second opinion on {named}: every holder is cooling, and the reset is asked again.";
-        // The pass the capped account ended stays the failed record it was; its work is asked of the next holder, said once on the run.
         if (early is not null) Service.LandingSaid(OpinionLines.HandedOn(due.Session, occasion, early, ""));
 
         var reading = choice;

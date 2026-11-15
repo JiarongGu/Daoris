@@ -75,9 +75,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             // Its agent refused the entry's model at the open, so the record has ended `choice-not-offered` and this call
             // asks its walk again, the refused (entry, account) passed, before it publishes an ordinary outcome: the replacement's record
             // opens in the same copy, which nothing read; with none left, the walk's own "no reviewer could run", its pass reasons said.
-            // A pass its account's limit or spend cap ended is asked of the next holder at once, said once on the run, and not
-            // waited out to the reset: the account is cooling, so the walk passes it. With no holder left, the limited pass stands
-            // as the outcome and the gate waits for the reset.
+            // A pass its account's cap ended goes to the next holder at once, not after the reset; with none left it stands.
             while (run is { NotOffered: true } or { Limited: true } && reask is not null && !ct.IsCancellationRequested)
             {
                 var limitedPass = run is { Limited: true } ? run : null;

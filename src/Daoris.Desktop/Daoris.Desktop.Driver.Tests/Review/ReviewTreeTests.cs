@@ -350,9 +350,7 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
-    /// A reviewer whose account's limit or spend cap ends its pass after it opened (the refusal answers its prompt) is not waited out to the
-    /// reset: the account is cooling, so the pass's own call asks the walk for the next holder at once, in the same copy, and says the hand-on
-    /// once; the capped record stays as the failed pass it was, and the replacement's is the pass the gate reads.
+    /// A pass its account's cap ends after it opened is asked of the next holder at once, in the same copy, and said once.
     /// </summary>
     [Fact]
     public async Task A_pass_its_account_s_cap_ends_is_asked_of_the_next_holder_at_once_and_said_once()
@@ -397,7 +395,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(["failed"], service.States("r1").Skip(2));
         Assert.Equal(["starting", "working", "completed"], service.States("r2"));
         Assert.Single(said, code => code == "opinion.handed-on");
-        Assert.NotNull(AccountCooling.Of(_home, "alt-stub", "account-1", DateTimeOffset.UtcNow));
+        Assert.Contains(AccountCooling.Read(_home, DateTimeOffset.UnixEpoch), entry => entry.Account == "account-1");
     }
 
     /// <summary>The refusing reviewer's twin whose first account's prompt is refused with the stand-in's spent-quota sentence.</summary>

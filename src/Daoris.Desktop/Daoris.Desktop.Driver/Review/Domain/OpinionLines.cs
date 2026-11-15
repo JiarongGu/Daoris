@@ -48,7 +48,6 @@ public static class OpinionLines
             ("required", gate.Required), ("door", door),
         ]);
 
-    /// <summary>A pass its account's limit or cap ended, asked of the next holder at once: the working session, the occasion, the ended opinion and its session.</summary>
     public static LandingLine HandedOn(string working, string occasion, string opinion, string session) =>
         new("opinion.handed-on", [("session", working), ("occasion", occasion), ("opinion", opinion), ("ended", session)]);
 

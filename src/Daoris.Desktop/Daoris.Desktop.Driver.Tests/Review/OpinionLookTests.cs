@@ -251,8 +251,7 @@ public sealed class OpinionLookTests : IDisposable
 
     /// <summary>
     /// A pass an account's limit ended is gated <c>Unavailable</c> / <c>Cooling</c> with its account's
-    /// reset read from the cool-off its session wrote, and the next look asks the opinion again of a holder that is ready without
-    /// waiting for that reset (a new reviewer session, the same opinion), never waiting on the person's <i>Try again</i>.
+    /// reset read from its session's cool-off, and the next look asks the opinion again of a ready holder before that reset.
     /// </summary>
     [Fact]
     public async Task A_pass_a_limit_ended_is_asked_again_by_the_look_of_the_next_ready_holder_before_the_reset()
