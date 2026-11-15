@@ -49,6 +49,23 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
+    /// 🔴 LINEEND1: a declined quest (an abandon declines it) ends its line. Words kept on its last session, a limited
+    /// record's among them, plan no go-on, so no hold keeps the line pending and its sessions archive at the next look.
+    /// </summary>
+    [Fact]
+    public void A_declined_quests_line_ends_so_words_kept_on_its_limited_record_plan_nothing()
+    {
+        var record = Written("failed") with { Limit = true };
+        var snapshot = new Snapshot([], [Repo], [])
+        {
+            Closed = [Quest("q1", "Declined")],
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = record },
+        };
+
+        Assert.Empty(Planner.Plan(snapshot, Config()));
+    }
+
+    /// <summary>
     /// The person's *End and carry on* ends a quiet run as their stop released in the
     /// same press, and the words they wrote to it go to the part that carries it on, never to a resume of the run that hung. Without the
     /// press's note, the same stopped and released record with words waiting goes on in itself.
