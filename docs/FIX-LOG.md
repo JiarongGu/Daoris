@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - Three CLI doctrine classes failed under three merges' load and passed alone (FLAKE1)
+
+- **Sighting:** the `reached` gate of GATEBUDGET1's, PERFSPEED1's and LINEEND1's merges (493f0a5dc0, 8d2432db19, c3bec16d7c) each
+  failed `src/Daoris.Cli/test/doc-shapes.test.ts`, `doctrine/tierrender.test.ts` and `doctrine/markdown-fence.test.ts` (PERFSPEED1's
+  six classes, LINEEND1's four), every one passing when run again alone; the machine also carried a driven session's start.
+- **Cause:** none found; load-shaped by the alone pass. Kept as a sighting; nothing changed for it.
+
 ## 2026-11-16 - The release rehearsal and the pinned git leg each red on main 1779ac2ec4
 
 - **Symptom:** `rehearse` failed four checks (the checkpointing pack's "core row stays on" and "comes back", the move to `.agents`'s
