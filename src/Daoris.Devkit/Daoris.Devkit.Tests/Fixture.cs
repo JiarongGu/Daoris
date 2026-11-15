@@ -41,8 +41,6 @@ public sealed class Fixture : IDisposable
 
     public void Dispose()
     {
-        // Git writes its objects read-only and a just-ended git process may still hold the folder on Windows: the
-        // shared remover makes files writable, retries briefly and leaves a still-held folder under the ignored fixtures.
         Daoris.Desktop.Driver.Tests.ScratchRemoval.Discard(Path);
     }
 
