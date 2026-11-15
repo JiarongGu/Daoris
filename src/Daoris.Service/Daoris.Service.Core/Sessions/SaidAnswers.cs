@@ -31,7 +31,7 @@ internal static class SaidAnswers
     /// The refusal of a say whose line could not be walked (row d-ii): it loops (<paramref name="end"/> a cycle), it goes on past
     /// <see cref="Lines.Bound"/> parts (the bound), or, with <paramref name="end"/> null, it runs back past them, so its settlement is not read.
     /// </summary>
-    internal static SessionSayOutcome UnplacedAnswer(Session session, LineEnd? end) => new(
+    internal static SessionSayOutcome UnplacedAnswer(Session session, LineEnd? end, int backBound = Lines.Bound) => new(
         SessionSayRefusal.Unplaced,
         end switch
         {
@@ -40,7 +40,7 @@ internal static class SaidAnswers
             LineEnd.Bound =>
                 $"Session `{session.Id}`'s line goes on past {Lines.Bound} parts, more than Daoris follows, so its newest part is not read, and nothing was kept.",
             _ =>
-                $"Session `{session.Id}`'s line runs back past {Lines.Bound} parts, more than Daoris follows, so whether these words were taken "
+                $"Session `{session.Id}`'s line runs back past {backBound} parts, more than Daoris follows, so whether these words were taken "
                 + "already is not read, and nothing was kept.",
         },
         Session: null);

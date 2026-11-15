@@ -210,7 +210,7 @@ export function tighten(found, list, seen = new Set()) {
 }
 
 /** The census classes `units` run again alone, once the merge's other gates have ended, so each writes a newer record of its own time. */
-function measureAlone(root, units) {
+export function measureAlone(root, units) {
   console.log(`time-ratchet: measured again alone: ${units.join(', ')}`);
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }

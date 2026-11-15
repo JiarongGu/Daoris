@@ -36,6 +36,9 @@ public sealed class SessionStore
 
     internal ConnectionGate Db => _db;
 
+    /// <summary>How far back along <c>from</c> a settlement's walk goes: <see cref="Lines.Bound"/>, which a test sets small so it need not write a line that long.</summary>
+    internal int SettlementBound { get; set; } = Lines.Bound;
+
     public SessionOpens Opens { get; }
 
     /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step.</summary>

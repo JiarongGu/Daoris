@@ -19,6 +19,9 @@ import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
 import { checkClock, scanClock } from './layers-census/clock.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
+import { checkBudgetAlone } from './layers-census/budget-alone.mjs';
+import { measureAlone } from './time-ratchet.mjs';
+import { loadWorld } from './time-reach.mjs';
 import { checkGit, scanGit } from './layers-census/git.mjs';
 import { checkMemory } from './layers-census/memory.mjs';
 import { checkProcesses, scanProcesses } from './layers-census/processes.mjs';
@@ -31,7 +34,7 @@ export {
 
 const EMPTY = { packages: {}, ambient: {}, clock: {}, processes: {}, git: {}, slowTests: {} };
 
-function main() {
+async function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'layers-census.json');
   const argv = process.argv.slice(2);
@@ -49,9 +52,14 @@ function main() {
       return 0;
     }
     const list = { ...EMPTY, ...JSON.parse(readFileSync(listFile, 'utf8')) };
+    // Only the default folder is one a measure writes into, so another folder's records are judged as they are.
+    const measuring = !argv.includes('--records');
+    const budget = measuring
+      ? await checkBudgetAlone({ records, list, dir: recordsAt, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) })
+      : { problems: checkBudget(records, list) };
     const problems = [
       ...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkClock(scanClock(tree), list.clock),
-      ...checkProcesses(scanProcesses(tree), list.processes), ...checkGit(scanGit(tree), list.git), ...checkBudget(records, list), ...checkMemory(tree),
+      ...checkProcesses(scanProcesses(tree), list.processes), ...checkGit(scanGit(tree), list.git), ...budget.problems, ...checkMemory(tree),
     ];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
@@ -63,4 +71,4 @@ function main() {
   }
 }
 
-if (isMain(import.meta.url)) process.exit(main());
+if (isMain(import.meta.url)) main().then((code) => process.exit(code));

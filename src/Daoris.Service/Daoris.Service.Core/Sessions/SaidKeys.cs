@@ -37,7 +37,7 @@ public static class SaidKeys
         var at = named;
         for (var hops = 0; at.From is { } from && !records.Contains(from, StringComparer.Ordinal); hops++)
         {
-            if (hops == Lines.Bound) return (records, false);
+            if (hops == sessions.SettlementBound) return (records, false);
             if (await sessions.FindAsync(from, ct).ConfigureAwait(false) is not { } before) break;
             records.Add(before.Id);
             at = before;

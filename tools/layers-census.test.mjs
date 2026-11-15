@@ -1,5 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
 import {
   checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock, scanGit,
   scanProcesses,
@@ -195,6 +199,28 @@ test('a test is judged by its latest run, so an older record of a loaded or sinc
   const problems = checkBudget(records, clean);
   assert.equal(problems.length, 1, problems.join('\n'));
   assert.match(problems[0], /Ns\.A\.old_slow took 9000 ms/);
+});
+
+test('LAYERSRED2: an over-budget test is a finding only if its class, measured again alone, is still over', async () => {
+  const loaded = [{ gate: 'driver', tier: 'unit', at: 1, tests: [{ class: 'Ns.Loaded', test: 'a', ms: 5000 }, { class: 'Ns.Slow', test: 'b', ms: 5000 }] }];
+  const world = async () => ({ units: new Map([['Ns.Loaded', { unit: 'Ns.Loaded' }], ['Ns.Slow', { unit: 'Ns.Slow' }]]) });
+  const measured = [];
+  const again = '<TestRun><Results><UnitTestResult testName="Ns.Loaded.a" duration="00:00:00.0300000" />'
+    + '<UnitTestResult testName="Ns.Slow.b" duration="00:00:04.0000000" /></Results></TestRun>';
+  const dir = join(tmpdir(), `census-alone-${process.pid}`);
+  mkdirSync(dir, { recursive: true });
+  try {
+    const { problems } = await checkBudgetAlone({
+      records: loaded, list: { slowTests: {} }, dir, world,
+      measure: (units) => { measured.push(...units); writeFileSync(join(dir, 'again.trx'), again); },
+    });
+    assert.deepEqual(measured, ['Ns.Loaded', 'Ns.Slow']);
+    assert.equal(problems.length, 1, problems.join('\n'));
+    assert.match(problems[0], /Ns\.Slow\.b took 4000 ms/);
+    assert.deepEqual(overBudgetOf(loaded, { slowTests: { 'Ns.Slow.b': 5000 } }), { 'Ns.Loaded.a': 5000 });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('LAYERS1: no duration records is a clean run that says so', () => {

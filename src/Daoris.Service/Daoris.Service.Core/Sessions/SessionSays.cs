@@ -136,7 +136,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
                 }
 
                 var (held, whole) = await SaidKeys.SettledOnLineAsync(sessions, session, line, key, now, inside).ConfigureAwait(false);
-                if (!whole) return UnplacedAnswer(session, line.End == LineEnd.Bound ? LineEnd.Bound : null);
+                if (!whole) return UnplacedAnswer(session, line.End == LineEnd.Bound ? LineEnd.Bound : null, sessions.SettlementBound);
                 if (held is not null) return SettledAnswer(key, held);
             }
 
