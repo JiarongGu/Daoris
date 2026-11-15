@@ -1,10 +1,12 @@
 export function parse(argv) {
   const options = {};
-  const values = new Set(['home', 'logs', 'since', 'until', 'service', 'quests', 'workspaces', 'work', 'merge-queue', 'merge-record', 'repo', 'case', 'transcripts', 'ids']);
+  const values = new Set(['home', 'logs', 'since', 'until', 'service', 'quests', 'workspaces', 'work', 'merge-queue', 'merge-record', 'repo', 'case', 'transcripts', 'ids', 'receipt', 'models', 'before']);
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     if (flag === '--json') { options.json = true; continue; }
     if (flag === '--landings') { options.landings = true; continue; }
+    if (flag === '--startup') { options.startup = true; continue; }
+    if (flag === '--plan') { options.plan = true; continue; }
     const name = flag.replace(/^--/, '');
     if (!flag.startsWith('--') || !values.has(name)) throw new Error(`unknown argument ${flag}`);
     const value = argv[++i];
