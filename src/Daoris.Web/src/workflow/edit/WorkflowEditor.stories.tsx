@@ -15,7 +15,7 @@ import { WorkflowEditor } from './WorkflowEditor';
 
 const nothing = () => {};
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+const dark: Decorator = (Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>;
 
 const meta: Meta<typeof WorkflowEditor> = {
   title: 'Workflow/WorkflowEditor',
