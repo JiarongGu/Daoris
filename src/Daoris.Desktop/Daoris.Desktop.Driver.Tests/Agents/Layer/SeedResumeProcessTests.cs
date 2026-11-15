@@ -107,6 +107,53 @@ public sealed class SeedResumeProcessTests : IDisposable
         Assert.True(answer.Contains(Word, StringComparison.Ordinal) && answer.Contains(Branch, StringComparison.Ordinal), $"answered: {answer}");
     }
 
+    /// <summary>dsh, started as Daoris starts it, resumes the session written under its home, and holds nothing of it back: no model is asked.</summary>
+    [LiveAgentFact("dsh")]
+    public async Task dsh_resumes_a_session_written_for_it()
+    {
+        SessionEvent[] withTools =
+        [
+            .. History,
+            new() { Kind = SessionEventKind.Tool, Id = "call-1", ToolName = "read", Input = "{\"path\":\"notes.md\"}", Status = "pending" },
+            new() { Kind = SessionEventKind.Tool, Id = "call-1", Output = "the notes", Status = "completed" },
+            new() { Kind = SessionEventKind.Message, Text = "The notes are read." },
+        ];
+        var (info, session) = DshWritten(withTools);
+
+        var answer = await AskAsync(info, session, "session/resume", prompt: false);
+
+        Assert.Equal("", answer);
+    }
+
+    /// <summary>dsh, started as Daoris starts it with its key, goes on in the session written under its home and names what only it holds.</summary>
+    [LiveAgentFact("dsh", key: "DEEPSEEK_API_KEY")]
+    public async Task dsh_goes_on_from_a_session_written_for_it()
+    {
+        var (info, session) = DshWritten(History);
+
+        var answer = await AskAsync(info, session, "session/resume");
+
+        Assert.True(answer.Contains(Word, StringComparison.Ordinal) && answer.Contains(Branch, StringComparison.Ordinal), $"answered: {answer}");
+    }
+
+    /// <summary>The seeded session placed in a home of its own and dsh's start in it, by the recipe Daoris's spawn makes.</summary>
+    private (ProcessStartInfo Info, string Session) DshWritten(IReadOnlyList<SessionEvent> history)
+    {
+        var home = Path.Combine(_tree, "dsh-home");
+        var placed = DshSeeding.Seeding.Place(new SeedAsk("dsh", home, _tree, Guid.NewGuid().ToString(), history, Context, DateTimeOffset.UtcNow));
+        Assert.Null(placed.Refused);
+        var recipe = new DshSpawn().Start(new SpawnRequest("test", _tree, "http://127.0.0.1:1") { Command = [LiveAgentFactAttribute.Located("dsh")!] });
+        var info = new ProcessStartInfo(recipe.Program)
+        {
+            WorkingDirectory = _tree, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (var argument in recipe.Arguments) info.ArgumentList.Add(argument);
+        foreach (var (name, value) in recipe.Variables) info.Environment[name] = value;
+        info.Environment["DSH_HOME"] = home;
+        return (info, placed.Conversation);
+    }
+
     private static async Task<(string Output, string Error)> RunAsync(ProcessStartInfo info)
     {
         using var process = Process.Start(info)!;
@@ -126,8 +173,11 @@ public sealed class SeedResumeProcessTests : IDisposable
         return (await output, await error);
     }
 
-    /// <summary>The protocol's three steps on the thread: the opening, its load, one prompt; the agent's words to that prompt, every request of its refused.</summary>
-    private static async Task<string> AskAsync(ProcessStartInfo info, string conversation)
+    /// <summary>
+    /// The protocol's three steps on the conversation: the opening, its load (or resume, where the agent advertises that), one prompt; the
+    /// agent's words to that prompt, every request of its refused. With no prompt it stops once the conversation is taken and answers nothing.
+    /// </summary>
+    private static async Task<string> AskAsync(ProcessStartInfo info, string conversation, string method = "session/load", bool prompt = true)
     {
         using var process = Process.Start(info)!;
         using var bound = new CancellationTokenSource(Bound);
@@ -175,11 +225,12 @@ public sealed class SeedResumeProcessTests : IDisposable
             await Answer(1);
             await Send(new JsonObject
             {
-                ["jsonrpc"] = "2.0", ["id"] = 2, ["method"] = "session/load",
+                ["jsonrpc"] = "2.0", ["id"] = 2, ["method"] = method,
                 ["params"] = new JsonObject { ["sessionId"] = conversation, ["cwd"] = info.WorkingDirectory, ["mcpServers"] = new JsonArray() },
             });
             var loaded = await Answer(2);
             Assert.True(loaded["error"] is null, $"the load was refused: {loaded}");
+            if (!prompt) return "";
             asked = true;
             await Send(new JsonObject
             {

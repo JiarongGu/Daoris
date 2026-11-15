@@ -8,7 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 internal sealed class LiveAgentFactAttribute : FactAttribute
 {
     /// <param name="program">The program's file name as the path names it, without its extension.</param>
-    public LiveAgentFactAttribute(string program)
+    /// <param name="key">A variable the run needs set, where the agent is held by a key alone; none where its sign-in is its own.</param>
+    public LiveAgentFactAttribute(string program, string? key = null)
     {
         if (Environment.GetEnvironmentVariable(RealReaderTheoryAttribute.Variable) != "1")
         {
@@ -17,6 +18,10 @@ internal sealed class LiveAgentFactAttribute : FactAttribute
         else if (Located(program) is null)
         {
             Skip = $"`{program}` is not on this machine's path";
+        }
+        else if (key is not null && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+        {
+            Skip = $"`{program}` is held by a key alone: set {key} to run it";
         }
     }
 

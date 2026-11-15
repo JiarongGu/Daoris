@@ -10,7 +10,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="provider">The provider's doors as the layer reads them.</param>
 /// <param name="writer">The provider's writer for a conversation run in a tree, written at a moment.</param>
-internal sealed class LayerSeeding(AgentProviderDescriptor provider, Func<string, DateTimeOffset, IConversationSeedWriter> writer) : IConversationSeeding
+/// <param name="physical">Where the agent keeps its files in another form than the text a writer returns (compressed, say): the file as it is placed.</param>
+internal sealed class LayerSeeding(
+    AgentProviderDescriptor provider, Func<string, DateTimeOffset, IConversationSeedWriter> writer, Func<ContextFile, PhysicalSeedFile>? physical = null)
+    : IConversationSeeding
 {
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
@@ -44,11 +47,12 @@ internal sealed class LayerSeeding(AgentProviderDescriptor provider, Func<string
         {
             foreach (var file in rendered.Files)
             {
-                var target = Path.Combine(ask.Home, file.Name);
+                var (name, bytes) = physical?.Invoke(file) is { } form ? (form.Name, form.Bytes) : (file.Name, Utf8.GetBytes(file.Text));
+                var target = Path.Combine(ask.Home, name);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                File.WriteAllText(target + ".seeding", file.Text, Utf8);
+                File.WriteAllBytes(target + ".seeding", bytes);
                 File.Move(target + ".seeding", target, overwrite: true);
-                placed.Add(file.Name);
+                placed.Add(name);
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

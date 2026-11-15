@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Each provider's seed writer holds Lyntai's contract (<see cref="SeedWriterConformance"/>) and writes its agent's own format: Claude Code's
-/// conversation lines in the tree's project folder, Codex's rollout under its day; dsh states none, so its moves take the brief. The layer's
+/// conversation lines in the tree's project folder, Codex's rollout under its day, dsh's log under its tree and id. The layer's
 /// seeding writes a session's events and Daoris's record as one conversation under the account's home.
 /// </summary>
 public sealed class SeedWritersTests : IDisposable
@@ -32,11 +32,86 @@ public sealed class SeedWritersTests : IDisposable
     public void Codex_s_writer_keeps_the_contract() => Assert.Empty(SeedWriterConformance.Check(new CodexSeedWriter(Tree, At), "codex-acp"));
 
     [Fact]
-    public void dsh_states_no_seed_so_its_moves_take_the_brief()
+    public void dsh_s_writer_keeps_the_contract() => Assert.Empty(SeedWriterConformance.Check(new DshSeedWriter(Tree, At), "dsh"));
+
+    /// <summary>🔴 dsh files a session by its tree and id, opens its log on a header, and numbers its events without a gap, each turn opened and closed.</summary>
+    [Fact]
+    public void dsh_s_session_is_a_log_under_its_tree_opening_on_its_header()
     {
-        Assert.Empty(SeedWriterConformance.Check(DshSeedWriter.Writer, "dsh"));
-        Assert.Equal(AgentSupport.Unknown, DshSeedWriter.Writer.SupportFor("dsh"));
-        Assert.Null(ConversationSeedings.Through(ProviderRegistry.Built(), new DoorId("dsh")));
+        var seeded = new DshSeedWriter(Path.GetFullPath(Tree), At).Write(SeedWriterConformance.Sample, "dsh", "0199aaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee");
+
+        var file = Assert.Single(seeded.Files);
+        Assert.Equal($"sessions/{DshSeedWriter.ProjectKey(Path.GetFullPath(Tree))}/0199aaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee/session.v4.jsonl", file.Name);
+        var lines = file.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => JsonNode.Parse(l)!.AsObject()).ToList();
+        Assert.Equal("session", (string?)lines[0]["type"]);
+        Assert.Equal(4, (int)lines[0]["version"]!);
+        Assert.Equal(Path.GetFullPath(Tree), (string?)lines[0]["cwd"]);
+        Assert.Equal(Enumerable.Range(0, lines.Count - 1), lines.Skip(1).Select(l => (int)l["seq"]!));
+        Assert.Equal(
+            ["turn/start", "step/start", "user/message", "assistant/message", "tool/call", "tool/call", "tool/result", "tool/result", "step/end",
+             "step/start", "assistant/message", "step/end", "turn/end", "turn/start", "step/start", "user/message"],
+            lines.Skip(1).Select(l => (string?)l["type"]));
+        Assert.True((bool)lines.Single(l => (string?)l["type"] == "tool/result" && (string?)l["data"]!["message"]!["toolCallId"] == "call-2")["data"]!["message"]!["isError"]!);
+    }
+
+    /// <summary>
+    /// 🔴 dsh refuses a log that does not decode: its file is a header frame and an events frame of Zstandard, whose blocks here are stored raw, and
+    /// the frames hold the log's own bytes.
+    /// </summary>
+    [Fact]
+    public void dsh_s_file_is_its_header_and_its_events_in_two_frames()
+    {
+        var seeded = new DshSeedWriter(Path.GetFullPath(Tree), At).Write(SeedWriterConformance.Sample, "dsh", "seed-1");
+        var text = Assert.Single(seeded.Files).Text;
+
+        var physical = DshSeedWriter.Physical(seeded.Files[0]);
+
+        Assert.Equal(seeded.Files[0].Name + ".zstd", physical.Name);
+        var frames = new List<string>();
+        var at = 0;
+        while (at < physical.Bytes.Length)
+        {
+            Assert.Equal(0xFD2FB528u, BitConverter.ToUInt32(physical.Bytes, at));
+            Assert.Equal(0xA0, physical.Bytes[at + 4]);
+            var size = (int)BitConverter.ToUInt32(physical.Bytes, at + 5);
+            at += 9;
+            var content = new List<byte>();
+            bool last;
+            do
+            {
+                var word = physical.Bytes[at] | physical.Bytes[at + 1] << 8 | physical.Bytes[at + 2] << 16;
+                last = (word & 1) != 0;
+                Assert.Equal(0, (word >> 1) & 3);
+                var n = word >> 3;
+                content.AddRange(physical.Bytes.AsSpan(at + 3, n).ToArray());
+                at += 3 + n;
+            }
+            while (!last);
+
+            Assert.Equal(size, content.Count);
+            frames.Add(System.Text.Encoding.UTF8.GetString([.. content]));
+        }
+
+        Assert.Equal(2, frames.Count);
+        Assert.Equal("session", (string?)JsonNode.Parse(frames[0].TrimEnd('\n'))!["type"]);
+        Assert.Equal(text, string.Concat(frames));
+    }
+
+    [Fact]
+    public void dsh_s_seeding_places_the_session_s_log_in_its_home_and_takes_it_out()
+    {
+        var home = Path.Combine(_root, "dsh-home");
+        var placed = DshSeeding.Seeding.Place(new SeedAsk(
+            "dsh", home, Tree, "seed-1", [new() { Kind = SessionEventKind.User, Text = "Say hello.", Origin = "person" }], [], At));
+
+        Assert.Null(placed.Refused);
+        var name = Assert.Single(placed.Files);
+        Assert.EndsWith("/seed-1/session.v4.jsonl.zstd", name);
+        Assert.True(File.Exists(Path.Combine(home, name)));
+        Assert.Equal(0x28, File.ReadAllBytes(Path.Combine(home, name))[0]);
+
+        DshSeeding.Seeding.Remove(home, placed);
+        Assert.False(File.Exists(Path.Combine(home, name)));
     }
 
     /// <summary>🔴 Claude Code reads a conversation by its folder and its chain: each line a user or assistant one, chained by parent.</summary>
@@ -133,6 +208,7 @@ public sealed class SeedWritersTests : IDisposable
         Assert.NotNull(ConversationSeedings.Through(registry, new DoorId("claude-code")));
         Assert.NotNull(ConversationSeedings.Through(registry, new DoorId("claude-code-acp")));
         Assert.NotNull(ConversationSeedings.Through(registry, new DoorId("codex-acp")));
+        Assert.NotNull(ConversationSeedings.Through(registry, new DoorId("dsh")));
     }
 
     [Fact]
