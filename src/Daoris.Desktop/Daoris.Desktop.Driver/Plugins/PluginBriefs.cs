@@ -4,7 +4,6 @@ namespace Daoris.Driver;
 
 public static class PluginBriefs
 {
-    /// <summary>The longest brief: one line a session reads beside its tools, not a guide.</summary>
     public const int Limit = 300;
 
     public static string? Read(JsonElement manifest)

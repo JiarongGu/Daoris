@@ -3,7 +3,6 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { askHeld, isPending } from '../state/held';
 
-/** One numbered slot of a repository's tree pool, as the desktop store answers it. */
 export type TreePoolSlot = { number: number; state: string; line: string; reason: string };
 
 /** The pool's numbered slots, read from the desktop store and refreshed with the driver's next look. */

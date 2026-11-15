@@ -36,7 +36,6 @@ public static class IntegrateChoice
         // read from the options; a version that does not read here has its own refusal, and a graph with no landing integrates nothing.
         var gates = GraphGates.Of(graph, declared);
         if (gates.Problem is not null) return new(repository, [], false);
-        // A second opinion its place cannot read would draw its node unable to start at every run; the choice says the press that lets it.
         IReadOnlyList<string> opinion = gates.OpinionCannot is { } unready ? [Capital(unready)] : [];
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode) return new(repository, opinion, false);
         var landing = WorkflowProcess.Of(

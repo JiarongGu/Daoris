@@ -63,7 +63,6 @@ public static class WorkflowPresets
         foreach (var gate in gates)
         {
             var added = new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" };
-            // The second opinion reads as the shipped opinion role, so it starts wherever its place declares reviewers.
             if (gate == WorkflowKinds.Opinion) added["options"] = new JsonObject { [NodeOptionFields.Role] = JsonValue.Create("opinion") };
             nodes.Add(added);
             wires.Add(new JsonObject { ["id"] = $"{gate}-in", ["kind"] = "after", ["from"] = from, ["to"] = gate });

@@ -114,10 +114,6 @@ public static class ParticipantWork
     /// </summary>
     public static bool HoldsSlot(string? work) => work is Build or Design or Exact or Intake or Help or Partner or Review or Plan or Orient;
 
-    /// <summary>
-    /// Whether the work keeps its own repository's memory: a build, a design, an exact build and a chat do. A review, a help, a partner and the
-    /// rest are denied <c>memory_write</c> by their own rules, which <c>ParticipantWorkTests</c> holds to this.
-    /// </summary>
     public static bool KeepsMemory(string work) => work is Build or Design or Exact or Chat;
 
     private static bool Marked(string? mark) => !string.IsNullOrEmpty(mark);
