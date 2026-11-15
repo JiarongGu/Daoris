@@ -1,11 +1,13 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { VARIANTS, sharesOf, usageOf } from './dev-metrics/startup.mjs';
 import { builderMeasures } from './dev-metrics/first-edit.mjs';
 import { builderOf } from './dev-metrics/builder.mjs';
 import { mainMeasures } from './dev-metrics/red-rate.mjs';
-import { LANDINGS, landingRecord, recordLanding } from './dev-metrics/landing.mjs';
+import { LANDINGS, landingRecord, recordLanding, summarizeLandings } from './dev-metrics/landing.mjs';
 
 mkdirSync('_fixtures', { recursive: true });
 const root = mkdtempSync(join('_fixtures', 'dev-landing-'));
@@ -97,4 +99,64 @@ test('a landing is recorded once, in the machine-local log, and a failing record
   write(join(root, 'blocked'), 'a file where the log folder must go');
   assert.equal(recordLanding(join(root, 'blocked'), { commit: 'c', branch: 'b' }), false);
   assert.equal(existsSync(join(root, 'blocked', LANDINGS)), false);
+});
+
+const read = (id, s, file, size, name = 'Read') => [
+  turn(`t${id}`, s, { input_tokens: 1, cache_creation_input_tokens: 1, cache_read_input_tokens: 1, output_tokens: 1 }, { type: 'tool_use', id, name, input: name === 'Bash' ? { command: file } : { file_path: file } }),
+  result(id, s + 1, 'z'.repeat(size)),
+];
+const classed = jl([
+  { type: 'user', timestamp: at(0), message: { content: 'the brief' } },
+  ...read('a', 10, 'D:\\repo\\AGENTS.md', 10),
+  ...read('b', 20, '/repo/docs/areas/driving.md', 20),
+  ...read('c', 30, '/repo/docs/index/README.md', 30),
+  ...read('d', 40, '/repo/.claude/INDEX.md', 1),
+  ...read('e', 50, '/repo/TASKS.md', 40),
+  ...read('f', 60, '/repo/docs/decisions/D12.md', 50),
+  ...read('g', 70, 'cat docs/task-archive.md', 5, 'Bash'),
+  ...read('h', 80, '/repo/docs/archive/areas/x.md', 2),
+  ...read('i', 90, '/repo/src/a.ts', 60),
+  turn('m9', 100, { input_tokens: 1, cache_creation_input_tokens: 1, cache_read_input_tokens: 1, output_tokens: 1 }, { type: 'tool_use', id: 'e', name: 'Edit', input: { file_path: 'src/a.ts' } }),
+]);
+
+test('the bytes before the first edit are split by the class of what was read, and library reads are counted', () => {
+  const m = builderMeasures(classed, 'cls');
+  assert.deepEqual(m.preEditByClass, { brief: 10, area: 20, index: 31, backlog: 40, library: 57, code: 60 });
+  assert.equal(m.preEditBytes, 218);
+  assert.equal(m.libraryReads, 3);
+});
+
+test('a window summary gives mean and median per class, and a schema-1 record without classes is left out of them', () => {
+  const one = builderMeasures(classed, 'one').preEditByClass;
+  const doubled = Object.fromEntries(Object.entries(one).map(([k, v]) => [k, 2 * v]));
+  const builder = (preEditByClass, libraryReads) => ({ preEditBytes: 1, preEditTokens: 1, startupTokens: 1, wallMinutes: 1, tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, preEditByClass, libraryReads });
+  const summary = summarizeLandings([
+    { schema: 2, branch: 'a', builder: builder(one, 3) }, { schema: 2, branch: 'b', builder: builder(doubled, 5) },
+    { schema: 2, branch: 'c', builder: builder(doubled, 7) }, { schema: 1, branch: 'd', builder: builder(undefined, undefined) },
+  ], join(root, 'empty'));
+  assert.equal(summary.preEditByClass.records, 3);
+  assert.deepEqual(summary.preEditByClass.library, { mean: 95, median: 114 });
+  assert.deepEqual(summary.preEditByClass.brief, { mean: 16.7, median: 20 });
+  assert.deepEqual(summary.preEditByClass.libraryReads, { mean: 5, median: 5 });
+  assert.equal(summarizeLandings([{ schema: 1, branch: 'd', builder: builder(undefined, undefined) }], join(root, 'empty')).preEdit.meanBytes, 1);
+  assert.match(summarizeLandings([{ schema: 1, branch: 'd', builder: builder(undefined, undefined) }], join(root, 'empty')).preEditByClass, /^not recorded/);
+});
+
+test('the startup plan lists every variant per model and starts no process', () => {
+  const plan = spawnSync(process.execPath, [resolve('tools/dev-metrics.mjs'), '--startup', '--plan', '--json'], { encoding: 'utf8', windowsHide: true });
+  assert.equal(plan.status, 0);
+  const rows = JSON.parse(plan.stdout);
+  assert.equal(rows.length, 2 * VARIANTS.length);
+  assert.equal(VARIANTS.length, 8);
+  assert.deepEqual([...new Set(rows.map(r => r.variant))], ['all', 'without-brief', 'without-claude-md', 'without-skills', 'without-agents', 'without-mcp', 'without-plugins', 'floor']);
+});
+
+test('a share is what the whole start has over the start without the source', () => {
+  const row = (variant, total) => ({ model: 'm', variant, total });
+  const [m] = sharesOf([row('all', 30000), row('floor', 24000), row('without-brief', 28500), row('without-skills', 29000)]);
+  assert.equal(m.repository, 6000);
+  assert.equal(m.sources.brief, 1500);
+  assert.equal(m.sources.mcp, null);
+  assert.deepEqual(usageOf(JSON.stringify({ usage: { input_tokens: 3, cache_creation_input_tokens: 10, cache_read_input_tokens: 100, output_tokens: 2 }, num_turns: 1 })), { input: 3, cacheWrite: 10, cacheRead: 100, output: 2, total: 113, turns: 1 });
+  assert.equal(usageOf('not json'), null);
 });

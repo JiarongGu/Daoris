@@ -4,6 +4,8 @@
  *
  *   node tools/dev-metrics.mjs --home <data> --logs <logs> --since YYYY-MM-DD --until YYYY-MM-DD
  *        [--service <url> | --quests <file>] [--workspaces a,b] [--work <dir>] [--merge-queue <file>] [--repo <checkout>] [--case <ask-or-quest-ids>] [--json]
+ *   node tools/dev-metrics.mjs --landings [--since D] [--receipt <name>] [--repo <checkout>] [--json]
+ *   node tools/dev-metrics.mjs --startup [--plan] [--models a,b] [--repo <checkout>] [--json]
  *   node tools/dev-metrics.mjs --transcripts <subagents dir> --ids <a,b,...> [--json]
  *
  * `--home` is an install's `data` folder, `--logs` its `logs` folder. A quest's record comes from the running
@@ -23,6 +25,7 @@ import { readHome, missing } from './dev-metrics/records.mjs';
 import { sessionLinks, caseScope, askOf } from './dev-metrics/scope.mjs';
 import { lifecycleRows } from './dev-metrics/lifecycle.mjs';
 import { landingsMode } from './dev-metrics/landings-mode.mjs';
+import { startupMode } from './dev-metrics/startup-mode.mjs';
 import { workflowRows, personQueue } from './dev-metrics/workflow.mjs';
 import { communicationRows } from './dev-metrics/communication.mjs';
 import { actorRows, replyRows } from './dev-metrics/actors.mjs';
@@ -434,6 +437,7 @@ export function renderBuilders(rows) {
 async function main() {
   const o = parse(process.argv.slice(2));
   if (o.landings) return landingsMode(o);
+  if (o.startup) return startupMode(o);
   if (o.transcripts) {
     if (!o.ids || !existsSync(o.transcripts)) { console.error('dev-metrics: --transcripts <dir> needs --ids <a,b,...>'); return 2; }
     const rows = builderTimes(o.transcripts, o.ids.split(','));

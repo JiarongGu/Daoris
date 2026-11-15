@@ -15,6 +15,18 @@ export function writeLandingsSnapshot(measures, { directory = 'docs/metrics', da
   return file;
 }
 
+/** A window's figures as the dated receipt `<date>-<name>.json`: counts and statistics only, no branch names of the person's. */
+export function writeLandingsReceipt(measures, name, { directory = 'docs/metrics', date = new Date().toISOString().slice(0, 10), since = null, before = null } = {}) {
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('--receipt needs a lowercase name of letters, digits and dashes');
+  const { withoutBuilder, ...rest } = measures;
+  mkdirSync(directory, { recursive: true });
+  const file = join(directory, `${date}-${name}.json`);
+  const text = JSON.stringify({ schema: 1, date, name, since, before, ...rest, withoutBuilder: withoutBuilder.length }, null, 2) + '\n';
+  if (/[A-Za-z]:[\\/]|\\\\[\w.-]+\\/.test(text)) throw new Error('receipt contains a machine path');
+  writeAtomic(file, text);
+  return file;
+}
+
 export function writeSnapshot(report, { directory = 'docs/metrics', date = report.range.until ?? report.generatedAt.slice(0, 10) } = {}) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new Error('snapshot date must be YYYY-MM-DD');
   mkdirSync(directory, { recursive: true });
