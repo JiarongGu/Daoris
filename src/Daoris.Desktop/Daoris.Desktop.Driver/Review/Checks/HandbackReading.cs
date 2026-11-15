@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A hand-back as a check step reads it from git, never from the session's note: the commit judged, the merge base with the line, how
-/// many commits the line moved past it, the paths touched since, and the commits without a maker's trailer. A line moved past the
-/// work, or a commit with no maker's trailer, is a fault only the session can put right, and the step's verdict.
+/// A hand-back as a check step reads it from git, never from the session's note: the commit judged, its base on the line, how far the line
+/// moved past it, the paths touched since, the commits without a maker's trailer and its <see cref="Merge"/> onto the line's tip. An
+/// unsigned commit, or a merge that conflicts, is a fault only the session can put right and the step's verdict; a moved line is none.
 /// </summary>
 internal sealed record HandbackReading(string Tip, string? Base, int Behind, IReadOnlyList<string> Touched, IReadOnlyList<UnsignedCommit> Unsigned)
 {
@@ -13,7 +13,9 @@ internal sealed record HandbackReading(string Tip, string? Base, int Behind, IRe
     /// <summary>The line the reading is made against, named in <see cref="Words"/>.</summary>
     internal string Line { get; init; } = "the line";
 
-    public bool Faulty => Behind > 0 || Unsigned.Count > 0;
+    internal LineMerge? Merge { get; init; }
+
+    public bool Faulty => Unsigned.Count > 0 || Merge is { Conflicts.Count: > 0 };
 
     /// <summary>The reading in words, for the session: what Daoris read and what it holds against the work.</summary>
     public string Words()
@@ -24,7 +26,7 @@ internal sealed record HandbackReading(string Tip, string? Base, int Behind, IRe
             + (Behind > 0 ? $", {Behind} {(Behind == 1 ? "commit" : "commits")} behind `{Line}`" : ", up to date with the line")
             + $"; {Touched.Count} {(Touched.Count == 1 ? "path" : "paths")} touched.",
         };
-        if (Behind > 0) lines.Add($"The line moved past this work: bring the branch up to date with `{Line}` (rebase it onto `{Line}`) and commit again.");
+        if (Merge?.Words() is { } merged) lines.Add(merged);
         if (CommitAttribution.Words(Unsigned) is { } unsigned) lines.Add(unsigned);
         return string.Join('\n', lines);
     }

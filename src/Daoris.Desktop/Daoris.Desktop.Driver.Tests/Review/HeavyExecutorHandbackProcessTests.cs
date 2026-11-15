@@ -4,9 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A check whose choice is <c>reached</c> reads the hand-back from git first (the line it is behind, the commits without a maker's
-/// trailer) and a fault there is its verdict, run no further; else it runs the declaration's required hand-back commands its change reaches,
-/// except any a check finished green at this very commit. A line it cannot find is no verdict at all: it is unknown, coded <c>unrun</c>.
+/// A run's check judges the work as merged onto its line's tip. One whose choice is <c>reached</c> reads the hand-back from git first
+/// (the line it is behind, the commits without a maker's trailer, the merge) and a fault there is its verdict, run no further; else it
+/// runs the declaration's required hand-back commands its change reaches, except any a check finished green at the very commit it judges.
+/// A line that moved is no fault: a clean merge is checked as merged and a conflict goes back naming its paths. A line it cannot find is
+/// no verdict at all: it is unknown, coded <c>unrun</c>.
 /// </summary>
 /// <remarks>Real git, node and job processes: the Process half's.</remarks>
 [Trait(Category.Name, Category.Process)]
@@ -75,19 +77,32 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         return (await GitFixture.GitAsync(Checkout, "rev-parse", "HEAD:daoris.gates.json")).Trim();
     }
 
-    private async Task<VerifyResult> RunAsync(string blob)
+    private string Tree => Checkout + "-verify";
+
+    private async Task<string> TipAsync(string at = "work") => (await GitFixture.GitAsync(Checkout, "rev-parse", at)).Trim();
+
+    private async Task<VerifyResult> RunAsync(string blob, IReadOnlyList<string>? gates = null, string invocation = "i-a")
     {
-        var commit = (await GitFixture.GitAsync(Checkout, "rev-parse", "HEAD")).Trim();
+        var commit = await TipAsync("HEAD");
         var executor = new HeavyExecutor(Home, new VerifyWorld() with { Poll = TimeSpan.FromMilliseconds(50) });
         _executors.Add(executor);
-        await executor.SendAsync(new VerifySend("q7", "i-a", "engine", Checkout, commit, blob) { Tree = Checkout + "-verify", Reached = true });
-        var path = VerifyFiles.ResultOf(Home, "q7", "i-a");
+        await executor.SendAsync(new VerifySend("q7", invocation, "engine", Checkout, commit, blob) { Tree = Tree, Reached = gates is null, Gates = gates, AsMerged = true });
+        var path = VerifyFiles.ResultOf(Home, "q7", invocation);
         await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
 
+    private async Task<(string Work, string Line)> BehindAsync(string path, string moved)
+    {
+        await CommitAsync(path, "work" + Trailer);
+        await GitAsync("switch", "-q", "main");
+        await CommitAsync(moved, "moved" + Trailer);
+        await GitAsync("switch", "-q", "work");
+        return (await TipAsync(), await TipAsync("main"));
+    }
+
     [Fact]
-    public async Task A_signed_work_on_the_line_runs_only_the_required_commands_its_paths_reach()
+    public async Task A_signed_work_on_the_line_runs_only_the_required_commands_its_paths_reach_on_the_work_as_it_stands()
     {
         var blob = await RepositoryAsync();
         await CommitAsync("src/a.txt", "work" + Trailer);
@@ -97,6 +112,66 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
         Assert.Equal(["fast-src"], result.Gates.Select(gate => gate.Name));
         Assert.Equal("fast-src required", File.ReadAllText(Ran).Trim());
+        Assert.Contains("up to date with the line", result.Why);
+        Assert.DoesNotContain("merged", result.Why);
+        Assert.Equal(await TipAsync(), (await GitFixture.GitAsync(Tree, "rev-parse", "HEAD")).Trim());
+    }
+
+    [Fact]
+    public async Task Work_behind_a_moved_line_with_no_conflict_is_checked_on_its_merge_onto_the_lines_tip_and_its_branch_is_left_as_it_is()
+    {
+        var blob = await RepositoryAsync();
+        var (work, line) = await BehindAsync("src/a.txt", "later.txt");
+
+        var result = await RunAsync(blob);
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal(work, result.Commit);
+        Assert.Contains("1 commit behind `main`", result.Why);
+        Assert.Contains("checked as merged onto `main`", result.Why);
+        Assert.Equal("fast-src required", File.ReadAllText(Ran).Trim());
+        Assert.Equal($"{line} {work}", (await GitFixture.GitAsync(Tree, "log", "-1", "--format=%P", "HEAD")).Trim());
+        Assert.True(File.Exists(Path.Combine(Tree, "later.txt")));
+        Assert.Equal(work, await TipAsync());
+    }
+
+    [Fact]
+    public async Task Work_behind_a_moved_line_that_conflicts_goes_back_to_the_work_naming_the_paths_and_runs_no_gate()
+    {
+        var blob = await RepositoryAsync();
+        var (work, _) = await BehindAsync("src/a.txt", "src/a.txt");
+
+        var result = await RunAsync(blob);
+
+        Assert.Equal((VerifyVerdicts.Failed, HandbackReading.Gate), (result.Verdict, result.Failed));
+        Assert.Contains("conflicts in src/a.txt: merge `main` into the branch, resolve that path and commit again", result.Why);
+        Assert.False(File.Exists(Ran));
+        Assert.Equal(work, await TipAsync());
+    }
+
+    [Fact]
+    public async Task A_named_gate_check_of_work_behind_a_moved_line_runs_on_its_merge_and_a_conflict_runs_none()
+    {
+        var blob = await RepositoryAsync();
+        var (work, line) = await BehindAsync("src/a.txt", "later.txt");
+
+        var result = await RunAsync(blob, ["slow"]);
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Contains("checked as merged onto `main`", result.Why);
+        Assert.Equal("slow -", File.ReadAllText(Ran).Trim());
+        Assert.Equal($"{line} {work}", (await GitFixture.GitAsync(Tree, "log", "-1", "--format=%P", "HEAD")).Trim());
+
+        File.Delete(Ran);
+        await GitAsync("switch", "-q", "main");
+        await CommitAsync("src/a.txt", "moved again" + Trailer);
+        await GitAsync("switch", "-q", "work");
+
+        var conflicted = await RunAsync(blob, ["slow"], "i-b");
+
+        Assert.Equal((VerifyVerdicts.Failed, HandbackReading.Gate), (conflicted.Verdict, conflicted.Failed));
+        Assert.Contains("conflicts in src/a.txt", conflicted.Why);
+        Assert.False(File.Exists(Ran));
     }
 
     [Fact]
@@ -146,22 +221,6 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         Assert.Equal((VerifyVerdicts.Failed, HandbackReading.Gate), (result.Verdict, result.Failed));
         Assert.Contains("work with no trailer", result.Why);
         Assert.Contains("Co-Authored-By", result.Why);
-        Assert.False(File.Exists(Ran));
-    }
-
-    [Fact]
-    public async Task Work_the_line_has_moved_past_fails_the_hand_back_and_runs_no_gate()
-    {
-        var blob = await RepositoryAsync();
-        await CommitAsync("src/a.txt", "work" + Trailer);
-        await GitAsync("switch", "-q", "main");
-        await CommitAsync("later.txt", "moved" + Trailer);
-        await GitAsync("switch", "-q", "work");
-
-        var result = await RunAsync(blob);
-
-        Assert.Equal((VerifyVerdicts.Failed, HandbackReading.Gate), (result.Verdict, result.Failed));
-        Assert.Contains("1 commit behind `main`", result.Why);
         Assert.False(File.Exists(Ran));
     }
 

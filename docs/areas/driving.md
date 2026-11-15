@@ -63,15 +63,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 7. Daoris checks a session's work only in a workflow's `check` step, never outside its workflow (D293): no look reads a done session's tree
     or asks it a check. A session's handback is the note it gave at done or decline, written once in the same write as the move,
     kept with the session that wrote it, and read whole. (D219) A `check` whose `gates` is `reached` reads the hand-back from git at the tip it
-    is bound to (`HandbackReading`, inside the check's executor): the base against the line, how far the line moved past it, the paths touched
-    and the commits that carry no `Co-Authored-By` line naming a maker (`CommitAttribution` over the repository port's log, the merge check's rule, held equal to
-    `tools/merge/attribution.ts` by one fixture, `attribution-contract.json`). A line moved past the work, or a commit without a maker's trailer,
-    is the step's failed verdict, gate `hand-back`, with the reading's words, and holds the steps after it; where the graph draws a `back` wire
+    is bound to (`HandbackReading`, inside the check's executor): the base against the line, how far the line moved past it, the paths touched,
+    the commits that carry no `Co-Authored-By` line naming a maker (`CommitAttribution` over the repository port's log, the merge check's rule, held equal to
+    `tools/merge/attribution.ts` by one fixture, `attribution-contract.json`), and the work merged onto the line's tip (`LineMerge`, workflows
+    rule 40). A line that moved is no fault on its own: a clean merge is what the gates judge. A commit without a maker's trailer, or a merge
+    that conflicts, its paths named, is the step's failed verdict, gate `hand-back`, with the reading's words, and holds the steps after it; where the graph draws a `back` wire
     from the step to the work, those words go to the work's open session as Daoris's word under the step's key (`NodeRunKeeping`). No line to
     read against, or git unable to say, is unknown with the code `unrun`, never failed. A process a session left running is not read: nothing
     reads one at a hand-back. Else it runs the declaration's required hand-back commands the paths reach: a gate marked `"handback"` in
-    `daoris.gates.json` (`true` for its `run`, or the command to run in its place), except one a broker check finished green at this very commit
-    (`HandbackGates.Verified`: its whole command, or its name where its own run is the requirement), which is named kept. Every driven brief lists
+    `daoris.gates.json` (`true` for its `run`, or the command to run in its place), except one a broker check finished green at the very commit
+    the verification tree takes, so never on a merge (`HandbackGates.Verified`: its whole command, or its name where its own run is the requirement), which is named kept. Every driven brief lists
     the required commands for the agent to run before done (`HandbackGates.Told`) and tells it to write its own `Co-Authored-By` line
     whatever its harness (`CommitTrailers`), since a shell commit through `claude-code-acp` gets none.
 
