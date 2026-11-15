@@ -83,7 +83,8 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish, () => Reopen))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish, () => Reopen,
+        () => SessionsRead))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans))!;
@@ -124,6 +125,9 @@ public sealed class NodeRuntime(
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
     public Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>? Finish { get; set; }
+
+    /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
+    public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
 
     public Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>? Reopen { get; set; }
 

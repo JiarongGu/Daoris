@@ -95,6 +95,33 @@ public sealed class RunEndsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_departure_the_person_passed_at_its_runs_holds_is_their_yes_and_the_runs_end_closes_it_done_with_its_session()
+    {
+        var requirement = new QuestRequirement("write the report", "The report is in docs/report.md.");
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now, requirements: [requirement]);
+        Assert.True((await _quests.BindAsync(quest.Id, quest.Id, Now)).Moved);
+        var opened = await _ledger.OpenAsync(quest.Id, "stub", Now, tree: "/trees/s-1");
+        foreach (var state in new[] { "starting", "working" }) await _ledger.AdvanceAsync(opened.Session!.Id, state, null, null, null, Now);
+        Assert.True((await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now)).Moved);
+        var departed = new QuestAnswer(1, null, Departed: "It went into the wiki instead.", Quote: requirement.Quote);
+        var held = (await _quests.SubmitAsync(quest.Id, "Built.", [departed], Now, session: opened.Session!.Id)).Quest!;
+        Assert.Equal(QuestHold.Departed, held.Hold);
+        await _ledger.AdvanceAsync(opened.Session!.Id, "awaiting-step", "It waits on its run.", null, null, Now.AddMinutes(1));
+
+        var refused = await _ledger.EndRunAsync(quest.Id, [(quest.Id, Ref(held))], [opened.Session!.Id], "completed", null, null, Now.AddMinutes(8));
+        Assert.Equal(QuestCloseRefusal.Held, refused.Refusal);
+
+        var ended = await _ledger.EndRunAsync(
+            quest.Id, [(quest.Id, Ref(held))], [opened.Session!.Id], "completed", null, null, Now.AddMinutes(9), passed: [quest.Id]);
+
+        Assert.Equal(QuestCloseRefusal.None, ended.Refusal);
+        var done = (await _quests.FindAsync(quest.Id))!;
+        Assert.Equal((QuestStatus.Done, "It went into the wiki instead."), (done.Status, done.Answers.Single().Departed));
+        Assert.NotNull(done.Accepted);
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(opened.Session!.Id))!.State);
+    }
+
+    [Fact]
     public async Task A_run_that_ended_any_other_way_ends_its_sessions_and_leaves_its_quest_taken()
     {
         var (quest, session) = await Submitted();

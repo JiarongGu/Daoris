@@ -5,13 +5,20 @@ namespace Daoris.Driver;
 /// told to the run's work, the accepts a carried-on session earns again, the landing started on its door, and the run's end and reopening.
 /// </summary>
 /// <param name="say">The say door a run's work is told what its steps sent back through: the session, the words and the key.</param>
+/// <param name="sessions">This machine's session records, among which a run's end finds the sessions waiting on it.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
     Func<ILandingWords?> landings, Func<Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>?>? finish = null,
-    Func<Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>?>? reopen = null)
+    Func<Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>?>? reopen = null,
+    Func<Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>?>? sessions = null)
 {
     private readonly HashSet<string> _reopenAsked = new(StringComparer.Ordinal);
+
+    private RunEndPorts Ends => new(records.Home)
+    {
+        Finish = finish?.Invoke(), Sessions = sessions?.Invoke(), Log = doors().Say, Owed = new OwedRunEnds(records.Home),
+    };
 
     /// <summary>A run's older records ended done asked once to wait on its first step active or ready (<see cref="RunSessionReopens"/>).</summary>
     public async Task ReopenSessionsAsync(GovernedUnit governed, RunScope scope, List<string> said, CancellationToken ct)
@@ -25,7 +32,7 @@ internal sealed class NodeRunKeeping(
     /// <summary>The run ends the service could not take, asked again (<see cref="RunSessionEnds.AgainAsync"/>).</summary>
     public async Task OwedEndsAsync(List<string> said, CancellationToken ct)
     {
-        if (holdsLease()) await RunSessionEnds.AgainAsync(finish?.Invoke(), new OwedRunEnds(records.Home), said, ct).ConfigureAwait(false);
+        if (holdsLease()) await RunSessionEnds.AgainAsync(Ends, said, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -125,8 +132,8 @@ internal sealed class NodeRunKeeping(
                     : RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
-        await RunSessionEnds.FinishAsync(finish?.Invoke(), scope.Run.Run, ended, scope.Quests,
-            [.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []], said, ct, new OwedRunEnds(records.Home)).ConfigureAwait(false);
+        await RunSessionEnds.FinishAsync(Ends, scope.Run.Run, ended, scope.Quests, RunEndQuests.Passed(governed.Graph, record), said, ct)
+            .ConfigureAwait(false);
         var outcome = $"{ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}";
         said.Add(why is null
             ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "

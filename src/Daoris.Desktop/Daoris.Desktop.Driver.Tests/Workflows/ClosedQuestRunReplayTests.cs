@@ -45,6 +45,8 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
             finished.Add(end);
             return Task.FromResult<RunEndResponse?>(new RunEndResponse(null, "ended", [], end.Sessions));
         };
+        runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
+            [.. runs.Select(run => new SessionRecord("s-" + run, "Owner", SessionStates.AwaitingStep) { WaitsOn = run })]);
         runtime.Reopen = (reopen, _) =>
         {
             reopened.Add(reopen);
@@ -64,6 +66,7 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
         {
             Assert.Equal("stopped", end.State);
             Assert.Empty(end.Quests);
+            Assert.Equal(["s-" + end.Run], end.Sessions);
             Assert.Contains("Daoris stopped", end.Note, StringComparison.Ordinal);
         });
     }
