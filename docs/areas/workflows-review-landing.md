@@ -362,7 +362,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
-    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). The verification tree is prepared as a
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A run's check (`RunChecks`, `AsMerged`) judges the work
+    as merged onto its line's tip (the remote's head, else `main` or `master`): the verification tree takes the work where it holds that tip,
+    else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
+    session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands
+    then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
+    saying so; a line's own run and a declaration's runner judge their commit as it stands. The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
     gates' declared `regenerate`, never the `treeBaseline`), again only where those keys or the declared commands moved; a
     preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.

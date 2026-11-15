@@ -4,7 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The hand-back as the check step reads it, from git and never from the session's note: the base against the line, how far the line
-/// moved past it, the paths touched, and the commits without a maker's trailer. Any of the last two held against it is a fault.
+/// moved past it, the paths touched, the commits without a maker's trailer and its merge onto the line's tip. An unsigned commit, or a
+/// merge that conflicts, is a fault; a line that moved is none on its own.
 /// </summary>
 public sealed class HandbackReadingTests
 {
@@ -29,13 +30,34 @@ public sealed class HandbackReadingTests
     }
 
     [Fact]
-    public void A_line_that_moved_past_the_work_is_a_fault_said_with_the_way_to_put_it_right()
+    public void A_line_that_moved_past_the_work_is_no_fault_on_its_own_and_asks_for_no_rebase()
     {
         var seen = new HandbackReading("t1", "b0", 1, ["a"], []) { Line = "main" };
 
-        Assert.True(seen.Faulty);
+        Assert.False(seen.Faulty);
         Assert.Contains("1 commit behind `main`", seen.Words());
-        Assert.Contains("rebase it onto `main`", seen.Words());
+        Assert.DoesNotContain("rebase", seen.Words());
+    }
+
+    [Fact]
+    public void A_merge_onto_the_line_that_conflicts_is_the_fault_and_names_its_paths()
+    {
+        var seen = new HandbackReading("t1", "b0", 2, ["src/a.txt"], [])
+        {
+            Line = "main", Merge = new LineMerge("main", "c0ffee1234", "t1", null, ["src/a.txt", "docs/b.md"]),
+        };
+
+        Assert.True(seen.Faulty);
+        Assert.Contains("conflicts in src/a.txt, docs/b.md: merge `main` into the branch", seen.Words());
+    }
+
+    [Fact]
+    public void A_clean_merge_onto_the_line_is_no_fault_and_says_the_work_is_checked_as_merged()
+    {
+        var seen = new HandbackReading("t1", "b0", 2, ["src/a.txt"], []) { Line = "main", Merge = new LineMerge("main", "c0ffee1234", "t1", "m1", []) };
+
+        Assert.False(seen.Faulty);
+        Assert.Contains("checked as merged onto `main` at c0ffee1", seen.Words());
     }
 
     [Fact]

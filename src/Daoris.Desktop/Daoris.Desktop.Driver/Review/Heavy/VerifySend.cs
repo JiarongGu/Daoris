@@ -21,9 +21,15 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The check's bound, counted from both slots held.</summary>
     public TimeSpan Bound { get; init; } = HeavyExecutor.DefaultBound;
 
-    /// <summary>The check's <c>reached</c> choice: the hand-back is read from git first, a fault there its verdict, else the required hand-back commands its change reaches run, except any a check finished green at this commit.</summary>
+    /// <summary>The check's <c>reached</c> choice: the hand-back is read from git first, a fault there its verdict, else the required hand-back commands its change reaches run, except any a check finished green at the commit the verification tree takes.</summary>
     public bool Reached { get; init; }
 
     /// <summary>The verification tree its direct gates run in; null for one under the lines folder, by the repository's slot key.</summary>
     public string? Tree { get; init; }
+
+    /// <summary>
+    /// Whether the check judges the work as merged onto its line's tip (<see cref="LineMerge"/>; a run's check, <see cref="RunChecks"/>), so a
+    /// line that moved is no fault and a conflict sends the work back; false where the commit is judged as it stands (a line's own run).
+    /// </summary>
+    public bool AsMerged { get; init; }
 }

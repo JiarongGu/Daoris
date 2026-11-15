@@ -22,6 +22,9 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
 
+    /// <summary>The commit the verification tree takes: the send's, or the work merged onto its line's tip (<see cref="OntoAsync"/>).</summary>
+    private string _at = send.Commit;
+
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
     {
         Directory.CreateDirectory(_folder);
@@ -82,9 +85,37 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             kept = [.. plan.Kept.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept))];
         }
 
-        if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, kept) { Declaration = send.Accepted }, false);
-        return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
+        // A run's check takes the work merged onto its line's tip; a conflict sends it back, and no line leaves it as it stands.
+        LineMerge? merge = null;
+        if (send.AsMerged && await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is { } line)
+        {
+            merge = await OntoAsync(line, ct).ConfigureAwait(false);
+            if (merge is { Conflicts.Count: > 0 }) return (Back(merge.Words()!), false);
+        }
+
+        if (chosen.Count == 0) return (Told(new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, kept) { Declaration = send.Accepted }, merge?.Words()), false);
+        return (Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), merge?.Words()), false);
     }
+
+    /// <summary>
+    /// The work merged onto <paramref name="line"/>'s tip where the send judges it so (<see cref="VerifySend.AsMerged"/>): the verification
+    /// tree then takes the merge, never the session's branch rebased; null where the commit is judged as it stands.
+    /// </summary>
+    private async Task<LineMerge?> OntoAsync(string line, CancellationToken ct)
+    {
+        if (!send.AsMerged) return null;
+        var merge = await LineMerge.ReadAsync(send.Checkout, line, send.Commit, ct).ConfigureAwait(false);
+        _at = merge.At ?? send.Commit;
+        return merge;
+    }
+
+    /// <summary>The work sent back for a fault only its session can put right: gate <c>hand-back</c> failed, and no gate run.</summary>
+    private VerifyResult Back(string why) =>
+        new(send.Invocation, send.Commit, VerifyVerdicts.Failed, why, [new VerifyGate(HandbackReading.Gate, RunnerVerdicts.Fail)]) { Failed = HandbackReading.Gate, Declaration = send.Accepted };
+
+    /// <summary><paramref name="result"/> with <paramref name="words"/> after its own why, where there are any.</summary>
+    private static VerifyResult Told(VerifyResult result, string? words) =>
+        words is null ? result : result with { Why = result.Why is { } why ? $"{why}\n{words}" : words };
 
     /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) the change reaches. No line, or git unable to say, is unrun and never failed.</summary>
     private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
@@ -94,26 +125,22 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             return (Unknown("no line (the remote's head, `main` or `master`) is here to read the hand-back against") with { Code = VerifyResult.Unrun }, false);
         }
 
-        if (await HandbackReading.ReadAsync(send.Checkout, line, send.Commit, ct).ConfigureAwait(false) is not { } seen)
+        if (await HandbackReading.ReadAsync(send.Checkout, line, send.Commit, ct).ConfigureAwait(false) is not { } read)
         {
             return (Unknown($"git could not read the hand-back at {TextBounds.ShortCommit(send.Commit, 7)} against `{line}`") with { Code = VerifyResult.Unrun }, false);
         }
 
-        if (seen.Faulty)
-        {
-            return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, seen.Words(), [new VerifyGate(HandbackReading.Gate, RunnerVerdicts.Fail)])
-            {
-                Failed = HandbackReading.Gate, Declaration = send.Accepted,
-            }, false);
-        }
+        var seen = read with { Merge = await OntoAsync(line, ct).ConfigureAwait(false) };
+        if (seen.Faulty) return (Back(seen.Words()), false);
 
+        // A broker check's green keeps a gate only at the very commit the tree takes, so a merge runs each one again.
         var files = new CheckFiles(home);
         var required = declared.Where(gate => gate.Handback && GateReach.Reaches(gate, seen.Touched)).ToList();
-        var verified = required.Where(gate => HandbackGates.Verified(files, gate, send.Commit)).ToList();
+        var verified = required.Where(gate => HandbackGates.Verified(files, gate, _at)).ToList();
         var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
         var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
         if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, seen.Words(), kept) { Declaration = send.Accepted }, false);
-        return (await GatesAsync(chosen, kept, ct).ConfigureAwait(false), false);
+        return (Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), seen.Words()), false);
     }
 
     private async Task<(VerifyResult? Result, bool Busy)> RunnerAsync(VerifyRunner runner, IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
@@ -208,8 +235,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     }
 
     /// <summary>
-    /// The verification tree at the commit: made once, detached, then moved to each run's tip, and locked while this run uses it, the lock's
-    /// reason naming this process as a replay's tree names its pass's.
+    /// The verification tree at the commit it takes (<see cref="_at"/>): made once, detached, then moved to each run's, and locked while this
+    /// run uses it, the lock's reason naming this process as a replay's tree names its pass's.
     /// </summary>
     private async Task TreeAtAsync(string tree, CancellationToken ct)
     {
@@ -217,14 +244,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         {
             Directory.CreateDirectory(Path.GetDirectoryName(tree)!);
             await WorkingTree.GitAsync(send.Checkout, ["worktree", "prune"], ct).ConfigureAwait(false);
-            var (made, _, problem) = await WorkingTree.GitAsync(send.Checkout, ["worktree", "add", "--detach", "--force", tree, send.Commit], ct).ConfigureAwait(false);
+            var (made, _, problem) = await WorkingTree.GitAsync(send.Checkout, ["worktree", "add", "--detach", "--force", tree, _at], ct).ConfigureAwait(false);
             if (made != 0) throw new DriverException($"the verification tree could not be made at {tree}: {problem.Trim()}");
         }
         else
         {
             await WorkingTree.GitAsync(send.Checkout, ["worktree", "unlock", tree], ct).ConfigureAwait(false);
-            var (moved, _, problem) = await WorkingTree.GitAsync(tree, ["checkout", "--detach", "--force", send.Commit], ct).ConfigureAwait(false);
-            if (moved != 0) throw new DriverException($"the verification tree could not be moved to {TextBounds.ShortCommit(send.Commit, 7)}: {problem.Trim()}");
+            var (moved, _, problem) = await WorkingTree.GitAsync(tree, ["checkout", "--detach", "--force", _at], ct).ConfigureAwait(false);
+            if (moved != 0) throw new DriverException($"the verification tree could not be moved to {TextBounds.ShortCommit(_at, 7)}: {problem.Trim()}");
         }
 
         await WorkingTree.GitAsync(send.Checkout, ["worktree", "lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), tree], ct).ConfigureAwait(false);
