@@ -9,18 +9,39 @@ namespace Daoris.Driver;
 /// A supervisor's answer at a door that waits on the person until a place appoints a role to it: a session's staged memory kept or
 /// dropped (<c>memory.keep</c>), a memory end approved or declined (<c>memory.decide</c>), a quest's departure accepted
 /// (<c>departure.accept</c>); or the subject left to the person (<see cref="SupervisorDoorActs.Hold"/>). Its subject, the repository
-/// whose supervisor answers it, the hold's generation, the act and its yes or no, the reasons and the holder.
+/// whose supervisor answers it, the hold's generation, the act and its yes or no, the reasons and the holder; and the pin of what the
+/// holder judged (<see cref="SupervisorDoorSubjects.PinAsync"/>), which the release reads again before it posts.
 /// </summary>
 public sealed record SupervisorDoorAnswer(
     SupervisorSubject Subject, string Repository, string Generation, string Do, string? Choice, IReadOnlyList<SupervisorReason> Reasons,
-    SupervisorHolder Holder);
+    SupervisorHolder Holder)
+{
+    public string? Pin { get; init; }
+}
 
-/// <summary>A held answer whose moment came, as the release hands it to the service's door, with the role and the agent it is the answer of.</summary>
+/// <summary>
+/// A held answer whose moment came, as the release hands it to the service's door, with the role and the agent it is the answer of, the
+/// pin of what it judged and the record of the agent's turn that held the role (none for a terminal's).
+/// </summary>
 public sealed record SupervisorDoorDue(string Id, SupervisorSubject Subject, string Repository, string Do, string? Choice, string Role, string Agent)
 {
+    public string? Pin { get; init; }
+
+    public string? Turn { get; init; }
+
     /// <summary>Whether the answer is a yes: a keep, an approve, an accept.</summary>
     public bool Yes => Choice is null or Keep or Approve;
 }
+
+/// <summary>
+/// The release's three reads of the service, as landing's <see cref="LandingRelease"/> is: why the answer may not go on now (what it judged
+/// changed since: null where it stands), its post to the door (null where the door kept it, else why not), and, for an answer a restart
+/// cut off after its release, whether the service shows it applied (null where it cannot be read now).
+/// </summary>
+public sealed record DoorRelease(
+    Func<SupervisorDoorDue, CancellationToken, Task<string?>> Why,
+    Func<SupervisorDoorDue, CancellationToken, Task<string?>> Post,
+    Func<SupervisorDoorDue, CancellationToken, Task<bool?>> Made);
 
 /// <summary>The door answers' acts and choices, as the kinds' rows, the release and the agent's block name them.</summary>
 public static class SupervisorDoorActs
@@ -47,9 +68,6 @@ public sealed record SupervisorDoorView(
     string Id, string Kind, string Subject, string Do, string? Choice, string Role, string Agent, SupervisorState State,
     DateTimeOffset KeptAt, DateTimeOffset GoesOnAt);
 
-/// <summary>The service's door for a released answer: null where it kept it, else why it refused, keeping nothing.</summary>
-public delegate Task<string?> SupervisorDoorPost(SupervisorDoorDue due, CancellationToken ct);
-
 /// <summary>An answer as memory keeps it: one per subject, held for the role's window, then posted to its door, or overruled.</summary>
 internal sealed class SupervisorDoorDecision
 {
@@ -61,16 +79,22 @@ internal sealed class SupervisorDoorDecision
     public required string Generation { get; init; }
     public required string Role { get; init; }
     public required string Agent { get; init; }
+    public string? Pin { get; init; }
+    public string? Turn { get; init; }
     public required DateTimeOffset KeptAt { get; init; }
     public required DateTimeOffset GoesOnAt { get; init; }
     public SupervisorState State { get; set; } = SupervisorState.Held;
+
+    public SupervisorDoorDue Due() => new(Id, Subject, Repository, Do, Choice, Role, Agent) { Pin = Pin, Turn = Turn };
 }
 
 /// <summary>
 /// The supervisor's answers at the person's doors a role may answer at low and medium risk: kept for the role's window with
 /// <i>Overrule</i>, written to the session's decisions with the role and the agent that gave it, then released in one step that asks the
-/// admission again and posts the answer to the service's own door as the role's, never the person's. A refusal there goes stale; the
-/// person's overrule inside the window closes the subject to them. A restart empties memory, and the start's sweep closes the files.
+/// admission again, reads what it judged again, and posts the answer to the service's own door as the role's, never the person's. A
+/// refusal there, or a subject changed since, goes stale; the person's overrule inside the window closes the subject to them. A
+/// <c>released</c> line comes before the post, so an answer a restart cut off after it is settled by what the service shows, never
+/// guessed; the start's sweep closes every other file.
 /// </summary>
 internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmission admission, MachineLog? log)
 {
@@ -96,6 +120,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             refused ??= admitted.Why ?? (admitted.Generation != answer.Generation ? SupervisorWhy.RoleChanged : null);
             refused ??= left || Offered(subject.Kind, answer.Do, answer.Choice) ? null : SupervisorWhy.NotOffered;
             refused ??= SupervisorKeeping.Refused(answer.Reasons, true, null);
+            refused ??= left || answer.Pin is not null ? null : SupervisorWhy.Answered;
             if (refused is not null)
             {
                 log?.Info("supervisor.refused", ("why", refused));
@@ -107,8 +132,8 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             var decision = new SupervisorDoorDecision
             {
                 Id = id, Subject = subject, Repository = answer.Repository, Do = answer.Do, Choice = answer.Choice, Generation = answer.Generation,
-                Role = admitted.Role ?? AppointedRoles.Supervisor, Agent = AgentOf(answer.Holder), KeptAt = now, GoesOnAt = goesOnAt,
-                State = left ? SupervisorState.Left : SupervisorState.Held,
+                Role = admitted.Role ?? AppointedRoles.Supervisor, Agent = AgentOf(answer.Holder), Pin = answer.Pin, Turn = answer.Holder.Agent?.Session,
+                KeptAt = now, GoesOnAt = goesOnAt, State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(subject.Session));
             AtomicFile.WriteText(book.Files.FileOf(subject.Session, id), FileText(decision, answer, now));
@@ -120,26 +145,36 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
         }, ct);
 
     /// <summary>
-    /// Each held answer whose moment came, released under its session's lock: the admission asked again, then the answer posted to its door
-    /// as the role's. Kept there it is <c>went-on</c>; refused, <c>stale</c> with the door's why. Returns the states the moved answers reached.
+    /// Each held answer whose moment came, released under its session's lock: the admission asked again and what it judged read again,
+    /// then <c>released</c> written and the answer posted to its door as the role's. Kept there it is <c>went-on</c>; refused or changed,
+    /// <c>stale</c> with the why. A <c>released</c> answer with no end, which a restart cut off, is <c>went-on</c> where the service shows
+    /// it applied and <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>) where it does not. Returns the states the moved answers reached.
     /// </summary>
-    public async Task<IReadOnlyList<SupervisorState>> ReleaseAsync(SupervisorDoorPost post, DateTimeOffset now, CancellationToken ct = default)
+    public async Task<IReadOnlyList<SupervisorState>> ReleaseAsync(DoorRelease release, DateTimeOffset now, CancellationToken ct = default)
     {
         var moved = new List<SupervisorState>();
-        foreach (var due in book.Doors.Values.Where(each => each.State == SupervisorState.Held && each.GoesOnAt <= now).ToList())
+        foreach (var due in book.Doors.Values.Where(each => each.State == SupervisorState.Released || (each.State == SupervisorState.Held && each.GoesOnAt <= now)).ToList())
         {
             var reached = await book.UnderAsync(due.Subject.Session, async () =>
             {
-                if (due.State != SupervisorState.Held) return (SupervisorState?)null;
+                if (due.State == SupervisorState.Released)
+                {
+                    if (await release.Made(due.Due(), ct).ConfigureAwait(false) is not { } made) return (SupervisorState?)null;
+                    return Settle(due, made ? SupervisorState.WentOn : SupervisorState.Stale, now, made ? null : SupervisorWhy.Restarted);
+                }
+
+                if (due.State != SupervisorState.Held) return null;
                 var admitted = admission.Admit(due.Subject.Kind, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
-                    ? await post(new SupervisorDoorDue(due.Id, due.Subject, due.Repository, due.Do, due.Choice, due.Role, due.Agent), ct).ConfigureAwait(false)
+                    ? await release.Why(due.Due(), ct).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;
-                var to = why is null ? SupervisorState.WentOn : SupervisorState.Stale;
-                Append(due, to, now, why);
-                if (to == SupervisorState.Stale) book.Closed[due.Subject] = to;
-                log?.Info($"supervisor.{SupervisorStates.Spell(to)}", ("session", due.Subject.Session), ("kind", due.Subject.Kind));
-                return to;
+                if (why is null)
+                {
+                    Append(due, SupervisorState.Released, now, why: null);
+                    why = await release.Post(due.Due(), ct).ConfigureAwait(false);
+                }
+
+                return Settle(due, why is null ? SupervisorState.WentOn : SupervisorState.Stale, now, why);
             }, ct).ConfigureAwait(false);
             if (reached is { } state) moved.Add(state);
         }
@@ -161,7 +196,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             return Task.FromResult<SupervisorState?>(held.State);
         }, ct);
 
-    /// <summary>A session's answers this run, oldest first; a restart's sweep has closed every earlier one, so none of them is held.</summary>
+    /// <summary>A session's answers this run, oldest first; a restart's sweep has closed every earlier one but a released one, so none of them is held.</summary>
     public IReadOnlyList<SupervisorDoorView> DoorsOf(string session) =>
     [
         .. book.Doors.Values.Where(each => each.Subject.Session == session)
@@ -173,12 +208,16 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
     /// <summary>Whether <paramref name="subject"/> waits for the holder: no answer on it, and it is not closed to the person.</summary>
     public bool Waits(SupervisorSubject subject) => !book.Doors.Values.Any(each => each.Subject == subject) && !book.Closed.ContainsKey(subject);
 
-    /// <summary>The soonest moment a held answer is due.</summary>
+    /// <summary>The soonest moment a held answer is due; now where a released one waits to be settled.</summary>
     public DateTimeOffset? NextGoesOn() =>
-        book.Doors.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
+        book.Doors.Values.Where(each => each.State is SupervisorState.Held or SupervisorState.Released)
+            .Select(each => (DateTimeOffset?)(each.State == SupervisorState.Released ? each.KeptAt : each.GoesOnAt)).Min();
 
-    /// <summary>A decision file of these kinds: its subject and the state its lines reached, for the start's sweep; null for another kind's.</summary>
-    public static (SupervisorSubject Subject, SupervisorState State)? Read(SupervisorDecisionFiles files, string session, string id)
+    /// <summary>
+    /// A decision file of these kinds read whole, its state the one its lines reached, for the start's sweep: a released one is kept again
+    /// for the release to settle. Null for another kind's or a file that does not read.
+    /// </summary>
+    public static SupervisorDoorDecision? Recover(SupervisorDecisionFiles files, string session, string id)
     {
         try
         {
@@ -194,7 +233,13 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
             var last = (SupervisorDecisionFiles.Read(files.StatesOf(session, id)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
             var state = last is null ? null : SupervisorStates.Parse(Json.Text(JsonDocument.Parse(last).RootElement, "state"));
-            return (subject, state ?? SupervisorState.Held);
+            return new SupervisorDoorDecision
+            {
+                Id = id, Subject = subject, Repository = Json.Text(root, "repository") ?? "", Do = Json.Text(root, "do") ?? "", Choice = Json.Text(root, "choice"),
+                Generation = Json.Text(root, "generation") ?? "", Role = Json.Text(root, "role") ?? "", Agent = Json.Text(root, "agent") ?? "",
+                Pin = Json.Text(root, "pin"), Turn = Json.Text(root, "turn"), KeptAt = Moment(root, "keptAt"), GoesOnAt = Moment(root, "goesOnAt"),
+                State = state ?? SupervisorState.Held,
+            };
         }
         catch (Exception error) when (error is IOException or JsonException or UnauthorizedAccessException)
         {
@@ -210,13 +255,25 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
     public static string AgentOf(SupervisorHolder holder) =>
         holder.Agent is { } agent ? string.Join(" · ", new[] { agent.Agent, agent.Model, agent.Effort }.Where(each => each is { Length: > 0 })) : holder.Kind;
 
+    private SupervisorState Settle(SupervisorDoorDecision due, SupervisorState to, DateTimeOffset now, string? why)
+    {
+        Append(due, to, now, to == SupervisorState.Stale ? why : null);
+        if (to == SupervisorState.Stale) book.Closed[due.Subject] = to;
+        log?.Info($"supervisor.{SupervisorStates.Spell(to)}", ("session", due.Subject.Session), ("kind", due.Subject.Kind), ("why", why ?? ""));
+        return to;
+    }
+
     private void Append(SupervisorDoorDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
         decision.State = to;
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Subject.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }
 
-    // The decision's file: the subject, the role and the agent that answered, the holder, the act and its choice, the reasons, and when it goes on.
+    private static DateTimeOffset Moment(JsonElement root, string name) =>
+        Json.Text(root, name) is { } text && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : DateTimeOffset.MinValue;
+
+    // The decision's file: the subject, the role and the agent that answered, the holder, the act and its choice, the pin of what it
+    // judged and the agent's turn, the reasons, and when it goes on.
     private static string FileText(SupervisorDoorDecision decision, SupervisorDoorAnswer answer, DateTimeOffset now) => new JsonObject
     {
         ["id"] = decision.Id,
@@ -230,6 +287,8 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
         ["repository"] = decision.Repository,
         ["do"] = decision.Do,
         ["choice"] = decision.Choice,
+        ["pin"] = decision.Pin,
+        ["turn"] = decision.Turn,
         ["reasons"] = new JsonArray([.. answer.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),
         ["keptAt"] = now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
         ["goesOnAt"] = decision.GoesOnAt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),

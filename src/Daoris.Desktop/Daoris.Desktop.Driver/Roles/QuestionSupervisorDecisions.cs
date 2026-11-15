@@ -110,8 +110,8 @@ public sealed class QuestionSupervisorDecisions
         _doors.KeepAsync(answer, refused, now, ct);
 
     /// <summary>Release each held door answer whose moment came, posting it to its door (<see cref="SupervisorDoorAnswers.ReleaseAsync"/>).</summary>
-    public Task<IReadOnlyList<SupervisorState>> ReleaseDoorsAsync(SupervisorDoorPost post, DateTimeOffset now, CancellationToken ct = default) =>
-        _doors.ReleaseAsync(post, now, ct);
+    public Task<IReadOnlyList<SupervisorState>> ReleaseDoorsAsync(DoorRelease release, DateTimeOffset now, CancellationToken ct = default) =>
+        _doors.ReleaseAsync(release, now, ct);
 
     /// <summary>A session's door answers as the page reads them (<see cref="SupervisorDoorAnswers.DoorsOf"/>).</summary>
     public IReadOnlyList<SupervisorDoorView> DoorsOf(string session) => _doors.DoorsOf(session);

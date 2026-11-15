@@ -10,7 +10,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class SuperviseAllows
 {
-    public static bool Reads(SupervisorSubject subject) => subject.Kind is SupervisorKinds.Allow or SupervisorKinds.Files;
+    public static bool Reads(SupervisorSubject subject) =>
+        subject.Kind is SupervisorKinds.Allow or SupervisorKinds.Files or SupervisorKinds.Memory or SupervisorKinds.Departure;
 
     /// <summary>Whether <paramref name="id"/>, as the verb is given it, names <paramref name="subject"/>.</summary>
     public static bool Names(SupervisorSubject subject, string id) =>
@@ -23,6 +24,9 @@ internal static class SuperviseAllows
     public static string Says(JsonElement listed, SupervisorSubject subject) => subject switch
     {
         { Kind: SupervisorKinds.Files } => $"allow {subject.Act?.What} {subject.Id} in {subject.Session}, asked at start {subject.Act?.Start}",
+        { Kind: SupervisorKinds.Memory, Id: SupervisorDoorActs.Staged } => $"keep or drop the staged memory changes of session {subject.Session}",
+        { Kind: SupervisorKinds.Memory } => $"approve or decline memory end {subject.Id} of session {subject.Session}",
+        { Kind: SupervisorKinds.Departure } => $"accept the departure on quest #{subject.Id}",
         { IsAsk: true } => $"allow the steward's {SupervisePointPrint.Text(listed, "act")} {subject.Id}",
         { IsPress: true } => $"allow the working session's press {SupervisePointPrint.Text(listed, "act")} {subject.Id}",
         { IsProposal: true } => $"allow widening {subject.Id}",
@@ -48,7 +52,10 @@ internal static class SuperviseAllows
         var acts = listed.TryGetProperty("acts", out var named) && named.ValueKind == JsonValueKind.Array
             ? string.Join("|", named.EnumerateArray().Select(each => each.GetString()))
             : "<act>";
-        print.Append($"answer: daoris session supervise {id} --kind {subject.Kind} --subject {subject.Id} --generation {generation} --do {acts} "
+        var choice = listed.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Array && choices.GetArrayLength() > 0
+            ? $"--choice {string.Join("|", choices.EnumerateArray().Select(each => each.GetString()))} "
+            : "";
+        print.Append($"answer: daoris session supervise {id} --kind {subject.Kind} --subject {subject.Id} --generation {generation} --do {acts} {choice}"
             + "--reason \"…\" --source \"<where>\"\n");
         print.Append(SessionsSuperviseCommand.LeaveLine);
         await output.WriteAsync(print.ToString()).ConfigureAwait(false);

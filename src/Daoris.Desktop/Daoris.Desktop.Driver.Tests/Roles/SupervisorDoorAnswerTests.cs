@@ -33,17 +33,21 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
 
     private static SupervisorDoorAnswer Staged(string choice = SupervisorDoorActs.Keep) => new(
         new SupervisorSubject(SupervisorKinds.Memory, "s1", SupervisorDoorActs.Staged), "reports", "g-1", "keep", choice,
-        [new SupervisorReason("The staged rows restate the area.", "the session's memory")], Codex);
+        [new SupervisorReason("The staged rows restate the area.", "the session's memory")], Codex) { Pin = "op-1,op-2" };
 
     private static SupervisorDoorAnswer Departure() => new(
         new SupervisorSubject(SupervisorKinds.Departure, "s1", "q7"), "reports", "g-1", SupervisorDoorActs.Accept, null,
-        [new SupervisorReason("The departure is the brief's own fallback.", "the quest's answers")], Codex);
+        [new SupervisorReason("The departure is the brief's own fallback.", "the quest's answers")], Codex) { Pin = "quest:1" };
 
-    private static SupervisorDoorPost Posting(List<SupervisorDoorDue> posted, string? why = null) => (due, _) =>
-    {
-        posted.Add(due);
-        return Task.FromResult(why);
-    };
+    /// <summary>A release whose subject reads <paramref name="pin"/> now, whose door answers <paramref name="why"/>, and whose service shows <paramref name="made"/>.</summary>
+    private static DoorRelease Posting(List<SupervisorDoorDue> posted, string? why = null, Func<SupervisorDoorDue, string?>? pin = null, bool? made = true) => new(
+        (due, _) => Task.FromResult((pin ?? (each => each.Pin))(due) == due.Pin ? null : SupervisorWhy.SubjectChanged),
+        (due, _) =>
+        {
+            posted.Add(due);
+            return Task.FromResult(why);
+        },
+        (_, _) => Task.FromResult(made));
 
     [Fact]
     public async Task A_role_holding_memory_keep_keeps_a_sessions_staged_memory_after_its_window_and_the_record_names_the_role_and_its_agent()
@@ -141,7 +145,114 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         await decisions.DoorAsync(Staged(), null, At);
 
         Assert.Equal([SupervisorState.Stale], await decisions.ReleaseDoorsAsync(Posting([], "running"), At.AddMinutes(11)));
+        Assert.Contains("\"why\":\"running\"", States("s1"));
         Assert.Equal(["memory.keep", "memory.decide", "departure.accept"],
             SupervisorKinds.Acts.Where(act => act.StartsWith("memory.", StringComparison.Ordinal) || act.StartsWith("departure.", StringComparison.Ordinal)));
+    }
+
+    /// <summary>A role granted while <see cref="Granted"/> holds; the release asks it again.</summary>
+    private sealed class Switch : IDecisionAdmission
+    {
+        public bool Granted { get; set; } = true;
+
+        public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
+            Granted ? new("g-1", null) { Window = TimeSpan.FromMinutes(10), Role = "daoris-landing" } : DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
+    }
+
+    private string States(string session) => string.Concat(Directory.EnumerateFiles(
+        DaorisHome.Entry(_home, HomeEntry.Sessions, session + QuestionSupervisorDecisions.DecisionsSuffix), "*.states*").Select(File.ReadAllText));
+
+    /// <summary>🔴 OWNERGATE1c: a keep is tied to the staged rows it judged; a row staged since makes it stale at its release, nothing posted, and the subject the person's.</summary>
+    [Fact]
+    public async Task A_held_answer_whose_subject_changed_since_it_was_judged_goes_stale_and_posts_nothing()
+    {
+        var decisions = new QuestionSupervisorDecisions(_home, new Holds("memory.keep", "departure.accept"));
+        await decisions.DoorAsync(Staged(), null, At);
+        await decisions.DoorAsync(Departure(), null, At);
+        var posted = new List<SupervisorDoorDue>();
+
+        var moved = await decisions.ReleaseDoorsAsync(Posting(posted, pin: due => due.Pin + ",changed"), At.AddMinutes(11));
+
+        Assert.Equal([SupervisorState.Stale, SupervisorState.Stale], moved);
+        Assert.Empty(posted);
+        Assert.Contains("\"why\":\"subject-changed\"", States("s1"));
+        Assert.False(decisions.RefersDoor(Staged().Subject));
+        // An answer pinned to nothing judged nothing that waits: it is refused, keeping nothing.
+        Assert.Equal(SupervisorWhy.Answered, (await decisions.DoorAsync(Staged() with { Pin = null, Subject = new(SupervisorKinds.Memory, "s3", SupervisorDoorActs.Staged) }, null, At)).Why);
+    }
+
+    /// <summary>🔴 OWNERGATE1c: a grant taken away after the keep and before its moment refuses the release: nothing is posted.</summary>
+    [Fact]
+    public async Task A_grant_removed_after_the_keep_refuses_the_release()
+    {
+        var role = new Switch();
+        var decisions = new QuestionSupervisorDecisions(_home, role);
+        Assert.True((await decisions.DoorAsync(Staged(), null, At)).Kept);
+        role.Granted = false;
+        var posted = new List<SupervisorDoorDue>();
+
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseDoorsAsync(Posting(posted), At.AddMinutes(11)));
+        Assert.Empty(posted);
+        Assert.Contains("\"why\":\"role-changed\"", States("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 OWNERGATE1c: a post a restart cut off after its <c>released</c> line is settled by what the service shows: applied, it is
+    /// <c>went-on</c> and nothing is posted again; not applied, <c>stale</c> as restarted. A held one the restart finds goes stale.
+    /// </summary>
+    [Theory]
+    [InlineData(true, SupervisorState.WentOn)]
+    [InlineData(false, SupervisorState.Stale)]
+    public async Task A_released_answer_a_restart_cut_off_is_settled_by_what_the_service_shows(bool made, SupervisorState reached)
+    {
+        var before = new QuestionSupervisorDecisions(_home, new Holds("memory.keep", "departure.accept"));
+        await before.DoorAsync(Staged(), null, At);
+        await before.DoorAsync(Departure() with { Subject = new SupervisorSubject(SupervisorKinds.Departure, "s2", "q8") }, null, At.AddMinutes(5));
+        var cut = new DoorRelease((_, _) => Task.FromResult<string?>(null), (_, _) => throw new OperationCanceledException(), (_, _) => Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => before.ReleaseDoorsAsync(cut, At.AddMinutes(11)));
+        Assert.Contains("\"state\":\"released\"", States("s1"));
+
+        var after = new QuestionSupervisorDecisions(_home, new Holds("memory.keep", "departure.accept"));
+        after.SweepAtStart(At.AddMinutes(12));
+        var posted = new List<SupervisorDoorDue>();
+
+        Assert.Equal([reached], await after.ReleaseDoorsAsync(Posting(posted, made: made), At.AddMinutes(13)));
+        Assert.Empty(posted);
+        Assert.Equal(reached, Assert.Single(after.DoorsOf("s1")).State);
+        Assert.Contains("\"why\":\"restarted\"", States("s2"));
+        Assert.Empty(after.DoorsOf("s2"));
+        Assert.False(after.RefersDoor(new SupervisorSubject(SupervisorKinds.Departure, "s2", "q8")));
+    }
+
+    /// <summary>🔴 OWNERGATE1c: the release posts a keep and an approve as a yes and a drop and a decline as a no, with the role, its agent and its turn.</summary>
+    [Theory]
+    [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Keep, "/api/sessions/s1/memory", "\"keep\":true")]
+    [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Drop, "/api/sessions/s1/memory", "\"keep\":false")]
+    [InlineData("op-9", SupervisorDoorActs.Approve, "/api/memory/op-9/decide", "\"approve\":true")]
+    [InlineData("op-9", SupervisorDoorActs.Decline, "/api/memory/op-9/decide", "\"approve\":false")]
+    public async Task The_release_posts_a_keep_as_a_yes_and_a_drop_or_decline_as_a_no(string id, string choice, string path, string said)
+    {
+        var bodies = new List<(string Path, string Body)>();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Recording(bodies)));
+        var due = new SupervisorDoorDue("d1", new SupervisorSubject(SupervisorKinds.Memory, "s1", id), "reports", "keep", choice, "daoris-landing", "codex-acp") { Turn = "t-1" };
+
+        Assert.Null(await DoorReleaseLook.PostAsync(service, due, default));
+
+        var (posted, body) = Assert.Single(bodies);
+        Assert.Equal(path, posted);
+        Assert.Contains(said, body);
+        Assert.Contains("\"role\":{\"role\":\"daoris-landing\",\"agent\":\"codex-acp\",\"decision\":\"d1\",\"session\":\"t-1\"}", body);
+    }
+
+    private sealed class Recording(List<(string Path, string Body)> bodies) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            bodies.Add((request.RequestUri!.AbsolutePath, request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct)));
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"message":"kept","moved":1}""", System.Text.Encoding.UTF8, "application/json"),
+            };
+        }
     }
 }
