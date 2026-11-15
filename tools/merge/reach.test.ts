@@ -47,7 +47,7 @@ const cases: [string, string[], string[]][] = [
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
       [...BASE, ...DESK, ...DRIVER_PROCESS, modulesProcess, family, webUnit, deployment]]),
     // The driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once.
-    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, driver, censuses, driverProcess, driverRehearsals, gitHalf, gitPinned]],
+    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, driver, censuses, driverProcess, driverRehearsals, gitHalf, gitPinned, layers]],
     // A browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, web]],
     // What the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
@@ -64,7 +64,7 @@ const cases: [string, string[], string[]][] = [
     ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, modules, modulesProcess, deployment]],
     ["the app's icon", ['src/Daoris.Desktop/Daoris.Desktop.App/daoris.ico'], [...BASE, modules, modulesProcess, deployment]],
     ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, driver, modules, modulesProcess, deployment]],
-    ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, modules, censuses, modulesProcess]],
+    ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, modules, censuses, modulesProcess, layers]],
     // The tests of the tools only the parent runs are the tool-tests gate, reached by those tools and their folder.
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, toolTests, family, deployment]],
     // The rehearsals' kit imports it too, to end what a timed-out command left running.
@@ -83,7 +83,7 @@ const cases: [string, string[], string[]][] = [
     // The driver reads the offers and the adoption playbook, as the service reads the digest's note table.
     ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, service, driver, driverProcess, family, web, deployment]],
     ['the adoption playbook', ['.claude/knowledge/adoption.md'], [...BASE, service, driver]],
-    ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, service]],
+    ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, service, toolTests]],
     // The history words' table sits among the service's tests, and the driver's twin reads it too.
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, service, driver]],
     // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
@@ -104,7 +104,7 @@ const cases: [string, string[], string[]][] = [
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, service, driver]],
     ['the brainstorm posture', ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
       [...BASE, service, ...DESK, ...DRIVER_PROCESS, modulesProcess, family, deployment]],
-    ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, service, serviceProcess]],
+    ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, service, serviceProcess, layers]],
     // The fence table sits among the CLI's fixtures, and the driver's SelfDescription twin and the service's MarkdownFence twin read it too.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, service, driver]],
     // The rotation-use table, among the driver's fixtures, which its twin reads, and the
@@ -121,7 +121,7 @@ const cases: [string, string[], string[]][] = [
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
-    ], [...BASE, driver, driverProcess, driverRehearsals, gitHalf, gitPinned]],
+    ], [...BASE, driver, driverProcess, driverRehearsals, gitHalf, gitPinned, layers]],
     // The bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
     // HomeFilesKeepTests reads them too, as the service's RemoteConfigKeepTests its remotes.json rows' reads and
     // the modules' BrowserSettingsTests browser/settings.json's.
@@ -162,7 +162,7 @@ const cases: [string, string[], string[]][] = [
     ["the merge tool's reach module", ['tools/merge/reach.ts'], [...BASE, toolTests]],
     ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, toolTests]],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'], [...BASE, service, serviceProcess, devkit, driver, family, web, webUnit, deployment]],
-    ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, devkit]],
+    ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, devkit, layers]],
     // The driver's fast CategoryTests read the file too, so a change there runs the driver's fast half.
     ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, driver, driverProcess, modulesProcess]],
     // The second file runs only the driver's git-only classes, four at once.
