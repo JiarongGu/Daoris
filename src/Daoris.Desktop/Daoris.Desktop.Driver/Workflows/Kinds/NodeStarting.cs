@@ -34,6 +34,10 @@ internal sealed record NodeStarting
 
     public required WorkPerformer Performer { get; init; }
 
+    public string Home { get; init; } = "";
+
+    public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? Sessions { get; init; }
+
     public required IWorkRuntimePort Port { get; init; }
 
     public required NodeClosing Closing { get; init; }

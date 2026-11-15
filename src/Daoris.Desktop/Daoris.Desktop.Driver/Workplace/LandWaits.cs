@@ -1,15 +1,11 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a run's <c>land</c> did nothing at a look, by a code: each exit of its node's keeping and of its judgement
-/// (<see cref="LandPerformer"/>) that starts and says nothing else. Written to the machine log once per change of reason for its node, never at
-/// every pass, so a landing that waits shows why without filling the log. Kept in memory, as the landing's tries are: a restart says each once more.
+/// Why a run's <c>land</c> did nothing at a look, by a code: each exit of its keeping and its judgement (<see cref="LandPerformer"/>) that
+/// says nothing else, written to the machine log once per change of reason (<see cref="NodeWaits"/>).
 /// </summary>
 public static class LandWaits
 {
-    /// <summary>The machine log's event a wait is written under.</summary>
     public const string Event = "landing.waits";
 
     /// <summary>No landing door is wired in this loop.</summary>
@@ -51,26 +47,9 @@ public static class LandWaits
     /// <summary>A second opinion or a review it waits on, said already.</summary>
     public const string Waiting = "waiting";
 
-    // The last reason said for each node, by home, run unit and node.
-    private static readonly ConcurrentDictionary<string, string> Last = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Whether <paramref name="reason"/> is not the last one said for the node, which it then is.</summary>
-    public static bool Changed(string home, string unit, string node, string reason)
-    {
-        var key = Key(home, unit, node);
-        if (string.Equals(Last.GetValueOrDefault(key), reason, StringComparison.Ordinal)) return false;
-        Last[key] = reason;
-        return true;
-    }
-
-    /// <summary>The node came to a try, which says itself: its next wait is said again, of any reason.</summary>
-    public static void Tried(string home, string unit, string node) => Last.TryRemove(Key(home, unit, node), out _);
-
-    /// <summary>A judgement's wait, in codes: the run, its node, where, and the reason.</summary>
     public static LandingLine Line(LandStart start, string reason) => new(Event,
         [("run", start.Run), ("node", start.Node), ("repository", start.Repository), ("workspace", start.Workspace), ("reason", reason)]);
 
-    /// <summary>The keeping's wait as the machine log's sentence: the run, its node, the reason's code and its words.</summary>
     public static string Sentence(string run, string node, string reason) => $"run {run}: `{node}` waits ({reason}): {Words(reason)}";
 
     private static string Words(string reason) => reason switch
@@ -80,6 +59,4 @@ public static class LandWaits
         NoTip => "its binding names no commit to land.",
         _ => reason,
     };
-
-    private static string Key(string home, string unit, string node) => $"{home}\n{unit}\n{node}";
 }

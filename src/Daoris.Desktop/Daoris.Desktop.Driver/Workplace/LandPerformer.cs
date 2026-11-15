@@ -72,7 +72,7 @@ public sealed class LandPerformer(
         var entry = EntryOf(record.Id, record.Quest!, start, record.Tree!);
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null) ?? Quiet(start, LandWaits.Partner);
         var (said, choice) = await JudgeAsync(entry, fresh, new Records(fresh), start, ct).ConfigureAwait(false);
-        if (said is not null || choice is not null) LandWaits.Tried(home, start.Unit, start.Node);
+        if (said is not null || choice is not null) NodeWaits.Tried(home, start.Unit, start.Node);
         if (choice is null) return said;
         var landed = await LandOneAsync(choice, fresh, ct).ConfigureAwait(false);
         // A repair outlives nothing that ended the landing: a landing or a refusal spends it.
@@ -414,7 +414,7 @@ public sealed class LandPerformer(
     /// <summary>A judgement that starts and says nothing: null, its reason written to the machine log once per change (<see cref="LandWaits"/>).</summary>
     private string? Quiet(LandStart run, string reason)
     {
-        if (LandWaits.Changed(home, run.Unit, run.Node, reason)) log?.Invoke(LandWaits.Line(run, reason));
+        if (NodeWaits.Changed(home, run.Unit, run.Node, reason)) log?.Invoke(LandWaits.Line(run, reason));
         return null;
     }
 

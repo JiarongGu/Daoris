@@ -32,17 +32,46 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
         : null;
 
     /// <summary>
-    /// Handed to the heavy executor, which takes it at once and runs it on its own task: the pass never awaits its gates. With no executor it
-    /// stays ready.
+    /// Handed to the heavy executor, which takes it at once and runs it on its own task: the pass never awaits its gates. Where it is not sent,
+    /// has no executor, or failed at its commit and the work has not answered that red, it stays ready, and says why once (<see cref="CheckStartWaits"/>).
     /// </summary>
-    public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) =>
-        !starting.Governed.Dispatchable.Contains(starting.Node.Id) || starting.Performer.PortOf(starting.Node.Kind) is null || AwaitsNewCommit(starting)
-            ? null
-            : await starting.Performer.StartAsync(starting.Node, starting.Start, ct).ConfigureAwait(false);
+    public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct)
+    {
+        var wait = !starting.Governed.Dispatchable.Contains(starting.Node.Id) ? CheckStartWaits.NotSent
+            : starting.Performer.PortOf(starting.Node.Kind) is null ? CheckStartWaits.NoDoor
+            : await AwaitsAnswerAsync(starting, ct).ConfigureAwait(false);
+        var (home, unit, node) = (starting.Home, starting.Governed.Unit.Id, starting.Node.Id);
+        if (wait is not null)
+        {
+            if (NodeWaits.Changed(home, unit, node, wait))
+            {
+                starting.Performer.Doors.Say(CheckStartWaits.Event, CheckStartWaits.Sentence(starting.Governed.Run, node, wait));
+            }
 
-    private static bool AwaitsNewCommit(NodeStarting starting) =>
-        starting.Status.By != NodeCause.Person && starting.Start.Move.Binding is { } binding
-        && CheckRounds.RedAt(starting.Performer.RecordOf(binding.Unit), starting.Node.Id, binding.SubjectRevision);
+            return null;
+        }
+
+        NodeWaits.Tried(home, unit, node);
+        return await starting.Performer.StartAsync(starting.Node, starting.Start, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Why a red at the commit it binds holds it: none where the person asked it, it holds no red there, or the run's work answered that red
+    /// (<see cref="CheckRounds.Answered"/>); else the work may still move the commit, or the sessions did not read.
+    /// </summary>
+    private static async Task<string?> AwaitsAnswerAsync(NodeStarting starting, CancellationToken ct)
+    {
+        if (starting.Status.By == NodeCause.Person || starting.Start.Move.Binding is not { } binding
+            || CheckRounds.RedAt(starting.Performer.RecordOf(binding.Unit), starting.Node.Id, binding.SubjectRevision) is not { } red)
+        {
+            return null;
+        }
+
+        if (starting.Governed.Scope is not { } scope || starting.Sessions is null) return CheckStartWaits.RedHere;
+        return await starting.Sessions(ct).ConfigureAwait(false) is not { } records ? CheckStartWaits.SessionsUnread
+            : CheckRounds.Answered(records, starting.Governed.Run, scope.Sessions, red.RecordedAt) ? null
+            : CheckStartWaits.RedHere;
+    }
 
     /// <summary>Its kind's perform, and 7200 seconds where it declares no <c>timeoutSeconds</c>.</summary>
     public NodeDeclaration Performed(NodeDeclaration node) =>
