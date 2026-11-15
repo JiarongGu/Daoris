@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
+import type { TreePoolSlot } from '../../data/api';
 import { askHeld, isPending } from '../state/held';
-import type { TreePoolSlot } from '../../projects/pool/TreePoolSection';
 
 /** The pool's numbered slots, read from the desktop store and refreshed with the driver's next look. */
 export function useTreePool(workspace: string, repository: string) {

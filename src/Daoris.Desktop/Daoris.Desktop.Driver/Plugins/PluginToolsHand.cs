@@ -49,6 +49,9 @@ public static class PluginToolsHand
         return Environment.ProcessPath is { } own && string.Equals(Path.GetFileName(own), exe, StringComparison.OrdinalIgnoreCase) ? own : null;
     }
 
+    public static PluginToolsAt? Read(ServerEntry entry) =>
+        entry.Arguments is { Count: >= 2 } words && words[0] == "plugin" && words[1] == "tools" ? Read(words.Skip(2).ToList()) : null;
+
     /// <summary>The words <c>plugin tools</c> takes, read back: the session, the place and the language; null where the session is not named.</summary>
     public static PluginToolsAt? Read(IReadOnlyList<string> words)
     {

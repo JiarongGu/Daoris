@@ -58,7 +58,7 @@ describe('a parked intake', () => {
     expect(onAnswerAsk).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your answer — it is posted on the ask’s channel');
+    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'a note for the ask’s channel — the intake does not read it');
   });
 
   /** The words go to the ask's channel as the person's, and to no session: nothing is said to the intake over the driver. */

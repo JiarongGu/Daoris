@@ -114,5 +114,7 @@ public static class ParticipantWork
     /// </summary>
     public static bool HoldsSlot(string? work) => work is Build or Design or Exact or Intake or Help or Partner or Review or Plan or Orient;
 
+    public static bool KeepsMemory(string work) => work is Build or Design or Exact or Chat;
+
     private static bool Marked(string? mark) => !string.IsNullOrEmpty(mark);
 }

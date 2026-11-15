@@ -12,8 +12,8 @@ public static class IntegrateChoice
     /// <param name="NoGates">Whether the version integrates its line there with no gates.</param>
     internal sealed record Reach(string Repository, IReadOnlyList<string> Cannots, bool NoGates);
 
-    /// <summary>Whether the graph holds a step this check judges: an <c>integrate</c>.</summary>
-    internal static bool Matters(NodeGraph graph) => graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
+    /// <summary>Whether the graph holds a step this check judges: an <c>integrate</c> or a second opinion.</summary>
+    internal static bool Matters(NodeGraph graph) => graph.Nodes.Any(node => node.Kind is NodeKinds.Integrate or NodeKinds.Opinion);
 
     /// <summary>Whether a fact in the accepted declaration is judged: the graph's <c>integrate</c> asks with <c>done</c> or <c>steward</c>.</summary>
     internal static bool NeedsAccepted(NodeGraph graph) =>
@@ -34,16 +34,19 @@ public static class IntegrateChoice
         };
         // A `land` is judged as the intent it binds, with the derived defaults where it leaves options open, its gates
         // read from the options; a version that does not read here has its own refusal, and a graph with no landing integrates nothing.
-        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode) return new(repository, [], false);
         var gates = GraphGates.Of(graph, declared);
         if (gates.Problem is not null) return new(repository, [], false);
+        IReadOnlyList<string> opinion = gates.OpinionCannot is { } unready ? [Capital(unready)] : [];
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode) return new(repository, opinion, false);
         var landing = WorkflowProcess.Of(
             config, repository, workspace, binding, gates,
             LandNodes.LandingOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode))).Landing;
         var policy = config.LinePolicyOf(repository, workspace);
         var integrates = graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
-        return new(repository, IntegrateCarry.Cannots(repository, graph, policy, landing, accepted), integrates && IntegrateCarry.NoGates(policy));
+        return new(repository, [.. opinion, .. IntegrateCarry.Cannots(repository, graph, policy, landing, accepted)], integrates && IntegrateCarry.NoGates(policy));
     }
+
+    private static string Capital(string sentence) => char.ToUpperInvariant(sentence[0]) + sentence[1..];
 
     /// <summary>
     /// Each repository the choice reaches, answered; a repository's accepted declaration is read only where the version asks with <c>done</c> or

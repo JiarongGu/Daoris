@@ -239,6 +239,11 @@ export function sinceMark(items: readonly ChannelItem[], mark: string | null | u
 /** The unread counts of several asks added up, for a heading over them. */
 export const unreadSum = (counts: Readonly<Record<string, number>>): number => Object.values(counts).reduce((sum, n) => sum + n, 0);
 
+const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
+
+export const channelRefusal = (t: Said, code: string): string =>
+  REFUSALS.has(code) ? t(`asks.channel.refused.${code}`) : t('asks.channel.refused.other', { code });
+
 /** The codes Daoris's lines carry that this page has words for (the service's `ChannelLine.Code`). */
 const LINE_CODES = new Set(['published', 'taken', 'submitted', 'done', 'declined', 'awaiting']);
 

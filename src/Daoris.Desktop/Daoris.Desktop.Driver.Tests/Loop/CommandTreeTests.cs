@@ -109,10 +109,11 @@ public sealed class CommandTreeTests
     [Fact]
     public void PLUGINVERB1_a_verb_of_the_plugin_command_never_falls_to_the_kits_door()
     {
+        string[] ownVerbs = ["list", "add", "update", "remove", "enable", "disable", "try-again", "switch"];
         foreach (var verb in CommandWords.Group("plugin")!.Verbs)
         {
             var door = CommandTree.Route(["plugin", verb]).Words[0];
-            Assert.Equal(PluginCommand.Verbs.Contains(verb, StringComparer.Ordinal) ? "plugin" : "plugins", door);
+            Assert.Equal(ownVerbs.Contains(verb) ? "plugin" : "plugins", door);
         }
     }
 

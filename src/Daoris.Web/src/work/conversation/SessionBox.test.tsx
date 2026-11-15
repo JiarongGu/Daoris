@@ -111,7 +111,7 @@ describe('SessionBox', () => {
     show({ box: { kind: 'ask' }, onSend });
 
     const field = screen.getByLabelText('Message');
-    expect(field).toHaveAttribute('placeholder', 'your answer — it is posted on the ask’s channel');
+    expect(field).toHaveAttribute('placeholder', 'a note for the ask’s channel — the intake does not read it');
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
     await userEvent.type(field, 'it is the engine’s');
     await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));

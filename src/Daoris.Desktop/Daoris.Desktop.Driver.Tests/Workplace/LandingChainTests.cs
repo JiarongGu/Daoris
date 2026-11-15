@@ -70,12 +70,14 @@ public sealed class LandingChainTests : IDisposable
             ["q2"] = new("q2", "ask #a1", "portal-ui", "Show the fixed gap", "", "Done") { Parent = "q1" },
             ["q3"] = new("q3", "ask #a1", "portal-ui", "Verify the shown gap", "", "Done") { Parent = "q2" },
             ["q4"] = new("q4", "ask #a1", "ENGINE", "Back to the engine", "", "Done") { Parent = "q3" },
+            ["q5"] = new("q5", "ask #a1", "engine", "Check the engine", "", "Done") { Parent = "q4" },
         };
         Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
 
         Assert.Equal(new LandingSubject("s2", "q2", "Show the fixed gap"), await BranchPatterns.SubjectAsync("s2", "q2", Find, opening: null));
         Assert.Equal(new LandingSubject("s3", "q2", "Show the fixed gap"), await BranchPatterns.SubjectAsync("s3", "q3", Find, opening: null));
         Assert.Equal(new LandingSubject("s4", "q4", "Back to the engine"), await BranchPatterns.SubjectAsync("s4", "q4", Find, opening: null));
+        Assert.Equal(new LandingSubject("s5", "q4", "Back to the engine"), await BranchPatterns.SubjectAsync("s5", "q5", Find, opening: null));
         Assert.Equal(new LandingSubject("s1", "q1", "Fix the gap"), await BranchPatterns.SubjectAsync("s1", "q1", Find, opening: null));
     }
 

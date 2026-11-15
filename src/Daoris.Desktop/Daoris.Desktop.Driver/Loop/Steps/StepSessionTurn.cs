@@ -6,9 +6,8 @@ namespace Daoris.Driver;
 /// The loop's start of the session that performs a plugin's step (<see cref="IStepSessions"/>), a supervisor's turn's shape: staffed as the
 /// place's builds are (its role's order and the account walk), its record a part of the run (<see cref="StepSessionDoors"/>) saying which
 /// step it performs while it works, at the place's checkout with no tree of its own under the step's read-only rules
-/// (<see cref="StepPermissions"/>), handed its one server, its first words the step's ask; it ends completed where the step is answered
-/// reached and failed otherwise, its note the step's outcome.
-/// </summary>
+/// (<see cref="StepPermissions"/>), handed its one server and its standing block (<see cref="StepStandingBlock"/>), its first words the
+/// step's ask; it ends completed where the step is answered reached and failed otherwise, its note the step's outcome.</summary>
 /// <param name="driverOf">A driver for one session, built as a look's is.</param>
 internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
 {
@@ -96,13 +95,7 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         {
             Session = sessionId,
             Prompt = ask.Prompt(),
-            Block = new StandingFacts
-            {
-                Repository = ask.Repository,
-                Workspace = ask.Workspace,
-                Knowledge = false,
-                PluginBriefs = PluginBriefs.At(home, new PluginPlace(ask.Repository, ask.Workspace), [tools]),
-            },
+            Block = StepStandingBlock.Of(home, ask, tools),
             Asked = choice.Effective?.Asked,
             Choice = choice.Effective?.From,
         };

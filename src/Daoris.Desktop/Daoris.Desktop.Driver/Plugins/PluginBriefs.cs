@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 public static class PluginBriefs
 {
-    public const int Limit = 1_000;
+    public const int Limit = 300;
 
     public static string? Read(JsonElement manifest)
     {
@@ -16,7 +16,7 @@ public static class PluginBriefs
     public static IReadOnlyList<string> At(string home, PluginPlace place, IReadOnlyList<ServerEntry> handed)
     {
         var commands = handed.FirstOrDefault(server => server.Name == PluginToolsServer.Name);
-        var at = commands is null ? null : PluginToolsHand.Read(commands.Arguments.Skip(2).ToList());
+        var at = commands is null ? null : PluginToolsHand.Read(commands);
         var tools = at is null ? [] : PluginToolList.At(home, place)
             .Where(tool => (at.Plugin is null || at.Plugin == tool.Plugin.Manifest.Id)
                 && (commands!.Tools is null || commands.Tools.Contains(tool.Name)))

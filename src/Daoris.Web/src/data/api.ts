@@ -168,6 +168,8 @@ export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; q
  * A registered repository as the service declares it (`generated/service.ts`); `root` is the checkout on this machine, answered to it
  * alone. The fields left out read as none; a `kind` left out is a repository's.
  */
+export type TreePoolSlot ={ number: number; state: string; line: string; reason: string };
+
 export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>
   & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>>;
 

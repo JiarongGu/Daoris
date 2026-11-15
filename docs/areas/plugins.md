@@ -134,7 +134,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 22. A sample frame names no repository: an empty scratch root and a `GIT_DIR` that is not there. (D101)
 23. A tool is found and checked only at a trial or on a press, never at a load or on a timer. A check's `fix` (such as `az login`)
     runs only on the person's press, in a console they see. Daoris never signs in or downloads. (D150)
-24. A manifest's optional `brief` is one authored line, trimmed, at most 1,000 characters with no control characters; an unusable
+24. A manifest's optional `brief` is one authored line, trimmed, at most 300 characters with no control characters; an unusable
     value contributes nothing. `PluginBriefs` hands it once in the session's standing block only where the plugin contributes,
     its `tools` switch is on at that place and its tools are handed: a declared server or an eligible command on `daoris-plugins`
     (also subject to `commands`, and to a step's one-plugin restriction). An update plan shows a changed brief.
