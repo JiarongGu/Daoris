@@ -194,6 +194,17 @@ test('the command line exits 0 on a clean change, 1 on a breach and 2 where ther
   git('checkout', '-q', '--', '.');
 });
 
+test('a branch that raised a file\'s comment share against main is red from its own folder, whatever base its tree recorded', () => {
+  const { dir, git } = repo({ 'src/Reads.cs': BASE });
+  git('checkout', '-q', '-b', 'topic');
+  put(dir, { 'src/Reads.cs': `${BASE}// Says more.\n// Says still more.\n`, 'local/quick-base.json': '{"steps":{}}' });
+  git('add', '-A');
+  git('commit', '-q', '-m', 'topic');
+  const run = spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir], { encoding: 'utf8', windowsHide: true });
+  assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stderr, /comments rose from/);
+});
+
 test('judge passes a file that gains code and keeps its comments', () => {
   assert.deepEqual(judge('src/Reads.cs', BASE, `${BASE}public static class Three { }\npublic static class Four { }\n`), []);
 });
