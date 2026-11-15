@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 /**
- * Sets a builder's worktree up to build and test: the local props copied, the dependencies installed from the lockfiles,
- * and the build primed. A builder runs it once, first, from its worktree.
+ * Sets a builder's worktree up to build and test: the local inputs copied, the dependencies installed, the build primed.
  *
  *   node tools/worktree-setup.mjs [--plan] [--build]
  *
- * - **Local inputs.** Exactly what the main checkout's `daoris.gates.json` declares: each `localInputs` path (the sibling
- *   builds' props, absolute feed paths) and the sensitive-patterns file, never a glob of `local/`, are copied into the worktree's `local/` as files, refreshed on every run, and
- *   never linked: a junction into the main checkout is followed by git and by an install, and emptied what it names. A
- *   `local/` or a `node_modules` that is a link is refused.
+ * - **Local inputs.** What the main checkout's `daoris.gates.json` declares (`localInputs`, the sensitive-patterns file), never
+ *   a glob of `local/`, copied as files, refreshed on every run, and never linked: a junction into the main checkout is
+ *   followed by git and by an install, and emptied what it names. A `local/` or a `node_modules` that is a link is refused.
  * - **Dependencies.** Each folder of `DEPENDENCY_FOLDERS` whose `node_modules` is missing, or not from its lockfile as it stands,
  *   is installed with `npm ci`; one current by its stamp, or by npm's own record of the versions, is left alone.
  * - **The build primed.** The orientation index (written in each checkout), the gates' declared `regenerate` commands, and the
