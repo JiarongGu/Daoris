@@ -32,13 +32,12 @@
  * eventually says to delete history. Saying which is which is most of this tool's content; the counting
  * is the easy half.
  *
- * ## It reports; it does not fail
+ * ## A document's ceiling reports; the startup set's fail
  *
- * Over a ceiling prints loudly and exits 0, as the canon's own budget does. A word count is a judgement, not a fact this tool established: 3,601 words
- * against a ceiling of 3,600 is not *wrong*, and a build that stops over a judgement gets its number
- * raised rather than read. A stale entry — a ceiling naming a document that moved — is the one thing
- * here that IS a fact, and it still fails, because a ceiling pointing at nothing has silently stopped
- * applying and that is a defect in the manifest rather than an opinion about length.
+ * Over a document's ceiling prints loudly and exits 0. A stale entry — a ceiling naming a document that moved — fails,
+ * because a ceiling pointing at nothing has silently stopped applying. The startup set (`doc-budgets/startup.mjs`: the
+ * brief, `CLAUDE.md`, each skill's and agent's description, the largest agent body) fails over its ceilings, because every
+ * session pays it before its first step; its total is printed per source on every run, for Stage 0.
  *
  * ## The discipline, when it goes over
  *
@@ -57,6 +56,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
+import { STARTUP, startupSet } from './doc-budgets/startup.mjs';
 
 const MANIFEST = 'tools/doc-budgets.json';
 const DECLARED = 'daoris.json';
@@ -121,8 +121,18 @@ if (isMain(import.meta.url)) {
       + '  is written only when the words need the space — and say why in the commit.');
   }
 
+  // The startup set, per source, so it reads beside Stage 0's measured share of each.
+  const start = startupSet(repoRoot);
+  const said = (source) => `${source.name}${source.label ? ` ${source.label}` : ''}${source.count === undefined ? '' : ` (${source.count})`} `
+    + `${source.tokens}${source.rawTokens === undefined ? '' : ` (${source.rawTokens} raw)`}`;
+  console.log(`doc-budgets: startup set ~${start.total} of ${STARTUP.tokens} tokens: ${start.sources.map(said).join('; ')}`);
+  for (const each of start.reported) {
+    console.log(`  reported only (untracked, never failed on): ${each.name} ${each.words} words, ~${each.tokens} tokens`);
+  }
+  stale.push(...start.failing.map((failing) => `${failing.what} — over a startup ceiling: cut it, the brief carries the rules`));
+
   if (stale.length > 0) {
-    console.error(`doc-budgets: ${stale.length} stale ceiling(s)\n  ${stale.join('\n  ')}`);
+    console.error(`doc-budgets: ${stale.length} failing\n  ${stale.join('\n  ')}`);
     process.exit(1);
   }
 

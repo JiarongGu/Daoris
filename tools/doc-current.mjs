@@ -8,12 +8,14 @@
  *                                               renamed, and show only the findings in the homes the diff touched
  *   node tools/doc-current.mjs --json           the report as data
  *
- * Reports and never fails: exit 0 clean or reporting, 2 on a tool error (a bad declaration, a base git cannot read). A pure
- * audit like doc-system.mjs; the declaration is `documents.present` in `daoris.json`: `homes` (a file, or a folder whose `.md`
+ * Reports, and fails only on the brief (`AGENTS.md`, outside its generated region, which every session reads whole): a path
+ * or name there that does not exist, or a before-done line that is not the hand-back gates of `daoris.gates.json`. Exit 0
+ * clean or reporting, 1 on the brief, 2 on a tool error (a bad declaration, a base git cannot read). The declaration is
+ * `documents.present` in `daoris.json`: `homes` (a file, or a folder whose `.md`
  * files this repository owns, not those `daoris.lock` says the canon writes), `bases` (per home: folders its short paths
  * follow), `runtime` (roots a path under is machine state, never checked) and `allow` (a span with the reason it is let through).
  *
- * The rule, over each code span outside a fence, in a home read above its generated doctrine region (design §3.2):
+ * The rule, over each code span outside a fence, in a home read outside its generated doctrine region (design §3.2):
  *  - A path: its `:line` is stripped and never range-checked. It is resolved exactly against the home's folder, the root, then each
  *    base; present if tracked, a tracked folder or ignored by git. A placeholder, a bare file name, a machine path, a path under
  *    a runtime root and a path whose first part is no top-level entry are unchecked, said as such and never as present. A moved
@@ -28,13 +30,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fenced } from './doc-duplicates.mjs';
+import { BRIEF, compareHandback, outsideRegion } from './doc-current/brief.mjs';
 import { isMain, repositoryFiles, spawnGit } from './fsx.mjs';
 
 const SOURCE = /\.(?:cs|ts|tsx|mjs|js|ps1)$/;
 // A test source is a test file, a test project or folder, or a fixture: a name only there is test-only.
 const TEST = /(?:\.(?:test|spec|stories)\.[a-z]+$|Tests?\.cs$|(?:^|\/)(?:[^/]*\.Tests|tests?|tool-test|e2e|__tests__|fixtures?|[^/]*-fixtures|_fixtures)\/)/;
 /** The generated doctrine region begins here in a brief; the canon owns it, so it is never read (design §5 iii). */
-const REGION = '<!-- daoris:rules';
 const VERBS = '(?:GET|POST|PUT|PATCH|DELETE|HEAD)';
 const BARE = /^\.?[\w.-]+\.(?:md|jsonc?|mts|cts|tsx?|mjs|cjs|jsx?|cs|csproj|slnx?|props|targets|ps1|psm1|sh|cmd|bat|py|ya?ml|toml|xml|html?|css|scss|svg|png|ico|txt|lock|exe|dll|log|db|sqlite|config|settings|snap)$|^\.[\w.-]+$/;
 const LINE = /(?::\d+(?:-\d+)?)(?:,\s*:?\d+(?:-\d+)?)*$/;
@@ -168,12 +170,10 @@ function homesOf(present, files, read, target) {
   return [...new Set(homes)].sort();
 }
 
-/** Every code span outside a fence, with its line: `{ line, text }`. A span broken over a line is not one. */
+/** Every code span outside a fence and the generated region, with its line: `{ line, text }`. A span broken over a line is not one. */
 function spansOf(text) {
   const out = [];
-  const lines = text.split(/\r?\n/);
-  const region = lines.findIndex((line) => line.startsWith(REGION));
-  const read = region < 0 ? lines : lines.slice(0, region);
+  const read = outsideRegion(text.split(/\r?\n/));
   const inFence = fenced(read);
   for (const [index, line] of read.entries()) {
     if (inFence[index]) continue;
@@ -207,7 +207,7 @@ const sameRoute = (a, b) => a.length === b.length
  * Audit the declared present records against the code. The caller supplies the inventory and the reads, and `ignored(paths)`
  * answering which of those paths git ignores, so a fixture needs no checkout. `diff` is `sinceDiff`'s answer, or null.
  */
-export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
+export function auditCurrent({ manifest, files, read, ignored, diff = null, gates = null }) {
   const present = manifest?.documents?.present;
   if (!present || typeof present !== 'object') throw new Error('daoris.json declares no documents.present (the homes the report reads)');
   const allow = present.allow ?? {};
@@ -370,6 +370,14 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
   findings.sort((a, b) => (a.home < b.home ? -1 : a.home > b.home ? 1 : a.line - b.line));
   quoting.sort((a, b) => (a.home < b.home ? -1 : a.home > b.home ? 1 : a.line - b.line));
   const result = { homes, counts, findings, unusedAllow: Object.keys(allow).filter((span) => !hit.has(span)) };
+  // The brief every session reads fails on what it names that is not there, and on before-done commands that are not the
+  // declared hand-back gates; a name only test source has asks for a look, as elsewhere.
+  if (homes.includes(BRIEF)) {
+    result.brief = {
+      failing: findings.filter((finding) => finding.home === BRIEF && !finding.kind.endsWith('test-only')),
+      handback: gates ? compareHandback(outsideRegion(read(BRIEF).split(/\r?\n/)).join('\n'), gates) : null,
+    };
+  }
   if (diff) {
     const touched = new Set(diff.changed.flatMap((change) => [change.path, change.from].filter(Boolean)));
     result.since = { touched: homes.filter((home) => touched.has(home)), quoting };
@@ -442,7 +450,17 @@ function print(result, since) {
   }
   for (const f of shown) console.log(`${f.home}:${f.line}: ${f.kind} \`${f.span}\`: ${f.say}`);
   for (const span of result.unusedAllow) console.log(`daoris.json: documents.present.allow names \`${span}\`, which no finding needs any more`);
-  console.log(`doc-current: ${shown.length} finding(s)${since ? ' in the touched homes' : ''}; reports only, never fails`);
+  const brief = result.brief;
+  const handback = brief?.handback;
+  if (handback?.differs) {
+    console.log(`${BRIEF}: its before-done commands differ from daoris.gates.json's hand-back gates — missing `
+      + `${handback.missing.map((c) => `\`${c}\``).join(', ') || 'none'}, not declared ${handback.extra.map((c) => `\`${c}\``).join(', ') || 'none'}`);
+  }
+  const failing = (brief?.failing.length ?? 0) + (handback?.differs ? 1 : 0);
+  console.log(`doc-current: ${shown.length} finding(s)${since ? ' in the touched homes' : ''}; `
+    + (failing ? `${failing} in ${BRIEF} fail: the brief names only what exists, and its before-done line is the hand-back gates`
+      : 'the rest report and never fail'));
+  return failing ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {
@@ -467,9 +485,10 @@ if (isMain(import.meta.url)) {
       read: (file) => readFileSync(join(root, file), 'utf8'),
       ignored: ignoredBy(root),
       diff,
+      gates: JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8')),
     });
     if (json) console.log(JSON.stringify({ ...result, since: result.since && { ...result.since } }, null, 2));
-    else print(result, base);
+    else process.exitCode = print(result, base);
   } catch (error) {
     console.error(`doc-current: ${error.message}`);
     process.exitCode = 2;
