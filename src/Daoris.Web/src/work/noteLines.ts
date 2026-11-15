@@ -325,8 +325,8 @@ export const NOTE_VALUES: Readonly<
   window: 'window',
 };
 
-/** A cool-off's four reasons, each its `harness.cooling.why.*` entry. */
-const COOLING = new Set(['stated', 'assumed', 'default', 'notBelieved']);
+/** A cool-off's reasons, each its `harness.cooling.why.*` entry. */
+const COOLING = new Set(['stated', 'assumed', 'default', 'notBelieved', 'learned']);
 
 /**
  * Where a rule is set, worded as the handed account words a section's source: the default is none set. A source

@@ -218,7 +218,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 33. An account's limit is read from the agent's own words. It cools that account until the reset it names and is never a strike.
     The record ends `failed` with its `limited` flag and reads as *limited*. (D125, D206)
 34. A limited driven line resumes by itself: its own conversation when its account is ready; else a briefed part on another account
-    or the role's next choice; else it waits and shows the earliest reset. An account the person picked is never moved off.
+    or the role's next choice; else it waits and shows the earliest reset. Waiting words change none of it: where no account of its own
+    agent is ready for them, the line walks the role's choices as one with no words does, its words going with it (`CutLineWalk`). An
+    account the person picked is never moved off, nor is a line whose role waits on the limit.
     (D205, D206)
 35. A transient error is retried in the same conversation after 1, 2, 4, 8 and 16 minutes, and is never a strike; past that the
     line waits for the person's word or *Try again*. Access goes to the person; a fatal error fails with its reason. (D210)

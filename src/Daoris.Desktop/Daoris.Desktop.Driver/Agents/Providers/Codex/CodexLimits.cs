@@ -27,6 +27,8 @@ public static class CodexLimits
             @"(?:^|: )you've hit your (?<hit>usage) limit(?: for .+?)?\.(?= |$)",
             // The workspace's credits are spent: the owner refills, so the sentence names no reset.
             @"(?:^|: )your workspace is out of (?<hit>credits)\.(?= |$)",
+            // The workspace's owner keeps the cap low on purpose: no time is named, and Daoris learns when it reopens.
+            @"(?:^|: )you hit your (?<hit>spend cap) set by the owner of your workspace\b",
         ],
         Resets: [@"\btry again at (?<when>.+?)\.?$"],
         Recorded:
@@ -35,6 +37,11 @@ public static class CodexLimits
                 "Your workspace is out of credits. Ask your workspace owner to refill in order to continue.",
                 "2026-10-26",
                 "the protocol door, codex-acp 2.1.1: the JSON-RPC error `Internal error` answering session/prompt in three driven sessions, the sentence in data.message (CODEXCREDITS1)",
+                "2.1.1"),
+            new(
+                "You hit your spend cap set by the owner of your workspace.",
+                "2026-11-14",
+                "the protocol door, codex-acp: the JSON-RPC error `Internal error` answering session/prompt in driven sessions on a workspace whose owner keeps a low spend cap, the sentence in data.message",
                 "2.1.1"),
             new("You’ve hit your usage limit. … Try again at 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),
             new("You’ve hit your usage limit. … or try again at Oct 3rd, 2026 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),

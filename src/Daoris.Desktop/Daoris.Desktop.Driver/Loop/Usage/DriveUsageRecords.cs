@@ -97,9 +97,11 @@ internal static class DriveUsageRecords
               at the line's tip. read writes its found rules again; set and remove edit your own; none acts in a tree.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
-          notices [--json]
+          notices [--json | --set-aside <kind>]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
-              you by group, unread messages by ask, and Done and failed, as the running Daoris holds them; without
-              it, the notices' record alone, and the rest said not read. The window's Notifications is the other door.
+              you by group, unread messages by ask, and Done and failed (never the rows you set aside), as the running
+              Daoris holds them; without it, the notices' record alone, and the rest said not read. The window's
+              Notifications is the other door. --set-aside sets every row of one kind of What needs you aside, your
+              press, confirmed in the window.
         """;
 }

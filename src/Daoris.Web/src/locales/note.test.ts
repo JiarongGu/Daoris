@@ -148,7 +148,8 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
 
     const cooling = reasons('Cooling');
     expect(cooling.map((reason) => reason.key).sort()).toEqual([
-      'harness.cooling.why.assumed', 'harness.cooling.why.default', 'harness.cooling.why.notBelieved', 'harness.cooling.why.stated',
+      'harness.cooling.why.assumed', 'harness.cooling.why.default', 'harness.cooling.why.learned', 'harness.cooling.why.notBelieved',
+      'harness.cooling.why.stated',
     ]);
   });
 

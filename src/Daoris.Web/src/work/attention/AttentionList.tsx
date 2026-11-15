@@ -4,7 +4,9 @@ import { SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { attentionGroups, staleGoAheads } from './attention';
+import { repeatedKinds } from './repeatedKinds';
 import type { Answered } from '../InlineConfirm';
+import { SetAsideKind } from './SetAsideKind';
 import { STALE_AT_ONCE, StaleGoAheads } from './StaleGoAheads';
 
 /**
@@ -30,8 +32,13 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
  */
 export function AttentionList({
   items, doors = {}, run, acts, acting = null, held, below, onSessions, bare = false, onRefuseStale, refusingStale = false,
+  onSetAsideKind, settingAside = false,
 }: {
   items: readonly Attention[];
+  /** Every row of one kind a group holds many of set aside in one press; offered where a group holds `ASIDE_AT_ONCE` or more. Absent, none is offered. */
+  onSetAsideKind?: (kind: Attention['kind'], count: number, answered: Answered) => void;
+  /** The one press's act is on its way. */
+  settingAside?: boolean;
   /**
    * Every stale go-ahead a group holds refused in one press, with one reason, each through its own row's door; offered
    * where a group holds two or more. Absent, none is offered.
@@ -78,6 +85,9 @@ export function AttentionList({
             {onRefuseStale && stale.length >= STALE_AT_ONCE && (
               <StaleGoAheads items={stale} busy={refusingStale} onRefuse={onRefuseStale} />
             )}
+            {onSetAsideKind && repeatedKinds(rows).map(({ kind, count }) => (
+              <SetAsideKind key={kind} kind={kind} count={count} busy={settingAside} onSetAside={onSetAsideKind} />
+            ))}
             <ul className="m-0 grid list-none gap-1 p-0">
               {shown.map((item) => (
                 <AttentionRow

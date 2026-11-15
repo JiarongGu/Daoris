@@ -15,7 +15,11 @@ public static class CoolingWhy
     /// <summary>The agent named a date more than 8 days off: Daoris's default.</summary>
     public const string NotBelieved = "notBelieved";
 
+    public const string Learned = "learned";
+
+    public const string CapWindow = "cap";
+
     /// <summary>The code for an entry, read as <see cref="CoolingWords"/> reads it for its sentence.</summary>
     public static string Of(CoolingEntry entry) =>
-        entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
+        entry.Window == CapWindow ? Learned : entry.Stated ? (entry.AssumedZone ? Assumed : Stated) : entry.NotBelieved ? NotBelieved : Default;
 }

@@ -45,7 +45,8 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                 {
                     state.Agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
                                   ?? role[0].Agent;
-                    limitWalks = policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
+                    limitWalks = (policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))
+                                 && !context.Conversations.PickedOn(cut.Session, cut.Profile);
 
                     // A role that waits on a limit, or a supervisor's wait on this part, keeps the choice until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
@@ -103,6 +104,20 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
+
+                // Nothing of its own agent is ready for the words: a cut-off line walks the role's choices as one with no words does, its
+                // words going with it to the new part.
+                if (limitedWords && CutLineWalk.Leaves(resume, limitWalks, context.Conversations.PickedOn(words.Session, words.Profile)))
+                {
+                    var walked = await wiring.WalkBuildPassesAsync(start, run.Registry, ct, role: stepRole).ConfigureAwait(false);
+                    if (walked.Selection.Allowed)
+                    {
+                        (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
+                        state.Agent = chosen?.Agent ?? state.Agent;
+                        resume = null;
+                        if (limitedLine is { Limit: true } leftLimit) StaffCourse.LimitMoved(context.Harnesses.StaffFor(context.Home), policyRole, quest.Id, leftLimit, chosen);
+                    }
+                }
             }
             else if (policyMove is null && !start.GoesOn && limitedLine is not null && wiring.GoOns.LimitResumes(limitedLine, state.Agent)
                      && await context.Harnesses

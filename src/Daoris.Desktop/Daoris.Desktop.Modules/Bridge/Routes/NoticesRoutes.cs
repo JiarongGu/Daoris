@@ -35,14 +35,23 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// <summary>
     /// The notice <c>id</c> dismissed; or with <c>all</c>, every notice of the window's <c>workspace</c> and every machine-wide one,
     /// every notice where it names none; or with <c>rowKind</c>, <c>rowId</c> and <c>rowSince</c>, that row of <i>What needs you</i> set
-    /// aside with no act, kept in the history.
+    /// aside with no act, kept in the history; or with <c>all</c> and <c>rowKind</c> alone, every row of that kind now in
+    /// <i>What needs you</i> (the window's scope, or every workspace's where none is named), said in the verb's words for a terminal (<c>said</c>).
     /// </summary>
     [DriverRoute("NOTICE_DISMISS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("NOTICE_DISMISS", None = OwnerNone.ActsOnNothing)]
-    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", "rowKind", "rowId", "rowSince", Quick = true)]
+    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", "rowKind", "rowId", "rowSince", "said", Quick = true)]
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
     private Task<object?> NoticeDismissAsync(NoticeDismissPress press, CancellationToken cancellationToken)
     {
+        if (press is { All: true, RowKind: { } kind, RowId: null })
+        {
+            var count = _loop.Notices.SetAsideKind(_loop.Slices.Find(AttentionStateSlice.Name)?.Snapshot(), kind.Trim(), press.Workspace);
+            return Task.FromResult<object?>(press.Said
+                ? new { Said = NoticesAside.Said(kind.Trim(), count).ToWire() }
+                : new NoticesWritten(count is not null));
+        }
+
         if (press.RowKind is not null || press.RowId is not null)
         {
             if (string.IsNullOrWhiteSpace(press.RowKind) || string.IsNullOrWhiteSpace(press.RowId))

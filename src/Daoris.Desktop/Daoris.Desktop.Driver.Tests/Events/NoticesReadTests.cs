@@ -120,6 +120,78 @@ public sealed class NoticesReadTests
         Assert.NotNull(presses.Single(each => each!["id"]!.GetValue<string>() == "h1")!["expires"]);
     }
 
+    /// <summary>A row the person set aside is a marker, no notice: neither the text nor the JSON lists it, in Done and failed or anywhere.</summary>
+    [Fact]
+    public async Task A_row_set_aside_is_no_notice_in_the_text_or_the_json()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var now = DateTimeOffset.UtcNow;
+        Assert.Null(Notices.Add(home.Home, new Notice("ended-s1", Notices.Ended, now.AddMinutes(-5), Session: "s1", State: "failed"), now));
+        Assert.Null(Notices.Renew(home.Home, Notices.SetAsideOf("check-failed", "q1", "2026-10-22T08:00:00.000Z", "games", now.AddMinutes(-3)), now));
+
+        Assert.Equal(0, await RunAsync(home));
+        var text = home.Out.ToString();
+        Assert.Contains("Done and failed (1 unread)", text);
+        Assert.DoesNotContain("set-aside", text);
+        Assert.DoesNotContain("check-failed", text);
+
+        var json = new InstanceTestHome();
+        await using (json)
+        {
+            Assert.Null(Notices.Renew(json.Home, Notices.SetAsideOf("check-failed", "q1", null, null, now), now));
+            Assert.Equal(0, await RunAsync(json, "--json"));
+            Assert.Equal(0, JsonNode.Parse(json.Out.ToString())!["notices"]!.AsArray().Count);
+        }
+    }
+
+    /// <summary>
+    /// <c>--set-aside &lt;kind&gt;</c> is the person's press of <c>NOTICE_DISMISS</c> for the whole kind, confirmed in the window, and prints the
+    /// lines the route answers.
+    /// </summary>
+    [Fact]
+    public async Task Set_aside_sends_the_kind_as_the_person_s_press_and_prints_what_it_answers()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var standIn = home.Serve();
+        standIn.Confirming = true;
+        string[] lines = ["notices: set aside 98 rows of kind `check-failed`."];
+        standIn.Data = new { said = new TreesSaid(lines, [], 0).ToWire() };
+
+        var exit = await RunAsync(home, "--set-aside", "check-failed");
+
+        Assert.Equal(0, exit);
+        Assert.Equal($"{lines[0]}{Environment.NewLine}", home.Out.ToString());
+        var press = Assert.Single(standIn.Presses);
+        Assert.Equal("NOTICE_DISMISS", press.GetProperty("type").GetString());
+        Assert.Equal("""{"rowKind":"check-failed","all":true,"said":true}""", press.GetProperty("payload").GetRawText());
+    }
+
+    /// <summary>Where no Daoris runs nothing judges what needs the person, so the verb sets nothing aside and says why, exit 2.</summary>
+    [Fact]
+    public async Task Set_aside_where_no_daoris_runs_changes_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+
+        var exit = await NoticesRead.RunAsync(["--set-aside", "check-failed"], home.Home, null, home.Out, home.Error);
+
+        Assert.Equal(2, exit);
+        Assert.StartsWith("notices: what needs you is judged by the running Daoris", home.Error.ToString());
+        Assert.False(File.Exists(Notices.PathOf(home.Home)));
+    }
+
+    /// <summary>The kind's words say how many rows went, or that none waits, or that the record refused the write.</summary>
+    [Fact]
+    public void The_set_aside_says_how_many_rows_went()
+    {
+        Assert.Equal(["notices: set aside 1 row of kind `parked`."], NoticesAside.Said("parked", 1).Out);
+        Assert.Equal(["notices: set aside 3 rows of kind `parked`."], NoticesAside.Said("parked", 3).Out);
+        Assert.Equal(["notices: no row of kind `parked` is waiting for you."], NoticesAside.Said("parked", 0).Out);
+        Assert.Equal(2, NoticesAside.Said("parked", null).Code);
+    }
+
     [Fact]
     public async Task Alone_with_no_record_it_says_so()
     {
@@ -161,5 +233,5 @@ public sealed class NoticesReadTests
     /// <summary>Its usage line, in the driver's usage.</summary>
     [Fact]
     public void Its_usage_line_is_in_the_driver_s_usage() =>
-        Assert.Contains("\n  notices [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  notices [--json | --set-aside <kind>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
 }

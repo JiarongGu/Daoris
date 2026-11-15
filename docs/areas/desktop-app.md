@@ -151,8 +151,13 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 31. *Notifications* is one view, opened by the title bar's bell: presses waiting, *What needs you*, messages, and *Done and
     failed*. There is no *Confirm all*; a *What needs you* row is answered, or set aside with *Set aside*, which every kind
     offers: `NOTICE_DISMISS` with the row's kind, id and since keeps a read `set-aside` entry in the history, and the judge hides
-    that row only while it stands as it did (`Notices.Hidden`, `AttentionFacts.Hidden`), so one that moved on is shown again. *Done and failed* holds only what needs a look: a
-    session's end that failed, was stopped or ran out (never one that completed, was declined or stood down), none for a part whose
+    that row only while it stands as it did (`Notices.Hidden`, `AttentionFacts.Hidden`), so one that moved on is shown again. Where a
+    group holds three or more rows of one kind it offers *Set all aside…* for that kind (`SetAsideKind`; `NOTICE_DISMISS` with `rowKind` and
+    `all`, which keeps every row of the kind the attention slice holds, in the window's scope, in one write, `AsideOfKind`), and
+    `daoris notices --set-aside <kind>` is the person's press of the same route. The set-asides are markers: neither `daoris notices` nor its
+    JSON lists one as a notice. *Done and failed* holds only what needs a look: a
+    session's end that failed, was stopped or ran out (never one that completed, was declined or stood down, nor one an update stopped, which
+    carries on: class `stopped-update`), none for a part whose
     line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), a failed run step after the review, one line by run, node
     and attempt (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once), a failed plugin round, and the set-asides. A notice whose
     subject moved on (a step that went on, a run gone) is cleared by the same pass (`RunOutcomesRead.Moved`), from the one read of the runs

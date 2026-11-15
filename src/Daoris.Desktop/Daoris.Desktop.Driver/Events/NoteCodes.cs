@@ -103,6 +103,7 @@ public static class NoteCodes
         new(CoolingWhy.Assumed, [], "harness.cooling.why.assumed"),
         new(CoolingWhy.Default, [], "harness.cooling.why.default"),
         new(CoolingWhy.NotBelieved, [], "harness.cooling.why.notBelieved"),
+        new(CoolingWhy.Learned, [], "harness.cooling.why.learned"),
     ]);
 
     /// <summary>

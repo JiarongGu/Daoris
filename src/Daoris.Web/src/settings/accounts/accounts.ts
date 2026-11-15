@@ -295,6 +295,7 @@ export function nothingSaid(agent: AgentAccounts, scope: AccountScope): boolean 
 
 /** Why a cool-off lasts until then, in the reader's language: the agent said so, or Daoris's default stood in. */
 export function coolingWhy(cooling: AccountCooling): string {
+  if (cooling.window === 'cap') return i18n.t('harness.cooling.why.learned');
   if (cooling.stated) return i18n.t(cooling.assumedZone ? 'harness.cooling.why.assumed' : 'harness.cooling.why.stated');
   return i18n.t(cooling.notBelieved ? 'harness.cooling.why.notBelieved' : 'harness.cooling.why.default');
 }

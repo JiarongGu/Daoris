@@ -244,6 +244,9 @@ public static class PersonPresses
     /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c>: a clear.</summary>
     public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
 
+    /// <summary><c>notices --set-aside &lt;kind&gt;</c>: every row of one kind of <i>What needs you</i> set aside.</summary>
+    public static InstanceRoute NoticeAside { get; } = Person("NOTICE_DISMISS");
+
     /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c>: a conversation's name, or its first question again; the one route for every conversation.</summary>
     public static InstanceRoute ConversationRename { get; } = Person("CONVERSATION_RENAME");
 
@@ -373,6 +376,7 @@ public static class PersonPresses
         ("history clear --workspace <name> --yes", HistoryClear),
         ("quest clear <id> [--failed] --yes", HistoryClear),
         ("ask --clear <id> --yes", HistoryClear),
+        ("notices --set-aside <kind>", NoticeAside),
         ("help rename <id> \"…\"|--clear", ConversationRename),
         ("help pin <id>", ConversationPin),
         ("help unpin <id>", ConversationPin),
