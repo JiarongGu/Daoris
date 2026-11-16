@@ -380,7 +380,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or content, or
     carried; with a tree, only this home's tree on a branch that moved and that no run owns (rule 51). Landed work goes only once it is on the line, and a branch
     its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
-    keeping pass purges it. (D88, D195)
+    keeping pass purges it. It never starts in a repository whose landing is due, being made or waiting to be tried again
+    (`LandRetries.Due`), and comes at a look after it lands. (D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
     `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
     its folder where the line commits nothing there, else the file alone (`GeneratedIndex`); and every path the repository's own

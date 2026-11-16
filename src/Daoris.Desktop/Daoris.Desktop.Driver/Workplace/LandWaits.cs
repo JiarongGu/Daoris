@@ -47,6 +47,12 @@ public static class LandWaits
     /// <summary>A second opinion or a review it waits on, said already.</summary>
     public const string Waiting = "waiting";
 
+    /// <summary>Another of Daoris's writes still holds the repository its refused landing waits on, within the wait's deadline (<see cref="LandRetries"/>).</summary>
+    public const string Busy = "busy";
+
+    /// <summary>That wait passed its deadline and climbed the reporting line (<see cref="LandRetries.Climb"/>), said once.</summary>
+    public const string Climbed = "climbed";
+
     public static LandingLine Line(LandStart start, string reason) => new(Event,
         [("run", start.Run), ("node", start.Node), ("repository", start.Repository), ("workspace", start.Workspace), ("reason", reason)]);
 

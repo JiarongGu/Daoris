@@ -126,6 +126,8 @@
   "workflow.runtimeTip.declared": "规则已设定并保存，但还没有东西依据它行动。",
   "workflow.limit.opinion-partial": "只有在另一个智能体对它的阅读了结之后，或者你通过 `daoris session opinion` 不等它继续时，这里的工作才会落地；审阅还没有画出它，也还没有任务能选自己的阅读者。",
   "workflow.limit.look-partial": "落地会一直等到你确认已审阅或跳过审阅；在那之前，准备步骤的构建从它的会话结束起在 Daoris 的浏览器中展示。目前还不会为你编排准备步骤，也没有为它单独运行的进程。",
+  "workflow.landRetry.busy": "已采纳；Daoris 的另一项写入占着该仓库，那项写入结束后会自动再试。",
+  "workflow.landRetry.climbed": "已采纳；该仓库被占用超过了落地的期限，所以这次等待已沿汇报线上报：{{line}}。",
   "workflow.limit.plugin-unready": "它的插件现在无法在本机落地工作：它没有安装、已停用、什么都不提供，或者不在 `work/land` 挂点上说话。`daoris plugin list` 会说明是哪一种。",
   "workflow.limit.pull-request-unread": "它的插件不回答 `work/state`，所以 Daoris 从不读取这个拉取请求是被合并还是被放弃。",
   "workflow.limit.pull-request-at-clean-up": "只有在清理分支时才会向它的插件询问它的状态，有人在等时从不询问。",

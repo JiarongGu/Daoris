@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { landRetrySaid } from './landRetrySaid';
 import { type GraphRun, knownState, type RunHolder, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { stepTitle } from './said';
 
@@ -237,6 +238,11 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       if (node === 'human') return t('workflow.run.graph.said.task');
       if ((node === 'quest.holds' || node === 'content.holds') && step.words) {
         return t('workflow.run.graph.said.holds', { why: step.words.replace(/\.+$/, '') });
+      }
+      // A landing tried again by itself, or whose wait climbed the reporting line, says so rather than plain working.
+      if (node === 'land' && step.words) {
+        const retry = landRetrySaid(t, step.words);
+        if (retry) return retry;
       }
       // A decline holds the work's requests active and waiting on you; the driver reads it from the quests, as its code.
       if (node === 'work.requests') {
