@@ -56,6 +56,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
    approval's card names the release, its definition, the build and its source branch.
+3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
+   `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
+   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris). Create
+   matches a release by the landed commit its artifact carries, across every build of that commit, or reads the release its holder names
+   (`release` option); it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
+   end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
+   key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
+   deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
+   sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1). Saved
+   versions keep the bundled `release` step.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
