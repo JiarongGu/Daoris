@@ -40,7 +40,6 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByText(/Current workflow/)).toBeNull();
   });
 
-  // The run's view heads with the route that chose its workflow, as its binding keeps it.
   it('heads with the route that chose its workflow', async () => {
     const routed = (route: NonNullable<WorkflowRun['workflow']['route']>) =>
       answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1, route } });

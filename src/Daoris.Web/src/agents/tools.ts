@@ -173,10 +173,6 @@ export interface Account {
   settings?: AccountSettings | null;
   /** When its state is last read; null where it never is, and left out where it has none. */
   read?: string | null;
-  /**
-   * Its sign-in state as the start's walk ranks it, from the same reading: `unanswered` is a check asked that did not answer,
-   * ranked last; `since` when it began saying so; `notByPerson` a sign-out after a signed-in reading. Absent from an older driver.
-   */
   signIn?: { state: 'in' | 'out' | 'unanswered' | 'unread'; since: string | null; notByPerson: boolean } | null;
 }
 

@@ -127,8 +127,6 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     expect(release.edges.find((edge) => edge.to === none[0]!.id)).toMatchObject({ from: 'find', style: 'when', port: 'none', label: 'none' });
     // The routed outcome stays an edge to its step.
     expect(release.edges.find((edge) => edge.from === 'find' && edge.to === 'release')).toMatchObject({ style: 'when', port: 'release', label: 'release' });
-    // A decision's "not needed" routes by no `when` wire: the step it closes is passed and the check after it goes on, drawn as not needed
-    // this run, never as no further step.
     const decided = draw(shipped('pull-request-release').graph);
     const notNeeded = decided.nodes.filter((node) => node.title === 'Not needed this run');
     expect(notNeeded.map((node) => decided.edges.find((edge) => edge.to === node.id)?.from)).toEqual(['config-needed']);

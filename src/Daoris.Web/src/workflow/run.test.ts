@@ -28,7 +28,6 @@ describe('a run as the page reads it', () => {
     expect(runTone('waiting', { kind: 'person' })).toBe('open');
     expect(runTone('done')).toBe('done');
     expect(runTone('failed')).toBe('declined');
-    // A wait an agent holds wears no hue, and nothing else tells the two apart.
     expect(runTone('waiting', { kind: 'agent', name: 'codex-acp' })).toBe('neutral');
     expect(runTone('waiting')).toBe('neutral');
     for (const state of ['working', 'not-known', 'cannot-start', 'skipped', 'stopped', 'not-reached', 'later']) {

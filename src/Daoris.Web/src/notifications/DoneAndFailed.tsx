@@ -49,7 +49,6 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
   }
   if (notice.kind === 'signed-out') {
-    // A sign-out nobody at Daoris made: the account by the person's name for it, else its id, and its agent.
     return t('notifications.done.signedOut', { account: notice.act ?? notice.code ?? '', agent: notice.route ?? '' });
   }
   if (notice.kind === 'set-aside') {

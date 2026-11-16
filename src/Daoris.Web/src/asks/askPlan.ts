@@ -25,7 +25,6 @@ export type AskPlanAnswer = { key: string; words: string; at: string };
 export type AskPlanRevision = {
   scope: string | null; revision: number; depth: number; why: string; parts: AskPlanPart[]; edges: AskPlanEdge[]; flags: AskPlanFlag[];
   releases: AskPlanRelease[]; questions: AskPlanQuestion[]; answers: AskPlanAnswer[];
-  /** `one-scope`: its parts merge with no checks each and are checked once at the end; null for each part checked, as before. */
   integration?: 'one-scope' | 'per-part' | null;
 };
 

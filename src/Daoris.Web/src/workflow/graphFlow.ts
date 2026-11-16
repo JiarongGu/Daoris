@@ -32,7 +32,6 @@ export type DrawnNode = FlowNode & {
   outcomes?: readonly string[];
   /** The outcome a run's decision returned: its route is reached, and an outcome it did not return is not taken. */
   outcome?: string | null;
-  /** The role that takes the step, by its id: the one it names, or its kind's where the caller reads the palette. */
   role?: string | null;
 };
 
@@ -93,7 +92,6 @@ export function drawnFromJson(t: TFunction, i18n: I18n, json: unknown): DrawnGra
   const nodes = (Array.isArray(graph.nodes) ? graph.nodes : []).map(record).map((node): DrawnNode => {
     const kind = text(node.kind) ?? '';
     const glyph = glyphOfKind(kind, record(node.options));
-    // Only the role the step names: its kind's is the palette's, which a saved graph's drawing does not read.
     const role = namedRole(node);
     return {
       id: text(node.id) ?? '', kind, title: plain(kindTitle(t, i18n, kind)), outcomes: names(node.outcomes), ...(glyph ? { glyph } : {}), ...(role ? { role } : {}),
@@ -302,7 +300,6 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
       const lit: Partial<FlowNode> = node.outcome == null ? {}
         : node.outcome === outcome ? { reached: true }
           : { reached: false, state: { word: t('workflow.run.notTaken.state'), tone: 'neutral' } };
-      // A decision's "not needed" passes the step it closes on the record: it reads as not needed this run, never as no further step.
       nowhere.push({
         id, title: t(outcome === 'not-needed' ? 'workflow.graph.notNeeded' : 'workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
         step: { kind: 'none', variant: 'other', ports: [], terminal: 'none' },

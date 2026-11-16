@@ -56,7 +56,6 @@ export type ChartStep = {
   group?: { count: number; open: boolean; members: string[] };
   /** What the driver's judgement refused at this step, in the reader's words: an outline on the step, its chip the canvas's, and the words in its description. */
   refused?: string[];
-  /** The role that takes the step, by its id (`StepRoles`), drawn under its title; none where the drawing knows none. */
   role?: string;
 };
 

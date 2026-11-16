@@ -23,7 +23,6 @@ export function LandOptions({
   graph: unknown;
   /** The saved workflow it is a version of, and the version the change is made against. */
   workflow: { id: string; version: number };
-  /** The lines the place declares, which a landing's target is chosen from. */
   lines?: string[];
   /** The newest planned save's answer and the fingerprint of the draft it answered. */
   judged: WorkflowSaveAnswer | null;

@@ -287,7 +287,6 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         // *Ask for a fix…* publishes an ask rather than recording a word: the driver's sentence names it.
         (answer) => notify(answer.done && resolution !== 'ask-fix' ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
     },
-    // A plugin's wait with no page done outside Daoris: the run view's own door, on the attempt its row names; the driver's next look applies it.
     doneOutside: (ask) => resolveHeld.mutateAsync(ask),
     // The folder a node record that does not read is kept in, opened for the person to mend it; a refusal (no record
     // kept now) in the driver's words. Its row goes once the record reads, as the slice is judged again.
