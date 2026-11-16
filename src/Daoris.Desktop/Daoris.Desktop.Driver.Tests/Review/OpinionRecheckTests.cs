@@ -286,14 +286,14 @@ public sealed class OpinionRecheckTests : IDisposable
         var client = host.Client();
         var said = new List<string>();
         client.LandingLined += line => said.Add(line.Event);
-        var seen = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var seen = new DateTimeOffset(2026, 11, 15, 21, 12, 11, TimeSpan.Zero);
         var driver = Driver(client, git, (ask, choice) =>
         {
             if (_passes.Count == 1)
             {
                 // Codex's spend cap ends the recheck, and its account cools until the reset.
                 host.Opinion("op2", "s1", state: "failed", why: OpinionViews.Limited, pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base);
-                AccountCooling.Cool(_home, new CoolingEntry("codex", null, seen.AddHours(3), Stated: false, "cap", seen, "r-op2"), seen);
+                AccountCooling.Cool(_home, new CoolingEntry("codex", null, seen.AddYears(100), Stated: false, "cap", seen, "r-op2"), seen);
                 return new OpinionPassRun("failed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "failed", Limited = true };
             }
 
