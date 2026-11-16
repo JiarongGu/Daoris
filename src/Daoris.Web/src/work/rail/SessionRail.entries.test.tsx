@@ -91,6 +91,29 @@ describe('the session rail over entries (SESSONE1c)', () => {
     expect(screen.queryByText(/^Intake/)).toBeNull();
   });
 
+  /** The owner's words: "when app open we display a list of session which then gone after a few second or minutes". */
+  it("draws no list before the reader's first answer, so the eleven records and the archived line never flash", async () => {
+    GROUPINGS = EVIDENCE_GROUPINGS.map((row) => (row.session.startsWith('ap00001') ? { ...row, group: 'archived', archived: true } : row));
+    ENTRIES = EVIDENCE_ENTRIES.map((entry) => (entry.leading === 'ap000013' ? { ...entry, group: 'archived' } : entry));
+    let answer = () => {};
+    const answered = new Promise<void>((resolve) => { answer = resolve; });
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { ask?: string } }) => {
+      if (type === 'SESSION_GROUPS') await answered;
+      return drive(module, type, options);
+    });
+    show();
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
+    await new Promise((resolve) => { setTimeout(resolve, 200); });
+    expect(screen.queryAllByRole('heading', { level: 3 })).toEqual([]);
+    expect(screen.queryByText(/^Intake/)).toBeNull();
+
+    answer();
+    const working = (await screen.findByRole('heading', { level: 3, name: 'Working (2)' })).closest('section')!;
+    expect(rowsOf(working)).toHaveLength(2);
+    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Working (2)']);
+  });
+
   it('draws each row from its leading part and says how many parts it holds', async () => {
     show();
 
