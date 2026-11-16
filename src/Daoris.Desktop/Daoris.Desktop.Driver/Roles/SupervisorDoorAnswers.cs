@@ -136,8 +136,11 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 KeptAt = now, GoesOnAt = goesOnAt, State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(subject.Session));
-            AtomicFile.WriteText(book.Files.FileOf(subject.Session, id), FileText(decision, answer, now));
+            var text = FileText(decision, answer, now);
+            AtomicFile.WriteText(book.Files.FileOf(subject.Session, id), text);
             Append(decision, decision.State, now, why: null);
+            book.Window(decision.State, decision.State, () => new HeldDecisionRow(
+                id, subject.Session, subject.Kind, answer.Repository, answer.Generation, goesOnAt, text), id);
             book.Doors[id] = decision;
             if (left) book.Closed[subject] = SupervisorState.Left;
             log?.Info(left ? "supervisor.left" : "supervisor.door", ("session", subject.Session), ("kind", subject.Kind), ("do", answer.Do));
@@ -265,6 +268,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
     private void Append(SupervisorDoorDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
+        if (decision.State == SupervisorState.Held && to != SupervisorState.Held) book.Held.Drop(decision.Id);
         decision.State = to;
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Subject.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }
