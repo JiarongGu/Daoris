@@ -14,10 +14,10 @@ namespace Daoris.Service.Tests;
 public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
     /// <summary>
-    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,393 of the other tools (the
+    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,260 of the other tools (the
     /// design comparison <see cref="SynthesisBudget"/> holds among them), descriptions cut to what an agent needs, plus <see cref="PlanBudget"/>.
     /// </summary>
-    internal const int ListingBudget = 50_700;
+    internal const int ListingBudget = 50_500;
 
     /// <summary>One tool's definition may not exceed this many characters.</summary>
     internal const int ToolBudget = 2_600;
@@ -31,12 +31,16 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
     /// <summary>
     /// The second tool over <see cref="ToolBudget"/>: team_plan writes a plan whole in one call, so its schema carries the shapes of a
     /// part (with its requirements and pack), an edge, a deployable, a release order, a question and the ask's integration; its text is
-    /// already cut to what the shapes do not say, and a second tool for some of them would be a second way to write a plan.
+    /// already cut to what the shapes do not say, and a second tool for some of them would be a second way to write a plan. The
+    /// integration's field is some 70 characters of schema before its words, which no wording of them brings under the earlier 7,000.
     /// </summary>
-    internal const int PlanBudget = 7_250;
+    internal const int PlanBudget = 7_200;
 
-    /// <summary>The third: brainstorm_synthesize carries a design pass's comparison, its trial and owner questions, in the one synthesis.</summary>
-    internal const int SynthesisBudget = 3_400;
+    /// <summary>
+    /// The third: brainstorm_synthesize carries a design pass's comparison, its trial and owner questions, in the one synthesis. The
+    /// comparison's shape is some 840 characters of schema before any word, more than the 620 the tool had under <see cref="ToolBudget"/>.
+    /// </summary>
+    internal const int SynthesisBudget = 3_300;
 
     /// <summary>The tokens a model reads in JSON text, at about three characters each.</summary>
     internal static int EstimatedTokens(int characters) => (characters + 2) / 3;

@@ -70,7 +70,7 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
         BrainstormGroupInput[]? groups,
         [Description("The proposals you left out of every group, each by id with why.")]
         BrainstormLeftOutInput[]? leftOut = null,
-        [Description("Only a design pass's comparison: the route, why, what would flip it, the trial and the owner's questions.")]
+        [Description("Only for a design pass: its routes compared.")]
         DesignComparisonInput? comparison = null)
     {
         var text = Composed(writer =>
@@ -257,7 +257,7 @@ public sealed record DesignComparisonInput(
     string? Why,
     [property: Description("One to six checkable observations that would make another route better.")]
     string?[]? Flips,
-    [property: Description("The trial: the area tried first, its baseline, and the keep and retire criteria written now.")]
+    [property: Description("The area tried first, its baseline, and keep and retire criteria written now.")]
     DesignTrialInput? Trial,
     [property: Description("At most eight questions only the owner can answer.")]
     DesignQuestionInput?[]? Questions);

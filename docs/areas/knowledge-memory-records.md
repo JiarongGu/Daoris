@@ -130,9 +130,10 @@ one job each, checked by `verify`.
     session with no tree). What a one-job session may call is its harness's rules, handed at its start. (from D212, D284)
     The listing is what every session pays before its first word, so each tool's description and schema text says what an agent
     needs to choose and call it and no more: the rationale lives here. `McpListingBudgetTests` measures the listing as the wire
-    carries it (35 tools, 48,664 characters, about 16,200 tokens) and fails over its budget or a tool over its own, so a number
+    carries it (35 tools, 50,460 characters, about 16,800 tokens) and fails over its budget or a tool over its own, so a number
     over budget needs a cut or a reason beside it; `quest_publish` and `team_plan` carry their own larger budgets, each because
-    it takes a whole document's shapes in one call. Claude Code's deferred tool loading stays off (agents-and-harnesses 12): its
+    it takes a whole document's shapes in one call, and `brainstorm_synthesize` one because a design pass's comparison is one
+    shape of its synthesis. Claude Code's deferred tool loading stays off (agents-and-harnesses 12): its
     search step costs a model round trip before the first move.
 19. `McpRoleFilterTests` holds the tests' `fixtures/call-table.json` to the registration and to the closed set of works, a
     brainstorm placed by its two turns. (from D212, D284)
