@@ -274,10 +274,33 @@ public static class WorkflowOperations
     {
         var problems = new List<WireProblem>();
         RoleCatalog? catalogue = null;
+        bool Catalogued(string id)
+        {
+            try
+            {
+                catalogue ??= RoleCatalog.ReadHome(home);
+                return catalogue.Slots.Any(slot => slot.Id == id);
+            }
+            catch (DriverException)
+            {
+                return false;
+            }
+        }
+
         foreach (var node in graph.Nodes)
         {
-            if (NodeKit.Of(node.Kind)?.RoleTakes is not [var work, ..]) continue;
-            if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
+            if (NodeKit.Of(node.Kind)?.RoleTakes is not [var work, ..])
+            {
+                // A step no agent session takes names one of the census's roles, or a role the catalogue holds.
+                if (node.Role is { } other && !StepRoles.All.Contains(other, StringComparer.Ordinal) && StepRoles.Problem(node) is null && !Catalogued(other))
+                {
+                    problems.Add(new(StepRoles.Unknown, null, node.Id, $"the step `{node.Id}` names the role `{other}`, which is neither one of Daoris's (`{string.Join("`, `", StepRoles.All)}`) nor a role of the catalogue."));
+                }
+
+                continue;
+            }
+
+            if (StepRoles.Written(node) is not { } written || NodeOptions.Value(written) is null or "") continue;
             if (NodeOptions.Value(written) is not string role)
             {
                 problems.Add(new(RoleRefused, null, node.Id, $"the step `{node.Id}` names its role by something other than a role's id."));

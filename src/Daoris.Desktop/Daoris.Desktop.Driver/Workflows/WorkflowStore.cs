@@ -37,8 +37,14 @@ public static class WorkflowStore
     /// </summary>
     /// <param name="kept">The versions a kept run names; absent, those this home's runs name (<see cref="WorkflowRunBindings.KeptVersions(string, string)"/>).</param>
     /// <returns>The version's number.</returns>
-    public static int Add(string home, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null) =>
-        Add(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), add, kept);
+    public static int Add(string home, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null)
+    {
+        var store = WorkflowPorts.Store(home);
+        var version = Add(store, WorkflowPorts.Runs(home), add, kept);
+        // A version naming a step's role keeps the build a going back may not pass (WorkflowRolesSince).
+        WorkflowRolesSince.Keep(home, store.Load(add.Id)?.File, UpdateRefusal.Running);
+        return version;
+    }
 
     /// <summary>A version added and written through the ports: the plan over the file the store holds, then the file whole.</summary>
     /// <param name="kept">The versions a kept run names; absent, those <paramref name="runs"/> name.</param>

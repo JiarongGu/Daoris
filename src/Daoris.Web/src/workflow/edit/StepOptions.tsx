@@ -57,20 +57,8 @@ export function StepOptions({ node, fields, roleTakes, roles, place = null, staf
         const id = `${base}-${field.name}`;
         const value = optionOf(node, field.name);
         const label = optionLabel(t, kind, field.name);
-        if (field.name === ROLE_OPTION && roleTakes.length > 0) {
-          return (
-            <StepRole
-              key={field.name}
-              id={id}
-              value={typeof value === 'string' && value ? value : ''}
-              roleTakes={roleTakes}
-              roles={roles}
-              place={place}
-              staffing={staffing}
-              onChoose={(chosen) => onSet(field.name, chosen)}
-            />
-          );
-        }
+        // The role is the step's own field, set by `StepRoleField`: an older driver's `role` option is never offered beside it.
+        if (field.name === ROLE_OPTION) return null;
 
         if (field.name === TARGET_OPTION && field.type === 'text' && lines.length > 0) {
           const named = typeof value === 'string' && value ? value : '';

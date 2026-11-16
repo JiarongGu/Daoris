@@ -141,6 +141,13 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// <summary>What an agent performing the step is to bring about, or null: a step that declares one is performed by an agent (<see cref="StepAgents"/>).</summary>
     public AuthoredText? Goal { get; init; }
 
+    /// <summary>
+    /// The role that takes the step, by its id (<see cref="StepRoles"/>), or null: none named, and its kind's default is read
+    /// (<see cref="StepRoles.Of"/>), never written into the version. A role, never a holder: the save refuses a person or an agent named here. In
+    /// equality, the hash and a graph's digest, the digest's only where it is named, so a version from before the field keeps its own.
+    /// </summary>
+    public string? Role { get; init; }
+
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
     /// <summary>
@@ -199,6 +206,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
         && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
         && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic
+        && string.Equals(Role, other.Role, StringComparison.Ordinal)
         && Outcomes.SequenceEqual(other.Outcomes, StringComparer.Ordinal)
         && OutputsOn.Count == other.OutputsOn.Count && OutputsOn.Zip(other.OutputsOn).All(pair =>
             string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal) && pair.First.Value.SequenceEqual(pair.Second.Value, StringComparer.Ordinal));
@@ -223,6 +231,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Skippable);
         hash.Add(Perform);
         hash.Add(Synthetic);
+        hash.Add(Role, StringComparer.Ordinal);
         foreach (var outcome in Outcomes) hash.Add(outcome, StringComparer.Ordinal);
         foreach (var (output, on) in OutputsOn)
         {

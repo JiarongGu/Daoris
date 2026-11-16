@@ -54,6 +54,8 @@ export type PaletteKind = {
   evidenced: boolean; skipBy: string | null; options: OptionField[]; leaves: string[]; roleTakes: string[];
   /** How the editor offers the kind: `alone`, `tail:<method>` for a step a landing's method brings. Absent: `alone`. */
   offered?: string;
+  /** The role a step of the kind names where it names none (`INodeKind.Role`); absent from a driver before the field. */
+  role?: string;
   /** The outcomes a step of the kind is reached with, which an added step declares (a monitor's). Absent or empty: none. */
   outcomes?: string[];
   inputs?: Record<string, string>;
@@ -81,7 +83,11 @@ export type PaletteStep = {
 
 export type PalettePlugin = { plugin: string; steps: PaletteStep[] };
 
-export type WorkflowPaletteAnswer = { kinds: PaletteKind[]; wires: PaletteWire[]; plugins: PalettePlugin[] };
+export type WorkflowPaletteAnswer = {
+  kinds: PaletteKind[]; wires: PaletteWire[]; plugins: PalettePlugin[];
+  /** Daoris's roles a step may name (`StepRoles.All`), in the editor's order; absent from a driver before the field. */
+  roles?: string[];
+};
 
 /** One repository a save or a choice reaches (the integration design §17.7): why it cannot start the version, and whether its line has no gates. */
 export type WorkflowReachRow = { repository: string; workflow: string | null; cannots: string[]; noGates: boolean; said: string | null };

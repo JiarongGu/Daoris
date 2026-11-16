@@ -21,7 +21,8 @@ public sealed class OpinionSetupTests
     {
         var node = Copy().Nodes.Single(each => each.Kind == NodeKinds.Opinion);
 
-        Assert.Equal("opinion", NodeOptions.Value(node.Options[NodeOptionFields.Role]));
+        Assert.Equal(StepRoles.Opinion, node.Role);
+        Assert.False(node.Options.ContainsKey(NodeOptionFields.Role));
     }
 
     [Fact]

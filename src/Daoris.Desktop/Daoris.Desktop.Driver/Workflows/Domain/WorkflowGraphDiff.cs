@@ -243,6 +243,7 @@ public static class WorkflowGraphDiff
         When(old.Rejectable != node.Rejectable, "rejectable");
         When(old.Skippable != node.Skippable, "skippable");
         When(!Equals(old.Perform, node.Perform), "perform");
+        When(old.Role != node.Role, "role");
         foreach (var name in old.Options.Keys.Union(node.Options.Keys, StringComparer.Ordinal).Order(StringComparer.Ordinal))
         {
             When(old.Options.GetValueOrDefault(name) != node.Options.GetValueOrDefault(name), $"options.{name}");

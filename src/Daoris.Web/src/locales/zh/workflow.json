@@ -244,5 +244,21 @@
   "workflow.compose.open": "编排步骤…",
   "workflow.compose.twin": "在终端中：`daoris workflow new <id> --from <default>`",
   "workflow.canvas.fit": "显示整个工作流",
-  "workflow.canvas.moves": "工作流图：拖动或滚轮移动，Ctrl+滚轮缩放"
+  "workflow.canvas.moves": "工作流图：拖动或滚轮移动，Ctrl+滚轮缩放",
+  "workflow.role.label": "角色",
+  "workflow.role.line": "角色：{{role}}",
+  "workflow.role.default": "{{role}}（其类型的）",
+  "workflow.role.none": "其类型的",
+  "workflow.role.hint": "承担这一步骤的角色。由谁担任这个角色，由所在位置决定。",
+  "workflow.role.said": "设置了{{step}}的角色",
+  "workflow.role.design": "设计",
+  "workflow.role.opinion": "第二意见",
+  "workflow.role.tester": "试用人",
+  "workflow.role.acceptor": "采纳人",
+  "workflow.role.approver": "审批人",
+  "workflow.role.release-manager": "发布负责人",
+  "workflow.role.operations": "运维",
+  "workflow.role.config-changer": "配置变更人",
+  "workflow.role.credentials-keeper": "凭据管理人",
+  "workflow.role.owner": "所有者"
 }
