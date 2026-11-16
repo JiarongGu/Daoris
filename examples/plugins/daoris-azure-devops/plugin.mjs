@@ -5,7 +5,7 @@
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its two steps, once per idempotency key (the kit's work.mjs keeps that): `pull-request` opens the pull request
 //  from the pushed branch, or finds the active one, and sets auto-complete where its options ask (auto-complete.mjs); `release` watches
-//  what the merged commit's release takes to its end (release.mjs). The branch and checkout come from the units `work/watch` tells it.
+//  what the merged commit's release takes to its end (release.mjs), each wait on the way a `progress` of its own id that settles nothing. The branch and checkout come from the units `work/watch` tells it.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
 //  DAORIS_PLUGIN_PRIVATE this plugin's own storage, where login keeps the token: never logged, sent only to the API as Basic's password
@@ -133,10 +133,6 @@ async function stateOf(frame) {
   };
 }
 
-/**
- * An attempt's progress as a `work/step` frame Daoris keeps on the attempt and never settles it by: `progress`, the actor its act waits
- * on where one does, and its words and page. Each its own id, so no later frame, the completion above all, is read as its replay.
- */
 const progressOf = (attempt) => {
   let told = 0;
   return ({ actor, environment, url, message }) => {

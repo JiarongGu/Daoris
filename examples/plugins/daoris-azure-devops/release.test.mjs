@@ -130,6 +130,17 @@ test('a stage the step observes that nothing started waits on its deployer, and 
   assert.deepEqual(writes(api), []);
 });
 
+test('a watch tells its first look though nothing waits, so a wait kept from an earlier process gives way to where the stage stands', async (t) => {
+  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'inProgress')] });
+  api.onRead = moving(api, 'Production', 3, { status: 'succeeded' });
+
+  const { step, progress } = await released(t, api, DECLARED);
+
+  assert.deepEqual(progress.map((frame) => frame.params.actor ?? null), [null]);
+  assert.match(progress[0].params.evidence.message, /Production deploying\./);
+  assert.equal(step.params.state, 'reached');
+});
+
 test('no release made from the merged build names the releases of its definition it found and the builds they carry', async (t) => {
   const api = await merged();
   api.releases[0].artifacts[0].definitionReference.version = { id: '40', name: '20261110.40' };

@@ -39,8 +39,7 @@ async function releasesOf(repo, definition, build, alias) {
       && artifact.sourceId === sourceOf(build) && String(artifact.definitionReference?.version?.id) === String(build.id)));
 }
 
-/** The definition's newest releases, a hand-made one included, in words with the build each carries: what a `no-release` found instead. */
-async function othersOf(repo, definition, build) {
+async function foundInstead(repo, definition, build) {
   const listed = await releases(repo, 'GET', `/releases?definitionId=${definition.id}&$top=3&$expand=artifacts`).then((answer) => answer.json?.value ?? [], () => null);
   if (listed === null) return 'Its other releases could not be read.';
   const carried = (each) => {
@@ -52,10 +51,7 @@ async function othersOf(repo, definition, build) {
   return words.length > 0 ? `It found ${words.join(', ')}, not this one.` : `It found no release of ${definition.name}.`;
 }
 
-/**
- * The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way.
- * `progress` is told each change of what the watched stage waits on (`{ actor?, environment, act, url, message }`), its actor absent once it waits on none.
- */
+/** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way; `progress` hears each change of what that stage waits on. */
 export async function release(attempt, unit, say, progress = () => {}) {
   const asked = declared(attempt.options);
   const lead = asked.deployable ? `Deployable \`${asked.deployable}\`: ` : '';
@@ -135,7 +131,7 @@ export async function release(attempt, unit, say, progress = () => {}) {
     let starting = null;
     if ((found ?? []).length === 0) {
       if (asked.action !== 'create-and-start') {
-        const seen = await othersOf(repo, definition, build);
+        const seen = await foundInstead(repo, definition, build);
         return failed('no-release', `No release of ${of} was made from ${from} within ${asked.find / 1000} s; the step's action does not create one. ${seen}`, buildUrl);
       }
       starting = selfStarting(definition.environments ?? []);
@@ -157,7 +153,6 @@ export async function release(attempt, unit, say, progress = () => {}) {
     }
     const [chosen] = found;
     const link = web(chosen, `_releaseProgress?releaseId=${chosen.id}&_a=release-pipeline-progress`);
-    // What the stage waits on goes to Daoris as it changes, with the release's page, where the act is taken.
     const tell = (standing) => progress({ ...standing, url: link, message: fit(`${lead}${chosen.name} of ${definition.name}: ${standing.act}.`) });
     const watched = await watchRelease(repo, chosen.id, asked, ends, say, commit, tell);
     const made = starting === null ? '' : `, made here${starting.length > 0 ? `, its creation starting ${starting.join(', ')} by itself` : ''}`;

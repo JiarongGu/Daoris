@@ -15,7 +15,6 @@ public static class WorkStates
 
     public const string Unknown = "unknown";
 
-    /// <summary>Not an outcome: a running attempt's word, naming the actor it waits on where one does (<see cref="StepProgress"/>).</summary>
     public const string Progress = "progress";
 
     public static readonly IReadOnlyList<string> All = [Reached, Failed, Unknown];
