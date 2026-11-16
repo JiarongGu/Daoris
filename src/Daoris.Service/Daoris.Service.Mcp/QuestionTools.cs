@@ -32,7 +32,7 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         [Description("Why you recommend it, at most 300 characters. Only with `recommend`.")]
         string? why = null,
         [Description(
-            "Only where the owner alone may answer it, never a supervisor: `direction` (what to build, a target), `money` (spending, a "
+            "Only where it is the owner's alone, never a supervisor's to answer: `direction` (what to build, a target), `money` (spending, a "
             + "budget, a paid account beyond the work's runs), `sign-in` (a credential or account), `release` (one the owner marked "
             + "theirs), `history` (a rewrite), `data` (deleting the owner's data), `publish` (to people outside beyond what the "
             + "repository declares). Otherwise leave it out.")]

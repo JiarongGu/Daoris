@@ -14,7 +14,7 @@ namespace Daoris.Service.Tests;
 public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
     /// <summary>
-    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,260 of the other tools (the
+    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,276 of the other tools (the
     /// design comparison <see cref="SynthesisBudget"/> holds among them), descriptions cut to what an agent needs, plus <see cref="PlanBudget"/>.
     /// </summary>
     internal const int ListingBudget = 50_500;
