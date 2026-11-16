@@ -8,7 +8,7 @@ import { makeFixture } from '../test/_fixture.ts';
 import { BUILD_MANIFEST, NOT_NOW, STAGED, UPDATE_REQUEST, holdNotNow, promoteStage } from '../../../tools/desktop-publish.mjs';
 
 /**
- * `--stage --not-now` (STAGENOTNOW1): the build staged held from the start, in one act. The person's word, as `daoris update --cancel`
+ * `--stage --not-now`: the build staged held from the start, in one act. The person's word, as `daoris update --cancel`
  * writes it for that build, is in `data/update.json` before the stage is visible to the running desktop, so its idle install can
  * never race a later cancel.
  */

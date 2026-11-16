@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A staged build is never installed while a run's plugin step is in flight: with no driven session and no turn, a release its plugin
-/// was sent and has not settled holds the drain, said as the steps it waits on, and the look once it settles installs the build (D301).
+/// A staged build is never installed while a run's plugin step is in flight: with no driven session and no turn, a release sent to its
+/// plugin and not settled holds the drain, said as the steps it waits on, and the look once it settles installs the build.
 /// </summary>
 public sealed class UpdatePluginStepTests : Bridge, IDisposable
 {

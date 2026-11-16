@@ -3,16 +3,12 @@ using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// What the drain waits on: driven sessions this loop runs, conversations with a turn in flight, and the runs' plugin steps in flight,
-/// which the updater reads from the run records itself (<see cref="PluginStepsInFlight"/>).
-/// </summary>
+/// <summary>What the drain waits on: driven sessions this loop runs, conversations with a turn in flight, and runs' plugin steps.</summary>
 public sealed record UpdateWork(int Driven, int Turns)
 {
-    /// <summary>The runs' plugin steps in flight: a release or a deploy sent to its plugin and not settled.</summary>
+    /// <summary>The runs' plugin steps in flight, which the updater reads from the run records (<see cref="PluginStepsInFlight"/>).</summary>
     public int Steps { get; init; }
 
-    /// <summary>Whether the work allows the update (<see cref="InstallUpdate.Idle"/>).</summary>
     public bool Idle => InstallUpdate.Idle(Driven, Turns, Steps);
 }
 
@@ -42,10 +38,7 @@ public sealed record UpdateState(
     string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome,
     UpdateOutcome? Last, DateTimeOffset? Since = null)
 {
-    /// <summary>
-    /// The plugin steps in flight the drain waits on, beside <see cref="Driven"/> and <see cref="Turns"/>
-    /// (<see cref="UpdateWork.Steps"/>): read while it drains and as it applies, none otherwise.
-    /// </summary>
+    /// <summary>The plugin steps in flight the drain waits on (<see cref="UpdateWork.Steps"/>), while it drains and as it applies.</summary>
     public int Steps { get; init; }
 }
 
@@ -301,10 +294,7 @@ public sealed class InstallUpdater(
             : Publish(Drains(staged, mode, now, since));
     }
 
-    /// <summary>
-    /// The work the drain waits on: the loop's sessions and turns, and the runs' plugin steps in flight, read from the home's run
-    /// records (<see cref="PluginStepsInFlight"/>), so a release or a deploy sent to its plugin is never cut off by the swap.
-    /// </summary>
+    // A release or a deploy sent to its plugin is never cut off by the swap: the home's run records are asked at each look.
     private UpdateWork Work() => work() with { Steps = PluginStepsInFlight.Count(home) };
 
     private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now, DateTimeOffset? since) =>

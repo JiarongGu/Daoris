@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The plugin steps in flight under a home: each attempt a plugin performs (its step <c>&lt;plugin&gt;/&lt;node&gt;</c>) that is
 /// recorded, sent or unknown, so sent or perhaps sent and its outcome not settled, on a record whose run goes on. What an update's drain
-/// waits on beside the driven sessions and the turns (D301): a swap then cuts the call off, and its outcome is not known until the
-/// restart asks after it.
+/// waits on beside the driven sessions and the turns: a swap then cuts the call off, and its outcome is not known until the restart
+/// asks after it.
 /// </summary>
 /// <remarks>
 /// None of these is in flight: a settled attempt; a held one, which waits on the person's word rather than its plugin; Daoris's own

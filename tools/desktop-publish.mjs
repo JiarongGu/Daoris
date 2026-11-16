@@ -14,11 +14,8 @@
  *                                                           which the desktop installs when idle: it drains
  *                                                           (starts nothing new, holds the presses that would start
  *                                                           work) until every driven session, turn and plugin
- *                                                           step in flight ends; `daoris update --cancel` holds
- *                                                           it *not now*
- *   … --stage --not-now                                     …staged held *not now* in one act: the word is written
- *                                                           before the build is visible, so no idle install races
- *                                                           a cancel
+ *                                                           step ends; `daoris update --cancel` holds it *not now*
+ *   … --stage --not-now                                     …held *not now* from the start, in one act
  *   … --force-ungated                                       …a commit whose tiers have not both passed
  *                                                           (see below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
@@ -393,7 +390,6 @@ async function main() {
       at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     };
     writeManifest(root, identity);
-    // `--not-now`: held from the start, its word written before the build is visible, never a stage then a cancel.
     promoteStage(root, to, { notNow: flag('--not-now') ? identity.id : null });
     // A stage built here is recorded here; the gate tree's child is recorded by its parent, and a rehearsal's
     // stage under `_fixtures` is no stage of the owner's install.

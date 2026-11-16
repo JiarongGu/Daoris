@@ -17,7 +17,6 @@ export type UpdateState = {
   /** Driven sessions still running, conversations with a turn in flight and runs' plugin steps in flight: what the drain waits on. */
   driven: number;
   turns: number;
-  /** A release or a deploy sent to its plugin and not settled; absent where the answer has none. */
   steps?: number;
   /** Why the staged build is not being installed: the check's code, which this words, and the driver's sentence. */
   problem: { code: string; message: string } | null;

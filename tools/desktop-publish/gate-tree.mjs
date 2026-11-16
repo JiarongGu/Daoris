@@ -146,7 +146,7 @@ export function stageReport(home, commit) {
 /**
  * What a stage says of the drain it starts, printed after it. Staged while the install is idle, the install
  * drains: it starts nothing new and holds the presses that would start work until every driven session, turn and plugin step
- * in flight ends; the terminal's `update --cancel` holds the build *not now* instead. Staged `--not-now`, it was held from the start.
+ * in flight ends; the terminal's `update --cancel` holds the build *not now* instead; a stage `--not-now` is held from the start.
  */
 export function stagedAdvice({ notNow = false } = {}) {
   if (notNow) {

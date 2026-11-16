@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A plugin step in flight is an attempt its plugin performs that is recorded, sent or unknown on a record whose run goes on: what an
-/// update's drain waits on beside the sessions and the turns (D301). Settled and held attempts, Daoris's own kinds and an ended run's
+/// update's drain waits on beside the sessions and the turns. Settled and held attempts, Daoris's own kinds and an ended run's
 /// attempts are none; the home's records are read as the runtime keeps them.
 /// </summary>
 public sealed class PluginStepsInFlightTests : IDisposable

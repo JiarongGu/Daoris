@@ -243,7 +243,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   rule 17. Add it to `HomePlacing.Moves` only if Daoris alone names it by a derived path.
 - **Start-time home work:** `Mod/Update/InstallHome.cs`, `HomePlacing.cs`.
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
-  them. **When to update:** `Mod/Update/InstallUpdater.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
+  them. **When to update:** `Mod/Update/InstallUpdater.cs`, a run's plugin step in flight read by
+  `Drv/Workflows/Nodes/PluginStepsInFlight.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.
@@ -252,9 +253,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
 **Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit, `HomeMigrationTests`,
-`ServiceHostLocatorTests`, `PinnedUpdatesTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
+`ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
-`home-census.test.ts`, `tool-test/desktop-publish.test.ts`, `test/deployment-rehearsal.test.ts`.
+`home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
 `cli` (`npm run verify`: the home census, the size ratchet); `tool-tests` for the publish; and
