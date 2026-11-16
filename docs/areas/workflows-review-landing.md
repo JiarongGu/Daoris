@@ -208,13 +208,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
     never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
-    said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. Under a saved graph the
+    said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
+    recheck goes the same way: its first reviewer held by a cool-off, the rule's next ready holder reads it, and one a cap ended is gated
+    cooling and asked again by the next look's delivery. Under a saved graph the
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the
     reviewers are named once, by the place (`daoris place opinion <repository> --agents …`), and choosing the workflow for a
     repository that declares none is refused with that press. An opinion owed closes as `landed` once its work is on the line:
     by commit ids, by a squashing landing's record, or by patch (a landing that replayed the commits and merged the replay
-    leaves the tree's own ids on no branch), the last read as the review reads the tree (`TreeWork`). (D155, D190, D227)
+    leaves the tree's own ids on no branch), each read as the review reads the tree (`TreeWork`), kept while its `HEAD`, its
+    repository's refs, its files and the home's records stand (`TreeReadMemo`), so a look over an owed opinion whose tree did not move
+    starts no git. (D155, D190, D227)
 27. Review's diff is a dependency graph of git reads, kept by no later open, taking no lock and refreshing no index in a tree
     Daoris does not own; within one open each question is asked of git once (`GitReadOnce`), and leaving the page stops its git.
     (D202)

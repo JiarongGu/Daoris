@@ -23,8 +23,6 @@ public sealed class LandedByIdsCensusTests
         ["Workplace/LandPerformer.cs"] = "the landing's gate: a count of zero closes a landing, a count above zero goes on to the per-commit reading that carries replays",
         ["Workplace/UnheldTips.cs"] = "whether a branch's tip is held by a branch of the person's, for the clean-up of branches, not a session's work",
         ["Workplace/Git/GitRepository.cs"] = "the port's own git read",
-        // Ends where the opinion look reads the tree's work alone: the entry goes with the count.
-        ["Review/OpinionLook.cs"] = "an opinion owed's close, read beside the tree's work by patch",
     };
 
     [Fact]

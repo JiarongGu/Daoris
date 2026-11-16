@@ -14,9 +14,9 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>The pull's own look, once.</b> The judge takes the look <c>SESSION_GROUPS</c> takes (<see cref="LookAsync"/>): the records,
 /// the quests, the loop's last verdicts (a fresh plan where no loop has looked), the marks, the waits and the calls read now, and each
-/// tree as the machine's facts' parts judged it, a tree no part asked walked here (<see cref="HelpFacts.WithTreesAsync"/>). So a pushed
-/// row is as fresh as the pull's, and the walk the pull made per window is made once. Not the facts' sessions' look, which may lag a
-/// ledger move by half a minute. Null before the service answers, which keeps the slice not judged.</para>
+/// tree as the facts' parts judged it, one no part asked walked here, none waited for or walked before their first judgement, whose
+/// landing wakes it (<see cref="HelpFacts.WithTreesAsync"/>). So a row is as fresh as the pull's and the walk is made once, not per
+/// window; not the facts' sessions' look, which may lag a ledger move by half a minute. Null before the service answers: not judged.</para>
 ///
 /// <para><b>Two partitions, keyed</b> (<see cref="StateSlice.Keyed"/>): <see cref="Rows"/>, each row under its session as
 /// <see cref="SessionsGroupsWires.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its leading session as
@@ -118,7 +118,7 @@ public static class GroupsStateSlice
 
     /// <summary>The slice the shell's loop owns, taking <paramref name="loop"/>'s look once its service answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct).ConfigureAwait(false)) : null)
+        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct, waits: false).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -131,12 +131,13 @@ public static class GroupsStateSlice
     /// The look <c>SESSION_GROUPS</c> takes of every session: read now without trees, the loop's waits and calls laid on it,
     /// kept for Ask Daoris's room as the route's whole look is, then each tree as the facts' parts judged it.
     /// <param name="only">The sessions asked (null for every one); only a look at every session is kept for Ask Daoris's room.</param>
-    /// <param name="walked">
-    /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never hides work a tree
-    /// gained since), instead of read as the facts judged them. The route and this slice take the one look here.
-    /// </param>
+    /// <param name="walked">Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never
+    /// hides work a tree gained since), instead of read as the facts judged them. The route and this slice take the one look here.</param>
+    /// <param name="waits">Whether a tree the parts have not judged is waited for and walked before their first judgement; the slice's
+    /// is not, so a start's first rows are placed at once by the records, the quests and the marks, the trees' offers after.</param>
     public static async Task<SessionLook> LookAsync(
-        DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false)
+        DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false,
+        bool waits = true)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
@@ -154,7 +155,7 @@ public static class GroupsStateSlice
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);
-        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct).ConfigureAwait(false);
+        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct, waits: waits).ConfigureAwait(false);
     }
 
     /// <summary>

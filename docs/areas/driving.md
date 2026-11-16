@@ -201,7 +201,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     trees once a look until one of its stages writes, a branch's end judgement is three starts, and a repository whose last pass did nothing and said nothing starts no git while the stamp of git's own
     files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
-    (`JudgedOnce`); a look reads the open records and every record once each, and every graph run and its record once
+    (`JudgedOnce`); an owed opinion's judgment reads its tree's work kept while the tree and its refs stand (`TreeReadMemo`);
+    a look reads the open records and every record once each, and every graph run and its record once
     (`RunOutcomeNotices`, a workflow file decoded once a read); the overlaps read a running tree's changes only
     where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
     look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent

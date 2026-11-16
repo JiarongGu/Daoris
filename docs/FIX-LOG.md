@@ -5,6 +5,44 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The look's opinions stage queued git each look, and a recheck a cap ended was never asked again (LOOKOPINIONS1)
+
+- **Symptom:** on the install (build 7c1395e38c) `~opinions` for quest 82406c797e18 grew from ~1.3 s to 6–27 s a look
+  (`look.slow` stage `opinions`), its `~opinions.queue` near the whole of it; the recheck a43800a2 that codex's spend cap
+  ended at 21:12 was never asked again, before or after the reset, and no `opinion.handed-on` was said.
+- **Root cause (the stage):** each look judged each open due afresh, and its close read the tree with git every time: the
+  unlanded count (`symbolic-ref` and `log HEAD --not --branches`, two launches a due), and on main since 2b7c3a4a91
+  (OPINIONDUE1) the tree-work read too (a `status` and a second `log`), four launches a due a look over a tree that had not
+  moved. Each waits for one of the repository's two background places behind the tidy's and the nodes' reads, so the stage
+  grew with their queue, not with anything it read. The session record (c69733ec) is not read by the stage, and stopped
+  growing at 21:22.
+- **Root cause (the recheck):** OPINIONCAP1 (46083b6137) re-asks a first pass a cap ended; a recheck walks only the first
+  reviewer, so its reask found no holder, and the gate read a failed recheck as an outcome (`commits-since`), never asking it again.
+- **Fix:** both closes read the tree through the room's kept tree reads (`TreeReadMemo`), so a look over a tree whose `HEAD`,
+  refs, files and the home's records stand starts no git. A recheck whose first reviewer a cool-off holds walks the rule's other
+  reviewers; one a cap ended is gated cooling as such a first pass is, and the next look's delivery asks it of a ready holder,
+  said `opinion.handed-on` once, or waits for the reset. **Verified:**
+  `OpinionLookTests.A_judgment_over_a_tree_that_did_not_move_starts_no_git` (real git, red first: four launches),
+  `OpinionRecheckTests.A_recheck_a_cap_ended_is_asked_again_of_the_next_ready_holder_and_said_once` and
+  `OpinionGateTests.A_recheck_a_cap_ended_is_cooling_and_one_that_failed_otherwise_stands` (red first: one pass; `commits-since`).
+## 2026-11-16 - The session list drawn at a start lost rows seconds or minutes later (SESSIONFLASH1)
+
+- **Symptom:** the owner, 2026-11-16: "when app open we display a list of session which then gone after a few second or
+  minutes".
+- **Root cause:** two halves. The rail (`SessionRail`, since SESSUX1c, bdf622d3fb) placed every record by its record alone until
+  the groups slice first judged, so it drew every part of a line, every archived line and every ended intake as a row, which
+  that judgement took away (the entries collapse a line to one row, the archive mark folds a line out). And the judgement came
+  late at a start: the slice walks each tree the machine's facts have not judged (PUSH1c3a, 777c5bb391), and the facts begin only
+  after the first screen (STARTFAST1b, bb86b8ccc0), so its first judgement walked every ended session's tree with git behind the
+  first look's (the look's tidy took 75–140 s on the install). Neither the look nor its tidy archives or deletes a record: archive
+  and history clearing are presses.
+- **Fix:** the rail draws its rows' outline until the reader's first answer (an unjudged slice draws as loading); the slice's own
+  judgement waits for no tree and walks none while the parts' first judgement is to come (`HelpTreeFacts.WithTreesAsync`'s
+  `waits: false`), the trees' offers following as their parts land, which wakes it. The route `SESSION_GROUPS` still waits.
+  **Verified:** `SessionRail.entries.test.tsx` (the eleven records drawn as Working, Failed and Done before the answer, red
+  first), `GroupsStateSliceTests.A_start_s_first_judgement_places_the_archived_and_the_ended_before_any_tree_is_judged` (timed out
+  at 5 s on the parts' ten-second wait, red first), `HelpTreeWalkTests.A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement`.
+
 ## 2026-11-16 - An opinion owed on a replayed landing never closed (OPINIONDUE1)
 
 - **Symptom:** on the install the due for session 4a9b01af (quest ba5c8968fdf5, landed as main's fd9baed4c3) stayed open with no

@@ -249,6 +249,7 @@ public static class QuestWire
         // The session that said a ready, or wrote a done's or a decline's handback, on those kinds alone and
         // only where one said it: every other operation crosses exactly as it did, and an older build reads each without it.
         if (QuestStore.KeepsSession(operation.Kind) && operation.Session is { } session) writer.WriteString("session", session);
+        if (operation is { Kind: QuestOperationKind.Accepted, By: { } by }) writer.WriteString("by", by);
 
         // An evidenced operation's verdict: names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
@@ -678,7 +679,8 @@ public static class QuestWire
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
             dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session,
-            lostToTheReopen, forward, workflowChoice, revision);
+            lostToTheReopen, forward, workflowChoice, revision,
+            kind == QuestOperationKind.Accepted && Text(item, "by") is { Length: > 0 } by ? by : null);
     }
 
 }

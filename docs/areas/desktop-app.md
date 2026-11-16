@@ -87,8 +87,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     registry's retire, re-wiring, excludes and import. The remaining person's doors each answer a wait or set what a wait reads (a
     verdict, a yes, a done, a reopen and its continue, a go-ahead's answer, an ask's and a quest's workflow, review choice and
     through words, an ask itself with its choices, a set-up step, their words and the channel's, a memory end's approval) and need
-    the key until the approval request puts another caller's press to the wait's party. An unclassed write is refused. A refusal
-    is a 403 with a code, never a 500. (from D156, D284)
+    the key until the approval request puts another caller's press to the wait's party. Three of them, a departure's yes, a memory
+    end's approval and a stopped session's Keep or Drop, are a workflow's accept steps and take an appointed role's answer through
+    their `role` form, the driver's (`RoleAnswerDoors`): posted with the key, kept as the role's and its agent's, and never read as
+    the owner's mark on its quest. A role naming no role or no agent is refused, and no confirmation carries the form, so a person's
+    press never posts a role's name. An unclassed write is refused. A refusal is a 403 with a code, never a 500. (from D156, D284,
+    D297)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the Confirm, default no, until answered or taken back (under the tier `act`,
     rule 15, with no row); a main window in front says it by a toast, and one heard out of focus is said once the window comes
@@ -177,8 +181,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
     the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
-    whose run the person stopped with its review among its steps (`StoppedRuns`). Overview keeps one summary line per group.
-    (from D150, D181, D196)
+    whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
+    Memory section, its head carrying a role's held answer there with *Overrule*. Overview keeps one summary line per group.
+    (from D150, D181, D196, D297)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits
@@ -227,7 +232,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that
-    place is gone. A wait lists its phases with their times. An unjudged slice draws as loading. (from D185)
+    place is gone. A wait lists its phases with their times. An unjudged slice draws as loading: Sessions' list draws its
+    rows' outline until the groups slice first judges, never a list placed by the records alone, which would hold every part,
+    archived line and ended intake as a row the first judgement takes away; and that judgement waits for no tree the machine's
+    facts have not judged, nor walks one, while their first judgement is to come, the trees' offers following as their parts
+    land (`HelpTreeFacts.WithTreesAsync`'s `waits`, SESSIONFLASH1). (from D185)
 
 **Flowcharts and the canvas**
 

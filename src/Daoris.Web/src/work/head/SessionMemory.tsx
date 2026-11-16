@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 
@@ -27,16 +28,22 @@ const ENDS = ['end', 'supersede'];
  * the owner's quest. An end awaiting its approver is the person's to approve or decline; an ended session's staged changes are theirs to
  * keep or drop. Nothing to say, and nothing is drawn.
  */
-export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKeep }: {
+export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKeep, seek = 0 }: {
   rows: readonly MemoryRow[];
   ended: boolean;
   busy?: boolean;
   said?: string | null;
   onDecide: (op: string, approve: boolean) => void;
   onKeep: (keep: boolean) => void;
+  seek?: number;
 }) {
   const { t } = useTranslation();
-  if (rows.length === 0) return null;
+  const own = useRef<HTMLElement>(null);
+  const shown = rows.length > 0;
+  useEffect(() => {
+    if (seek > 0 && shown) own.current?.scrollIntoView?.({ block: 'start' });
+  }, [seek, shown]);
+  if (!shown) return null;
   const staged = rows.filter((row) => row.state === 'staged').length;
 
   const what = (row: MemoryRow) => {
@@ -65,7 +72,7 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
   };
 
   return (
-    <section aria-label={t('work.memory.title')} className="grid min-w-0 gap-0.5 text-small text-ink-soft">
+    <section ref={own} aria-label={t('work.memory.title')} className="grid min-w-0 gap-0.5 text-small text-ink-soft">
       <span className="font-semibold text-ink-faint">{t('work.memory.title')}</span>
       <ul className="m-0 grid list-none gap-1 p-0">
         {rows.map((row) => (

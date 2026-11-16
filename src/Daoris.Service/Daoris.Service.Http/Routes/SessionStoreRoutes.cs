@@ -31,12 +31,21 @@ public sealed class SessionStoreRoutes(HostWiring host) : IRouteModule
         routes.Map<ReadLineMemory, MemoryReadResponse>(ReadLineMemoryAsync);
         routes.Map<DecideMemory, MemoryDecisionResponse>(async (request, http, ct) =>
             !host.MachineLocal(http) ? Answer<MemoryDecisionResponse>.Else(StatusCodes.Status404NotFound, null)
+            : host.Gate.Refused(http, RoleAnswerDoors.Decide, form: request.Role is not null) is { } refused ? refused
+            : request.Role?.Malformed is { } malformed ? Refusal.BadRequest(malformed)
             : request.Approve is not { } approve ? Refusal.BadRequest("approve is required: true approves the end, false declines it")
-            : Decided(await new MemoryDesk(Service.Sessions.Memory).DecideAsync(request.Id, session: null, approve, DateTimeOffset.UtcNow, ct)));
+            : Decided(await new MemoryDesk(Service.Sessions.Memory).DecideAsync(
+                request.Id, session: null, approve, DateTimeOffset.UtcNow, ct, MemoryDesk.ApproverOf(request.Role?.Role, request.Role?.Agent),
+                holder: request.Role?.Session)));
         routes.Map<KeepSessionMemory, MemoryDecisionResponse>(async (request, http, ct) =>
             !host.MachineLocal(http) ? Answer<MemoryDecisionResponse>.Else(StatusCodes.Status404NotFound, null)
+            : host.Gate.Refused(http, RoleAnswerDoors.Keep, form: request.Role is not null) is { } refused ? refused
+            : request.Role?.Malformed is { } malformed ? Refusal.BadRequest(malformed)
             : request.Keep is not { } keep ? Refusal.BadRequest("keep is required: true keeps the staged changes, false drops them")
-            : Decided(await new MemoryDesk(Service.Sessions.Memory).KeepAsync(request.Id, keep, DateTimeOffset.UtcNow, ct)));
+            : request.Role is not null && request.Ops is not { Count: > 0 }
+                ? Refusal.BadRequest("ops is required with role: a role's keep or drop names the staged rows it judged, and moves those alone")
+            : Decided(await new MemoryDesk(Service.Sessions.Memory).KeepAsync(
+                request.Id, keep, DateTimeOffset.UtcNow, ct, MemoryDesk.ApproverOf(request.Role?.Role, request.Role?.Agent), request.Ops)));
         routes.Map<DeleteSession, DeletedResponse>(DeleteAsync);
         routes.Map<JudgeSessionDelete, SessionDeletionResponse>(async (request, _, ct) =>
         {

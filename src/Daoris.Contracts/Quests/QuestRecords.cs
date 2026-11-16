@@ -147,7 +147,7 @@ public sealed record QuestMovesResponse(string Quest, IReadOnlyList<QuestMoveRes
 public sealed record QuestMoveResponse(
     string Kind, DateTimeOffset At, string Machine, long Sequence, long? Number, bool Applied, string? From = null,
     string? Attempted = null, QuestMoveRefResponse? Dismisses = null, string? WaitsOn = null, string? Session = null,
-    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
+    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null, string? By = null);
 
 /// <summary>An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.</summary>
 public sealed record QuestMoveRefResponse(string Machine, long Sequence);
