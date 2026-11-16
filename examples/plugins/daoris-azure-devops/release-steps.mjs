@@ -1,10 +1,10 @@
-// The release as the run's own steps (RELEASESTEPS1), one per fact Azure DevOps holds: target, create release, start <stage>, approve <stage>,
+// The release as the run's own steps, one per fact Azure DevOps holds: target, create release, start <stage>, approve <stage>,
 // watch <stage>. Each step's act reads its fact first, whoever made it (a trigger, a person in Azure DevOps, Daoris), so a fact made while the
-// step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`). A step makes its fact itself only
+// step is only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`). A step makes its fact itself only
 // where its action says so, keyed by its effect and read again before it is made, so a retry or a restart between intent and effect finds
 // what the first made. A wait says the role it waits on, with its page, until the step's deadline: no fixed give-up. A refused key or
-// sign-in waits on the credentials keeper with the page that fixes it, never failing the step (ACCESSSTEP1). No step approves by itself:
-// an approval is its approver's (APPROVEHERE1's `approve-release` is the person's press alone, never an agent's tool).
+// sign-in waits on the credentials keeper with the page that fixes it, never failing the step. No step approves by itself:
+// an approval is its approver's (`approve-release` is the person's press alone, never an agent's tool).
 import { createHash } from 'node:crypto';
 import { Refusal, TRANSIENT, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
 import { SUCCESS, aliasOf, changedWords, declared, undeclared, unresolved } from './target.mjs';
@@ -90,7 +90,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
       if (pr === undefined) throw new Refusal('not-merged', `no pull request from \`${unit.branch}\` was found, so nothing is released`);
       const read = (await call(repo, 'GET', `/pullrequests/${pr}`)).json;
       if (read?.status !== 'completed' || typeof read?.lastMergeCommit?.commitId !== 'string') throw new Refusal('not-merged', `pull request ${pr} is ${read?.status ?? 'unread'}, not merged`);
-      // The target, read again at every step's act (ACTPIN1): a step never acts on a definition its route leaves out.
+      // The target, read again at every step's act: a step never acts on a definition its route leaves out.
       const all = asked.pipeline === null ? [] : await definitionsTaking(repo, asked.pipeline);
       const definition = typeof asked.definition !== 'number' ? null
         : await releases(repo, 'GET', `/definitions/${asked.definition}`).then((answer) => (answer.status === 200 ? answer.json : null));

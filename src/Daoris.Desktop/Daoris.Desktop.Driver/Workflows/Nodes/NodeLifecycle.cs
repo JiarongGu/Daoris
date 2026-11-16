@@ -288,8 +288,8 @@ public static class NodeLifecycle
             // on their own word and never as its plugin's, on a plugin's performed node alone (NodeAuthority.PersonSettles).
             new(NodeStates.Unknown, NodeStates.Reached, person, "the person settles an attempt nothing else can establish: it happened, on their word"),
             new(NodeStates.Unknown, NodeStates.Failed, person, "the person settles an attempt nothing else can establish: it did not"),
-            // A step done outside Daoris is done by its holder, with its link, whether its attempt is under way or failed (DONEBYHOLDER1).
-            new(NodeStates.Active, NodeStates.Reached, person, "its holder says it was done outside Daoris, with its link: the attempt in flight stands down"),
+            // A step done outside Daoris is done by its holder, with its link, whether its attempt is under way or failed.
+            new(NodeStates.Active, NodeStates.Reached, person, "its holder says it is done outside Daoris, with its link: the attempt in flight stands down"),
             new(NodeStates.Failed, NodeStates.Reached, person, "its holder says it was done outside Daoris, with its link, after its attempt failed"),
             new(NodeStates.Unknown, NodeStates.Ready, daoris, "a check Daoris could not run (unrun) with asks left: a new attempt (UnrunChecks)"),
             new(NodeStates.Failed, NodeStates.Ready, daoris, "a declared retry: a transient code with attempts left, as a new attempt"),
@@ -397,7 +397,7 @@ public static class NodeLifecycle
                     return To(next with { By = NodeSource.Person, Code = move.Code, Needs = null, Transient = false, Unreconciled = null });
                 }
 
-                // A step under way or failed is reached on its holder's word only with the link that proves it was done outside. The link is
+                // A step under way or failed is reached on its holder's word only with the link that proves it is done outside. The link is
                 // that proof where its kind's evidence would be, so an evidence schema takes it; declared outputs, which no word fills, never.
                 var outside = !string.IsNullOrWhiteSpace(move.Link);
                 if (status.State is NodeStates.Active or NodeStates.Failed && !outside) return Refuse(NodeRefusal.NoEvidence);

@@ -22,7 +22,7 @@ async function discovered(args) {
 export const APPROVE = 'approve-release';
 
 /**
- * `approve-release` (APPROVEHERE1): the approver's own press on the card, approving or rejecting one pending approval of a release's stage
+ * `approve-release`: the approver's own press on the card, approving or rejecting one pending approval of a release's stage
  * through the holder's own sign-in (Daoris's browser, else the kept token). Declared with no `tool`, so no agent is ever handed it: an
  * approval is its approver's, and a production stage's is the owner's.
  */

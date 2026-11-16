@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An attempt in flight stood down as its step closes (DONEBYHOLDER1, D304 point 5): a skip, a stop or its holder's <i>Done outside Daoris</i>
-/// settles the plugin's attempt its step was on, its outcome <see cref="AttemptOutcomes.StoodDown"/> and its code the act, so nothing the run
+/// An attempt in flight stood down as its step closes: a skip, a stop or its holder's <i>Done outside Daoris</i>
+/// settles the plugin's attempt its step holds, its outcome <see cref="AttemptOutcomes.StoodDown"/> and its code the act, so nothing the run
 /// waits on is left with it, its plugin is told (<see cref="WorkPerformer.StandDown"/>), and the plugin's later outcome of it is a replay.
 /// Written as <c>settled</c>, never a state of its own: an older build rejects a record holding a state it does not know.
 /// </summary>

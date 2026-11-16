@@ -85,7 +85,7 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>
     /// The link its holder's <i>Done outside Daoris</i> gave (<see cref="HeldResolutions.DoneOutside"/>), kept with <see cref="Resolution"/>
-    /// <c>happened</c>: an older build reads that word and passes over this field. Null on every attempt no holder said was done outside.
+    /// <c>happened</c>: an older build reads that word and ignores this field. Null on every attempt no holder said is done outside.
     /// </summary>
     public string? Link { get; init; }
 
@@ -97,7 +97,7 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>
     /// Who the outside system credits with the act its outcome settled on (<c>outside: &lt;name&gt;</c>, or Daoris), from the evidence's
-    /// <see cref="WorkEvidence.By"/>: an older build passes over the field, and drops it where it writes the record again. Null where none was named.
+    /// <see cref="WorkEvidence.By"/>: an older build ignores the field, and drops it where it writes the record again. Null where none is named.
     /// </summary>
     public string? By { get; init; }
 }
@@ -110,7 +110,7 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 public static class AttemptOutcomes
 {
     /// <summary>
-    /// Stood down while in flight: its step was skipped, stopped or done outside Daoris, its code saying which (<see cref="NodeWordActs.Skip"/>,
+    /// Stood down while in flight: its step is skipped, stopped or done outside Daoris, its code saying which (<see cref="NodeWordActs.Skip"/>,
     /// <see cref="NodeWordActs.Stop"/>, <see cref="HeldResolutions.DoneOutside"/>). Its plugin is told, and a later outcome of it is a replay.
     /// </summary>
     public const string StoodDown = "stood-down";

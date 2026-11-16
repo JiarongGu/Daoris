@@ -57,7 +57,7 @@ public static class StepWaiting
     }
 
     /// <summary>
-    /// The role a wait is on where its step names none: until a step's declaration carries its role (ACTORFIELD1), each wait's own. A
+    /// The role a wait is on where its step names none: until a step's declaration carries its role, each wait's own. A
     /// vacancy and a failure kept go up to the line's first level, the place's supervisor (<see cref="AppointedRoles.Supervisor"/>), whose
     /// holder answers or passes them up.
     /// </summary>
@@ -202,7 +202,7 @@ public static class HeldSteps
         }
 
         var presses = RunNodeWords.Acts(node, status).Where(act => act != NodeWordActs.Stop).ToList();
-        // A plugin's role wait with no page is acted on where nothing observes it: its holder says it was done outside, with the link.
+        // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var held = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
         if (held is not null) presses.Add(HeldResolutions.DoneOutside);

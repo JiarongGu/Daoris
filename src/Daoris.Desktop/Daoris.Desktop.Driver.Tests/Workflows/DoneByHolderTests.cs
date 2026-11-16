@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A step done outside Daoris is done by its holder, and the run goes on (DONEBYHOLDER1, D304 point 5): <i>Done outside Daoris</i> with its
+/// A step done outside Daoris is done by its holder, and the run goes on: <i>Done outside Daoris</i> with its
 /// link settles a plugin's step under way or failed, a proof-carrying one included; skip, stop and done each stand the attempt in flight
 /// down, written as <c>settled</c> with its outcome code, its plugin told, its later outcome a replay; and the skip a proof-carrying step
 /// refuses names the done-outside press.

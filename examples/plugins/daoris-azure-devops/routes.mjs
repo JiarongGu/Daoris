@@ -1,6 +1,6 @@
 // The place's route table: which release definition a landed branch releases through, read from each definition's continuous-deployment
 // trigger at the moment it is asked, never kept and never from a label. The branch the work merged into routes to the definitions whose
-// trigger takes it; an act on a definition the route does not reach is refused `target-changed` at the act (ACTPIN1, D307), listing the route
+// trigger takes it; an act on a definition the route does not reach is refused `target-changed` at the act, listing the route
 // as the choice, so a feature branch's build is never released through the main line's definition.
 import { heads, releases } from './azure.mjs';
 import { triggeredBy } from './triggers.mjs';

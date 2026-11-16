@@ -139,7 +139,7 @@ public sealed class OpinionVacancyTests : IDisposable
         Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "claude-code-acp"));
         Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "gemini"));
         Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent));
-        // The prepaid one spends money: the census asks its covering grant too (GRANTSPEND1).
+        // The prepaid one spends money: the census asks its covering grant too.
         Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, OpinionCasting.PrepaidAgent)));
         Assert.Null(ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, "codex-acp")));
         Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Wait, null));

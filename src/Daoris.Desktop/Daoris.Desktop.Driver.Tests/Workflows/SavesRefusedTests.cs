@@ -98,7 +98,7 @@ public sealed class SavesRefusedTests : IDisposable
     [Fact]
     public void The_step_presets_are_deleted_and_the_palette_offers_by_kind()
     {
-        // The pull request's step variants are gone; the shipped release graph (CONFIGSTEP1) is a graph of its own, never one of them.
+        // The pull request's step variants are gone; the shipped release graph is a graph of its own, never one of them.
         Assert.DoesNotContain(WorkflowPresets.GraphTable, preset => preset.Id.StartsWith("pull-request-", StringComparison.Ordinal)
             && preset.Id is not ("pull-request" or "pull-request-release"));
 

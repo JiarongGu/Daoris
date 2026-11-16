@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests.Plugins;
 
 /// <summary>
-/// The frame census (FRAMESWEEP1): every answer kind a plugin sends at <c>work/step</c> reaches every reader that counts answers. The kinds
+/// The frame census: every answer kind a plugin sends at <c>work/step</c> reaches every reader that counts answers. The kinds
 /// are <see cref="WorkStates"/>' constants, read by reflection, so a kind added there is counted here before any reader is; each reader is
 /// probed by what it does with a frame of the kind, never by what it says of itself: the wire reads it, the trial (<see cref="PluginCycles"/>)
 /// counts a completion apart from a progress, and the run-said table says each wait a progress makes. Seen failing first on <c>progress</c>,

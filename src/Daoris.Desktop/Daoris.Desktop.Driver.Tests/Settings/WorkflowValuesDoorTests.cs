@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The release target's door (RELEASEVALUES1): a node's values set through one judge, the window's route and <c>daoris workflow values</c>
+/// The release target's door: a node's values set through one judge, the window's route and <c>daoris workflow values</c>
 /// alike, the reason recorded beside them; a value that is no JSON, or no reason, is refused with nothing written.
 /// </summary>
 public sealed class WorkflowValuesDoorTests : IDisposable

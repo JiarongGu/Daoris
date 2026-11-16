@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The role a step names (D304 points 1 and 9, D309 point 4): the position that takes it, never who fills it. A step names one by its
+/// The role a step names: the position that takes it, never who fills it. A step names one by its
 /// declaration's <see cref="NodeDeclaration.Role"/>; one that names none reads its kind's default (<see cref="INodeKind.Role"/>), which is read and
 /// never written, so a version saved before the field keeps its digest. A role is one of <see cref="All"/>, or a role of the home's catalogue
 /// (a working role that staffs an agent step), which the save reads where a step names one (<see cref="WorkflowOperations.RoleProblems"/>).
@@ -37,7 +37,7 @@ public static class StepRoles
     /// <summary>Who keeps the keys and sign-ins a plugin acts with.</summary>
     public const string CredentialsKeeper = "credentials-keeper";
 
-    /// <summary>The role at the top of every reporting line (D304 point 3); a person's task names it until the task names its own.</summary>
+    /// <summary>The role at the top of every reporting line; a person's task names it until the task names its own.</summary>
     public const string Owner = "owner";
 
     /// <summary>Every role a step may name without the catalogue, in the editor's order: the census the window words, in both catalogues.</summary>
@@ -49,7 +49,7 @@ public static class StepRoles
         new(@"^(?=.{1,40}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Words that name a holder, never a role: whoever fills a role, a person or an agent alike (D304 point 2), so the refusal says the same
+    /// Words that name a holder, never a role: whoever fills a role, a person or an agent alike, so the refusal says the same
     /// of either. The agents' ids are their providers' (<c>Agents/Providers/*/provider.json</c>) and the model families'.
     /// </summary>
     public static IReadOnlyList<string> Holders { get; } =

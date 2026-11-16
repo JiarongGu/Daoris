@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An act is keyed by its effect (EFFECTKEY1, D309): a digest of its run, its node, its slot and its target subject, the same for every attempt
+/// An act is keyed by its effect: a digest of its run, its node, its slot and its target subject, the same for every attempt
 /// on that target and a new one for a new target; written on the record before the send; carried on the wire beside the attempt's own key;
-/// and read as the attempt's own key on an attempt written before it, so an attempt in flight keeps the key it was sent with.
+/// and read as the attempt's own key on an attempt that predates it, so an attempt in flight keeps the key it carries.
 /// </summary>
 public sealed class EffectKeyTests : IDisposable
 {

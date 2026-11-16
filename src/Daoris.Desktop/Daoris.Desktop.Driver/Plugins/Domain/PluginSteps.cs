@@ -52,7 +52,7 @@ public static class PluginSteps
     public const string CleanupPoint = "work/cleanup";
 
     /// <summary>
-    /// The point a plugin is told on that an attempt stood down: its step was skipped, stopped or done outside Daoris, so what the attempt
+    /// The point a plugin is told on that an attempt stood down: its step is skipped, stopped or done outside Daoris, so what the attempt
     /// still watches or waits for is no longer wanted. A notification, answered by nothing; a later outcome of it is a replay.
     /// </summary>
     public const string StandDownPoint = "work/stand-down";

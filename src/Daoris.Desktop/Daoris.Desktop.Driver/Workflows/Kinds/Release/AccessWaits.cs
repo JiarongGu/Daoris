@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// ACCESSSTEP1's driver half: a plugin's wait on the credentials keeper (凭据管理人, <see cref="StepRoles.CredentialsKeeper"/>) that reaches
+/// A plugin's wait on the credentials keeper (凭据管理人, <see cref="StepRoles.CredentialsKeeper"/>) that reaches
 /// its deadline climbs the reporting line (<see cref="ReportingLine.Climb"/>) instead of ending as <c>timeout</c>. Sign-ins and credentials
 /// are an owner-class kind (<see cref="OwnerClass.SignIn"/>), so the climb passes every level below the owner role whoever holds it, and the
 /// attempt is held there with its plugin's page: the step stays under way, its gate held, until its holder's word (a new attempt once the key

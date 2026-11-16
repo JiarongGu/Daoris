@@ -168,7 +168,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
                 "brainstorms", "workflow", "keep",
                 // The role catalogue's door.
                 "role", "terminal",
-                // A place's risk and the owner's marks (PLACERISK1).
+                // A place's risk and the owner's marks.
                 "risk", "settings"],
             DriverChoicesCommand.Verbs);
         Assert.All(DriverChoicesCommand.Verbs, verb =>

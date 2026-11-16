@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 c on the look: the evidence routine runs once a day after its hour or at once on the steward's word, keeps its proposed
+/// The evidence routine runs once a day after its hour or at once on the steward's word, keeps its proposed
 /// class rows for the steward role, and an accepted row reaches the backlog through the records door alone; a declined class is not
 /// proposed again.
 /// </summary>

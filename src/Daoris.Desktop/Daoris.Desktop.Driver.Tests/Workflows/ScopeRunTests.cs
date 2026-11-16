@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 c wired into a team plan's run: under <c>one-scope</c> each part's request onto the ask's branch is frozen with no gates,
+/// A one-scope plan in a team plan's run: under <c>one-scope</c> each part's request onto the ask's branch is frozen with no gates,
 /// and the ask's delivery check asks the full set once with the two reviews; under <c>per-part</c> nothing changes.
 /// </summary>
 public sealed class ScopeRunTests : IDisposable

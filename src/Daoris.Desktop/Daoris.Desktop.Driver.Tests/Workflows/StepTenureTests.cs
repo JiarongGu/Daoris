@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A holder record per attempt (TENURE1, D309): <c>{role, holder, epoch, since, why}</c> in a file of its own that no older build reads, never in
+/// A holder record per attempt: <c>{role, holder, epoch, since, why}</c> in a file of its own that no older build reads, never in
 /// the node record; a holder change starts a new epoch without restarting the step; and a word from an ended epoch is refused, saying who
 /// holds the step now and since when.
 /// </summary>
@@ -82,7 +82,7 @@ public sealed class StepTenureTests : IDisposable
         var handed = Tenures.HandOver(Unit, "release", 1, "agent:beta", TenureWhy.HandOver, _now.AddMinutes(5));
         Assert.Equal((1, 2, "release-manager", "agent:beta"), (cast!.Epoch, handed!.Epoch, handed.Role, handed.Holder));
 
-        // The step is not restarted: its status, its attempt and what was sent are as they were.
+        // The step is not restarted: its status, its attempt and what it sent are unchanged.
         Assert.Equal(before, status());
         Assert.Single(Files.Read(Unit)!.Attempts);
         Assert.Single(_port.Sent);
