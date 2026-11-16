@@ -117,6 +117,16 @@ export function readTranscript(text) {
   };
 }
 
+/** What a subagent's `.meta.json` says; `{}` when it is absent, blank or half-written (its transcript may be being written). */
+export function readMeta(metaFile) {
+  try {
+    const meta = JSON.parse(readFileSync(metaFile, 'utf8'));
+    return meta !== null && typeof meta === 'object' ? meta : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Every subagent transcript under `dir`, with what its `.meta.json` says, written on or after `since`. */
 export function collect(dir, { since = new Date(0) } = {}) {
   const agents = [];
@@ -128,8 +138,7 @@ export function collect(dir, { since = new Date(0) } = {}) {
       const file = join(folder, name);
       const written = statSync(file).mtime;
       if (written < since) continue;
-      const metaFile = file.replace(/\.jsonl$/, '.meta.json');
-      const meta = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')) : {};
+      const meta = readMeta(file.replace(/\.jsonl$/, '.meta.json'));
       const agent = readTranscript(readFileSync(file, 'utf8'));
       if (agent.turns === 0) continue;
       agents.push({
