@@ -134,7 +134,7 @@
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting", "detail": "active", "words": "deploy the release", "said": "Waits for your go-ahead: deploy the release" },
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting", "detail": "active", "said": "Waits for your go-ahead." },
     { "node": "human", "kind": "human", "state": "waiting", "detail": "active", "said": "Waits for your task." },
-    { "node": "work.requests", "kind": "work.requests", "detail": "active", "said": "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over." },
+    { "node": "work.requests", "kind": "work.requests", "detail": "active", "said": "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to say is not needed this run." },
     { "node": "work.requests", "kind": "work.requests", "state": "waiting", "detail": "active", "code": "declined", "said": "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on." },
     { "node": "content.holds", "kind": "content.holds", "detail": "active", "words": "it holds no commit the line lacks: nothing to land", "said": "Holds the work: it holds no commit the line lacks: nothing to land." },
     { "node": "quest.holds", "kind": "quest.holds", "detail": "active", "words": "its quest's done waits for your yes.", "said": "Holds the work: its quest's done waits for your yes." },
