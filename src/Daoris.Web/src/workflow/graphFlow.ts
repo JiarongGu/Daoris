@@ -302,8 +302,9 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
       const lit: Partial<FlowNode> = node.outcome == null ? {}
         : node.outcome === outcome ? { reached: true }
           : { reached: false, state: { word: t('workflow.run.notTaken.state'), tone: 'neutral' } };
+      // A decision's "not needed" passes the step it closes on the record: it reads as not needed this run, never as no further step.
       nowhere.push({
-        id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
+        id, title: t(outcome === 'not-needed' ? 'workflow.graph.notNeeded' : 'workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
         step: { kind: 'none', variant: 'other', ports: [], terminal: 'none' },
       });
       edges.push({

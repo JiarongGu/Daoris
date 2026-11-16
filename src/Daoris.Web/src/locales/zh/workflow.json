@@ -29,6 +29,7 @@
   "workflow.graph.end": "工作在此完成",
   "workflow.graph.endStill": "其后的步骤仍会运行",
   "workflow.graph.noFurther": "无后续步骤",
+  "workflow.graph.notNeeded": "本次不需要",
   "workflow.graph.noFurtherSays": "走到 `{{outcome}}` 时，其后没有步骤",
   "workflow.graph.holds": "Daoris 核实 · {{count}}",
   "workflow.graph.holdsOpen": "▾ Daoris 核实 · {{count}}",

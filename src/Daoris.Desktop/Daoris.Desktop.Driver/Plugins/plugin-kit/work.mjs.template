@@ -20,7 +20,8 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
  *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none;
  *                      `call.effectKey`, where Daoris sends one, names the act whatever attempt asks it, a mark to leave on what it makes for `check` to find
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
- *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop
+ *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop;
+ *                      given `attempt.link` (a holder's Done outside Daoris), it reads the thing named, never acting, and answers done or failed with `link`
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
  *   observe(unit, step) what an observed step's platform says of a unit's tip: an outcome, or null while it says nothing yet
  * Under the kit's stand-in world (DAORIS_PLUGIN_WORLD, which its tests and `plugins try` set), none of them is called: the world
@@ -156,8 +157,15 @@ export function work({ data, send, say, act, check, remove, observe }) {
   };
 
   const answers = {
-    // What became of an attempt: from the journal where it knows, else asked of the platform.
+    // What became of an attempt: from the journal where it knows, else asked of the platform. A holder's Done outside Daoris link is read by
+    // `check` first, which settles or refuses it: its answer names the link it read, and one that names none leaves the word its holder's.
     'work/reconcile': async (call) => {
+      if (typeof call.link === 'string' && calls.check) {
+        const known = journal.get('attempts', call.idempotencyKey);
+        const said = await calls.check({ ...(known ?? { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
+          subjectRevision: call.subjectRevision }), options: call.options ?? known?.options ?? {}, link: call.link });
+        if ((said?.state === 'done' || said?.state === 'failed') && said.link === call.link) return { state: said.state, outcome: outcomeOf(said.outcome), link: call.link };
+      }
       const attempt = journal.get('attempts', call.idempotencyKey);
       if (!attempt) return { state: 'not-started' };
       if (attempt.state === 'reached') return { state: 'done', outcome: attempt.outcome };

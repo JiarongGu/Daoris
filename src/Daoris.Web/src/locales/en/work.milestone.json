@@ -81,6 +81,7 @@
   "work.milestone.held.recorded": "Your word on {{node}} is recorded: the next look applies it.",
   "work.milestone.held.why.unknown": "Its plugin was asked and cannot say what became of it",
   "work.milestone.held.why.no-reconcile": "Its step declares no way to ask what became of it",
+  "work.milestone.held.why.access-climbed": "Its wait for the credentials keeper reached its deadline and passed up to the owner: put the key or sign-in right, then try it again",
   "work.milestone.held.why.no-outcome": "Its plugin said it was done and named no outcome",
   "work.milestone.held.why.not-current": "The step moved off it while its effect may still run",
   "work.milestone.held.why.not-on-word": "Your word that it happened could not be taken: its results are its plugin's to give",
