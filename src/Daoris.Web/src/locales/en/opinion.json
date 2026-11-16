@@ -124,5 +124,9 @@
   "opinion.said.sentBack": "Your words went to session {{session}} as its next turn.",
   "opinion.session.title": "Second opinion",
   "opinion.session.kind": "second opinion",
-  "opinion.session.reads": "reads {{title}}"
+  "opinion.session.reads": "reads {{title}}",
+  "opinion.consulted.another-maker": "Consulted as a review of the work: independent of its makers.",
+  "opinion.consulted.same-agent": "Consulted as a review of the work: not independent, the same maker as the work.",
+  "opinion.consulted.maker-not-declared": "Consulted as a review of the work: not counted as independent, its maker is not declared.",
+  "opinion.consulted.sawAnother": "The recheck read the first pass's findings, so it saw another answer."
 }

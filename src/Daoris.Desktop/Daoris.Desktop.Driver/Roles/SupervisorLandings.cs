@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using JsonRead = Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -8,7 +9,8 @@ namespace Daoris.Driver;
 /// The supervisor's landing decisions: a <c>review</c> step's Accept or a <c>human</c> approval's Approve or Reject, decided by the holder
 /// the admission admits for the run's repository and held for the role's window. At its moment the release asks the admission and the
 /// step again, then keeps the decision as the node's word on the run's record, <c>released</c>, which the pass applies through the node's own
-/// door. The decision is live while released; a restart empties memory, so the word the record keeps outlives it and the pass drops it.
+/// door. The decision is live while released; a restart reads a held one an agent's hold kept back with its window (<see cref="HeldDecisions"/>)
+/// and closes a released one, so the word the record keeps outlives it and the pass drops it.
 /// Kept in the <see cref="SupervisorBook"/> under the work session's lock and written beside that session's other decisions.
 /// </summary>
 internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission admission, MachineLog? log) : ILandingWords
@@ -49,8 +51,11 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 State = left ? SupervisorState.Left : SupervisorState.Held, Revision = landing.Revision,
             };
             Directory.CreateDirectory(book.Files.FolderOf(landing.Session));
-            AtomicFile.WriteText(book.Files.FileOf(landing.Session, id), Json(id, landing, repository, now, goesOnAt));
+            var text = Json(id, landing, repository, now, goesOnAt);
+            AtomicFile.WriteText(book.Files.FileOf(landing.Session, id), text);
             Append(decision, decision.State, now, why: null);
+            book.Window(decision.State, decision.State, () => new HeldDecisionRow(
+                id, landing.Session, SupervisorKinds.Landing, repository, landing.Generation, goesOnAt, text), id);
             book.Landings[id] = decision;
             log?.Info(left ? "supervisor.left" : "supervisor.landing", ("session", landing.Session), ("run", landing.Run), ("node", landing.Node), ("do", landing.Do));
             return Task.FromResult(new SupervisorKept(true, id, left ? null : goesOnAt, null));
@@ -150,6 +155,33 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
 
     public bool Applied(SupervisorLandingView view) => Landed?.Invoke(view) == true;
 
+    /// <summary>A held landing decision read back from its row after a restart (<see cref="HeldDecisions"/>); null where the text is not one.</summary>
+    internal static SupervisorLandingDecision? Restore(HeldDecisionRow row)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(row.Kept);
+            var root = document.RootElement;
+            if (!root.TryGetProperty("landing", out var landing) || landing.ValueKind != JsonValueKind.Object
+                || JsonRead.Text(landing, "run") is not { } run || JsonRead.Text(landing, "node") is not { } node || JsonRead.Text(landing, "do") is not { } act
+                || !landing.TryGetProperty("attempt", out var number) || !number.TryGetInt32(out var attempt))
+            {
+                return null;
+            }
+
+            return new SupervisorLandingDecision
+            {
+                Id = row.Id, Session = row.Session, Run = run, Node = node, Attempt = attempt, Repository = row.Repository, Do = act,
+                Generation = row.Generation, Words = string.Join(" ", JsonRead.Items(root, "reasons").Select(reason => JsonRead.Text(reason, "says") ?? "")),
+                GoesOnAt = row.GoesOnAt, Revision = JsonRead.Text(landing, "revision"),
+            };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     private static readonly string[] LandingActs = [SupervisorLandingActs.Accept, SupervisorLandingActs.Approve, SupervisorLandingActs.Reject];
 
     // A closed subject is the person's, as any decision's that did not go on.
@@ -160,6 +192,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
 
     private void Append(SupervisorLandingDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
+        if (decision.State == SupervisorState.Held && to != SupervisorState.Held) book.Held.Drop(decision.Id);
         (decision.State, decision.StateAt, decision.Why) = (to, at, why);
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }

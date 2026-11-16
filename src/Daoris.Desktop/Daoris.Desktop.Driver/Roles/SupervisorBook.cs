@@ -16,6 +16,19 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
 
     public SupervisorAttempts Attempts { get; } = new(home);
 
+    /// <summary>The held decisions and their windows a restart reads back (<c>held_decisions</c>).</summary>
+    public HeldDecisions Held { get; } = new(home);
+
+    /// <summary>
+    /// Keep <paramref name="id"/>'s row while it is held (<paramref name="to"/> <c>held</c>), or let it go at its first move off held
+    /// (<paramref name="from"/> <c>held</c>): the one bookkeeping of the table every kind's move calls.
+    /// </summary>
+    public void Window(SupervisorState from, SupervisorState to, Func<HeldDecisionRow> row, string id)
+    {
+        if (to == SupervisorState.Held) Held.Hold(row());
+        else if (from == SupervisorState.Held) Held.Drop(id);
+    }
+
     /// <summary>Every live decision by id.</summary>
     public ConcurrentDictionary<string, SupervisorLiveDecision> Live { get; } = new(StringComparer.Ordinal);
 
@@ -87,6 +100,8 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     public void Append(SupervisorLiveDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
         var line = SupervisorDecisionFiles.StateLine(to, at, why, to == SupervisorState.Released ? decision.Word : null);
+        Window(decision.State, to, () => new HeldDecisionRow(
+            decision.Id, decision.Session, SupervisorKinds.Question, decision.Repository, decision.Generation, decision.GoesOnAt, decision.Written), decision.Id);
         decision.State = to;
         decision.StateAt = at;
         decision.Why = why;

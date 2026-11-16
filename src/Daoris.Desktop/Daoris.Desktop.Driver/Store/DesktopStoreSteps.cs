@@ -815,5 +815,20 @@ internal static class DesktopStoreSteps
             ALTER TABLE session_event_heads ADD COLUMN cache_read  INTEGER;
             ALTER TABLE session_event_heads ADD COLUMN cache_write INTEGER;
             """)),
+
+        // A role's held decisions and their windows, which a restart reads back. A new table an older build never opens: such a build's
+        // start closes the decisions' files as before, and this build reads a row whose file a closing line reached as closed.
+        new(DesktopStore.HeldDecisionsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE held_decisions (
+              id          TEXT NOT NULL PRIMARY KEY,
+              session     TEXT NOT NULL,
+              kind        TEXT NOT NULL,
+              repository  TEXT NOT NULL,
+              generation  TEXT NOT NULL,
+              goes_on_at  TEXT NOT NULL,
+              kept        TEXT NOT NULL
+            );
+            """)),
     ];
 }

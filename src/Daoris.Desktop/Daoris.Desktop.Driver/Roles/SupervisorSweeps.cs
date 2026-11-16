@@ -97,14 +97,18 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
     }
 
     /// <summary>
-    /// The start's sweep, before the first look's carry-ons: every kind's decision file read only to close it, <c>held</c> and <c>released</c>
-    /// to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final to the owner,
-    /// one whose state line never reached its file among them, or whose agent attempts ended, remembered as closed. Memory is empty but
-    /// for a door answer left <c>released</c>, kept again for the release to settle by what the service shows (<see cref="DoorRelease.Made"/>).
+    /// The start's sweep, before the first look's carry-ons. A held answer an agent's hold kept, whose row <c>held_decisions</c> still holds
+    /// with its file unchanged, is read back into memory with its window as it stood (<see cref="HeldDecisions"/>): inside it the owner may
+    /// still overrule, and past it the next look releases it, asking the admission again. Every other decision file is read only to close it,
+    /// <c>held</c> and <c>released</c> to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), a terminal's hold ending with its run, and
+    /// <c>admitted</c> to <c>interrupted</c>; each subject final to the owner, an overruled one among them, one whose state line never reached
+    /// its file, or whose agent attempts ended, remembered as closed. A door answer left <c>released</c> is kept again for the release to
+    /// settle by what the service shows (<see cref="DoorRelease.Made"/>).
     /// </summary>
     /// <returns>The sessions with a decision the sweep closed, whose waiting supervisor's words the look takes back.</returns>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
     {
+        var held = book.Held.All().ToDictionary(row => row.Id, StringComparer.Ordinal);
         var swept = new List<string>();
         foreach (var folder in book.Files.Folders())
         {
@@ -120,6 +124,17 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
                     // Its post may have applied before the restart: only the service knows, so the release reads it, never a guess here.
                     book.Doors[id] = door;
                     continue;
+                }
+
+                if (earlier.State == SupervisorState.Held && held.Remove(id, out var row))
+                {
+                    if (Restored(session, row))
+                    {
+                        log?.Info("supervisor.restored", ("session", session), ("kind", row.Kind));
+                        continue;
+                    }
+
+                    book.Held.Drop(id);
                 }
 
                 var closed = earlier.State switch
@@ -148,7 +163,38 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
         foreach (var _ in book.Attempts.CloseUnended(now)) log?.Info("supervisor.attempt-failed", ("why", SupervisorWhy.Restarted));
         foreach (var subject in book.Attempts.EndedSubjects()) book.Closed.TryAdd(subject, SupervisorState.Interrupted);
 
+        // A row whose decision was closed here, or whose file is gone, holds nothing any more.
+        foreach (var id in held.Keys) book.Held.Drop(id);
         return swept;
+    }
+
+    // A held decision read back from its row: an agent's hold only, its generation the role's id and revision, which a restart keeps (a
+    // terminal's hold ended with the run), and its file still the text the keeping wrote. The kinds a role answers with a window.
+    private bool Restored(string session, HeldDecisionRow row)
+    {
+        if (row.Session != session || !AgentHold.Is(row.Generation) || SupervisorDecisionFiles.Read(book.Files.FileOf(session, row.Id)) != row.Kept) return false;
+        switch (row.Kind)
+        {
+            case SupervisorKinds.Question when book.Files.Earlier(session, row.Id) is { State: SupervisorState.Held } view:
+                var live = new SupervisorLiveDecision
+                {
+                    Id = row.Id, Session = session, Repository = row.Repository, Question = view.Question, Choice = view.Choice, Bound = view.Bound,
+                    Reasons = view.Reasons, Holder = view.Holder, Generation = row.Generation, KeptAt = view.KeptAt, GoesOnAt = row.GoesOnAt,
+                    Written = row.Kept, StateAt = view.StateAt,
+                };
+                live.Lines.Add(SupervisorDecisionFiles.Read(book.Files.StatesOf(session, row.Id)) ?? "");
+                book.Live[row.Id] = live;
+                return true;
+            case SupervisorKinds.Memory or SupervisorKinds.Departure
+                when SupervisorDoorAnswers.Recover(book.Files, session, row.Id) is { State: SupervisorState.Held } door:
+                book.Doors[row.Id] = door;
+                return true;
+            case SupervisorKinds.Landing when SupervisorLandings.Restore(row) is { } landing:
+                book.Landings[row.Id] = landing;
+                return true;
+            default:
+                return false;
+        }
     }
 
     // A decision file of any kind: its subject and the state its lines reached; null for a rule's act or a file that does not read.

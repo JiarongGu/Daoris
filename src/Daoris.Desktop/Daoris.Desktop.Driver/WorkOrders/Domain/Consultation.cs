@@ -50,6 +50,37 @@ public static class Consultations
         return new Consultation(kind, document.Id, givers);
     }
 
+    /// <summary>
+    /// A second opinion's consultation (D308), from the host's view of it and the working session's answers: one giver in <c>review</c>
+    /// mode, since it reads a candidate and its evidence, with the reviewer's maker and product, what it read, and whether it saw another
+    /// answer (a recheck reads the first pass's findings). Its label decides what did not hold: one of the work's own families is
+    /// <c>same-maker</c>, said as not independent, and an undeclared maker is <c>maker-not-declared</c>. The decider's line is the
+    /// working session's answers: how many findings changed the work. None before it answered.
+    /// </summary>
+    public static Consultation OfOpinion(OpinionView view, OpinionReading? answered)
+    {
+        string[] notHeld =
+        [
+            .. view.Label switch
+            {
+                ReviewerLabels.SameAgent => [SameMaker],
+                ReviewerLabels.MakerNotDeclared => [MakerNotDeclared],
+                _ => Array.Empty<string>(),
+            },
+            .. view.Rechecks is null ? Array.Empty<string>() : [SawAnother],
+        ];
+        var giver = new ConsultationGiver(
+            view.Pass, ReviewMode, ReviewMode, view.Maker ?? "", view.Product ?? "", null, view.Read ?? $"{view.Base}..{view.Tip}",
+            view.Rechecks is not null, notHeld);
+        var changed = answered is null
+            ? null
+            : $"{answered.Findings.Count(finding => finding.Counts == OpinionViews.Fixed)} of {answered.Findings.Count} findings changed the work";
+        return new Consultation("opinion", view.Id, [giver], changed);
+    }
+
+    public const string MakerNotDeclared = ReviewerLabels.MakerNotDeclared;
+    public const string SawAnother = "saw-another";
+
     /// <summary>The record's bytes: <c>consultation: 1</c>, then its fields, LF only.</summary>
     public static byte[] Json(Consultation consultation)
     {
