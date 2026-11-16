@@ -121,6 +121,8 @@ export type PushedAttention = {
   declined?: DeclinedRequest;
   /** A run waiting on a person's task: its `human` node and the presses it waits for. */
   task?: HumanTaskWait;
+  /** A run whose plugin step waits on an actor the person holds: the actor, the act in its plugin's words and the page it is taken on. */
+  actor?: ActorWait;
   /** What memory waits on the person for a session: ends and replacements to approve, a stopped session's staged rows. */
   memory?: MemoryWait;
   /** An integration's wait on the owner: which, its line, and the candidate, commit or landing it is of. */
@@ -168,6 +170,7 @@ export type DeclinedRequest = { node: string; quest: string; to: string; work?: 
  * `approve` and `reject`), and the run's newest work quest here (null where it has none), which its door reads.
  */
 export type HumanTaskWait = { run: string; node: string; acts: string[]; work?: string | null };
+export type ActorWait = { run: string; node: string; actor: string; words?: string | null; url?: string | null; work?: string | null };
 
 /**
  * A press a terminal sent that waits for the window's Confirm: its route, the terminal as the system names it, and when a

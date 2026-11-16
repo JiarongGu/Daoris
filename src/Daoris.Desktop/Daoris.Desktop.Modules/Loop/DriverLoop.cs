@@ -339,6 +339,9 @@ public sealed class DriverLoop(
     /// <summary>The runs waiting on a person's task, for <i>What needs you</i>; none before a pass has read.</summary>
     public IReadOnlyList<HumanTask> HumanTasks => _state.Watch?.HumanTasks ?? [];
 
+    /// <summary>The runs whose plugin step waits on an actor the person holds, for <i>What needs you</i>; none before a pass has read.</summary>
+    public IReadOnlyList<ActorWait> ActorWaits => _state.Watch?.ActorWaits ?? [];
+
     /// <summary>The run steps waiting on the person, for Sessions' groups and so <i>What needs you</i>; none before the watch is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _state.Watch?.PersonWaits ?? [];
 

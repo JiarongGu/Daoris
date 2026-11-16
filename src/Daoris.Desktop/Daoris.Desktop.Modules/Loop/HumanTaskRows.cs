@@ -22,4 +22,23 @@ internal static class HumanTaskRows
             yield return row;
         }
     }
+
+    /// <summary>
+    /// One row for each run whose plugin step waits on an actor the person holds, keyed <c>actor:&lt;run&gt;/&lt;node&gt;</c>, carrying the
+    /// actor, the act in its plugin's words and its page: the act is taken there, never by a press here.
+    /// </summary>
+    public static IEnumerable<JsonObject> Actors(IReadOnlyList<JsonObject> waits)
+    {
+        foreach (var wait in waits)
+        {
+            var (run, node) = (Text(wait, "run"), Text(wait, "node"));
+            var row = Row("actor", $"{run}/{node}", Text(wait, "since"), Text(wait, "workspace") ?? "default");
+            row["where"] = Text(wait, "repository");
+            row["actor"] = new JsonObject
+            {
+                ["run"] = run, ["node"] = node, ["actor"] = Text(wait, "actor"), ["words"] = Text(wait, "words"), ["url"] = Text(wait, "url"), ["work"] = Text(wait, "work"),
+            };
+            yield return row;
+        }
+    }
 }

@@ -35,6 +35,14 @@ describe('a row its run waits placed', () => {
     expect(said(approval)).toBe('它的进展停在 approve，等你批准');
   });
 
+  it('says the actor a plugin step waits on, which the person holds, as any other wait on them', async () => {
+    const actor = placed({ reason: 'actor', waits: [{ run: 'q1', node: 'release', why: 'actor', actor: 'approver' }] });
+    await i18n.changeLanguage('en');
+    expect(said(actor)).toBe('its run waits at release on `approver`, which you hold');
+    await i18n.changeLanguage('zh');
+    expect(said(actor)).toBe('它的进展停在 release，等 `approver`（由你担任）');
+  });
+
   it('says the step that put it in Waiting on you where more than one waits, and a word a newer host adds plainly', async () => {
     await i18n.changeLanguage('en');
     const both = placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'review', why: 'accept' }, { run: 'q1', node: 'go', why: 'go-ahead' }] });

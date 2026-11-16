@@ -98,8 +98,8 @@ export async function standIn() {
     }
     if (request.method === 'GET' && path === `${PROJECT}/release/releases`) {
       return [200, { value: api.releases.filter((each) => (query('definitionId') === null || each.releaseDefinition.id === Number(query('definitionId')))
-        && each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
-          && artifact.definitionReference.version.id === query('artifactVersionId'))) }];
+        && (query('artifactTypeId') === null || each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
+          && artifact.definitionReference.version.id === query('artifactVersionId')))) }];
     }
     if (request.method === 'POST' && path === `${PROJECT}/release/releases`) {
       const sent = JSON.parse(text);
@@ -209,7 +209,7 @@ export function start(t, env, journal = null) {
     await closed;
     return said;
   };
-  return { ask, next, stop, said: () => said };
+  return { ask, next, stop, said: () => said, heard: () => [...heard] };
 }
 
 export const unitAt = (root, awaiting = [STEP], more = {}) => ({ repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null,
@@ -224,6 +224,6 @@ export async function performed(t, env, unit, { step = STEP, key = 'k-1', option
     unit: 'app:daoris/work', step, stepVersion: 1, invocation, idempotencyKey, subjectRevision: tip, inputs: [],
     deadlineAt: deadlineAt ?? new Date(Date.now() + 60000).toISOString(), ...(options ? { options } : {}) });
   await perform('i-1', key);
-  const done = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1');
-  return { plugin, perform, step: done };
+  const done = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1' && frame.params.state !== 'progress');
+  return { plugin, perform, step: done, progress: plugin.heard().filter((frame) => frame.method === 'work/step' && frame.params.state === 'progress') };
 }

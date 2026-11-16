@@ -437,11 +437,12 @@ public static class PluginCycles
 
         private static WorkReconcileCall Reconcile(WorkPerformCall call) => new(call.Unit, call.Step, call.Invocation, call.IdempotencyKey, call.SubjectRevision);
 
-        private static Func<WorkStepFrame, bool> Completion(string invocation) => heard => heard.Invocation == invocation;
+        private static Func<WorkStepFrame, bool> Completion(string invocation) =>
+            heard => heard.Invocation == invocation && heard.Outcome.State != WorkStates.Progress;
 
-        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once.</summary>
+        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once; a progress is no completion.</summary>
         private static bool Same(IEnumerable<WorkStepFrame> heard, WorkStepFrame? first) =>
-            first is not null && heard.All(each => WorkWire.Step(each).ToJsonString() == WorkWire.Step(first).ToJsonString());
+            first is not null && heard.Where(each => each.Outcome.State != WorkStates.Progress).All(each => WorkWire.Step(each).ToJsonString() == WorkWire.Step(first).ToJsonString());
 
         /// <summary>Whether a reached outcome carries the receipt its step declares, and names only resources its manifest declares.</summary>
         private bool Receipted(NodeDeclaration step, WorkStepFrame heard) =>

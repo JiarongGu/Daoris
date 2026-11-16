@@ -11,6 +11,7 @@ const LINES: Record<string, string> = {
   held: 'work.rail.runWaits.held',
   choose: 'work.rail.runWaits.choose',
   left: 'work.rail.runWaits.left',
+  actor: 'work.rail.runWaits.actor',
 };
 
 /**
@@ -22,11 +23,11 @@ export function runWaitFact(grouping: SessionGrouping): { line: string; values?:
   const waits = grouping.waits ?? [];
   const lead: RunWait | undefined = waits.find((wait) => wait.why !== 'accept') ?? waits[0];
   if (!lead) return null;
-  return { line: LINES[lead.why] ?? 'work.rail.runWaits.other', values: { node: lead.node }, tip: 'work.rail.runWaitsTip' };
+  return { line: LINES[lead.why] ?? 'work.rail.runWaits.other', values: { node: lead.node, actor: lead.actor ?? '' }, tip: 'work.rail.runWaitsTip' };
 }
 
 /**
- * Whether the driver placed the row of `session` by its run's waits (`why`: `accept`, `approval`, `task`, `go-ahead`, `held`, `choose`): the
+ * Whether the driver placed the row of `session` by its run's waits (`why`: `accept`, `approval`, `task`, `go-ahead`, `held`, `choose`, `actor`): the
  * list opens it on its run's view, where the step is acted on.
  */
 export function opensRun(groups: readonly SessionGrouping[] | undefined, session: string): boolean {

@@ -272,7 +272,7 @@ public static class WorkflowRunNodes
         WorkflowRunStates.Failed => NodeAuthorities.Of(node)?.FailureBy is null ? NodeStates.Active : NodeStates.Failed,
         WorkflowRunStates.Stopped => NodeStates.Stopped,
         WorkflowRunStates.WaitingOnAgent when node.Kind == NodeKinds.Look && step.Detail == WorkflowRunDetails.NotYet => NodeStates.Rejected,
-        WorkflowRunStates.Working or WorkflowRunStates.WaitingOnYou or WorkflowRunStates.WaitingOnAgent => NodeStates.Active,
+        WorkflowRunStates.Working or WorkflowRunStates.WaitingOnYou or WorkflowRunStates.WaitingOnAgent or WorkflowRunStates.Waiting => NodeStates.Active,
         _ => null,
     };
 

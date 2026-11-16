@@ -28,6 +28,16 @@ const UNDER_WAY = { inProgress: 'deploying', queued: 'queued', scheduled: 'sched
 const approvalsOf = (environment) => [...(environment.preDeployApprovals ?? []), ...(environment.postDeployApprovals ?? [])];
 const pendingOf = (environment) => approvalsOf(environment).find((approval) => approval.status === 'pending');
 const whoOf = (approval) => approval?.approvedBy?.displayName ?? approval?.approver?.displayName ?? 'its approvers';
+const sinceOf = (iso) => (Number.isFinite(Date.parse(iso ?? '')) ? ` since ${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '');
+
+/** The actor whose act the stage waits on, in Azure DevOps and never here (an approval its approver's, an observed stage nothing started its deployer's), with the act; else null. */
+export function waitOf(environment, target) {
+  const name = environment.name;
+  const pending = pendingOf(environment);
+  if (pending) return { actor: 'approver', environment: name, act: `Approve ${name} in Azure DevOps: asked of ${whoOf(pending)}${sinceOf(pending.createdOn)}` };
+  if (!NOT_STARTED.includes(environment.status) || target.action !== 'observe') return null;
+  return { actor: 'deployer', environment: name, act: `Deploy ${name} in Azure DevOps: nothing started it, and the step observes it` };
+}
 
 /** The declared stage of a classic release in words: how it ended, or where it stands. */
 function environmentWords(environment, seen, target) {
@@ -51,11 +61,12 @@ function environmentWords(environment, seen, target) {
 /**
  * The declared stage of release `id` watched until it ends or `ends` passes: `{ verdict: 'done' | 'failed' | 'timeout', words }`, or
  * `{ verdict: 'missing' }` where the release holds no such stage. Where the action starts it and nothing has, it is started here once, by
- * the token, for Azure DevOps' approvals and gates to decide.
+ * the token, for Azure DevOps' approvals and gates to decide. `tell` hears its first look and each change of what it waits on before it ends, once.
  */
-export async function watchRelease(repo, id, target, ends, say, commit) {
+export async function watchRelease(repo, id, target, ends, say, commit, tell = () => {}) {
   const seen = { started: false, approval: null };
   let last = null;
+  let told;
   const verdict = await until(async () => {
     const release = (await releases(repo, 'GET', `/releases/${id}`)).json;
     if (!release) return undefined;
@@ -65,6 +76,12 @@ export async function watchRelease(repo, id, target, ends, say, commit) {
     const pending = pendingOf(environment);
     if (pending && !seen.approval) say(`${environment.name} waits on an approval by ${whoOf(pending)}.`);
     if (pending) seen.approval = whoOf(pending);
+    const ended = WELL[environment.status] || FAILED.includes(environment.status);
+    const waits = ended ? null : waitOf(environment, target);
+    if (!ended && (told === undefined || (waits?.act ?? null) !== (told?.act ?? null))) {
+      tell(waits ?? { environment: environment.name, act: `${environment.name} ${UNDER_WAY[environment.status] ?? environment.status}` });
+      told = waits;
+    }
     if (NOT_STARTED.includes(environment.status) && !seen.started && target.action !== 'observe') {
       const set = await releases(repo, 'PATCH', `/releases/${id}/environments/${environment.id}`,
         { status: 'inProgress', comment: `Started by Daoris for ${commit.slice(0, 8)}.`, scheduledDeploymentTime: null });

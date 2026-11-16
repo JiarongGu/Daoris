@@ -43,6 +43,25 @@ public sealed class HumanTaskRowsTests
     }
 
     [Fact]
+    public void A_release_waiting_on_an_approver_the_person_holds_is_one_row_with_the_act_and_the_releases_page_and_no_press()
+    {
+        var since = new DateTimeOffset(2026, 11, 16, 9, 51, 0, TimeSpan.Zero);
+        const string Page = "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90";
+        var written = System.Text.Json.JsonSerializer.SerializeToNode(
+            new ActorWait("q7", "release", "engine", "aurora", "approver", "Approve Production in Azure DevOps: asked of Release Approvers.", Page, "q7", since),
+            Shenora.Core.Ipc.IpcJson.Options)!.AsObject();
+
+        var row = Assert.Single(Rows(new() { Actors = [written] }));
+
+        Is($$$"""
+            {"kind":"actor","id":"q7/release","since":"{{{written["since"]!.GetValue<string>()}}}","workspace":"aurora","where":"engine",
+             "actor":{"run":"q7","node":"release","actor":"approver","words":"Approve Production in Azure DevOps: asked of Release Approvers.","url":"{{{Page}}}","work":"q7"}}
+            """, row);
+        Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
+        Assert.Empty(Rows(new() { Actors = [] }));
+    }
+
+    [Fact]
     public void The_runtimes_task_is_written_as_its_row_reads_it()
     {
         var written = System.Text.Json.JsonSerializer.SerializeToNode(

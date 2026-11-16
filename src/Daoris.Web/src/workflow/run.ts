@@ -7,12 +7,12 @@ import type { WorkflowStep } from './current';
 
 /** Where a step stands (design §5.2), as the driver spells it (`WorkflowRunStates`). */
 export type RunState =
-  | 'not-reached' | 'working' | 'waiting-on-you' | 'waiting-on-agent' | 'not-known' | 'cannot-start'
+  | 'not-reached' | 'working' | 'waiting-on-you' | 'waiting-on-agent' | 'waiting' | 'not-known' | 'cannot-start'
   | 'done' | 'skipped' | 'failed' | 'stopped';
 
 /** The states this page words; one a newer driver names is said as recorded, never dropped. */
 export const KNOWN_STATES: readonly RunState[] = [
-  'not-reached', 'working', 'waiting-on-you', 'waiting-on-agent', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
+  'not-reached', 'working', 'waiting-on-you', 'waiting-on-agent', 'waiting', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
 ];
 
 /** One step of a run: the chosen graph's cell beside where it stands, and the facts its words and its door are made of. */

@@ -39,8 +39,20 @@ async function releasesOf(repo, definition, build, alias) {
       && artifact.sourceId === sourceOf(build) && String(artifact.definitionReference?.version?.id) === String(build.id)));
 }
 
-/** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way. */
-export async function release(attempt, unit, say) {
+async function foundInstead(repo, definition, build) {
+  const listed = await releases(repo, 'GET', `/releases?definitionId=${definition.id}&$top=3&$expand=artifacts`).then((answer) => answer.json?.value ?? [], () => null);
+  if (listed === null) return 'Its other releases could not be read.';
+  const carried = (each) => {
+    const artifacts = (each.artifacts ?? []).filter((artifact) => artifact.type === 'Build');
+    const version = (artifacts.find((artifact) => artifact.sourceId === sourceOf(build)) ?? artifacts[0])?.definitionReference?.version;
+    return version ? ` from build ${version.name ?? version.id}` : '';
+  };
+  const words = listed.slice(0, 3).map((each) => `${each.name} (#${each.id})${carried(each)}`);
+  return words.length > 0 ? `It found ${words.join(', ')}, not this one.` : `It found no release of ${definition.name}.`;
+}
+
+/** The step for `unit`: reached once the declared stage ended as its success asks, else failed in the words of what stands in the way; `progress` hears each change of what that stage waits on. */
+export async function release(attempt, unit, say, progress = () => {}) {
   const asked = declared(attempt.options);
   const lead = asked.deployable ? `Deployable \`${asked.deployable}\`: ` : '';
   const answered = (code, message, url) => ({ state: 'failed', code, evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
@@ -119,7 +131,8 @@ export async function release(attempt, unit, say) {
     let starting = null;
     if ((found ?? []).length === 0) {
       if (asked.action !== 'create-and-start') {
-        return failed('no-release', `No release of ${of} was made from ${from} within ${asked.find / 1000} s; the step's action does not create one.`, buildUrl);
+        const seen = await foundInstead(repo, definition, build);
+        return failed('no-release', `No release of ${of} was made from ${from} within ${asked.find / 1000} s; the step's action does not create one. ${seen}`, buildUrl);
       }
       starting = selfStarting(definition.environments ?? []);
       say(`creating a release of ${of} from build ${numberOf(build)}; ${starting.length > 0 ? `its creation starts ${starting.join(', ')} by itself` : 'no stage starts by itself'}.`);
@@ -139,10 +152,11 @@ export async function release(attempt, unit, say) {
       return failed('ambiguous', `Several releases of ${of} were made from ${from}: ${listed}. Abandon all but one and try the step again.`, buildUrl);
     }
     const [chosen] = found;
-    const watched = await watchRelease(repo, chosen.id, asked, ends, say, commit);
+    const link = web(chosen, `_releaseProgress?releaseId=${chosen.id}&_a=release-pipeline-progress`);
+    const tell = (standing) => progress({ ...standing, url: link, message: fit(`${lead}${chosen.name} of ${definition.name}: ${standing.act}.`) });
+    const watched = await watchRelease(repo, chosen.id, asked, ends, say, commit, tell);
     const made = starting === null ? '' : `, made here${starting.length > 0 ? `, its creation starting ${starting.join(', ')} by itself` : ''}`;
-    return outcome(`${chosen.name} of ${definition.name} from ${from}${made}: `, watched,
-      web(chosen, `_releaseProgress?releaseId=${chosen.id}&_a=release-pipeline-progress`));
+    return outcome(`${chosen.name} of ${definition.name} from ${from}${made}: `, watched, link);
   } catch (error) {
     if (error instanceof Refusal) return failed(error.code, error.message);
     throw error;

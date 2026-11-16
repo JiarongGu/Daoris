@@ -41,4 +41,21 @@ public sealed class PluginCycleStaleTests : IDisposable
 
         Assert.True(cycle.Passed, string.Join(" | ", cycle.Steps.Select(step => $"{(step.Ok ? "ok" : "FAIL")} {step.Name}: {step.Sentence}")));
     }
+
+    [Fact]
+    public async Task A_performer_that_sends_progress_before_its_outcome_passes_the_cycle()
+    {
+        var plan = PluginKit.Plan("acme-slow", [HookPoints.Perform], _scratch);
+        PluginKit.Write(plan);
+        var work = Path.Combine(plan.Folder, "work.mjs");
+        var text = File.ReadAllText(work);
+        var anchor = "    let outcome;\n    try {\n      outcome = outcomeOf(await calls.act(attempt));";
+        Assert.Contains(anchor, text.Replace("\r\n", "\n"));
+        var progress = "    send({ jsonrpc: '2.0', method: 'work/step', params: { step: attempt.step, invocation: attempt.invocation, state: 'progress', at: new Date().toISOString(), id: attempt.invocation + '-progress' } });\n";
+        File.WriteAllText(work, text.Replace("\r\n", "\n").Replace(anchor, progress + anchor, StringComparison.Ordinal));
+
+        var cycle = await PluginCycles.TryAsync(Path.Combine(_scratch, "home"), plan.Folder, CycleFixture.Default with { Deadline = TimeSpan.FromSeconds(1) });
+
+        Assert.True(cycle.Passed, string.Join(" | ", cycle.Steps.Select(step => $"{(step.Ok ? "ok" : "FAIL")} {step.Name}: {step.Sentence}")));
+    }
 }

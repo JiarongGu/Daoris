@@ -16,6 +16,8 @@
   "work.attention.task": "waiting for your task",
   "work.attention.taskWhy": "The run waits at {{node}} for your Done.",
   "work.attention.approvalWhy": "The run waits at {{node}} for your Approve or Reject.",
+  "work.attention.actorWhy": "The run waits at {{node}} on `{{actor}}`, which you hold: {{words}}",
+  "work.attention.actorOpen": "Open where you act",
   "work.attention.go-ahead": "needs your go-ahead",
   "work.attention.departure": "awaits your yes",
   "work.attention.review": "to review",
