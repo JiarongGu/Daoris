@@ -123,7 +123,7 @@ describe('Review and save', () => {
     await edit(user);
     await holds();
     await user.click(reviewButton());
-    const said = 'Saving this closes going back to builds before 1.48.0: a step names a role other than its kind\'s own, which older builds cannot read.';
+    const said = 'Saving this closes going back to builds before 1.48.0: a step names a role other than its kind\'s own, which those builds cannot read.';
     expect(within(await screen.findByRole('region', { name: 'Before it is saved' })).getByText(said)).toBeInTheDocument();
     view.unmount();
 
