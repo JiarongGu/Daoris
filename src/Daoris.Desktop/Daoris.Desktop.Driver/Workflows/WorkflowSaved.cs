@@ -12,4 +12,10 @@ public sealed record WorkflowSaved(
 {
     /// <summary>Each refusal of a graph refused, by its code at the step or wire it names; empty for every other answer.</summary>
     public IReadOnlyList<WireProblem> Problems { get; init; } = [];
+
+    /// <summary>
+    /// The build below which saving this version closes going back (<see cref="WorkflowRolesSince"/>): a step names a role other than its
+    /// kind's, and no save closed it yet. The confirm card says it before the save; null where the save closes nothing.
+    /// </summary>
+    public string? ClosesBelow { get; init; }
 }

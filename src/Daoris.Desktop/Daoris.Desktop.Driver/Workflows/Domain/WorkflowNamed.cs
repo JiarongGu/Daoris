@@ -280,7 +280,8 @@ public static class WorkflowNamed
         if (add.Graph is not null)
         {
             version["schema"] = GraphSchema;
-            version["graph"] = add.Graph.DeepClone();
+            // A step naming its kind's own role is written naming none: an older build reads the version unchanged (StepRoles.Unwritten).
+            version["graph"] = StepRoles.Unwritten(add.Graph.DeepClone());
             if (add.Steps is not null) version["steps"] = add.Steps.DeepClone();
         }
         else

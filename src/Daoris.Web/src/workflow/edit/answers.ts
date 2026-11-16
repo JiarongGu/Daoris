@@ -112,6 +112,8 @@ export type WorkflowSaveAsk = {
 export type WorkflowSaveAnswer = {
   id: string; done: boolean; refused: string | null; message: string | null; version: number | null; written: boolean; appended: boolean;
   scopes: WorkflowScopeRow[]; reach: WorkflowReachRow[]; problems?: GraphProblem[];
+  /** The build below which this save closes going back (a step names a role other than its kind's); absent or null where it closes none. */
+  closesBelow?: string | null;
 };
 
 /**

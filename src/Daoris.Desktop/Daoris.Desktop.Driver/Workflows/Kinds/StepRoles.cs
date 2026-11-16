@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
@@ -65,7 +66,32 @@ public static class StepRoles
     public const string Unknown = "role-unknown";
 
     /// <summary>The role <paramref name="node"/> names, or its kind's default where it names none; an older version's agent step read by its option.</summary>
-    public static string Of(NodeDeclaration node) => Named(node) ?? NodeKit.Of(node.Kind)?.Role ?? Operations;
+    public static string Of(NodeDeclaration node) => Named(node) ?? Default(node.Kind);
+
+    /// <summary>The role a step of <paramref name="kind"/> that names none reads: its kind's, and a plugin's step <see cref="Operations"/>.</summary>
+    public static string Default(string kind) => NodeKit.Of(kind)?.Role ?? Operations;
+
+    /// <summary>
+    /// <paramref name="graph"/> as a save writes it: no step names its kind's default role where naming none reads the same, so a version
+    /// holding only defaults is the version a build before the field reads, and closes no going back (<see cref="WorkflowRolesSince"/>). An
+    /// agent step's role is kept as named, since there naming none takes the role the place's catalogue gives its work, not the default.
+    /// Changed in place, and returned.
+    /// </summary>
+    public static JsonNode? Unwritten(JsonNode? graph)
+    {
+        if (graph?["nodes"] is not JsonArray nodes) return graph;
+        foreach (var node in nodes.OfType<JsonObject>())
+        {
+            if (node["kind"] is JsonValue kind && kind.TryGetValue<string>(out var named) && node["role"] is JsonValue role
+                && role.TryGetValue<string>(out var written) && written == Default(named) && NodeKit.Of(named)?.RoleTakes is not [_, ..]
+                && node["options"]?[NodeOptionFields.Role] is null)
+            {
+                node.Remove("role");
+            }
+        }
+
+        return graph;
+    }
 
     /// <summary>
     /// The role <paramref name="node"/> names itself, or null: its <see cref="NodeDeclaration.Role"/>, else the <c>role</c> option an agent step

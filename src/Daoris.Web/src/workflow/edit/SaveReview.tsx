@@ -22,6 +22,8 @@ export type ReviewFacts = {
   ways: number;
   part: string[];
   reach: string[];
+  /** The build below which the save closes going back, said first; null where it closes none. */
+  closesBelow: string | null;
 };
 
 /** The choice, as the editor offers it: not at all, after the changes are saved, or as a press (two where the driver announces a plan). */
@@ -114,6 +116,9 @@ export function SaveReview({
           className="grid min-w-0 gap-2 rounded-card border border-line bg-raised p-3 outline-none"
         >
           <h5 id={reviewId} className="m-0 text-small font-semibold text-ink">{t('workflow.edit.review.title')}</h5>
+          {review.closesBelow !== null && (
+            <p className="m-0 text-small text-ink [overflow-wrap:anywhere]">{t('workflow.edit.review.closesRollback', { build: review.closesBelow })}</p>
+          )}
           <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft">
             {review.fresh !== null && <li>{t('workflow.edit.review.fresh', { count: review.fresh })}</li>}
             {review.fresh === null && review.added.length + review.removed.length + review.changed.length + review.ways === 0 && (

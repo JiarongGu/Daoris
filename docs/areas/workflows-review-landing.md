@@ -614,7 +614,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **WORKFLOWEDIT1c**, **LANDNODE1j**, **REVIEWFLOW1c**, **LANDPRESS1**: the installed window.
 - **PROCSTEPS1** (`docs/2026-11-09-process-steps-design.md`): `resolve`'s loop resolvers, `merge`, `tidy`'s removals, the cut-over.
 - **Roles** (D304 to D309): workflows written in roles that do not tell a person from an agent, evolved in place in one scope (D309), the reporting line kept apart from authority (D305), acts spending only what their grants cover (D306) and re-checked at their effect (D307), consultations recording their mode (D308). Every step names the role that takes it in its `role` field
-  (`NodeDeclaration.Role`, in the version's digest), its kind's default where it names none (`StepRoles.Of`); the save refuses a holder
+  (`NodeDeclaration.Role`, in the version's digest), its kind's default where it names none (`StepRoles.Of`). A save writes none where a
+  step that no agent session takes names its kind's own (`StepRoles.Unwritten`), so such a version is the one an older build reads and
+  closes no going back; one naming another role closes going back below the build that saved it (`roles-since.txt`), which the save's
+  review says first (`closesBelow`), and a preset's second opinion names none. The save refuses a holder
   named there (`role-holder`) and a role no catalogue has (`role-unknown`); the editor sets it (`StepRoleField`, applied to the newest draft by
   its `onRole` act), the chart and the run view draw it, and an older version's agent-step `role` option is read as the role by the one
   reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). A step's authority is still its kind's
