@@ -20,12 +20,7 @@ public sealed class AskDaorisWatchTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    private static async Task Until(Func<bool> done)
-    {
-        var watch = Stopwatch.StartNew();
-        while (!done() && watch.Elapsed < TimeSpan.FromSeconds(10)) await Task.Delay(10);
-        Assert.True(done());
-    }
+    private static Task Until(Func<bool> done) => Poll.Until(done);
 
     private SessionEvents Events() => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

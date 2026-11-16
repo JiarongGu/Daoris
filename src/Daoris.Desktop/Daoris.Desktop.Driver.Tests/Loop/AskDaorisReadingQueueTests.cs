@@ -231,13 +231,5 @@ public sealed class AskDaorisReadingQueueTests : IDisposable
         Assert.Equal(AskDaorisReports.Restarted, Report().Why);
     }
 
-    internal static async Task Until(Func<bool> done)
-    {
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (!done())
-        {
-            Assert.True(DateTime.UtcNow < until, "the reading did not get there");
-            await Task.Delay(20);
-        }
-    }
+    internal static Task Until(Func<bool> done) => Poll.Until(done, () => "the reading did not get there");
 }

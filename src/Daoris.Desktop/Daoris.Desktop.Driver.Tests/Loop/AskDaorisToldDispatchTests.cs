@@ -16,12 +16,7 @@ public sealed class AskDaorisToldDispatchTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    private static async Task Until(Func<bool> done)
-    {
-        var watch = Stopwatch.StartNew();
-        while (!done() && watch.Elapsed < TimeSpan.FromSeconds(10)) await Task.Delay(10);
-        Assert.True(done());
-    }
+    private static Task Until(Func<bool> done) => Poll.Until(done);
 
     private void Flagged(AskDaorisReports reports, string range, string call) =>
         reports.Write(new AskDaorisReport(range, "s1", AskDaorisStates.Read, At, [], [])
