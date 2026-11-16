@@ -185,7 +185,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
                 live.Lines.Add(SupervisorDecisionFiles.Read(book.Files.StatesOf(session, row.Id)) ?? "");
                 book.Live[row.Id] = live;
                 return true;
-            case SupervisorKinds.Memory or SupervisorKinds.Departure
+            case SupervisorKinds.Memory or SupervisorKinds.Departure or SupervisorKinds.GoAhead
                 when SupervisorDoorAnswers.Recover(book.Files, session, row.Id) is { State: SupervisorState.Held } door:
                 book.Doors[row.Id] = door;
                 return true;

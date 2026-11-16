@@ -163,26 +163,24 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
         Assert.Null(await SupervisorDecisionDoor.FactsAsync(door.Loop, waiting, "f1", default));
     }
 
+    /// <summary>
+    /// A share spends a destination outside the repository, which no grant covers, so it stays the owner role's even for a
+    /// workspace's supervisor granted every files act: not listed, refused in the admission naming the spend, and nothing written.
+    /// </summary>
     [Fact]
-    public async Task A_share_decided_at_the_workspace_covering_both_repositories_is_allowed_in_both_layers_and_one_outside_it_is_not_listed()
+    public async Task A_share_spends_a_destination_no_grant_covers_so_it_is_the_owner_s_and_not_listed()
     {
         if (!OperatingSystem.IsWindows()) return;
         PersonPermissions.Add(Home, null, "ask", "share(*)", null);
         var workspaces = new Dictionary<string, string> { ["engine"] = "shop", ["web"] = "shop", ["docs"] = "other" };
         using var door = await OpenAsync(new CatalogueScope(CatalogueScope.Workspace, "shop"), workspaces: workspaces);
-        var inside = Held("engine", "share(deps/)", FileAsk.Share, others: "web");
-        Held("engine", "share(out/)", FileAsk.Share, others: "docs");
+        Held("engine", "share(deps/)", FileAsk.Share, others: "web");
 
-        var listed = Assert.Single(await ListedAsync(door));
-        Assert.Equal("share(deps/)", listed.GetProperty("subject").GetProperty("text").GetString());
-
-        var kept = await DecideAsync(door, inside, Generation(door, inside, new RolePlace(Workspace: "shop")));
-
-        Assert.True(kept.GetProperty("kept").GetBoolean(), kept.GetRawText());
-        Assert.Equal(FileVerdict.Made, Judge("engine", "share(deps/)"));
-        Assert.Equal(FileVerdict.Made, Judge("web", "share(deps/)"));
-        Assert.Equal(FileVerdict.Held, Judge("docs", "share(deps/)"));
-        Assert.Equal(FileVerdict.Held, Judge("engine", "share(out/)"));
+        Assert.Empty(await ListedAsync(door));
+        var refused = door.Judge.Admit(SupervisorKinds.Files, new RolePlace(Workspace: "shop"), "allow-share");
+        Assert.Equal((SupervisorWhy.NotGranted, ActSpending.Destination), (refused.Why, refused.Missing));
+        Assert.Equal(FileVerdict.Held, Judge("engine", "share(deps/)"));
+        Assert.Equal(FileVerdict.Held, Judge("web", "share(deps/)"));
     }
 
     [Fact]

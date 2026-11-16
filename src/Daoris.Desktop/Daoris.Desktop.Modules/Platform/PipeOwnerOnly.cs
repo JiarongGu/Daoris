@@ -17,7 +17,7 @@ public static class PipeOwnerOnly
     public const string RefusedSentence =
         "This is the owner's to set: a place's risk and marks, and what agents may do, are widened by the owner alone. An agent's press goes on the owner's card through its own session's key. Nothing was changed.";
 
-    /// <summary>Whether <paramref name="request"/> sets one of the owner's records: a place's risk, or a role granting an agent acts.</summary>
+    /// <summary>Whether <paramref name="request"/> sets one of the owner's records: a place's risk, or a role granting acts to any holder but the rules.</summary>
     public static bool Governs(IpcRequest request)
     {
         if (!string.Equals(request.Module, DriverModule.Name, StringComparison.OrdinalIgnoreCase)) return false;
@@ -31,9 +31,12 @@ public static class PipeOwnerOnly
         };
     }
 
-    /// <summary>Whether one role change writes an appointed role an agent holds with any act granted (D306: an agent never grants agents acts).</summary>
+    /// <summary>
+    /// Whether one role change writes an appointed role with any act granted to a holder that is not the person's rules (an agent never
+    /// grants agents acts): an agent, a terminal (an agent's session too), or none yet, which one start would make act.
+    /// </summary>
     private static bool GrantsAgent(JsonElement change) =>
         change.ValueKind == JsonValueKind.Object && change.TryGetProperty("role", out var role) && role.ValueKind == JsonValueKind.Object
-        && role.TryGetProperty("holder", out var holder) && holder.ValueKind == JsonValueKind.String && holder.GetString() == RoleHolders.Agent
+        && !(role.TryGetProperty("holder", out var holder) && holder.ValueKind == JsonValueKind.String && holder.GetString() == RoleHolders.Rules)
         && role.TryGetProperty("authority", out var acts) && acts.ValueKind == JsonValueKind.Array && acts.GetArrayLength() > 0;
 }

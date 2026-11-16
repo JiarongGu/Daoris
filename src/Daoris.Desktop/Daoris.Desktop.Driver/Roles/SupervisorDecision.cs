@@ -15,6 +15,12 @@ public interface IDecisionAdmission
     /// level there left it, then the machine's; refused <c>passed-up</c> once the climb left no supervisor to hold it.
     /// </summary>
     DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) => Admit(subject.Kind, place, act);
+
+    /// <summary>
+    /// The place's risk and the owner's marks as they stand now, which a held go-ahead's release judges again (<see cref="GoAheadAuthority.OwnersOwn"/>);
+    /// where the admission reads none, high, as a risk record that does not read is.
+    /// </summary>
+    PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>
