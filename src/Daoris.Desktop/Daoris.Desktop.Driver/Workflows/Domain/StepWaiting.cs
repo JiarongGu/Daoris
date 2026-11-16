@@ -58,7 +58,8 @@ public static class StepWaiting
 
     /// <summary>
     /// The role a wait is on where its step names none: until a step's declaration carries its role (ACTORFIELD1), each wait's own. A
-    /// vacancy and a failure kept go up to the line's lead (<see cref="LineActors.Lead"/>), whose holder answers or passes them up.
+    /// vacancy and a failure kept go up to the line's first level, the place's supervisor (<see cref="AppointedRoles.Supervisor"/>), whose
+    /// holder answers or passes them up.
     /// </summary>
     public static string RoleOf(string why) => why switch
     {
@@ -66,7 +67,7 @@ public static class StepWaiting
         PersonWaits.Approval or PersonWaits.GoAhead => "approver",
         PersonWaits.Task or PersonWaits.Choose => "worker",
         PersonWaits.Held => "operations",
-        _ => LineActors.Lead,
+        _ => AppointedRoles.Supervisor,
     };
 
     /// <summary>Where a wait's act is taken in the window when no press of its own settles it from a row: the run view, else nowhere.</summary>

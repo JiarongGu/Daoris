@@ -4,8 +4,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The week's capped reviewer replayed (2026-11-16): every declared reviewer of a second opinion cooling makes a vacancy on the reporting
-/// line, which waits on the lead; an agent-held lead re-casts it on another family, journalled beside the gate, and the next walk reads
-/// it; with no lead staffed it passes up naming why; a level's leave is its pass up, and the head's ends it as gave up.
+/// line, which waits on the repository's supervisor; an agent-held one re-casts it on another family, journalled beside the gate, and the
+/// next walk reads it; with none staffed it passes up naming why; a level's leave is its pass up, and the machine's supervisor's ends it
+/// as gave up.
 /// </summary>
 public sealed class OpinionVacancyTests : IDisposable
 {
@@ -30,7 +31,7 @@ public sealed class OpinionVacancyTests : IDisposable
     }
 
     private static readonly RoleSlot Machine = Supervisor(AppointedRoles.Supervisor, RoleScope.Everywhere, RoleHolders.Rules, [.. SupervisorKinds.Seeded]);
-    private static readonly RoleSlot Lead = Supervisor("engine-lead", new RoleScope(RoleScope.Repository, Engine), RoleHolders.Agent, Recast);
+    private static readonly RoleSlot AtEngine = Supervisor("engine-supervisor", new RoleScope(RoleScope.Repository, Engine), RoleHolders.Agent, Recast);
 
     private static ReportingLine Line(params RoleSlot[] slots) =>
         ReportingLine.Of(slots, SupervisorKinds.Vacancy, new RolePlace(Repository: Engine), null, SupervisorKinds.Recast);
@@ -47,21 +48,22 @@ public sealed class OpinionVacancyTests : IDisposable
                 })));
 
     [Fact]
-    public async Task Every_declared_reviewer_cooling_waits_on_the_lead_which_recasts_on_another_family_journalled()
+    public async Task Every_declared_reviewer_cooling_waits_on_the_repositorys_supervisor_which_recasts_on_another_family_journalled()
     {
         var capped = await Walk(["codex-acp"]);
         var vacancy = OpinionVacancy.Of(capped);
 
         Assert.NotNull(vacancy);
         Assert.Equal((ReviewerUnavailable.Cooling, "codex-acp", Reset), (vacancy.Code, vacancy.Back, vacancy.Until));
-        var waits = Line(Lead, Machine).Climb(ownerClass: false);
-        Assert.Equal("waiting on lead: `engine-lead` · second opinion: nobody free, `codex-acp` back 07:02", vacancy.Said(waits, TimeZoneInfo.Utc));
+        var waits = Line(AtEngine, Machine).Climb(ownerClass: false);
+        Assert.Equal(
+            "waiting on the repository's supervisor: `engine-supervisor` · second opinion: nobody free, `codex-acp` back 07:02", vacancy.Said(waits, TimeZoneInfo.Utc));
 
         var casts = new OpinionCasts(_home);
-        casts.Keep(Chain, Engine, new OpinionCast(At, "s1", LineActors.Lead, "engine-lead", SupervisorKinds.Recast, "dsh", "codex is cooling until 07:02; dsh reads now"));
+        casts.Keep(Chain, Engine, new OpinionCast(At, "s1", LineLevels.Repository, "engine-supervisor", SupervisorKinds.Recast, "dsh", "codex is cooling until 07:02; dsh reads now"));
 
         var kept = Assert.Single(casts.Read(Chain, Engine, "s1"));
-        Assert.Equal((LineActors.Lead, "engine-lead", SupervisorKinds.Recast, "dsh"), (kept.Actor, kept.Role, kept.Act, kept.Agent));
+        Assert.Equal((LineLevels.Repository, "engine-supervisor", SupervisorKinds.Recast, "dsh"), (kept.Level, kept.Role, kept.Act, kept.Agent));
         var reviewers = OpinionCasting.Reviewers(["codex-acp"], kept, Working);
         Assert.Equal(["dsh", "codex-acp"], reviewers);
         var recast = await Walk(reviewers, free: "dsh");
@@ -69,40 +71,41 @@ public sealed class OpinionVacancyTests : IDisposable
     }
 
     [Fact]
-    public async Task With_no_lead_staffed_the_vacancy_passes_up_naming_why()
+    public async Task With_no_repositorys_supervisor_staffed_the_vacancy_passes_up_naming_why()
     {
         var vacancy = OpinionVacancy.Of(await Walk(["codex-acp"]))!;
 
         var waits = Line(Machine).Climb(ownerClass: false);
 
-        Assert.Equal(LineActors.Head, waits.At!.Actor);
+        Assert.Equal(LineLevels.Machine, waits.At!.Level);
         Assert.Equal(
-            "waiting on head: you · passed up: lead: no lead is appointed: no supervisor of the repository `engine` or its workspace decides `vacancy`"
-            + " · second opinion: nobody free, `codex-acp` back 07:02",
+            "waiting on the machine's supervisor: you · passed up: the repository's supervisor: no supervisor of the repository `engine` or its workspace"
+            + " decides `vacancy` · second opinion: nobody free, `codex-acp` back 07:02",
             vacancy.Said(waits, TimeZoneInfo.Utc));
     }
 
     [Fact]
-    public void A_levels_leave_passes_it_up_and_the_heads_ends_it_as_gave_up()
+    public void A_levels_leave_passes_it_up_and_the_machines_supervisors_ends_it_as_gave_up()
     {
-        var head = Supervisor(AppointedRoles.Supervisor, RoleScope.Everywhere, RoleHolders.Agent, Recast);
+        var machine = Supervisor(AppointedRoles.Supervisor, RoleScope.Everywhere, RoleHolders.Agent, Recast);
         var casts = new OpinionCasts(_home);
-        casts.Keep(Chain, Engine, new OpinionCast(At, "s1", LineActors.Lead, "engine-lead", LinePasses.Left, null, "no other family is installed"));
+        casts.Keep(Chain, Engine, new OpinionCast(At, "s1", LineLevels.Repository, "engine-supervisor", LinePasses.Left, null, "no other family is installed"));
 
-        Assert.Equal(LineActors.Head, Line(Lead, head).Climb(false, OpinionCasting.Left(casts.Read(Chain, Engine, "s1"))).At!.Actor);
+        Assert.Equal(LineLevels.Machine, Line(AtEngine, machine).Climb(false, OpinionCasting.Left(casts.Read(Chain, Engine, "s1"))).At!.Level);
 
-        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(5), "s1", LineActors.Head, AppointedRoles.Supervisor, LinePasses.Left, null, "no account of another maker is signed in"));
-        var ended = Line(Lead, head).Climb(false, OpinionCasting.Left(casts.Read(Chain, Engine, "s1")));
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(5), "s1", LineLevels.Machine, AppointedRoles.Supervisor, LinePasses.Left, null, "no account of another maker is signed in"));
+        var ended = Line(AtEngine, machine).Climb(false, OpinionCasting.Left(casts.Read(Chain, Engine, "s1")));
 
         Assert.True(ended.GaveUp);
-        Assert.Equal("gave up: lead: no other family is installed; head: no account of another maker is signed in", ended.Said());
+        Assert.Equal(
+            "gave up: the repository's supervisor: no other family is installed; the machine's supervisor: no account of another maker is signed in", ended.Said());
         Assert.Empty(casts.Read(Chain, Engine, "s2"));
     }
 
     [Fact]
     public void Each_act_shapes_the_next_walk_and_a_vacancy_is_only_a_reviewer_held()
     {
-        OpinionCast Cast(string act, string? agent = null) => new(At, "s1", LineActors.Lead, "engine-lead", act, agent, "why");
+        OpinionCast Cast(string act, string? agent = null) => new(At, "s1", LineLevels.Repository, "engine-supervisor", act, agent, "why");
 
         Assert.Equal(["codex-acp", "claude-code-acp"], OpinionCasting.Reviewers(["codex-acp"], Cast(SupervisorKinds.Relax), Working));
         Assert.Equal([OpinionCasting.PrepaidAgent, "codex-acp"], OpinionCasting.Reviewers(["codex-acp"], Cast(SupervisorKinds.Prepaid), Working));
@@ -148,8 +151,8 @@ public sealed class OpinionVacancyTests : IDisposable
         IReadOnlyList<string> declared = ["codex-acp", "gemini"];
         var casts = new OpinionCasts(_home);
         Vacant(casts, declared, Tried("codex-acp", ReviewerHeld.Cooling), Tried("gemini", ReviewerHeld.Cooling));
-        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(1), "s1", LineActors.Lead, "engine-lead", LinePasses.Left, null, "no reset is stated"));
-        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(2), "s1", LineActors.Head, AppointedRoles.Supervisor, SupervisorKinds.Recast, "gemini", "gemini resets first"));
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(1), "s1", LineLevels.Repository, "engine-supervisor", LinePasses.Left, null, "no reset is stated"));
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(2), "s1", LineLevels.Machine, AppointedRoles.Supervisor, SupervisorKinds.Recast, "gemini", "gemini resets first"));
         Assert.Equal(["gemini", "codex-acp"], OpinionCasting.Reviewers(declared, OpinionCasting.Newest(casts.Read(Chain, Engine, "s1")), Working));
 
         casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(3), "s1", OpinionCasting.Step, OpinionCasting.Step, OpinionCasting.Filled, "gemini", "op1"));

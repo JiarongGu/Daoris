@@ -213,6 +213,7 @@ public static class WorkflowGraphRuns
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
+                Role = StepRoles.Of(node),
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,

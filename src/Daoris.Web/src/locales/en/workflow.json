@@ -244,5 +244,21 @@
   "workflow.compose.open": "Compose steps…",
   "workflow.compose.twin": "In a terminal: `daoris workflow new <id> --from <default>`",
   "workflow.canvas.fit": "Show the whole workflow",
-  "workflow.canvas.moves": "a workflow's drawing: drag or the wheel to move, Ctrl+wheel to zoom"
+  "workflow.canvas.moves": "a workflow's drawing: drag or the wheel to move, Ctrl+wheel to zoom",
+  "workflow.role.label": "Role",
+  "workflow.role.line": "Role: {{role}}",
+  "workflow.role.default": "{{role}} (its kind's)",
+  "workflow.role.none": "Its kind's",
+  "workflow.role.hint": "The role that takes this step. Who fills the role is the place's to say.",
+  "workflow.role.said": "Set the role of {{step}}",
+  "workflow.role.design": "Design",
+  "workflow.role.opinion": "Second opinion",
+  "workflow.role.tester": "Tester",
+  "workflow.role.acceptor": "Acceptor",
+  "workflow.role.approver": "Approver",
+  "workflow.role.release-manager": "Release manager",
+  "workflow.role.operations": "Operations",
+  "workflow.role.config-changer": "Config changer",
+  "workflow.role.credentials-keeper": "Credentials keeper",
+  "workflow.role.owner": "Owner"
 }

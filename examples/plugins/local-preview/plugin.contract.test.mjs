@@ -216,6 +216,44 @@ test('one external effect under duplicate delivery, before and after a restart',
   assert.deepEqual(after.params, outcome.params);
 });
 
+test('one act per effect: a retry, and a second holder after a restart, on the same target are answered with the act already made', async (t) => {
+  const place = scratch(t);
+  const effect = { effectKey: 'e-contract' };
+  const first = await start(t, place);
+  assert.deepEqual(await first.ask('hook/work/perform', { ...attempt(1), ...effect }), { invocation: 'i-1' });
+  const made = await first.until(completion(1), 'outcome for `i-1`');
+  assert.equal(made.params.state, 'reached');
+  assert.deepEqual(await first.ask('hook/work/perform', { ...attempt(2), ...effect }), { invocation: 'i-2' });
+  const retry = await first.until(completion(2), 'outcome for `i-2`, a retry on the same effect');
+  await first.stop();
+
+  const again = await start(t, place);
+  assert.deepEqual(await again.ask('hook/work/perform', { ...attempt(3), ...effect }), { invocation: 'i-3' });
+  const second = await again.until(completion(3), 'outcome for `i-3`, a second holder on the same effect');
+  await again.stop();
+
+  assert.deepEqual(effects(place).filter((line) => line.startsWith('act ')), ['act k-1'], 'one effect reached the platform more than once');
+  for (const each of [retry, second]) {
+    assert.deepEqual({ state: each.params.state, evidence: each.params.evidence }, { state: made.params.state, evidence: made.params.evidence },
+      'an attempt on an effect already made is not answered with what it made');
+  }
+});
+
+test('an act whose outcome was lost is asked of the platform before a retry, and what it says is done stands for the retry', async (t) => {
+  const place = scratch(t, { acts: { 'i-1': { exit: true } }, checks: { 'i-1': { state: 'done', outcome: { state: 'reached', evidence: { message: 'seen made' } } } } });
+  const effect = { effectKey: 'e-contract' };
+  const lost = await start(t, place);
+  await lost.ask('hook/work/perform', { ...attempt(1), ...effect });
+  await lost.gone;
+
+  const again = await start(t, place);
+  assert.deepEqual(await again.ask('hook/work/perform', { ...attempt(2), ...effect }), { invocation: 'i-2' });
+  const retry = await again.until(completion(2), 'outcome for `i-2`');
+  await again.stop();
+  assert.equal(retry.params.state, 'reached', 'a retry whose effect the platform says is done was not settled by it');
+  assert.deepEqual(effects(place).filter((line) => line.startsWith('act ')), ['act k-1'], 'a retry acted again on an effect the platform says is done');
+});
+
 test('two processes sharing the data folder keep each other\'s attempts, as two places\' processes of one plugin do', async (t) => {
   const place = scratch(t);
   const [one, two] = await Promise.all([start(t, place), start(t, place)]);

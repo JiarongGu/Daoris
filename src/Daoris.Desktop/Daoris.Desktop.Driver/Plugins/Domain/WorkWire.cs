@@ -102,11 +102,24 @@ public sealed record WorkStepFrame(
     string Step, WorkOutcome Outcome, DateTimeOffset At, string Id,
     string? Repository = null, string? Branch = null, string? Commit = null, string? Invocation = null);
 
-/// <summary>A <see cref="HookPoints.Perform"/> request's params: one attempt, with the key the plugin deduplicates it by.</summary>
+/// <summary>
+/// A <see cref="HookPoints.Perform"/> request's params: one attempt, with its own key (<see cref="IdempotencyKey"/>, the same at every delivery
+/// of this attempt) and the key of the effect it is for (<see cref="EffectKey"/>, the same for every attempt on its target).
+/// </summary>
 public sealed record WorkPerformCall(
     string Unit, string Step, int StepVersion, string Invocation, string IdempotencyKey, string SubjectRevision,
     IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt)
 {
+    /// <summary>
+    /// The act's key (<see cref="EffectKeys"/>): a digest of its run, node, slot and target subject, written on the record before the first
+    /// send, so every attempt on that target, a retry's or a second holder's, names one act, which the plugin makes once. Null on an attempt
+    /// written without one (an older build's, or one an older build wrote over), whose own key is its effect (<see cref="Effect"/>).
+    /// </summary>
+    public string? EffectKey { get; init; }
+
+    /// <summary>The effect this attempt is for: its <see cref="EffectKey"/>, else its own key.</summary>
+    public string Effect => EffectKey ?? IdempotencyKey;
+
     /// <summary>
     /// The performed node's options as its graph writes them (<see cref="NodeDeclaration.Options"/>): each name with its JSON value's
     /// text. The host fills them at each send from the declaration it performs, so they are never kept on the attempt's record.
@@ -242,8 +255,8 @@ public static class WorkWire
     };
 
     /// <summary>
-    /// <see cref="HookPoints.Perform"/>'s params, as its example writes them. The step's <c>options</c> follow where it has any: an object
-    /// of each option's JSON value, or its text as written where that is not JSON.
+    /// <see cref="HookPoints.Perform"/>'s params, as its example writes them, with its <c>effectKey</c> where it has one. The step's
+    /// <c>options</c> follow where it has any: an object of each option's JSON value, or its text as written where that is not JSON.
     /// </summary>
     public static JsonObject Perform(WorkPerformCall call)
     {
@@ -258,6 +271,7 @@ public static class WorkWire
             ["inputs"] = Strings(call.Inputs),
             ["deadlineAt"] = Time(call.DeadlineAt),
         };
+        if (call.EffectKey is { } effect) written["effectKey"] = effect;
         if (call.Options.Count > 0)
         {
             var options = new JsonObject();
@@ -456,7 +470,7 @@ public static class WorkWire
         && Text(@params, "subjectRevision") is { } revision && StringList(@params, "inputs") is { } inputs
         && Text(@params, "deadlineAt") is { } deadline && ReadTime(deadline) is { } deadlineAt
         && ReadOptions(@params) is { } options
-            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt) { Options = options }
+            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt) { Options = options, EffectKey = Text(@params, "effectKey") }
             : null;
 
     /// <summary>A perform call's <c>options</c> read back as each value's JSON text: absent or null is none; null where it is not an object.</summary>

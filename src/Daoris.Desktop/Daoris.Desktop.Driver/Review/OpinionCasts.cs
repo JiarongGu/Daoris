@@ -25,7 +25,7 @@ public sealed class OpinionCasts(string home)
     {
         if (PathOf(chain) is not { } path) throw new DriverException($"`{chain}` names no chain this machine keeps a gate for.");
         var line = JsonSerializer.Serialize(
-            new Kept(repository, cast.At, cast.Session, cast.Actor, cast.Role, cast.Act, cast.Agent, cast.Why, cast.Offered.Count == 0 ? null : cast.Offered), Options);
+            new Kept(repository, cast.At, cast.Session, cast.Level, cast.Role, cast.Act, cast.Agent, cast.Why, cast.Offered.Count == 0 ? null : cast.Offered), Options);
         lock (Gate)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -41,7 +41,7 @@ public sealed class OpinionCasts(string home)
         lock (Gate) lines = File.ReadAllLines(path);
         return [.. lines.Select(Parse).OfType<Kept>()
             .Where(kept => string.Equals(kept.Repository, repository, StringComparison.OrdinalIgnoreCase) && string.Equals(kept.Session, session, StringComparison.OrdinalIgnoreCase))
-            .Select(kept => new OpinionCast(kept.At, kept.Session!, kept.Actor!, kept.Role!, kept.Act!, kept.Agent, kept.Why ?? "") { Offered = kept.Offered ?? [] })];
+            .Select(kept => new OpinionCast(kept.At, kept.Session!, kept.Level!, kept.Role!, kept.Act!, kept.Agent, kept.Why ?? "") { Offered = kept.Offered ?? [] })];
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public sealed class OpinionCasts(string home)
     {
         try
         {
-            return JsonSerializer.Deserialize<Kept>(line, Options) is { Repository: not null, Session: not null, Actor: not null, Role: not null, Act: not null } kept ? kept : null;
+            return JsonSerializer.Deserialize<Kept>(line, Options) is { Repository: not null, Session: not null, Level: not null, Role: not null, Act: not null } kept ? kept : null;
         }
         catch (JsonException)
         {
@@ -82,6 +82,6 @@ public sealed class OpinionCasts(string home)
     }
 
     private sealed record Kept(
-        string? Repository, DateTimeOffset At, string? Session, string? Actor, string? Role, string? Act, string? Agent, string? Why,
+        string? Repository, DateTimeOffset At, string? Session, string? Level, string? Role, string? Act, string? Agent, string? Why,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? Offered = null);
 }

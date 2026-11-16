@@ -21,6 +21,7 @@ public static class InstallRollback
     public static (string Code, string Sentence)? Refused(string home, string? staged, string? running)
     {
         if (!(Numbered(staged) is { } older && Numbered(running) is { } newer && older < newer)) return null;
+        if (WorkflowRolesSince.Refused(home, staged) is { } roles) return roles;
         var rollback = new DeliveryStore(home).Rollback();
         return rollback.Allowed ? null : (Deliveries, rollback.Refused!);
     }

@@ -63,7 +63,7 @@ public static class WorkflowPresets
         foreach (var gate in gates)
         {
             var added = new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" };
-            if (gate == WorkflowKinds.Opinion) added["options"] = new JsonObject { [NodeOptionFields.Role] = JsonValue.Create("opinion") };
+            if (gate == WorkflowKinds.Opinion) added["role"] = StepRoles.Opinion;
             nodes.Add(added);
             wires.Add(new JsonObject { ["id"] = $"{gate}-in", ["kind"] = "after", ["from"] = from, ["to"] = gate });
             wires.Add(new JsonObject { ["id"] = $"{gate}-out", ["kind"] = "after", ["from"] = gate, ["to"] = into });

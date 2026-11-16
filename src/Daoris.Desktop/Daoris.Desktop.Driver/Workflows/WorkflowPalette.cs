@@ -21,6 +21,9 @@ public sealed record PaletteKind(
     public IReadOnlyDictionary<string, string> Outputs { get; init; } = NodePorts.None;
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn { get; init; } = NodeArrivals.NoneOn;
+
+    /// <summary>The role a step of the kind names where its declaration names none (<see cref="INodeKind.Role"/>), which the editor shows as its default.</summary>
+    public string Role { get; init; } = StepRoles.Operations;
 }
 
 /// <summary>
@@ -44,6 +47,9 @@ public sealed record PalettePlugin(string Plugin, IReadOnlyList<PaletteStep> Ste
 /// <summary>What a step graph may hold.</summary>
 public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnlyList<PaletteWire> Wires, IReadOnlyList<PalettePlugin> Plugins)
 {
+    /// <summary>The roles a step may name without the catalogue (<see cref="StepRoles.All"/>), in the editor's order.</summary>
+    public IReadOnlyList<string> Roles { get; init; } = StepRoles.All;
+
     /// <summary>
     /// The palette, built from the kinds' own units (<see cref="NodeKit"/>), in the kit's order: each built-in kind's authority, options, role and
     /// offer, each wire kind with the kinds that may leave it (a failed wire only a kind something can fail, a rejected wire only a kind a person
@@ -60,6 +66,7 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
                 each.Unit.Offered)
             {
                 Outcomes = each.Unit.Outcomes, Inputs = each.Unit.Inputs, Outputs = each.Unit.Outputs, OutputsOn = each.Unit.OutputsOn,
+                Role = each.Unit.Role,
             })
             .ToArray();
         IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) => [.. units.Where(unit => may(unit.Row)).Select(unit => unit.Row.Kind)];
@@ -91,12 +98,12 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
     {
         static string Names(IEnumerable<string> names) => string.Join(", ", names.Select(name => $"`{name}`"));
         static string Ports(IReadOnlyDictionary<string, string> ports) => string.Join(", ", ports.Select(port => $"`{port.Key}` ({port.Value})"));
-        var text = new System.Text.StringBuilder("Built-in kinds:\n");
+        var text = new System.Text.StringBuilder($"A step names the role that takes it in `role` (one of {Names(Roles)}, or a catalogue role's id), never who fills it; none reads its kind's role.\nBuilt-in kinds:\n");
         foreach (var kind in Kinds)
         {
             var options = kind.Options.Select(option =>
                 $"`{option.Name}` ({option.Type}{(option.Choices.Count > 0 ? $": {string.Join("|", option.Choices)}" : "")}{(option.Required ? ", required" : "")})");
-            text.Append($"- `{kind.Kind}`: {kind.Reach}");
+            text.Append($"- `{kind.Kind}`: {kind.Reach}; role `{kind.Role}`");
             if (kind.Outcomes.Count > 0) text.Append($"; outcomes {Names(kind.Outcomes)}");
             if (kind.Options.Count > 0) text.Append($"; options {string.Join(", ", options)}");
             text.Append($"; ways on {string.Join(", ", kind.Leaves)}{(kind.MayEnd ? "; may end the work" : "")}\n");

@@ -113,6 +113,6 @@ public sealed class StepWaitCensusTests
         Assert.Equal((Page, "approver", "person"), (actor["url"]!.GetValue<string>(), actor["role"]!.GetValue<string>(), actor["holder"]!.GetValue<string>()));
 
         var vacancy = (JsonObject)Assert.Single(Rows(FactsAt(PersonWaits.Vacant)))["step"]!;
-        Assert.Equal((StepWaiting.OpensRun, LineActors.Lead), (vacancy["opens"]!.GetValue<string>(), vacancy["role"]!.GetValue<string>()));
+        Assert.Equal((StepWaiting.OpensRun, AppointedRoles.Supervisor),(vacancy["opens"]!.GetValue<string>(), vacancy["role"]!.GetValue<string>()));
     }
 }

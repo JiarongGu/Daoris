@@ -12,6 +12,7 @@ import { HumanWaits } from './HumanWaits';
 import { HUMAN, setApproval } from './humanDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
+import { setRole, StepRoleField } from './StepRoleField';
 import type { RolePlace } from './StepRole';
 import { type WaysActs, WaysOnTable } from './WaysOnTable';
 
@@ -123,6 +124,11 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
         <HumanWaits node={node} onChoose={(approval) => acts.onChange(
           setApproval(draft, id, approval), t('workflow.edit.said.human', { step: title, waits: t(`workflow.edit.human.${approval ? 'approval' : 'task'}`) }),
         )} />
+      )}
+
+      {choice && (
+        <StepRoleField id={`${id}-role`} node={node} palette={palette} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing}
+          onSet={(role) => acts.onChange(setRole(draft, id, role), t('workflow.role.said', { step: title }))} />
       )}
 
       {options.length > 0 && choice && (

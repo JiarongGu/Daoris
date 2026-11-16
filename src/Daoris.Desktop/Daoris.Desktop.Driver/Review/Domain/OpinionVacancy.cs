@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A second opinion nobody is free to give: every declared reviewer held (cooling, signed out, none installed or refused), a subject of the
-/// reporting line's lead rather than a wait with nobody asked.
+/// reporting line's first level, the repository's supervisor, rather than a wait with nobody asked.
 /// </summary>
 /// <param name="Code">Why no reviewer reads it (<see cref="ReviewerUnavailable"/>).</param>
 /// <param name="Until">The first reset among the reviewers cooling; none where none is.</param>
@@ -25,7 +25,7 @@ public sealed record OpinionVacancy(string Code, DateTimeOffset? Until, string? 
     public static OpinionVacancy? Of(OpinionGateState gate) =>
         gate is { State: OpinionGateStates.Unavailable, Code: { } code } && Held.Contains(code, StringComparer.Ordinal) ? new(code, gate.Until, null) : null;
 
-    /// <summary><c>waiting on lead: `role` · second opinion: nobody free, `codex-acp` back 07:02</c>, the reset in <paramref name="zone"/>.</summary>
+    /// <summary><c>waiting on the repository's supervisor: `role` · second opinion: nobody free, `codex-acp` back 07:02</c>, the reset in <paramref name="zone"/>.</summary>
     public string Said(LineWait wait, TimeZoneInfo zone)
     {
         var back = Until is { } until
@@ -39,12 +39,12 @@ public sealed record OpinionVacancy(string Code, DateTimeOffset? Until, string? 
 /// One act of a line level's holder on a vacancy, journalled beside the gate (<see cref="OpinionCasts"/>): a re-cast on another family or
 /// account, the family difference relaxed, the prepaid balance spent, the reset waited for, or <c>left</c>, its pass up.
 /// </summary>
-/// <param name="Actor">The level that acted (<see cref="LineActors"/>).</param>
+/// <param name="Level">The level that acted (<see cref="LineLevels"/>), or the step's own role on the look's acts (<see cref="OpinionCasting.Step"/>).</param>
 /// <param name="Role">The role holding that level.</param>
 /// <param name="Act">One of the vacancy's acts (<see cref="SupervisorKinds.Vacancy"/>), or <see cref="LinePasses.Left"/>.</param>
 /// <param name="Agent">The agent a re-cast names; none for the other acts.</param>
 /// <param name="Why">The holder's reading, which the record and a pass up carry.</param>
-public sealed record OpinionCast(DateTimeOffset At, string Session, string Actor, string Role, string Act, string? Agent, string Why)
+public sealed record OpinionCast(DateTimeOffset At, string Session, string Level, string Role, string Act, string? Agent, string Why)
 {
     /// <summary>On the look's <c>vacant</c>, the declared reviewers its walk found installed: the agents a re-cast may name.</summary>
     public IReadOnlyList<string> Offered { get; init; } = [];
@@ -121,11 +121,11 @@ public static class OpinionCasting
 
     /// <summary>
     /// The levels whose newest act passed the vacancy standing now up, each with its reading, as <see cref="ReportingLine.Climb"/> reads
-    /// them; a filled vacancy's leaves are spent, so the next waits on the lead again.
+    /// them; a filled vacancy's leaves are spent, so the next waits on the repository's supervisor again.
     /// </summary>
     public static IReadOnlyDictionary<string, string> Left(IReadOnlyList<OpinionCast> casts) =>
-        Current(casts).GroupBy(cast => cast.Actor, StringComparer.Ordinal).Select(level => level.MaxBy(cast => cast.At)!)
-            .Where(cast => cast.Act == LinePasses.Left).ToDictionary(cast => cast.Actor, cast => cast.Why, StringComparer.Ordinal);
+        Current(casts).GroupBy(cast => cast.Level, StringComparer.Ordinal).Select(level => level.MaxBy(cast => cast.At)!)
+            .Where(cast => cast.Act == LinePasses.Left).ToDictionary(cast => cast.Level, cast => cast.Why, StringComparer.Ordinal);
 
     private static IReadOnlyList<string> First(string agent, IReadOnlyList<string> reviewers) =>
         [agent, .. reviewers.Where(each => !string.Equals(each, agent, StringComparison.OrdinalIgnoreCase))];

@@ -403,6 +403,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         writer.WriteNumber("stepVersion", attempt.Call.StepVersion);
         writer.WriteString("invocation", attempt.Call.Invocation);
         writer.WriteString("idempotencyKey", attempt.Call.IdempotencyKey);
+        // A property an older build passes over, and drops where it writes the record again: the attempt then reads its own key as its effect.
+        if (attempt.Call.EffectKey is { } effect) writer.WriteString("effectKey", effect);
         writer.WriteString("subjectRevision", attempt.Call.SubjectRevision);
         writer.WriteStartArray("inputs");
         foreach (var input in attempt.Call.Inputs) writer.WriteStringValue(input);
@@ -729,7 +731,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         var resolution = Text(element, "resolution");
         if (resolution is not null && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return null;
 
-        return new NodeAttempt(node, number, plugin, new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline), state)
+        var sent = new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline) { EffectKey = Text(call, "effectKey") };
+        return new NodeAttempt(node, number, plugin, sent, state)
         {
             RecordedAt = recordedAt,
             Generation = Number(element, "generation"),

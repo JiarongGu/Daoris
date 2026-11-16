@@ -53,8 +53,8 @@ describe('Who decides here', () => {
 
     expect(screen.getByText('Questions: Supervisor (this machine)')).toBeTruthy();
     expect(screen.getByText('Allows: Gatekeeper (workspace games)')).toBeTruthy();
-    expect(screen.getByText('Landings: you (Lander may not accept)')).toBeTruthy();
-    expect(screen.getByText("The rule file's allows: you (Supervisor may not allow)")).toBeTruthy();
+    expect(screen.getByText('Landings: passed up the reporting line (Lander may not accept)')).toBeTruthy();
+    expect(screen.getByText("The rule file's allows: passed up the reporting line (Supervisor may not allow)")).toBeTruthy();
   });
 
   it('reads a repository no place names as the driver says, the decisions yours where its map does not read', () => {
@@ -89,6 +89,6 @@ describe('Who decides here', () => {
     expect(screen.getByText('这里由谁决定')).toBeTruthy();
     expect(screen.getByText('允许：Gatekeeper（工作区 games）')).toBeTruthy();
     expect(screen.getByText('问题：主管（本机）')).toBeTruthy();
-    expect(screen.getByText('落地：你（Lander 不可采纳）')).toBeTruthy();
+    expect(screen.getByText('落地：沿汇报线上交（Lander 不可采纳）')).toBeTruthy();
   });
 });
