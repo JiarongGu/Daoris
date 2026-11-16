@@ -27,6 +27,8 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     HarnessRoster ILookWiring.Harnesses => Context.Harnesses;
 
+    TimeProvider ILookWiring.Clock => driver.RetryClock;
+
     QuestionSupervisorDecisions ILookWiring.Supervisor => Context.Supervisor;
 
     ISupervisorDesk? ILookWiring.Supervising => Context.Supervising;

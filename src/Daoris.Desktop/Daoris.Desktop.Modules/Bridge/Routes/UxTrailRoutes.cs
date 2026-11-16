@@ -3,7 +3,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The window's UX trail (<see cref="UxTrail"/>): whether it is on, turned on or off, and its entries kept. A window's alone. The switch is
 /// read once as the module is built and held after, and every write is made off the window's thread, one after another, so the read
-/// answers from memory (NOBLOCK1).
+/// answers from memory, as every read the window asks for does.
 /// </summary>
 public sealed class UxTrailRoutes(DriverContext context)
 {

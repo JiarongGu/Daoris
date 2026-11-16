@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// <c>UX_TRAIL</c>, the window's door onto the person's own UX trail (UXTRAIL1): <c>{}</c> reads whether it is on, <c>{ on }</c> turns it
+/// <c>UX_TRAIL</c>, the window's door onto the person's own UX trail:<c>{}</c> reads whether it is on, <c>{ on }</c> turns it
 /// on or off, and <c>{ entries }</c> keeps what the window recorded, nothing while it is off; each answered <c>{ on, kept }</c> from
 /// memory, its writes made after.
 /// </summary>

@@ -58,7 +58,7 @@ internal sealed class SignOutsLook(ILookWiring wiring) : ILookPass
 {
     public Task RunAsync(LookRound round, CancellationToken ct)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = wiring.Clock.GetUtcNow();
         var occurrences = SignOutNotices.Occurrences(wiring.Home, now);
         if (occurrences.Count == 0) return Task.CompletedTask;
         var claimed = new News(wiring.Home).Claim(SignOutNotices.Teller, occurrences, null, now);

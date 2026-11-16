@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// METHODS1 b: the desk's design pass. A design pass's packet is its purpose brief alone, so the desk refuses a source beside it
+/// The desk's design pass. A design pass's packet is its purpose brief alone, so the desk refuses a source beside it
 /// and any pass but <c>design</c>, and writes the pass where the driver reads it.
 /// </summary>
 public sealed class BrainstormDesignDeskTests : IDisposable

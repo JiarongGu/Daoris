@@ -46,7 +46,7 @@ public sealed class OwnerSetCensusTests
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
         ["SET_TERMINAL"] = OwnerNone.MachineSetting, // the terminal's tier; the `session` it names is the one that changed it, kept in the log
         // A place's risk and the owner's marks, by the repository or workspace whose record it sets: the owner's alone, so an agent's press
-        // goes on the owner's card and no role's owner set judges it (PipeOwnerOnly, PLACERISK1).
+        // goes on the owner's card and no role's owner set judges it (PipeOwnerOnly).
         ["SET_PLACE_RISK"] = OwnerNone.MachineSetting,
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest

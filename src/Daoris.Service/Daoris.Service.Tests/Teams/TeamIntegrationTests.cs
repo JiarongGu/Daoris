@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// METHODS1 c: a plan's integration. <c>one-scope</c> builds the ask's parts as one scope (merged into the ask's branch with no
+/// A plan's integration. <c>one-scope</c> builds the ask's parts as one scope (merged into the ask's branch with no
 /// gate each, the full set and two reviews once at the end); <c>per-part</c> is each part gated, as before. Only the ask's own
 /// plan names it, a revision that names none keeps the standing one, and a plan written before reads as per-part.
 /// </summary>
