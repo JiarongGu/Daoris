@@ -5,8 +5,9 @@ import type { LineSupervision } from './lineSupervision';
 import { SupervisorCourseCard } from './SupervisorCourseCard';
 import { SupervisorAllowCard } from './SupervisorAllowCard';
 import { SupervisorLandingCard } from './SupervisorLandingCard';
+import { SupervisorDoorCard } from './SupervisorDoorCard';
 
-/** The newest decision the supervisor made on `session`'s referred points or on its run's waiting step, with *Overrule* where this machine holds the record. */
+/** The supervisor's newest decision on `session`'s points or its run's step, and each answer a role holds at its doors, with *Overrule* where this machine holds the record. */
 export function SessionSupervisorCourse({ session, supervision, here }: { session: string; supervision: LineSupervision; here: boolean }) {
   const { t } = useTranslation();
   const overrule = useOverruleSupervisor(session);
@@ -31,6 +32,15 @@ export function SessionSupervisorCourse({ session, supervision, here }: { sessio
         busy={overrule.isPending}
         said={said}
       />
+      {(supervision.doors ?? []).filter((door) => door.state === 'held').map((door) => (
+        <SupervisorDoorCard
+          key={door.id}
+          door={door}
+          onOverrule={here ? (decision) => void press(decision) : undefined}
+          busy={overrule.isPending}
+          said={said}
+        />
+      ))}
     </>
   );
 }

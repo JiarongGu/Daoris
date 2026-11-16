@@ -44,6 +44,12 @@
   "work.supervision.allow.reject": "The supervisor refused this once, {{when}}: the agent was told, and went on without it.",
   "work.supervision.allow.leave": "The supervisor left this to you, {{when}}: the call still waits for you.",
   "work.supervision.kind.allow": "an allow",
+  "work.supervision.door.title": "An appointed role's answer for you",
+  "work.supervision.door.keep": "{{role}} ({{agent}}) keeps this session's staged memory changes; it goes on at {{at}}.",
+  "work.supervision.door.drop": "{{role}} ({{agent}}) drops this session's staged memory changes; it goes on at {{at}}.",
+  "work.supervision.door.approve": "{{role}} ({{agent}}) approves the memory end; it goes on at {{at}}.",
+  "work.supervision.door.decline": "{{role}} ({{agent}}) declines the memory end; it goes on at {{at}}.",
+  "work.supervision.door.accept": "{{role}} ({{agent}}) accepts the departure on quest #{{quest}}; it goes on at {{at}}.",
   "work.supervision.overrule": "Overrule",
   "work.supervision.overruleRefused": "It already went on, so it cannot be overruled."
 }

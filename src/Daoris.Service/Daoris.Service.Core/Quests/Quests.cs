@@ -429,7 +429,7 @@ public sealed class QuestStore
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
         QuestOperationRef? submission = null, string? session = null, QuestOperationRef? forward = null,
-        QuestWorkflowChoice? choice = null, QuestRevision? revision = null)
+        QuestWorkflowChoice? choice = null, QuestRevision? revision = null, string? by = null)
     {
         // Each field kept only on the kinds that carry it, so the row written and the operation handed back read the same; a publish
         // carries the quest as asked, open from this moment.
@@ -451,7 +451,8 @@ public sealed class QuestStore
             Session: KeepsSession(kind) ? session : null,
             Forward: kind == QuestOperationKind.Dismissed ? forward : null,
             Choice: kind == QuestOperationKind.Chosen ? choice : null,
-            Revision: kind == QuestOperationKind.Revised ? revision : null);
+            Revision: kind == QuestOperationKind.Revised ? revision : null,
+            By: kind == QuestOperationKind.Accepted ? by : null);
 
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -537,8 +538,8 @@ public sealed class QuestStore
         WriteAsync(tx => Operations.Of<QuestCloseOperation>().CloseOutcomeAsync(tx, named, close, now), ct);
 
     /// <inheritdoc cref="QuestAcceptOperation.AcceptAsync"/>
-    public Task<QuestMove> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
-        WriteAsync(tx => Operations.Of<QuestAcceptOperation>().AcceptAsync(tx, id, now), ct);
+    public Task<QuestMove> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? by = null) =>
+        WriteAsync(tx => Operations.Of<QuestAcceptOperation>().AcceptAsync(tx, id, now, by), ct);
 
     /// <inheritdoc cref="QuestSetUpOperation.SetUpAsync"/>
     public Task<QuestMove> SetUpAsync(string id, QuestSetUp setUp, DateTimeOffset now, CancellationToken ct = default) =>

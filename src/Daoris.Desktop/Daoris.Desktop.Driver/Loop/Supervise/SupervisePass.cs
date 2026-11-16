@@ -75,7 +75,10 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
 
         Unavailable.TryRemove(subject, out _);
         var number = order.ToList().IndexOf(entry) + 1;
-        if (await life.PromptAsync(waiting, choice, ct).ConfigureAwait(false) is not { } prompt) return (null, null, ct);
+        if (await life.PromptAsync(waiting, choice, ct).ConfigureAwait(false) is not { } prompt)
+        {
+            return (null, SaidUnavailable(waiting, life, "Daoris could not read what it stands on now, so no agent was asked."), ct);
+        }
         if (attempts.Begin(subject, number < 1 ? spent.Count + 1 : number, DateTimeOffset.UtcNow) is not { } attempt) return (null, null, ct);
         if (runs.Start(subject, ct) is not { } source) return (null, null, ct);
 

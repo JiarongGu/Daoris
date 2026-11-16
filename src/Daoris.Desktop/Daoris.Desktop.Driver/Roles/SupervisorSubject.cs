@@ -20,6 +20,8 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Course] = "point",
         [SupervisorKinds.Limit] = "point",
         [SupervisorKinds.Landing] = "landing",
+        [SupervisorKinds.Memory] = "memory",
+        [SupervisorKinds.Departure] = "quest",
         [SupervisorKinds.Allow] = "request",
         [SupervisorKinds.Files] = "text",
         [SupervisorKinds.AskDaoris] = "range",

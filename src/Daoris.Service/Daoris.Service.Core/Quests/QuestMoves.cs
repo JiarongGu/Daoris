@@ -45,6 +45,9 @@ public sealed record QuestMoveReading(
     /// <see cref="QuestMoves.NoHold"/> where it let one go. Null where the move leaves the hold as it is, or does not apply.
     /// </summary>
     public string? Hold { get; init; }
+
+    /// <summary>An accepted's: the appointed role that said the yes and its agent (<see cref="QuestOperation.By"/>); null for the person's own.</summary>
+    public string? By { get; init; }
 }
 
 /// <summary>
@@ -113,8 +116,9 @@ public static class QuestMoves
     private static QuestMoveReading Own(QuestOperation operation, QuestMoveReading move) => operation.Kind switch
     {
         QuestOperationKind.Published or QuestOperationKind.Taken or QuestOperationKind.Done or QuestOperationKind.Declined
-            or QuestOperationKind.Deleted or QuestOperationKind.Accepted or QuestOperationKind.Bound or QuestOperationKind.Reopened
+            or QuestOperationKind.Deleted or QuestOperationKind.Bound or QuestOperationKind.Reopened
             or QuestOperationKind.Rebound => move,
+        QuestOperationKind.Accepted => move with { By = operation.By },
         // A workflow choice or a revision answers none of its own: the quest's own answer says what stands, and the words
         // stay in the log.
         QuestOperationKind.Chosen or QuestOperationKind.Revised => move,

@@ -30,8 +30,9 @@ type Page = ComponentProps<typeof AttendedSession>;
  */
 export function AttendedPane({
   t, notify, session, record, work, boxState, waitsState, headState, roster, nameOf, agentRoster, following, atWorkHeld, heavy, partRows,
-  onShowPart, openAtWork, attend, onOpenQuest, onAnswerAsk, onOpenBranch,
+  onShowPart, openAtWork, attend, onOpenQuest, onAnswerAsk, onOpenBranch, memorySeek = null,
 }: {
+  memorySeek?: { session: string; n: number } | null;
   t: TFunction;
   notify: Notify;
   session: ReturnType<typeof useAttendedSession>;
@@ -145,6 +146,7 @@ export function AttendedPane({
         said: decideMemory.variables?.session === attended.id ? decideMemory.data?.message ?? null : null,
         onDecide: (op, approve) => decideMemory.mutate({ session: attended.id, op, approve }),
         onKeep: (keep) => decideMemory.mutate({ session: attended.id, keep }),
+        seek: memorySeek?.session === attended.id ? memorySeek.n : 0,
       }}
       continues={continues}
       helps={helps}

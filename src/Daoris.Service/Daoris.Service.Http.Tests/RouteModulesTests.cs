@@ -93,8 +93,8 @@ public sealed class RouteModulesTests(LocalHost host) : IClassFixture<LocalHost>
         var plain = await SendTextAsync("/api/quests/nosuchquest/respond", "action=take");
         Assert.Equal((415, ""), plain);
 
-        // The yes binds no body, so whatever is sent is left unread and the exchange answers.
-        var (status, _) = await SendTextAsync("/api/quests/nosuchquest/accept", "anything");
+        // The go-on binds no body, so whatever is sent is left unread and the exchange answers.
+        var (status, _) = await SendTextAsync("/api/quests/nosuchquest/continue", "anything");
         Assert.Equal(404, status);
     }
 

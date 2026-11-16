@@ -99,6 +99,8 @@ public static class SupervisorWhy
     public const string NotParked = "not-parked";
     public const string NoQuest = "no-quest";
     public const string QuestionChanged = "question-changed";
+
+    public const string SubjectChanged = "subject-changed";
     public const string NotOfferedChoice = "not-offered-choice";
     public const string NoSource = "no-source";
     public const string GoAheadOpen = "go-ahead-open";

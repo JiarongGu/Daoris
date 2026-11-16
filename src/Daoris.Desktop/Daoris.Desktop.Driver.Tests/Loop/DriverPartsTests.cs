@@ -32,12 +32,12 @@ public sealed class DriverPartsTests : IDisposable
             ["kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
                 "reviews", "opinions", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
-                "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
+                "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "door-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
                 "through-notices"],
             order.Select(part => part.Name));
         Assert.Equal(
             [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 22),
-                .. Enumerable.Repeat(LookPhase.Planned, 7), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 5)],
+                .. Enumerable.Repeat(LookPhase.Planned, 8), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 5)],
             order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -86,6 +86,7 @@ public sealed class DriverPartsTests : IDisposable
             pass => Assert.IsType<RuleActsLook>(pass),
             pass => Assert.IsType<CourseReleaseLook>(pass),
             pass => Assert.IsType<LandingReleaseLook>(pass),
+            pass => Assert.IsType<DoorReleaseLook>(pass),
             pass => Assert.IsType<SuperviseLook>(pass));
         Assert.Collection(
             driver.LookPasses.In(LookPhase.Begun),

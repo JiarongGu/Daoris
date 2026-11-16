@@ -125,7 +125,6 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
 
-
     [Fact]
     public async Task Ready_keeps_the_quest_taken_with_its_submission_and_holds_it_as_a_done_would_be()
     {
