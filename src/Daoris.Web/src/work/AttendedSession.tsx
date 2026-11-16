@@ -76,7 +76,7 @@ export function AttendedSession({
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold, supervisorCourse,
-  placeHold,
+  placeHold, runWaits,
 }: {
   /** Passed straight through to the head: a parked line's hold on its checkout, with *Let others work here*. */
   placeHold?: Parameters<typeof SessionHead>[0]['placeHold'];
@@ -88,6 +88,8 @@ export function AttendedSession({
   supervision?: Parameters<typeof SessionHead>[0]['supervision'];
   /** Passed straight through to the head: a terminal holding this conversation, with *Let go of the terminal*. */
   terminalHold?: Parameters<typeof SessionHead>[0]['terminalHold'];
+  /** Passed straight through to the head: the steps of its run waiting on the person, each with its presses. */
+  runWaits?: Parameters<typeof SessionHead>[0]['runWaits'];
   /** Its pieces, the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
   /** What its line waits on: *At work*'s answer, handed to its head's *Waiting on*. Absent, none is drawn. */
@@ -329,6 +331,7 @@ export function AttendedSession({
         gitAccess={gitAccess}
         supervision={supervision}
         terminalHold={terminalHold}
+        runWaits={runWaits}
         supervisorCourse={supervisorCourse}
         placeHold={placeHold}
       />

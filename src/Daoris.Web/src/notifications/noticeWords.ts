@@ -67,6 +67,8 @@ export function attentionToast(t: TFunction, item: AttentionTold): string | null
       case 'Waiting': return t('notifications.system.waiting.title', { repository });
       case 'Answered': return help ? t('notifications.system.answered.help') : t('notifications.system.answered.title', { repository });
       case 'Holding': return help ? t('notifications.system.holding.help') : t('notifications.system.holding.title', { repository });
+      // A run's step waiting on a role the person holds: its notification opens the session its run placed, at the step's presses.
+      case 'Step': return t('notifications.system.step.title', { repository });
       default: return null;
     }
   })();

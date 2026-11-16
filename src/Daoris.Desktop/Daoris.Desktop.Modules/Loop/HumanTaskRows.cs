@@ -12,15 +12,20 @@ namespace Daoris.Desktop;
 internal static class HumanTaskRows
 {
     /// <summary>The fields a step's row carries, as the slice pushes them (<see cref="AttentionStateSlice.Fields"/>).</summary>
-    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work"];
+    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work", "held"];
 
-    public static IEnumerable<JsonObject> Of(IReadOnlyList<JsonObject> steps)
+    /// <param name="groups">Sessions' placings, by which a row names the session its run's waits placed in Needs you: what its notification opens.</param>
+    public static IEnumerable<JsonObject> Of(IReadOnlyList<JsonObject> steps, IReadOnlyList<JsonObject>? groups = null)
     {
         foreach (var step in steps)
         {
             var (run, node) = (Text(step, "run"), Text(step, "node"));
             var row = Row("step", $"{run}/{node}", Text(step, "since"), Text(step, "workspace") ?? "default");
             row["where"] = Text(step, "repository");
+            if ((groups ?? []).FirstOrDefault(placed => Objects(placed["waits"]).Any(wait => Text(wait, "run") == run && Text(wait, "node") == node)) is { } placing)
+            {
+                row["session"] = Text(placing, "session");
+            }
             var carried = new JsonObject();
             foreach (var field in Fields)
             {

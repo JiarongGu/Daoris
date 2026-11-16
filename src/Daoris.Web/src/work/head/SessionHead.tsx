@@ -108,8 +108,10 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
+  question = null, parkBox = false, pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION, runWaits,
 }: {
+  /** The steps of its run waiting on a role the person holds, the frame's `SessionRunWaits`: each "waiting on <role>: you" with its presses. */
+  runWaits?: ReactNode;
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
   placeHold?: ReactNode;
@@ -348,6 +350,7 @@ export function SessionHead({
       {answered !== null && <AnsweredPark answer={answered} />}
       {/* What the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
       {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}
+      {runWaits}
       {/* Each section a wait stands in is marked: the frame watches them, and the strip at the foot stands aside
           while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (

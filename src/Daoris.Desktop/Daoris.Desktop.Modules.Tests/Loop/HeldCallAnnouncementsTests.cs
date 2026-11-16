@@ -103,6 +103,38 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
         Assert.Empty(Said());
     }
 
+    /// <summary>
+    /// A run's step waiting on a role the person holds is announced once, on the session its run's waits placed in Needs you, which a
+    /// notification's click opens: that session's head reads the step's wait with its presses. Its own switch, a park's, is read apart.
+    /// </summary>
+    [Fact]
+    public async Task A_step_waiting_on_the_person_is_announced_once_on_the_session_its_run_placed()
+    {
+        var parks = true;
+        var facts = new AttentionFacts
+        {
+            Sessions = [Session("s1a2b3c4", "engine")],
+            Groups = [JsonNode.Parse("""
+                {"session":"s1a2b3c4","group":"needs-you","reason":"waits","waits":[{"run":"q7","node":"sign","why":"task","role":"worker","since":null}]}
+                """)!.AsObject()],
+            Steps = [JsonNode.Parse("""
+                {"run":"q7","node":"sign","repository":"engine","workspace":"default","why":"task","role":"worker","holder":"person","presses":["done"],
+                 "since":"2026-11-16T09:51:00Z"}
+                """)!.AsObject()],
+        };
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new HeldCallAnnouncements(Bus, () => false, () => parks));
+
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+
+        var told = Assert.Single(Said());
+        Assert.Equal(
+            (HeldCallAnnouncements.StepKind, "q7/sign", "s1a2b3c4", "engine"),
+            (told.GetProperty("Kind").GetString(), told.GetProperty("Id").GetString(), told.GetProperty("Session").GetString(),
+                told.GetProperty("Repository").GetString()));
+        Assert.Equal("engine: a step is waiting on a role you hold", told.GetProperty("Headline").GetString());
+    }
+
     /// <summary>The loop's switch, read at each announcement as a conversation's answer reads it: a choice that does not read errs toward saying it.</summary>
     [Fact]
     public void The_loop_reads_the_notify_switch_at_each_announcement()

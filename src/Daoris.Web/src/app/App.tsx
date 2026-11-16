@@ -8,6 +8,7 @@ import { NotificationsBell } from '../notifications/NotificationsBell';
 import { NotificationsView } from '../notifications/NotificationsView';
 import { messagesCount } from '../notifications/Messages';
 import { AttentionBand } from '../work/attention/AttentionBand';
+import { useUxTrailRecorder } from './uxTrail';
 import { AskDaoris } from '../help/AskDaoris';
 import { QuickAsk } from '../help/QuickAsk';
 import { ContextMenus } from '../menus/ContextMenu';
@@ -185,6 +186,8 @@ export function App() {
     onGo: go,
   };
   const { attentionDoors } = useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings, openHelp });
+  // The person's own UX trail, recorded only while they turned it on in Settings.
+  useUxTrailRecorder();
   const { renderView, contextDoors } = useViewLayouts({ notify, settingsSection, chooseSettings, settingsAnchor, setSettingsAnchor, settingsGitHost, setSettingsGitHost, go, attached, askSetup, driving, openInWork, plugins, quests, projects, knowledge, agents, t, openings, setSearchAsked, open, askQuickly, openBrowser, copyText, view, openQuest, presses, showNotifications, onRefresh, refresh, mapCode });
 
   return (

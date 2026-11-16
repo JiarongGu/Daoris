@@ -130,7 +130,13 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
     main window is forgotten there, its flash going to the first. (from D196, D108)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
-    hands it in its language, with the English catalogue as fallback. (from D196, D142)
+    hands it in its language, with the English catalogue as fallback. (from D196, D142) A run's step waiting on a role the person
+    holds is one (`Step`): its click attends the session its run placed, whose head carries the step's presses.
+    The person's UX trail (UXTRAIL1) is off by default and turned on by Settings → Agents and sessions' row. While on, a main window
+    records the pages opened, each press by its control's words and its *What needs you* row (`data-attention-row`), and each row as it
+    begins to wait; never typing or a field's value. `UX_TRAIL`, a window's route alone, keeps them on this desktop under the home's
+    `ux-trail/`, one file a day of at most 2 MB, in the fields `UxTrailEntry` names. `node tools/ux-trail.mjs <folder>` prints the time
+    from each wait to its press, with the pages between.
 21. A render that throws is caught by `PageBoundary`. It offers a reload of the page alone and logs `page.error` with
     the view's name and a five-frame stack. (from D217)
 

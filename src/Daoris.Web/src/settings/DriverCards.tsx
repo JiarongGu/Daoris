@@ -7,6 +7,7 @@ import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
 import { CopyBoundSetting } from './machine/CopyBoundSetting';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
+import { UxTrailSetting } from './machine/UxTrailSetting';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type TerminalTier, TerminalTierSetting } from './machine/TerminalTierSetting';
 import type { TerminalTierChange } from '../person/terminalActs';
@@ -91,6 +92,9 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             <p className="m-0 text-small text-ink-soft">{t(facts.notify ? 'settings.notify.state.on' : 'settings.notify.state.off')}</p>
             <p className="m-0 mt-1 text-small text-ink-faint">{t('settings.notify.press')}</p>
           </SettingRow>
+
+          {/* The person's own UX trail, off by default and kept on this desktop only. */}
+          <UxTrailSetting />
 
           {/* How long an account cools when its agent names no reset: offered where the shell says it,
               since the answer has no such field and has no route to write it. */}
