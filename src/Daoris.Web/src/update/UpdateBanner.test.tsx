@@ -56,6 +56,15 @@ describe('the update banner', () => {
     expect(screen.queryByRole('button', { name: 'Update when idle' })).toBeNull();
   });
 
+  it('while draining on a plugin step in flight, says the step it waits on', async () => {
+    draw(state({ state: 'draining', staged: STAGED, mode: 'when-idle', steps: 1 }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('1 plugin step still under way.');
+    expect(screen.getByRole('status')).not.toHaveTextContent('still running');
+    await i18n.changeLanguage('zh');
+    expect(await screen.findByText(/还有 1 个插件步骤在进行中。/)).toBeTruthy();
+  });
+
   it('waiting after Not now, offers Update when idle and Update now', async () => {
     const { onSay } = draw(state({ state: 'waiting', staged: STAGED, mode: 'not-now' }));
 

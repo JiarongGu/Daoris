@@ -145,15 +145,21 @@ export function stageReport(home, commit) {
 
 /**
  * What a stage says of the drain it starts, printed after it. Staged while the install is idle, the install
- * drains: it starts nothing new and holds the presses that would start work until every driven session ends; the terminal's
- * `update --cancel` stages the build *not now* instead.
+ * drains: it starts nothing new and holds the presses that would start work until every driven session, turn and plugin step
+ * in flight ends; the terminal's `update --cancel` holds the build *not now* instead; a stage `--not-now` is held from the start.
  */
-export function stagedAdvice() {
+export function stagedAdvice({ notNow = false } = {}) {
+  if (notNow) {
+    return [
+      '  Held not now from the start: work goes on and the desktop does not drain for it. It is installed at the next start,',
+      '  or `daoris update --when-idle` drains for it now and --now installs without waiting (D139).',
+    ];
+  }
   return [
     '  The desktop drains for it: it starts nothing new and holds the presses that would start work until every driven',
-    '  session and turn has ended, then installs it and starts again (D139). `daoris update` says where it stands;',
-    '  `daoris update --cancel` stages it *not now* (installed at the next start, or `update --when-idle` later),',
-    '  and --now installs without waiting.',
+    '  session, turn and plugin step in flight has ended, then installs it and starts again (D139). `daoris update` says',
+    '  where it stands; `daoris update --cancel` holds it *not now* (installed at the next start, or `update --when-idle`',
+    '  later), and --now installs without waiting. To stage it held from the start, stage with --not-now.',
   ];
 }
 

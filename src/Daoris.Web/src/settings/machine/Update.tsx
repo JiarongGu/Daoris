@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../../locales/format';
+import { list, moment } from '../../locales/format';
 import { Button, Card, MetaLine, Pill, SectionTitle, SettingList, SettingRow } from '../../design/ui';
 import type { UpdateMode, UpdateOutcome, UpdateState } from '../../update/UpdateBanner';
 
@@ -46,11 +46,12 @@ export function UpdateSection({ update, busy = false, onSay }: {
     (code && i18n.exists(`update.why.${code}`) ? t(`update.why.${code}`) : fallback ?? code ?? '');
 
   const waits = () => {
-    const driven = update.driven > 0 ? t('settings.update.driven', { count: update.driven }) : null;
-    const turns = update.turns > 0 ? t('settings.update.turns', { count: update.turns }) : null;
-    if (driven && turns) return t('settings.update.waitsOnBoth', { driven, turns });
-    if (driven || turns) return t('settings.update.waitsOn', { what: driven ?? turns });
-    return t('settings.update.nothingRuns');
+    const what = [
+      update.driven > 0 ? t('settings.update.driven', { count: update.driven }) : null,
+      update.turns > 0 ? t('settings.update.turns', { count: update.turns }) : null,
+      (update.steps ?? 0) > 0 ? t('settings.update.steps', { count: update.steps }) : null,
+    ].filter((part): part is string => part !== null);
+    return what.length > 0 ? t('settings.update.waitsOn', { what: list(what, i18n.language) }) : t('settings.update.nothingRuns');
   };
 
   const standing = (): string => {

@@ -160,14 +160,21 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 **Updating**
 
 37. The person's word on a staged build is `data/update.json`: when idle (the default, also when absent or unreadable), now,
-    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it.
-    (from D139, D50)
+    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it,
+    and `--stage --not-now` writes *not now* for the build it stages once nothing is staged and before the build is, one act, so
+    no idle install races a cancel. (from D139, D50, D301)
 38. While it drains, the loop starts nothing new but still looks: endings are reported, plugins told, sync runs. A press that
     starts a process or changes a repository through git waits for the restart; one that starts no process goes on: a stop, a
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
     every press waits. (from D139)
-39. Idle is no driven session running and no conversation's turn in flight. A conversation between turns, a parked session
-    and the terminal are idle. (from D139)
+39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
+    performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
+    its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
+    cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
+    record. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
+    the role it waits on (an approver, a deployer, whoever holds it), Daoris's own steps, an ended run's, and an attempt the
+    runtime does not ask after (a run it does not govern, a node no graph declares, a plugin down) are idle; the banner names the
+    steps it waits on. (from D139, D301)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
     version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
@@ -240,7 +247,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   rule 17. Add it to `HomePlacing.Moves` only if Daoris alone names it by a derived path.
 - **Start-time home work:** `Mod/Update/InstallHome.cs`, `HomePlacing.cs`.
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
-  them. **When to update:** `Mod/Update/InstallUpdater.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
+  them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
+  steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
+  `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.
@@ -249,9 +258,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
 **Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit, `HomeMigrationTests`,
-`ServiceHostLocatorTests`, `PinnedUpdatesTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
+`ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
-`home-census.test.ts`, `tool-test/desktop-publish.test.ts`, `test/deployment-rehearsal.test.ts`.
+`home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
 `cli` (`npm run verify`: the home census, the size ratchet); `tool-tests` for the publish; and

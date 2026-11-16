@@ -154,6 +154,11 @@ public sealed class NodeRuntime(
     public IReadOnlyList<HumanTask> HumanTasks() => _governed is { } governed ? Daoris.Driver.HumanTasks.Of(governed.Values, records.Read) : [];
     public IReadOnlyList<ActorWait> ActorWaits() => _governed is { } governed ? Daoris.Driver.ActorWaits.Of(governed.Values, records.Read) : [];
 
+    /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
+    public int PluginStepsInFlight() => _lastRead is { } governed
+        ? Daoris.Driver.PluginStepsInFlight.Count(governed.Values, records.Read, plugin => port.GenerationOf(plugin) is not null)
+        : 0;
+
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
 
     /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
@@ -219,6 +224,8 @@ public sealed class NodeRuntime(
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
+
+    private Dictionary<string, GovernedUnit>? _lastRead;
 
     /// <summary>
     /// The choices <see cref="_governed"/> is judged under, as read: a wake under other choices reads the units afresh before any attempt is
@@ -299,7 +306,7 @@ public sealed class NodeRuntime(
     {
         Telling.Withdraw();
         Owing.Forget();
-        (_governed, _choices) = (null, null);
+        (_governed, _lastRead, _choices) = (null, null, null);
         _byTold = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
         LastQuests = null;
         QuestReads.Delete(records.Home);
@@ -339,6 +346,7 @@ public sealed class NodeRuntime(
                     .ConfigureAwait(false);
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings, Keeping.Skipped)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                _lastRead = _governed;
                 _restarted = false;
                 foreach (var run in asks) _returned.TryRemove(run, out _);
                 _byTold = NodeEvaluations.ByTold(_governed.Values);

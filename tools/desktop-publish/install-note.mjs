@@ -87,11 +87,13 @@ a pin of that kind, unpin it, start Daoris, and pin its running window once.
 ## Updating it
 
 Stage a new build beside it while it runs: \`npm run publish:desktop -- --to <this folder> --service --stage\`. The
-application then starts nothing new, lets the running sessions end or park, closes, and \`${LAUNCHER}\` checks the
+application then starts nothing new, lets the running sessions end or park and a plugin's step in flight (a release, a
+deploy) settle, closes, and \`${LAUNCHER}\` checks the
 staged build, swaps \`${SHELL_HOME[0]}/\` and starts it again, putting the build before it back if the new one does not
 come up (D139). The banner in the window and \`daoris update --when-idle|--now|--cancel\` say when.
 While it drains the application starts nothing new and holds the presses that would start work;
-\`daoris update --cancel\` stages the build *not now* (installed at the next start, or \`update --when-idle\` later).
+\`daoris update --cancel\` holds the build *not now* (installed at the next start, or \`update --when-idle\` later), and
+\`--stage --not-now\` stages it held from the start, its word in \`${HOME}/update.json\` before the build is in place.
 Re-publishing over this folder with the application closed still works, with \`--service\` while it carries the hosts
 (a re-publish without it is refused rather than leave the last build's); nothing here is edited by hand.
 `;

@@ -404,11 +404,15 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// What an update waits on: the driven sessions this loop runs — a quest's, a resume, a carry-on, an intake —
-    /// and the conversations whose turn is in flight. A conversation between turns, a parked session and a terminal are idle.
+    /// the conversations whose turn is in flight, and the runs' plugin steps in flight its evaluation runtime governs. A conversation
+    /// between turns, a parked session and a terminal are idle.
     /// </summary>
     public UpdateWork Work() => new(
         _state.Watch?.Running.Running ?? 0,
-        Chat?.InFlight ?? 0);
+        Chat?.InFlight ?? 0)
+    {
+        Steps = _state.Watch?.PluginStepsInFlight ?? 0,
+    };
 
     /// <summary>One quest as the tick hands it to the page (<see cref="TickShown.Quest"/>).</summary>
     public static object TickConsideration(Consideration consideration, QuestPark? park = null, AccountWait? wait = null) =>
