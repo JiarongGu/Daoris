@@ -1,13 +1,9 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckField, SelectField } from '../../design/ui';
-import type { EditorRole, OptionField, StepStaffing } from './answers';
+import type { OptionField } from './answers';
 import { choiceLabel, optionLabel } from './editWords';
 import { type DraftNode, optionOf } from './graphDraft';
-import { type RolePlace, StepRole } from './StepRole';
-
-/** The option a step names the role that takes it by (the driver's `NodeOptionFields.Role`). */
-export const ROLE_OPTION = 'role';
 
 /** The option a land names its target line by. */
 const TARGET_OPTION = 'target';
@@ -22,19 +18,13 @@ const fieldClass = 'min-h-[1.9rem] min-w-0 max-w-full rounded-control border bor
 
 /**
  * **A step's options**: each field the palette says its kind reads (`NodeOptionFields`), worded in the page's
- * words with the name the saved step uses left to *Details*, drawn by its type, a choice from the code's own list, and the role that takes
- * it offered from the working roles that do its work. A molecule: the step and the roles arrive as props, and each change goes out, an
+ * words with the name the saved step uses left to *Details*, drawn by its type, and a choice from the code's own list. The role that takes
+ * the step is its own field (`StepRoleField`), never an option. A molecule: the step arrives as a prop, and each change goes out, an
  * emptied one clearing the option.
  */
-export function StepOptions({ node, fields, roleTakes, roles, place = null, staffing, lines = [], notes = {}, onSet }: {
+export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
   node: DraftNode;
   fields: OptionField[];
-  /** The works a role does this step's work by, its own first; none where no agent session takes it. */
-  roleTakes: string[];
-  roles: EditorRole[];
-  /** The place the editor opened from, which a step's role is given and named for; and the role editor's reads and presses. */
-  place?: RolePlace | null;
-  staffing?: StepStaffing;
   /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */
   lines?: string[];
   /** What the page says under a field, by its name: the tail a method brings, a pattern's preview. */
@@ -57,9 +47,6 @@ export function StepOptions({ node, fields, roleTakes, roles, place = null, staf
         const id = `${base}-${field.name}`;
         const value = optionOf(node, field.name);
         const label = optionLabel(t, kind, field.name);
-        // The role is the step's own field, set by `StepRoleField`: an older driver's `role` option is never offered beside it.
-        if (field.name === ROLE_OPTION) return null;
-
         if (field.name === TARGET_OPTION && field.type === 'text' && lines.length > 0) {
           const named = typeof value === 'string' && value ? value : '';
           // A line a saved version names that the place does not declare is kept in view, for the judge to say why.

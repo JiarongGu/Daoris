@@ -134,7 +134,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
       )}
 
       {options.length > 0 && choice && (
-        <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing} lines={lines} notes={notes}
+        <StepOptions node={node} fields={options} lines={lines} notes={notes}
           onSet={(option, value) => setNodeOption(t, i18n, palette, draft, node, title, acts, option, value)} />
       )}
 
