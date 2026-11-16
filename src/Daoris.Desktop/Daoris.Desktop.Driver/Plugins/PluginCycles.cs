@@ -437,11 +437,10 @@ public static class PluginCycles
 
         private static WorkReconcileCall Reconcile(WorkPerformCall call) => new(call.Unit, call.Step, call.Invocation, call.IdempotencyKey, call.SubjectRevision);
 
-        /// <summary>An invocation's completion: its outcome, never a progress it sent on the way, which is no completion.</summary>
         private static Func<WorkStepFrame, bool> Completion(string invocation) =>
             heard => heard.Invocation == invocation && heard.Outcome.State != WorkStates.Progress;
 
-        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once. A progress is none of them.</summary>
+        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once; a progress is no completion.</summary>
         private static bool Same(IEnumerable<WorkStepFrame> heard, WorkStepFrame? first) =>
             first is not null && heard.Where(each => each.Outcome.State != WorkStates.Progress).All(each => WorkWire.Step(each).ToJsonString() == WorkWire.Step(first).ToJsonString());
 
