@@ -38,6 +38,9 @@ public sealed record SupervisorDecided(bool Kept, string? Decision, string? Goes
 
     public static SupervisorDecided Refused(string why) => new(false, null, null, why);
 
+    /// <summary>On a <c>not-granted</c> refusal, the grant that was missing on the act's chain (<see cref="ActSpends"/>): the act's own or its spend's.</summary>
+    public string? Missing { get; init; }
+
     /// <summary>What the keeping answered, said as the door says it.</summary>
     public static SupervisorDecided Of(SupervisorKept kept, string refused) =>
         kept.Kept ? new(true, kept.Decision, kept.GoesOnAt is { } at ? Moments.Write(at) : null, null) : Refused(kept.Why ?? refused);

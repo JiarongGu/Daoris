@@ -13,6 +13,7 @@ import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
 import type { GrowthValue } from '../settings/repository/Growth';
+import type { PlaceRiskRow } from '../settings/place/PlaceRisk';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
@@ -182,6 +183,8 @@ export type DriverState = {
   growth?: { repository: string; value: GrowthValue }[];
   /** And by workspace. */
   workspaceGrowth?: { workspace: string; value: GrowthValue }[];
+  /** Every place's risk and the owner's marks as set, a row per place (`machine`, `workspace/<name>`, `repository/<name>`). */
+  placeRisk?: PlaceRiskRow[];
   /**
    * The access setups as set: what each repository's sessions start under, full access or the pauses it
    * names — left out where none is set: the pageoffers no access section. What each repository resolves to is `LINES`' `access`.

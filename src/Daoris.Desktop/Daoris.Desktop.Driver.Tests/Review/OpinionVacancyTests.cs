@@ -130,15 +130,16 @@ public sealed class OpinionVacancyTests : IDisposable
         Vacant(casts, ["codex-acp", "gemini", OpinionCasting.PrepaidAgent],
             Tried("codex-acp", ReviewerHeld.Cooling), Tried("gemini", ReviewerHeld.NotInstalled), Tried(OpinionCasting.PrepaidAgent, ReviewerHeld.Cooling));
         var kept = casts.Read(Chain, Engine, "s1");
-        string? PrepaidUngranted(string act) => act == SupervisorKinds.Prepaid ? SupervisorWhy.NotGranted : null;
+        var recast = SupervisorKinds.Qualified(SupervisorKinds.Vacancy, SupervisorKinds.Recast);
 
         Assert.Equal(["codex-acp", OpinionCasting.PrepaidAgent], Assert.Single(kept).Offered);
-        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "claude-code-acp", PrepaidUngranted));
-        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "gemini", PrepaidUngranted));
-        Assert.Equal(SupervisorWhy.NotGranted, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent, PrepaidUngranted));
-        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent, _ => null));
-        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "codex-acp", PrepaidUngranted));
-        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Wait, null, PrepaidUngranted));
+        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "claude-code-acp"));
+        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "gemini"));
+        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent));
+        // The prepaid one spends money: the census asks its covering grant too (GRANTSPEND1).
+        Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, OpinionCasting.PrepaidAgent)));
+        Assert.Null(ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, "codex-acp")));
+        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Wait, null));
     }
 
     [Fact]

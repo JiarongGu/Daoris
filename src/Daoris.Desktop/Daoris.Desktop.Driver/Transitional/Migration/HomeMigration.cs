@@ -66,6 +66,7 @@ public static class HomeMigration
         new ConversationFactsStep(),
         new AccessDefaultsOffStep(),
         new SessionEventHeadsStep(),
+        new PlaceRiskStep(),
     ];
 
 

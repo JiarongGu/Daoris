@@ -27,10 +27,16 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     {
         var slots = owner.SlotsNow();
         var effective = SupervisorResolution.Find(slots, kind, place, owner.Wider()).Role;
+        // The place's risk casts who may act there: at high risk no appointed role holds an act, and its decisions wait on the owner role.
+        if (act is not null && !owner.RiskAt(place).RoleMayHold()) return DecisionAdmitted.Refused(SupervisorWhy.HighRisk);
         if (AppointedStaffing.Ordered(effective?.Hold))
         {
             // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.
-            if (act is not null && !SupervisorGrants.Covers(effective!, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
+            if (act is not null && !SupervisorGrants.Covers(effective!, kind, act))
+            {
+                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = SupervisorKinds.Qualified(kind, act) };
+            }
+
             var revision = slots.First(slot => slot.Id == effective!.Id).Revision;
             return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id };
         }
@@ -38,7 +44,10 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         lock (state.Gate)
         {
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
-            if (act is not null && !SupervisorGrants.Covers(effective, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
+            if (act is not null && !SupervisorGrants.Covers(effective, kind, act))
+            {
+                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = SupervisorKinds.Qualified(kind, act) };
+            }
             return state.HoldOf(effective.Id) is { } hold
                 ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotStarted);
