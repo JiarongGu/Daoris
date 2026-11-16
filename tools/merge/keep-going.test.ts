@@ -2,7 +2,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 // @ts-expect-error — untyped workspace tooling, read through the seam its own tests use
 import * as untyped from '../merge-branch.mjs';
-import { failsFast } from './reach.ts';
+import { failsFast } from './red-brief.ts';
 
 type Gate = { name: string; run: string; kind: string };
 type Result = { gate: Gate; code: number; verdict: string; note: string; ms: number; log: string };

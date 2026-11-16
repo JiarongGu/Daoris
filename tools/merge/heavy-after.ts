@@ -81,10 +81,7 @@ export function startDetached(home: string, args: string[], log: string): number
 /** The run's runner exists in this repository: a scratch repository the tool's own tests merge in holds none, and starts no run. */
 export const hasRunner = (home: string): boolean => existsSync(join(home, HEAVY_RUNNER));
 
-/**
- * The queue landing's after-steps on the tip just promoted: its measure, the run, and the watch of main's cheap suites
- * (`main-watch.ts`); the lines to say, none where the repository holds no runner (a scratch one).
- */
+/** The queue landing's after-steps on the tip just promoted: its measure, the run, main's watch; none where no runner is (a scratch repository). */
 export function startAfterLanding(home: string, candidate: { tip: string; base: string; members: { branch: string }[] }): string[] {
   if (!hasRunner(home)) return [];
   measureAfterLanding(home, landedOf(candidate));

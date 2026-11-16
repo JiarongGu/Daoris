@@ -155,7 +155,6 @@ export function parseArgs(argv: string[]): Options {
   if (baseNext) throw usageError('--base names its ref: --preflight --base <ref>');
   if (options.base && !options.preflight) throw usageError("--base is the preflight's: --preflight --base <ref>");
   if (options.preflight) {
-    // The branch is the worktree's own; the run keeps going past every failure, so --keep-going would change nothing.
     if (options.branches.length) throw usageError("--preflight takes no branch: it gates the branch this worktree has out");
     if (flags.some((flag) => !['--preflight', '--base', '--one-at-a-time'].includes(flag))) throw usageError('--preflight takes only --base <ref> and --one-at-a-time: it runs every gate to its end');
     return options;

@@ -15,8 +15,9 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
   test('--rerun runs a fixed gate again on the merge in place, and names the verdicts it kept and from when', async () => {
     const repo = scratch('rerun', [
       { name: 'first', run: 'node gate.mjs first' },
-      // Fails the first time only, as a gate does once the parent has fixed what it found.
-      { name: 'second', run: 'node gate.mjs second 3 once' },
+      // Fails the first time only, as a gate does once the parent has fixed what it found; a blocking light gate, the one
+      // kind whose failure a merge's run does not keep going past.
+      { name: 'test-map', run: 'node gate.mjs test-map 3 once' },
       { name: 'third', run: 'node gate.mjs third' },
     ]);
     branch(repo.root, 'fix', { 'fix.txt': 'x\n' });
@@ -32,17 +33,18 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     // build nothing in common and would start together.
     result = await repo.run(['fix', '--one-at-a-time']);
     assert.equal(result.status, 1, result.out);
-    assert.deepEqual(repo.ran(), ['first', 'second']);
+    assert.deepEqual(repo.ran(), ['first', 'test-map']);
     assert.match(result.out, /NOT RUN\s+third/);
-    assert.match(result.out, /--rerun second/, 'the failure says how to run the fixed gate alone');
+    assert.match(result.out, /--rerun test-map/, 'the failure says how to run the fixed gate alone');
+    assert.match(result.out, /the red brief, every failing gate with its cause and whether main fails it too: local\/scratch\/merge-fix\/brief\.md/);
 
     result = await repo.run(['--rerun', 'nope']);
     assert.equal(result.status, 2, result.out);
-    assert.match(result.out, /no gate 'nope' in the plan: first, second, third/);
+    assert.match(result.out, /no gate 'nope' in the plan: first, test-map, third/);
 
-    result = await repo.run(['--rerun', 'second']);
+    result = await repo.run(['--rerun', 'test-map']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran(), ['first', 'second', 'second', 'third'], 'the fixed gate, then the one its failure stopped; never the one that passed');
+    assert.deepEqual(repo.ran(), ['first', 'test-map', 'test-map', 'third'], 'the fixed gate, then the one its failure stopped; never the one that passed');
     assert.match(result.out, /kept\s+first\s+PASS\s+from \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC/);
     assert.match(result.out, /2 gates run and passed; 1 verdict kept \(first, from \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\)/);
     assert.equal(merging(repo.root), true, 'still merged in place, and never committed');
@@ -50,7 +52,7 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
     // --continue keeps its meaning: every gate again.
     result = await repo.run(['--continue']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran().slice(4), ['first', 'second', 'third']);
+    assert.deepEqual(repo.ran().slice(4), ['first', 'test-map', 'third']);
     assert.doesNotMatch(result.out, /kept/);
     repo.cleanup();
   });

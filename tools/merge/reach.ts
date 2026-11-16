@@ -27,15 +27,6 @@ export const BASELINE: readonly string[] = Object.freeze(['universal', 'code-map
  */
 export const BLOCKING: readonly string[] = Object.freeze(['universal', 'code-map', 'test-map']);
 
-/**
- * How far a run of gates goes past a failure: `true` (`--keep-going`) past every one; `'blocking'` (a merge's, the queue's and a
- * preflight's default) past every one but a blocking light gate's, which fails fast; `false` stops at the first (REDBRIEF1).
- */
-export type KeepGoing = boolean | 'blocking';
-
-/** Whether a failure of `gate` starts nothing more in a run that keeps going as `keepGoing` says. */
-export const failsFast = (keepGoing: KeepGoing, gate: string): boolean => keepGoing === false || (keepGoing === 'blocking' && BLOCKING.includes(gate));
-
 /** A light check a merge blocks on when one of its paths reaches what it reads: the gate, the paths that reach it and why. */
 export type PathCheck = { gate: string; paths: readonly string[]; why: string };
 

@@ -40,8 +40,9 @@
  * own gate and in `verify`, run through `tools/as-merged.mjs`: its docs gate dates each path from
  * HEAD's history, and there HEAD is the commit the merge would make.
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
- * beside and renamed when the gate ends, and one line per gate says its result and that file. The
- * first failing gate starts nothing more, in either lane (`--keep-going` runs the rest), and what did not run is named. A
+ * beside and renamed when the gate ends, and one line per gate says its result and that file. A merge's run keeps going
+ * past a failure but a blocking light gate's (`failsFast`; `--keep-going` past that too, as `--rerun`, `--stale` and `--full`
+ * past any), what did not run is named, and a red writes the brief (`merge/red-brief.ts`, below). A
  * test gate also writes `<gate>.trx` there, and the ten slowest classes are printed after its line.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
  * `--rerun`, `--stale` and the stage read (below): the main checkout's, whichever worktree the run is in.
@@ -51,6 +52,13 @@
  * here directly is landed by `--commit`: once every gate chosen for it has a standing pass (whatever way the gates ran, a
  * `--rerun` or `--no-timeout` run included, which the commit message then says) the tool commits it, starts the heavy run on
  * the new tip and prunes, so no landing is a hand-made commit that skips either.
+ *
+ * ## Every red once, early
+ *
+ * A builder's `--preflight` runs its merge's own gates in its worktree (`merge/preflight.ts`). A red of a merge, a candidate, a
+ * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
+ * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
+ * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Every run's gates get `DAORIS_RATCHET_SINCE`, its start.
  *
  * ## A fixed gate re-runs alone
  *
@@ -360,7 +368,7 @@ import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
 import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
 import { chooseGates } from './merge/choose-gates.ts';
-import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor, failsFast } from './merge/reach.ts';
+import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
 import {
   isProcessGate, isProcessLane, isHeavyGate, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
@@ -378,7 +386,7 @@ import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mjs';
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
-import { briefGates, briefText, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
+import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
 import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand,
@@ -5507,7 +5515,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
   };
 }
 
-/** The red brief of a run's failed results, written into each of `dirs` and said; each failure marked by `mark` (REDBRIEF1). */
+/** The red brief of a run's failed results, written into each of `dirs` and said; each failure marked by `mark`. */
 async function briefRed(root, failed, { tree = root, dirs, title, ran, mark }) {
   const gates = await briefGates(failed, {
     signed: (result) => failuresOf(tree, result, result.trx ?? result.gate.scopedTrx), read: (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null), shown: (file) => shown(root, file), mark,
@@ -5537,7 +5545,7 @@ function mainMarker(root, dir) {
   };
 }
 
-/** `--preflight [--base <ref>]`: the merge's own gates for this worktree's branch, run here, every one to its end (GATEPREFLIGHT1). */
+/** `--preflight [--base <ref>]`: the merge's own gates for this worktree's branch, run here, every one to its end. */
 async function preflightVerb(root, options) {
   const facts = preflightFacts(root, options.base ?? MAIN, git);
   for (const line of facts.lines) console.log(line);
@@ -5835,7 +5843,7 @@ async function runCandidateWatched(home, candidate, watch) {
   const outcome = candidateOutcome(judgements, candidate.members, policy);
   if (outcome.action === 'dropped') return drained(home, candidate, withConfirms(run), { ...gone(), why: watch.trees.ended });
   fileJudged(home, candidate, outcome);
-  // One brief for every red the run found, each marked by its run on the base, in each member's merge folder (REDBRIEF1).
+  // The judgement already ran each failure on the base, so the brief marks it from there and runs nothing again.
   const judgedOf = (failure, result) => judgements.find((each) => each.failure.gate === result.gate.name && each.failure.test === failure.test)?.judged;
   await briefRed(home, failed, {
     tree, dirs: candidate.members.map((each) => join(home, SCRATCH, `merge-${slug(each.branch)}`)), title: `Red brief: the candidate ${sha} (${run.members.map((each) => each.branch).join(', ')})`,
@@ -5917,7 +5925,7 @@ async function queueStep(home) {
   }
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
-  // A red on main the watch found starts no merge and lands none until it is fixed or named known (MAINWATCH1).
+  // A merge built on a red main inherits the red and hides whose it is, so none starts or lands until it is fixed or named known.
   if ((['run', 'promote'].includes(action) || (action === 'none' && queue.queued.length)) && mainRedHold(home, mainTip)) return 'wait';
   if (action === 'promoted') {
     // C4: the member that held a contained one has promoted, so the contained one is settled with it: the record's contained, read
@@ -6336,7 +6344,7 @@ async function waitOutcome(home, branch, tip, request) {
   }
 }
 
-/** `--main-watch <commit>`: the cheap suites on a landed tip in the watch's tree, every one to its end, then on main's newest tip until it holds still (MAINWATCH1). */
+/** `--main-watch <commit>`: the cheap suites on a landed tip in the watch's tree, every one to its end, then on main's newest tip until it holds still. */
 async function mainWatchVerb(root, options) {
   const home = verdictsHome(root);
   const lock = join(home, MAIN_WATCH_LOCK);
@@ -6371,7 +6379,7 @@ async function mainWatchVerb(root, options) {
   }
 }
 
-/** Main's red the watch found, neither fixed nor named known, holds the queue's next merge; said once, and a moved tip watched (MAINWATCH1). */
+/** Main's red the watch found, neither fixed nor named known, holds the queue's next merge; said once, and a moved tip watched. */
 function mainRedHold(home, mainTip) {
   const findings = readFindings(home).findings.filter((each) => each.state === 'red' && !knownRedStanding(each).expired);
   const held = watchHold(readWatch(home), { mainTip, alive: pidAlive, known: (failure) => findings.some((each) => each.gate === failure.gate && each.key === failure.key) });

@@ -1,5 +1,5 @@
 /**
- * The preflight (GATEPREFLIGHT1): a builder runs its merge's own gates from its own worktree before it hands back, so the merge
+ * The preflight: a builder runs its merge's own gates from its own worktree before it hands back, so the merge
  * stops being where a branch's reds are first found. `node tools/merge-branch.mjs --preflight [--base <ref>]` judges the branch
  * the worktree has out against `main` (or `--base`) as the queue's scoped run judges its candidate: the paths from their merge
  * base to the branch's tip choose the gates (`scopedChoice`, the queue's own), and every gate runs to its end in the worktree.

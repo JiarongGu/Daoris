@@ -1,5 +1,5 @@
 /**
- * The red brief (REDBRIEF1): what a failing merge, preflight or watch of main writes once, so the steward and the fixer read
+ * The red brief: what a failing merge, preflight or watch of main writes once, so the steward and the fixer read
  * one file and never the logs. For each failing gate: the failing tests, or the first error where no test is named; their file
  * and line; the first assertion or error lines, kept short; and whether it fails on main too, which the caller checks by
  * running only that test's selection, or the gate, on main's tree (`mark`).
@@ -10,6 +10,15 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { BLOCKING } from './reach.ts';
+
+/**
+ * Whether a failure of `gate` starts nothing more, so every red is found in one round: under `--keep-going` (`true`) none does;
+ * under `'blocking'`, a merge's and the queue's default, only a blocking light gate's, since nothing past a broken index or
+ * census reads true; `false` every one.
+ */
+export type KeepGoing = boolean | 'blocking';
+export const failsFast = (keepGoing: KeepGoing, gate: string): boolean => keepGoing === false || (keepGoing === 'blocking' && BLOCKING.includes(gate));
 
 /** Whether a failure fails on main too: `main` the same way, `other` another way, `branch` not at all, `unchecked` not run there. */
 export type Mark = { on: 'main' | 'other' | 'branch' | 'unchecked'; why: string };

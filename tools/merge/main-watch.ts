@@ -1,5 +1,5 @@
 /**
- * The watch of main (MAINWATCH1): after each landing the cheap suites (the CLI's verify and tests, the tool tests, the desktop's
+ * The watch of main: after each landing the cheap suites (the CLI's verify and tests, the tool tests, the desktop's
  * censuses: `WATCH_GATES`) run on main's new tip in the background, in a tree of their own (`MAIN_WATCH_TREE`), every one to its
  * end, by `node tools/merge-branch.mjs --main-watch <commit>` (`startWatch`, which the landing's after-steps call). A red writes the
  * brief (`red-brief.ts`) and holds the merge queue's next merge (`watchHold`) until it is fixed (a watch of a later tip is green)
