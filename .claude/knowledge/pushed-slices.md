@@ -22,7 +22,7 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 | Mounting | The spec in `ShellSignals`' `PUSHED` | `pushedState.test.tsx`-style counts |
 | The query | `queryFn: () => readPushed(client, name, pull)`, and while `usePushedLive(name)`, no focus refetch and never stale | a tick and a focus counted at the bridge: zero reads of the slice |
 | Invalidations | Every broad invalidation of a family holding the entry passes `predicate: notPushed(client)`; the hub's scopes already do | `ShellSignals.test.tsx`, `stateHub.test.tsx` |
-| Answers | A press answering the slice's data writes it only where the slice is pulled (`writeAnswered` is the driver's), or where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost | the press's own test; `useSweepLook` (PUSH1c4b) |
+| Answers | A press answering the slice's data writes it only where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost; once they compose it, its push brings the change | the press's own test; `useSweepLook` (PUSH1c4b) |
 | The records | The README's `STATE_SLICE` row names the slice and its partitions; D182 gets the row's note | `DriverModuleRoutesTests`' README check |
 
 **Four traps.** A window's views whose effects run before `ShellSignals` pull beside the snapshot, so a root mounts it first

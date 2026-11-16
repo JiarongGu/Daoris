@@ -250,8 +250,8 @@ two `golden/brainstorm-rules` files (a pass is denied every tool but its own), a
 (the driver's `Permissions.cs`, held by `PermissionRulesTests`) and a reviewer's and a helper's (`OpinionPermissions`);
 `.claude/knowledge/connector-tools.md` lists every place. It is classed in `ToolClasses` (what the call's place records it as) and
 named in `fixtures/call-table.json`'s `registered` list.
-**The connector lists and serves every registered tool to every session, whatever its work** (ACCESS1 row h, D284): `tools/list`
-names all of them and no call is refused by the session's work or by who made it. A tool whose work has nothing to act on says so
+**The connector lists and serves every registered tool to every session, whatever its work** (ACCESS1 row h, D284): the protocol's
+list of tools names all of them and no call is refused by the session's work or by who made it. A tool whose work has nothing to act on says so
 in its own answer (a brainstorm tool with no turn, `checkout_read` outside Ask Daoris, a memory change by a work with no repository
 of its own). What a one-job session may call is its harness's rules, handed by the driver at its start. `McpRoleFilterTests` holds
 the file to the registration and to the closed set of works.
