@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
-import { keys } from '../data/queries';
-import { TIDIED_EVENTS } from '../projects/workspace/WorkspaceTidied';
-import type { LogFilters, LogReading, LogSince } from '../settings/Logs';
+import { keys } from '../../data/queries';
+import { TIDIED_EVENTS } from '../../projects/workspace/WorkspaceTidied';
+import type { LogFilters, LogReading, LogSince } from '../../settings/Logs';
 
-// The machine log: what the page reports into it, and Settings → Logs reading it back.
+// The machine log: what the page reports into it, and Settings → Logs reading it back. Its scope, `logs/`, holds what the
+// window keeps of what the person did on the screen: this log, and the person's UX trail (`uxTrail.ts`).
 
 /** The longest string the page reports: the machine log keeps a clue, never a paragraph. */
 export const LOG_TEXT = 120;

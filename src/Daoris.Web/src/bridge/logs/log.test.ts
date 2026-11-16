@@ -12,7 +12,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import { installPageErrors, logEvent, LOG_TEXT, pageShows, reportPageStopped, STACK_FRAMES, stackTop } from './shell';
+import { installPageErrors, logEvent, LOG_TEXT, pageShows, reportPageStopped, STACK_FRAMES, stackTop } from '../shell';
 
 /** Whatever the report's promise does, let it settle before looking. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 0));

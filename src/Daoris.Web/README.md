@@ -193,7 +193,7 @@ complete-for-word-overlap (D24).
 provider and reads no query, scope or bridge hook. A render that throws below it draws *This window's page stopped on an error*,
 the error's message on one line, that the sessions and the driver behind the page go on, and *Reload the page*
 (`window.location.reload()`: the fresh page hands the window its ready handshake and lifts its splash again). It lifts a splash
-still up, and writes one `page.error` line, `where` `render` (`bridge/log.ts`'s `reportPageStopped`), with the view the page showed
+still up, and writes one `page.error` line, `where` `render` (`bridge/logs/log.ts`'s `reportPageStopped`), with the view the page showed
 (the frame says it as it shows it, `pageShows`; a secondary window's is `window:monitor` or `window:session`) and the first five
 frames of React's component stack by name alone (`stackTop`), never a frame's location (D217). A failure outside a render is still
 `installPageErrors`'s, `where` `window` or `promise`, the message alone. **An effect sets state only on a change**: React 19.2 counts a

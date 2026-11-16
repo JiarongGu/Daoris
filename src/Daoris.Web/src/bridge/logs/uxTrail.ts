@@ -1,5 +1,5 @@
-import type { UxTrailPress } from './generated/routes';
-import { call } from './call';
+import type { UxTrailPress } from '../generated/routes';
+import { call } from '../call';
 
 const answered = (answer: unknown): boolean => (answer as { on?: boolean } | null)?.on === true;
 

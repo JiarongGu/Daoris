@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { readUxTrail, sendUxTrail, setUxTrail } from '../bridge/uxTrail';
+import { readUxTrail, sendUxTrail, setUxTrail } from '../bridge/logs/uxTrail';
 import { useAttention } from '../bridge/attention';
 
 // The person's own UX trail:opt-in, off by default, kept on the desktop only (`UX_TRAIL`, the driver's `UxTrail`). It records

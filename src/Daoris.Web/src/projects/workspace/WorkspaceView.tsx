@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTidiedBranches } from '../../bridge/log';
+import { useTidiedBranches } from '../../bridge/logs/log';
 import { sentence } from '../../locales/format';
 import { useRetireMachine, useSessions, useSyncStanding } from '../../data/queries';
 import { sessionTitle } from '../../work/identity';
