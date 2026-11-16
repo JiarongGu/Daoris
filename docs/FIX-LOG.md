@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The session list drawn at a start lost rows seconds or minutes later (SESSIONFLASH1)
+
+- **Symptom:** the owner, 2026-11-16: "when app open we display a list of session which then gone after a few second or
+  minutes".
+- **Root cause:** two halves. The rail (`SessionRail`, since SESSUX1c, bdf622d3fb) placed every record by its record alone until
+  the groups slice first judged, so it drew every part of a line, every archived line and every ended intake as a row, which
+  that judgement took away (the entries collapse a line to one row, the archive mark folds a line out). And the judgement came
+  late at a start: the slice walks each tree the machine's facts have not judged (PUSH1c3a, 777c5bb391), and the facts begin only
+  after the first screen (STARTFAST1b, bb86b8ccc0), so its first judgement walked every ended session's tree with git behind the
+  first look's (the look's tidy took 75–140 s on the install). Neither the look nor its tidy archives or deletes a record: archive
+  and history clearing are presses.
+- **Fix:** the rail draws its rows' outline until the reader's first answer (an unjudged slice draws as loading); the slice's own
+  judgement waits for no tree and walks none while the parts' first judgement is to come (`HelpTreeFacts.WithTreesAsync`'s
+  `waits: false`), the trees' offers following as their parts land, which wakes it. The route `SESSION_GROUPS` still waits.
+  **Verified:** `SessionRail.entries.test.tsx` (the eleven records drawn as Working, Failed and Done before the answer, red
+  first), `GroupsStateSliceTests.A_start_s_first_judgement_places_the_archived_and_the_ended_before_any_tree_is_judged` (timed out
+  at 5 s on the parts' ten-second wait, red first), `HelpTreeWalkTests.A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement`.
+
 ## 2026-11-16 - An opinion owed on a replayed landing never closed (OPINIONDUE1)
 
 - **Symptom:** on the install the due for session 4a9b01af (quest ba5c8968fdf5, landed as main's fd9baed4c3) stayed open with no
