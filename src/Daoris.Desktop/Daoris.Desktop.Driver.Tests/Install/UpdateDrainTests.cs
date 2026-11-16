@@ -16,7 +16,8 @@ public sealed class UpdateDrainTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    // No deadline of its own: every wait here is bounded by Poll.Until, and a shorter one cancelled the watch under load.
+    private readonly CancellationTokenSource _closing = new();
 
     public UpdateDrainTests()
     {
