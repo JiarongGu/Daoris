@@ -19,6 +19,9 @@ public static class SupervisorKinds
 
     public const string Departure = "departure";
 
+    /// <summary>A go-ahead a session asked for on its ask, answered yes or no (<see cref="GoAheadAuthority"/>).</summary>
+    public const string GoAhead = "goahead";
+
     /// <summary>A step nobody is free to hold (a capped second opinion), a subject of the reporting line (<see cref="ReportingLine"/>).</summary>
     public const string Vacancy = "vacancy";
 
@@ -46,12 +49,13 @@ public static class SupervisorKinds
         [Landing] = ["accept", "approve", "reject"],
         [Memory] = ["keep", "decide"],
         [Departure] = ["accept"],
+        [GoAhead] = [Answer],
         [Vacancy] = [Recast, Relax, Prepaid, Wait],
         [AskDaoris] = [Report],
     };
 
     /// <summary>Every kind, in the editor's order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, Memory, Departure, Vacancy, AskDaoris];
+    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, Memory, Departure, GoAhead, Vacancy, AskDaoris];
 
     public static bool MachineOnly(string kind) => kind == AskDaoris;
 

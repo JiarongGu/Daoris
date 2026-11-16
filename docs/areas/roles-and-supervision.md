@@ -222,8 +222,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     are a go-ahead, the seven owner-class kinds and those three. (D208, D304) A go-ahead is the approver's yes, a role act of its own
     (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it at low and medium risk; it
     stays the owner role's at high risk (`high-risk`), where its release reads as production at a place whose production releases
-    are marked (`marked`), and for a sign-in (`owner-class`). The kind that lists, holds and releases it is not built yet, so every
-    go-ahead still waits for the owner's answer. (GOAHEADACT1)
+    are marked (`marked`), and for a sign-in (`owner-class`). The `goahead` kind lists each open go-ahead (`{ session, goahead }`:
+    the newest session that asked it, and `<ask>/<number>`) only where its place's supervisor may answer it, holds an `approved` or
+    `refused` for the role's window with *Overrule* as a door answer (rule 49's table), pinned to its number, kind, target and act
+    (`GoAheadPin`), and releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
+    older build as the person's) and refuses a keyless caller; its leave climbs the line. (GOAHEADACT1)
 48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
     the holder decides `go-on` once; on failures the quest's point is released as the quest's own *Try again*; on failures on one
@@ -268,7 +271,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 49a. Each place's risk (low, medium or high) and the owner's marks are one record, `placeRisk` in `driver.json` (`PlaceRiskBook`), keyed
     `machine`, `workspace/<name>`, `repository/<name>`; a place it does not name is low and unmarked, the narrowest risk set stands, and a
     destination's mark (`release.production`: the place's production releases stay the owner role's) covers every place under it. The
-    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*), `daoris settings risk`, and Ask
+    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*: a workspace's on its page, a
+    repository's beside its sessions' access, its own row over the one it takes from its workspace or the machine, said as where it
+    comes from, each press `SET_PLACE_RISK` naming that repository), `daoris settings risk`, and Ask
     Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
     (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
     decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line;

@@ -52,6 +52,8 @@ internal sealed class DoorReleaseLook(ILookWiring wiring) : ILookPass
         {
             var (ok, _) = due.Subject.Kind == SupervisorKinds.Departure
                 ? await service.AcceptDepartureAsync(due.Subject.Id, ct, role).ConfigureAwait(false)
+                : due.Subject.GoAheadParts is { } goAhead
+                ? await service.AnswerGoAheadAsync(goAhead.Ask, goAhead.Number, due.Yes, null, ct, goesOn: true, role).ConfigureAwait(false)
                 : await service.DecideMemoryAsync(due.Subject.Session, staged ? null : due.Subject.Id, due.Yes, ct, role,
                     staged ? (due.Pin ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries) : null).ConfigureAwait(false);
             return ok ? null : SupervisorWhy.Answered;

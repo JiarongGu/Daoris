@@ -25,7 +25,11 @@ public enum GoAheadState
 public sealed record GoAheadRequest(string Session, string? Quest, DateTimeOffset At, string Why);
 
 /// <summary>The person's answer to a go-ahead: yes or no, their words where they gave any, and when.</summary>
-public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At);
+public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At)
+{
+    /// <summary>The role that answered, as <c>role:&lt;role&gt; · &lt;agent&gt;</c>; null for the person's own answer. An older build reads it as the person's.</summary>
+    public string? By { get; init; }
+}
 
 /// <summary>
 /// A go-ahead held on an ask: the person's yes for one act outside a repository, asked once and named
@@ -378,7 +382,7 @@ public static class GoAheads
             && answered.TryGetProperty("approved", out var approved) && approved.ValueKind is JsonValueKind.True or JsonValueKind.False
             && Moments.Read(answered, "at") is { } when)
         {
-            answer = new GoAheadAnswer(approved.GetBoolean(), JsonFields.Text(answered, "words"), when);
+            answer = new GoAheadAnswer(approved.GetBoolean(), JsonFields.Text(answered, "words"), when) { By = JsonFields.Text(answered, "by") };
         }
 
         return new GoAhead((int)number, kind, on, act)
@@ -416,6 +420,7 @@ public static class GoAheads
             writer.WriteStartObject("answer");
             writer.WriteBoolean("approved", answer.Approved);
             if (answer.Words is { } words) writer.WriteString("words", words);
+            if (answer.By is { } by) writer.WriteString("by", by);
             writer.WriteString("at", Moments.Write(answer.At));
             writer.WriteEndObject();
         }

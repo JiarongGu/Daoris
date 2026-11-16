@@ -22,6 +22,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Memory] = "memory",
         [SupervisorKinds.Departure] = "quest",
+        [SupervisorKinds.GoAhead] = "goahead",
         [SupervisorKinds.Vacancy] = "step",
         [SupervisorKinds.Allow] = "request",
         [SupervisorKinds.Files] = "text",
@@ -32,6 +33,14 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     public static IReadOnlyList<string> Kinds { get; } = [.. SupervisorKinds.All.Where(Named.ContainsKey)];
 
     public static SupervisorSubject Question(string session, string question) => new(SupervisorKinds.Question, session, question);
+
+    /// <summary>A go-ahead <c>{ session, goahead }</c>: the newest session that asked it, and its ask and number, <c>&lt;ask&gt;/&lt;number&gt;</c>.</summary>
+    public static SupervisorSubject GoAhead(string session, string ask, int number) => new(SupervisorKinds.GoAhead, session, $"{ask}/{number}");
+
+    public (string Ask, int Number)? GoAheadParts =>
+        Kind == SupervisorKinds.GoAhead && Id.LastIndexOf('/') is > 0 and var at && int.TryParse(Id[(at + 1)..], out var number) && number > 0
+            ? (Id[..at], number)
+            : null;
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
 

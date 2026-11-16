@@ -13,7 +13,7 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
     /// local host's door is the only one, as the ask routes are.
     /// </remarks>
     public async Task<GoAheadAnswerOutcome> AnswerAsync(
-        string id, int number, bool approved, string? words, DateTimeOffset now, CancellationToken ct)
+        string id, int number, bool approved, string? words, DateTimeOffset now, CancellationToken ct, string? by = null)
     {
         var said = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
         if (said is { Length: > GoAheads.WordsLimit })
@@ -23,7 +23,8 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
                 await standings.FindAsync(id, ct).ConfigureAwait(false));
         }
 
-        var answer = new GoAheadAnswer(approved, said, now);
+        // A role's answer names the role and its agent (`role:<role> · <agent>`); the person's names no one.
+        var answer = new GoAheadAnswer(approved, said, now) { By = by };
         var (found, decided) = await asks.DecideGoAheadsAsync<(GoAhead? Answered, bool WasWaiting, IReadOnlyList<int> Numbers)>(id, entries =>
         {
             var held = entries.Select(entry => entry.Read).OfType<GoAhead>().FirstOrDefault(goAhead => goAhead.Number == number);

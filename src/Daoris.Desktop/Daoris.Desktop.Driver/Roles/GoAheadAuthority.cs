@@ -1,6 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
+/// What a role's answer to a go-ahead is pinned to (D306): its number on the ask, its kind, its target and its act. The release reads the
+/// go-ahead again and posts only where all four still stand, so an act that changed since is no longer what the role judged.
+/// </summary>
+public sealed record GoAheadPin(int Number, string Kind, string On, string Act)
+{
+    /// <summary>The pin as a held answer keeps it: <c>number|kind|target|act</c>.</summary>
+    public string Said => $"{Number}|{Kind}|{On}|{Act}";
+}
+
+/// <summary>
 /// Who answers a go-ahead (GOAHEADACT1, D304 point 4): the approver's yes is a role act, <see cref="Act"/>, which an appointed role whose
 /// grants cover it takes at low and medium risk, held for the owner's overrule as <c>landing.accept</c> is. It stays the owner role's at
 /// high risk (<c>high-risk</c>), where the owner marked its destination (a place's production releases, <c>marked</c>), and for a sign-in,

@@ -31,8 +31,19 @@ public static class RoleAnswerDoors
         Form = new DoorForm(Field, DoorClass.Driver, "a role's yes to a departure"),
     };
 
-    /// <summary>The three, in the table's order.</summary>
-    public static IReadOnlyList<Door> All { get; } = [Accept, Decide, Keep];
+    /// <summary>
+    /// A go-ahead's yes or no (GOAHEADACT1): a role granted <c>goahead.answer</c> answers it at low and medium risk, judged by the driver
+    /// before it holds the answer (a marked production release, a high-risk place and a sign-in stay the owner role's), and kept with
+    /// who answered.
+    /// </summary>
+    public static readonly Door GoAhead = new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer")
+    {
+        Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered"),
+        Form = new DoorForm(Field, DoorClass.Driver, "a role's answer to a go-ahead"),
+    };
+
+    /// <summary>The four, in the table's order.</summary>
+    public static IReadOnlyList<Door> All { get; } = [Accept, GoAhead, Decide, Keep];
 
     /// <summary>Whether <paramref name="body"/> makes <paramref name="door"/>'s role form: a <c>role</c> that is an object.</summary>
     public static bool Makes(Door door, JsonElement? body) =>
