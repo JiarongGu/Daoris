@@ -91,6 +91,21 @@ describe("the session's Workflow view", () => {
     expect(row('look')).toHaveTextContent('Cannot start: No declared reviewer.');
   });
 
+  it('says the role that takes a step beside its state, Daoris\'s own by its word and a catalogue role as written', async () => {
+    const roled: WorkflowRun = {
+      ...IN_REVIEW,
+      steps: IN_REVIEW.steps.map((step) => step.step.id === 'work' ? { ...step, role: 'builder' } : step.step.id === 'look' ? { ...step, role: 'approver' } : step),
+    };
+    const { unmount } = render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
+    expect(row('work')).toHaveTextContent('role builder');
+    expect(row('look')).toHaveTextContent('role Approver');
+    expect(row('landing')).not.toHaveTextContent('role');
+    unmount();
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
+    expect(row('look')).toHaveTextContent('角色 审批人');
+  });
+
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 

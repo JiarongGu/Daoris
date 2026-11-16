@@ -22,6 +22,7 @@
   "workflow.run.state.failed": "failed",
   "workflow.run.state.stopped": "stopped",
   "workflow.run.state.unknown": "{{state}}",
+  "workflow.run.role": "role {{role}}",
   "workflow.run.thisSession": "this session",
   "workflow.run.chatChecks": "Its checks (`{{checks}}`) are not yet enforced for a conversation, so its tree is not held to them.",
   "workflow.run.said.recorded": "Shown as recorded: {{state}}, {{detail}}.",
