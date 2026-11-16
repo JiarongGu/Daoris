@@ -28,7 +28,15 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     /// <summary>The heavy executor's port: its answer asks a pass, which reconciles it.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Executor is { } executor
-        ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node) ?? RunChecks.SendOf(wiring.Home, unit, attempt, node))
+        ? new CheckExecution(
+            executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node) ?? RunChecks.SendOf(wiring.Home, unit, attempt, node),
+            wiring.Plans is null ? null : async (send, ct) =>
+            {
+                // A one-scope ask's end: the full set once, and its two reviews told where they are asked.
+                var end = await ScopeLanding.EndAsync(wiring.Home, send, wiring.Plans(), wiring.Reviewers?.Invoke(send.Repository) ?? [], ct).ConfigureAwait(false);
+                if (end.Reviews.Count > 0) wiring.ScopeReviews?.Invoke(send.Run, end.Reviews);
+                return end.Send;
+            })
         : null;
 
     /// <summary>

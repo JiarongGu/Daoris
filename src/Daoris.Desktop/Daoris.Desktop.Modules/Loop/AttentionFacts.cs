@@ -24,6 +24,9 @@ public sealed record AttentionFacts
     /// <summary>Every ask, as the asks slice holds them, each with its go-aheads.</summary>
     public IReadOnlyList<JsonObject> Asks { get; init; } = [];
 
+    /// <summary>The brainstorms, each with its pass, its comparison's questions and the keys answered (<see cref="DesignQuestionRows"/>).</summary>
+    public IReadOnlyList<JsonObject> Brainstorms { get; init; } = [];
+
     /// <summary>The folders the last look held for the agent's trust, as the tick hands them.</summary>
     public IReadOnlyList<JsonObject> Untrusted { get; init; } = [];
 

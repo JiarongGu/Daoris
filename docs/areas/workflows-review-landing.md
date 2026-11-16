@@ -383,7 +383,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     plan at its standing revision has landed (`PartsReports`, read by each pass for the asks the integration holds a part for); a part
     a revision dropped is no longer required. A part's `integrate` start tags its own request: the quest's publish key
     (`<ask>/<part>/<n>`) names the pair, and the ask's plan must give that part to that very quest (`TrainPartOf`, the plan's part
-    carrying its `Quest`), else the request is an ordinary landing's. Before each batch the line's tip is merged into the ask's branch
+    carrying its `Quest`), else the request is an ordinary landing's. Where the ask's plan is built as one scope (its `integration`
+    is `one-scope`, `ScopeLanding.GatesEachPart`), the part's request is frozen with no gates (`IntegrationRequests.NodeJudgement`),
+    so each part merges into the ask's branch ungated; under `per-part`, or a plan that names none, the line's own gates run. Before each batch the line's tip is merged into the ask's branch
     from objects alone (`TrainBases`: `merge-tree`, `commit-tree`, one verified `update-ref`; a conflict leaves the branch as it was
     and the parts land on it unmerged; a missing branch is made at the line's tip), and each promoted batch is kept on
     `refs/daoris/train/<ask>/<n>` (`TrainRefs`). The shipped `team-part` (work, checks, `integrate` with `request: done`, the line)
@@ -403,7 +405,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it has no quest, so it ends (`AskRunEnds`) when nothing waits and no node can move, naming the ask, and is never governed again.
     Its `parts` waits for the plan's parts given to its repository (`PartsReport.For`, a part given to none waits everywhere); its
     `check` verifies its repository at the tip it is bound to under the accepted declaration (`RunChecks`, beside a verification
-    run's send, for a chain's run as for an ask's); its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
+    run's send, for a chain's run as for an ask's), and where the ask's plan is one scope, the plan read at each send, it runs the full
+    set, every declared gate and no reached reading (`ScopeLanding.EndAsync`, `VerifySend.Full`), and names the two reviews, wide
+    and close, from the reviewers the landing role offers; its `review` is the ask's Accept in that repository, bound to the branch at its tip and to where it left the line
     (`AskRunReads`: the merge base), its handbacks the quests the ask gave the repository, answered by the person or by the place's
     appointed landing supervisor (roles rule 49), its step kept against the newest session of those quests (`LandingSessions`); its `land` merges the branch at the accepted
     tip into the line (`AskLanding`, through the integration the session merges use, with no session or tree) and is reached where the

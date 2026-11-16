@@ -195,7 +195,11 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     brainstorm (`DesignPasses`): its packet is the purpose brief alone, no search, no source and no repository named, and the desk
     refuses a source beside it; its generators write designs from the brief, and its synthesis is the comparison, which beside its
     groups gives `comparison` (the route, why, what would flip it, the trial's area, baseline and keep and retire criteria, the owner's
-    closed questions keyed `Q1` and on), refused with `comparison-missing` or `comparison:<field>` where it lacks one. Every brainstorm
+    closed questions keyed `Q1` and on), refused with `comparison-missing` or `comparison:<field>` where it lacks one. Each closed
+    question a design pass keeps unanswered is a row of What needs you (`DesignQuestionRows`, kind `design-question`, its `yes` and
+    `no` options, worded with what each changes and where to look), and an answer is drafted as a decision for the person to keep
+    (`DecisionDrafts`: the repository's next number, the chosen side as the comparison worded it, its route as why, the other side
+    as what it rejected), never as the person's words. Every brainstorm
     keeps `consultation.json` beside its document (D308): each answered giver's mode (`independent` for a generator, `review` for the
     synthesis), maker, adapter, account, the packet it read and whether it saw another answer; two generators of one maker each say
     `same-maker`, and the record counts no independence. The decider's line (`changed`) stays null until one is said. A second

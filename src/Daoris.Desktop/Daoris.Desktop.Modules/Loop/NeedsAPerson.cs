@@ -115,6 +115,7 @@ public static class NeedsAPerson
         }
 
         rows.AddRange(PlanQuestionRows.Of(facts.Asks));
+        rows.AddRange(DesignQuestionRows.Of(facts.Brainstorms));
 
         // A done its departure holds for the person's yes, until they accept it. A set-up step its review holds waits for
         // their review instead, which no yes lifts, so it is the set-up's row and never this one.

@@ -50,6 +50,12 @@ export type PushedAttention = {
   choices?: string[];
   ask?: string;
   question?: { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
+  /** A design pass's closed question: what it is, what yes and no change and where to look, as its comparison wrote them. */
+  design?: { key: string; question: string; yes: string; no: string; where: string };
+  /** The design pass the question is of. */
+  brainstorm?: string;
+  /** The answers a closed question takes. */
+  options?: string[];
   number?: number;
   /** A go-ahead's act, which its title says. */
   goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;

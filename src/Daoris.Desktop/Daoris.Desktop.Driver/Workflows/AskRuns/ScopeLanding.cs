@@ -15,6 +15,7 @@ public sealed record ScopeReview(string Breadth, string Adapter, string Maker, b
 public static class ScopeLanding
 {
     public const string OneScope = "one-scope";
+    public const string PerPart = "per-part";
     public const string Full = "full";
     public const string Wide = "wide";
     public const string Close = "close";
@@ -39,4 +40,20 @@ public static class ScopeLanding
         var independent = other is not null;
         return [new ScopeReview(Wide, wide.Adapter, wide.Maker, independent), new ScopeReview(Close, close.Adapter, close.Maker, independent)];
     }
+
+    /// <summary>
+    /// What a run's check sends at the end of its ask, and the reviews the end asks: for an ask's delivery run whose plan is one scope, the
+    /// full set (every declared gate, no reached reading) and the two reviews; for any other run, or a plan not read, the send as it was
+    /// and no review. The plan is read once per send, so the end follows the standing revision.
+    /// </summary>
+    public static async Task<ScopeEnd> EndAsync(string home, VerifySend send, ITrainPlans? plans, IReadOnlyList<ScopeReviewer> offered, CancellationToken ct)
+    {
+        if (plans is null || WorkflowRunBindings.Read(home, send.Run) is not { } binding || !AskRunKey.Is(binding)) return new(send, []);
+        var plan = await plans.OfAsync(binding.Ask!, ct).ConfigureAwait(false);
+        if (EndTier(plan?.Integration) != Full) return new(send, []);
+        return new(send with { Full = true, Reached = false, Gates = null, Reach = null, Base = null }, Reviews(offered));
+    }
 }
+
+/// <summary>A scope's end as its ask's delivery check asks it: the send to the heavy executor, and the two reviews (none outside one scope).</summary>
+public sealed record ScopeEnd(VerifySend Send, IReadOnlyList<ScopeReview> Reviews);
