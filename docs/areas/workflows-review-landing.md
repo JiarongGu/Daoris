@@ -212,7 +212,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the
     reviewers are named once, by the place (`daoris place opinion <repository> --agents …`), and choosing the workflow for a
-    repository that declares none is refused with that press. (D155, D190, D227)
+    repository that declares none is refused with that press. An opinion owed closes as `landed` once its work is on the line:
+    by commit ids, by a squashing landing's record, or by patch (a landing that replayed the commits and merged the replay
+    leaves the tree's own ids on no branch), the last read as the review reads the tree (`TreeWork`). (D155, D190, D227)
 27. Review's diff is a dependency graph of git reads, kept by no later open, taking no lock and refreshing no index in a tree
     Daoris does not own; within one open each question is asked of git once (`GitReadOnce`), and leaving the page stops its git.
     (D202)
