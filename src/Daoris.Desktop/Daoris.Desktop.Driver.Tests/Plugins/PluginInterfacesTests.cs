@@ -168,10 +168,11 @@ public sealed class PluginInterfacesTests : IDisposable
         Assert.Null(problem);
         string[] named = ["login", "logout", "status", "create-pull-request", "pull-request-status", "complete-pull-request"];
         Assert.Equal(
-            example == "daoris-azure-devops" ? [.. named, "discover-releases"] : named,
+            example == "daoris-azure-devops" ? [.. named, "discover-releases", "approve-release"] : named,
             manifest.Interfaces.Commands.Select(command => command.Name));
         Assert.True(manifest.Interfaces.Commands[0].Interactive);
-        Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool && !command.Interactive && command.Args.Count > 0));
+        // An approval is its approver's own press (APPROVEHERE1): `approve-release` writes, and is never handed to an agent as a tool.
+        Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool == (command.Name != "approve-release") && !command.Interactive && command.Args.Count > 0));
         Assert.All(manifest.Steps, step => Assert.Equal(step.Kind.EndsWith("/pull-request", StringComparison.Ordinal), step.Goal is not null));
         Assert.NotNull(manifest.Interfaces.Storage);
         Assert.Empty(manifest.Interfaces.Refused);

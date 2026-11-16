@@ -293,6 +293,9 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, WorkflowValuesKey.Values> WorkflowValues { get; init; } =
         new Dictionary<string, WorkflowValuesKey.Values>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Why each node's values were last set, by <c>repository/workflow/node</c> (<see cref="WorkflowValuesKey.Apply"/>).</summary>
+    public IReadOnlyDictionary<string, string> WorkflowValuesWhy { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// The saved workflow a place follows where nothing above it names one: the home's default, level <see cref="WorkflowLevels.Home"/>
     /// of the choosing order, seeded once into a fresh home by <see cref="HomeSeed"/>. Null names none, and a place then follows Current.
