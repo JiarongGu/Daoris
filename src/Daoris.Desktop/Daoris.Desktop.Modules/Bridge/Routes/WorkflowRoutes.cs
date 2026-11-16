@@ -396,6 +396,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Scopes = saved.Scopes.Select(each => new { each.Level, each.Name, each.Role, each.Kind, each.Key }).ToArray(),
             Reach = ReachRows(saved.Reach),
             Problems = saved.Problems.Select(each => new { each.Code, each.Wire, each.Node, each.Words }).ToArray(),
+            saved.ClosesBelow,
         };
     }
 

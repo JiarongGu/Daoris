@@ -119,4 +119,38 @@ public sealed class LandRetryTests : GraphRunFixture
         Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
         Assert.Single(_lines, line => line.Event == "landing.auto" && CodeOf(line) == LandingCode.Landed);
     }
+
+    /// <summary>
+    /// A landing refused because its delivery is held here (being landed or settled by another of Daoris's doors) holds no tree lock a look
+    /// reads, so each look tries it again: past its deadline the refusal itself climbs the reporting line, once, as every busy cause does.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_whose_delivery_is_held_past_its_deadline_climbs_the_reporting_line()
+    {
+        var (root, tree, start) = await StartedAsync();
+        var held = DeliveryRuns.Hold(_home, DeliveryStore.KeyOf(Work.Session, start.Tip, DeliveryMethods.Branch, "main"));
+        Assert.NotNull(held);
+
+        // A home with no lock folder holds no lock: a look tries the landing at once.
+        Assert.Null(LandRetries.StillHeld(_home, tree));
+        using (held)
+        {
+            await Performer().PerformAsync(start);
+            Assert.Equal(LandingCode.Busy, CodeOf(_lines.Last(line => line.Event == "landing.auto")));
+            Assert.Equal(LandRetries.Busy, LandRetries.Waiting(start.Unit, start.Tip)?.Code);
+            _now += LandRetries.Deadline + TimeSpan.FromMinutes(1);
+            await Performer().PerformAsync(start);
+            await Performer().PerformAsync(start);
+        }
+
+        var waiting = LandRetries.Waiting(start.Unit, start.Tip);
+        Assert.Equal(LandRetries.Climbed, waiting?.Code);
+        Assert.StartsWith("waiting on ", waiting!.Line, StringComparison.Ordinal);
+        Assert.Single(Notes("s1"), note => note.Text!.Contains("past the landing's deadline", StringComparison.Ordinal));
+
+        // The delivery let go: it lands by itself, once.
+        await Performer().PerformAsync(start);
+        Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Single(_lines, line => line.Event == "landing.auto" && CodeOf(line) == LandingCode.Landed);
+    }
 }

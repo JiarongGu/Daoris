@@ -144,6 +144,40 @@ public sealed class StepRolesTests : IDisposable
         Assert.Equal(WorkflowRolesSince.Code, InstallRollback.Refused(_home, "1.39.2", "1.41.0")?.Code);
     }
 
+    /// <summary>
+    /// A version whose steps name only their kinds' own roles is written naming none, so a build before the field reads it unchanged and no
+    /// going back is closed: a preset's second opinion among them. Another role is kept as named, and its save says first that it closes
+    /// going back below this build, where none is closed yet.
+    /// </summary>
+    [Fact]
+    public void A_save_naming_only_the_kinds_roles_writes_none_and_closes_no_going_back()
+    {
+        var shipped = WorkflowPresets.GraphTable.First(preset => preset.Graph()["nodes"]!.AsArray().Any(node => (string?)node!["kind"] == NodeKinds.Land));
+        var preset = WorkflowPresets.WithGraphGates(shipped.Graph(), opinion: true, look: true);
+        var kinds = JsonNode.Parse(Json(StepRoles.Tester))!;
+        kinds["end"] = "ask";
+        kinds["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "ask", ["kind"] = NodeKinds.Human, ["version"] = 1, ["reach"] = "pressed", ["role"] = StepRoles.Owner });
+        kinds["wires"]!.AsArray().Add(new JsonObject { ["id"] = "w2", ["kind"] = "after", ["from"] = "look", ["to"] = "ask" });
+
+        foreach (var graph in new[] { preset, kinds })
+        {
+            var file = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, graph), []).Result!;
+            Assert.DoesNotContain(file["versions"]![0]!["graph"]!["nodes"]!.AsArray(), node => node!.AsObject().ContainsKey("role"));
+            Assert.Null(WorkflowRolesSince.Closes(_home, file, "1.40.0"));
+            WorkflowRolesSince.Keep(_home, file, "1.40.0");
+            Assert.Null(WorkflowRolesSince.Read(_home));
+        }
+
+        // A shipped default names no kind's own role, so a copy saved of it keeps the shipped digest.
+        Assert.All(WorkflowDefaults.All, each => Assert.Equal(each.Graph().ToJsonString(), StepRoles.Unwritten(each.Graph())!.ToJsonString()));
+
+        var named = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, JsonNode.Parse(Json(StepRoles.Operations))), []).Result!;
+        Assert.Equal(StepRoles.Operations, (string?)named["versions"]![0]!["graph"]!["nodes"]![1]!["role"]);
+        Assert.Equal("1.40.0", WorkflowRolesSince.Closes(_home, named, "1.40.0"));
+        WorkflowRolesSince.Keep(_home, named, "1.40.0");
+        Assert.Null(WorkflowRolesSince.Closes(_home, named, "1.41.0"));
+    }
+
     private static NodeGraph Graph(string? role) => NodeGraphs.Read(Json(role)).Graph!;
 
     private static string Json(string? role) => $$"""

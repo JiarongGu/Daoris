@@ -12,4 +12,6 @@ public sealed record WorkflowSaved(
 {
     /// <summary>Each refusal of a graph refused, by its code at the step or wire it names; empty for every other answer.</summary>
     public IReadOnlyList<WireProblem> Problems { get; init; } = [];
+
+    public string? ClosesBelow { get; init; }
 }

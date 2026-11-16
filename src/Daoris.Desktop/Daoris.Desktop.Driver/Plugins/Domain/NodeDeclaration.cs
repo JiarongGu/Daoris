@@ -61,15 +61,17 @@ public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<
 
     public IReadOnlyList<string> Transient { get => transient; init => transient = Copied(value); }
 
+    public bool Acts { get; init; } = true;
+
     private static ImmutableArray<string> Copied(IReadOnlyList<string> codes) =>
         ImmutableArray.CreateRange(codes ?? throw new ArgumentNullException(nameof(codes)));
 
     public bool Equals(NodePerform? other) =>
-        other is not null && Idempotent == other.Idempotent && Reconcile == other.Reconcile
+        other is not null && Idempotent == other.Idempotent && Reconcile == other.Reconcile && Acts == other.Acts
         && Transient.SequenceEqual(other.Transient, StringComparer.Ordinal);
 
     public override int GetHashCode() =>
-        Transient.Aggregate(HashCode.Combine(Idempotent, Reconcile), (hash, code) => HashCode.Combine(hash, StringComparer.Ordinal.GetHashCode(code)));
+        Transient.Aggregate(HashCode.Combine(Idempotent, Reconcile, Acts), (hash, code) => HashCode.Combine(hash, StringComparer.Ordinal.GetHashCode(code)));
 }
 
 /// <summary>

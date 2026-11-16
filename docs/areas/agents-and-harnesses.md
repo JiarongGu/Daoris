@@ -186,8 +186,12 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     whether each token is there and when the access token expires, never a value. A start that has counted its account renews
     the sign-in once, under the account's lock, where the stored token expires within ten minutes and no session of Daoris's runs
     on it (`SignInRefresh`), so starts and resumes on one account together find it fresh and none of their sessions spends the
-    single-use refresh token beside another. Each look reads the stores, and one its agent cleared reads signed out at once
-    (`StoredSignIns`). (CREDRACE1)
+    single-use refresh token beside another. Its limit: where a session of Daoris's already runs on the account nothing is renewed,
+    since that session's process holds the token and renewing beside it would spend its refresh token; a start beside it reads the
+    store as it stands and may still refresh at the same moment as the running session, which no lock of Daoris's reaches. A sign-in
+    is read without decoding a token: presence is judged on the file's bytes, which are cleared after. Each look reads the stores,
+    and one its agent cleared reads signed out at once (`StoredSignIns`); a sign-out read after an unanswered reading that followed a
+    sign-in still reads as one nobody at Daoris made (`AccountReads` carries the word before through the unanswered run). (CREDRACE1)
 
 **Usage, limits and errors**
 

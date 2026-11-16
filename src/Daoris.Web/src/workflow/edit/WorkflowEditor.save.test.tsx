@@ -115,6 +115,26 @@ describe('Review and save', () => {
     expect(asked('WORKFLOW_SAVE').every((each) => each.plan === true)).toBe(true);
   });
 
+  it('says first that a save naming a role other than a step kind\'s own closes going back below this build, and says nothing where it closes none', async () => {
+    const user = userEvent.setup();
+    let closes: string | null = '1.48.0';
+    driver.plan = () => ({ ...HOLDS, closesBelow: closes });
+    const view = render(wrap(<Editor startFrom={APPENDING} />));
+    await edit(user);
+    await holds();
+    await user.click(reviewButton());
+    const said = 'Saving this closes going back to builds before 1.48.0: a step names a role other than its kind\'s own, which older builds cannot read.';
+    expect(within(await screen.findByRole('region', { name: 'Before it is saved' })).getByText(said)).toBeInTheDocument();
+    view.unmount();
+
+    closes = null;
+    render(wrap(<Editor startFrom={APPENDING} />));
+    await edit(user);
+    await holds();
+    await user.click(reviewButton());
+    expect(within(await screen.findByRole('region', { name: 'Before it is saved' })).queryByText(/closes going back/)).toBeNull();
+  });
+
   it('says the steps it changes, then the places an append reaches, and saves only on consent to exactly those', async () => {
     const user = userEvent.setup();
     driver.plan = () => APPEND;

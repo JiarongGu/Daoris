@@ -290,6 +290,7 @@
   "workflow.edit.review.cannot": "{{repository}} 无法开始它：{{why}}",
   "workflow.edit.review.noGates": "{{repository}} 的主线没有检查项。",
   "workflow.edit.review.back": "继续编辑",
+  "workflow.edit.review.closesRollback": "保存后将无法退回到 {{build}} 之前的版本：有步骤指定了不同于其类型默认的角色，旧版本无法读取。",
   "workflow.edit.save.again": "重新读取",
   "workflow.edit.save.rebased": "现在基于 {{id}} 的 v{{version}}；草稿保持原样。",
   "workflow.edit.use.plan": "在此使用…",

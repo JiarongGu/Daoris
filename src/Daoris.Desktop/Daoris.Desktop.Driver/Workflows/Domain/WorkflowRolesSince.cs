@@ -24,10 +24,17 @@ public static class WorkflowRolesSince
     /// </summary>
     public static void Keep(string home, JsonNode? file, string? running)
     {
-        if (HomeLastBuild.Numbered(running) is null || Read(home) is not null || !NamesRole(file)) return;
+        if (Closes(home, file, running) is not { } build) return;
         Directory.CreateDirectory(WorkflowStore.FolderOf(home));
-        File.WriteAllText(PathOf(home), running);
+        File.WriteAllText(PathOf(home), build);
     }
+
+    /// <summary>
+    /// The build a save of <paramref name="file"/> keeps as the floor, which its confirm card says first: <paramref name="running"/> where the
+    /// file names a step's role (a default one is never written, <see cref="StepRoles.Unwritten"/>) and none is kept yet; else null.
+    /// </summary>
+    public static string? Closes(string home, JsonNode? file, string? running) =>
+        HomeLastBuild.Numbered(running) is not null && Read(home) is null && NamesRole(file) ? running : null;
 
     /// <summary>Why installing <paramref name="staged"/> is a going back past the field, or null: none kept, or a staged build at or above it.</summary>
     public static (string Code, string Sentence)? Refused(string home, string? staged) =>

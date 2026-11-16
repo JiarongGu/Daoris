@@ -155,8 +155,10 @@ public sealed class NodeRuntime(
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
-        ? Daoris.Driver.PluginStepsInFlight.Count(governed.Values, records.Read, plugin => port.GenerationOf(plugin) is not null)
+        ? Daoris.Driver.PluginStepsInFlight.Count(governed.Values, records.Read, plugin => port.GenerationOf(plugin) is not null, _unknown, clock())
         : 0;
+
+    private readonly UnknownAttempts _unknown = new();
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
 

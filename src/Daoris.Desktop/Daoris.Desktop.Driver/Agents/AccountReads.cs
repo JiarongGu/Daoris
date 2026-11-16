@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// often it is read again. Null where the entry carries none (written before it was kept, or by a build that keeps none), read as
 /// <paramref name="At"/>.
 /// </param>
-/// <param name="Before">The word the run replaced, where the entry says one: a sign-out after <c>in</c> is one nobody at Daoris made.</param>
+/// <param name="Before">The word the run replaced, through an unanswered run between: a sign-out after <c>in</c> is one nobody at Daoris made.</param>
 public sealed record AccountRead(LoginState Login, DateTimeOffset At, DateTimeOffset? Since = null, LoginState? Before = null);
 
 /// <summary>An agent's readings: its own sign-in's, and each account's by its name; none where nothing is read.</summary>
@@ -94,9 +94,10 @@ public static class AccountReads
 
             if (Key(parent, name) is { } old) parent.Remove(old);
             var entry = new JsonObject { ["login"] = Word(login), ["read"] = AccountCooling.Stamp(at) };
-            // A run of readings saying the same keeps when it began and what it replaced; a new word begins one.
+            // A run saying the same keeps when it began and what it replaced; a new word begins one, after an unanswered run the word before it.
             var (since, replaced) = before is null ? ((DateTimeOffset?)null, (LoginState?)null)
                 : before.Login == login ? (before.Since, before.Before)
+                : before.Login == LoginState.Unknown ? (at, before.Before == login ? (LoginState?)null : before.Before ?? LoginState.Unknown)
                 : (at, before.Login);
             if (since is { } began) entry["since"] = AccountCooling.Stamp(began);
             if (replaced is { } word) entry["before"] = Word(word);

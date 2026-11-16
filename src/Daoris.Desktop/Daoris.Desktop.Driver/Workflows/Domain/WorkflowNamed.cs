@@ -280,7 +280,7 @@ public static class WorkflowNamed
         if (add.Graph is not null)
         {
             version["schema"] = GraphSchema;
-            version["graph"] = add.Graph.DeepClone();
+            version["graph"] = StepRoles.Unwritten(add.Graph.DeepClone());
             if (add.Steps is not null) version["steps"] = add.Steps.DeepClone();
         }
         else

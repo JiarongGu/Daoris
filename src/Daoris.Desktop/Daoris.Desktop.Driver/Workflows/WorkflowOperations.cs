@@ -373,12 +373,14 @@ public static class WorkflowOperations
                     made = "the page";
                 }
 
+                var closesNew = WorkflowRolesSince.Closes(home, planned.Plan.Result, UpdateRefusal.Running);
                 if (!plan && !WorkflowStore.WriteIfAbsent(WorkflowPorts.Store(home), id, planned.Plan.Result!))
                 {
                     return Refuse("stale", $"`{id}` was saved by another save while this one was made, so this one would have replaced it. Nothing was written.");
                 }
 
-                return new(id, true, null, $"`{id}` v1, a new workflow, from {made}.", planned.Plan.Version, !plan, false, [], []);
+                if (!plan) WorkflowRolesSince.Keep(home, planned.Plan.Result, UpdateRefusal.Running);
+                return new(id, true, null, $"`{id}` v1, a new workflow, from {made}.", planned.Plan.Version, !plan, false, [], []) { ClosesBelow = closesNew };
             }
 
             if (from is not null) return Refuse("refused", $"`{id}` is a workflow here already: a save with `from` makes a new one. Add a version with `steps` or `graph`.");
@@ -409,8 +411,14 @@ public static class WorkflowOperations
                     + "now: authorize those places, then save. Nothing was written.", scopes, reach.Rows, appended: true);
             }
 
+            // A version naming a step's role other than its kind's closes going back below this build: the plan says so for the confirm card.
+            var closes = WorkflowRolesSince.Closes(home, planAgainst.Plan.Result, UpdateRefusal.Running);
             if (!plan && !WorkflowStore.WriteIfNewest(WorkflowPorts.Store(home), id, newest.Version, planAgainst.Plan.Result!)) return Refuse("stale", $"`{id}` {Changed}");
-            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
+            if (!plan) WorkflowRolesSince.Keep(home, planAgainst.Plan.Result, UpdateRefusal.Running);
+            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows)
+            {
+                ClosesBelow = closes,
+            };
         }
         catch (ChoiceWords refused)
         {

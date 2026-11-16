@@ -172,12 +172,14 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
     cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
     record. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
-    the role it waits on (an approver, a deployer, whoever holds it), Daoris's own steps, an ended run's, and an attempt the
-    runtime does not ask after (a run it does not govern, a node no graph declares, a plugin down) are idle; the banner names the
-    steps it waits on. (from D139, D301)
+    the role it waits on (an approver, a deployer, whoever holds it), a watch whose plugin declares it acts on nothing
+    (`perform.acts: false`), Daoris's own steps, an ended run's, and an attempt the runtime does not ask after (a run it does not
+    govern, a node no graph declares, a plugin down) are idle, and an attempt not known is idle 15 minutes after the loop first
+    counts it so (`PluginStepsInFlight.UnknownBound`); the banner names the steps it waits on. (from D139, D301)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
-    version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
+    version while a delivery is unresolved, and below the first build that saved a workflow whose step names a role other than its
+    kind's own (`workflows`, `WorkflowRolesSince`); a role equal to a step kind's own is never written, so it closes nothing. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
     the sentence, names the deliveries, writes the word and exits 1. A refusal closes nothing, is said again at every look, and holds
     for its build until the person's next word, from the banner, Settings or the terminal, which checks again. (from D139, D215)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the

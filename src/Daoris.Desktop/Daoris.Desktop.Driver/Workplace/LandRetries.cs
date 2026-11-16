@@ -52,14 +52,18 @@ public static class LandRetries
     /// <summary>The wait of <paramref name="unit"/>'s landing at <paramref name="tip"/>, or null where it waits on nothing that passes.</summary>
     public static Wait? Waiting(string unit, string tip) => Waits.GetValueOrDefault(Key(unit, tip));
 
-    /// <summary>A try refused for a cause that passes: its wait begins now, or goes on from its first refusal. True where it began now.</summary>
-    internal static bool Refused(string home, string repository, string unit, string tip, DateTimeOffset now)
+    /// <summary>
+    /// A try refused for a cause that passes: its wait begins now, or goes on from its first refusal and is judged against its deadline as a
+    /// look's is (<see cref="Looked"/>), so a cause no look reads (the tree's landing hold, its delivery held here) climbs the line too.
+    /// </summary>
+    /// <returns>Whether the wait began now, and whether it climbed at this refusal.</returns>
+    internal static (bool Began, bool Climbed) Refused(string home, string repository, string unit, string tip, DateTimeOffset now, Func<LineWait> climb)
     {
         var began = false;
         Waits.AddOrUpdate(Key(unit, tip),
             _ => { began = true; return new(Homes.Full(home), repository, Busy, now, now); },
-            (_, was) => was.Code == Ended ? Begin() : was with { Seen = now });
-        return began;
+            (_, was) => was.Code == Ended ? Begin() : was);
+        return began ? (true, false) : (false, Looked(home, repository, unit, tip, now, climb).Climbed);
 
         Wait Begin()
         {

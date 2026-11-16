@@ -30,7 +30,7 @@
       { "id": "release-create", "kind": "daoris-azure-devops/release-create", "version": 1, "reach": "performed", "role": "release-manager" },
       { "id": "release-start", "kind": "daoris-azure-devops/release-start", "version": 1, "reach": "performed", "role": "release-manager" },
       { "id": "release-approve", "kind": "daoris-azure-devops/release-approve", "version": 1, "reach": "performed", "role": "approver" },
-      { "id": "release-watch", "kind": "daoris-azure-devops/release-watch", "version": 1, "reach": "performed", "role": "operations" },
+      { "id": "release-watch", "kind": "daoris-azure-devops/release-watch", "version": 1, "reach": "performed" },
       { "id": "config-needed", "kind": "human", "version": 1, "reach": "pressed", "outcomes": ["needed", "not-needed"], "role": "release-manager" },
       { "id": "config-change", "kind": "human", "version": 1, "reach": "pressed", "role": "config-changer" },
       { "id": "check-release", "kind": "human", "version": 1, "reach": "pressed", "role": "operations" }

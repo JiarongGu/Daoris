@@ -128,6 +128,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
       reach: reached.flatMap((row) => row.cannots.length > 0
         ? [t('workflow.edit.review.cannot', { repository: row.repository, why: row.said ?? row.cannots.join('; ') })]
         : row.noGates ? [t('workflow.edit.review.noGates', { repository: row.repository })] : []),
+      closesBelow: judgement?.closesBelow ?? null,
     };
   };
   const save = async () => {

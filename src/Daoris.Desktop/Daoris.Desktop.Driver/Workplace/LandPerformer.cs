@@ -414,12 +414,18 @@ public sealed class LandPerformer(
 
     /// <summary>
     /// A try's code kept on its run's wait (<see cref="LandRetries"/>): a cause that passes begins it or goes on with it, said only where it
-    /// began; anything else ends it. False where nothing more is said.
+    /// began, and past its deadline climbs the line however the cause holds it; anything else ends it. False where nothing more is said.
     /// </summary>
     private bool Retried(LandEntry entry, string code)
     {
         if (_start is not { } start) return true;
-        if (code == LandingCode.Busy) return LandRetries.Refused(home, entry.Repository, start.Unit, start.Tip, Now());
+        if (code == LandingCode.Busy)
+        {
+            var (began, climbed) = LandRetries.Refused(home, entry.Repository, start.Unit, start.Tip, Now(), () => Climb(entry));
+            if (climbed) Climbed(entry, start);
+            return began;
+        }
+
         LandRetries.End(start.Unit, start.Tip, LandingCode.Closes(code));
         return true;
     }
@@ -427,10 +433,19 @@ public sealed class LandPerformer(
     /// <summary>A wait whose cause still holds the repository: read again, and past its deadline climbed once, which the conversation is told.</summary>
     private string? Waited(LandEntry entry, LandStart run)
     {
-        var (wait, climbed) = LandRetries.Looked(home, entry.Repository, run.Unit, run.Tip, Now(),
-            () => LandRetries.Climb(home, entry.Repository, entry.Workspace, DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk));
-        if (climbed) events.Keep(entry.Session, LandTryNotes.Climbed(wait.Line ?? ""), say: null);
+        var (wait, climbed) = LandRetries.Looked(home, entry.Repository, run.Unit, run.Tip, Now(), () => Climb(entry));
+        if (climbed) Climbed(entry, run);
         return Quiet(run, wait.Code == LandRetries.Climbed ? LandWaits.Climbed : LandWaits.Busy);
+    }
+
+    private LineWait Climb(LandEntry entry) =>
+        LandRetries.Climb(home, entry.Repository, entry.Workspace, DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk);
+
+    /// <summary>The wait climbed at this look: said once in the conversation, and on the run's step as its wait reads.</summary>
+    private void Climbed(LandEntry entry, LandStart run)
+    {
+        events.Keep(entry.Session, LandTryNotes.Climbed(LandRetries.Waiting(run.Unit, run.Tip)?.Line ?? ""), say: null);
+        Quiet(run, LandWaits.Climbed);
     }
 
     private void Ended(TreeLanding end)

@@ -290,6 +290,7 @@
   "workflow.edit.review.cannot": "{{repository}} could not start it: {{why}}",
   "workflow.edit.review.noGates": "{{repository}}'s line has no gates.",
   "workflow.edit.review.back": "Keep editing",
+  "workflow.edit.review.closesRollback": "Saving this closes going back to builds before {{build}}: a step names a role other than its kind's own, which older builds cannot read.",
   "workflow.edit.save.again": "Read it again",
   "workflow.edit.save.rebased": "Now against v{{version}} of {{id}}; the draft is as it was.",
   "workflow.edit.use.plan": "Use here…",
