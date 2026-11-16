@@ -48,7 +48,7 @@
   "work.supervision.door.keep": "{{role}}（{{agent}}）保留这个会话暂存的记忆改动；将于 {{at}} 生效。",
   "work.supervision.door.drop": "{{role}}（{{agent}}）丢弃这个会话暂存的记忆改动；将于 {{at}} 生效。",
   "work.supervision.door.approve": "{{role}}（{{agent}}）批准这项记忆的结束；将于 {{at}} 生效。",
-  "work.supervision.door.decline": "{{role}}（{{agent}}）拒绝这项记忆的结束；将于 {{at}} 生效。",
+  "work.supervision.door.decline": "{{role}}（{{agent}}）谢绝这项记忆的结束；将于 {{at}} 生效。",
   "work.supervision.door.accept": "{{role}}（{{agent}}）采纳委托 #{{quest}} 完成时的偏离；将于 {{at}} 生效。",
   "work.supervision.overrule":"否决",
   "work.supervision.overruleRefused": "它已经继续了，无法否决。"
