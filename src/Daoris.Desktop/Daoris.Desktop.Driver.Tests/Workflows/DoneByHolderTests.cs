@@ -107,6 +107,8 @@ public sealed class DoneByHolderTests : IDisposable
         // The link is the proof: none, and nothing is recorded.
         Assert.Equal(WorkPerformer.NoLink, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside).Code);
         Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, note: "made by hand").What);
+        Assert.Empty(performer.Resolve(Declared));
+        await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None);
         Assert.Equal(HeldResolutions.DoneOutside, Assert.Single(performer.Resolve(Declared)).Code);
 
         var release = Status("release");
@@ -126,6 +128,7 @@ public sealed class DoneByHolderTests : IDisposable
         Assert.Equal(NodeStates.Active, Status("release").State);
 
         Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link).What);
+        await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None);
         performer.Resolve(Declared);
 
         var attempt = Assert.Single(Record().Attempts);

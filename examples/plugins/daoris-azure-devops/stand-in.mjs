@@ -211,7 +211,6 @@ export function start(t, env, journal = null) {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: mine, method, params })}\n`);
     return next((frame) => frame.id === mine);
   };
-  /** A notification, as the driver sends `work/stand-down`: no id, so nothing answers it. */
   const tell = (method, params) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
   const stop = async () => {
     child.kill();

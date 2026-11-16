@@ -61,7 +61,6 @@ export function work({ data, send, say, act, check, remove, observe }) {
   };
 
   const run = async (attempt) => {
-    // Stood down before its act began: nothing is made.
     if (attempt.stoodDown) return settle(attempt, stoodDown(attempt.stoodDown));
     const stop = live.get(attempt.idempotencyKey)?.stop ?? new AbortController();
     let outcome;
@@ -117,7 +116,6 @@ export function work({ data, send, say, act, check, remove, observe }) {
         await acting.get(effectOf(attempt));
         continue;
       }
-      // With no check to ask, a gone process's act is not known, and this attempt makes it afresh rather than waiting on it for ever.
       if (!calls.check && holder.life !== life) break;
       const said = await asked(attempt);
       if (said?.state === 'done' && said.outcome?.state === 'reached') return settle(attempt, outcomeOf(said.outcome));
@@ -184,6 +182,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
         const said = await calls.check({ ...(known ?? { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
           subjectRevision: call.subjectRevision }), options: call.options ?? known?.options ?? {}, link: call.link });
         if ((said?.state === 'done' || said?.state === 'failed') && said.link === call.link) return { state: said.state, outcome: outcomeOf(said.outcome), link: call.link };
+        return { state: 'running', link: call.link };
       }
       const attempt = journal.get('attempts', call.idempotencyKey);
       if (!attempt) return { state: 'not-started' };
@@ -197,9 +196,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
       return { state: 'unknown' };
     },
 
-    // An attempt stood down (a skip, a stop, its holder's Done outside Daoris), told as a notification and answered by nothing: written down
-    // first, so no later delivery of its key acts, then its act's signal aborted, so the act makes nothing after it. One not known here yet is
-    // written down settled, and its key never acts.
+    // A notification: written down first, so no later delivery of its key acts (one not known yet is written settled), then its signal aborted.
     'work/stand-down': async (call) => {
       const key = call.idempotencyKey;
       if (typeof key !== 'string') return undefined;
@@ -292,8 +289,7 @@ function stoodDown(why) {
  *     "removes": { "<resource>": { "disposition": "retained", "message": "…" } },
  *     "observed": { "<step>": { "state": "reached" } },
  *     "check": false }
- * Anything not scripted is reached, removed, or not known. `waits` waits that long before its act, as a wait for a fact does, and makes
- * nothing once stood down; `check: false` is a plugin written with no `check`.
+ * Anything not scripted is reached, removed, or not known; `waits` makes nothing once stood down; `check: false` is a plugin with no `check`.
  */
 function standIn(file) {
   writeFileSync(`${file}.taken`, `${process.pid}\n`);

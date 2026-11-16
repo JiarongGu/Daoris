@@ -92,6 +92,9 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
     /// <summary>The note its holder gave with <see cref="Link"/>, where they gave one.</summary>
     public string? Note { get; init; }
 
+    /// <summary>When its plugin's check answered <see cref="Link"/>, which the word waits for (<see cref="LinkHolds"/>); an older build passes over it.</summary>
+    public DateTimeOffset? LinkChecked { get; init; }
+
     /// <summary>
     /// Who the outside system credits with the act its outcome settled on (<c>outside: &lt;name&gt;</c>, or Daoris), from the evidence's
     /// <see cref="WorkEvidence.By"/>: an older build passes over the field, and drops it where it writes the record again. Null where none was named.

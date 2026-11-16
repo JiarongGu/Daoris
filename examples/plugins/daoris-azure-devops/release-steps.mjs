@@ -13,7 +13,6 @@ import { definitionsTaking, offRoute, routeWords, routed } from './routes.mjs';
 const EVIDENCE = 'azure-devops-pull-request/release@1';
 const MARGIN = 5000;
 const ACCESS = ['unauthorized', 'no-token', 'signed-out'];
-/** A wait of `ms`, cut short when `signal` is aborted. */
 const pause = (ms, signal) => new Promise((done) => {
   const timer = setTimeout(done, ms);
   signal?.addEventListener('abort', () => { clearTimeout(timer); done(); }, { once: true });
@@ -143,7 +142,6 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
       if (Number.isFinite(named)) {
         const held = (await releases(repo, 'GET', `/releases/${named}`)).json;
         if (!/^\d+$/.test(String(held?.id ?? ''))) throw new Refusal('no-release', `release ${named} was not found in ${repo.project}`);
-        // A named release is held to the step's declared definition (ACTPIN1), whatever commit it carries.
         if (Number(held.releaseDefinition?.id) !== definition.id) {
           throw new Refusal('target-changed', `release ${named} is of definition #${held.releaseDefinition?.id ?? '?'}, not the step's #${definition.id}`);
         }
@@ -165,8 +163,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
         return undefined;
       }
       if (!['succeeded', 'partiallySucceeded'].includes(build.result)) throw new Refusal('build-failed', `build ${numberOf(build)} of ${short} ${build.result ?? 'ended'}, so no release takes it`);
-      // Continuous deployment is given its time from the build's end; then the release manager makes the release, and only `create-and-start`
-      // makes it here: under `start-stage` the release is CD's to make, under `observe` its holder's, and the step waits for it to its deadline.
+      // CD has its time from the build's end; only `create-and-start` makes the release here, else CD (or, observed, its holder) makes it.
       const finished = Date.parse(build.finishTime ?? '') || Date.now();
       const cdUntil = Math.min(ends, (Number.isFinite(finished) ? finished : Date.now()) + asked.find);
       if (asked.action !== 'create-and-start' || Date.now() < cdUntil) {
@@ -223,7 +220,6 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
           started = true;
           return undefined;
         }
-        // Refused, or answered oddly: read again, so a stage started meanwhile (this start or another's) is taken, never failed.
         const again = (await releases(repo, 'GET', `/releases/${release.id}`)).json;
         const shown = (again?.environments ?? []).find((each) => Number(each.definitionEnvironmentId) === asked.stage);
         if (!shown || ['notStarted', 'undefined'].includes(shown.status)) throw new Refusal('rejected', `Azure DevOps did not start ${name} (${set.status})`);

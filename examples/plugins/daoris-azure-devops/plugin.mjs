@@ -48,10 +48,7 @@ const stepOf = (attempt) => String(attempt.step).split('/').pop();
 const unitOf = (attempt) => units.find((each) => each.tip === attempt.subjectRevision && (each.awaiting ?? []).some((step) => step.split('/').pop() === stepOf(attempt)))
   ?? units.find((each) => each.tip === attempt.subjectRevision);
 
-/**
- * Where each unit was last told, by its tip, kept in the data folder: a Done outside Daoris link on a step no unit awaits any more (a failed
- * step is told to no plugin) is read at the checkout its unit was told at. The newest hundred are kept.
- */
+// Each unit's checkout by tip, the newest hundred: a link on a step no unit awaits (a failed one is told to no plugin) is read there.
 const where = records(join(process.env.DAORIS_PLUGIN_DATA ?? '.', 'units.json'));
 const remember = (told) => {
   for (const unit of told) {
@@ -211,7 +208,6 @@ const points = {
 
 const answers = { ...points, ...kit.calls, 'command/run': run };
 
-// A notification (`work/stand-down`) carries no id and is answered by nothing; what goes wrong with one is said on the console.
 const answer = async (frame) => {
   const notified = frame.id === undefined;
   try {
