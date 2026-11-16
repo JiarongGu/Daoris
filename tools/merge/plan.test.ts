@@ -1,9 +1,9 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gitSight, manifestOf } from './adapters.ts';
+import { ADAPTERS_ROOT, manifestOf, type Sight } from './adapters.ts';
 import { git } from './git.ts';
 import {
   BESIDE_GIT_HALF, LIGHT_WIDTH, SHARED_PROJECTS, dotnetComponent, gateComponents, gateKind, gatePlan, isGitHalf, isHeavyGate, isLongGate, isProcessGate,
@@ -242,11 +242,6 @@ test("this repository's light gates run three at once, never two that build one 
     for (const name of suites) assert.ok(building(component).includes(name), `${name} builds ${component}`);
     for (const shared of SHARED_PROJECTS.get(component) ?? []) for (const name of suites) assert.ok(building(shared).includes(name), `${name} builds ${shared}`);
   }
-  const sight = gitSight(repoRoot);
-  const adapterSuites = sight.adapters().map((name) => manifestOf(name, sight).tests);
-  assert.ok(adapterSuites.length > 0);
-  for (const gate of repoPlan) for (const tests of adapterSuites) assert.ok(!gate.run.includes(tests), `${gate.name} runs ${tests}`);
-  assert.ok(repoPlan.some((gate) => gate.name === 'adapters-lock' && gate.run === 'node tools/merge/adapters.ts check'));
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
   const cli = byRun(/^npm run verify:checks$/);
   const web = byRun(/^npm run test:web:e2e$/);
@@ -262,6 +257,15 @@ test("this repository's light gates run three at once, never two that build one 
     if (fast) assert.equal(schedule.reuses[gate.name], fast.name, gate.name);
     else assert.equal(schedule.reuses[gate.name], undefined, gate.name);
   }
+});
+
+test('an adapter is tested only in its own development: no gate runs its suite, and the lock is checked', () => {
+  const files = { text: (path: string) => { try { return readFileSync(join(repoRoot, path), 'utf8'); } catch { return null; } } } as Sight;
+  const adapters = readdirSync(join(repoRoot, ADAPTERS_ROOT), { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.endsWith('.Tests')).map((entry) => entry.name);
+  const adapterSuites = adapters.map((name) => manifestOf(name, files).tests);
+  assert.ok(adapterSuites.length > 0);
+  for (const gate of repoPlan) for (const tests of adapterSuites) assert.ok(!gate.run.includes(tests), `${gate.name} runs ${tests}`);
+  assert.ok(repoPlan.some((gate) => gate.name === 'adapters-lock' && gate.run === 'node tools/merge/adapters.ts check'));
 });
 
 test("this repository's web gates build no component beside the .NET gates", () => {
