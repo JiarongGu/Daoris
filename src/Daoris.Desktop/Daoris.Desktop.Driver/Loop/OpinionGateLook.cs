@@ -482,7 +482,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         if (OpinionCasting.Current(acted).Count > 0)
         {
             casts.Keep(key, due.Repository, new OpinionCast(
-                DateTimeOffset.UtcNow, due.Session, OpinionCasting.Step, reading.Role ?? OpinionCasting.Step, OpinionCasting.Filled, reading.Reviewer, run.Opinion));
+                at, due.Session, OpinionCasting.Step, reading.Role ?? OpinionCasting.Step, OpinionCasting.Filled, reading.Reviewer, run.Opinion));
         }
 
         var view = await Service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);

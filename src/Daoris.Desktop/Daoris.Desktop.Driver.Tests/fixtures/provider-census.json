@@ -72,6 +72,7 @@
     ["Daoris.Desktop.Driver/Platform/DaorisHome.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: the home's run entry (design §9), no agent's door"],
     ["Daoris.Desktop.Driver/Plugins/PluginKit.cs", "\"claude-code\"", "-", "measurement", "a sample session the kit's trial hands a hook"],
     ["Daoris.Desktop.Driver/Plugins/PluginPage.cs", "\"protocol\"", "q", "behaviour", "the page shows a plugin's harness as a protocol door"],
+    ["Daoris.Desktop.Driver/Review/Domain/OpinionVacancy.cs", "\"dsh\"", "-", "permanent", "the harness whose prepaid key a vacancy may spend, only with `vacancy.prepaid` granted: the one paid account the gates declaration lets reviews use"],
     ["Daoris.Desktop.Driver/Review/OpinionVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
     ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "\"claude-code\"", "-", "permanent", "D23's supported default adapter"],
     ["Daoris.Desktop.Driver/Roles/SecondCheck.cs", "CodexAccounts", "-", "permanent", "the seeded second check's first choice, another maker's agent than the default, named by its id; the person changes it in the editor"],

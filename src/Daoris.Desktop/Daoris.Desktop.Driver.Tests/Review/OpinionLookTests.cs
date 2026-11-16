@@ -290,16 +290,13 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(["op1", "op2"], new OpinionGates(_home).Read("q1", "reports").Asks.Select(ask => ask.Opinion));
     }
 
-    /// <summary>
-    /// A vacancy a line level answered is filled once a reviewer holds the step: the look journals it beside the gate, so the act that
-    /// answered it shapes no later walk.
-    /// </summary>
+    /// <summary>A vacancy a level answered is filled once a reviewer holds the step, so its act shapes no later walk.</summary>
     [Fact]
     public async Task A_pass_that_opens_on_a_vacancy_fills_it_and_its_act_shapes_no_later_walk()
     {
         var (host, _, _) = await DoneAsync(required: false);
         var casts = new OpinionCasts(_home);
-        var at = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var at = new DateTimeOffset(2026, 11, 16, 3, 40, 0, TimeSpan.Zero);
         casts.Keep("q1", "reports", new OpinionCast(at, "s1", OpinionCasting.Step, OpinionCasting.Step, OpinionCasting.Vacant, "codex-acp", ReviewerUnavailable.Cooling)
         {
             Offered = ["codex-acp"],
