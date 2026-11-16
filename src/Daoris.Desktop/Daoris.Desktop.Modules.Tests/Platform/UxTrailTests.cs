@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -26,7 +27,7 @@ public sealed class UxTrailTests : IDisposable
 
         Assert.False(trail.On);
         Assert.Equal(0, trail.Append(Entries("""[{"kind":"page","page":"/sessions"}]"""), Now));
-        Assert.False(Directory.Exists(Path.Combine(_home, UxTrail.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.UxTrail)));
     }
 
     [Fact]
@@ -43,7 +44,7 @@ public sealed class UxTrailTests : IDisposable
             """), Now);
 
         Assert.Equal(3, kept);
-        var lines = File.ReadAllLines(Path.Combine(_home, UxTrail.Folder, "2026-11-16.jsonl"));
+        var lines = File.ReadAllLines(DaorisHome.Entry(_home, HomeEntry.UxTrail, "2026-11-16.jsonl"));
         Assert.Equal(3, lines.Length);
         Assert.DoesNotContain(lines, line => line.Contains("secret", StringComparison.Ordinal) || line.Contains("hello", StringComparison.Ordinal));
         Assert.Equal("Approve…", JsonDocument.Parse(lines[2]).RootElement.GetProperty("press").GetString());

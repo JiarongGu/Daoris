@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -9,6 +11,9 @@ public sealed class DriverModuleUxTrailTests : DriverModuleBridge
 {
     private static readonly object Page = new { entries = new[] { new { kind = "page", page = "/sessions", from = "/overview" } } };
 
+    /// <summary>The trail's folder, the home's entry asked by name.</summary>
+    private string Trail => DaorisHome.Entry(Home, HomeEntry.UxTrail);
+
     [Fact]
     public async Task Off_it_keeps_nothing_and_on_it_keeps_the_window_s_entries_under_the_home()
     {
@@ -16,12 +21,11 @@ public sealed class DriverModuleUxTrailTests : DriverModuleBridge
 
         Assert.False((await AnswerAsync(module, "UX_TRAIL", new { })).GetProperty("on").GetBoolean());
         Assert.Equal(0, (await AnswerAsync(module, "UX_TRAIL", Page)).GetProperty("kept").GetInt32());
-        Assert.False(Directory.Exists(Path.Combine(Home, UxTrail.Folder)));
+        Assert.False(Directory.Exists(Trail));
 
         Assert.True((await AnswerAsync(module, "UX_TRAIL", new { on = true })).GetProperty("on").GetBoolean());
         Assert.Equal(1, (await AnswerAsync(module, "UX_TRAIL", Page)).GetProperty("kept").GetInt32());
-        await UntilAsync(() => Directory.Exists(Path.Combine(Home, UxTrail.Folder))
-            && Directory.EnumerateFiles(Path.Combine(Home, UxTrail.Folder), "*.jsonl").Any());
+        await UntilAsync(() => Directory.Exists(Trail) && Directory.EnumerateFiles(Trail, "*.jsonl").Any());
         Assert.True(new UxTrail(Home).On);
         // A module built later reads the switch as it stands.
         Assert.True((await AnswerAsync(Module(), "UX_TRAIL", new { })).GetProperty("on").GetBoolean());

@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
 /// <summary>
 /// The person's own UX trail, which measures how long finding the press takes: the pages they open and the presses they make, and
-/// when a step began waiting on them, kept on this desktop only under the home's <see cref="Folder"/>, one file a day, and only while they
+/// when a step began waiting on them, kept on this desktop only in the home's entry <see cref="HomeEntry.UxTrail"/>, one file a day, and only while they
 /// turned it on (Settings → Driver). Never a field's value or typing: an entry keeps only the fields this class names, each
 /// a string clipped to <see cref="Longest"/>, and a kind it does not name is not kept. <c>tools/ux-trail.mjs</c> prints a trail's summary.
 /// </summary>
@@ -16,9 +17,6 @@ namespace Daoris.Desktop;
 /// </remarks>
 public sealed class UxTrail(string home)
 {
-    /// <summary>The folder under the home it is kept in.</summary>
-    public const string Folder = "ux-trail";
-
     /// <summary>The most a day's file holds.</summary>
     public const long DayCap = 2 * 1024 * 1024;
 
@@ -31,7 +29,7 @@ public sealed class UxTrail(string home)
     private const string OnFile = "on";
     private static readonly Lock Gate = new();
 
-    private string Root => Path.Combine(home, Folder);
+    private string Root => DaorisHome.Entry(home, HomeEntry.UxTrail);
 
     /// <summary>Whether the person turned it on.</summary>
     public bool On => File.Exists(Path.Combine(Root, OnFile));

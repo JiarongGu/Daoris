@@ -17,7 +17,7 @@ public sealed class WorkflowValuesDoorTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string File => Path.Combine(_home, "driver.json");
+    private string File => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private int Run(params string[] words)
     {

@@ -408,6 +408,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json", "data/terminal-acts.json");
+    // The person's UX trail, one file a day while they turned it on; kept on this desktop only.
+    public static readonly HomeEntry UxTrail = new("ux-trail", HomeCategory.Data, "data/ux-trail", "data/ux-trail");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -481,7 +483,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Checks, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
-        LastBuild, Migration, Salvage, TerminalActs,
+        LastBuild, Migration, Salvage, TerminalActs, UxTrail,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
