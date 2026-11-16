@@ -39,7 +39,6 @@ describe('a session row as work', () => {
 
     const line = screen.getByText('Waits on its step n10, step 11 of 30.');
     expect(container.querySelectorAll('[role="list"], [role="listitem"]')).toHaveLength(0);
-    // The state, the title, the facts and the one status line, whatever runs.
     expect(line.parentElement!.parentElement!.children).toHaveLength(4);
     const tip = line.getAttribute('title')!;
     expect(tip.split('\n')).toHaveLength(30 + 12);
