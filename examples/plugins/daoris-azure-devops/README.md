@@ -123,12 +123,13 @@ release the definition's CD trigger makes where one takes the build's branch, an
 which stages its creation starts by itself; the release's description names the attempt, and a retry after an interrupted creation finds
 the release it made rather than making a second. Several releases of the definition from one build fail `ambiguous`, listing them. Only the
 declared stage is watched, until it ends: a pending approval is said on the plugin's console and waited on, never given here, and the stage
-is started (once) only by `start-stage` and `create-and-start`. Each change of what the stage waits on is told to Daoris as a `progress`
+is started (once) only by `start-stage` and `create-and-start`. The watch's first look and each change of what the stage waits on are told to Daoris as a `progress`
 on the attempt (`work/step`, its own id, settling nothing), naming the actor whose act it is: `approver` for a pending approval, with whom
 Azure DevOps asks and since when (*Release-12 of app-release: Approve Production in Azure DevOps: asked of Release Approvers since
 2026-11-16 09:50 UTC.*), and `deployer` for a stage `observe` watches that nothing started; its evidence is the release's page and the
 stage. Once the stage goes on, a `progress` with no actor says so. Daoris draws the step as waiting on that actor, filled by its holder,
-and lists it in *What needs you* where the person holds it. The step reaches when that stage ended as `success` asks, with the
+and lists it in *What needs you*, its session in Sessions' Needs you, where the person holds it. A watch started again replaces what
+Daoris kept from before, its first look told whatever it finds. The step reaches when that stage ended as `success` asks, with the
 release's or the run's address as evidence and the stage's outcome in its message (*Release-12 of app-release from build 20261110.41
 (1a2b3c4d): Production succeeded after an approval by Release Approvers.*). A pipeline run's own stage is only observed.
 
