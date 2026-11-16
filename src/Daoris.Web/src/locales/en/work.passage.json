@@ -1,5 +1,4 @@
 {
-  "work.passage.label": "Steps of {{workflow}}",
   "work.passage.mark.passed": "{{node}}: passed",
   "work.passage.mark.current": "{{node}}: now",
   "work.passage.mark.next": "{{node}}: to come",
@@ -12,7 +11,6 @@
   "work.passage.waits.step": "Waits on its workflow's next step.",
   "work.passage.waits.agent": "Its agent is working.",
   "work.passage.waits.start": "Waits to start.",
-  "work.passage.turns": "Turns",
   "work.passage.turn": "Turn {{n}}",
   "work.passage.causeAt": "{{cause}} ({{node}})",
   "work.passage.cause.start": "started",
