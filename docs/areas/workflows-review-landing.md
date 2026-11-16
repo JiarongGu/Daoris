@@ -44,7 +44,28 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3a. A repository's own values for a workflow it follows are options over it, never a copy: `driver.json`'s `workflowValues`, by
    repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options (`NodeValues`)
    wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
-   binding stay the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
+   binding stay the version's, and naming values names no workflow. One door writes them, the window's `SET_WORKFLOW_VALUES` and its
+   twin `daoris workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>`, both through
+   `WorkflowValuesKey.Apply`, which refuses a value that is no JSON or a change with no reason and records the reason beside the values
+   (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
+   or `target-changed` failure listed, never by editing the file. `SettingDoorsCensusTests` holds every key of the driver's file a step
+   reads to a setting of the window's and its verb. (D288, RELEASEVALUES1)
+3c. A release target keeps to its route (ACTPIN1, D307): the Azure DevOps plugin reads each release definition's continuous-deployment
+   trigger at the act, and the branch the merged build ran on routes to the definitions whose trigger takes it (`routes.mjs`). A failure
+   for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
+   on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
+   refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
+   approval's card names the release, its definition, the build and its source branch.
+3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
+   `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
+   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris). Create
+   matches a release by the landed commit its artifact carries, across every build of that commit, or reads the release its holder names
+   (`release` option); it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
+   end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
+   key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
+   deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
+   sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1). Saved
+   versions keep the bundled `release` step.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -143,7 +164,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     while a word waits, and a decision's answer may change until the run ends. A failed plugin step's run step
     holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
     `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
-    failed to ready by the person, a new attempt its plugin is sent. A performed attempt's `progress` (`work/step` bound to its
+    failed to ready by the person, a new attempt its plugin is sent. *Done outside Daoris* (`done-outside`, the same door and verb with
+    `<link> ["…"]`, the link required) settles a plugin's step under way, held or failed on its holder's word (`active`, `unknown` or
+    `failed → reached` by the person, the link its evidence and the note its words), a step whose kind carries its proof as evidence
+    included, since the link is that proof; it is kept on the attempt as `happened` with its `link`, a word an older build reads. Skip
+    (*Not needed this run*), stop (*End this work*) and done outside each stand the plugin's attempt in flight down (`StandDowns`): it
+    settles `stood-down` with the act as its code, never a state of its own, its node's gate lifts so nothing holds the run, its plugin is
+    told (`work/stand-down`, a notification), and its later outcome is not taken. A skip a proof-carrying step refuses names the
+    done-outside press, and ending the work leaves its quest to close by the person's word. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
     rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
@@ -463,13 +491,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     performs them; their contract is `docs/2026-11-09-process-steps-design.md`. Built beneath them: `rebase` replays work in
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
-55. Every step of a live run that only the person moves is read from the bound runs, never stored: an active `review`, `human` or
-    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step waiting on an actor the person holds (`actor`,
-    naming the actor), and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
-    alone). Sessions places the run's newest session in Needs you with
-    its `waits`, opening the run's view, and *What needs you* lists each with its presses; an actor's row (`ActorWaits`) carries the act
-    in its plugin's words and its page, and no press: the act is taken there. Both read an actor's wait by one reading,
-    `StepWaiting.OnThePerson`.
+55. Every step's wait is read by one reading, `StepWaiting.Read`, from the bound runs, never stored: the wait it stands at
+    (`PersonWaits.All`: an active `review`, `human` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
+    waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
+    `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
+    done alone)), the role it waits on and that role's holder; until a step names its role, each wait has its own (`StepWaiting.RoleOf`),
+    a vacancy and a failure kept the line's `lead`. The waits whose role the person holds are theirs: Sessions places the run's newest
+    session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
+    page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
+    rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
+    that settle it (never its stop), a plugin's words and page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a
+    vacancy are answered.
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.

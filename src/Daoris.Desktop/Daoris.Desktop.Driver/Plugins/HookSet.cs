@@ -505,6 +505,23 @@ public sealed class HookSet(
     }
 
     /// <summary>
+    /// An attempt's stand-down told to the plugin's current process, fenced as a performance is; a process not up, or one that cannot be
+    /// asked, is told nothing, since a stood-down attempt's outcome is a replay whatever it does.
+    /// </summary>
+    public void StandDown(string plugin, WorkStandDownCall call)
+    {
+        try
+        {
+            var (channel, _, _) = Performer(plugin, call.Unit);
+            _ = channel.StandDownAsync(call, CancellationToken.None).ContinueWith(told => _ = told.Exception, TaskScheduler.Default);
+        }
+        catch (DriverException)
+        {
+            // Not up, or not this loop's to ask: nothing is told.
+        }
+    }
+
+    /// <summary>
     /// The plugins whose process the lease's loop keeps up though no unit awaits their steps: each owes a receipt's
     /// cleanup, which only its process answers. Whole each time; a plugin not named is owed nothing.
     /// </summary>

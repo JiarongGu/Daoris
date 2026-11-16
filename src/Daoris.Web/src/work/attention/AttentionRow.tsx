@@ -9,7 +9,7 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type HumanTaskWait, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type StepWaitRow, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
   type QuietWait,
   type StaleSince,
 } from './attention';
@@ -17,7 +17,6 @@ import { Note } from '../Note';
 import type { Answered } from '../InlineConfirm';
 import type { TaskAct } from '../../workflow/task/TaskPress';
 import { ExternalLink } from '../../design/links';
-import type { ActorWait } from './attentionPushed';
 import { taskActOf } from './attentionOffers';
 import { hasNote, type NoteRecord } from '../noteLines';
 import type { OpinionWait } from '../gates/opinion';
@@ -31,7 +30,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'unclosed' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'left' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'actor' | 'second-check' | 'plan-question';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'step' | 'second-check' | 'plan-question';
 
 /** A second check's flag not yet seen, as a `second-check` row carries it: the reader's claim about one of Ask Daoris's acts. */
 export type SecondCheckFlag = {
@@ -92,10 +91,8 @@ export type Attention = {
   trust?: TrustHold;
   /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
   declined?: DeclinedRequest;
-  /** A `task` row's run, its `human` node and the presses it waits for. */
-  task?: HumanTaskWait;
-  /** An `actor` row's run, its step, the actor it waits on and the page where the person acts. */
-  actor?: ActorWait;
+  /** A `step` row's run and node, its wait on a role and holder, the presses that settle it and the page where its act is taken. */
+  step?: StepWaitRow;
   /** The ask a `go-ahead` is on, or a `trust` row's held intake is for: what the door opens. */
   ask?: string;
   /** The quest a `trust` row holds: what the door opens. */
@@ -509,8 +506,8 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
           : item.detail && (
             <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
           )}
-        {item.actor?.url && (
-          <p className="m-0 mt-0.5 text-small"><ExternalLink href={item.actor.url}>{t('work.attention.actorOpen')}</ExternalLink></p>
+        {item.step?.url && (
+          <p className="m-0 mt-0.5 text-small"><ExternalLink href={item.step.url}>{t('work.attention.actorOpen')}</ExternalLink></p>
         )}
       </div>
       {(offered.length > 0 || onOpen || onRun || setAside) && (

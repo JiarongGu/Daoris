@@ -12,7 +12,8 @@ internal static class RunWaitWords
 
     private static string What(PersonWait wait) => wait.Why switch
     {
-        PersonWaits.Actor => $"waits on `{wait.Actor}`, which you hold,",
+        PersonWaits.Actor => $"waits on `{wait.Role}`, which you hold,",
+        PersonWaits.Vacant => "waits for a second opinion nobody is free to give",
         PersonWaits.Accept => "waits for your Accept",
         PersonWaits.Approval => "waits for your approval",
         PersonWaits.Task => "waits for your Done",

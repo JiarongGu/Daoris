@@ -151,6 +151,12 @@ public static class CleanupDispositions
 /// </summary>
 public sealed record WorkCleanupCall(string Receipt, string Resource, string IdempotencyKey);
 
+/// <summary>
+/// A <c>work/stand-down</c> notification's params: the attempt by its invocation and key, and why it stood down (<c>skip</c>, <c>stop</c>,
+/// <c>done-outside</c>).
+/// </summary>
+public sealed record WorkStandDownCall(string Unit, string Step, string Invocation, string IdempotencyKey, string Why);
+
 /// <summary><c>work/cleanup</c>'s answer: a disposition of <see cref="CleanupDispositions"/>, its proof and the plugin's words.</summary>
 public sealed record WorkCleanupAnswer(string Disposition, string? Proof = null, string? Message = null);
 
@@ -179,6 +185,9 @@ public static class WorkWire
 
     /// <summary>The cleanup adapter's request: one receipt's removal asked of the plugin that created it.</summary>
     public const string CleanupMethod = "hook/" + PluginSteps.CleanupPoint;
+
+    /// <summary>The notification an attempt's stand-down is told by (<see cref="PluginSteps.StandDownPoint"/>).</summary>
+    public const string StandDownMethod = "hook/" + PluginSteps.StandDownPoint;
 
     /// <summary>How many resources one outcome or reconciliation names at most, as many as its outputs.</summary>
     public const int ResourcesAtMost = 8;
@@ -275,6 +284,16 @@ public static class WorkWire
         ["receipt"] = call.Receipt,
         ["resource"] = call.Resource,
         ["idempotencyKey"] = call.IdempotencyKey,
+    };
+
+    /// <summary><c>work/stand-down</c>'s params: <c>{ unit, step, invocation, idempotencyKey, why }</c>.</summary>
+    public static JsonObject StandDown(WorkStandDownCall call) => new()
+    {
+        ["unit"] = call.Unit,
+        ["step"] = call.Step,
+        ["invocation"] = call.Invocation,
+        ["idempotencyKey"] = call.IdempotencyKey,
+        ["why"] = call.Why,
     };
 
     // ——— a plugin's messages: what a stand-in and the kit's scaffold write

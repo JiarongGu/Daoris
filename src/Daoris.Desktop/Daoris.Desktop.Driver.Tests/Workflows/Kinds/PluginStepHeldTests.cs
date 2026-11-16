@@ -52,13 +52,13 @@ public sealed class PluginStepHeldTests : NodeRunFixture
     }
 
     [Fact]
-    public void A_failed_plugin_steps_attempt_is_held_for_the_persons_again()
+    public void A_failed_plugin_steps_attempt_is_held_for_the_persons_again_or_their_done_outside()
     {
         var step = Step(Failed());
 
         var held = Assert.IsType<WorkflowRunHeld>(step.Held);
         Assert.Equal((RunUnit, 1), (held.Unit, held.Attempt));
-        Assert.Equal([HeldResolutions.Again], held.Words);
+        Assert.Equal([HeldResolutions.Again, HeldResolutions.DoneOutside], held.Words);
         Assert.DoesNotContain("try-again", step.Acts ?? []);
     }
 

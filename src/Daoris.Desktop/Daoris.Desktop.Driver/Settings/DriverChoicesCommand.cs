@@ -102,6 +102,7 @@ public static class DriverChoicesCommand
             _ when args.Count == 1 && MachineSettings.Of(verb) is not null => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
             "growth" => ChoiceGrammar.GrowthChanges(args),
+            "risk" => PlaceRiskVerb.Changes(args),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read.
             "keep" => args.Count > 1,

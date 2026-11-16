@@ -66,7 +66,8 @@ public sealed class CheckWaitsTests
     public void A_run_s_end_ends_its_waiting_sessions_completed_at_its_end_and_stopped_otherwise()
     {
         Assert.Equal("completed", RunSessionEnds.StateOf(new RunEnd("q1", At) { Outcome = RunOutcomes.Completed }));
-        Assert.Equal("stopped", RunSessionEnds.StateOf(new RunEnd("q1", At) { Outcome = RunOutcomes.Failed, Node = "check" }));
+        Assert.Equal("stopped", RunSessionEnds.StateOf(new RunEnd("q1", At) { Outcome = RunOutcomes.Stopped, Node = "check" }));
+        Assert.False(RunSessionEnds.Ends(new RunEnd("q1", At) { Outcome = RunOutcomes.Failed, Node = "check" }));
     }
 
     [Fact]

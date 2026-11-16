@@ -326,8 +326,10 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKit.IsPlugin(Kind);
 
     /// <summary>
-    /// Whether the person may settle an attempt whose outcome nothing else establishes: a plugin's performed node alone, whose attempt the performer holds when reconciliation cannot say. Its
-    /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
+    /// Whether the step's holder may settle it on their word: a plugin's performed node alone, whose attempt the performer holds when
+    /// reconciliation cannot say, or which its holder did outside Daoris. Its <c>unknown → reached</c> and <c>unknown → failed</c>, and with the
+    /// link of a step done outside its <c>active → reached</c> and <c>failed → reached</c>, are the holder's word, never the plugin's
+    /// (<see cref="NodeSource.Person"/>, the holder's channel today).
     /// </summary>
     public bool PersonSettles => Reach == NodeReach.Performed && NodeKit.IsPlugin(Kind);
 

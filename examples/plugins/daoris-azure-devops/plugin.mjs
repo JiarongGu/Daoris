@@ -14,6 +14,7 @@ import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { release } from './release.mjs';
+import { STEPS, releaseStep } from './release-steps.mjs';
 import { wayWords, within } from './browser.mjs';
 import { work } from './work.mjs';
 import { run } from './commands.mjs';
@@ -149,11 +150,13 @@ const kit = work({
   act: async (attempt) => {
     if (stepOf(attempt) === 'pull-request') return within(async () => told(await pullRequest(attempt)));
     if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say, progressOf(attempt))));
+    if (STEPS.includes(stepOf(attempt))) return within(async () => told(await releaseStep(stepOf(attempt), attempt, unitOf(attempt), say, progressOf(attempt))));
     return failed('unknown-step', `no step ${attempt.step}`);
   },
-  // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.
+  // An earlier process's attempt: the active pull request says if it made one; a release's steps read their fact before they make it, so
+  // start again, and a release the first made under its effect is found, never made twice.
   check: (attempt) => within(async () => {
-    if (stepOf(attempt) === 'release') return { state: 'not-started' };
+    if (stepOf(attempt) === 'release' || STEPS.includes(stepOf(attempt))) return { state: 'not-started' };
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
     try {

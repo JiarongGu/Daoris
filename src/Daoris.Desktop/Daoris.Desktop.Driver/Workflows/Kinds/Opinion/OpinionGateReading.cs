@@ -23,6 +23,12 @@ public static class OpinionGateReading
     /// <summary>Where the gate's record is kept, by name (<c>&lt;home&gt;/opinions/gates/&lt;chain&gt;.json</c>): what a reach's evidence names.</summary>
     public const string GateRecord = "opinions/gates";
 
+    /// <summary>
+    /// The hold a pending node keeps while its gate holds it for want of a reviewer (<see cref="OpinionVacancy"/>): a wait on the line's
+    /// lead (<see cref="PersonWaits.Vacant"/>). Any other pending reading keeps the gate's state, so a vacancy filled reads so at once.
+    /// </summary>
+    public const string Vacant = "vacant";
+
     /// <summary>What the gate says of the reading's node on its binding, for its unit's work: an outcome by the gate's authority, or none, which is pending.</summary>
     public static NodeObservation Observe(NodeReading reading)
     {
@@ -77,7 +83,7 @@ public static class OpinionGateReading
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
             OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),
-            _ => Seen(null, $"its gate says {gate.State}"),
+            _ => Seen(null, $"its gate says {gate.State}") with { Holds = gate.Required && OpinionVacancy.Of(gate) is not null ? Vacant : gate.State },
         };
     }
 }

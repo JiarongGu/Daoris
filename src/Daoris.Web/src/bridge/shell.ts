@@ -24,6 +24,7 @@ export * from './helpReadings';
 export * from './hold';
 export * from './sessions/history';
 export * from './repositories/growth';
+export * from './repositories/placeRisk';
 export * from './repositories/lines';
 export * from './log';
 export * from './notices';

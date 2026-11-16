@@ -159,8 +159,12 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'policy-hold': return plain('retry');
     // The run's existing *Pass over…*, offered where the node it is said on is named.
     case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
-    // The presses the run's task waits for, as the driver names them.
-    case 'task': return plain(...(item.task?.acts ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`));
+    // The presses that settle the run's step, as the driver names them: a task's or an approval's own, and its *Not needed this run*.
+    // A press the row cannot make (a decision's outcome, a file's choice) is made where the row's door opens, the run's view.
+    case 'step': return plain(
+      ...(item.step?.presses ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`),
+      ...(item.step?.presses.includes('skip') ? ['pass-over' as const] : []),
+    );
     // Nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');

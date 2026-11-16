@@ -118,12 +118,17 @@ export interface CheckHeld {
   resolution?: string | null;
 }
 
-/** The person's word on a held check (`WORK_HELD`): *Run again* is `again`, *Not now* is `stop`. */
+/**
+ * The person's word on a held check or a plugin's step (`WORK_HELD`): *Run again* is `again`, *Not now* is `stop`, and *Done outside
+ * Daoris* is `done-outside` with its `link`, required, and a `note`.
+ */
 export interface CheckHeldAsk {
   unit: string;
   node: string;
   attempt: number;
-  resolution: 'again' | 'stop';
+  resolution: 'again' | 'stop' | 'done-outside';
+  link?: string;
+  note?: string;
 }
 
 /** What `WORK_HELD` answers: kept, or refused by its code with the driver's sentence. */

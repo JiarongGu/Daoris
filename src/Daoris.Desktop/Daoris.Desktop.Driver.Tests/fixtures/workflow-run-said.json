@@ -199,5 +199,12 @@
       "Its graph observes quest #q2, its newest work here, and `daoris/q2-work`, the branch its newest session worked.",
       "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one."
     ] }
+  ],
+  "waits": [
+    { "code": "actor", "actor": "approver", "holder": "person", "words": "Approve Production in Azure DevOps.", "url": "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90",
+      "said": "Waiting on `approver`: you. Approve Production in Azure DevOps. Open https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90" },
+    { "code": "actor", "actor": "release-manager", "holder": "agent", "holderName": "release-steward", "words": "Build 512 running.",
+      "said": "Waiting on `release-manager`: `release-steward`. Build 512 running." },
+    { "code": "progress", "words": "Production deploying.", "said": "Under way. Production deploying." }
   ]
 }

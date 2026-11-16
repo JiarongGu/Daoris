@@ -70,6 +70,7 @@ internal static class DriverConfigReader
             WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
             Growth = GrowthKey.Map(root, "growth"),
             WorkspaceGrowth = GrowthKey.Map(root, "workspaceGrowth"),
+            PlaceRisk = PlaceRiskBook.Read(root),
             Brainstorms = BrainstormKey.Machine(root),
             WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
             Commits =CommitKey.Map(root, "commits"),
@@ -78,6 +79,7 @@ internal static class DriverConfigReader
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
             WorkflowValues = WorkflowValuesKey.Map(root),
+            WorkflowValuesWhy = WorkflowValuesKey.WhyMap(root),
             // A default that is no workflow's id is not read.
             DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
                 && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,

@@ -78,17 +78,23 @@ public static class OpinionCasting
     ];
 
     /// <summary>
-    /// Why the decision door refuses <paramref name="act"/> on the vacancy <paramref name="casts"/> stand at, in its words: a re-cast naming
-    /// no reviewer the vacancy offered (<see cref="SupervisorWhy.NotOfferedChoice"/>), or the prepaid harness where its own act's admission,
-    /// as <paramref name="refused"/> answers it, refuses (<see cref="SupervisorWhy.NotGranted"/>); none where the act may be kept.
+    /// Why the decision door refuses <paramref name="act"/> on the vacancy <paramref name="casts"/> stand at: a re-cast naming no reviewer the
+    /// vacancy offered (<see cref="SupervisorWhy.NotOfferedChoice"/>); none where it named one. What the act spends is the census's
+    /// (<see cref="ActSpends"/>), read with <see cref="Spends"/>.
     /// </summary>
-    public static string? Refusal(IReadOnlyList<OpinionCast> casts, string act, string? agent, Func<string, string?> refused)
+    public static string? Refusal(IReadOnlyList<OpinionCast> casts, string act, string? agent)
     {
         if (act != SupervisorKinds.Recast) return null;
         var offered = Current(casts).LastOrDefault(cast => cast.Act == Vacant)?.Offered ?? [];
-        if (agent is null || !offered.Contains(agent, StringComparer.Ordinal)) return SupervisorWhy.NotOfferedChoice;
-        return string.Equals(agent, PrepaidAgent, StringComparison.OrdinalIgnoreCase) ? refused(SupervisorKinds.Prepaid) : null;
+        return agent is null || !offered.Contains(agent, StringComparer.Ordinal) ? SupervisorWhy.NotOfferedChoice : null;
     }
+
+    /// <summary>
+    /// Whether <paramref name="act"/> naming <paramref name="agent"/> spends money (<see cref="ActSpends"/>): the prepaid act, and a re-cast
+    /// naming the prepaid harness, spend its balance; every other use spends nothing beyond the act.
+    /// </summary>
+    public static bool Spends(string act, string? agent) =>
+        act == SupervisorKinds.Prepaid || (act == SupervisorKinds.Recast && string.Equals(agent, PrepaidAgent, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// The reviewers the next walk reads after <paramref name="cast"/>: a re-cast's agent first; the prepaid harness first; relaxed, the

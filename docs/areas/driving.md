@@ -245,7 +245,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
     (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
-    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it ended any other way. A run not ended
+    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it was stopped, its quests left for the
+    person's word. A run ended failed ends none (`RunSessionEnds.Ends`, said once as `failed-held`): its step's holder may still settle
+    it done outside Daoris or try it again, which governs the run again, so the sessions awaiting its later steps wait on. A run not ended
     whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
     its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
     `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person

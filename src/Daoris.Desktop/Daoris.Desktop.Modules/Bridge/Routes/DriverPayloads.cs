@@ -15,6 +15,17 @@ public sealed record SetStanding(string Repository, string? Says);
 /// <summary>No repository is read as an empty name, and no checks clear them.</summary>
 public sealed record SetSessionChecks(string? Repository, string? Checks);
 
+/// <summary>A node's values set (each option's JSON text) or cleared, with the reason recorded (<c>SET_WORKFLOW_VALUES</c>).</summary>
+public sealed record SetWorkflowValues(string? Repository, string? Workflow, string? Node, System.Text.Json.JsonElement? Values, bool Clear, string? Why)
+{
+    /// <summary>The values to lay over the node's, each option's JSON text; null to clear; refused where neither is asked.</summary>
+    public IReadOnlyDictionary<string, string>? Options() =>
+        Clear ? null
+        : Values is { ValueKind: System.Text.Json.JsonValueKind.Object } values && values.EnumerateObject().Any()
+            ? values.EnumerateObject().ToDictionary(option => option.Name, option => option.Value.GetRawText(), StringComparer.Ordinal)
+            : throw new Daoris.Driver.DriverException("name the values to set as an object of options, or clear the node's.");
+}
+
 public sealed record SetNotify(bool Notify);
 
 /// <summary>No minutes, or none whole, is the driver's refusal, as less than one is.</summary>

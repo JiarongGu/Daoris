@@ -171,8 +171,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     next one. `ROLES` answers it as `deciders`, worded on a place's Roles as *Who decides here*. Ask Daoris may explain the
     supervisor, never overrule it. The resolver is read as the reporting line (`ReportingLine`, D304 point 3): the lead is the
     supervisor it finds below the machine, the head the machine's, the owner actor the top, held by the person. Help waits on the
-    first level that holds it; a level held by the person's rules or by nobody is held by the person there; a level nobody is
-    appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
+    first level that holds it; no level is the person's by default (D305): a level held by the person's rules or by nobody is the
+    person's only where the place's risk record marks it (`line`, rule 49a), else vacant, the older reading kept while a home's record
+    is unwritten; a level nobody is appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
     `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner actor (`owner-class`); other help the head
     leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
     the machine's supervisor of `ask-daoris`, granted `ask-daoris.report` and held by the person's rules, so it reads nothing until
@@ -193,7 +194,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     generation is its role's id and revision, read at every admission, so any write of the role makes a decision kept under the old
     one `role-changed`. Any caller writes the roles: `driver role` from a process an agents' job holds acts as from the person's
     terminal, and a holder's act from inside such a job is judged by its proof alone; only a caller the system cannot place is
-    refused (`untold`). (D208, D209, D233, D284)
+    refused (`untold`). A write of a role an agent holds with acts granted is the owner's alone (`PipeOwnerOnly`): an agent's press
+    of it goes on the owner's card in every mode, and one from an agents' job proving no key is refused (`owner-only`). Every act
+    of a supervisor kind and of the steward declares in one census what it spends (money, a sign-in, a destination) and its pin,
+    the subject it lapses with (`ActSpends`); it is admitted only where every grant on its chain lists both the act and the grant
+    covering its spend, a spend no grant covers staying the owner role's, and a refusal names the grant missing (`missing`).
+    (D208, D209, D233, D284, D306)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris writes,
     running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The verb sends
@@ -242,11 +248,22 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     the service shows. A keep or a drop names the staged rows its pin holds and the service moves exactly those, each still staged
     on the session's own page or none, so a row staged since, or by a session it continues, waits to be judged on its own; the
     person's moves them all. A departure's accepted move names the role (`by`), so the owner's mark never reads it as theirs, and the
-    session's head shows a held one with *Overrule*; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
-    high-risk place holds none. (D208, D233, D296, D297)
+    session's head shows a held one with *Overrule*; an act applies only where a role holding it is set for the scope and the place's
+    risk record (rule 49a) lets a role hold it. (D208, D233, D296, D297, D305)
+49a. Each place's risk (low, medium or high) and the owner's marks are one record, `placeRisk` in `driver.json` (`PlaceRiskBook`), keyed
+    `machine`, `workspace/<name>`, `repository/<name>`; a place it does not name is low and unmarked, the narrowest risk set stands, and a
+    destination's mark (`release.production`: the place's production releases stay the owner role's) covers every place under it. The
+    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*), `daoris settings risk`, and Ask
+    Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
+    (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
+    decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line;
+    the home's migration (`place-risk`) wrote today's person-held levels (the machine's seed and every supervisor held by rules or nobody)
+    as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
+    rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`) and listed to the hold that answers it now: the lead at the
-    repository, the head at the machine once the lead left it, nobody once the head left it (gave up). Its acts, kept at once with
+    repository, the head at the machine once the lead left it or where the lead holds none of the vacancy's acts, nobody once the
+    head left it (gave up). Its acts, kept at once with
     their reading and no window: `recast` naming a reviewer the rule declares that the look's walk found installed (else
     `not-offered-choice`), the DeepSeek harness only where `vacancy.prepaid` is granted too (else `not-granted`); `relax` (the work's
     own makers read it after the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a
@@ -358,7 +375,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 - **Staffing:** `RoleStaffing.Set`, the one writer; another reader of an order goes through `RoleOrders` (`OrderReadersCensusTests`).
 - **A policy field:** `StaffPolicy`, `StaffJudge`, then `StaffCapabilities.Fields`.
 - **A supervisor count or action:** `SupervisorRules`, the count in `Course/Domain/LineCounts.cs`, read through `SupervisorRuleBook`.
-- **A decision kind:** a row under `Modules/Bridge/SupervisorKinds/` and its typed subject.
+- **A decision kind:** a row under `Modules/Bridge/SupervisorKinds/` and its typed subject; each act's spend and pin in `ActSpends`.
 - **A steward act:** a row in `StewardActRows` naming its person's route, its name in `StewardActNames`, the web's `ACTS`, its words
   in both catalogues.
 - **An Ask Daoris door, only where one is wanted:** a view in `Modules/Platform/Views/` registered in `PressViews.All`, its

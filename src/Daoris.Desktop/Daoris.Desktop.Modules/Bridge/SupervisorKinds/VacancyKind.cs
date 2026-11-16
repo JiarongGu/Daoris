@@ -55,13 +55,15 @@ internal sealed class VacancyKind : ISupervisorKind
         var admitted = judge.Admit(SupervisorKinds.Vacancy, place, act == LinePasses.Left ? null : act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
-        // A re-cast names a reviewer the vacancy offered, and the prepaid one spends money: its own act's grant too.
-        if (OpinionCasting.Refusal(kept, act, agent, other => judge.Admit(SupervisorKinds.Vacancy, place, other).Why) is { } refused)
+        // A re-cast names a reviewer the vacancy offered; and every grant on the act's chain covers what it spends (D306).
+        if (OpinionCasting.Refusal(kept, act, agent) is { } refused) return SupervisorDecided.Refused(refused);
+        var role = judge.Supervising(SupervisorKinds.Vacancy, place).Role;
+        if (act != LinePasses.Left && ActSpends.Missing([role?.Hold?.Acts ?? []], SupervisorKinds.Qualified(SupervisorKinds.Vacancy, act), OpinionCasting.Spends(act, agent))
+            is { } missing)
         {
-            return SupervisorDecided.Refused(refused);
+            return SupervisorDecided.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
         }
 
-        var role = judge.Supervising(SupervisorKinds.Vacancy, place).Role;
         var actor = role is { Scope.Rank: > 0 } ? LineActors.Lead : LineActors.Head;
         var reading = string.Join(" ", reasons.Select(reason => reason.Says));
         casts.Keep(parts.Chain, parts.Repository, new OpinionCast(
@@ -79,6 +81,11 @@ internal sealed class VacancyKind : ISupervisorKind
         var left = OpinionCasting.Left(casts);
         if (left.ContainsKey(LineActors.Head)) return null;
         if (left.ContainsKey(LineActors.Lead)) return new RolePlace();
-        return loop.Pipe?.StandingConfirmation is { } judge ? judge.Placed(repository) : new RolePlace(Repository: repository);
+        if (loop.Pipe?.StandingConfirmation is not { } judge) return new RolePlace(Repository: repository);
+        var place = judge.Placed(repository);
+        // A lead holding none of the vacancy's acts is vacant (D305): the vacancy passes up to the machine's level, never to nobody.
+        return judge.Supervising(SupervisorKinds.Vacancy, place).Role is { Scope.Rank: > 0 } && SupervisorDecisionDoor.Covered(judge, SupervisorKinds.Vacancy, place) is null
+            ? new RolePlace()
+            : place;
     }
 }
