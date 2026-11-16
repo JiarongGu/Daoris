@@ -232,11 +232,7 @@ public static class WorkflowProcesses
         return (name, graph is null ? null : Involvement.StepsOf(graph));
     }
 
-    /// <summary>
-    /// The workflow a run would follow without its task's kind, as <see cref="Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>
-    /// reads it, with its newest graph version whole, which the kind's paths compare checks and the person's part by (<see cref="KindLowering"/>).
-    /// </summary>
-    /// <returns>Its name as said, and its newest graph, or null where none is chosen or it does not read.</returns>
+    /// <summary>The same workflow with its newest graph whole, or null, which a kind's paths compare checks by (<see cref="KindLowering"/>).</summary>
     public static (string Name, NodeGraph? Graph) OtherwiseGraph(
         IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
     {
