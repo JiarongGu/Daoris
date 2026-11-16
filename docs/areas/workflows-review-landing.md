@@ -44,7 +44,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3a. A repository's own values for a workflow it follows are options over it, never a copy: `driver.json`'s `workflowValues`, by
    repository, workflow id and node id, each option's JSON value (`WorkflowValuesKey`), laid over that node's options (`NodeValues`)
    wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
-   binding stay the version's, and naming values names no workflow. No door writes them yet: the file is edited. (D288)
+   binding stay the version's, and naming values names no workflow. One door writes them, the window's `SET_WORKFLOW_VALUES` and its
+   twin `daoris workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>`, both through
+   `WorkflowValuesKey.Apply`, which refuses a value that is no JSON or a change with no reason and records the reason beside the values
+   (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
+   or `target-changed` failure listed, never by editing the file. `SettingDoorsCensusTests` holds every key of the driver's file a step
+   reads to a setting of the window's and its verb. (D288, RELEASEVALUES1)
+3c. A release target keeps to its route (ACTPIN1, D307): the Azure DevOps plugin reads each release definition's continuous-deployment
+   trigger at the act, and the branch the merged build ran on routes to the definitions whose trigger takes it (`routes.mjs`). A failure
+   for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
+   on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
+   refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
+   approval's card names the release, its definition, the build and its source branch.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;

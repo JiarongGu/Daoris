@@ -109,7 +109,7 @@ test('a stage waiting on an approval tells Daoris, once, that the step waits on 
   assert.notEqual(waits.id, 'i-1');
   assert.equal(waits.evidence.environment, 'Production');
   assert.equal(waits.evidence.url, RELEASE_WEB);
-  assert.match(waits.evidence.message, /^Release-12 of app-release: Approve Production in Azure DevOps: asked of Release Approvers since 2026-11-16 09:50 UTC\./);
+  assert.match(waits.evidence.message, /^Release-12 of app-release \(#3\), build 20261110\.41 from `main`: Approve Production in Azure DevOps: asked of Release Approvers since 2026-11-16 09:50 UTC\./);
   assert.equal(step.params.state, 'reached');
   assert.deepEqual(writes(api), []);
 });

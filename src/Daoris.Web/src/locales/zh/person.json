@@ -444,6 +444,7 @@
   "person.route.SET_REVIEW": "更改工作落地前如何审阅",
   "person.route.SET_SESSION_OPTION": "更改一段对话的选项",
   "person.route.SET_SESSION_CHECKS": "更改一个仓库的会话运行哪些检查",
+  "person.route.SET_WORKFLOW_VALUES": "设置仓库在某个工作流步骤上的自有取值，例如发布目标",
   "person.route.SET_STANDING": "更改一个仓库的长期答复",
   "person.route.SET_CHECKOUT_WRITES": "更改 Daoris 是否可以改动一个仓库检出中的文件",
   "person.route.GIT_REF_CREATE": "在一个仓库中创建分支或标签",

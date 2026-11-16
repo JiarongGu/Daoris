@@ -78,6 +78,7 @@ internal static class DriverConfigWriter
             WorkflowKey.WriteMap(writer, "workflows", config.Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", config.WorkspaceWorkflows, workspace: true);
             WorkflowValuesKey.WriteMap(writer, config.WorkflowValues);
+            WorkflowValuesKey.WriteWhy(writer, config.WorkflowValuesWhy);
             // Written only when set: absent is no home default (a place follows Current) and no line policy.
             if (config.DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
             LinePolicyKey.WritePolicies(writer, "linePolicies", config.LinePolicies);

@@ -619,6 +619,13 @@ export const useSetSessionChecks = () =>
   useDriverChange('SET_SESSION_CHECKS');
 
 /**
+ * A repository's own values on a node of a workflow it follows (a release step's target), set or cleared with the reason recorded
+ * (`SET_WORKFLOW_VALUES`): `{ repository, workflow, node, values: { name: json }, clear, why }`. `daoris workflow values` is its twin.
+ */
+export const useSetWorkflowValues = () =>
+  useDriverChange('SET_WORKFLOW_VALUES');
+
+/**
  * Whether a repository's own `daoris.gates.json` marks heavy gates, so wins over this machine's list: the
  * driver's reading of that one file in the checkout it holds (`HEAVY_MARKS`), never the page's. A read; `enabled` holds it back until
  * the section it serves is drawn, and the file is asked again whenever the page is, since nothing wakes it on an edit to the file.

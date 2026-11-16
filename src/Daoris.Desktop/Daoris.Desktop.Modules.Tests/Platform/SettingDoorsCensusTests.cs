@@ -92,6 +92,42 @@ public sealed class SettingDoorsCensusTests
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
+    /// <summary>
+    /// Each key of the driver's file a step or a door reads by its own <c>Key</c> (each <c>…Key</c> type's, by reflection) and the window's
+    /// setting that writes it: a key with none is a value only an edit of the file sets, which is how a release target came to be edited by
+    /// hand (RELEASEVALUES1). Seen failing first on <c>workflowValues</c>.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ConfigDoors { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [HeavyKey.Key] = "SET_HEAVY_GATES",
+        [IntegrationGatesKey.Key] = "INTEGRATION_GATES",
+        [KeepChoices.Key] = "SET_KEEP",
+        [SessionChecksKey.Key] = "SET_SESSION_CHECKS",
+        [WorkflowValuesKey.Key] = "SET_WORKFLOW_VALUES",
+    };
+
+    [Fact]
+    public void Every_config_key_has_a_setting_the_window_writes_and_its_verb()
+    {
+        var keys = typeof(DriverConfig).Assembly.GetTypes()
+            .Where(type => type.Namespace == "Daoris.Driver" && (type.Name.EndsWith("Key", StringComparison.Ordinal) || type == typeof(KeepChoices)))
+            .Select(type => type.GetField("Key", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            .Where(field => field is { IsLiteral: true } && field.FieldType == typeof(string))
+            .Select(field => (string)field!.GetRawConstantValue()!).Distinct(StringComparer.Ordinal).ToList();
+        var doors = Built();
+        var routes = doors.Settings.Concat(doors.Presses).ToHashSet(StringComparer.Ordinal);
+        var twinned = doors.Twins.Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
+
+        var problems = keys.Where(key => !ConfigDoors.ContainsKey(key)).Select(key => $"`{key}` is read from the driver's file, and no setting the window writes is named for it")
+            .Concat(ConfigDoors.Where(each => routes.All(route => !route.EndsWith("." + each.Value, StringComparison.Ordinal) && route != each.Value))
+                .Select(each => $"`{each.Key}`'s setting {each.Value} is no route of the window's"))
+            .Concat(ConfigDoors.Where(each => twinned.All(route => !route.EndsWith("." + each.Value, StringComparison.Ordinal) && route != each.Value) && !doors.NoTwin.Keys.Any(route => route.EndsWith("." + each.Value, StringComparison.Ordinal)))
+                .Select(each => $"`{each.Key}`'s setting {each.Value} has no verb and says no reason"))
+            .ToList();
+
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+    }
+
     /// <summary>The settings it counts are the window's standing choices, the line's policy among them, and none of the acts.</summary>
     [Fact]
     public void It_counts_the_window_s_settings_and_none_of_its_acts()
