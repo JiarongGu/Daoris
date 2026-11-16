@@ -169,13 +169,14 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person's. The admission answers that supervisor's hold where its holder is the started terminal or an agent and the act is
     granted (else `not-staffed`, `not-started`, `not-granted`), and every later step asks it again, so a grant taken away stops the
     next one. `ROLES` answers it as `deciders`, worded on a place's Roles as *Who decides here*. Ask Daoris may explain the
-    supervisor, never overrule it. The resolver is read as the reporting line (`ReportingLine`, D304 point 3): the lead is the
-    supervisor it finds below the machine, the head the machine's, the owner actor the top, held by the person. Help waits on the
+    supervisor, never overrule it. The resolver is read as the reporting line (`ReportingLine`, D304 point 3), each level named by
+    the supervisor holding it (`LineLevels`, D309 point 4): the repository's or the workspace's supervisor, whichever it finds below
+    the machine, then the machine's supervisor, and the owner role the top, held by the person. Help waits on the
     first level that holds it; no level is the person's by default (D305): a level held by the person's rules or by nobody is the
     person's only where the place's risk record marks it (`line`, rule 49a), else vacant, the older reading kept while a home's record
     is unwritten; a level nobody is appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
-    `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner actor (`owner-class`); other help the head
-    leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
+    `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner role (`owner-class`); other help the
+    machine's supervisor leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
     the machine's supervisor of `ask-daoris`, granted `ask-daoris.report` and held by the person's rules, so it reads nothing until
     the person turns it on; the home's `second-check` step gives it its first choices once (Codex, then Claude Code · opus · high,
     40 starts a day each) unless the person's own record, staffing or supervisor stands. (D233, D272)
@@ -261,9 +262,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
     rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
-    the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`) and listed to the hold that answers it now: the lead at the
-    repository, the head at the machine once the lead left it or where the lead holds none of the vacancy's acts, nobody once the
-    head left it (gave up). Its acts, kept at once with
+    the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`, each act naming its level) and listed to the hold that answers
+    it now: the repository's or the workspace's supervisor at the repository, the machine's supervisor once that level left it or
+    where it holds none of the vacancy's acts, nobody once the machine's supervisor left it (gave up). Its acts, kept at once with
     their reading and no window: `recast` naming a reviewer the rule declares that the look's walk found installed (else
     `not-offered-choice`), the DeepSeek harness only where `vacancy.prepaid` is granted too (else `not-granted`); `relax` (the work's
     own makers read it after the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a

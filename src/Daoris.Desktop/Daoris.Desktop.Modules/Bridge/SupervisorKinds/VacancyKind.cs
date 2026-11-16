@@ -4,11 +4,11 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The vacancy kind: a second opinion nobody is free to give, its subject <c>{ session, step }</c> naming the gate's chain and repository.
-/// It waits on the reporting line's level that holds it now: the lead at the repository (the head where no lead is appointed), and the
-/// head at the machine once the lead left it. Its decide re-casts (naming a reviewer the vacancy offered, the prepaid one only with
-/// <c>vacancy.prepaid</c> granted), relaxes the family difference, spends the prepaid balance or waits, journalled at once beside the gate
-/// (<see cref="OpinionCasts"/>), which the look's next walk reads until a walk fills it; its leave is its pass up, and the head's ends it
-/// as gave up, listed to nobody.
+/// It waits on the reporting line's level that holds it now: the repository's or its workspace's supervisor (the machine's where neither
+/// is appointed), and the machine's supervisor once that level left it. Its decide re-casts (naming a reviewer the vacancy offered, the
+/// prepaid one only with <c>vacancy.prepaid</c> granted), relaxes the family difference, spends the prepaid balance or waits, journalled
+/// at once beside the gate (<see cref="OpinionCasts"/>), which the look's next walk reads until a walk fills it; its leave is its pass up,
+/// and the machine's supervisor's ends it as gave up, listed to nobody.
 /// </summary>
 internal sealed class VacancyKind : ISupervisorKind
 {
@@ -64,26 +64,26 @@ internal sealed class VacancyKind : ISupervisorKind
             return SupervisorDecided.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
         }
 
-        var actor = role is { Scope.Rank: > 0 } ? LineActors.Lead : LineActors.Head;
+        var level = role is null ? LineLevels.Machine : LineLevels.Of(role.Scope);
         var reading = string.Join(" ", reasons.Select(reason => reason.Says));
         casts.Keep(parts.Chain, parts.Repository, new OpinionCast(
-            DateTimeOffset.UtcNow, subject.Session, actor, role?.Id ?? holder.Agent?.Role ?? holder.Kind, act, agent,
+            DateTimeOffset.UtcNow, subject.Session, level, role?.Id ?? holder.Agent?.Role ?? holder.Kind, act, agent,
             bound is null ? reading : $"{bound}: {reading}"));
         return new SupervisorDecided(true, act, null, null);
     }
 
     /// <summary>
-    /// Where the vacancy waits now: at the repository until a level leaves it, then at the machine, the head's place; null once the head
-    /// left it too, gave up with what it tried.
+    /// Where the vacancy waits now: at the repository until a level leaves it, then at the machine, the machine's supervisor's place; null
+    /// once the machine's supervisor left it too, gave up with what it tried.
     /// </summary>
     private static RolePlace? Up(DriverLoop loop, IReadOnlyList<OpinionCast> casts, string repository)
     {
         var left = OpinionCasting.Left(casts);
-        if (left.ContainsKey(LineActors.Head)) return null;
-        if (left.ContainsKey(LineActors.Lead)) return new RolePlace();
+        if (left.ContainsKey(LineLevels.Machine)) return null;
+        if (left.Keys.Any(LineLevels.IsBelowMachine)) return new RolePlace();
         if (loop.Pipe?.StandingConfirmation is not { } judge) return new RolePlace(Repository: repository);
         var place = judge.Placed(repository);
-        // A lead holding none of the vacancy's acts is vacant (D305): the vacancy passes up to the machine's level, never to nobody.
+        // A level below the machine holding none of the vacancy's acts is vacant (D305): the vacancy passes up to the machine's, never to nobody.
         return judge.Supervising(SupervisorKinds.Vacancy, place).Role is { Scope.Rank: > 0 } && SupervisorDecisionDoor.Covered(judge, SupervisorKinds.Vacancy, place) is null
             ? new RolePlace()
             : place;

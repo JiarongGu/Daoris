@@ -263,7 +263,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 51. Shipped data keeps one English text. Its words are catalogue keys by id, and a census holds every id in every
     catalogue. (from D222)
 52. A name is a UI element, designed in each language. `glossary.json` is the authority. `names:check --strict` runs in
-    the web build for conformance, form and doors; the budgets only report. (from D116, D54)
+    the web build for conformance, form and doors; the budgets only report. Its census of shared words (`shared-words.mjs`) fails
+    a word two things say with different Chinese across the glossary, the driver's seeded roles and the reporting line's levels,
+    so a new code word never takes a word the window already gives another thing. (from D116, D54, D309)
 53. Daoris's own lines in a record are codes the page words in the reader's language. A session's note is drawn from its
     coded parts only (`work/Note.tsx`): a record with no parts draws nothing, and a part the page cannot word shows marked as
     recorded. Someone's words show as written. The window's language is the viewer's; the terminal stays English. (from D142)

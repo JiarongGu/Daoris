@@ -10,7 +10,7 @@
   "asks.plan.team": "团队",
   "asks.plan.member": "{{role}} {{session}}：{{part}}",
   "asks.plan.wholePlan": "整个计划",
-  "asks.plan.role.lead": "负责人",
+  "asks.plan.role.lead": "主导",
   "asks.plan.decided": "第 {{revision}} 版，由 {{author}} {{decision}}",
   "asks.plan.decision.planned": "制定",
   "asks.plan.decision.revised": "修订",

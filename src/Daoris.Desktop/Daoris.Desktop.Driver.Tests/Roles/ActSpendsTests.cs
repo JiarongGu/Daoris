@@ -46,10 +46,10 @@ public sealed class ActSpendsTests
     {
         List<OpinionCast> casts =
         [
-            new(At, "s1", LineActors.Head, "supervisor", OpinionCasting.Vacant, null, "nobody free"),
-            new(At.AddMinutes(1), "s1", LineActors.Head, "supervisor", SupervisorKinds.Prepaid, null, "spend the balance"),
+            new(At, "s1", LineLevels.Machine, "supervisor", OpinionCasting.Vacant, null, "nobody free"),
+            new(At.AddMinutes(1), "s1", LineLevels.Machine, "supervisor", SupervisorKinds.Prepaid, null, "spend the balance"),
             new(At.AddMinutes(2), "s1", OpinionCasting.Step, "dsh", OpinionCasting.Filled, null, "dsh holds the step"),
-            new(At.AddMinutes(30), "s2", LineActors.Head, "supervisor", OpinionCasting.Vacant, null, "nobody free again"),
+            new(At.AddMinutes(30), "s2", LineLevels.Machine, "supervisor", OpinionCasting.Vacant, null, "nobody free again"),
         ];
         Assert.Null(OpinionCasting.Newest(casts));
         Assert.Empty(OpinionCasting.Left(casts));
