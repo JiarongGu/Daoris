@@ -168,9 +168,13 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
     every press waits. (from D139)
 39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
-    performs that is recorded, sent or unknown on a run that goes on, read from the run records (`PluginStepsInFlight`), so a
-    release or a deploy is never cut off and left not known. A conversation between turns, a parked session, the terminal, a
-    held or settled attempt, Daoris's own steps and an ended run's are idle; the banner names the steps it waits on. (from D139, D301)
+    performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
+    its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
+    cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
+    record. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
+    the role it waits on (an approver, a deployer, whoever holds it), Daoris's own steps, an ended run's, and an attempt the
+    runtime does not ask after (a run it does not govern, a node no graph declares, a plugin down) are idle; the banner names the
+    steps it waits on. (from D139, D301)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
     version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
@@ -243,8 +247,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   rule 17. Add it to `HomePlacing.Moves` only if Daoris alone names it by a derived path.
 - **Start-time home work:** `Mod/Update/InstallHome.cs`, `HomePlacing.cs`.
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
-  them. **When to update:** `Mod/Update/InstallUpdater.cs`, a run's plugin step in flight read by
-  `Drv/Workflows/Nodes/PluginStepsInFlight.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
+  them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
+  steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
+  `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.

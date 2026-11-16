@@ -62,6 +62,9 @@ public sealed class DriverWatch(
     /// <summary>The runs whose plugin step waits on an actor the person holds; none before a pass.</summary>
     public IReadOnlyList<ActorWait> ActorWaits => _doors.Nodes?.ActorWaits() ?? [];
 
+    /// <summary>The runs' plugin steps in flight the evaluation runtime governs, their plugin up (<see cref="NodeRuntime.PluginStepsInFlight"/>); none before a pass.</summary>
+    public int PluginStepsInFlight => _doors.Nodes?.PluginStepsInFlight() ?? 0;
+
     /// <summary>The run steps waiting on the person, read through the evaluation runtime; none before it is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _doors.Nodes?.PersonWaits() ?? [];
 

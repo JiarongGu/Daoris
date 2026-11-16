@@ -1,28 +1,27 @@
-using System.Collections.Immutable;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin step in flight is an attempt its plugin performs that is recorded, sent or unknown on a record whose run goes on: what an
-/// update's drain waits on beside the sessions and the turns. Settled and held attempts, Daoris's own kinds and an ended run's
-/// attempts are none; the home's records are read as the runtime keeps them.
+/// A plugin step in flight is an attempt its plugin performs that is recorded, sent or unknown, on a run the runtime governs now, at a node
+/// its graph declares, while its plugin's process is up, and whose step waits on no role's act: what an update's drain waits on beside the
+/// sessions and the turns. Settled and held attempts, Daoris's own kinds, an orphaned record (a run no binding governs, a node no graph
+/// declares), a plugin down and a step whose progress names the role it waits on are none, so nothing that never moves holds the install.
 /// </summary>
-public sealed class PluginStepsInFlightTests : IDisposable
+public sealed class PluginStepsInFlightTests : NodeRunFixture
 {
-    private static readonly DateTimeOffset At = new(2026, 11, 16, 3, 53, 0, TimeSpan.Zero);
+    /// <summary>The claim, the plugin's performed deploy, then the landing.</summary>
+    private const string ClaimedDeployHanded = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deploy"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
+        """;
 
-    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-steps-" + Guid.NewGuid().ToString("N")[..8]);
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
-    }
-
-    private static NodeAttempt Attempt(string node, string step, string state, int number = 1) =>
-        new(node, number, step.Contains('/') ? step[..step.IndexOf('/')] : step,
-            new WorkPerformCall("unit-1", step, 1, $"i-{node}-{number}", $"k-{node}-{number}", "r1", [], At.AddMinutes(15)), state)
-        { RecordedAt = At };
+    private NodeAttempt Attempt(string node, string step, string state, string invocation = "i-1") =>
+        new(node, 1, step.Contains('/') ? step[..step.IndexOf('/')] : step,
+            new WorkPerformCall("unit-b1", step, 1, invocation, "k-" + invocation, Tip1, [], _now.AddMinutes(15)), state)
+        { RecordedAt = _now, Generation = 1, Deliveries = 1 };
 
     [Theory]
     [InlineData(AttemptStates.Recorded, true)]
@@ -41,40 +40,69 @@ public sealed class PluginStepsInFlightTests : IDisposable
         Assert.False(PluginStepsInFlight.InFlight(Attempt("ask", NodeKinds.Request, AttemptStates.Recorded)));
     }
 
-    /// <summary>A run's record as the runtime keeps one: each attempt's node holding a status that names it.</summary>
-    private static NodeRecord Run(string run, RunEnd? ended, params NodeAttempt[] attempts)
+    /// <summary>
+    /// Run q7 bound to the deploy graph, its deploy sent to the plugin with <paramref name="progress"/> said of it; and run q9's record, which
+    /// no binding names any more (its repository retired), holding a deploy sent that nothing will ever ask after.
+    /// </summary>
+    private NodeRuntime Governing(StepProgress? progress = null)
     {
-        var unit = RunUnits.IdOf(run);
-        return new NodeRecord(unit)
+        var digest = RunHome.SaveGraph(_home, ClaimedDeployHanded);
+        RunHome.Bind(_home, RunId, digest, _now);
+        var bound = new NodeAcceptance(RunUnit, Tip1, digest, "deploy", 1, 1) { Subject = "unit-b1" };
+        Files.Write(new NodeRecord(RunUnit)
         {
-            Statuses = attempts.ToImmutableSortedDictionary(
-                attempt => attempt.Node, attempt => new NodeStatus(unit, attempt.Node, NodeStates.Active) { Attempt = attempt.Attempt, Tries = 1 },
-                StringComparer.Ordinal),
-            Attempts = attempts,
-            Ended = ended,
-        };
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["deploy"] = new(RunUnit, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1, Binding = bound, Scope = new NodeScope(digest, RunId) },
+            },
+            Attempts = [Attempt("deploy", Plugin + "/deploy", AttemptStates.Sent) with { Progress = progress }],
+        });
+        var orphan = RunUnits.IdOf("q9");
+        Files.Write(new NodeRecord(orphan)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["deploy"] = new(orphan, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1 } },
+            Attempts = [Attempt("deploy", Plugin + "/deploy", AttemptStates.Sent, "i-orphan")],
+        });
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        _port.Answer = _ => new(ReconcileStates.Running);
+        return Runtime();
     }
 
     [Fact]
-    public void The_home_s_records_count_each_run_s_plugin_steps_in_flight_and_none_of_a_run_that_ended()
+    public async Task A_governed_run_s_plugin_step_counts_while_its_plugin_is_up_and_an_orphaned_record_never_does()
     {
-        var records = new NodeRecordFiles(_home, () => true);
-        records.Write(Run("r1", null,
-            Attempt("deploy", "acme.deploy/deploy", AttemptStates.Settled),
-            Attempt("release", "acme.deploy/release", AttemptStates.Sent),
-            Attempt("gates", NodeKinds.Check, AttemptStates.Sent)));
-        records.Write(Run("r2", null, Attempt("release", "acme.deploy/release", AttemptStates.Unknown)));
-        records.Write(Run("r3", new RunEnd("q3", At), Attempt("release", "acme.deploy/release", AttemptStates.Sent)));
+        var runtime = Governing();
 
-        Assert.Empty(records.All().Unreadable);
-        Assert.Equal(2, PluginStepsInFlight.Count(_home));
+        Assert.Equal(0, runtime.PluginStepsInFlight());
 
-        records.Write(Run("r1", null, Attempt("release", "acme.deploy/release", AttemptStates.Settled) with { Outcome = "reached" }));
+        await RunPassAsync(runtime);
 
-        Assert.Equal(1, PluginStepsInFlight.Count(_home));
+        Assert.Equal(AttemptStates.Sent, Assert.Single(Files.Read(RunUnit)!.Attempts).State);
+        Assert.Equal(1, runtime.PluginStepsInFlight());
+
+        // The plugin removed, or crashing at its start: nothing asks after the step until it is up, so it holds nothing.
+        _port.Generation = null;
+        Assert.Equal(0, runtime.PluginStepsInFlight());
     }
 
-    [Fact]
-    public void A_home_with_no_records_has_no_plugin_step_in_flight() =>
-        Assert.Equal(0, PluginStepsInFlight.Count(_home));
+    /// <summary>
+    /// A release's stage waiting on its approver, or a deploy on its deployer, waits on a role's act outside the plugin, whoever holds that
+    /// role: the count reads the role the progress names and never its holder, so the person's approval or an agent's is alike. A step
+    /// whose progress says it goes on is in flight.
+    /// </summary>
+    [Theory]
+    [InlineData("approver", 0)]
+    [InlineData("deployer", 0)]
+    [InlineData(null, 1)]
+    public async Task A_step_whose_progress_names_the_role_it_waits_on_holds_nothing_and_one_going_on_does(string? role, int inFlight)
+    {
+        var runtime = Governing(new StepProgress(role, "Release-12: Production.", "https://example.test/release/12", "Production", _now));
+
+        await RunPassAsync(runtime);
+
+        var kept = Assert.Single(Files.Read(RunUnit)!.Attempts);
+        Assert.Equal((AttemptStates.Sent, role), (kept.State, kept.Progress?.Actor));
+        Assert.Equal(inFlight, runtime.PluginStepsInFlight());
+    }
 }

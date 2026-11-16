@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 /// <summary>What the drain waits on: driven sessions this loop runs, conversations with a turn in flight, and runs' plugin steps.</summary>
 public sealed record UpdateWork(int Driven, int Turns)
 {
-    /// <summary>The runs' plugin steps in flight, which the updater reads from the run records (<see cref="PluginStepsInFlight"/>).</summary>
+    /// <summary>The runs' plugin steps in flight the loop's evaluation runtime governs, their plugin up (<see cref="PluginStepsInFlight"/>).</summary>
     public int Steps { get; init; }
 
     public bool Idle => InstallUpdate.Idle(Driven, Turns, Steps);
@@ -273,7 +273,7 @@ public sealed class InstallUpdater(
             return Publish(new UpdateState(UpdateStates.Waiting, staged, mode, 0, 0, null, Outcome(), Last()));
         }
 
-        var now = Work();
+        var now = work();
         if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, request, now, "now").ConfigureAwait(false);
 
         DateTimeOffset? since;
@@ -293,9 +293,6 @@ public sealed class InstallUpdater(
             ? await ApplyAsync(id, staged, mode, request, now, "idle").ConfigureAwait(false)
             : Publish(Drains(staged, mode, now, since));
     }
-
-    // A release or a deploy sent to its plugin is never cut off by the swap: the home's run records are asked at each look.
-    private UpdateWork Work() => work() with { Steps = PluginStepsInFlight.Count(home) };
 
     private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now, DateTimeOffset? since) =>
         new(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since) { Steps = now.Steps };
@@ -432,7 +429,7 @@ public sealed class InstallUpdater(
             // What began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began, a plugin step a pass sent) is read again now that no press passes, and the drain
             // goes on for it. *Update now* closes whatever runs, so it reads nothing.
-            else if (by == "idle" && Work() is { Idle: false } again)
+            else if (by == "idle" && work() is { Idle: false } again)
             {
                 DateTimeOffset? since;
                 lock (_gate)
