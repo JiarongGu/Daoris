@@ -173,8 +173,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             if (!moved.Moved) return (null, (null, moved.Refused));
             // The call names the unit its node observes, which on a run's record is its subject's,
             // never `run:`; on a unit's own record it is that unit.
+            // Its own key per attempt, and the key of its effect, the same for every attempt on this target, written here before the send.
             var call = new WorkPerformCall(binding.Observes, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
-                [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node));
+                [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node))
+            {
+                EffectKey = EffectKeys.Of(unit, node.Id, node.Kind, EffectKeys.Target(binding.Observes, binding.SubjectRevision)),
+            };
             var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, onPort ? node.Kind : node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
             return (Kept(record, moved, "start", now) with { Attempts = [.. record.Attempts, attempt], Fired = fired }, (attempt, null));
