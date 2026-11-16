@@ -107,7 +107,7 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runShort(t, finished('push'))).not.toBe(runShort(t, MERGED));
   });
 
-  // D304 point 2: a wait is said alike whoever holds it; the holder's word is all that differs, in either language.
+  // A wait is said alike whoever holds it; the holder's word is all that differs, in either language.
   it('says a wait held by an agent and one held by the person alike but for the holder', () => {
     const waiting = (holder: { kind: string; name?: string }) => ({
       ...WORKING.steps[0], state: 'waiting', detail: 'accept', step: { ...WORKING.steps[0]!.step, kind: 'landing' }, role: 'acceptor', holder,
