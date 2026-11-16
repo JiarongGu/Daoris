@@ -41,7 +41,7 @@ public sealed class BrainstormRoutes(HostWiring host) : IRouteModule
                 Reply(new(BrainstormRefusal.BadShape, "A meeting takes no named sources. Nothing was asked.")),
             BrainstormDesk.MeetingKind => Reply(_meetings.Ask(request.Question, request.Repository, request.Agents, DateTimeOffset.UtcNow, request.Id)),
             BrainstormDesk.BrainstormKind => Reply(
-                _brainstorms.Ask(request.Question, request.Repository, request.Agents, DateTimeOffset.UtcNow, request.Id, request.Sources)),
+                _brainstorms.Ask(request.Question, request.Repository, request.Agents, DateTimeOffset.UtcNow, request.Id, request.Sources, request.Pass)),
             _ => Reply(BadKind(request.Kind)),
         });
     }

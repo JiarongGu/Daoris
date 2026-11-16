@@ -191,6 +191,14 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     generators' deadline, its slot let go meanwhile; a maker cooling past it, meeting its limit on its restart too, or held by the cap, ends the brainstorm
     `short-handed` before any synthesis: what answered (nothing, if none did) is kept unranked, and the document names who and offers the wait by cause (ask again
     once the account lifts, its limit resets or the cap frees). (from D176, D284)
+    A **design pass** (`pass: design`; `daoris brainstorm "<purpose brief>" --design`) is the canon's fresh-design pass run by the
+    brainstorm (`DesignPasses`): its packet is the purpose brief alone, no search, no source and no repository named, and the desk
+    refuses a source beside it; its generators write designs from the brief, and its synthesis is the comparison, which beside its
+    groups gives `comparison` (the route, why, what would flip it, the trial's area, baseline and keep and retire criteria, the owner's
+    closed questions keyed `Q1` and on), refused with `comparison-missing` or `comparison:<field>` where it lacks one. Every brainstorm
+    keeps `consultation.json` beside its document (D308): each answered giver's mode (`independent` for a generator, `review` for the
+    synthesis), maker, adapter, account, the packet it read and whether it saw another answer; two generators of one maker each say
+    `same-maker`, and the record counts no independence. The decider's line (`changed`) stays null until one is said. (from D308; METHODS1)
 41. No pass may ask for a brainstorm, a helper or a reviewer, or post to a channel. Fan-out is Daoris's fixed plan, never an
     agent's. (from D176)
 42. A meeting is the person and named agents in one conversation Daoris relays, each message attributed from its turn's binding.
