@@ -10,9 +10,9 @@ public sealed record SetLanguage(string? Language, string? Repository, string? W
 
 /// <summary>
 /// A repository or a workspace, one of them. A <c>Branch</c> sent at all sets the line, blank or null clearing it; a <c>Policy</c> sent
-/// sets how the line is integrated, null withdrawing it, and with no branch beside it leaves the line as it is.
+/// sets how the line is integrated, null withdrawing it, with no branch leaving the line; <c>Merge</c> lays only its keys over the held one.
 /// </summary>
-public sealed record SetLine(string? Repository, string? Workspace, JsonElement? Branch, JsonElement? Policy);
+public sealed record SetLine(string? Repository, string? Workspace, JsonElement? Branch, JsonElement? Policy, bool Merge = false);
 
 // A rule edit in its shared table's own shape: the place it is for, then what it does, the nested object the table's alone to judge.
 // The handler hands it to the table as the terminal's verb hands its own (`RuleEdit.Shape`).

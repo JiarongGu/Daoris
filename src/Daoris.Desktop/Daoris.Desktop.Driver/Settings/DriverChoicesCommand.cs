@@ -35,7 +35,9 @@ public static class DriverChoicesCommand
                daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
-               daoris place line <repository>|--workspace <name> <branch>|--clear
+               daoris place line <repository>|--workspace <name> [<branch>|--clear] [--commit merge|rebase|squash] [--batch <1 to 8>]
+                      [--order arrival|apart] [--gates declared|none] [--unreached|--reached split|hold|land] [--integrate-line <branch>];
+                      the policy's keys merge into the place's own, `--no-policy` withdraws it; either alone leaves the line as it is
                daoris place across <repository>|--workspace <name> read on|off|--clear
                daoris place across <repository> write-to <other> [--clear]
                daoris place standing <repository> "…"|--clear
@@ -68,6 +70,11 @@ public static class DriverChoicesCommand
                       · role remove|default <id> · role suggested [--use]
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
+
+    private const string LineUsage =
+        "`driver line` needs <repository>|--workspace <name>, then <branch>|--clear and/or the policy's keys (--commit merge|rebase|squash, "
+        + "--batch <1 to 8>, --order arrival|apart, --gates declared|none, --unreached|--reached split|hold|land, --integrate-line <branch>), "
+        + "or --no-policy — e.g. `daoris place line aurora-engine develop` or `daoris place line aurora-engine --gates declared`.";
 
     public const string SessionVariable = ChildMarks.SessionVariable;
 
@@ -344,37 +351,74 @@ public static class DriverChoicesCommand
 
             case "line":
             {
+                string[] valued = ["--workspace", .. LinePolicyFlags.Valued];
+                Flags(args, valued, ["--clear", LinePolicyFlags.Withdraw], "place line", LineUsage);
                 var workspace = FlagValue(args, "--workspace");
                 var clear = args.Contains("--clear");
-                var words = Operands(args, ["--workspace"]);
+                var words = Operands(args, valued);
                 var first = words.ElementAtOrDefault(1);
                 var second = words.ElementAtOrDefault(2);
                 var name = workspace ?? first;
                 var branch = workspace is not null ? first : second;
-                if (string.IsNullOrEmpty(name) || (!clear && string.IsNullOrEmpty(branch)))
-                {
-                    throw new ChoiceWords("`driver line` needs <repository>|--workspace <name>, then <branch>|--clear — "
-                        + "e.g. `daoris place line aurora-engine develop`.");
-                }
-
-                if (!clear && !BranchName.IsValid(branch!)) throw new ChoiceWords($"`{branch}` is not a branch name git would take.");
+                // The policy's keys (how the line is integrated) ride beside the branch, or alone, which leaves the line as it is.
+                var policyNamed = LinePolicyFlags.Names(args);
+                var branchNamed = clear || !string.IsNullOrEmpty(branch);
+                if (string.IsNullOrEmpty(name) || (!branchNamed && !policyNamed)) throw new ChoiceWords(LineUsage);
+                if (!clear && branchNamed && !BranchName.IsValid(branch!)) throw new ChoiceWords($"`{branch}` is not a branch name git would take.");
                 var set = clear ? null : branch;
                 var payload = Scoped(workspace, name);
-                payload["branch"] = set;
+                if (branchNamed) payload["branch"] = set;
+                LandingIntegrate? policy = null, keys = null;
+                if (policyNamed)
+                {
+                    // Only the keys named travel and are laid over the policy held when the change is made, never the whole as read now.
+                    keys = LinePolicyFlags.Named(args);
+                    var own = workspace is not null ? AtName(before.WorkspaceLinePolicies, workspace) : AtName(before.LinePolicies, name);
+                    policy = keys is null ? null : LinePolicyKey.Overlay(own, keys);
+                    // The judge the window's press meets, before a route is asked or a file written.
+                    _ = Judged(() => workspace is not null ? before.WithWorkspaceLinePolicy(workspace, policy) : before.WithLinePolicy(name, policy));
+                    payload["policy"] = keys is null ? null : LinePolicyKey.Wire(keys);
+                    if (keys is not null) payload["merge"] = true;
+                }
+
                 return Change(ChoiceRoutes.Line, payload,
-                    config => workspace is not null ? config.WithWorkspaceLine(workspace, set) : config.WithLine(name, set), () =>
+                    config =>
+                    {
+                        if (branchNamed) config = workspace is not null ? config.WithWorkspaceLine(workspace, set) : config.WithLine(name, set);
+                        if (!policyNamed) return config;
+                        var held = workspace is not null ? AtName(config.WorkspaceLinePolicies, workspace) : AtName(config.LinePolicies, name);
+                        var next = keys is null ? null : LinePolicyKey.Overlay(held, keys);
+                        return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, next) : config.WithLinePolicy(name, next);
+                    }, () =>
                     {
                         var whose = workspace is not null ? $"repositories in the workspace `{workspace}`" : $"`{name}`";
-                        Say(set is null
-                            ? $"daoris: {whose} take{(workspace is not null ? "" : "s")} {(workspace is not null ? "their" : "its")} line from "
-                              + $"{(workspace is not null ? "their own setting or " : "its workspace, else ")}the checkout again."
-                            : $"daoris: work in {whose} grows from `{set}` and lands on it.");
-                        if (set is not null && workspace is not null)
+                        if (branchNamed)
                         {
-                            Say("  A repository with a line of its own keeps it — `daoris place line <repository> --clear` hands it back.");
+                            Say(set is null
+                                ? $"daoris: {whose} take{(workspace is not null ? "" : "s")} {(workspace is not null ? "their" : "its")} line from "
+                                  + $"{(workspace is not null ? "their own setting or " : "its workspace, else ")}the checkout again."
+                                : $"daoris: work in {whose} grows from `{set}` and lands on it.");
+                            if (set is not null && workspace is not null)
+                            {
+                                Say("  A repository with a line of its own keeps it — `daoris place line <repository> --clear` hands it back.");
+                            }
+
+                            Say("  A session already running keeps the line it started from.");
                         }
 
-                        Say("  A session already running keeps the line it started from.");
+                        if (policyNamed)
+                        {
+                            Say(policy is null
+                                ? workspace is not null
+                                    ? $"daoris: {whose} that set none of their own integrate their line by the defaults again."
+                                    : $"daoris: {whose} takes its workspace's line policy, else the defaults, again."
+                                : $"daoris: the line of {whose} is integrated with {LinePolicyFlags.Listed(policy)}; a key left out reads its default.");
+                            if (policy is not null && workspace is not null)
+                            {
+                                Say("  A repository with a policy of its own keeps it — `daoris place line <repository> --no-policy` hands it back.");
+                            }
+                        }
+
                         Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
                         return 0;
                     });

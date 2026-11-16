@@ -89,7 +89,9 @@ internal sealed class GroundScopedAttribute(string route, string list, string wo
 {
     public string? Sets { get; set; }
 
-    public override IEnumerable<PipeGround> Grounds() => [new RepositoryGround("repository", "workspace"), PipeReads.Scoped(list, workspaces, Sets)];
+    public string? Unless { get; set; }
+
+    public override IEnumerable<PipeGround> Grounds() => [new RepositoryGround("repository", "workspace"), PipeReads.Scoped(list, workspaces, Sets, Unless)];
 }
 
 /// <summary>A read of the bridge or the loop projected to what the press acts on, by its name in <see cref="PipeReads"/>.</summary>

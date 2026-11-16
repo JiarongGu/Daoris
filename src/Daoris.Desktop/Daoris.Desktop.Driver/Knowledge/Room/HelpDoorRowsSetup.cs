@@ -45,6 +45,12 @@ internal static class HelpDoorRowsSetup
             "(no screen yet)", "`daoris repository register [--repository <name>]`"),
         ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → Line",
             "`daoris place line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
+        ("set how a repository's line is integrated, or a workspace's: how each member lands, how many make a candidate, the order, whether "
+            + "the accepted gates run, and what an unconfirmed failure does",
+            "(no screen yet: a place's Set up… gives a line it integrates the default policy)",
+            "`daoris place line <repository> [--commit merge|rebase|squash] [--batch <1 to 8>] [--order arrival|apart] "
+            + "[--gates declared|none] [--unreached|--reached split|hold|land] [--integrate-line <branch>]` (`--workspace <name>` for a "
+            + "whole workspace; the keys merge into the place's own, the line stays), `daoris place line <repository> --no-policy`"),
         // How work is committed, pressed; its convention may be seeded from the repository's own instructions where the person asks.
         ("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
             + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "

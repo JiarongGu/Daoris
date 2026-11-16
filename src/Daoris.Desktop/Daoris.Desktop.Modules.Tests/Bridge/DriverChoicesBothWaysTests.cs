@@ -99,6 +99,10 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("terminal ask")]
     [InlineData("line engine develop")]
     [InlineData("line --workspace aurora --clear")]
+    [InlineData("line engine --gates declared")]
+    [InlineData("line engine --batch 3 --order apart --unreached hold")]
+    [InlineData("line --workspace aurora develop --commit squash --integrate-line release")]
+    [InlineData("line engine --no-policy")]
     [InlineData("across engine read off")]
     [InlineData("across --workspace aurora read --clear")]
     [InlineData("across game write-to engine")]
@@ -119,6 +123,20 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("commits --workspace aurora --mode at-end")]
     public async Task A_standing_choice_says_and_writes_the_same_alone_and_through_its_route(string words) =>
         await BothWaysAsync(Module(), words);
+
+    /// <summary>A policy key changed between the plan and the act is kept: the words lay only their own keys over the policy held at the act.</summary>
+    [Fact]
+    public async Task A_policy_key_changed_between_the_plan_and_the_act_is_kept()
+    {
+        Before().WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.NoGates, Batch: 4)).Save(DriverConfigPath);
+        var press = DriverChoicesCommand.Plan(["line", "engine", "--batch", "3"], DriverConfig.Load(DriverConfigPath), World(new StringWriter(), new StringWriter()));
+
+        DriverConfig.Load(DriverConfigPath).WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared, Batch: 4)).Save(DriverConfigPath);
+        await press.Act(CancellationToken.None);
+
+        var policy = DriverConfig.Load(DriverConfigPath).LinePolicies["engine"];
+        Assert.Equal((LandingIntegrate.Declared, 3), (policy.Gates, policy.Batch));
+    }
 
     /// <summary>A terminal's act is granted only through its route, whose press the person confirms; alone, with no card to show, it is refused.</summary>
     [Fact]

@@ -287,13 +287,13 @@ internal static class PipeReads
     /// A standing choice at a repository's or a workspace's scope: its row in <c>STATE</c>'s list or its workspace twin. One whose edit
     /// merges into the rule names no value it sets, so it is never <c>already</c>; one that sets a single value does.
     /// </summary>
-    internal static ReadGround Scoped(string list, string workspaces, string? sets)
+    internal static ReadGround Scoped(string list, string workspaces, string? sets, string? unless = null)
     {
         return State(["repository", "workspace"],
             (a, p) => Text(p, "repository") is { } repository
                 ? Value(Named(At(a, list), "repository", repository))
                 : Value(Named(At(a, workspaces), "workspace", Text(p, "workspace"))),
-            sets is null ? null : p => Text(p, sets) ?? "");
+            sets is null ? null : p => unless is not null && Field(p, unless) is not null ? null : Text(p, sets) ?? "");
 
         // A row's value without its scope's name: one field (a branch, a language) is said as its text; a rule as its JSON.
         static string Value(JsonElement? row)

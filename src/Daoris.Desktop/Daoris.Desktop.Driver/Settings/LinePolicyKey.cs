@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
@@ -115,6 +116,40 @@ public static class LinePolicyKey
         }
 
         return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
+    }
+
+    /// <summary>The policy <paramref name="held"/> with each key <paramref name="named"/> sets laid over it; the keys it names not at all stay.</summary>
+    public static LandingIntegrate Overlay(LandingIntegrate? held, LandingIntegrate named)
+    {
+        var now = held ?? new LandingIntegrate();
+        return now with
+        {
+            Request = named.Request ?? now.Request, Commit = named.Commit ?? now.Commit, Batch = named.Batch ?? now.Batch,
+            Order = named.Order ?? now.Order, Gates = named.Gates ?? now.Gates, Unreached = named.Unreached ?? now.Unreached,
+            Reached = named.Reached ?? now.Reached, Conflicts = named.Conflicts ?? now.Conflicts, Line = named.Line ?? now.Line,
+        };
+    }
+
+    /// <summary>A policy as <c>SET_LINE</c> takes it, the keys the file writes, each only where set.</summary>
+    internal static JsonObject Wire(LandingIntegrate policy)
+    {
+        var wire = new JsonObject();
+        if (policy.Request is not null) wire["request"] = policy.Request;
+        if (policy.Commit is not null) wire["commit"] = policy.Commit;
+        if (policy.Batch is { } batch) wire["batch"] = batch;
+        if (policy.Order is not null) wire["order"] = policy.Order;
+        if (policy.Gates is not null) wire["gates"] = policy.Gates;
+        if (policy.Unreached is not null || policy.Reached is not null)
+        {
+            var unconfirmed = new JsonObject();
+            if (policy.Unreached is not null) unconfirmed["unreached"] = policy.Unreached;
+            if (policy.Reached is not null) unconfirmed["reached"] = policy.Reached;
+            wire["unconfirmed"] = unconfirmed;
+        }
+
+        if (policy.Conflicts is not null) wire["conflicts"] = policy.Conflicts;
+        if (policy.Line is not null) wire["line"] = policy.Line;
+        return wire;
     }
 
     internal static IReadOnlyDictionary<string, LandingIntegrate> PolicyMap(JsonElement root, string name)

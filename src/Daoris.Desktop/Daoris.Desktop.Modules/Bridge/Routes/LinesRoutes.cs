@@ -37,7 +37,7 @@ public sealed class LinesRoutes(DriverContext context)
     // file `daoris place line` edits: one truth, two doors.
     [DriverRoute("SET_LINE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_LINE", Repository = "repository", Workspace = "workspace")]
-    [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch")]
+    [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch", Unless = "policy")]
     [Says("SET_LINE", "repository:repository")]
     [Publishes("SET_LINE", Chosen)]
     private object? SetLine(SetLine press)
@@ -68,7 +68,16 @@ public sealed class LinesRoutes(DriverContext context)
             }
 
             if (!named) return config;
-            return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, policy) : config.WithLinePolicy(repository!, policy);
+            var next = policy;
+            if (press.Merge && policy is not null)
+            {
+                var held = workspace is not null
+                    ? config.WorkspaceLinePolicies.GetValueOrDefault(workspace.Trim())
+                    : config.LinePolicies.GetValueOrDefault(repository!.Trim());
+                next = LinePolicyKey.Overlay(held, policy);
+            }
+
+            return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, next) : config.WithLinePolicy(repository!, next);
         });
         return DriverRoutes.State(_loop);
     }

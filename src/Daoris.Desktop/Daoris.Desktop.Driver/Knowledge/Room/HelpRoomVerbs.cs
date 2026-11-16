@@ -13,7 +13,9 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         var text = new StringBuilder();
         text.Append("### The verbs you press\n\n");
         text.Append("- Every setting is pressed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
-        text.Append("  `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
+        text.Append("  `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace; `line` also takes the line policy's\n");
+        text.Append("  keys, `--commit`, `--batch`, `--order`, `--gates`, `--unreached`, `--reached` and `--integrate-line`, which merge into the\n");
+        text.Append("  place's own policy and leave its line as it is, and `--no-policy` withdraws it),\n");
         text.Append("  `daoris place review|opinion|helpers|commits <repository> …`, `daoris place standing <repository> …`,\n");
         text.Append("  `daoris place across <repository> read|write-to …`, `daoris quest retry <quest>`, `daoris git use …` and\n");
         text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");

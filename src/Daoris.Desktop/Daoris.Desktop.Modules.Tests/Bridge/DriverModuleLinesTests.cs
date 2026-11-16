@@ -42,6 +42,33 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Lines.Count > 0);
     }
 
+    /// <summary>A policy `daoris place line` refuses is refused by the press in the same sentence, nothing written.</summary>
+    [Theory]
+    [InlineData("""{"batch":9}""", "`integrate.batch` is how many members a candidate holds, 1 to 8.")]
+    [InlineData("""{"request":"steward"}""", "who requests and where a conflict goes are the workflow's `integrate` step's.")]
+    public async Task A_policy_the_terminals_keys_refuse_is_refused_by_the_press_in_the_same_sentence(string policy, string said)
+    {
+        var refused = await RefusalAsync(Module(), "SET_LINE", new { repository = "engine", policy = Body(policy) });
+
+        Assert.Contains(said, refused);
+        Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).LinePolicies.Count > 0);
+    }
+
+    [Fact]
+    public async Task A_merged_policy_press_lays_its_keys_over_the_policy_held_when_it_is_made_and_a_whole_one_replaces_it()
+    {
+        DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Batch: 4, Order: LandingIntegrate.Apart)).Save(DriverConfigPath);
+        var module = Module();
+
+        await AnswerAsync(module, "SET_LINE", new { repository = "engine", policy = Body("""{"gates":"declared"}"""), merge = true });
+        var merged = DriverConfig.Load(DriverConfigPath).LinePolicies["engine"];
+        Assert.Equal((4, LandingIntegrate.Apart, LandingIntegrate.Declared), (merged.Batch, merged.Order, merged.Gates));
+
+        await AnswerAsync(module, "SET_LINE", new { repository = "engine", policy = Body("""{"gates":"none"}""") });
+        var whole = DriverConfig.Load(DriverConfigPath).LinePolicies["engine"];
+        Assert.Equal((null, null, LandingIntegrate.NoGates), (whole.Batch, whole.Order, whole.Gates));
+    }
+
     private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
     /// <summary>Each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>
