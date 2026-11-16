@@ -11,7 +11,8 @@ const SUMMARY = /^\s*(?:Passed|Failed)!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+)
 
 /** The simple name of a test's class: the segment before the method, a nested class's outer name. */
 export const testClass = (test) => (test.split('.').at(-2) ?? '').split('+')[0];
-const short = (test) => test.split('.').slice(-2).join('.');
+/** A test as a line says it: its class and method. */
+export const short = (test) => test.split('.').slice(-2).join('.');
 
 /**
  * What a `dotnet test` run says it failed: each failed test once (a theory by its method), how many

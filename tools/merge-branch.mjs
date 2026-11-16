@@ -389,7 +389,7 @@ import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
 import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
 import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
 import {
-  flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand,
+  flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
 import { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory } from './merge-branch/memory.mjs';
 import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, readWatch, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
@@ -1114,7 +1114,7 @@ export function checkoutRerun(gates, named) {
 // ---------------------------------------------------------------------------------------------------
 // Flakes
 
-// The output readers: `merge-branch/test-output.mjs`.
+// Output readers: `merge-branch/test-output.mjs`.
 export { flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand };
 
 // ---------------------------------------------------------------------------------------------------
