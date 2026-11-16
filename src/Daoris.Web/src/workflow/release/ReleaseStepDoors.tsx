@@ -24,7 +24,7 @@ function useOrigin(repository: string, enabled: boolean): string | null {
 }
 
 /**
- * **The release target, found and set** (RELEASEVALUES1's window half), for the run's failed release step and the repository's Setup:
+ * **The release target, found and set**, for the run's failed release step and the repository's Setup:
  * *Find release targets* asks the plugin's `discover-releases`, the holder picks with a reason, and the one door sets the choice on every
  * release step of the workflow, each as `daoris workflow values` would.
  */
@@ -58,7 +58,7 @@ export function ReleaseTarget({ repository, workflow, plugin, nodes }: { reposit
   );
 }
 
-/** The approval card on a release step waiting on its approver, with the press the plugin's channel allows (APPROVEHERE1). */
+/** The approval card on a release step waiting on its approver, with the press the plugin's channel allows. */
 function Approval({ run, step }: { run: WorkflowRun; step: RunStep }) {
   const { i18n } = useTranslation();
   const opener = useContext(LinkOpener);

@@ -4,9 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
+const SKIP = 'Not needed this run', SKIP_ASK = `${SKIP}…`;
+
 // *What needs you* on a machine, over a mocked shell: the rows as the shell pushes them (judged in
-// .NET), and the acts that settle them where they stand. `OverviewView.test.tsx` holds the band in a browser, which says it is the
-// app's.
+// .NET), and the acts that settle them where they stand. `OverviewView.test.tsx` holds the band in a browser.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -315,18 +316,18 @@ describe('What needs you on a machine', () => {
     start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
 
     const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    await userEvent.click(within(item).getByRole('button', { name: 'Not needed this run…' }));
-    const asking = within(item).getByRole('group', { name: 'Not needed this run…' });
+    await userEvent.click(within(item).getByRole('button', { name: SKIP_ASK }));
+    const asking = within(item).getByRole('group', { name: SKIP_ASK });
     await userEvent.type(within(asking).getByRole('textbox'), 'again');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Not needed this run' }));
+    await userEvent.click(within(asking).getByRole('button', { name: SKIP }));
 
     expect(await within(item).findByRole('alert')).toHaveTextContent("requests already has your word, which Daoris's next look applies.");
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'again' } });
 
     await userEvent.clear(within(asking).getByRole('textbox'));
     await userEvent.type(within(asking).getByRole('textbox'), 'web will not take it');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Not needed this run' }));
-    await waitFor(() => expect(within(item).queryByRole('group', { name: 'Not needed this run…' })).toBeNull());
+    await userEvent.click(within(asking).getByRole('button', { name: SKIP }));
+    await waitFor(() => expect(within(item).queryByRole('group', { name: SKIP_ASK })).toBeNull());
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'web will not take it' } });
   });
 
@@ -339,7 +340,7 @@ describe('What needs you on a machine', () => {
     start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
 
     const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    expect(within(item).queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
+    expect(within(item).queryByRole('button', { name: SKIP_ASK })).toBeNull();
     await userEvent.click(within(item).getByRole('button', { name: 'Ask again…' }));
     await userEvent.click(within(within(item).getByRole('group', { name: 'Ask again…' })).getByRole('button', { name: 'Ask again' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'ask', act: 'ask-again' } }));

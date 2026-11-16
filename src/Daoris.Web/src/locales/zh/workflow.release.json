@@ -22,5 +22,5 @@
   "workflow.release.approval.reject": "拒绝",
   "workflow.release.approval.comment": "备注（可选）",
   "workflow.release.approval.open": "打开",
-  "workflow.release.approval.yours": "以你自己的登录批准或拒绝；这个操作不会交给任何代理。"
+  "workflow.release.approval.yours": "以你自己的登录批准或拒绝；这个操作不会交给任何智能体。"
 }

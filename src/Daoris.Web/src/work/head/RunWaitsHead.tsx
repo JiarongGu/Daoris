@@ -18,7 +18,7 @@ const stepOf = (wait: SessionWait, row: StepWaitRow | undefined): RunStep => ({
 });
 
 /**
- * **The steps of the session's run that wait on a role the person holds**, on its page's head (GAPWAITS1): each reads
+ * **The steps of the session's run that wait on a role the person holds**, on its page's head:each reads
  * "<node>: waiting on `<role>`: you", with the presses that settle it beside it, the ones its row in *What needs you* offers (the step's
  * own words, its *Not needed this run*, a plugin wait's *Done outside Daoris*), never its stop. A notification about the step opens
  * this session, so it opens here. Nothing where no step waits on the person.

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The UX trail's terminal reader (UXTRAIL1): `node tools/ux-trail.mjs <home's ux-trail folder or a day's .jsonl>` prints a trail's
+// The UX trail's terminal reader:`node tools/ux-trail.mjs <home's ux-trail folder or a day's .jsonl>` prints a trail's
 // summary: how many pages and presses, and for each row that waited on the person, the time from its wait to their first press in that
 // row, with the pages opened between; a wait never pressed says so. The trail is the person's, kept on their desktop when they turn it on.
 import { readdirSync, readFileSync, statSync } from 'node:fs';

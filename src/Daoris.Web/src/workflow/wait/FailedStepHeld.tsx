@@ -9,7 +9,7 @@ import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../run';
  * **A plugin step held for its holder**: under its node, on a failed step *Try again*, the held attempt's `again` (`WORK_HELD`),
  * which What needs you presses too, so a failed step is tried again one way; and on a failed step or one under way *Done outside
  * Daoris…* (`done-outside`), its link required and a note if given, which settles the step on the holder's word, stands its attempt
- * down and lets the run go on (DONEBYHOLDER1). The word given is said until the driver's next look applies it.
+ * down and lets the run go on. The word given is said until the driver's next look applies it.
  *
  * A molecule: the step and the press arrive as props; the driver's refusal is said where it is pressed.
  */

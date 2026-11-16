@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../design/ui';
+import { Button, SelectField } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import { RELEASE_ACTIONS, type FoundReleases, type ReleaseAction, type ReleaseTargetChoice } from './releaseTarget';
 
@@ -10,7 +10,7 @@ import { RELEASE_ACTIONS, type FoundReleases, type ReleaseAction, type ReleaseTa
  * chooses: nothing is picked until the holder picks it. The press is the one door's (`SET_WORKFLOW_VALUES`, twin `daoris workflow
  * values`); a refusal is said where it is pressed.
  *
- * A molecule: what was found and the save arrive as props.
+ * A molecule: what the plugin found and the save arrive as props.
  */
 export function ReleaseTargetForm({ found, onSave }: {
   found: FoundReleases;
@@ -43,26 +43,19 @@ export function ReleaseTargetForm({ found, onSave }: {
   return (
     <div className="grid min-w-0 gap-1.5" role="group" aria-label={t('workflow.release.target.title')}>
       <p className="m-0 text-small text-ink">{t('workflow.release.target.title')}</p>
-      <select aria-label={t('workflow.release.target.definition')} value={chosen} className={field}
-        onChange={(event) => { setChosen(event.target.value); setStage(''); }}>
-        <option value="">{t('workflow.release.target.pick')}</option>
-        {options.map(({ pipeline, definition }) => (
-          <option key={`${pipeline}:${definition.id}`} value={`${pipeline}:${definition.id}`}>
-            {t('workflow.release.target.definitionOption', { id: definition.id, name: definition.name, pipeline,
-              triggers: definition.triggers.length > 0 ? definition.triggers.join(', ') : t('workflow.release.target.noTrigger') })}
-          </option>
-        ))}
-      </select>
-      <select aria-label={t('workflow.release.target.stage')} value={stage} className={field} disabled={!picked} onChange={(event) => setStage(event.target.value)}>
-        <option value="">{t('workflow.release.target.pick')}</option>
-        {(picked?.definition.stages ?? []).map((each) => (
-          <option key={each.id} value={String(each.id)}>{t('workflow.release.target.stageOption', { id: each.id, name: each.name })}</option>
-        ))}
-      </select>
-      <select aria-label={t('workflow.release.target.action')} value={action} className={field} onChange={(event) => setAction(event.target.value as ReleaseAction | '')}>
-        <option value="">{t('workflow.release.target.pick')}</option>
-        {RELEASE_ACTIONS.map((each) => <option key={each} value={each}>{t(`workflow.release.target.actions.${each}`)}</option>)}
-      </select>
+      <SelectField ariaLabel={t('workflow.release.target.definition')} value={chosen} placeholder={t('workflow.release.target.pick')}
+        onChange={(value) => { setChosen(value); setStage(''); }}
+        options={options.map(({ pipeline, definition }) => ({
+          value: `${pipeline}:${definition.id}`,
+          label: t('workflow.release.target.definitionOption', { id: definition.id, name: definition.name, pipeline,
+            triggers: definition.triggers.length > 0 ? definition.triggers.join(', ') : t('workflow.release.target.noTrigger') }),
+        }))} />
+      <SelectField ariaLabel={t('workflow.release.target.stage')} value={stage} placeholder={t('workflow.release.target.pick')} disabled={!picked}
+        onChange={setStage}
+        options={(picked?.definition.stages ?? []).map((each) => ({ value: String(each.id), label: t('workflow.release.target.stageOption', { id: each.id, name: each.name }) }))} />
+      <SelectField ariaLabel={t('workflow.release.target.action')} value={action} placeholder={t('workflow.release.target.pick')}
+        onChange={(value) => setAction(value as ReleaseAction | '')}
+        options={RELEASE_ACTIONS.map((each) => ({ value: each, label: t(`workflow.release.target.actions.${each}`) }))} />
       <input aria-label={t('workflow.release.target.why')} placeholder={t('workflow.release.target.why')} value={why} className={field}
         onChange={(event) => setWhy(event.target.value)} />
       <div className="flex flex-wrap items-center gap-1.5">

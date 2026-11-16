@@ -12,6 +12,7 @@ import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
 import { stepRead } from './taskRead';
+import { designRead } from './designWords';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
@@ -417,15 +418,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ask: row.ask,
       };
     // A design pass's closed question: what yes and no change, as its comparison wrote them; an answer drafts a decision to keep.
-    case 'design-question':
-      return {
-        ...base,
-        title: row.design?.question ?? row.id,
-        detail: row.design
-          ? [i18n.t('work.attention.designYes', { text: row.design.yes }), i18n.t('work.attention.designNo', { text: row.design.no }),
-            i18n.t('work.attention.designWhere', { where: row.design.where })].join(' · ')
-          : null,
-      };
+    case 'design-question': return { ...base, ...designRead(row) };
     case 'trust':
       return {
         ...base,

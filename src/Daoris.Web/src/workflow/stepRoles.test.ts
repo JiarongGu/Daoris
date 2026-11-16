@@ -3,7 +3,7 @@ import i18n from '../locales/i18n';
 import { drawnFromJson, graphFlow } from './graphFlow';
 import { STEP_ROLES, namedRole, roleOf, roleSaid } from './stepRoles';
 
-// Every step names its role (ACTORFIELD1): the role it names, else the older `role` option an agent step named it by, else its kind's
+// Every step names its role:the role it names, else the older `role` option an agent step named it by, else its kind's
 // default the palette carries; Daoris's own roles are worded in both catalogues, and a catalogue role's id is said as written.
 
 const t = i18n.t.bind(i18n);

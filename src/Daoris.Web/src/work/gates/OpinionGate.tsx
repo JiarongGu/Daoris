@@ -274,8 +274,8 @@ export function opinionSays(t: ReturnType<typeof useTranslation>['t'], gate: Gat
 }
 
 /**
- * How the opinion was consulted, as its consultation record says it (D308): a review of the candidate, and whether it was independent of
- * the work's makers by its reviewer's label; a recheck says it read the first pass's findings. Nothing before a reviewer read it.
+ * How the opinion is consulted, as its consultation record says it: a review of the candidate, and whether its reviewer's label shows it
+ * independent of the work's makers; a recheck says it read the first pass's findings. Nothing before a reviewer read it.
  */
 export function opinionConsulted(t: ReturnType<typeof useTranslation>['t'], detail: OpinionDetail | null): string[] {
   const label = detail?.first?.label;
