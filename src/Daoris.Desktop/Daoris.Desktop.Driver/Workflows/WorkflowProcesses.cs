@@ -228,10 +228,18 @@ public static class WorkflowProcesses
     public static (string Name, IReadOnlyList<NamedStep>? Steps) Otherwise(
         IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
     {
+        var (name, graph) = OtherwiseGraph(store, config, repository, workspace, kind);
+        return (name, graph is null ? null : Involvement.StepsOf(graph));
+    }
+
+    /// <summary>The same workflow with its newest graph whole, or null, which a kind's paths compare checks by (<see cref="KindLowering"/>).</summary>
+    public static (string Name, NodeGraph? Graph) OtherwiseGraph(
+        IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
+    {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, kind is null ? null : new WorkflowTaskChoice(kind, null));
         if (selected.Workflow == WorkflowSelection.Current) return ("no workflow", null);
         var found = WorkflowNamed.IsId(selected.Workflow) ? store.Load(selected.Workflow) : null;
         var newest = found?.Read.Versions.LastOrDefault(each => each.Graph is not null);
-        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", Involvement.StepsOf(newest.Graph!));
+        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", newest.Graph);
     }
 }

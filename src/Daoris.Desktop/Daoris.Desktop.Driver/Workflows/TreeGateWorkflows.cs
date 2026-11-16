@@ -78,10 +78,10 @@ internal static class TreeGateWorkflows
         KindPathsRead? paths = null;
         if (WorkflowGate.ChecksPaths(process))
         {
-            var (otherwise, steps) = WorkflowProcesses.Otherwise(context.Home, context.Config(), process.Repository, process.Binding!.Workspace);
-            var lowered = steps is null
+            var (otherwise, graph) = WorkflowProcesses.OtherwiseGraph(WorkflowPorts.Store(context.Home), context.Config(), process.Repository, process.Binding!.Workspace);
+            var lowered = graph is null
                 ? [$"what {otherwise} asks of you could not be read here, so it is taken as more"]
-                : Involvement.Lowers(process.Steps, steps);
+                : KindLowering.Of(process.Steps, process.Graph, graph);
             paths = new KindPathsRead(lowered, otherwise, lowered.Count == 0 || process.Binding.Kept is not null ? [] : await gates.ChangedAsync(tree, ct, tip).ConfigureAwait(false));
         }
 
