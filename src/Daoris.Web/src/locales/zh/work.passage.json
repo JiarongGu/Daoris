@@ -1,5 +1,4 @@
 {
-  "work.passage.label": "{{workflow}} 的步骤",
   "work.passage.mark.passed": "{{node}}：已过",
   "work.passage.mark.current": "{{node}}：当前",
   "work.passage.mark.next": "{{node}}：未到",
@@ -12,7 +11,6 @@
   "work.passage.waits.step": "等待工作流的下一步骤。",
   "work.passage.waits.agent": "智能体正在工作。",
   "work.passage.waits.start": "等待开始。",
-  "work.passage.turns": "各轮",
   "work.passage.turn": "第 {{n}} 轮",
   "work.passage.causeAt": "{{cause}}（{{node}}）",
   "work.passage.cause.start": "开始",
