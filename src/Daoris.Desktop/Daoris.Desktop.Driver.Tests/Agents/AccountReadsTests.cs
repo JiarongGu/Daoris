@@ -184,7 +184,7 @@ public sealed class AccountReadsTests : IDisposable
     [Theory]
     [InlineData("a name in Chinese is written as it is", null, "claude-code", "工作", "in", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"工作":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
     [InlineData("HTML's marks and a plus in a name are written as they are", null, "claude-code", "R&D+<team>'s", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"R&D+<team>'s":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
-    [InlineData("an accented name found in another case is written under the name given", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"CAFÉ":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
+    [InlineData("an accented name found in another case is written under the name given", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"CAFÉ":{"login":"out","read":"2026-10-04T10:00:00Z","since":"2026-10-04T10:00:00Z","before":"in"}}}}""")]
     [InlineData("words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", """{"later":"é 中文 &","codex":{"accounts":{"work":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
     public void A_name_beyond_plain_ascii_is_kept_as_the_cli_writes_it(
         string why, string? file, string agent, string? account, string login, string at, string after)

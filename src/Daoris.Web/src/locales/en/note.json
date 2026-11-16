@@ -519,6 +519,8 @@
   "note.opening.why.refused": "the `{{agent}}` account `{{over}}` was refused by its provider",
   "note.opening.why.signed-out": "the `{{agent}}` account `{{over}}` is not signed in",
   "note.opening.why.locked": "the `{{agent}}` account `{{over}}` is being asked about by another question",
+  "note.opening.why.unanswered": "`{{over}}`'s sign-in check did not answer, so it goes last until one does",
+  "note.opening.why.unanswered-self": "its sign-in check did not answer, and no other account is ready",
   "note.opening.why.kept-self": "it is kept for conversations",
   "note.opening.why.kept-last": "`{{over}}` is kept for conversations, which take it last",
   "note.opening.why.kept": "`{{over}}` is kept for conversations",

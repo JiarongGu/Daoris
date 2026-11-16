@@ -43,6 +43,9 @@ public enum NextReason
     /// <summary>The list's order, begun at its default: nothing else told the two apart (step 7, or <c>order</c>'s walk).</summary>
     List,
 
+    /// <summary>The other account's sign-in check is asked and did not answer, so it goes last until one does.</summary>
+    Unanswered,
+
     /// <summary>No account the scope may use is ready: the start waits.</summary>
     Waits,
 

@@ -210,6 +210,9 @@ public sealed class AgentsRoutes(DriverContext context)
             : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
         // When its state is last read, or null where it never is: absent is never a reading.
         profile.Read,
+        // Its sign-in state as the walk ranks it (`in`, `out`, `unanswered`, `unread`): since when, and for a sign-out whether
+        // the person made it. Null where the report says none. Words and moments alone, never a token.
+        SignIn = profile.SignIn is { } signIn ? new { State = signIn.Word, signIn.Since, signIn.NotByPerson } : null,
     };
 
     /// <summary>

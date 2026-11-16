@@ -19,6 +19,12 @@ public static class OpeningWhy
     /// <summary>The account its scope begins at is passed because another question holds its lock past the start's patience.</summary>
     public const string Locked = "locked";
 
+    /// <summary>The account it is weighed against goes last: its sign-in check is asked and did not answer.</summary>
+    public const string Unanswered = "unanswered";
+
+    /// <summary>It runs on an account whose sign-in check did not answer, last, since no other account is ready.</summary>
+    public const string UnansweredSelf = "unanswered-self";
+
     /// <summary>It runs on the account kept for conversations, which is where its scope begins.</summary>
     public const string KeptSelf = "kept-self";
 

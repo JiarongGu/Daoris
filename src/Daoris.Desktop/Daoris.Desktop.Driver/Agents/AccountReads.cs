@@ -9,7 +9,13 @@ namespace Daoris.Driver;
 /// <summary>What one reading of a sign-in says, and when it is made.</summary>
 /// <param name="Login">The agent's word: in, out, or unknown where its answer does not read or the question cannot be asked.</param>
 /// <param name="At">When the answer came.</param>
-public sealed record AccountRead(LoginState Login, DateTimeOffset At);
+/// <param name="Since">
+/// When the word became what it is: the first reading of a run of readings saying the same, so a sign-out says since when however
+/// often it is read again. Null where the entry carries none (written before it was kept, or by a build that keeps none), read as
+/// <paramref name="At"/>.
+/// </param>
+/// <param name="Before">The word the run replaced, where the entry says one: a sign-out after <c>in</c> is one nobody at Daoris made.</param>
+public sealed record AccountRead(LoginState Login, DateTimeOffset At, DateTimeOffset? Since = null, LoginState? Before = null);
 
 /// <summary>An agent's readings: its own sign-in's, and each account's by its name; none where nothing is read.</summary>
 public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, AccountRead> Accounts);
@@ -31,7 +37,9 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// <para>Held, row for row, to one table, <c>fixtures/account-reads.json</c> among the driver's tests, which <c>AccountReadsTests</c>
 /// reads. A terminal's reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
-/// { "login": "out", "read": "…Z" } } } }</c>; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
+/// { "login": "out", "read": "…Z", "since": "…Z", "before": "in" } } } }</c>, <c>since</c> and <c>before</c> where the word changed
+/// from another (<see cref="AccountRead.Since"/>): an older build's write drops them, read then as since that reading and after
+/// nothing; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
 /// </remarks>
 public static class AccountReads
 {
@@ -64,6 +72,10 @@ public static class AccountReads
         return new AgentReads(Child(held, Own) is { } own ? Reading(own) : null, accounts);
     }
 
+    /// <summary>The agents the file holds readings of, by the key each is kept under.</summary>
+    public static IReadOnlyList<string> Agents(string home) =>
+        [.. Load(home).Where(pair => pair.Value is JsonObject held && held.ContainsKey(AccountsKey)).Select(pair => pair.Key)];
+
     /// <summary>
     /// A reading of one account's sign-in, or with <paramref name="account"/> null the tool's own: kept unless a newer reading
     /// of it is already there.
@@ -77,10 +89,18 @@ public static class AccountReads
             var held = Made(root, agent);
             var parent = account is null ? held : Made(held, AccountsKey);
             var name = account ?? Own;
-            if (Child(parent, name) is { } was && Reading(was) is { } before && before.At > at) return;
+            var before = Child(parent, name) is { } was ? Reading(was) : null;
+            if (before is not null && before.At > at) return;
 
             if (Key(parent, name) is { } old) parent.Remove(old);
-            parent[name] = new JsonObject { ["login"] = Word(login), ["read"] = AccountCooling.Stamp(at) };
+            var entry = new JsonObject { ["login"] = Word(login), ["read"] = AccountCooling.Stamp(at) };
+            // A run of readings saying the same keeps when it began and what it replaced; a new word begins one.
+            var (since, replaced) = before is null ? ((DateTimeOffset?)null, (LoginState?)null)
+                : before.Login == login ? (before.Since, before.Before)
+                : (at, before.Login);
+            if (since is { } began) entry["since"] = AccountCooling.Stamp(began);
+            if (replaced is { } word) entry["before"] = Word(word);
+            parent[name] = entry;
             Save(home, root);
         }
     }
@@ -115,10 +135,13 @@ public static class AccountReads
     /// <summary>One entry's reading, or null where its word or its time does not read.</summary>
     private static AccountRead? Reading(JsonObject entry)
     {
-        LoginState? login = entry["login"] is JsonValue value && value.TryGetValue<string>(out var word)
+        return WordOf(entry["login"]) is { } said && Moment(entry, "read") is { } at
+            ? new AccountRead(said, at, Moment(entry, "since"), WordOf(entry["before"]))
+            : null;
+
+        static LoginState? WordOf(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var word)
             ? word switch { "in" => LoginState.In, "out" => LoginState.Out, "unknown" => LoginState.Unknown, _ => null }
             : null;
-        return login is { } said && Moment(entry, "read") is { } at ? new AccountRead(said, at) : null;
     }
 
     /// <summary>The file's root, or an empty one when it is missing or does not read.</summary>

@@ -159,7 +159,12 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
     (D197, D175)
-29. The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
+29. An account's sign-in state is read once, by one unit (`SignInStates`) from its last reading: signed in, signed out since a
+    time (a sign-out after a signed-in reading is one nobody at Daoris made: it raises one notice in *Done and failed*), its check
+    not answered (asked, and timed out or said nothing readable), or never read. The walk ranks by it and the account page shows
+    it, with *Sign in* beside a sign-out and an unanswered check. The walk, under every use, takes an account whose check did not
+    answer last until a check answers, and the start's opening line says so (`unanswered`, `unanswered-self`). (AUTHPROBE1)
+    The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
     curve holds, the person's included, so all its remaining room is spendable, and the most per hour to its reset goes first
     ahead of any other account's room), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,

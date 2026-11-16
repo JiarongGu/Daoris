@@ -519,6 +519,8 @@
   "note.opening.why.refused": "`{{agent}}` 账户 `{{over}}` 被其服务商拒绝",
   "note.opening.why.signed-out": "`{{agent}}` 账户 `{{over}}` 未登录",
   "note.opening.why.locked": "`{{agent}}` 账户 `{{over}}` 正被另一个查询占用",
+  "note.opening.why.unanswered": "`{{over}}` 的登录查询未应答，所以在有查询应答之前它排在最后",
+  "note.opening.why.unanswered-self": "它的登录查询未应答，而没有其他账户就绪",
   "note.opening.why.kept-self": "它留作对话",
   "note.opening.why.kept-last": "`{{over}}` 留作对话，对话最后才用它",
   "note.opening.why.kept": "`{{over}}` 留作对话",

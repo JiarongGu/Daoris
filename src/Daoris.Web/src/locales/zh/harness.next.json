@@ -30,6 +30,7 @@
   "harness.next.why.pace": "它比 {{over}} 更落后于本周的用量节奏",
   "harness.next.why.room": "它在曲线下的余量比 {{over}} 多",
   "harness.next.why.leastRecent": "Daoris 在它上面启动的时间比 {{over}} 更早",
+  "harness.next.why.unanswered": "{{over}} 的登录查询未应答，所以它排在最后",
   "harness.next.why.notStarted": "Daoris 还没有在它上面启动过",
   "harness.next.why.listDefault": "它是这里的默认账户",
   "harness.next.why.listFirst": "它在顺序中排第一",
