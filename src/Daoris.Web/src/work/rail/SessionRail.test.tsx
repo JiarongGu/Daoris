@@ -623,9 +623,8 @@ describe('the session rail', () => {
 });
 
 /**
- * By state, the default, each session where the driver's one reader places it, asked once
- * under the sessions' key; a record the reader has not answered for yet by its record alone; and with no driver to ask,
- * the arrangement the list always had.
+ * By state, the default, each session where the driver's one reader places it; one it has not answered for by its record
+ * alone; with no driver, by repository.
  */
 describe('the session rail by state', () => {
   beforeEach(() => {
@@ -929,7 +928,7 @@ describe('a group a door brings into view', () => {
     }
   });
 
-  /** A finished session with work to review is the reader's alone to place in *Needs you*: the rail waits for its answer. */
+  /** A finished session with work to review is the reader's alone to place in *Needs you*. */
   it("waits for the reader's answer before it looks for the group", async () => {
     SESSIONS = [{ ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'completed', created: at(60), updated: at(20) }];
     GROUPS = [{ session: 'f41led00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false }];
@@ -940,8 +939,9 @@ describe('a group a door brings into view', () => {
     const brought = vi.fn();
     show(<SessionRail notify={() => {}} group="needs-you" onGroupBrought={brought} />);
 
-    // By its record alone it is done; the reader has not said yet that its work waits for you.
-    await screen.findByRole('heading', { level: 3, name: 'Done (1)' });
+    // No list until the reader answers: by its record alone it was done.
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
     expect(brought).not.toHaveBeenCalled();
     answer({ sessions: GROUPS });
     const heading = await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });

@@ -49,6 +49,41 @@ public sealed class HelpTreeWalkTests
         Assert.Equal([SessionGroups.Normal(kept)], read.Trees.Keys);
     }
 
+    /// <summary>
+    /// SESSIONFLASH1: a reader that does not wait, the groups slice, answers at once with what the parts judged and walks nothing
+    /// while their first judgement is to come, the facts not begun or their wait not passed; once it passed, it walks as a door does.
+    /// </summary>
+    [Fact]
+    public async Task A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement()
+    {
+        var tree = Path.Combine("trees", "default", "engine", "s-1");
+        var look = new SessionLook([Ended("e1", "engine", tree)], [], []);
+        using var facts = new MachineFacts();
+        var walked = 0;
+
+        Task<TreeWork?> Walk(string _, CancellationToken __)
+        {
+            Interlocked.Increment(ref walked);
+            return Task.FromResult<TreeWork?>(new TreeWork(1, 0));
+        }
+
+        var unbegun = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, waits: false).WaitAsync(Poll.Patience);
+        facts.Start();
+        var waiting = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, first: TimeSpan.FromMilliseconds(300), waits: false)
+            .WaitAsync(Poll.Patience);
+
+        Assert.Empty(unbegun.Trees);
+        Assert.Empty(waiting.Trees);
+        Assert.Equal(0, Volatile.Read(ref walked));
+
+        // A door waits the rest of the wait and walks; past it, the reader that does not wait walks too.
+        await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(Poll.Patience);
+        var past = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, waits: false).WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, past.Trees[SessionGroups.Normal(tree)].Commits);
+        Assert.Equal(2, Volatile.Read(ref walked));
+    }
+
     private static SessionRecord Ended(string id, string repository, string tree) =>
         new(id, repository, "completed") { Tree = tree, Created = At.AddHours(-1), Updated = At.AddMinutes(-30) };
 

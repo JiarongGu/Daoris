@@ -226,7 +226,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that
-    place is gone. A wait lists its phases with their times. An unjudged slice draws as loading. (from D185)
+    place is gone. A wait lists its phases with their times. An unjudged slice draws as loading: Sessions' list draws its
+    rows' outline until the groups slice first judges, never a list placed by the records alone, which would hold every part,
+    archived line and ended intake as a row the first judgement takes away; and that judgement waits for no tree the machine's
+    facts have not judged, nor walks one, while their first judgement is to come, the trees' offers following as their parts
+    land (`HelpTreeFacts.WithTreesAsync`'s `waits`, SESSIONFLASH1). (from D185)
 
 **Flowcharts and the canvas**
 

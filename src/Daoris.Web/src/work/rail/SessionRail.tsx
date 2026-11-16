@@ -43,8 +43,9 @@ import { limitWaitLines } from '../waits/limitWait';
  * bind a selection its rail keeps to itself.
  *
  * **By state, a session is where the driver's one reader places it** (`useSessionGroups`): the page asks
- * and never derives a group of its own. A record the reader has not answered for yet, or every record while no answer
- * has come, is placed by its record alone (`groups.ts`) until the next answer. **A browser has no driver to ask**, so
+ * and never derives a group of its own. Until its first answer the rail draws its rows' outline, never a list placed by the
+ * records alone, which that answer would take rows out of (SESSIONFLASH1); a record that began after the answer is placed by
+ * its record alone (`groups.ts`) until the next. **A browser has no driver to ask**, so
  * its list is the arrangement by repository; and the monitor's list, the present tense only,
  * asks nothing and keeps it too.
  *
@@ -174,6 +175,9 @@ export function SessionRail({
   if (bringing && !compact && query) setQuery('');
   const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
   useBringGroup(bringing ? groupHeading('sessions', group) : null, answered, onGroupBrought);
+  // The records held and the reader not answered yet: no list is drawn, since one placed by the records alone holds every part,
+  // archived line and ended intake as a row of its own, which the reader's first answer takes away (SESSIONFLASH1).
+  const placing = sessions.data !== undefined && !answered;
 
   const questFor = new Map((quests.data ?? []).map((quest): [string, Quest] => [quest.id, quest]));
   const registered = new Map((registry.data ?? []).map((row) => [row.repository, row]));
@@ -344,7 +348,7 @@ export function SessionRail({
   };
 
   if (compact) {
-    if (sessions.isPending) return null;
+    if (sessions.isPending || placing) return null;
     return (
       <SessionStrip
         arrangement={drawn}
@@ -359,7 +363,7 @@ export function SessionRail({
     );
   }
 
-  if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
+  if (sessions.isPending || placing) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
 
   const searching = query.trim().length > 0;
 

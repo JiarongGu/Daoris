@@ -16,7 +16,9 @@ namespace Daoris.Desktop;
 /// the quests, the loop's last verdicts (a fresh plan where no loop has looked), the marks, the waits and the calls read now, and each
 /// tree as the machine's facts' parts judged it, a tree no part asked walked here (<see cref="HelpFacts.WithTreesAsync"/>). So a pushed
 /// row is as fresh as the pull's, and the walk the pull made per window is made once. Not the facts' sessions' look, which may lag a
-/// ledger move by half a minute. Null before the service answers, which keeps the slice not judged.</para>
+/// ledger move by half a minute. Null before the service answers, which keeps the slice not judged. While the parts' first judgement
+/// is to come, a start's, no tree is waited for or walked: the rows are placed at once and the trees' offers follow as the parts land
+/// (<see cref="HearTrees"/>), since the page draws no list before this slice's first judgement (SESSIONFLASH1).</para>
 ///
 /// <para><b>Two partitions, keyed</b> (<see cref="StateSlice.Keyed"/>): <see cref="Rows"/>, each row under its session as
 /// <see cref="SessionsGroupsWires.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its leading session as
@@ -118,7 +120,7 @@ public static class GroupsStateSlice
 
     /// <summary>The slice the shell's loop owns, taking <paramref name="loop"/>'s look once its service answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct).ConfigureAwait(false)) : null)
+        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct, waits: false).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -135,8 +137,14 @@ public static class GroupsStateSlice
     /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never hides work a tree
     /// gained since), instead of read as the facts judged them. The route and this slice take the one look here.
     /// </param>
+    /// <param name="waits">
+    /// Whether a tree the facts' parts have not judged yet is waited for and walked; the slice's own judgement does not wait while their
+    /// first judgement is to come, so a start's first list is placed by the records, the quests and the marks at once and its trees'
+    /// offers follow as the parts land (SESSIONFLASH1).
+    /// </param>
     public static async Task<SessionLook> LookAsync(
-        DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false)
+        DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false,
+        bool waits = true)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
@@ -154,7 +162,7 @@ public static class GroupsStateSlice
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);
-        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct).ConfigureAwait(false);
+        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct, waits: waits).ConfigureAwait(false);
     }
 
     /// <summary>

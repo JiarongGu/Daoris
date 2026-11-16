@@ -263,6 +263,32 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         Assert.Empty(Pushes());
     }
 
+    /// <summary>
+    /// SESSIONFLASH1: a start's first judgement waits for no tree the machine's facts have not judged and walks none, so the archived
+    /// session is in the fold and the ended one in its group at once, their trees' offers left for the facts' parts, whose landing wakes
+    /// the slice (<see cref="A_tree_s_part_landing_wakes_it_and_no_other_fact"/>). It waited for the parts' first judgement, then walked.
+    /// </summary>
+    [Fact]
+    public async Task A_start_s_first_judgement_places_the_archived_and_the_ended_before_any_tree_is_judged()
+    {
+        var trees = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "default", "engine");
+        var done = Record("done1", "completed", "q4", 50);
+        done["tree"] = Path.Combine(trees, "s-done1");
+        var chat = Record("chat1", "completed", null, 55);
+        chat["tree"] = Path.Combine(trees, "s-chat1");
+        new ConversationFacts(Home).Archive(["chat1"], At);
+        var (loop, slice) = await UpAsync(done, chat);
+        // The machine's facts begun and none of their parts judged: a door waits for them up to ten seconds.
+        loop.Facts.Start();
+
+        await slice.JudgeAsync().WaitAsync(TimeSpan.FromSeconds(5));
+
+        var rows = Partition(slice.Snapshot(), GroupsStateSlice.Rows);
+        Assert.Equal(SessionGroup.Archived, rows["chat1"]!["group"]!.GetValue<string>());
+        Assert.Equal(SessionGroup.Done, rows["done1"]!["group"]!.GetValue<string>());
+        Assert.False(rows["done1"]!.AsObject().ContainsKey("lands"));
+    }
+
     [Fact]
     public async Task A_second_window_s_snapshot_is_read_from_memory_and_judges_nothing()
     {
