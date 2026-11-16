@@ -79,6 +79,9 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>The outcome the person named with <i>it happened</i> on a held decision; null on every other word and attempt.</summary>
     public string? Decision { get; init; }
+
+    /// <summary>What its plugin last said of it while it runs, the actor it waits on among it; null where nothing is said.</summary>
+    public StepProgress? Progress { get; init; }
 }
 
 /// <summary>

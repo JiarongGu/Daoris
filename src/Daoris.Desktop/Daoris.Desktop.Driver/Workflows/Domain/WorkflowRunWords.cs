@@ -66,6 +66,7 @@ public static class WorkflowRunWords
         WorkflowRunStates.Working => "working",
         WorkflowRunStates.WaitingOnYou => "waiting on you",
         WorkflowRunStates.WaitingOnAgent => "waiting on an agent",
+        WorkflowRunStates.Waiting => "waiting",
         WorkflowRunStates.NotKnown => "not known",
         WorkflowRunStates.CannotStart => "cannot start",
         WorkflowRunStates.Done => "done",
@@ -77,7 +78,7 @@ public static class WorkflowRunWords
 
     private static readonly HashSet<string> States =
     [
-        WorkflowRunStates.NotReached, WorkflowRunStates.Working, WorkflowRunStates.WaitingOnYou, WorkflowRunStates.WaitingOnAgent,
+        WorkflowRunStates.NotReached, WorkflowRunStates.Working, WorkflowRunStates.WaitingOnYou, WorkflowRunStates.WaitingOnAgent, WorkflowRunStates.Waiting,
         WorkflowRunStates.NotKnown, WorkflowRunStates.CannotStart, WorkflowRunStates.Done, WorkflowRunStates.Skipped,
         WorkflowRunStates.Failed, WorkflowRunStates.Stopped,
     ];
@@ -236,6 +237,7 @@ public static class WorkflowRunWords
     private static string NodeSaid(WorkflowRunStep step, string node)
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
+        if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
         var on = On(step);
         return step.Detail switch
         {

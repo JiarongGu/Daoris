@@ -66,6 +66,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   'request-declined': 'quests',
   // A person's task opens its run's work quest, as a declined request does.
   task: 'quests',
+  // A step waiting on an actor the person holds opens its run's work quest too; the act is taken on its platform's page.
+  actor: 'quests',
   'go-ahead': 'quests',
   departure: 'quests',
   'set-up': 'quests',

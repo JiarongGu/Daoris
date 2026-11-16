@@ -65,6 +65,13 @@ internal sealed class WorkHearing(
                 continue;
             }
 
+            // A progress is kept on the attempt while it is out, replacing the one before; it settles nothing and takes no receipt.
+            if (each.Step.Outcome.State == WorkStates.Progress)
+            {
+                done.Add(records.Edited(unit, attempt.Node, record => Progressed(record, unit, invocation, StepProgress.Of(each.Step.Outcome, each.Step.At))));
+                continue;
+            }
+
             // Applied to the attempt as the record holds it now, under its lock: on its binding, or as a stale attempt's where
             // the work moved past the revision it is dispatched on.
             var lapsed = WorkBelief.Lapsed(attempt, told!);
@@ -88,6 +95,18 @@ internal sealed class WorkHearing(
         }
 
         return done;
+    }
+
+    /// <summary>The record with <paramref name="progress"/> on the attempt it names while that attempt is out; one settled or held is told nothing more.</summary>
+    internal static (NodeRecord? Next, WorkPerformed Result) Progressed(NodeRecord record, string unit, string invocation, StepProgress progress)
+    {
+        if (record.Invoked(invocation) is not { State: AttemptStates.Recorded or AttemptStates.Sent } current)
+        {
+            return (null, new WorkPerformed(unit, record.Invoked(invocation)?.Node ?? "", PerformedWhat.Replay));
+        }
+
+        var said = current with { Progress = progress };
+        return (record with { Attempts = [.. record.Attempts.Select(each => ReferenceEquals(each, current) ? said : each)] }, new WorkPerformed(unit, current.Node, PerformedWhat.Noted));
     }
 
     /// <summary>The unit whose record names an invocation, and the attempt as read: what an answer is judged on again under the lock.</summary>

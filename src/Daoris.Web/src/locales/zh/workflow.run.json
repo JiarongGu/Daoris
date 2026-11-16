@@ -14,6 +14,7 @@
   "workflow.run.state.working": "进展中",
   "workflow.run.state.waiting-on-you": "等你处理",
   "workflow.run.state.waiting-on-agent": "等智能体",
+  "workflow.run.state.waiting": "等待中",
   "workflow.run.state.not-known": "未知",
   "workflow.run.state.cannot-start": "无法开始",
   "workflow.run.state.done": "已完成",

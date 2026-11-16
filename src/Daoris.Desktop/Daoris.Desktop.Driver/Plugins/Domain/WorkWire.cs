@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What a plugin reports of a step: reached, failed, or not known.</summary>
+/// <summary>What a plugin reports of a step: reached, failed, or not known; and, while a performed attempt runs, its progress.</summary>
 public static class WorkStates
 {
     public const string Reached = "reached";
@@ -15,6 +15,13 @@ public static class WorkStates
 
     public const string Unknown = "unknown";
 
+    /// <summary>
+    /// Not an outcome: what a performed attempt stands at while it runs, bound to its invocation, naming the <c>actor</c> it waits on where
+    /// one does (<see cref="StepProgress"/>). Kept on the attempt and replaced by the next; it never settles it.
+    /// </summary>
+    public const string Progress = "progress";
+
+    /// <summary>The outcomes: what settles an attempt or an observed step.</summary>
     public static readonly IReadOnlyList<string> All = [Reached, Failed, Unknown];
 }
 
@@ -87,6 +94,9 @@ public sealed record WorkOutcome(
 
     /// <summary>A failure's fix: one of its plugin's declared commands, which the person runs to put it right. Judged against the declaration where the run is read.</summary>
     public string? Needs { get; init; }
+
+    /// <summary>The actor a progress waits on (<see cref="WorkStates.Progress"/>); null on every other state.</summary>
+    public string? Actor { get; init; }
 }
 
 /// <summary>
@@ -327,7 +337,9 @@ public static class WorkWire
         field = "step";
         if (Text(@params, "step") is not { } step || !IsStep(step)) return null;
 
-        var outcome = ReadOutcome(@params, out field);
+        // A progress binds to the attempt it names: an observed step's event is an outcome or nothing.
+        var bound = @params.TryGetProperty("invocation", out var named) && named.ValueKind == JsonValueKind.String;
+        var outcome = ReadOutcome(@params, out field, progress: bound);
         if (outcome is null) return null;
 
         field = "at";
@@ -339,13 +351,13 @@ public static class WorkWire
         if (!Optional(@params, "invocation", NameChars, out var invocation)) return null;
 
         // An observed step binds to a commit; a completion binds to the attempt it names.
-        var bound = invocation is null;
+        var observed = invocation is null;
         field = "repository";
-        if (!Optional(@params, "repository", NameChars, out var repository) || (bound && repository is null)) return null;
+        if (!Optional(@params, "repository", NameChars, out var repository) || (observed && repository is null)) return null;
         field = "branch";
-        if (!Optional(@params, "branch", BranchChars, out var branch) || (bound && branch is null)) return null;
+        if (!Optional(@params, "branch", BranchChars, out var branch) || (observed && branch is null)) return null;
         field = "commit";
-        if (!Optional(@params, "commit", 64, out var commit) || (commit is not null && !FullCommit.IsMatch(commit)) || (bound && commit is null))
+        if (!Optional(@params, "commit", 64, out var commit) || (commit is not null && !FullCommit.IsMatch(commit)) || (observed && commit is null))
         {
             return null;
         }
@@ -476,6 +488,7 @@ public static class WorkWire
     private static JsonObject Outcome(JsonObject into, WorkOutcome outcome)
     {
         into["state"] = outcome.State;
+        if (outcome.Actor is not null) into["actor"] = outcome.Actor;
         if (outcome.Code is not null) into["code"] = outcome.Code;
         if (outcome.Needs is not null) into["needs"] = outcome.Needs;
         if (outcome.Evidence is { } evidence)
@@ -539,10 +552,13 @@ public static class WorkWire
     /// An outcome's fields read from <paramref name="from"/> by shape, or null with the broken field: a state of the three, a failure's code,
     /// evidence of its four optional parts, and outputs on a reached outcome alone, at most 8, each a reference to a declared kind of thing.
     /// </summary>
-    private static WorkOutcome? ReadOutcome(JsonElement from, out string? field)
+    private static WorkOutcome? ReadOutcome(JsonElement from, out string? field, bool progress = false)
     {
         field = "state";
-        if (Text(from, "state") is not { } state || !WorkStates.All.Contains(state)) return null;
+        if (Text(from, "state") is not { } state || !(WorkStates.All.Contains(state) || (progress && state == WorkStates.Progress))) return null;
+
+        field = "actor";
+        if (!Optional(from, "actor", 40, out var actor) || (actor is not null && (state != WorkStates.Progress || !CodeShape.IsMatch(actor)))) return null;
 
         field = "code";
         if (!Optional(from, "code", 40, out var code) || (code is not null && !CodeShape.IsMatch(code))) return null;
@@ -596,7 +612,7 @@ public static class WorkWire
         field = "resources";
         if (ReadResources(from) is not { } resources) return null;
         field = null;
-        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision, Needs = needs };
+        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision, Needs = needs, Actor = actor };
     }
 
     /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind).</summary>
