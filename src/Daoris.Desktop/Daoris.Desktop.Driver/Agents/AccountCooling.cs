@@ -513,7 +513,11 @@ public static class CoolingWords
 
     /// <summary>Why it lasts until then: the agent said so, or Daoris's default stood in.</summary>
     internal static string Why(CoolingEntry entry) =>
-        entry.Window == SpendCaps.Window ? "Daoris's reading of when this account's spend cap reopened before" : entry.Stated ? (entry.AssumedZone ? "as the agent said, in this machine's zone" : "as the agent said")
+        entry.Window == SpendCaps.Window
+            ? (entry.Until - entry.Seen >= SpendCaps.Unlearned
+                ? "Daoris's default: the spend cap named no reset, so a day"
+                : "Daoris's reading of when this account's spend cap reopened before")
+        : entry.Stated ? (entry.AssumedZone ? "as the agent said, in this machine's zone" : "as the agent said")
         : entry.NotBelieved ? "Daoris's default: the agent named a date more than 8 days off"
         : "Daoris's default: the agent named no time";
 

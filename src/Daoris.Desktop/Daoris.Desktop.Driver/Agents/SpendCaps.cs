@@ -22,8 +22,8 @@ public static class SpendCaps
     /// <summary>What a refusal's <c>hit</c> says where it is a cap.</summary>
     public const string Hit = "spend cap";
 
-    /// <summary>The wait for an account whose cap has not reopened in any history Daoris holds: tried again after this, not hourly.</summary>
-    public static readonly TimeSpan Unlearned = TimeSpan.FromHours(3);
+    /// <summary>The wait where no history shows the cap reopening and the refusal named no reset: a day.</summary>
+    public static readonly TimeSpan Unlearned = TimeSpan.FromHours(24);
 
     /// <summary>The shortest and longest wait: a cap met again at once doubles up to the longest.</summary>
     public static readonly TimeSpan Soonest = TimeSpan.FromMinutes(10), Latest = TimeSpan.FromHours(24);
@@ -66,6 +66,7 @@ public static class SpendCaps
     /// </summary>
     public static LimitSeen Learn(string home, string agent, string? account, LimitSeen seen, DateTimeOffset now)
     {
+        if (seen.Stated) return seen;
         var caps = Moments(home, agent, account);
         IReadOnlyList<DateTimeOffset> worked;
         try

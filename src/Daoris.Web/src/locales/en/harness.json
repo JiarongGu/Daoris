@@ -138,7 +138,7 @@
   "harness.cooling.why.assumed": "the agent said so, in this machine's zone",
   "harness.cooling.why.default": "Daoris's default: the agent named no time",
   "harness.cooling.why.notBelieved": "Daoris's default: the agent named a date more than 8 days off",
-  "harness.cooling.why.learned": "Daoris's reading of when this account's spend cap reopened before",
+  "harness.cooling.why.learned": "Daoris's reading of when this account's spend cap reopens: when it reopened before, else a day, as the cap named no time",
   "harness.cooling.pill": "cooling",
   "harness.cooling.tryNow": "Try now",
   "harness.cooling.tryNowFor": "try {{account}} now",

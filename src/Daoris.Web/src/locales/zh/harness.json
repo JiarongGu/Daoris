@@ -138,7 +138,7 @@
   "harness.cooling.why.assumed": "智能体如此说明，按本机时区解读",
   "harness.cooling.why.default": "Daoris 的默认值：智能体没有说明时间",
   "harness.cooling.why.notBelieved": "Daoris 的默认值：智能体说明的日期在 8 天以后",
-  "harness.cooling.why.learned": "Daoris 根据该账户的消费上限以往重新开放的时间推算",
+  "harness.cooling.why.learned": "Daoris 根据该账户的消费上限推算：以往重新开放用了多久就等多久，没有记录则等一天，因为上限没有说明时间",
   "harness.cooling.pill": "冷却中",
   "harness.cooling.tryNow": "立即尝试",
   "harness.cooling.tryNowFor": "立即尝试 {{account}}",
