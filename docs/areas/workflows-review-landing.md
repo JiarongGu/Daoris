@@ -145,7 +145,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     failed to ready by the person, a new attempt its plugin is sent. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
-    rendering whoever holds it. A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
+    rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
     until a role takes one, and an approver at a destination marked as the person's stays theirs. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
@@ -451,11 +451,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
 55. Every step of a live run that only the person moves is read from the bound runs, never stored: an active `review`, `human` or
-    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
+    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step waiting on an actor the person holds (`actor`,
+    naming the actor), and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
     alone). Sessions places the run's newest session in Needs you with
-    its `waits`, opening the run's view, and *What needs you* lists each with its presses. A plugin step waiting on an actor the person
-    holds is an `actor` row (`ActorWaits`, read as a task is), with the act in its plugin's words and its page, and no press: the act is
-    taken there.
+    its `waits`, opening the run's view, and *What needs you* lists each with its presses; an actor's row (`ActorWaits`) carries the act
+    in its plugin's words and its page, and no press: the act is taken there. Both read an actor's wait by one reading,
+    `StepWaiting.OnThePerson`.
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.
