@@ -211,12 +211,14 @@ public static class AskDoorViews
     /// it, as the ask's page has it. False by default, for a caller that answers the park itself, which leaves the park to it.
     /// </param>
     public static async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
-        this ServiceClient service, string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false)
+        this ServiceClient service, string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false,
+        RoleAnswerWire? role = null)
     {
+        // A role's answer (its `role` form, the driver's) is kept as the role's, never the person's.
         var sent = await service.SendAsync(
             new AnswerGoAhead(
                 ask.Trim().TrimStart('#'), number.ToString(CultureInfo.InvariantCulture), approved ? "approved" : "refused",
-                string.IsNullOrWhiteSpace(words) ? null : words, goesOn),
+                string.IsNullOrWhiteSpace(words) ? null : words, goesOn, role),
             ct).ConfigureAwait(false);
         if (sent.Answer is { } answered) return (true, answered.Message ?? "");
         return QuestViews.Error(sent) is { } error

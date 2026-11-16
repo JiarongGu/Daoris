@@ -33,8 +33,8 @@ internal sealed class DepartureKind : ISupervisorKind
         {
             if (records.LastOrDefault(each => each.Quest == quest.Id) is not { } session) continue;
             var repository = session.Repository ?? quest.To;
-            if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: repository)) is not { } covered) continue;
             var subject = new SupervisorSubject(Kind, session.Session, quest.Id);
+            if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
             if (!covered.Acts.Contains(SupervisorDoorActs.Accept) || !loop.Supervisor.RefersDoor(subject)) continue;
             waiting.Add(new
             {
@@ -71,7 +71,7 @@ internal sealed class DepartureKind : ISupervisorKind
             return SupervisorDecided.Refused(SupervisorWhy.NotReferred);
         }
 
-        if (SupervisorDecisionDoor.Covers(loop, generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        if (SupervisorDecisionDoor.Covers(loop, generation, subject, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
         // The quest as it stands, pinned: a done redone, answered again or held for anything but its departure is no longer what the role judged.
         var pin = await SupervisorDoorSubjects.PinAsync(service, subject, ct).ConfigureAwait(false);
         var answer = new SupervisorDoorAnswer(subject, repository, generation, act, null, reasons, holder) { Pin = pin };

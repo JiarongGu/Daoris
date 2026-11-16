@@ -2,6 +2,7 @@
   "settings.risk.label": "Risk and your marks",
   "settings.risk.body": "How much an appointed role may settle here. At low and medium risk a role you appoint answers what its grants cover, held for your Overrule; at high risk none does, and every decision waits on you. A mark keeps one kind of act yours whatever the risk: this place’s production releases. Only you set this: an agent’s press of it goes on your card in every mode.",
   "settings.risk.twin.workspace": "`daoris settings risk {{workspace}} low|medium|high --mark release.production`",
+  "settings.risk.twin.repository": "`daoris settings risk {{workspace}} --repository {{repository}} low|medium|high --mark release.production`",
   "settings.risk.choice": "The risk of {{name}}",
   "settings.risk.values.low": "Low",
   "settings.risk.values.medium": "Medium",

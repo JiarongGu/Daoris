@@ -158,7 +158,8 @@ public sealed record CloseAsk(string Id, string? Reason) : IRoute<AskActionRespo
 /// <param name="Answer"><c>approved</c> or <c>refused</c>.</param>
 /// <param name="Words">Theirs, where they give any.</param>
 /// <param name="GoesOn">False leaves a parked session that waited on it to its caller; absent or true, the answer that leaves none waiting goes on.</param>
-public sealed record AnswerGoAhead(string Id, string Number, string? Answer, string? Words = null, bool? GoesOn = null) : IRoute<AskActionResponse>
+public sealed record AnswerGoAhead(string Id, string Number, string? Answer, string? Words = null, bool? GoesOn = null, Quests.RoleAnswerWire? Role = null)
+    : IRoute<AskActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/asks/{id}/go-aheads/{number}";

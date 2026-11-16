@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// </summary>
 public static class SupervisorDecisionDoor
 {
-    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind(), new LimitKind(), new AllowKind(), new FilesKind(), new LandingKind(), new MemoryKind(), new DepartureKind(), new VacancyKind(), new AskDaorisKind()];
+    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind(), new LimitKind(), new AllowKind(), new FilesKind(), new LandingKind(), new MemoryKind(), new DepartureKind(), new GoAheadKind(), new VacancyKind(), new AskDaorisKind()];
 
     /// <summary>The kinds the door takes, each one row.</summary>
     public static IReadOnlyList<string> Kinds { get; } = [.. Rows.Select(row => row.Kind)];
@@ -30,7 +30,26 @@ public static class SupervisorDecisionDoor
         if (PipeDoor.Role is not { Generation: { } generation } judged) return SupervisorDecided.Refused(SupervisorWhy.NotHolder);
         if (SupervisorLeaveForm.Read(payload) is not { } form || RowOf(form.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
         if (form.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
-        return Nudged(loop, await row.LeaveAsync(loop, form, HolderOf(judged), ct).ConfigureAwait(false));
+        var holder = HolderOf(judged);
+        if (await PlaceAsync(loop, row, form.Subject).ConfigureAwait(false) is not { } place) return Nudged(loop, await row.LeaveAsync(loop, form, holder, ct).ConfigureAwait(false));
+        return Nudged(loop, await SupervisorClimb.LeaveAsync(loop, form, place, () => row.LeaveAsync(loop, form, holder, ct)).ConfigureAwait(false));
+    }
+
+    /// <summary>An agent's leave through its kind's row, climbing the line as a terminal's does, its hold read again first.</summary>
+    internal static async Task<SupervisorDecided> AgentLeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
+    {
+        if (RowOf(form.Subject.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
+        if (await PlaceAsync(loop, row, form.Subject).ConfigureAwait(false) is not { } place) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
+        return await AgentAsync(loop, form.Subject, form.Generation, null, holder, kind =>
+            SupervisorClimb.LeaveAsync(loop, form, place, () => kind.LeaveAsync(loop, form, holder, ct))).ConfigureAwait(false);
+    }
+
+    // The place a subject is answered at: its row's, else its session's repository as the judge places it; none where neither reads.
+    private static async Task<RolePlace?> PlaceAsync(DriverLoop loop, ISupervisorKind row, SupervisorSubject subject)
+    {
+        if (await row.PlaceOfAsync(loop, subject, CancellationToken.None).ConfigureAwait(false) is { } place) return place;
+        if (loop.Pipe?.StandingConfirmation is not { } judge || loop.Service is not { } service) return null;
+        return await service.RecordAsync(subject.Session, CancellationToken.None).ConfigureAwait(false) is { Repository: { } repository } ? judge.Placed(repository) : null;
     }
 
     /// <summary>What waits for a terminal holder: every kind's subjects but an agent's, each with its generation and covered acts. Names no key.</summary>
@@ -40,7 +59,8 @@ public static class SupervisorDecisionDoor
     internal static async Task<IReadOnlyList<object>> AllWaitingAsync(DriverLoop loop, CancellationToken ct)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
-        var admission = (IDecisionAdmission?)loop.Pipe?.StandingConfirmation ?? NoDecisionAdmission.Instance;
+        // Read where each subject waits on the line now, so a subject its place's supervisor left lists to the machine's.
+        var admission = new PipeDecisionAdmission(loop);
         var records = (await service.RecordsAsync(ct).ConfigureAwait(false)).ToList();
         var waiting = new List<object>();
         foreach (var row in Rows) waiting.AddRange(await row.WaitingAsync(loop, records, admission, ct).ConfigureAwait(false));
@@ -57,15 +77,10 @@ public static class SupervisorDecisionDoor
         DriverLoop loop, SupervisorSubject subject, string generation, string? act, SupervisorHolder holder, Func<ISupervisorKind, Task<SupervisorDecided>> keep)
     {
         if (RowOf(subject.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
-        if (loop.Pipe?.StandingConfirmation is not { } judge || loop.Service is not { } service) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
-        var place = await row.PlaceOfAsync(loop, subject, CancellationToken.None).ConfigureAwait(false);
-        if (place is null)
-        {
-            if (await service.RecordAsync(subject.Session, CancellationToken.None).ConfigureAwait(false) is not { Repository: { } repository }) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
-            place = judge.Placed(repository);
-        }
-
-        var admitted = judge.Admit(subject.Kind, place.Value, act);
+        if (loop.Pipe?.StandingConfirmation is null || loop.Service is null) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
+        if (await PlaceAsync(loop, row, subject).ConfigureAwait(false) is not { } place) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
+        // Where the subject waits on the line now: the machine's supervisor once its place's left it.
+        var admitted = new PipeDecisionAdmission(loop).Admit(subject, place, act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
         return Nudged(loop, await keep(row).ConfigureAwait(false));
@@ -75,12 +90,19 @@ public static class SupervisorDecisionDoor
     /// The hold that answers <paramref name="kind"/> at <paramref name="place"/>, and the kind's acts its grants cover there; null where
     /// no hold is admitted or it covers none, so a subject only the person may decide is never listed.
     /// </summary>
-    internal static (string Generation, IReadOnlyList<string> Acts)? Covered(IDecisionAdmission admission, string kind, RolePlace place)
+    internal static (string Generation, IReadOnlyList<string> Acts)? Covered(IDecisionAdmission admission, string kind, RolePlace place) =>
+        Covered((act) => admission.Admit(kind, place, act), kind);
+
+    /// <summary>The hold that answers <paramref name="subject"/> where it waits on the line now (<see cref="SupervisorClimb"/>), and the acts it covers.</summary>
+    internal static (string Generation, IReadOnlyList<string> Acts)? Covered(IDecisionAdmission admission, SupervisorSubject subject, RolePlace place) =>
+        Covered((act) => admission.Admit(subject, place, act), subject.Kind);
+
+    private static (string Generation, IReadOnlyList<string> Acts)? Covered(Func<string?, DecisionAdmitted> admit, string kind)
     {
-        if (admission.Admit(kind, place, act: null) is not { Why: null, Generation: { } generation }) return null;
+        if (admit(null) is not { Why: null, Generation: { } generation }) return null;
         var prefix = kind.Length + 1;
         IReadOnlyList<string> acts = [.. SupervisorKinds.ActsOf(kind).Select(act => act[prefix..])
-            .Where(act => admission.Admit(kind, place, act) is { Why: null } admitted && admitted.Generation == generation)];
+            .Where(act => admit(act) is { Why: null } admitted && admitted.Generation == generation)];
         return acts.Count == 0 ? null : (generation, acts);
     }
 
@@ -90,6 +112,22 @@ public static class SupervisorDecisionDoor
     /// </summary>
     internal static string? Covers(DriverLoop loop, string generation, string kind, string repository) =>
         loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, kind, repository) : SupervisorWhy.NotStaffed;
+
+    /// <summary>
+    /// Whether the hold of <paramref name="generation"/> answers <paramref name="subject"/> in <paramref name="repository"/> where it waits on
+    /// the line now: the repository's own judgement until its supervisor left the subject, then the machine's.
+    /// </summary>
+    internal static string? Covers(DriverLoop loop, string generation, SupervisorSubject subject, string repository)
+    {
+        if (loop.Pipe?.StandingConfirmation is not { } judge) return SupervisorWhy.NotStaffed;
+        var place = judge.Placed(repository);
+        return SupervisorClimb.PlaceOf(loop, subject, place) switch
+        {
+            null => SupervisorWhy.PassedUp,
+            var now when now == place => judge.Covers(generation, subject.Kind, repository),
+            var now => CoversPlace(loop, generation, subject.Kind, now.Value),
+        };
+    }
 
     /// <summary>Whether the hold of <paramref name="generation"/> answers <paramref name="kind"/> at any <paramref name="place"/>, asking no grant; null where it does, else why not.</summary>
     internal static string? CoversPlace(DriverLoop loop, string generation, string kind, RolePlace place)

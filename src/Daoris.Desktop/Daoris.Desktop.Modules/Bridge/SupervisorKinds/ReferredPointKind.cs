@@ -28,10 +28,11 @@ internal abstract class ReferredPointKind : ISupervisorKind
         {
             if (record.Teammate || record.Repository is not { } repository || points.Open(record.Session, loop.Look.Latest) is not { } open) continue;
             if (SupervisorRules.KindOf(open.Rule.Count) != Kind || !loop.Supervisor.Refers(record.Session, open.Id, Kind)) continue;
-            if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: repository)) is not { } covered) continue;
+            var subject = SupervisorSubject.Point(record.Session, open.Id, Kind);
+            if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
             waiting.Add(new
             {
-                Kind, Subject = SupervisorSubject.Point(record.Session, open.Id, Kind).Wire(), Repository = repository, Count = open.Rule.Count, N = open.N,
+                Kind, Subject = subject.Wire(), Repository = repository, Count = open.Rule.Count, N = open.N,
                 Rule = open.Rule.Id, Place = open.Rule.Place, covered.Generation, covered.Acts,
             });
         }
@@ -43,7 +44,7 @@ internal abstract class ReferredPointKind : ISupervisorKind
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await service.RecordAsync(course.Session, ct).ConfigureAwait(false) is not { Repository: { } repository } record) return SupervisorDecided.Refused(SupervisorWhy.NotReferred);
-        if (SupervisorDecisionDoor.Covers(loop, course.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        if (SupervisorDecisionDoor.Covers(loop, course.Generation, SupervisorSubject.Point(course.Session, course.Point, Kind), repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
 
         var counts = (await LineCountsRead.FactsAsync(service, loop.Home, course.Session, ct).ConfigureAwait(false)).Counts;
         var point = ReferredPoints.For(loop.Home, loop.Events, new GoOnMarks(loop.Home)).PointOf(record, counts, loop.Look.Latest);

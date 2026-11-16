@@ -33,7 +33,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
 
             refused ??= book.ClosedWhy(subject);
             var left = landing.Do == SupervisorLandingActs.Hold;
-            var admitted = admission.Admit(SupervisorKinds.Landing, new RolePlace(Repository: repository), left ? null : landing.Do);
+            var admitted = admission.Admit(subject, new RolePlace(Repository: repository), left ? null : landing.Do);
             refused ??= admitted.Why ?? (admitted.Generation != landing.Generation ? SupervisorWhy.RoleChanged : null);
             refused ??= SupervisorKeeping.Refused(landing.Reasons, left || LandingActs.Contains(landing.Do), null);
             if (refused is not null)
@@ -78,7 +78,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 {
                     Revision = due.Revision,
                 };
-                var admitted = admission.Admit(SupervisorKinds.Landing, new RolePlace(Repository: due.Repository), due.Do);
+                var admitted = admission.Admit(SupervisorSubject.Landing(due.Session, due.Run, due.Node, due.Attempt), new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
                     ? await line.Why(handed).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;
