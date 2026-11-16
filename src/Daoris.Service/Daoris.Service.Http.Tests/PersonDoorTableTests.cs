@@ -225,6 +225,7 @@ public sealed class PersonDoorTableTests
                 ("POST", "/api/quests/{id}/respond", "whileOpen", Person),
                 ("POST", "/api/quests/{id}/set-up", "look", Person),
                 ("POST", "/api/quests/{id}/accept", "role", Driver),
+                ("POST", "/api/asks/{id}/go-aheads/{number}", "role", Driver),
                 ("POST", "/api/memory/{id}/decide", "role", Driver),
                 ("POST", "/api/sessions/{id}/memory", "role", Driver),
             },
