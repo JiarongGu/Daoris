@@ -261,7 +261,7 @@ public static class WorkflowRunWords
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
-                    : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
+                    : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to say is not needed this run.",
                 // Each holds the work until it lets go, and passing it over lets it go on.
                 NodeKinds.QuestHolds or NodeKinds.ContentHolds when step.Words is { Length: > 0 } why => $"Holds the work: {why.TrimEnd('.')}.",
                 NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, is held for your yes or its evidence's verdict, or is unchecked: an ask's quest with no requirement.",

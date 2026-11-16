@@ -123,7 +123,7 @@ export async function release(attempt, unit, say, progress = () => {}) {
       return failed('build-failed', `build ${numberOf(build)} of ${short} ${built.result ?? 'ended'}, so no release takes it.`, buildUrl);
     }
 
-    // ACTPIN1 (D307): the target is read again at the act, against the route of the branch the build ran on.
+    // The target is read again at the act, against the route of the branch the build ran on.
     const branch = withoutHeads(build.sourceBranch ?? target);
     const off = offRoute(definition, await definitionsTaking(repo, asked.pipeline), asked.pipeline, branch);
     if (off) return await holding('target-changed', `${changedWords(off.why, asked.deployable)} ${routeWords(off.route, branch)}`);

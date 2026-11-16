@@ -43,7 +43,7 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
 
     public override string? Title => "Your task";
 
-    /// <summary>A task with no means of its own is the owner's where it names no role (its role named on the step is the one way after HOLDDOOR1).</summary>
+    /// <summary>A task with no means of its own is the owner's where it names no role (a role named on the step is the one way to change it).</summary>
     public override string Role => StepRoles.Owner;
 
     /// <summary>A landing supervisor's Approve and Reject of an approval; a task a person does by hand is theirs alone.</summary>

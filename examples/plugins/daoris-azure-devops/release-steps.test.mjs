@@ -1,7 +1,7 @@
-// The release as the run's own steps (RELEASESTEPS1) against the stand-in, never a real system (D309 point 5): each step settles on the fact
+// The release as the run's own steps against the stand-in, never a real system: each step settles on the fact
 // Azure DevOps holds whoever made it, a release is matched by the landed commit across its builds, made once keyed by its effect across a lost
-// answer and a restart, waited for with no fixed give-up; every act keeps to its route (ACTPIN1); an approval is never given here
-// (APPROVEHERE1); a refused key waits on the credentials keeper, never failing for access (ACCESSSTEP1).
+// answer and a restart, waited for with no fixed give-up; every act keeps to its route; an approval is never given here;
+// a refused key waits on the credentials keeper, never failing for access.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { POINTS, RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, start, tip, unitAt } from './stand-in.mjs';

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCESSSTEP1's driver half (W3c row 3): a plugin's wait on the credentials keeper that reaches its deadline climbs the reporting line instead
+/// A plugin's wait on the credentials keeper that reaches its deadline climbs the reporting line instead
 /// of ending as <c>timeout</c>: sign-ins are an owner-class kind, so it passes every level to the owner role and is held there, its step still
 /// under way. A wait on any other role ends as before. Seen failing first.
 /// </summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 d: the evidence routine. A day's failures, read from the records handed to it, each given its root-cause class; one
+/// The evidence routine. A day's failures, read from the records handed to it, each given its root-cause class; one
 /// proposed row per class, never per failure; a class the steward declined is not proposed again; and the routine is due once a
 /// day after its hour, or at once on the steward's word.
 /// </summary>

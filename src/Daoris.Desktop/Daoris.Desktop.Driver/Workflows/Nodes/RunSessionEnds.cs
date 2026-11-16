@@ -21,7 +21,7 @@ public static class RunSessionEnds
 {
     /// <summary>
     /// Whether <paramref name="ended"/> ends the work its sessions wait in: an end at its graph's end or by a stop (<i>End this work</i>, or
-    /// Daoris's at a closed quest) does; a failure does not, since its holder may still say it was done outside Daoris, or try it again.
+    /// Daoris's at a closed quest) does; a failure does not, since its holder may still say it is done outside Daoris, or try it again.
     /// </summary>
     public static bool Ends(RunEnd ended) => ended.Outcome != RunOutcomes.Failed;
 

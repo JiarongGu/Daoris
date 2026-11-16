@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 c: a one-scope plan's end. Its parts merge into the ask's branch with no gate each; the full set runs once on the
+/// A one-scope plan's end. Its parts merge into the ask's branch with no gate each; the full set runs once on the
 /// branch; and two reviews, wide and close, are the landing role's first ready reviewers of two makers, else one maker's twice,
 /// said as not independent.
 /// </summary>

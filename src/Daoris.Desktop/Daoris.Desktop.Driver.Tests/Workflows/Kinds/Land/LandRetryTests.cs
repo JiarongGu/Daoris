@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRETRY1: a run's <c>land</c> refused for a cause that passes (the repository's trees being cleaned up, another of Daoris's writes
+/// A run's <c>land</c> refused for a cause that passes (the repository's trees being cleaned up, another of Daoris's writes
 /// holding it) keeps the yes and is tried again by itself once the cause clears, never asked of the person again; each wait has a deadline,
 /// past which it climbs the reporting line instead of reading as working. A refusal that does not pass keeps waiting on a change or a press.
 /// </summary>

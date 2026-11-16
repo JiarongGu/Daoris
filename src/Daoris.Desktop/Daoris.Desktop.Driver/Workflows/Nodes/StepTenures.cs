@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One holder's tenure of a step's attempt (TENURE1, D309): the role it fills, its holder as the holder's channel names it, its epoch (1 for
+/// One holder's tenure of a step's attempt: the role it fills, its holder as the holder's channel names it, its epoch (1 for
 /// the attempt's first holder, one more at each change), since when and why. A word from an ended epoch is refused.
 /// </summary>
 public sealed record StepTenure(string Node, int Attempt, string Role, string Holder, int Epoch, DateTimeOffset Since, string Why);

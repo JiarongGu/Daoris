@@ -76,7 +76,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
 
   /**
    * An attempt an earlier process began, or one it could not tell: only the platform can say what became of it, asked of the attempt that
-   * holds its act. Its answer settles that attempt, and this one where it was not known only for waiting on it.
+   * holds its act. Its answer settles that attempt, and this one, where it is not known, only for waiting on it.
    */
   const asked = async (attempt) => {
     const holder = holderOf(attempt) ?? attempt;
@@ -95,7 +95,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
 
   /**
    * One attempt's act, made once per effect: an act already made answers it; one under way here is waited for; one failed, lost or begun
-   * by a process since gone is asked of the platform first, and its done answer stands for this attempt. Only where none was made, or the
+   * by a process since gone is asked of the platform first, and its done answer stands for this attempt. Only where none exists, or the
    * platform says it failed or never started, is the act made, its effect written down first.
    */
   const perform = async (attempt) => {

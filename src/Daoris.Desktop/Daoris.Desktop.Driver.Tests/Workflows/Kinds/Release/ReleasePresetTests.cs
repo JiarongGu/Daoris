@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The shipped release preset (CONFIGSTEP1): the release as its observed steps, then the per-run decision whether a config change is
+/// The shipped release preset: the release as its observed steps, then the per-run decision whether a config change is
 /// needed, *Change live config* where it is, and *Check release* after either. A run through the preset's after-release steps with "not
 /// needed" passes the config step on the record naming both holders, and the check goes on. Seen failing first.
 /// </summary>

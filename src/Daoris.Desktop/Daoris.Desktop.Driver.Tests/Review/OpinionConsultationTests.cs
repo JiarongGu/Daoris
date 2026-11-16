@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A second opinion's consultation record (CONSULTREC1, D308), in the brainstorm's <c>consultation.json</c> shape: its mode, maker and
+/// A second opinion's consultation record, in the brainstorm's <c>consultation.json</c> shape: its mode, maker and
 /// product, what it read, whether it saw another answer, what of independence did not hold, and the decider's line once answered.
 /// </summary>
 public sealed class OpinionConsultationTests : IDisposable

@@ -82,7 +82,7 @@ public static class NodeGraphs
             }
             // Judged with the graph, so the declarations' own checks leave it alone.
             else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
-            // A step names a role, never who fills it (D304 point 2).
+            // A step names a role, never who fills it.
             else if (StepRoles.Problem(node) is { } role) problems.Add(role);
         }
 

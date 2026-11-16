@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An act's key (EFFECTKEY1, D309): what the act is for, never who asked or how often. A digest of its run (the record's unit), its node,
+/// An act's key: what the act is for, never who asked or how often. A digest of its run (the record's unit), its node,
 /// its slot (the act within its step: the step a performed node is) and its target subject (the unit it acts on at its revision), with no
 /// holder, attempt or time in it, so a retry and a second holder on the same target name the same act, and a new revision a new one.
 /// </summary>

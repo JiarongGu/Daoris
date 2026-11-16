@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 a: a design pass's closed question answered becomes a decision draft for the person to keep: the repository's next decision
+/// A design pass's closed question answered becomes a decision draft for the person to keep: the repository's next decision
 /// number, the choice stated as the comparison worded it, and what it rejected; never the person's own words.
 /// </summary>
 public sealed class DesignDecisionDraftTests

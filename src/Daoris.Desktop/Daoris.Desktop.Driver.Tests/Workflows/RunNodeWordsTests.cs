@@ -157,7 +157,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Single(pass.Said, line => line.Contains("its run ended at #q7", StringComparison.Ordinal));
     }
 
-    /// <summary>A stop from a holder whose epoch ended at a hand-over is refused, naming who holds the step now; the holder of now is heard (TENURE1).</summary>
+    /// <summary>A stop from a holder whose epoch ended at a hand-over is refused, naming who holds the step now; the holder of now is heard.</summary>
     [Fact]
     public async Task A_stop_from_the_holder_before_a_hand_over_is_refused_and_the_holder_of_now_is_heard()
     {

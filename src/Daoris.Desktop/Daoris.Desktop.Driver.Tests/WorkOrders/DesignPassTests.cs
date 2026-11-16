@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// METHODS1 b: the design pass the brainstorm runs. Its packet is the purpose brief alone, its designers and comparison reader
-/// are told their jobs, its comparison is judged and kept in the document, and every brainstorm keeps its consultation (D308).
+/// The design pass the brainstorm runs. Its packet is the purpose brief alone, its designers and comparison reader
+/// are told their jobs, its comparison is judged and kept in the document, and every brainstorm keeps its consultation.
 /// </summary>
 public sealed class DesignPassTests
 {

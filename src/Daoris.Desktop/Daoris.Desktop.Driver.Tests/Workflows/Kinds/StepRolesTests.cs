@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every step names its role (ACTORFIELD1, D304 points 1 and 9, D309 point 4): a declaration's <c>role</c> is in its equality and its
+/// Every step names its role: a declaration's <c>role</c> is in its equality and its
 /// version's digest, a version naming none reads each kind's default and keeps its digest, the save refuses a holder named where a role goes
 /// (a person and an agent alike), and a going back past the first build that saved one is refused.
 /// </summary>
