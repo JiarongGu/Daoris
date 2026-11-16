@@ -9,7 +9,7 @@ import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
 import {
-  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
+  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, stepWaitsOnYou, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
   type WorkflowRun, type WorkflowRunAnswer,
 } from './run';
 import { outcomeSaid } from './graphFlow';
@@ -119,7 +119,7 @@ function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step
   if (!pill && !here && !when && !children) return null;
   return (
     <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
+      {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state, step.holder)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
       {here && (
         <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
       )}
@@ -197,7 +197,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   // The second opinion's gate holding the work on the person: its owner's control draws *Go on anyway…* under the step
   // where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
   // and the terminal's, and the door opens the review, where the gate's presses stand.
-  const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
+  const twin = !control && kind === 'opinion' && stepWaitsOnYou(step) && step.session
     ? t('workflow.run.opinionTwin', { session: step.session })
     : null;
 
@@ -292,7 +292,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   // A graph run's node: where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
   // landed branch's page for what follows the landing; the session whose branch it observes.
   if (step.node) {
-    if (step.node === 'go-ahead' && step.state === 'waiting-on-you' && run.ask && doors?.ask) {
+    if (step.node === 'go-ahead' && stepWaitsOnYou(step) && run.ask && doors?.ask) {
       return { label: t('workflow.run.door.ask'), open: () => doors.ask?.(run.ask!) };
     }
     if (step.on === 'quest' && step.quest && doors?.quest) {
@@ -316,7 +316,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   }
   // The gate holds the work on the person: its presses stand beside the review's Accept (`LANDING` answers it there).
   const reviewed = reviewRunOf(run);
-  if (kind === 'opinion' && step.state === 'waiting-on-you' && reviewed && doors?.review) {
+  if (kind === 'opinion' && stepWaitsOnYou(step) && reviewed && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
@@ -325,7 +325,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   if (kind === 'look' && step.quest && doors?.quest) {
     return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
   }
-  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && reviewed && doors?.review) {
+  if (kind === 'landing' && (stepWaitsOnYou(step) || step.state === 'cannot-start') && reviewed && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   // Landed on a branch: its page draws how it landed. A landing into the line keeps no branch, so it has none.
@@ -379,7 +379,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       // when a long run folds), its lines without the pill the node draws, and Enter opens its record. A route not taken says so.
       state: notTakenIn(run, step)
         ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
-        : { word: stepWord(t, step), tone: runTone(step.state) },
+        : { word: stepWord(t, step), tone: runTone(step.state, step.holder) },
       settled: step.state === 'done',
       node: mark(false),
       ...(step.state === 'not-reached' ? {} : { open: pick }),
@@ -444,8 +444,8 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
  * handed in (`controls`, by the step's id) and drawn under it, so no press has a second implementation; every other step's
  * door opens where its record is.
  *
- * **Hues** (design §7, platform-ux §3): waiting on the person in open's hue, theirs alone; a wait on an agent or on Daoris
- * neutral; done's green for a step done; red only for a failure. The person's part stays the rail's shape and its word,
+ * **Hues** (design §7, platform-ux §3): a wait on a role the person holds in open's hue, theirs alone; a wait on a role an agent or
+ * Daoris holds neutral; done's green for a step done; red only for a failure. The person's part stays the rail's shape and its word,
  * never a hue.
  *
  * **An ask's work in several repositories is several runs** (design §3.8), each at its own step, drawn one after another.

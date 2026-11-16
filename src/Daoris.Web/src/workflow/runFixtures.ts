@@ -12,8 +12,22 @@ const COMMIT = '0123456789abcdef0123456789abcdef01234567';
 const limitsOf = (steps: RunStep[]) =>
   Object.fromEntries(steps.flatMap(({ step }) => (step.limit ? [[step.limit, LIMITS[step.limit] ?? step.limit]] : [])));
 
-/** A step where it stands, with what the record says of it. */
-const at = (step: WorkflowStep, state: string, detail: string, facts: Partial<RunStep> = {}): RunStep => ({ step, state, detail, ...facts });
+/** The role a waiting step waits on, as the driver names it for the kind (`StepRoles`). */
+const ROLES: Record<string, string> = { work: 'design', opinion: 'acceptor', look: 'tester', landing: 'acceptor', 'pull-request': 'acceptor', 'go-ahead': 'approver' };
+
+/** The details at which an agent holds the role a step waits on: its session answering, a set-up shown again, a question another repository answers. */
+const AGENT_AT = ['with-session', 'not-yet', 'not-held', 'awaits', 'reopened'];
+
+/** A step where it stands, with what the record says of it; a waiting one names its role and, but for an agent still at it, the person as holder. */
+const at = (step: WorkflowStep, state: string, detail: string, facts: Partial<RunStep> = {}): RunStep => ({
+  step,
+  state,
+  detail,
+  ...(state === 'waiting'
+    ? AGENT_AT.includes(detail) ? { role: 'design', holder: { kind: 'agent' } } : { role: ROLES[step.kind] ?? 'acceptor', holder: { kind: 'person' } }
+    : {}),
+  ...facts,
+});
 
 const run = (steps: RunStep[], fields: Partial<WorkflowRun> = {}): WorkflowRun => ({
   repository: 'engine',
@@ -38,7 +52,7 @@ export const WORKING = run([
 
 /** A go-ahead its session asked, waiting on the person (*a go-ahead a session asked*). */
 export const WAITING_ON_YOU = run([
-  at(WORK(), 'waiting-on-you', 'go-ahead', {
+  at(WORK(), 'waiting', 'go-ahead', {
     session: 's1', quest: 'q1', agent: 'claude-code', at: AT, goAhead: 1, words: 'write the configuration to dev', count: 0, of: 1,
   }),
   at(MERGE_YOU_ACCEPT, 'not-reached', ''),
@@ -47,7 +61,7 @@ export const WAITING_ON_YOU = run([
 /** The work done, and its set-up shown in `dev`, waiting for the person's look (*a set-up shown waits for your look*). */
 export const IN_REVIEW = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
-  at(LOOK, 'waiting-on-you', 'shown', { session: 's2', quest: 'q2', environment: 'dev', commit: COMMIT, at: AT }),
+  at(LOOK, 'waiting', 'shown', { session: 's2', quest: 'q2', environment: 'dev', commit: COMMIT, at: AT }),
   at(BRANCH_AUTOMATIC, 'not-reached', ''),
   at(PULL_REQUEST, 'not-reached', ''),
 ], { quests: ['q1', 'q2'], session: 's2' });
@@ -58,7 +72,7 @@ export const IN_REVIEW = run([
  */
 export const HELD_FOR_OPINION = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
-  at(OPINION, 'waiting-on-agent', 'with-session', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 3 }),
+  at(OPINION, 'waiting', 'with-session', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 3 }),
   at(MERGE_YOU_ACCEPT, 'not-reached', ''),
 ]);
 
@@ -69,7 +83,7 @@ export const HELD_FOR_OPINION = run([
  */
 export const OPINION_DISPUTED = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
-  at(OPINION, 'waiting-on-you', 'disputed', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 1 }),
+  at(OPINION, 'waiting', 'disputed', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 1 }),
   at(MERGE_YOU_ACCEPT, 'not-reached', ''),
 ]);
 
@@ -77,7 +91,7 @@ export const OPINION_DISPUTED = run([
 export const OPINION_SETTLED = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
   at(OPINION, 'done', 'settled', { session: 'r1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 3 }),
-  at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 's1', at: AT }),
+  at(MERGE_YOU_ACCEPT, 'waiting', 'accept', { session: 's1', at: AT }),
 ]);
 
 /** Landed into its line by the person's accept (*an acceptance the session's record keeps*): finished. */
@@ -90,7 +104,7 @@ export const LANDED = run([
 export const PULL_REQUEST_OPEN = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
   at(BRANCH_AUTOMATIC, 'done', 'branch', { session: 's1', branch: 'work/q1-fix-the-header', code: 'auto', plugin: 'example.pull-request', at: AT }),
-  at(PULL_REQUEST, 'waiting-on-you', 'merge', {
+  at(PULL_REQUEST, 'waiting', 'merge', {
     session: 's1', branch: 'work/q1-fix-the-header', plugin: 'example.pull-request', pullRequest: 'https://example.test/pull/7', code: 'open', at: AT,
   }),
 ]);
@@ -117,7 +131,7 @@ export const GO_AHEAD_REFUSAL = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
   at(OPINION, 'skipped', 'none'),
   at(LOOK, 'skipped', 'skip', { quest: 'q1', words: 'docs only', at: AT }),
-  at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 's1', at: AT }),
+  at(MERGE_YOU_ACCEPT, 'waiting', 'accept', { session: 's1', at: AT }),
   at(GO_AHEAD_WAIT, 'not-reached', ''),
 ], { workflow: { version: '5d1c0e7a92b4', startHolds: [], limits: limitsOf([at(OPINION, '', ''), at(LOOK, '', ''), at(GO_AHEAD_WAIT, '', '')]), id: 'release', boundVersion: 2 } });
 
@@ -167,8 +181,8 @@ export const GRAPH_RUN = run([
  */
 export const GRAPH_RUN_ADDED_LOOK = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
-  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting-on-you', 'active', { node: 'go-ahead', words: 'release to prod' }),
-  at(LOOK, 'waiting-on-you', 'not-shown', { added: 'chain', environment: 'dev' }),
+  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting', 'active', { node: 'go-ahead', words: 'release to prod' }),
+  at(LOOK, 'waiting', 'not-shown', { added: 'chain', environment: 'dev' }),
   at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked',
     { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
 ], {
@@ -187,7 +201,7 @@ export const GRAPH_RUN_ADDED_LOOK = run([
  */
 export const GRAPH_RUN_GO_AHEAD = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
-  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting-on-you', 'active',
+  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting', 'active',
     { node: 'go-ahead', words: 'release to prod', acts: ['skip', 'stop'] }),
   at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked',
     { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
@@ -206,7 +220,7 @@ export const GRAPH_RUN_GO_AHEAD = run([
  */
 export const GRAPH_RUN_REVIEW = run([
   at(nodeCell('work', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
-  at(nodeCell('review', 'review', 'you', 'daoris', 'accept'), 'waiting-on-you', 'active',
+  at(nodeCell('review', 'review', 'you', 'daoris', 'accept'), 'waiting', 'active',
     { node: 'review', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1', acts: ['changes', 'stop'] }),
   at(nodeCell('landing', 'landing', 'automatic', 'daoris', null, { method: 'merge', accept: 'automatic' }), 'not-reached', 'blocked',
     { node: 'land', on: 'branch', branch: BRANCH, session: 's1' }),
@@ -318,7 +332,7 @@ export const GRAPH_RUN_REQUESTS = run([
       { kind: 'agent', id: 'h1', to: 'codex-acp', state: 'working', session: 's1', awaits: false, at: AT },
     ],
   }),
-  at(nodeCell('requests', 'work.requests', 'automatic', 'daoris'), 'waiting-on-you', 'active', { node: 'work.requests', code: 'declined', acts: ['skip', 'stop'] }),
+  at(nodeCell('requests', 'work.requests', 'automatic', 'daoris'), 'waiting', 'active', { node: 'work.requests', code: 'declined', acts: ['skip', 'stop'] }),
   at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked', { node: 'handed' }),
 ], {
   at: 'requests',
@@ -387,9 +401,9 @@ export const GRAPH_RUN_UNJUDGED = run([
  * person's Accept; its second opinion, which that Accept asks; and its checks, `light`, not yet enforced for a conversation.
  */
 export const CHAT_RUN = run([
-  at(WORK(), 'waiting-on-you', 'land', { session: 'c2', agent: 'claude-code', at: AT, count: 2 }),
-  at(OPINION, 'waiting-on-you', 'chat-at-accept', { session: 'c2', agent: 'codex-acp' }),
-  at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 'c2', at: AT }),
+  at(WORK(), 'waiting', 'land', { session: 'c2', agent: 'claude-code', at: AT, count: 2 }),
+  at(OPINION, 'waiting', 'chat-at-accept', { session: 'c2', agent: 'codex-acp' }),
+  at(MERGE_YOU_ACCEPT, 'waiting', 'accept', { session: 'c2', at: AT }),
 ], { ask: null, quests: [], session: 'c2', chat: { run: 'chat-c1', checks: 'light', enforced: false } });
 
 /** An ask's work in two repositories, each its own run at its own step (design §3.8). */

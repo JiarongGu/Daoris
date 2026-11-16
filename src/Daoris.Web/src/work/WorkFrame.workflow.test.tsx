@@ -130,7 +130,7 @@ describe("the session's Workflow view", () => {
 
     await waitFor(() => expect(within(side).getByRole('tab', { name: 'Workflow' })).toHaveAttribute('aria-selected', 'true'));
     expect(await within(side).findByText((_, element) => element?.matches('p') === true
-      && element.textContent === 'At Your look in dev · waiting on you')).toBeInTheDocument();
+      && element.textContent === 'At Your look in dev · waiting on tester: you')).toBeInTheDocument();
     const look = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
     expect(look).toHaveAttribute('aria-current', 'step');
   });

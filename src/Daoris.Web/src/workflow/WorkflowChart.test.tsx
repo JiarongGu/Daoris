@@ -166,9 +166,9 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(placement(container)).toBe('down');
     const look = node('Your look in dev', run());
     expect(look).toHaveAttribute('aria-current', 'step');
-    expect(within(look).getByText('waiting on you')).toHaveClass('text-ink-open');
+    expect(within(look).getByText('waiting on tester: you')).toHaveClass('text-ink-open');
     // The pill is the node's, once.
-    expect(within(look).getAllByText('waiting on you')).toHaveLength(1);
+    expect(within(look).getAllByText('waiting on tester: you')).toHaveLength(1);
     expect(within(look).getByText(/Waits for your look in/)).toHaveTextContent('Waits for your look in dev: shown at 01234567.');
     expect(within(node('The work', run())).getByText('done')).toHaveClass('text-ink-done');
     expect(node('The work', run())).toHaveTextContent('this session');

@@ -94,7 +94,7 @@ describe("the session's Workflow view", () => {
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 
-    expect(document.body).toHaveTextContent('At Your look in dev · waiting on you');
+    expect(document.body).toHaveTextContent('At Your look in dev · waiting on tester: you');
     expect(screen.getByText('engine · Current workflow, version 06e90f358edc')).toBeInTheDocument();
     expect(steps().map((item) => item.getAttribute('data-step'))).toEqual(['work', 'look', 'landing', 'pull-request']);
 
@@ -107,7 +107,7 @@ describe("the session's Workflow view", () => {
     const look = row('look');
     expect(look).toHaveAttribute('aria-current', 'step');
     expect(look).toHaveTextContent('agent + you');
-    expect(look).toHaveTextContent('waiting on you');
+    expect(look).toHaveTextContent('waiting on tester: you');
     expect(within(look).getByText(/Waits for your look in/)).toHaveTextContent('Waits for your look in dev: shown at 01234567.');
     expect(look.querySelector('code')).toHaveTextContent('dev');
   });
@@ -126,7 +126,7 @@ describe("the session's Workflow view", () => {
 
   it("wears open's hue only where the person is waited on, done's green for done, and red only for a failure", () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
-    expect(within(row('look')).getByText('waiting on you')).toHaveClass('text-ink-open');
+    expect(within(row('look')).getByText('waiting on tester: you')).toHaveClass('text-ink-open');
     expect(within(row('work')).getByText('done')).toHaveClass('text-ink-done');
     unmount();
 
@@ -169,7 +169,7 @@ describe("the session's Workflow view", () => {
     expect(row('pull-request')).toHaveTextContent('Open: waits for you to merge it on the platform.');
     await userEvent.click(detailsOf('landing')!);
     expect(row('landing')).toHaveTextContent('Landed on work/q1-fix-the-header, accepted automatically.');
-    expect(document.body).toHaveTextContent('· waiting on you');
+    expect(document.body).toHaveTextContent('· waiting on acceptor: you');
   });
 
   // A landing that made a branch opens that branch's page, with how it landed; one into the line keeps no branch to open.
@@ -195,10 +195,10 @@ describe("the session's Workflow view", () => {
   it("stands at the second opinion while its gate holds, in the gate's words, and past it once settled", async () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(HELD_FOR_OPINION)} />);
     expect(row('opinion')).toHaveAttribute('aria-current', 'step');
-    expect(row('opinion')).toHaveTextContent('waiting on an agent');
+    expect(row('opinion')).toHaveTextContent('waiting on design: an agent');
     expect(row('opinion')).toHaveTextContent('The working session is answering its 3 findings.');
     expect(row('landing')).toHaveTextContent('not reached');
-    expect(document.body).toHaveTextContent('At Second opinion · waiting on an agent');
+    expect(document.body).toHaveTextContent('At Second opinion · waiting on design: an agent');
     unmount();
 
     const settled = render(<WorkflowRunView answer={answerOf(OPINION_SETTLED)} />);
@@ -213,14 +213,14 @@ describe("the session's Workflow view", () => {
     render(<WorkflowRunView answer={answerOf(OPINION_DISPUTED)} doors={{ review, session: vi.fn() }} />);
     const opinion = row('opinion');
 
-    expect(opinion).toHaveTextContent('waiting on you');
-    expect(within(opinion).getByText('waiting on you')).toHaveClass('text-ink-open');
+    expect(opinion).toHaveTextContent('waiting on acceptor: you');
+    expect(within(opinion).getByText('waiting on acceptor: you')).toHaveClass('text-ink-open');
     expect(opinion).toHaveTextContent('1 finding is disputed: a must the working session did not fix and no recheck withdrew.');
     expect(opinion).toHaveTextContent("Go on anyway is on the session's own page, beside its second opinion, and at a terminal");
     expect(opinion).toHaveTextContent('daoris session opinion anyway s1 "…" goes on without it');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Open its outputs' }));
     expect(review).toHaveBeenCalledWith('q1');
-    expect(document.body).toHaveTextContent('At Second opinion · waiting on you');
+    expect(document.body).toHaveTextContent('At Second opinion · waiting on acceptor: you');
   });
 
   /** The gate's own control draws *Go on anyway…* under the step, in the twin's place. */
@@ -250,8 +250,8 @@ describe("the session's Workflow view", () => {
     expect(await said(step('not-asked', 'working'))).toContain("Asked at the driver's next look.");
     expect(await said(step('reading', 'working'))).toContain('Being read by Codex (OpenAI).');
     expect(await said(step('read-again', 'working'))).toContain('Read again by Codex (OpenAI): the commits made in answer.');
-    expect(await said(step('commits-since', 'waiting-on-you', { count: 2 }))).toContain('2 commits since were not read by another agent');
-    expect(await said(step('unavailable', 'waiting-on-you', { code: 'no-reviewer' })))
+    expect(await said(step('commits-since', 'waiting', { count: 2, role: 'acceptor', holder: { kind: 'person' } }))).toContain('2 commits since were not read by another agent');
+    expect(await said(step('unavailable', 'waiting', { code: 'no-reviewer', role: 'acceptor', holder: { kind: 'person' } })))
       .toContain('No second opinion could be had: no listed reviewer of another maker is installed. The rule requires one');
     expect(await said(step('unavailable', 'skipped', { code: 'out-of-time' }))).toContain('The rule does not require one, so nothing waits for it.');
     expect(await said(step('anyway', 'done', { words: 'a typo' }))).toContain('You went on without a settled second opinion.');
@@ -279,8 +279,8 @@ describe("the session's Workflow view", () => {
   it("draws an ask's runs apart, each named by its repository", () => {
     render(<WorkflowRunView answer={SEVERAL} />);
 
-    expect(document.body).toHaveTextContent('engine: At Your look in dev · waiting on you');
-    expect(document.body).toHaveTextContent(/game: At .* · waiting on you/);
+    expect(document.body).toHaveTextContent('engine: At Your look in dev · waiting on tester: you');
+    expect(document.body).toHaveTextContent(/game: At .* · waiting on \w+: you/);
     expect(screen.getAllByRole('group')).toHaveLength(2);
   });
 
@@ -438,7 +438,7 @@ describe("the session's Workflow view", () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 
-    expect(row('look')).toHaveTextContent('等你处理');
+    expect(row('look')).toHaveTextContent('等待 tester：你');
     expect(row('look')).toHaveTextContent('智能体与你');
     expect(row('work')).toHaveTextContent('本会话');
     await open('work');
@@ -478,7 +478,7 @@ describe("a graph run's Workflow view", () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} />);
     expect(row('release')).toHaveTextContent('Your go-ahead');
     expect(row('release')).toHaveTextContent('Waits for your go-ahead: release to prod');
-    expect(document.body).toHaveTextContent('At Your go-ahead · waiting on you');
+    expect(document.body).toHaveTextContent('At Your go-ahead · waiting on approver: you');
     await open('look');
     expect(row('look')).toHaveTextContent("A look added for this work by its chain's choice.");
   });
@@ -687,7 +687,7 @@ describe("the work's requests", () => {
   it('says a declined hold waits on you, offers Pass over…, and sends the run, the node and the words', async () => {
     const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'skip', done: true });
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} onNodeWord={onNodeWord} />);
-    expect(row('requests')).toHaveTextContent('waiting on you');
+    expect(row('requests')).toHaveTextContent('waiting on acceptor: you');
     expect(row('requests')).toHaveTextContent('A quest the work\'s sessions published was declined: it waits on you');
 
     await userEvent.click(within(row('requests')).getByRole('button', { name: 'Not needed this run…' }));
@@ -890,12 +890,12 @@ describe("a run's view of where its work stands", () => {
 
   it('says where the work stands in one sentence: the step, and its state', async () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
-    expect(document.body).toHaveTextContent('At Your look in dev · waiting on you');
+    expect(document.body).toHaveTextContent('At Your look in dev · waiting on tester: you');
     unmount();
 
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
-    expect(document.body).toHaveTextContent('停在：你的查看（dev） · 等你处理');
+    expect(document.body).toHaveTextContent('停在：你的查看（dev） · 等待 tester：你');
   });
 
   it("opens the step the run stands at, with its owner's control, and every other step as its title and one fact", async () => {
@@ -917,7 +917,7 @@ describe("a run's view of where its work stands", () => {
     expect(row('work')).toHaveTextContent('The agent finished: 1 quest here is done.');
     expect(within(row('work')).getByRole('button', { name: 'Open its session' })).toBeInTheDocument();
     // The selection moved: the look is its title and its state again, and its control goes with its record.
-    expect(row('look')).toHaveTextContent('waiting on you');
+    expect(row('look')).toHaveTextContent('waiting on tester: you');
     expect(row('look')).not.toHaveTextContent('Waits for your look in');
     expect(screen.queryByRole('button', { name: 'Reviewed' })).toBeNull();
     expect(detailsOf('work')).toBeNull();
