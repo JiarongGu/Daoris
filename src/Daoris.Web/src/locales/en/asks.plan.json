@@ -10,6 +10,7 @@
   "asks.plan.team": "Team",
   "asks.plan.member": "{{role}} {{session}}: {{part}}",
   "asks.plan.wholePlan": "the whole plan",
+  "asks.plan.oneScope": "Built as one: the parts merge into the ask's branch with no checks each, and the full set and two second opinions, wide and close, run once at the end.",
   "asks.plan.role.lead": "Lead",
   "asks.plan.decided": "Revision {{revision}}, {{decision}} by {{author}}",
   "asks.plan.decision.planned": "planned",

@@ -56,6 +56,7 @@ function Revision({ revision, onOpenQuest, onSettle }: { revision: AskPlanRevisi
         {revision.depth > 1 && <Pill tone="neutral">{t('asks.plan.depth', { count: revision.depth })}</Pill>}
       </p>
       {revision.why && <p className="m-0 wrap-anywhere text-body text-ink">{revision.why}</p>}
+      {revision.integration === 'one-scope' && <p className="m-0 wrap-anywhere text-meta text-ink-faint">{t('asks.plan.oneScope')}</p>}
       <ul className="m-0 grid list-none gap-2 p-0">
         {revision.parts.map((part) => (
           <li key={part.id} className="grid min-w-0 gap-0.5">

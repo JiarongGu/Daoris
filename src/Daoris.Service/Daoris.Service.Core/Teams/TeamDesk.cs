@@ -53,12 +53,13 @@ public sealed class TeamDesk(TeamStore store, TeamLedger ledger, AskDesk asks, F
             return new(TeamRefusal.Unfit, "A split of a part holds no deployables: what is released is the ask's own plan's to say.");
         }
 
+        if (TeamIntegration.Refusal(save.Integration, save.Scope) is { } integrated) return new(TeamRefusal.Unfit, integrated);
         var delivery = DeliveryGraph.Judge(save.Deployables, save.Releases, save.Questions, current?.Waivers);
         if (delivery.Refusal is { } unordered) return new(TeamRefusal.Unfit, unordered);
 
         var plan = new TeamPlan(ask.Id, save.Scope, (current?.Revision ?? 0) + 1, save.By, save.Why, now)
         {
-            Base = save.Base, Parts = judged.Parts, Edges = judged.Edges, Flags = [.. judged.Flags, .. delivery.Flags], Depth = depth,
+            Base = save.Base, Integration = TeamIntegration.Carried(save.Integration, current), Parts = judged.Parts, Edges = judged.Edges, Flags = [.. judged.Flags, .. delivery.Flags], Depth = depth,
             Deployables = save.Deployables, Releases = delivery.Edges, Questions = delivery.Questions,
             Answers = current?.Answers ?? [], Waivers = current?.Waivers ?? [],
         };

@@ -82,6 +82,19 @@ describe('an ask’s plan', () => {
     expect(screen.getByText(words)).toBeTruthy();
   });
 
+  it.each([
+    ['en', 'Built as one: the parts merge'],
+    ['zh', '整体构建：各部分合并进需求的分支'],
+  ])('says a plan built as one merges its parts unchecked and checks them once at the end, in %s', async (language, line) => {
+    await i18n.changeLanguage(language);
+    const raw = { ...RAW, plans: [{ ...RAW.plans[0], integration: 'one-scope' }, RAW.plans[1]] };
+    const { unmount } = render(<AskPlanSection plan={askPlanOf(raw)!} onOpenQuest={vi.fn()} />);
+    expect(screen.getByText(line, { exact: false })).toBeTruthy();
+    unmount();
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+    expect(screen.queryByText(line, { exact: false })).toBeNull();
+  });
+
   it('offers no answer and no waiver without a door', () => {
     render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
 
