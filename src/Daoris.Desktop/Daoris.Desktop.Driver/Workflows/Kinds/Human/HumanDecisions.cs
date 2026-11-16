@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A per-run decision (D304 point 5): a <c>human</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
+/// A per-run decision: a <c>human</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
 /// approval's <c>approved</c> or the <c>rejected</c> wire's name, answered by <c>decide</c> with one of them. A holder's proposal, with its
 /// reason, stands as the answer at once, held for the owner's word; the owner's same answer confirms it and another overrules it, and the
 /// owner may answer again until the run ends. Its record line names who proposed and who confirmed, and the step its answer's route closed is

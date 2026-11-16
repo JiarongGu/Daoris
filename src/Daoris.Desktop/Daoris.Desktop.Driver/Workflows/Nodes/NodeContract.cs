@@ -342,10 +342,7 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// <summary>The source an observed reach of a pressed kind carries: a <c>review</c> seen landed is git's, never the person's.</summary>
     public string? ObservedBy { get; init; }
 
-    /// <summary>
-    /// Whether a reach is answered again on its binding until its run ends (<c>reached → reached</c>): a person's step's, whose door offers it
-    /// on a decision alone (<see cref="HumanDecisions"/>). Every other kind's reach stands until its binding lapses.
-    /// </summary>
+    /// <summary>Whether a reach is answered again on its binding until its run ends: a person's step's, offered on a decision alone.</summary>
     public bool Reanswers { get; init; }
 }
 
