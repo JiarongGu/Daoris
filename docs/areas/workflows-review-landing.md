@@ -505,7 +505,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
     that settle it (never its stop; a skip reads *Not needed this run*), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
-    answered. A `step` row names the session its run placed; it is announced once as a park is (`HeldCallAnnouncements`, kind `Step`,
+    answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"
     with the same presses beside it (`RunWaitsHead`).
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in

@@ -5,8 +5,8 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A tool call a session holds for the person's answer, and a run's step waiting on a role the person holds (its notification opening
-/// the session its run placed in Needs you, whose head carries the step's presses), each announced as a park is: on
+/// The waits that come to the person: a tool call a session holds for their answer, and a run's step waiting on a role they hold (its
+/// notification opening the session its run placed in Needs you, whose head carries the step's presses), each announced as a park is: on
 /// <c>SESSION_ATTENTION</c>, in the shape the shell's notifier and the page's toast read, once, where the attention slice first sees
 /// its row, while the notify switch is on.
 /// </summary>
@@ -24,7 +24,7 @@ namespace Daoris.Desktop;
 /// row seen at the first judgement is held in this run, and a restart holds none to say again.
 /// </remarks>
 /// <param name="steps">Whether a run's step waiting on a role the person holds is said, a park's switch; null says none.</param>
-public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying, Func<bool>? steps = null)
+public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<bool>? steps = null)
 {
     /// <summary>The kind of attention a held tool call is told as.</summary>
     public const string AttentionKind = "Holding";

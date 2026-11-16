@@ -209,13 +209,13 @@ public static class AttentionStateSlice
                 wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake), wake => HearGitAsks(loop.Home, wake),
                 wake => HearQuiet(SessionWatch.Of(loop.Events), wake), wake => AttentionSecondCheckRows.Hear(loop.Home, wake),
             ],
-            loop.Log, new HeldCallAnnouncements(bus, () => NotifyRule.Tells(NewsKind.HeldCall, loop.Notifying()),
+            loop.Log, new WaitAnnouncements(bus, () => NotifyRule.Tells(NewsKind.HeldCall, loop.Notifying()),
                 () => NotifyRule.Tells(NewsKind.Parked, loop.Notifying())));
 
     /// <summary>The slice over <paramref name="facts"/>, read at each judgement, woken where <paramref name="hears"/> hear a move.</summary>
     public static StateSlice Of(
         Func<AttentionFacts?> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null,
-        HeldCallAnnouncements? held = null) =>
+        WaitAnnouncements? held = null) =>
         Of(_ => Task.FromResult(facts()), bus, hears, log, held);
 
     /// <summary>
@@ -224,7 +224,7 @@ public static class AttentionStateSlice
     /// </summary>
     public static StateSlice Of(
         Func<CancellationToken, Task<AttentionFacts?>> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null,
-        HeldCallAnnouncements? held = null) =>
+        WaitAnnouncements? held = null) =>
         new(Name, bus, async ct =>
         {
             var judged = Judge(await facts(ct).ConfigureAwait(false));
