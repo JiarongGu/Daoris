@@ -125,6 +125,7 @@ public static class HeldAttempts
         ReconcileStates.Unknown => "its plugin was asked and cannot say what became of it",
         WorkPerformer.NoReconcile => "its step declares no way to ask what became of it, so it is never sent again by itself",
         WorkPerformer.NoOutcome => "its plugin said it was done and named no outcome",
+        AccessWaits.Climbed => "its wait for the credentials keeper reached its deadline and passed up to the owner: put the key or sign-in right, then try it again",
         WorkPerformer.NotCurrent => "its node moved off it while its effect may still run, and its step can be sent again but not asked",
         WorkPerformer.FailureKept => $"its plugin said it failed ({held.Code}), and Daoris does not try it again by itself",
         WorkPerformer.TriesSpent => $"its plugin said it failed ({held.Code}) and its tries are spent, so Daoris does not try it again by itself",

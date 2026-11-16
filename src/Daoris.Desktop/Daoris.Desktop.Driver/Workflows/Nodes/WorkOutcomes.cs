@@ -32,6 +32,9 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
             return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
         }
 
+        // A wait for access at its deadline climbs the reporting line to the owner role and is held there, never failed (ACCESSSTEP1).
+        if (AccessWaits.Is(attempt, outcome)) return Hold(record, AccessWaits.Held(attempt, outcome.State, generation, now), AccessWaits.Climbed);
+
         // A check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
         var source = OnPort(attempt) ? NodeSource.Gates : NodeSource.Plugin;
         NodeMove move;

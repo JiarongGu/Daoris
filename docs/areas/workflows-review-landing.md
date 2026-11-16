@@ -71,7 +71,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
    key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
    deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
-   sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1). Saved
+   sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1); at the
+   deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
+   owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
+   page, its step still under way until its holder's word. Saved
    versions keep the bundled `release` step; the shipped `pull-request-release` preset names the five steps after its Azure DevOps pull
    request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
    work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
