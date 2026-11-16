@@ -81,6 +81,11 @@ internal sealed class VacancyKind : ISupervisorKind
         var left = OpinionCasting.Left(casts);
         if (left.ContainsKey(LineActors.Head)) return null;
         if (left.ContainsKey(LineActors.Lead)) return new RolePlace();
-        return loop.Pipe?.StandingConfirmation is { } judge ? judge.Placed(repository) : new RolePlace(Repository: repository);
+        if (loop.Pipe?.StandingConfirmation is not { } judge) return new RolePlace(Repository: repository);
+        var place = judge.Placed(repository);
+        // A lead holding none of the vacancy's acts is vacant (D305): the vacancy passes up to the machine's level, never to nobody.
+        return judge.Supervising(SupervisorKinds.Vacancy, place).Role is { Scope.Rank: > 0 } && SupervisorDecisionDoor.Covered(judge, SupervisorKinds.Vacancy, place) is null
+            ? new RolePlace()
+            : place;
     }
 }
