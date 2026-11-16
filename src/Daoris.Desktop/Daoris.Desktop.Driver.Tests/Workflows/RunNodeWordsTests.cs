@@ -157,6 +157,23 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Single(pass.Said, line => line.Contains("its run ended at #q7", StringComparison.Ordinal));
     }
 
+    /// <summary>A stop from a holder whose epoch ended at a hand-over is refused, naming who holds the step now; the holder of now is heard (TENURE1).</summary>
+    [Fact]
+    public async Task A_stop_from_the_holder_before_a_hand_over_is_refused_and_the_holder_of_now_is_heard()
+    {
+        await GoAheadWaitingAsync();
+        var attempt = RunStatus("go").Attempt;
+        var tenures = new StepTenureFiles(Files.Home, () => true);
+        tenures.Hold(RunUnit, "go", attempt, "approver", "agent:alpha", TenureWhy.Cast, _now);
+        tenures.HandOver(RunUnit, "go", attempt, "person", TenureWhy.TakeBack, _now);
+
+        var refused = RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not mine now", () => _now, epoch: 1);
+        Assert.Equal(StepTenureFiles.EndedEpoch, refused.Refused);
+        Assert.Contains("held now by person", refused.Detail, StringComparison.Ordinal);
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+        Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "mine", () => _now, epoch: 2).Done);
+    }
+
     /// <summary>
     /// What the door refuses before anything is kept, each in its code: a run bound to no graph version here, a node its graph does not hold, a
     /// word that is neither, a node the person may not pass over, a node the table moves nowhere from where it stands, a second word on a node

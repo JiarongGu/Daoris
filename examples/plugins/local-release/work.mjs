@@ -1,7 +1,7 @@
 // The kit's half of a plugin that works, so its author writes only the external calls, in plugin.mjs; `daoris plugin new` writes
 // it again for a newer build, so change plugin.mjs, not this. It keeps `work-journal.json` in the data folder through storage.mjs, a
-// record at a time and before anything it records is said: each attempt by its key BEFORE the external call, and its outcome; each
-// cleanup; each observation reported. Several processes of one plugin share that folder, and each record they write is kept. A
+// record at a time and before anything it records is said: each attempt by its key, and the attempt that makes each effect's act by the
+// effect's key, BEFORE the external call, and its outcome; each cleanup; each observation reported. Several processes of one plugin share that folder, and each record they write is kept. A
 // journal that does not read stops the plugin rather than starting afresh: forgetting an attempt is how an effect happens twice.
 import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,7 +17,8 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
 /**
  * The work points' handlers, built around the author's external calls:
- *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none
+ *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none;
+ *                      `call.effectKey`, where Daoris sends one, names the act whatever attempt asks it, a mark to leave on what it makes for `check` to find
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
  *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
@@ -61,12 +62,61 @@ export function work({ data, send, say, act, check, remove, observe }) {
     settle(attempt, outcome);
   };
 
-  /** An attempt an earlier process began, or one it could not tell: only the platform can say what became of it. */
+  /** The effect an attempt is for: its `effectKey`, the same for every attempt on its target, else its own key. */
+  const effectOf = (attempt) => attempt.effectKey ?? attempt.idempotencyKey;
+
+  /** The attempt that made, or is making, the act an attempt is for, where it is another attempt: null where this one is to make it. */
+  const holderOf = (attempt) => {
+    const key = journal.get('effects', effectOf(attempt));
+    return key && key !== attempt.idempotencyKey ? journal.get('attempts', key) ?? null : null;
+  };
+
+  /** This process's acts under way, by effect: an attempt on the same effect waits for its end rather than acting beside it. */
+  const acting = new Map();
+
+  /**
+   * An attempt an earlier process began, or one it could not tell: only the platform can say what became of it, asked of the attempt that
+   * holds its act. Its answer settles that attempt, and this one where it was not known only for waiting on it.
+   */
   const asked = async (attempt) => {
-    const said = calls.check ? await calls.check(attempt) : null;
-    if (said?.state === 'done' || said?.state === 'failed') settle(attempt, outcomeOf(said.outcome));
-    if (said?.state === 'not-started') journal.remove('attempts', attempt.idempotencyKey);
+    const holder = holderOf(attempt) ?? attempt;
+    const waited = holder !== attempt && attempt.state === 'unknown';
+    const said = calls.check ? await calls.check(holder) : null;
+    if (said?.state === 'done' || said?.state === 'failed') {
+      settle(holder, outcomeOf(said.outcome));
+      if (waited) settle(attempt, outcomeOf(said.outcome));
+    }
+    if (said?.state === 'not-started') {
+      for (const each of waited ? [holder, attempt] : [holder]) journal.remove('attempts', each.idempotencyKey);
+      if (journal.get('effects', effectOf(holder)) === holder.idempotencyKey) journal.remove('effects', effectOf(holder));
+    }
     return said;
+  };
+
+  /**
+   * One attempt's act, made once per effect: an act already made answers it; one under way here is waited for; one failed, lost or begun
+   * by a process since gone is asked of the platform first, and its done answer stands for this attempt. Only where none was made, or the
+   * platform says it failed or never started, is the act made, its effect written down first.
+   */
+  const perform = async (attempt) => {
+    for (let holder = holderOf(attempt); holder; holder = holderOf(attempt)) {
+      if (holder.state === 'reached') return settle(attempt, holder.outcome);
+      if (holder.state === 'begun' && holder.life === life && acting.has(effectOf(attempt))) {
+        await acting.get(effectOf(attempt));
+        continue;
+      }
+      const said = await asked(attempt);
+      if (said?.state === 'done' && said.outcome?.state === 'reached') return settle(attempt, outcomeOf(said.outcome));
+      if (said?.state === 'done' || said?.state === 'failed' || said?.state === 'not-started' || (!said && holder.state === 'failed')) break;
+      // Running, or not to be told: this attempt is not known either, and is asked after with the attempt that holds its act.
+      return settle(attempt, { state: 'unknown', evidence: { message: `the act on this target is still ${holder.invocation}'s, whose outcome is not known` } });
+    }
+    journal.put('effects', effectOf(attempt), attempt.idempotencyKey);
+    const made = run(attempt);
+    acting.set(effectOf(attempt), made);
+    await made;
+    if (acting.get(effectOf(attempt)) === made) acting.delete(effectOf(attempt));
+    return undefined;
   };
 
   const points = {
@@ -83,15 +133,16 @@ export function work({ data, send, say, act, check, remove, observe }) {
       return {};
     },
 
-    // One attempt: written down before it is acknowledged, acknowledged before the work, its outcome sent at `work/step` once known.
+    // One attempt: written down before it is acknowledged, acknowledged before the work, its outcome sent at `work/step` once known. Its act
+    // is made once per effect (`effectKey`): another attempt on the same effect is answered with the act already made.
     'work/perform': async (call) => {
       const known = journal.get('attempts', call.idempotencyKey);
       if (!known) {
-        const attempt = { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
-          stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs, options: call.options ?? {}, deadlineAt: call.deadlineAt,
-          state: 'begun', life };
+        const attempt = { idempotencyKey: call.idempotencyKey, ...(call.effectKey ? { effectKey: call.effectKey } : {}), invocation: call.invocation,
+          unit: call.unit, step: call.step, stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs,
+          options: call.options ?? {}, deadlineAt: call.deadlineAt, state: 'begun', life };
         keep(attempt);
-        setImmediate(() => run(attempt));
+        setImmediate(() => perform(attempt));
       } else if (known.outcome && known.state !== 'unknown') {
         // Delivered again: the same key never calls the platform twice. Its outcome goes again, which Daoris takes once.
         setImmediate(() => tell(known));
