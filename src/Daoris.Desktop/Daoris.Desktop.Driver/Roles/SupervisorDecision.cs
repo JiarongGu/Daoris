@@ -110,8 +110,11 @@ public static class SupervisorWhy
     public const string OwnerAnswered = "owner-answered";
     public const string Form = "form";
 
-    /// <summary>The question carries the agent's <c>owner</c> mark: refused at the keeping and again at the release.</summary>
-    public const string OwnerQuestion = "owner-question";
+    /// <summary>
+    /// The question carries the agent's <c>owner</c> mark, an owner-class kind never answered below the owner actor: refused at the keeping
+    /// and again at the release.
+    /// </summary>
+    public const string OwnerClass = LinePasses.OwnerClass;
 
     /// <summary>The line's answers-alone count is at the answers-alone bound: refused at the keeping and again at the release.</summary>
     public const string SupervisorBound = "supervisor-bound";
@@ -140,14 +143,13 @@ public static class SupervisorWhy
 }
 
 /// <summary>
-/// The bounds a holder leaves a question to the owner by, as <c>SUPERVISOR_DEFER</c> names
-/// them: the six an asking agent may also mark its question with (<see cref="QuestionFiles"/>'s <c>owner</c>), and the four only the
-/// holder's judgement reaches.
+/// The bounds a holder leaves a decision by, as <c>SUPERVISOR_DEFER</c> names them: a go-ahead, the seven owner-class kinds an
+/// asking agent may also mark its question with (<see cref="OwnerClass"/>, <see cref="QuestionFiles"/>'s <c>owner</c>), and the three
+/// only the holder's judgement reaches.
 /// </summary>
 public static class SupervisorBounds
 {
-    public static readonly IReadOnlyList<string> All =
-        ["go-ahead", "sign-in", "access", "spending", "delete", "repository-asks", "preference", "unrecorded", "contradicts", "instructed"];
+    public static readonly IReadOnlyList<string> All = ["go-ahead", .. OwnerClass.Kinds, "unrecorded", "contradicts", "instructed"];
 
     public static bool Known(string? bound) => bound is not null && All.Contains(bound, StringComparer.Ordinal);
 }

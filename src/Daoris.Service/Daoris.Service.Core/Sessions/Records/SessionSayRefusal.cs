@@ -80,10 +80,10 @@ public enum SessionSayRefusal
     NotOfferedChoice,
 
     /// <summary>
-    /// The question on file carries the agent's <c>owner</c> mark (<c>owner-question</c>): checked again at the
-    /// release, so a question marked the owner's after the decision is kept is never answered by the supervisor.
+    /// The question on file carries the agent's <c>owner</c> mark, an owner-class kind (<c>owner-class</c>): checked again at the
+    /// release, so a question marked after the decision is kept is never answered below the owner actor.
     /// </summary>
-    OwnerQuestion,
+    OwnerClass,
 
     /// <summary>A go-ahead on the session's ask is open: go-aheads are the owner's alone (<c>go-ahead-open</c>).</summary>
     GoAheadOpen,

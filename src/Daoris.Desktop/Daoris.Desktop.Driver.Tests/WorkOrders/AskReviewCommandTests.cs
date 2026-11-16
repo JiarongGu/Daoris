@@ -159,8 +159,8 @@ public sealed class AskReviewCommandTests
         {
             HttpStatusCode.Forbidden,
             "Only the person can give an ask's review choice, and this call carried no key of theirs. Nothing was kept. In Daoris's "
-            + "window, press it there; from a terminal, run it again and confirm it in the window. An agent asks the person instead: "
-            + "a go-ahead, or its closing note."
+            + "window, press it there; from a terminal, run it again and confirm it in the window. An agent asks the actor it reports to "
+            + "instead (`question_ask`, a go-ahead, or its closing note); only an owner-class kind reaches the owner."
         },
     };
 

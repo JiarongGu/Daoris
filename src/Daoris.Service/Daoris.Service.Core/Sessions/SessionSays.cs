@@ -361,7 +361,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
         // The agent's mark, read again here from the file, so a question marked after the keeping is still the owner's.
         if (filed.Owner is { } owner)
         {
-            return Refused(SessionSayRefusal.OwnerQuestion, $"Session `{id}`'s question is marked the owner's ({owner}): the supervisor answers none of it.");
+            return Refused(SessionSayRefusal.OwnerClass, $"Session `{id}`'s question is owner-class ({owner}): only the owner actor answers it, never a supervisor below it.");
         }
 
         if (!filed.Choices.Any(offered => string.Equals(offered.Label, choice, StringComparison.Ordinal)))

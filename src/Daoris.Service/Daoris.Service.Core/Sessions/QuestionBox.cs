@@ -41,12 +41,14 @@ public sealed class QuestionBox(string? home)
     public const string Suffix = ".question.json";
 
     /// <summary>
-    /// The marks an agent sets on a question it knows is the owner's alone: a sign-in,
-    /// widening access, spending, deleting, a repository document that asks the owner, and the owner's own taste. A marked question is
-    /// never answered by the supervisor; the mark only narrows, so an unmarked question is still judged by its holder. The driver's
-    /// <c>SupervisorBounds.All</c> and the page's <c>OWNER_MARKS</c> name the same six; both readers take any mark as one.
+    /// The owner-class kinds an agent marks a question with, doctrine rule 1's closed list: direction and targets, money and budgets,
+    /// sign-ins and credentials, a release the owner marked as theirs, a history rewrite, deleting their data, publishing to people
+    /// outside. A marked question climbs the reporting line to the owner actor and no supervisor below answers it; the mark only narrows,
+    /// so an unmarked question is still judged by its holder. The driver's <c>OwnerClass.Kinds</c> and the page's <c>OWNER_MARKS</c> name
+    /// the same seven; both readers take any mark as one, so a question an older build marked (<c>access</c>, <c>spending</c>,
+    /// <c>delete</c>, <c>repository-asks</c>, <c>preference</c>) stays the owner's until it is answered or asked again.
     /// </summary>
-    public static readonly IReadOnlyList<string> OwnerMarks = ["sign-in", "access", "spending", "delete", "repository-asks", "preference"];
+    public static readonly IReadOnlyList<string> OwnerMarks = ["direction", "money", "sign-in", "release", "history", "data", "publish"];
 
     private const string NoSession =
         "This connector speaks for no session the driver started here, so there is no park of yours to ask the person in: say exactly "

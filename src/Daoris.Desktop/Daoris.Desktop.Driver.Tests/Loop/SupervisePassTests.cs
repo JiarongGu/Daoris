@@ -42,7 +42,7 @@ public sealed class SupervisePassTests : IDisposable
 
     private static string GoOn => $"{SupervisorBlock.Opening}\n{{ \"kind\": \"course\", \"subject\": {{ \"session\": \"s1\", \"point\": \"p-1\" }}, \"do\": \"go-on\", \"reasons\": [ {{ \"says\": \"The tests pass.\", \"source\": \"count:failures\" }} ] }}\n{SupervisorBlock.Closing}";
 
-    private static string Leave => GoOn.Replace("\"do\": \"go-on\"", "\"leave\": \"preference\"", StringComparison.Ordinal);
+    private static string Leave => GoOn.Replace("\"do\": \"go-on\"", "\"leave\": \"unrecorded\"", StringComparison.Ordinal);
 
     private (Daoris.Driver.Driver Driver, List<SuperviseRunAsk> Asked, List<IReadOnlyList<ActorEffective>> Walked) Driver(
         Func<SuperviseRunAsk, CancellationToken, Task<SuperviseRunEnd>> run, Func<ReviewerChoice>? choose = null)
@@ -148,7 +148,7 @@ public sealed class SupervisePassTests : IDisposable
         await Until(() => Last(driver)?.Outcome is not null);
 
         Assert.Equal(SupervisorAttemptOutcomes.Left, Last(driver)!.Outcome);
-        Assert.Equal("preference", Assert.Single(desk.Kept).Block.Leave);
+        Assert.Equal("unrecorded", Assert.Single(desk.Kept).Block.Leave);
         Assert.True(driver.Context.Supervisor.Attempts.Ended(Point.Subject));
     }
 

@@ -126,7 +126,7 @@ describe('QuestionCard', () => {
       left: { bound: 'sign-in', reasons: [{ says: 'It needs your account.', source: 'D191 point 3' }, { says: 'Nothing records it.', source: 'docs/x.md:4' }] },
     }} />);
 
-    const left = screen.getByRole('note', { name: 'The supervisor left this to you: a sign-in' });
+    const left = screen.getByRole('note', { name: 'The supervisor left this to you: a sign-in or a credential' });
     expect(within(left).getByText('It needs your account.')).toBeInTheDocument();
     expect(within(left).getByText('Source: D191 point 3')).toBeInTheDocument();
     expect(within(left).getByText('Source: docs/x.md:4')).toBeInTheDocument();
@@ -137,9 +137,14 @@ describe('QuestionCard', () => {
 
   /** The agent's mark that the question is the owner's alone, by its words; a mark this build does not know, unnamed. */
   it('says a question its agent marked as yours alone, by the mark\'s words, and a mark it does not know without naming it', () => {
-    const { unmount } = render(<QuestionCard question={{ ...QUESTION, owner: 'spending' }} />);
-    expect(screen.getByText('Asked of you alone: spending')).toBeInTheDocument();
+    const { unmount } = render(<QuestionCard question={{ ...QUESTION, owner: 'money' }} />);
+    expect(screen.getByText('Asked of you alone: money or a budget')).toBeInTheDocument();
     unmount();
+
+    // An older build's mark reads as one no word names.
+    const { unmount: older } = render(<QuestionCard question={{ ...QUESTION, owner: 'spending' }} />);
+    expect(screen.getByText('Asked of you alone')).toBeInTheDocument();
+    older();
 
     const { unmount: gone } = render(<QuestionCard question={{ ...QUESTION, owner: 'a-later-mark' }} />);
     expect(screen.getByText('Asked of you alone')).toBeInTheDocument();
@@ -157,7 +162,7 @@ describe('QuestionCard', () => {
       ...QUESTION, owner: 'sign-in', left: { bound: 'unrecorded', reasons: [{ says: 'Nothing records it.', source: 'D135 point 5' }] },
     }} />);
 
-    expect(screen.getByText('只问你：登录')).toBeInTheDocument();
+    expect(screen.getByText('只问你：登录或凭据')).toBeInTheDocument();
     const left = screen.getByRole('note', { name: '主管把这个留给你：记录里没有答案' });
     expect(within(left).getByText('Nothing records it.')).toBeInTheDocument();
     expect(within(left).getByText('来源：D135 point 5')).toBeInTheDocument();
