@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// own or the page where its act is taken. Seen failing first on a plugin's role wait (its row carried the page but no press field a
 /// census could read) and on a second opinion's vacancy (no reading of it at all).
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class StepWaitCensusTests
 {
     private const string Run = "q7";
