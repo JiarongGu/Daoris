@@ -24,7 +24,7 @@ internal static class InstallWrites
     private static TreeCompanion Read(string tree, string path)
     {
         var full = Path.Combine(tree, path.TrimEnd('/'));
-        if (Directory.Exists(full)) return new(path, DependencyManifest.Read(tree, path.TrimEnd('/'), [], out _), null);
+        if (Directory.Exists(full)) return new(path, DependencyManifest.Read(tree, path.TrimEnd('/'), [], out _, hashed: false), null);
         return new(path, null, File.Exists(full) ? DependencyManifest.HashOf(full) : null);
     }
 

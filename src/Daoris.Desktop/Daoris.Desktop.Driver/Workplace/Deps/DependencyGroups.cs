@@ -43,7 +43,7 @@ internal static class DependencyGroups
         foreach (var member in members)
         {
             if (state.Of(member) is not { } placement) continue;
-            var manifest = DependencyManifest.Read(tree, member.TrimEnd('/'), CachesOf(member, order), out _);
+            var manifest = DependencyManifest.Read(tree, member.TrimEnd('/'), CachesOf(member, order), out _, hashed: false);
             state = state.With(placement with { How = "grouped", Manifest = manifest });
         }
 
