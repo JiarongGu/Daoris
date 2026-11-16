@@ -1,10 +1,10 @@
 /**
- * How many heavy runs were under way when a test timing was taken, so the time ratchet judges only timings taken with the machine
+ * How many heavy runs are under way as a test timing is taken, so the time ratchet judges only timings taken with the machine
  * to themselves (a timing taken under load is the load's, not the test's).
  *
  * The count is the machine's heavy-run admission (`tools/machine-admission.mjs`): the places held, the run's own included. A
  * record file is marked in `_fixtures/test-timing/load-marks.json` as `{ "<file>": { holds, at } }`, `holds` the most places held
- * while its run lasted and `at` the record's write time when it was marked (a record written again after is unmarked). A record is
+ * while its run lasted and `at` the record's write time at the mark (a record written again after is unmarked). A record is
  * under load when more than `ALONE_HOLDS` places were held; one with no mark is judged as alone, as every record written before
  * this mark is. With no Daoris home nothing is shared and nothing counts.
  */
@@ -38,13 +38,13 @@ export function readMarks(dir) {
   }
 }
 
-/** Whether the record `file` written at `at` was taken under load, by `marks`. */
+/** Whether the record `file` written at `at` is marked as taken under load, by `marks`. */
 export function isLoaded(marks, file, at) {
   const mark = marks[file];
   return mark !== undefined && mark.at >= at && mark.holds > ALONE_HOLDS;
 }
 
-/** Mark every record of `dir` written at or after `since` with `holds`, the most heavy runs under way while it was taken. */
+/** Mark every record of `dir` written at or after `since` with `holds`, the most heavy runs under way during the run that wrote it. */
 export function stampLoad(dir, holds, since) {
   if (!existsSync(dir)) return [];
   const marks = readMarks(dir);

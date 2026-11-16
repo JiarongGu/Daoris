@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The one scan of the source tree for a run: the text of a source file, read from disk once a run and shared by every census that
 /// reads it (the compilations of the desktop projects, the say-door censuses, the git class censuses and the walks of the other
 /// censuses ask here), so a file linked into several projects, or read by several censuses, is read once, not once for each. Each
-/// read is counted by path (<see cref="DiskReads"/>) so a test can hold that no file was read twice.
+/// read is counted by path (<see cref="DiskReads"/>) so a test can hold that no file is read twice.
 /// </summary>
 internal static partial class SourceTexts
 {
@@ -29,7 +29,7 @@ internal static partial class SourceTexts
         })).Value;
     }
 
-    /// <summary>How many times each file was read from disk this run, by full path: one for every file a census read.</summary>
+    /// <summary>How many times each file has come from disk this run, by full path: one for every file a census reads.</summary>
     internal static IReadOnlyDictionary<string, int> DiskReads => Counted;
 
     /// <summary>
