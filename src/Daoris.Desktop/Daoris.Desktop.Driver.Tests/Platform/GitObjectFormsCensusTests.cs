@@ -13,11 +13,11 @@ public sealed class GitObjectFormsCensusTests
 {
     private const string What = "reads an object or its answer";
 
-    // `cat-file` asked a type, an option or a batch of its own, `show` of an interpolated `<rev>:<path>`, `ls-tree` asked sizes, and
-    // `--batch` or an answer's `missing` anywhere: what git writes back for an object, read as text.
+    // `cat-file` asked a type, an option or a batch of its own, `show` of an interpolated `<rev>:<path>`, `ls-tree` asked sizes,
+    // `--batch` in a git call, and an answer's `missing` anywhere: what git writes back for an object, read as text.
     private static readonly Regex Forms = new(
         """
-        "cat-file"\s*,\s*"(?:blob|commit|tree|tag|-[a-z]|--[a-z-]+)"|"show"\s*,\s*\$"[^"]*:|"ls-tree"[^\]\n]*"(?:-l|--long)"|"--batch(?:-check|-command)?"|" missing"
+        "cat-file"\s*,\s*"(?:blob|commit|tree|tag|-[a-z]|--[a-z-]+)"|"show"\s*,\s*\$"[^"]*:|"ls-tree"[^\]\n]*"(?:-l|--long)"|(?:Git\w*|"cat-file")[^\n]*"--batch(?:-check|-command)?"|" missing"
         """.Trim());
 
     private static readonly Dictionary<string, string> Readers = new(StringComparer.Ordinal)
@@ -54,5 +54,13 @@ public sealed class GitObjectFormsCensusTests
         var planted = SourceCensus.Driver().Append(("Planted.cs", $"internal static class Planted\n{{\n    public static object Read(string root) => {form};\n}}\n"));
 
         Assert.Equal(["Planted.cs reads an object or its answer and is not listed"], SourceCensus.Problems(Found(planted), Readers.Keys, What));
+    }
+
+    [Fact]
+    public void A_verb_flag_named_batch_is_no_object_read()
+    {
+        var planted = SourceCensus.Driver().Append(("Planted.cs", "internal static class Planted\n{\n    public static string? Read(string[] args) => FlagValue(args, \"--batch\");\n}\n"));
+
+        Assert.Empty(SourceCensus.Problems(Found(planted), Readers.Keys, What));
     }
 }
