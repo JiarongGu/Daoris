@@ -277,12 +277,9 @@ public sealed class OpinionGateTests
         Assert.Equal("Waits for a second opinion: read again by Codex (OpenAI), the commits made in answer.", reading.Says);
     }
 
-    /// <summary>
-    /// A recheck its reviewer's account limit or spend cap ended has read nothing: it is read again (by the next ready holder, or at
-    /// the reset), never passed over as though it had. One that failed otherwise stands as its outcome.
-    /// </summary>
+    /// <summary>A recheck a cap ended read nothing, so it cools as such a first pass does; one that failed otherwise stands.</summary>
     [Fact]
-    public async Task A_recheck_a_cap_ended_is_read_again_and_one_that_failed_otherwise_stands()
+    public async Task A_recheck_a_cap_ended_is_cooling_and_one_that_failed_otherwise_stands()
     {
         var world = new World();
         world.Opinions["o1"] = Opinion(weights: [OpinionViews.Must]);
@@ -293,8 +290,8 @@ public sealed class OpinionGateTests
         world.Opinions["o2"] = Opinion("o2", state: "failed", tip: Fixed, pass: "recheck");
         var ended = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")] }, world);
 
-        Assert.Equal(OpinionGateStates.ReadAgain, limited.State);
-        Assert.NotEqual(OpinionGateStates.ReadAgain, ended.State);
+        Assert.Equal((OpinionGateStates.Unavailable, ReviewerUnavailable.Cooling, "o2"), (limited.State, limited.Code, limited.Recheck?.Id));
+        Assert.Equal(OpinionGateStates.CommitsSince, ended.State);
     }
 
     [Fact]

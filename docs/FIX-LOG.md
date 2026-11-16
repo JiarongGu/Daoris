@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-16 - The look's opinions stage queued git each look, and a recheck a cap ended was never asked again (LOOKOPINIONS1)
+
+- **Symptom:** on the install (build 7c1395e38c) `~opinions` for quest 82406c797e18 grew from ~1.3 s to 6–27 s a look
+  (`look.slow` stage `opinions`), its `~opinions.queue` near the whole of it; the recheck a43800a2 that codex's spend cap
+  ended at 21:12 was never asked again, before or after the reset, and no `opinion.handed-on` was said.
+- **Root cause (the stage):** each look judged each open due afresh, and its close read the tree with git every time: the
+  unlanded count (`symbolic-ref` and `log HEAD --not --branches`, two launches a due), and on main since 2b7c3a4a91
+  (OPINIONDUE1) the tree-work read too (a `status` and a second `log`), four launches a due a look over a tree that had not
+  moved. Each waits for one of the repository's two background places behind the tidy's and the nodes' reads, so the stage
+  grew with their queue, not with anything it read. The session record (c69733ec) is not read by the stage, and stopped
+  growing at 21:22.
+- **Root cause (the recheck):** OPINIONCAP1 (46083b6137) re-asks a first pass a cap ended; a recheck walks only the first
+  reviewer, so its reask found no holder, and the gate read a failed recheck as an outcome (`commits-since`), never asking it again.
+- **Fix:** both closes read the tree through the room's kept tree reads (`TreeReadMemo`), so a look over a tree whose `HEAD`,
+  refs, files and the home's records stand starts no git. A recheck whose first reviewer a cool-off holds walks the rule's other
+  reviewers; one a cap ended is gated cooling as such a first pass is, and the next look's delivery asks it of a ready holder,
+  said `opinion.handed-on` once, or waits for the reset. **Verified:**
+  `OpinionLookTests.A_judgment_over_a_tree_that_did_not_move_starts_no_git` (real git, red first: four launches),
+  `OpinionRecheckTests.A_recheck_a_cap_ended_is_asked_again_of_the_next_ready_holder_and_said_once` and
+  `OpinionGateTests.A_recheck_a_cap_ended_is_cooling_and_one_that_failed_otherwise_stands` (red first: one pass; `commits-since`).
+
 ## 2026-11-16 - An opinion owed on a replayed landing never closed (OPINIONDUE1)
 
 - **Symptom:** on the install the due for session 4a9b01af (quest ba5c8968fdf5, landed as main's fd9baed4c3) stayed open with no

@@ -342,9 +342,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                  && await Service.Opinions.ReadAsync(ended, ct).ConfigureAwait(false) is { State: OpinionViews.Failed, Why: OpinionViews.Limited } capped)
         {
             // A recheck its reviewer's account limit or spend cap ended read nothing: it is asked again of the rule's next holder that is
-            // ready, said once, the limited one staying the failed record it was. With none ready it stays, read again until the reset.
+            // ready, said once, the limited one kept as a failed record. With none ready it stays, asked again until the reset.
             run = await RecheckAsync(view, reading, asked, ct, capped).ConfigureAwait(false);
-            if (run.Opinion is not null) kept = Deliveries.Rechecked(view.Id, run.Opinion, null);
+            if (run.Opinion is not null) kept = Deliveries.HandedOn(view.Id, ended, run.Opinion);
         }
 
         var recheck = kept.Recheck is { } id ? await Service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;

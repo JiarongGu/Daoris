@@ -45,16 +45,14 @@ public static class OpinionLook
     }
 
     /// <summary>
-    /// Why an opinion owed is closed now, or null where it is still owed: its quest not done, its rule not reading at
-    /// its occasion, its tree gone, its work landed (a landing recorded for it after it fell due, or nothing in its
-    /// tree that no branch of the person's, nor an older landing's squash, holds, where no automatic landing holds that branch's push
-    /// back), or, under <c>steps</c>, no next step of its chain left to hold.
+    /// Why an opinion owed is closed now, or null where it is still owed: its quest not done, its rule not reading at its occasion, its
+    /// tree gone, its work landed (a landing recorded for it after it fell due, or nothing in its tree that no branch of the person's,
+    /// nor a squash or a replay, holds), or, under <c>steps</c>, no next step of its chain left to hold.
     /// </summary>
     /// <param name="process">
     /// Its run's process: under a named workflow, whether its version still reads at the occasion. One that cannot be
     /// read here closes nothing, since it may read once it can. Null reads the rule live.
     /// </param>
-    /// <param name="trees">The home's trees, whose kept reads (<see cref="WorkAsync"/>) say what the tree holds.</param>
     public static async Task<string?> ClosesAsync(
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
         SessionTrees trees, IWorkplaceProcess? process = null)
@@ -80,8 +78,7 @@ public static class OpinionLook
         var work = await WorkAsync(due.Tree, trees, ct).ConfigureAwait(false);
         if (work is { Commits: 0 }) return OpinionDueClosed.Landed;
 
-        // An older landing that squashed the tree's work holds it while the tree stands at the commit it squashed, or
-        // behind it (the record's own word), though no branch of the person's holds those commits.
+        // An older landing that squashed the tree's work holds it while the tree stands at or behind the commit it squashed.
         if (work is { Commits: > 0 } && landing?.Squashed is { } squashed
             && await TreeRefs.IsAncestorAsync(due.Tree, "HEAD", squashed, ct).ConfigureAwait(false))
         {
@@ -91,11 +88,7 @@ public static class OpinionLook
         return work is { Landed: true } ? OpinionDueClosed.Landed : null;
     }
 
-    /// <summary>
-    /// What the tree holds as the review reads it (<see cref="TreeWork"/>): its commits no branch of the person's holds, and whether the
-    /// line holds them by patch (a replay). Kept while the tree's <c>HEAD</c>, its repository's refs, its files and the home's records stand
-    /// (<see cref="TreeReadMemo"/>), so an opinion owed look after look on a tree that did not move asks git nothing.
-    /// </summary>
+    /// <summary>The tree's work as the review reads it, kept while what it rests on stands (<see cref="TreeReadMemo"/>): no git where nothing moved.</summary>
     private static Task<TreeWork?> WorkAsync(string tree, SessionTrees trees, CancellationToken ct) =>
         TreeReadMemo.Of(trees.Context.Home).Begin(trees).WorkAsync(tree, ct);
 

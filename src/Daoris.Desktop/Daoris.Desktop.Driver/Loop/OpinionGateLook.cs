@@ -239,12 +239,13 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         // The person's asks first: Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped.
         OpinionAct? act = null;
         var asked = new OpinionGates(Home).Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
+        var recheckCapped = gate is { State: OpinionGateStates.Unavailable, Recheck: { State: OpinionViews.Failed, Why: OpinionViews.Limited } };
         if (asked.Count > 0)
         {
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: true, process);
         }
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                  || gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null })
+                  || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null } && !recheckCapped))
                  // One opinion reads a chain's whole work here: an earlier step's is its last step's to ask.
                  && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
                  // A run bound to a graph version is asked its opinion only once its record has begun
@@ -258,7 +259,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             };
         }
         // A delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
-        else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && !Config.Draining
+        else if ((gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first && !Config.Draining
                  && _context.Runs.TryOpinion(claim))
         {
             OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);

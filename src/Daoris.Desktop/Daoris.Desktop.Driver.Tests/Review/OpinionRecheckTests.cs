@@ -277,7 +277,7 @@ public sealed class OpinionRecheckTests : IDisposable
 
     /// <summary>
     /// A recheck its reviewer's account cap ended read nothing: the next look asks it again of the rule's next holder that is ready,
-    /// said once (<c>opinion.handed-on</c>), the limited one staying the failed record it was; asked, no later look asks another.
+    /// said once (<c>opinion.handed-on</c>), the limited one kept as a failed record; asked, no later look asks another.
     /// </summary>
     [Fact]
     public async Task A_recheck_a_cap_ended_is_asked_again_of_the_next_ready_holder_and_said_once()
