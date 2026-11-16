@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { GraphRun, RunStep } from './run';
 import { bindingProblemSaid } from './place/effective';
-import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid, stepWord } from './runSaid';
 import { MERGED, WORKING } from './runFixtures';
 
 // The English a run says is one table with the driver (`.claude/knowledge/twins.md`), its
@@ -40,6 +40,8 @@ const stepOf = (row: Row): RunStep => ({
   code: row.code as string | undefined,
   node: row.node as string | undefined,
   on: row.on as string | undefined,
+  role: row.role as string | undefined,
+  holder: row.holder ? { kind: row.holder as string, name: row.holderName as string | undefined } : undefined,
 } as RunStep);
 
 /** A graph run's own part as the table's `graph` rows give it. */
@@ -105,9 +107,24 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runShort(t, finished('push'))).not.toBe(runShort(t, MERGED));
   });
 
+  // A wait is said alike whoever holds it; the holder's word is all that differs, in either language.
+  it('says a wait held by an agent and one held by the person alike but for the holder', () => {
+    const waiting = (holder: { kind: string; name?: string }) => ({
+      ...WORKING.steps[0], state: 'waiting', detail: 'accept', step: { ...WORKING.steps[0]!.step, kind: 'landing' }, role: 'acceptor', holder,
+    }) as RunStep;
+    for (const [lng, you, agent] of [['en', 'you', '`codex-acp`'], ['zh', '你', '`codex-acp`']] as const) {
+      const f = i18n.getFixedT(lng);
+      const person = runSaid(f, waiting({ kind: 'person' }))!;
+      const other = runSaid(f, waiting({ kind: 'agent', name: 'codex-acp' }))!;
+      expect(person).not.toBe(other);
+      expect(person.replace(you, '@')).toBe(other.replace(agent, '@'));
+      expect(stepWord(f, waiting({ kind: 'person' }))).toContain(you);
+    }
+  });
+
   // A reopened submission waits on its agent, which the head says as the reopen, never as another repository's answer.
   it('says a reopened submission in a few words, in English and Chinese', () => {
-    const reopened = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting-on-agent', detail: 'reopened' }, ...WORKING.steps.slice(1)] };
+    const reopened = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting', detail: 'reopened' }, ...WORKING.steps.slice(1)] };
     expect(runShort(t, reopened)).toBe('reopened, waits for its agent');
     expect(runShort(i18n.getFixedT('zh'), reopened)).toBe('已重新打开，等智能体');
     expect(runSaid(i18n.getFixedT('zh'), reopened.steps[0])).toBe('你重新打开了委托 #q1 的交付：等它的智能体再次交付。');
@@ -115,7 +132,7 @@ describe("a run's English, as the driver's table holds it", () => {
 
   // FABRIC-CLOSE1c7: a source made ready again leaves its started step on the person's go-on or abandon, said as theirs to choose.
   it('says a started step waiting on the go-on in a few words, in English and Chinese', () => {
-    const goOn = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting-on-you', detail: 'go-on', quest: 'q2' }, ...WORKING.steps.slice(1)] };
+    const goOn = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting', detail: 'go-on', quest: 'q2' }, ...WORKING.steps.slice(1)] };
     expect(runShort(t, goOn)).toBe('waits for your go-on');
     expect(runShort(i18n.getFixedT('zh'), goOn)).toBe('等你继续或放弃');
     expect(runSaid(i18n.getFixedT('zh'), goOn.steps[0])).toBe('你重新打开的工作已再次交付：它的下一步委托 #q2 等你选择在新的工作上继续它，或放弃它。');

@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// once, where the attention slice first sees its row, on <c>SESSION_ATTENTION</c> in the shape the shell's notifier and the page's
 /// toast read, and only while the notify switch is on. Seen with the switch off, it is seen: turned back on, it is not said late.
 /// </summary>
-public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
+public sealed class WaitAnnouncementsTests : DriverModuleBridge
 {
     private bool _notify = true;
 
@@ -29,7 +29,7 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
     private (StateSlice Slice, Func<AttentionFacts> Facts, Action<AttentionFacts> Set) Slice(params JsonObject[] held)
     {
         var facts = new AttentionFacts { Sessions = [Session("s1a2b3c4", "engine"), Session("s2b3c4d5", "game")], Permissions = [.. held] };
-        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new HeldCallAnnouncements(Bus, () => _notify));
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => _notify));
         return (slice, () => facts, now => facts = now);
     }
 
@@ -43,7 +43,7 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
 
         var told = Assert.Single(Said());
         Assert.Equal(
-            (HeldCallAnnouncements.AttentionKind, "s1a2b3c4#900", "s1a2b3c4", "engine", "npm test"),
+            (WaitAnnouncements.AttentionKind, "s1a2b3c4#900", "s1a2b3c4", "engine", "npm test"),
             (told.GetProperty("Kind").GetString(), told.GetProperty("Id").GetString(), told.GetProperty("Session").GetString(),
                 told.GetProperty("Repository").GetString(), told.GetProperty("Detail").GetString()));
         // Its English headline for a reader that reads it, the English catalogue's (`SessionBalloon`).
@@ -96,7 +96,7 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
     public async Task Only_a_held_call_is_announced_here()
     {
         var facts = new AttentionFacts { Sessions = [JsonNode.Parse("""{"id":"p1","state":"awaiting-person","repository":"engine"}""")!.AsObject()] };
-        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new HeldCallAnnouncements(Bus, () => true));
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true));
 
         await slice.JudgeAsync();
 
@@ -122,14 +122,14 @@ public sealed class HeldCallAnnouncementsTests : DriverModuleBridge
                  "since":"2026-11-16T09:51:00Z"}
                 """)!.AsObject()],
         };
-        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new HeldCallAnnouncements(Bus, () => false, () => parks));
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => parks));
 
         await slice.JudgeAsync();
         await slice.JudgeAsync();
 
         var told = Assert.Single(Said());
         Assert.Equal(
-            (HeldCallAnnouncements.StepKind, "q7/sign", "s1a2b3c4", "engine"),
+            (WaitAnnouncements.StepKind, "q7/sign", "s1a2b3c4", "engine"),
             (told.GetProperty("Kind").GetString(), told.GetProperty("Id").GetString(), told.GetProperty("Session").GetString(),
                 told.GetProperty("Repository").GetString()));
         Assert.Equal("engine: a step is waiting on a role you hold", told.GetProperty("Headline").GetString());

@@ -519,9 +519,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
     that settle it (never its stop; a skip reads *Not needed this run*), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
-    answered. A `step` row names the session its run placed; it is announced once as a park is (`HeldCallAnnouncements`, kind `Step`,
+    answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"
-    with the same presses beside it (`RunWaitsHead`).
+    with the same presses beside it (`RunWaitsHead`). A run's view and `daoris workflow show` say it the same way: a run step has one
+    waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
+    fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
+    point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. That an
+    agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.

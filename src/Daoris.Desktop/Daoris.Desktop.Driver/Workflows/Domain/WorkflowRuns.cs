@@ -59,7 +59,7 @@ public static class WorkflowRuns
         var look = Look(facts, workDone, landing);
         // The look's set-up step sits while an agent is still at work on the opinion, so
         // the person looks once, at work that already answered it: the look is not reached until then.
-        if (look is not null && opinion is { State: WorkflowRunStates.Working or WorkflowRunStates.WaitingOnAgent }
+        if (look is not null && opinion is { AgentAt: true }
             && !WorkflowRunStates.Settled(look.State))
         {
             look = look with { State = WorkflowRunStates.NotReached, Detail = "" };
@@ -209,28 +209,28 @@ public static class WorkflowRuns
                 && goAhead.Asked.Any(asked => ids.Contains(asked.Session) || (asked.Quest is { } quest && quests.Contains(quest)))) is { } asked)
         {
             var first = asked.Asked.MinBy(request => request.At)!;
-            return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.GoAhead) with
+            return At(WorkflowRunStates.Waiting, WorkflowRunDetails.GoAhead) with
             {
-                GoAhead = asked.Number, Session = first.Session, At = first.At, Words = asked.Act,
+                Role = StepRoles.Approver, GoAhead = asked.Number, Session = first.Session, At = first.At, Words = asked.Act,
             };
         }
 
         if (HeldForYou(current))
         {
-            return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Held) with { Code = current.Hold ?? EvidenceCodes.Departed, At = current.Updated };
+            return At(WorkflowRunStates.Waiting, WorkflowRunDetails.Held) with { Role = StepRoles.Acceptor,Code = current.Hold ?? EvidenceCodes.Departed, At = current.Updated };
         }
 
         if (latest is { State: "awaiting-person" })
         {
             return latest.Answer is null
-                ? At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Park) with { At = latest.Updated, Words = latest.Note }
+                ? At(WorkflowRunStates.Waiting, WorkflowRunDetails.Park) with { Role = StepRoles.Design,At = latest.Updated, Words = latest.Note }
                 : At(WorkflowRunStates.Working, WorkflowRunDetails.Answered) with { At = latest.Updated };
         }
 
         if (latest is not null && Live(latest)) return At(WorkflowRunStates.Working, WorkflowRunDetails.Agent) with { At = latest.Created };
 
         // Its taker asked another repository and waits on the answer: that repository's agent is the one at it.
-        if (current.Awaits is { } awaits) return At(WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Awaits) with { Quest = awaits, At = current.Updated };
+        if (current.Awaits is { } awaits) return At(WorkflowRunStates.Waiting, WorkflowRunDetails.Awaits) with { Role = StepRoles.Design, Holder = new StepHolder(StepHolders.Agent, latest?.Door),Quest = awaits, At = current.Updated };
 
         if (latest is { State: "failed" }) return At(WorkflowRunStates.Failed, WorkflowRunDetails.Failed) with { At = latest.Updated, Words = latest.Note };
 
@@ -239,17 +239,17 @@ public static class WorkflowRuns
 
         // The person reopened its submission: the finish is taken back, and the work waits for its agent's next ready, judged
         // from the start. Said where nobody is at it, as its done would be; an agent at it, failed or stopped is said above.
-        if (Reopened(current, chain)) return At(WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Reopened);
+        if (Reopened(current, chain)) return At(WorkflowRunStates.Waiting, WorkflowRunDetails.Reopened) with { Role = StepRoles.Design, Holder = new StepHolder(StepHolders.Agent, latest?.Door) };
 
         // Made ready again, its started step still held waits on the person's go-on or abandon at that step's door.
         if (WaitsGoOn(current, chain) is { } held)
         {
-            return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.GoOn) with { Quest = held.Id, At = current.Submission!.At ?? current.Updated };
+            return At(WorkflowRunStates.Waiting, WorkflowRunDetails.GoOn) with { Role = StepRoles.Design,Quest = held.Id, At = current.Submission!.At ?? current.Updated };
         }
 
         if (current.Status == "Taken" && latest is { State: "completed" or "stood-down" })
         {
-            return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Unclosed) with { At = latest.Updated };
+            return At(WorkflowRunStates.Waiting, WorkflowRunDetails.Unclosed) with { Role = StepRoles.Design,At = latest.Updated };
         }
 
         return At(WorkflowRunStates.Working, WorkflowRunDetails.Queued) with { At = current.Updated };

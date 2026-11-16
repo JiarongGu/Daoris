@@ -21,7 +21,8 @@ export const REMOVED_AS = ['on-line', 'merged', 'inside', 'pull-request'] as con
 const BY_PLATFORM = new Set(['pull-request', 'carried']);
 
 /** The run's tones for a pull request's answer, as the run's own pull-request step stands for each (`runTone`, trap 8). */
-const PULL_REQUEST_TONE: Record<string, string> = { open: 'waiting-on-you', completed: 'done', abandoned: 'stopped', unknown: 'not-known' };
+const PERSON = { kind: 'person' };
+const PULL_REQUEST_TONE: Record<string, string> = { open: 'waiting', completed: 'done', abandoned: 'stopped', unknown: 'not-known' };
 
 /** The pull request's answer in the run's own sentences (`pullRequestSaid`'s, on the branch's line). */
 const PULL_REQUEST_SAID: Record<string, string> = {
@@ -142,7 +143,7 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
         ...(state ? {
           state: {
             word: has(PULL_REQUEST_STATES, state) ? t(`landing.pr.state.${state}`) : t('landing.pr.recorded', { state }),
-            tone: runTone(PULL_REQUEST_TONE[state] ?? 'not-known'),
+            tone: runTone(PULL_REQUEST_TONE[state] ?? 'not-known', PERSON),
           },
         } : {}),
       });
@@ -184,7 +185,7 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
     const cleanup = completed ? 'completed' : waits.some((each) => each.disposition === 'blocked') ? 'blocked' : 'pending';
     nodes.push({
       id: 'cleanup', title: t('work.milestone.cleanup.label'), reached: completed,
-      state: { word: t(`landing.cleanup.state.${cleanup}`), tone: runTone(cleanup === 'completed' ? 'done' : cleanup === 'blocked' ? 'waiting-on-you' : 'not-known') },
+      state: { word: t(`landing.cleanup.state.${cleanup}`), tone: runTone(cleanup === 'completed' ? 'done' : cleanup === 'blocked' ? 'waiting' : 'not-known', PERSON) },
     });
     lines.cleanup = [
       // A blocked entry by its code in the reader's language, the driver's sentence where the page has no words.

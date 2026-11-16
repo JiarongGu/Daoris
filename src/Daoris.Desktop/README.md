@@ -1021,7 +1021,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   per question: one the person answered waits on nobody, so the same session asking again is said again
   (AUTONOMY1e). A driven session is told to decide what it can and ask only what it cannot (D184 point 4).
   A tool call a session holds for the person's answer is said as a park is (NOTIFY2d, D196): once, where the
-  attention slice first sees its row (`HeldCallAnnouncements`), while the notify switch is on.
+  attention slice first sees its row (`WaitAnnouncements`), while the notify switch is on.
 - **It speaks the window's language** (NOTIFY2d, D196): a main window's page hands the notifier the notices'
   words at its load and at each change of language over `DAORIS.WINDOWS SET_NOTICE_WORDS` (`NoticeWords`), a
   headline and a body per kind and every person's route's act, by their catalogue keys. `SessionBalloon` words

@@ -60,8 +60,30 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// </summary>
     public string? Node { get; init; }
 
-    /// <summary>On a graph run, the role that takes the node (<see cref="StepRoles.Of"/>): the one it names, else its kind's; null elsewhere.</summary>
+    /// <summary>
+    /// On a graph run, the role that takes the node (<see cref="StepRoles.Of"/>): the one it names, else its kind's; where the step waits, the
+    /// role it waits on (<see cref="StepWaiting.Read"/>). On a steps run, set where the step waits; null elsewhere.
+    /// </summary>
     public string? Role { get; init; }
+
+    private StepHolder? holder;
+
+    /// <summary>
+    /// The holder of the role a <c>waiting</c> step waits on, whoever it is (<see cref="StepHolders"/>): <i>waiting on &lt;role&gt;: &lt;holder&gt;</i>.
+    /// Null where the step does not wait. Where a wait names none, the role's own holder; that an agent is still at the step is read off its detail
+    /// (<see cref="AgentAt"/>), never off this.
+    /// </summary>
+    public StepHolder? Holder
+    {
+        get => holder ?? (State == WorkflowRunStates.Waiting && Role is { } role ? StepHolders.Of(role) : null);
+        init => holder = value;
+    }
+
+    /// <summary>
+    /// Whether an agent is still at the step: working, or the second opinion's working session answering its findings, which the step's detail
+    /// says (<see cref="OpinionGateStates.WithSession"/>). The run's sequencing reads this, never the holder.
+    /// </summary>
+    public bool AgentAt => State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
 
     /// <summary>
     /// What a graph run's node observes, one of <see cref="WorkflowGraphSubjects"/>: its

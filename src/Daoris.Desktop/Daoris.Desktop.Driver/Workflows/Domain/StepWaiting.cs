@@ -108,9 +108,16 @@ public static class StepWaiting
         var words = wait.Values.GetValueOrDefault("words") is { Length: > 0 } said ? $" {said.TrimEnd('.')}." : "";
         var page = wait.Values.GetValueOrDefault("url") is { Length: > 0 } url ? $" Open {url}" : "";
         if (wait.Code != Actor) return $"Under way.{words}{page}";
-        var holder = wait.Values.GetValueOrDefault("holder") == StepHolders.Agent ? $"`{wait.Values.GetValueOrDefault("holderName") ?? "an agent"}`" : "you";
-        return $"Waiting on `{wait.Values.GetValueOrDefault("actor")}`: {holder}.{words}{page}";
+        var holder = new StepHolder(wait.Values.GetValueOrDefault("holder") ?? StepHolders.Person, wait.Values.GetValueOrDefault("holderName"));
+        return $"{Line(wait.Values.GetValueOrDefault("actor") ?? "", holder)}{words}{page}";
     }
+
+    /// <summary>
+    /// The one line of every wait, whoever holds it: <i>Waiting on `role`: holder.</i>, the holder as the person reads it (<i>you</i> for their
+    /// own holding, an agent by its name). Nothing else branches on who holds it.
+    /// </summary>
+    public static string Line(string role, StepHolder holder) =>
+        $"Waiting on `{role}`: {(holder.Kind == StepHolders.Agent ? $"`{holder.Name ?? "an agent"}`" : "you")}.";
 }
 
 /// <summary>A step's wait as <see cref="StepWaiting.Read"/> reads it: what it waits for, on which role, held by whom, since when.</summary>
