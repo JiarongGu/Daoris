@@ -32,7 +32,7 @@ public static class RoleAnswerDoors
     };
 
     /// <summary>
-    /// A go-ahead's yes or no (GOAHEADACT1): a role granted <c>goahead.answer</c> answers it at low and medium risk, judged by the driver
+    /// A go-ahead's yes or no: a role granted <c>goahead.answer</c> answers it at low and medium risk, judged by the driver
     /// before it holds the answer (a marked production release, a high-risk place and a sign-in stay the owner role's), and kept with
     /// who answered.
     /// </summary>

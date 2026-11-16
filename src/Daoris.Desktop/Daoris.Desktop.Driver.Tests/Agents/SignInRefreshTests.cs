@@ -96,8 +96,8 @@ public sealed class SignInRefreshTests : IDisposable
     [Fact]
     public async Task A_cleared_store_is_read_signed_out_at_the_next_look()
     {
-        // Read signed in before the store is written: the store's moment is the file's, on this machine's clock.
-        AccountReads.Keep(_home, "agent", "account-1", LoginState.In, DateTimeOffset.UtcNow - TimeSpan.FromHours(1));
+        // Read signed in before the store is written: the store's moment is the file's, on this machine's clock, after this one.
+        AccountReads.Keep(_home, "agent", "account-1", LoginState.In, Ten - TimeSpan.FromHours(1));
         _agent.SignedIn(expires: Ten - TimeSpan.FromMinutes(1));
         _agent.Refuse();
         var roster = Roster();
@@ -107,7 +107,8 @@ public sealed class SignInRefreshTests : IDisposable
 
         var state = SignInStates.Of(AccountReads.Of(_home, "agent").Accounts["account-1"]);
         Assert.Equal((SignInStanding.Out, true), (state.Standing, state.NotByPerson));
-        Assert.Single(SignOutNotices.Occurrences(_home, DateTimeOffset.UtcNow));
+        // The notice as the look makes it at the moment the store read signed out.
+        Assert.Single(SignOutNotices.Occurrences(_home, state.Since!.Value));
         Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
     }
 
@@ -178,7 +179,7 @@ public sealed class SignInRefreshTests : IDisposable
         public void Refuse()
         {
             lock (_gate) _issued = "rotated-elsewhere";
-            Refresh(Held().Refresh, DateTimeOffset.UtcNow);
+            Refresh(Held().Refresh, Ten);
         }
 
         private bool Refresh(string presented, DateTimeOffset now)

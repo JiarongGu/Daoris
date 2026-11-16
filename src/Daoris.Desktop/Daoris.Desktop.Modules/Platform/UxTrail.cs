@@ -4,14 +4,14 @@ using System.Text.Json.Nodes;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The person's own UX trail (UXTRAIL1, D304's trial criterion on finding the press): the pages they open and the presses they make, and
+/// The person's own UX trail, which measures how long finding the press takes: the pages they open and the presses they make, and
 /// when a step began waiting on them, kept on this desktop only under the home's <see cref="Folder"/>, one file a day, and only while they
-/// turned it on (Settings → Agents and sessions). Never a field's value or typing: an entry keeps only the fields this class names, each
+/// turned it on (Settings → Driver). Never a field's value or typing: an entry keeps only the fields this class names, each
 /// a string clipped to <see cref="Longest"/>, and a kind it does not name is not kept. <c>tools/ux-trail.mjs</c> prints a trail's summary.
 /// </summary>
 /// <remarks>
 /// <para><b>A store of its own.</b> No older build reads the folder, and no record another reads is changed by it, so a build without
-/// it opens this home as before. Off is the absence of <c>on</c>; turning it off keeps what was written, which the person may delete.</para>
+/// it opens this home as before. Off is the absence of <c>on</c>; turning it off keeps the files, which the person may delete.</para>
 /// <para><b>Bounded.</b> A day's file stops at <see cref="DayCap"/> bytes.</para>
 /// </remarks>
 public sealed class UxTrail(string home)
@@ -36,7 +36,7 @@ public sealed class UxTrail(string home)
     /// <summary>Whether the person turned it on.</summary>
     public bool On => File.Exists(Path.Combine(Root, OnFile));
 
-    /// <summary>Turns it on or off; off keeps what was written.</summary>
+    /// <summary>Turns it on or off; off keeps the files.</summary>
     public void Set(bool on)
     {
         lock (Gate)
@@ -92,9 +92,9 @@ public sealed class UxTrail(string home)
 /// </summary>
 /// <param name="Kind">One of <see cref="UxTrail.Kinds"/>.</param>
 /// <param name="At">When, as the window's clock said it; the desktop's where none.</param>
-/// <param name="Page">The page it was on, or opened.</param>
+/// <param name="Page">The page it is on, or opens.</param>
 /// <param name="From">The page a page opened came from.</param>
 /// <param name="Press">A press's control's words.</param>
-/// <param name="Row">The <i>What needs you</i> row a press was made in, or a wait is.</param>
+/// <param name="Row">The <i>What needs you</i> row a press is made in, or a wait is.</param>
 /// <param name="Since">Since when a row has waited, as the driver judged it.</param>
 public sealed record UxTrailEntry(string Kind, string? At = null, string? Page = null, string? From = null, string? Press = null, string? Row = null, string? Since = null);

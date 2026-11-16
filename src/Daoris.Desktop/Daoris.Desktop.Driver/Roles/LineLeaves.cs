@@ -45,7 +45,7 @@ public sealed class LineLeaves(string home)
     {
         if (PathOf(subject.Session) is not { } path || !File.Exists(path)) return [];
         string[] lines;
-        lock (Gate) lines = File.ReadAllLines(path);
+        lock (Gate) lines = AtomicFile.ReadText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries);
         return [.. lines.Select(Parse).OfType<Kept>()
             .Where(kept => kept.Kind == subject.Kind && kept.Id == subject.Id && kept.Held == subject.Held && kept.Level is not null)
             .Select(kept => new LineLeave(kept.At, kept.Level!, kept.Role, kept.Bound, kept.Reading ?? ""))];

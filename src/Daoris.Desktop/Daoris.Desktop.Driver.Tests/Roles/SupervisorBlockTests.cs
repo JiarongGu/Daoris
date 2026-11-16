@@ -15,11 +15,11 @@ public sealed class SupervisorBlockTests
               "reasons": [ { "says": "The rename is the owner's to choose.", "source": "docs/decisions/D201.md point 3" } ] }
             """));
         var (leave, _) = SupervisorBlock.Read(Block("""
-            { "kind": "course", "subject": { "session": "s-1a2b3c4d", "point": "p-2" }, "leave": "preference", "reasons": [ { "says": "Taste.", "source": "count:answers-alone" } ] }
+            { "kind": "course", "subject": { "session": "s-1a2b3c4d", "point": "p-2" }, "leave": "direction", "reasons": [ { "says": "Taste.", "source": "count:answers-alone" } ] }
             """));
 
         Assert.Equal((SupervisorSubject.Question("s-1a2b3c4d", "q-7"), "answer", "Keep the old name"), (answer!.Subject, answer.Do, answer.Choice));
-        Assert.Equal((SupervisorSubject.Point("s-1a2b3c4d", "p-2"), "preference", (string?)null), (leave!.Subject, leave.Leave, leave.Do));
+        Assert.Equal((SupervisorSubject.Point("s-1a2b3c4d", "p-2"), "direction", (string?)null), (leave!.Subject, leave.Leave, leave.Do));
     }
 
     [Theory]

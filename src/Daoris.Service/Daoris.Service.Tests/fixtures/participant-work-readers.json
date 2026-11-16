@@ -62,6 +62,10 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
+    "Roles/SupervisorDoorSubjects.cs": {
+      "reads": "other",
+      "note": "a go-ahead subject's own ask, the one its number is on, found as a join key; no record's mark tells a work"
+    },
     "Course/RuledLine.cs": {
       "reads": "tells",
       "row": "1q",

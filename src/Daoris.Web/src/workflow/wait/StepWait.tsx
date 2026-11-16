@@ -16,8 +16,7 @@ const clock = (iso: string | null | undefined, language: string): string | null 
 /** A wait in words: `workflow.wait.<kind>.<code>` with its values, its since and until; one with no words is said as recorded. */
 export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en'): string {
   const values: Record<string, string> = { ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '' };
-  // A plugin step's wait on a role, or its progress, is any kind's: said by the role and its holder, alike for the person and an agent.
-  // The stored code and its value stay `actor` (a stored shape's word); the window's key says role.
+  // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
   if (wait.code === 'actor' || wait.code === 'progress') {
     const holder = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
     return t(`workflow.wait.${wait.code === 'actor' ? 'role' : wait.code}`, { ...values, role: values.actor ?? '', holder, words: values.words ?? '' }).trim();
