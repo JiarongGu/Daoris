@@ -424,6 +424,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         // line carried on across makers at a limit counts both.
         var wrote = OpinionWriters.Agents(records, due.Session, part.Select(quest => quest.Id));
         var reviewers = Reviewers(request, record, rule, Config);
+        // A line level's act on a vacancy (a re-cast, the difference relaxed, the prepaid spent) shapes the look's walk; a person's ask is theirs.
+        var casts = new OpinionCasts(Home);
+        var acted = casts.Read(key, due.Repository, due.Session);
+        if (request is null) reviewers = OpinionCasting.Reviewers(reviewers, OpinionCasting.Newest(acted), [.. wrote]);
         // The rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
         // The role the run's opinion step names, kept at its bind, gives the models in place of the opinion actor's.
         var stepRole = process.Binding?.RoleOf(NodeKinds.Opinion)?.Role;
@@ -461,6 +465,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             // No reviewer could read it, or its pass did not open: said, never downgraded silently.
             var code = run.Code ?? reading.Code ?? ReviewerUnavailable.Refused;
             gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip) { Code = code, Until = reading.Cooling?.Until, By = by });
+            // Nobody free to read it: a vacancy on the reporting line, journalled once until a level acts on it.
+            if (OpinionVacancy.Of(reading) is { } vacancy && acted.LastOrDefault()?.Act != OpinionCasting.Vacant)
+            {
+                casts.Keep(key, due.Repository, new OpinionCast(at, due.Session, OpinionCasting.Step, reading.Role ?? OpinionCasting.Step, OpinionCasting.Vacant, vacancy.Back, vacancy.Code));
+            }
+
             Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
             return $"opinion  {run.Line}";
         }

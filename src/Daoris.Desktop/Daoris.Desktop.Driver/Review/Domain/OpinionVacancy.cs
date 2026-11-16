@@ -52,6 +52,12 @@ public static class OpinionCasting
     /// <summary>The harness whose prepaid key reviews may spend, the one paid account a vacancy may use unasked (<c>daoris.gates.json</c>).</summary>
     public const string PrepaidAgent = "dsh";
 
+    /// <summary>The act the look journals when nobody is free to read the work, by the step's own actor (<see cref="Step"/>).</summary>
+    public const string Vacant = "vacant";
+
+    /// <summary>The actor whose step stands vacant: the second opinion.</summary>
+    public const string Step = "opinion";
+
     /// <summary>
     /// The reviewers the next walk reads after <paramref name="cast"/>: a re-cast's agent first; the prepaid harness first; relaxed, the
     /// work's own families after the rule's, read as not independent and said so on the opinion; waiting, the rule's as they are.
@@ -66,7 +72,13 @@ public static class OpinionCasting
         };
 
     /// <summary>The newest act that shapes a walk, its leaves apart.</summary>
-    public static OpinionCast? Newest(IEnumerable<OpinionCast> casts) => casts.Where(cast => cast.Act != LinePasses.Left).MaxBy(cast => cast.At);
+    public static OpinionCast? Newest(IEnumerable<OpinionCast> casts) => casts.Where(cast => cast.Act is not (LinePasses.Left or Vacant)).MaxBy(cast => cast.At);
+
+    /// <summary>
+    /// Whether the newest journalled act leaves the vacancy waiting on the line: the look's <c>vacant</c>, or a level's leave; a level's
+    /// other act answers it until the look journals it vacant again.
+    /// </summary>
+    public static bool Waiting(IReadOnlyList<OpinionCast> casts) => casts.Count > 0 && casts[^1].Act is Vacant or LinePasses.Left;
 
     /// <summary>The levels whose newest act passed the vacancy up, each with its reading, as <see cref="ReportingLine.Climb"/> reads them.</summary>
     public static IReadOnlyDictionary<string, string> Left(IEnumerable<OpinionCast> casts) =>

@@ -42,6 +42,31 @@ public sealed class OpinionCasts(string home)
             .Select(kept => new OpinionCast(kept.At, kept.Session!, kept.Actor!, kept.Role!, kept.Act!, kept.Agent, kept.Why ?? ""))];
     }
 
+    /// <summary>
+    /// Every vacancy that waits on the line on this machine: the chain, the repository and the session, with the acts kept on it, where the
+    /// newest is the look's <c>vacant</c> or a level's leave (<see cref="OpinionCasting.Waiting"/>).
+    /// </summary>
+    public IReadOnlyList<(string Chain, string Repository, string Session, IReadOnlyList<OpinionCast> Casts)> Waiting()
+    {
+        var folder = Path.GetDirectoryName(PathOf("chain")!)!;
+        if (!Directory.Exists(folder)) return [];
+        var waiting = new List<(string, string, string, IReadOnlyList<OpinionCast>)>();
+        foreach (var path in Directory.EnumerateFiles(folder, "*.casts.jsonl"))
+        {
+            var chain = Path.GetFileName(path)[..^".casts.jsonl".Length];
+            string[] lines;
+            lock (Gate) lines = File.ReadAllLines(path);
+            foreach (var part in lines.Select(Parse).OfType<Kept>().GroupBy(kept => (Repository: kept.Repository!.ToLowerInvariant(), Session: kept.Session!.ToLowerInvariant())))
+            {
+                var first = part.First();
+                var casts = Read(chain, first.Repository!, first.Session!);
+                if (OpinionCasting.Waiting(casts)) waiting.Add((chain, first.Repository!, first.Session!, casts));
+            }
+        }
+
+        return waiting;
+    }
+
     private static Kept? Parse(string line)
     {
         try
