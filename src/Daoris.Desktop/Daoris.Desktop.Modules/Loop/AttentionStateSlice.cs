@@ -69,7 +69,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "gitAsk", "obligation", "task", "actor", "secondCheck",
+            "convert", "gitAsk", "obligation", "step", "secondCheck",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -86,7 +86,7 @@ public static class AttentionStateSlice
             "code", "until", "later", "person", "answers", "says",
         ],
         ["placed"] = ["session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "waits"],
-        ["placedWaits"] = ["run", "node", "why", "since"],
+        ["placedWaits"] = ["run", "node", "why", "role", "since"],
         ["placedWork"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
         ["wordsHeld"] = ["why", "reason", "repository", "until", "account", "accountName"],
@@ -126,9 +126,8 @@ public static class AttentionStateSlice
         // A run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
         ["secondCheck"] = ["session", "range", "index", "says", "certainty", "call", "at", "reader", "independence"],
-        // A run waiting on a person's task, its node and the presses it waits for.
-        ["task"] = ["run", "node", "acts", "work"],
-        ["actor"] = ["run", "node", "actor", "words", "url", "work"],
+        // A step waiting on a role the person holds: its wait, the role and holder, the presses that settle it and where its act is taken.
+        ["step"] = HumanTaskRows.Fields,
         // What memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
         ["memoryEnd"] = ["op", "repository", "target", "revision", "reason"],
@@ -175,8 +174,7 @@ public static class AttentionStateSlice
         ["row.gitAsk"] = "gitAsk",
         ["row.convert"] = "convert",
         ["row.declined"] = "declined",
-        ["row.task"] = "task",
-        ["row.actor"] = "actor",
+        ["row.step"] = "step",
         ["row.secondCheck"] = "secondCheck",
         ["row.memory"] = "memory",
         ["memory.end"] = "memoryEnd",
@@ -327,9 +325,8 @@ public static class AttentionStateSlice
             {
                 hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
-            // Each run waiting on a person's task, from the node runtime's last look and its node records.
-            Tasks = Written(loop.HumanTasks),
-            Actors = Written(loop.ActorWaits),
+            // Each step waiting on a role the person holds, from the node runtime's last look and its node records.
+            Steps = Written(loop.HeldSteps),
             // The integration's waits on the owner, from the home's integration record and the node runtime's last look.
             Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits, loop.DeclarationsOwed)),
             // Each session the watcher brings to the person, from its memory.

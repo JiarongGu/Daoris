@@ -11,7 +11,7 @@ import { accountRowWorded } from './accountWords';
 import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
-import { actorRead, taskRead } from './taskRead';
+import { stepRead } from './taskRead';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
@@ -43,10 +43,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   unclosed: 'holding',
   // A run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
-  // A run waiting on a person's task stands still until they press it.
-  task: 'holding',
-  // A run whose step waits on an actor the person holds stands still until they act on its platform.
-  actor: 'holding',
+  // A run whose step waits on a role the person holds stands still until they press it, or act where its page is.
+  step: 'holding',
   // A stale one holds nothing and waits for the person's word instead (`attentionGroup`).
   'go-ahead': 'holding',
   // A tool call a session holds for the person's answer under asking: its turn stands still until they
@@ -186,8 +184,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'unclosed': return { session: item.session ?? null, quest: item.id };
     // The run's newest work quest here, whose run the step waits in.
     case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
-    case 'task': return item.task?.work ? { quest: item.task.work } : null;
-    case 'actor': return item.actor?.work ? { quest: item.actor.work } : null;
+    case 'step': return item.step?.work ? { quest: item.step.work } : null;
     default: return null;
   }
 }
@@ -196,7 +193,7 @@ export { ASKS_ONCE, attentionActs, attentionOffers, gitHeldOffers, heldActs } fr
 export type { AttentionActId, AttentionOffer } from './attentionOffers';
 
 export type {
-  AttentionPushed, DeclinedRequest, HumanTaskWait, GitAskWait, GitHeld, GitHeldClass, GitServed, IntegrationWait, MemoryWait, PushedAttention,
+  AttentionPushed, DeclinedRequest, StepWaitRow, GitAskWait, GitHeld, GitHeldClass, GitServed, IntegrationWait, MemoryWait, PushedAttention,
   PushedConfirmation, QuietWait, StaleSince,
 } from './attentionPushed';
 
@@ -222,7 +219,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  * a volume below its floor, a held git remote and quests nobody can take; then unfinished work, then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'actor', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'step', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question',
   'left', 'review',
 ];
@@ -405,10 +402,8 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       };
     }
     // The run's work as its quest names it, and the presses its task waits for.
-    case 'task':
-      return row.task ? { ...base, ...taskRead(row.task, questOf(row.task.work)?.title) } : { ...base, title: `#${row.id}` };
-    case 'actor':
-      return row.actor ? { ...base, ...actorRead(row.actor, questOf(row.actor.work)?.title) } : { ...base, title: `#${row.id}` };
+    case 'step':
+      return row.step ? { ...base, ...stepRead(row.step, questOf(row.step.work)?.title) } : { ...base, title: `#${row.id}` };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
     case 'plan-question':

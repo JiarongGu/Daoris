@@ -119,7 +119,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
             ],
         });
 
-        var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, wait.Actor, wait.Since)).ToList();
+        var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, (string?)wait.Role, wait.Since)).ToList();
 
         Assert.Equal(why is null ? [] : [(RunId, "release", why, actor, (DateTimeOffset?)said)], waits);
     }

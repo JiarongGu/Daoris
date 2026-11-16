@@ -56,11 +56,8 @@ public sealed class DriverWatch(
     /// <summary>The runs held at a declined request, as the evaluation runtime last read the quests; none before a pass.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _doors.Nodes?.RequestHolds() ?? [];
 
-    /// <summary>The runs waiting on a person's task, as the evaluation runtime last governed them; none before a pass.</summary>
-    public IReadOnlyList<HumanTask> HumanTasks => _doors.Nodes?.HumanTasks() ?? [];
-
-    /// <summary>The runs whose plugin step waits on an actor the person holds; none before a pass.</summary>
-    public IReadOnlyList<ActorWait> ActorWaits => _doors.Nodes?.ActorWaits() ?? [];
+    /// <summary>The steps waiting on a role the person holds, as the evaluation runtime last governed them; none before a pass.</summary>
+    public IReadOnlyList<HeldStep> HeldSteps => _doors.Nodes?.HeldSteps() ?? [];
 
     /// <summary>The run steps waiting on the person, read through the evaluation runtime; none before it is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _doors.Nodes?.PersonWaits() ?? [];

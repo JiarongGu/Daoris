@@ -64,9 +64,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   unclosed: 'quests',
   // The run's door opens its quest, where the work and its declined request are read.
   'request-declined': 'quests',
-  // A person's task opens its run's work quest, as a declined request does.
-  task: 'quests',
-  actor: 'quests',
+  // A run's step opens its run's work quest, as a declined request does.
+  step: 'quests',
   'go-ahead': 'quests',
   departure: 'quests',
   'set-up': 'quests',

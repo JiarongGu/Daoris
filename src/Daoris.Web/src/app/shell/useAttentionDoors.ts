@@ -34,9 +34,8 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     unclosed: (item) => openQuest(item.id),
     // A run held at a declined request opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
-    // A run waiting on a person's task (HUMAN) opens its work quest's page, where the run is read.
-    task: (item) => { if (item.task?.work) openQuest(item.task.work); },
-    actor: (item) => { if (item.actor?.work) openQuest(item.actor.work); },
+    // A run whose step waits on a role the person holds opens its work quest's page, where the run is read and its step answered.
+    step: (item) => { if (item.step?.work) openQuest(item.step.work); },
     // A held git remote leads to Settings → Git on its host, where its identity is set up, signed in again or
     // compared; one whose push is refused, or whose repository names its own authentication, to that repository's git remote row,
     // where another identity or the person's own sign-ins are chosen. A browser has no such page.

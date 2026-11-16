@@ -128,7 +128,7 @@ internal static class SessionsJson
                         writer.WriteString("run", wait.Run);
                         writer.WriteString("node", wait.Node);
                         writer.WriteString("why", wait.Why);
-                        if (wait.Actor is { } actor) writer.WriteString("actor", actor);
+                        if (wait.Role is { Length: > 0 } role) writer.WriteString("role", role);
                         if (wait.Since is { } since) writer.WriteString("since", since); else writer.WriteNull("since");
                         writer.WriteEndObject();
                     }
