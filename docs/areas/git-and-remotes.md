@@ -339,9 +339,9 @@ pull and landed review ask the port. What stays on real git is whatever reads th
 `ContentHolds`, `BranchJudging`), the backlog's rows, a diff's text, and `ResolveTree`'s rebase and index plumbing.
 
 Whether a session's work landed is read by patch, never by commit ids alone: `SessionTrees.WorkAsync` (`TreeWork`) counts none to land
-once the line holds every commit by patch, even where the line changed their files since (`ContentProof.ByPatch`), so the Sessions
-list offers no landing for a replayed tree. The id counts (`UnlandedAsync`, `UnlandedInTreeAsync`, `UnlandedHereAsync`) are named in
-`LandedByIdsCensusTests`; a new caller reads the tree's work or is named there with why.
+once the line holds the work by ancestry, a squash, a replay's patch or the merged branch as the line stands. The id counts
+(`UnlandedAsync`, `UnlandedInTreeAsync`, `UnlandedHereAsync`) are named in `LandedByIdsCensusTests`; a new caller reads the tree's work or
+is named there with why.
 
 The landed proof (`LandedProofs.ProveAsync`, the changed names every proof reads, the standing tip), the hand-back read, the step refs, and
 the workflow nodes' one-commit, ancestry, merge-base and ref-list reads ask the repository port, and their cases run on `MemoryRepository`
