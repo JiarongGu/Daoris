@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// each token is there, never its value, which is neither kept nor logged nor shown.
 /// </summary>
 /// <remarks>
-/// 2026-11-16: an account's file was found with both tokens empty and <c>expiresAt</c> 0 at the minute the install restarted,
-/// its refresh token valid for weeks: what the agent writes when a refresh of a rotating token is refused.
+/// Both tokens empty and <c>expiresAt</c> 0 is what the agent writes when a refresh of a rotating token is refused, though
+/// the refresh token stays valid for weeks.
 /// </remarks>
 internal sealed class ClaudeStoredSignIn : IStoredSignIn
 {

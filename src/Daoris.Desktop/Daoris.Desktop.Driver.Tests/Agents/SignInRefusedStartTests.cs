@@ -82,7 +82,6 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     private AccountRead? ReadOf(string agent, string account) => AccountReads.Of(_home, agent).Accounts.GetValueOrDefault(account);
 
-    /// <summary>A reading's word and moment, apart from since when it said so and what it replaced.</summary>
     private (LoginState, DateTimeOffset) WordOf(string agent, string account) =>
         ReadOf(agent, account) is { } read ? (read.Login, read.At) : throw new Xunit.Sdk.XunitException($"`{account}` of `{agent}` is not read.");
 

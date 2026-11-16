@@ -441,7 +441,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
     /// since asks it. False, the count taken back, where the account's lock stays held past <see cref="LockPatience"/>:
     /// a start beside a question in flight could spend its single-use refresh token twice, which signs it out. Holding the lock,
     /// it renews the account's sign-in once where its stored token is about to expire (<see cref="SignInRefresh"/>), so starts on
-    /// the account together find it fresh and none of their sessions refreshes it (CREDRACE1).
+    /// the account together find it fresh and none of their sessions refreshes it.
     /// </summary>
     private async Task<bool> WaitedOutAsync(
         string owner, string account, long number, AccountAgent asker, DriverConfig config, CancellationToken ct)

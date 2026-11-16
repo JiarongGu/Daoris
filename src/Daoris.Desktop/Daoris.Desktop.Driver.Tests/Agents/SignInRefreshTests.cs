@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Sessions on one account never race its sign-in's refresh (CREDRACE1): Daoris renews the sign-in once, under the account's lock,
+/// Sessions on one account never race its sign-in's refresh: Daoris renews the sign-in once, under the account's lock,
 /// before starts on it go on together, and a store its agent cleared is read signed out at the next look.
 /// </summary>
 /// <remarks>
@@ -113,7 +113,7 @@ public sealed class SignInRefreshTests : IDisposable
     }
 
     /// <summary>
-    /// Claude Code's store read for its shape alone, as the 2026-11-16 file was: both tokens there with their expiry, then both
+    /// Claude Code's store read for its shape alone: both tokens there with their expiry, then both
     /// emptied and the expiry 0, which is a cleared sign-in. The shape holds no text, so no token can reach a log or a page.
     /// </summary>
     [Fact]

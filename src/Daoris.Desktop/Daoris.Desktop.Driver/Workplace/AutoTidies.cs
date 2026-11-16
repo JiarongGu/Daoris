@@ -78,7 +78,6 @@ public static class TidyKept
     /// <summary>Its tree is reached through a link under the trees home, so it is somewhere else.</summary>
     public const string Linked = "linked";
 
-    /// <summary>A landing is due in the repository (<see cref="LandRetries.Due"/>), which the tidy yields to until a look after it lands.</summary>
     public const string Landing = "landing";
 }
 
@@ -188,8 +187,7 @@ internal sealed class AutoTidies(
         TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null, string? cause = null) =>
             new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause, Recovered = recovered, Released = released };
 
-        // A due landing goes first: the tidy yields and comes at a look after it. A landing that meets a tidy already under way waits for it
-        // instead (LandRetries), since a tidy ended part-way would leave its trees half removed.
+        // A due landing goes first: the tidy yields, since a landing meeting a tidy under way waits for it, never ends it part-way.
         if (LandRetries.Due(context.Home, repository, context.Clock())) return Pass([], TidyKept.Landing);
 
         // A main checkout's `.git` is a folder; a linked worktree's is a file, and a folder inside a repository has none. Asked

@@ -133,6 +133,9 @@ async function start(t, place) {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
   });
 
+  /** A notification, as the driver sends `work/stand-down`: no id, so nothing answers it. */
+  plugin.tell = (method, params) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
+
   /** The first event that `matches`, among those heard and those to come, within the patience. */
   plugin.until = (matches, what) => new Promise((resolveEvent, reject) => {
     const look = () => {
@@ -252,6 +255,34 @@ test('an act whose outcome was lost is asked of the platform before a retry, and
   await again.stop();
   assert.equal(retry.params.state, 'reached', 'a retry whose effect the platform says is done was not settled by it');
   assert.deepEqual(effects(place).filter((line) => line.startsWith('act ')), ['act k-1'], 'a retry acted again on an effect the platform says is done');
+});
+
+test('a stand-down during an attempt\'s wait ends it, no act is made after it, and the notification is answered by nothing', async (t) => {
+  const place = scratch(t, { acts: { 'i-1': { waits: 3000 } } });
+  const plugin = await start(t, place);
+  await plugin.ask('hook/work/perform', attempt(1));
+  plugin.tell('hook/work/stand-down', { unit: 'u-contract', step: STEP, invocation: 'i-1', idempotencyKey: 'k-1', why: 'done-outside' });
+  const outcome = await plugin.until(completion(1), 'outcome for `i-1` once stood down');
+  assert.deepEqual(await plugin.ask('hook/work/perform', attempt(1)), { invocation: 'i-1' });
+  await plugin.stop();
+
+  assert.deepEqual([outcome.params.state, outcome.params.code], ['failed', 'stood-down']);
+  assert.deepEqual(effects(place).filter((line) => line.startsWith('act ')), [], 'a stood-down attempt still acted');
+  assert.ok(plugin.frames.every((frame) => 'method' in frame || plugin.sent.has(frame.id)), 'the stand-down, a notification, was answered');
+});
+
+test('with no check, an attempt whose act a gone process held is made afresh, never left unknown', async (t) => {
+  const place = scratch(t, { check: false, acts: { 'i-1': { exit: true } } });
+  const effect = { effectKey: 'e-contract' };
+  const lost = await start(t, place);
+  await lost.ask('hook/work/perform', { ...attempt(1), ...effect });
+  await lost.gone;
+
+  const again = await start(t, place);
+  assert.deepEqual(await again.ask('hook/work/perform', { ...attempt(2), ...effect }), { invocation: 'i-2' });
+  const retry = await again.until(completion(2), 'outcome for `i-2`');
+  await again.stop();
+  assert.equal(retry.params.state, 'reached', 'an attempt with no check to ask was wedged behind a gone process\'s');
 });
 
 test('two processes sharing the data folder keep each other\'s attempts, as two places\' processes of one plugin do', async (t) => {

@@ -17,8 +17,7 @@ public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJso
 /// </summary>
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
-/// (the CLI's twin is <c>namedworkflows.ts</c>). The graphs are the defaults Daoris ships
-/// (<see cref="WorkflowDefaults"/>).
+/// (the CLI's twin is <c>namedworkflows.ts</c>). The graphs are the defaults Daoris ships (<see cref="WorkflowDefaults"/>).
 /// </remarks>
 public static class WorkflowPresets
 {

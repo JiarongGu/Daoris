@@ -9,11 +9,7 @@ namespace Daoris.Driver;
 /// <summary>What one reading of a sign-in says, and when it is made.</summary>
 /// <param name="Login">The agent's word: in, out, or unknown where its answer does not read or the question cannot be asked.</param>
 /// <param name="At">When the answer came.</param>
-/// <param name="Since">
-/// When the word became what it is: the first reading of a run of readings saying the same, so a sign-out says since when however
-/// often it is read again. Null where the entry carries none (written before it was kept, or by a build that keeps none), read as
-/// <paramref name="At"/>.
-/// </param>
+/// <param name="Since">The first reading of a run saying the same, so a sign-out says since when however often it is read again; null reads as <paramref name="At"/>.</param>
 /// <param name="Before">The word the run replaced, through an unanswered run between: a sign-out after <c>in</c> is one nobody at Daoris made.</param>
 public sealed record AccountRead(LoginState Login, DateTimeOffset At, DateTimeOffset? Since = null, LoginState? Before = null);
 
@@ -37,9 +33,8 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// <para>Held, row for row, to one table, <c>fixtures/account-reads.json</c> among the driver's tests, which <c>AccountReadsTests</c>
 /// reads. A terminal's reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
-/// { "login": "out", "read": "…Z", "since": "…Z", "before": "in" } } } }</c>, <c>since</c> and <c>before</c> where the word changed
-/// from another (<see cref="AccountRead.Since"/>): an older build's write drops them, read then as since that reading and after
-/// nothing; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
+/// { "login": "out", "read": "…Z", "since": "…Z", "before": "in" } } } }</c> (<see cref="AccountRead.Since"/>); an older build's write
+/// drops the last two; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
 /// </remarks>
 public static class AccountReads
 {

@@ -7,7 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class TrainPartOf
 {
-    /// <param name="reviewed">Whether the scope's two reviews are wired, without which a one-scope part keeps its gates (<see cref="ScopeLanding.GatesEachPart"/>).</param>
     public static async Task<TrainRef?> ReadAsync(string quest, string? publishKey, ITrainPlans? plans, bool reviewed, CancellationToken ct)
     {
         if (plans is null || publishKey is null) return null;

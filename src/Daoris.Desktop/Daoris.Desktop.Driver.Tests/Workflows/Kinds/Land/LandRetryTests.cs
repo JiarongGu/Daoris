@@ -24,7 +24,7 @@ public sealed class LandRetryTests : GraphRunFixture
         }
     }
 
-    private DateTimeOffset _now = DateTimeOffset.UtcNow;
+    private DateTimeOffset _now = new(2026, 10, 3, 8, 0, 0, TimeSpan.Zero);
 
     private LandPerformer Performer() => new(
         _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add, () => _now)
@@ -88,11 +88,11 @@ public sealed class LandRetryTests : GraphRunFixture
             await Performer().PerformAsync(start);
         }
 
-        var pass = await new SessionTrees(_home).TidyEmptyAsync(root, "engine", null, _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()));
+        var pass = await new SessionTrees(_home) { Clock = () => _now }.TidyEmptyAsync(root, "engine", null, _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()));
 
         Assert.Equal(TidyKept.Landing, pass.Held);
-        Assert.True(LandRetries.Due(_home, "engine", DateTimeOffset.UtcNow));
-        Assert.False(LandRetries.Due(_home, "engine", DateTimeOffset.UtcNow + LandRetries.Fresh));
+        Assert.True(LandRetries.Due(_home, "engine", _now));
+        Assert.False(LandRetries.Due(_home, "engine", _now + LandRetries.Fresh));
     }
 
     [Fact]

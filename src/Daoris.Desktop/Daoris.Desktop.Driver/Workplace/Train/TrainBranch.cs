@@ -3,7 +3,6 @@ namespace Daoris.Driver;
 /// <summary>The ask and the part a landing is for.</summary>
 public sealed record TrainRef(string Ask, string Part)
 {
-    /// <summary>Whether the ask's plan is built as one scope with its two reviews wired, so the part lands on the ask's branch with no gates (<see cref="ScopeLanding.GatesEachPart"/>).</summary>
     public bool OneScope { get; init; }
 }
 

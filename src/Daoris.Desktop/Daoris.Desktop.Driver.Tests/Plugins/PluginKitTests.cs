@@ -390,7 +390,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var folder = New("acme-silent", [HookPoints.State]);
         // It takes the frame and never answers it.
-        Replace(folder, "    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });", "    // silence");
+        Replace(folder, "    if (!notified) send({ jsonrpc: '2.0', id: frame.id, result });", "    // silence");
         Replace(folder, "    const declared = frame.params?.points ?? [];",
             "    await new Promise((resolve) => setTimeout(resolve, 1500));\n    const declared = frame.params?.points ?? [];");
 
@@ -982,7 +982,7 @@ public sealed class PluginKitTests : IDisposable
 
         Assert.True(exit == 0, output);
         Assert.Contains("# fail 0", output);
-        Assert.Contains("# pass 14", output);
+        Assert.Contains("# pass 18", output);
         foreach (var shown in new[] { "one external effect under duplicate delivery", "each work/reconcile answer", "already-gone on a repeated cleanup",
                      "two processes sharing the data folder keep each other's attempts", "two processes writing one file at once keep every record",
                      "an event sent again keeps the id it first had", "no frame claims what a plugin may not" })

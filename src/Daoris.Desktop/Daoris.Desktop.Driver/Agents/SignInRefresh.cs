@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An account's sign-in renewed once before sessions start or resume on it together, and a sign-in its agent cleared read at once
-/// (CREDRACE1). Both read the stored sign-in's shape alone (<see cref="IStoredSignIn"/>), never a token.
+/// An account's sign-in renewed once before sessions start or resume on it together, and a sign-in its agent cleared read at once.
+/// Both read the stored sign-in's shape alone (<see cref="IStoredSignIn"/>), never a token.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Why</b>: a sign-in's refresh token rotates, single-use. Sessions on one account that start together each find the

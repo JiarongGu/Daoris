@@ -244,7 +244,6 @@ internal sealed class RosterNext(HarnessRoster roster)
             }
         }
 
-        // Each account's sign-in state, the one reading the page shows too.
         var reads = AccountReads.Of(roster.Home, owner).Accounts;
         foreach (var account in list)
         {

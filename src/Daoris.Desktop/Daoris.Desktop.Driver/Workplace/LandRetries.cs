@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The waits of runs' landings refused for a cause that passes (<see cref="LandingCode.Busy"/>), and the repositories whose landing is due
-/// (LANDRETRY1). Kept in memory, as the performer's tries are: a restart reads as no try, and the next pass judges the landing afresh.
+/// The waits of runs' landings refused for a cause that passes (<see cref="LandingCode.Busy"/>), and the repositories whose landing is due.
+/// Kept in memory, as the performer's tries are: a restart reads as no try, and the next pass judges the landing afresh.
 /// </summary>
 /// <remarks>
-/// <para><b>Tried again by itself, never asked again.</b> The yes the landing was refused under stands. The performer tries it at the first look
+/// <para><b>Tried again by itself, never asked again.</b> The yes the landing is refused under stands. The performer tries it at the first look
 /// the repository is free (<see cref="StillHeld"/>), and that try is the landing a second Accept would make, behind the same delivery key and
 /// landing record, so it lands once.</para>
 /// <para><b>Each wait has a deadline.</b> Past <see cref="Deadline"/> from its first refusal the wait climbs the reporting line above the landing

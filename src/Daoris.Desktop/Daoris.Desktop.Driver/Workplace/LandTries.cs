@@ -129,7 +129,7 @@ public static class LandTryNotes
                 + "as follows. It lands at the first look after the checkout is clean; no review is waiting on you."),
             LandingCode.LineHolds => Noted.Of(ChatNoteCodes.LandingLineHolds,
                 "nothing to land: the line already holds everything on its branch, as follows. No review is waiting on you."),
-            // A cause that passes: the yes stands and nothing is asked of the person (LANDRETRY1).
+            // A cause that passes: the yes stands and nothing is asked of the person.
             LandingCode.Busy => Noted.Of(ChatNoteCodes.LandingBusy,
                 $"accepted, but another of Daoris's writes held the repository, so nothing was written yet, as follows. It is tried again by itself "
                 + $"once that ends, and climbs the reporting line if it has not landed within {(int)LandRetries.Deadline.TotalMinutes} minutes; "

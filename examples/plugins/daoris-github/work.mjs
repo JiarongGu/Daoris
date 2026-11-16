@@ -18,9 +18,14 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 /**
  * The work points' handlers, built around the author's external calls:
  *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none;
- *                      `call.effectKey`, where Daoris sends one, names the act whatever attempt asks it, a mark to leave on what it makes for `check` to find
+ *                      `call.effectKey`, where Daoris sends one, names the act whatever attempt asks it, a mark to leave on what it makes for `check` to find;
+ *                      `call.signal` is aborted when Daoris stands the attempt down (a skip, a stop, its holder's Done outside Daoris): read it before
+ *                      every write and in every wait, and answer `{ state: 'failed', code: 'stood-down' }` once it is, making nothing after it
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
- *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop
+ *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop;
+ *                      given `attempt.link` (a holder's Done outside Daoris), it reads the thing named, never acting, and answers done or failed with `link`.
+ *                      A plugin with no `check` cannot tell what a gone process's act came to, so the next attempt on its effect makes it afresh:
+ *                      write `check` wherever an act made twice does harm
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
  *   observe(unit, step) what an observed step's platform says of a unit's tip: an outcome, or null while it says nothing yet
  * Under the kit's stand-in world (DAORIS_PLUGIN_WORLD, which its tests and `plugins try` set), none of them is called: the world
@@ -43,23 +48,28 @@ export function work({ data, send, say, act, check, remove, observe }) {
     params: { step: attempt.step, invocation: attempt.invocation, ...attempt.outcome, at: attempt.at, id: attempt.invocation },
   });
 
+  const live = new Map();
+
   const settle = (attempt, outcome) => {
     attempt.state = outcome.state;
     attempt.outcome = outcome;
     attempt.at = new Date().toISOString();
     keep(attempt);
+    if (live.get(attempt.idempotencyKey)?.attempt === attempt) live.delete(attempt.idempotencyKey);
     tell(attempt);
   };
 
   const run = async (attempt) => {
+    if (attempt.stoodDown) return settle(attempt, stoodDown(attempt.stoodDown));
+    const stop = live.get(attempt.idempotencyKey)?.stop ?? new AbortController();
     let outcome;
     try {
-      outcome = outcomeOf(await calls.act(attempt));
+      outcome = outcomeOf(await calls.act({ ...attempt, signal: stop.signal }));
     } catch (error) {
       // It threw, so whether the effect happened is not known: said so, and asked of `check` before anything else is tried.
       outcome = { state: 'unknown', evidence: { message: words(error) } };
     }
-    settle(attempt, outcome);
+    return settle(attempt, outcome);
   };
 
   const effectOf = (attempt) => attempt.effectKey ?? attempt.idempotencyKey;
@@ -98,6 +108,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
         await acting.get(effectOf(attempt));
         continue;
       }
+      if (!calls.check && holder.life !== life) break;
       const said = await asked(attempt);
       if (said?.state === 'done' && said.outcome?.state === 'reached') return settle(attempt, outcomeOf(said.outcome));
       if (said?.state === 'done' || said?.state === 'failed' || said?.state === 'not-started' || (!said && holder.state === 'failed')) break;
@@ -135,10 +146,16 @@ export function work({ data, send, say, act, check, remove, observe }) {
           unit: call.unit, step: call.step, stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs,
           options: call.options ?? {}, deadlineAt: call.deadlineAt, state: 'begun', life };
         keep(attempt);
+        live.set(attempt.idempotencyKey, { attempt, stop: new AbortController() });
         setImmediate(() => perform(attempt));
       } else if (known.outcome && known.state !== 'unknown') {
         // Delivered again: the same key never calls the platform twice. Its outcome goes again, which Daoris takes once.
         setImmediate(() => tell(known));
+      } else if (known.stoodDown) {
+        setImmediate(() => settle(known, stoodDown(known.stoodDown)));
+      } else if (!calls.check && known.life !== life) {
+        live.set(known.idempotencyKey, { attempt: known, stop: new AbortController() });
+        setImmediate(() => perform(known));
       } else if (known.life !== life || known.state === 'unknown') {
         setImmediate(async () => {
           if ((await asked(known))?.state === 'not-started') await points['work/perform'](call);
@@ -149,8 +166,16 @@ export function work({ data, send, say, act, check, remove, observe }) {
   };
 
   const answers = {
-    // What became of an attempt: from the journal where it knows, else asked of the platform.
+    // What became of an attempt: from the journal where it knows, else asked of the platform. A holder's Done outside Daoris link is read by
+    // `check` first, which settles or refuses it: its answer names the link it read, and one that names none leaves the word its holder's.
     'work/reconcile': async (call) => {
+      if (typeof call.link === 'string' && calls.check) {
+        const known = journal.get('attempts', call.idempotencyKey);
+        const said = await calls.check({ ...(known ?? { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
+          subjectRevision: call.subjectRevision }), options: call.options ?? known?.options ?? {}, link: call.link });
+        if ((said?.state === 'done' || said?.state === 'failed') && said.link === call.link) return { state: said.state, outcome: outcomeOf(said.outcome), link: call.link };
+        return { state: 'running', link: call.link };
+      }
       const attempt = journal.get('attempts', call.idempotencyKey);
       if (!attempt) return { state: 'not-started' };
       if (attempt.state === 'reached') return { state: 'done', outcome: attempt.outcome };
@@ -161,6 +186,24 @@ export function work({ data, send, say, act, check, remove, observe }) {
         return said.outcome ? { state: said.state, outcome: outcomeOf(said.outcome) } : { state: said.state };
       }
       return { state: 'unknown' };
+    },
+
+    // A notification: written down first, so no later delivery of its key acts (one not known yet is written settled), then its signal aborted.
+    'work/stand-down': async (call) => {
+      const key = call.idempotencyKey;
+      if (typeof key !== 'string') return undefined;
+      const why = typeof call.why === 'string' && call.why.length > 0 ? call.why : 'stood-down';
+      const running = live.get(key);
+      const known = running?.attempt ?? journal.get('attempts', key);
+      if (known) {
+        known.stoodDown = why;
+        keep(known);
+      } else {
+        journal.put('attempts', key, { idempotencyKey: key, invocation: call.invocation, unit: call.unit, step: call.step, stoodDown: why,
+          state: 'failed', outcome: stoodDown(why), at: new Date().toISOString() });
+      }
+      running?.stop.abort(why);
+      return undefined;
     },
 
     // One resource removed, once: the same resource asked again is `already-gone`, never a second removal.
@@ -224,15 +267,21 @@ function words(error) {
   return String(error?.message ?? error).slice(0, 300);
 }
 
+/** What a stood-down attempt came to where its act made nothing: failed, `stood-down`, saying why. */
+function stoodDown(why) {
+  return { state: 'failed', code: 'stood-down', evidence: { message: `stood down (${why}) before its act made anything` } };
+}
+
 /**
  * The kit's stand-in world (DAORIS_PLUGIN_WORLD): a JSON file the kit's tests and `plugins try` write, answering in the platform's
  * place, read again at every call. Each external effect is one line in `<world>.effects`, so a test counts them; `<world>.taken` says
  * this plugin took the world, before anything is sent it. Scripted per invocation, or per resource:
- *   { "acts": { "<invocation>": { "state": "failed", "code": "unavailable" } | { "hold": true } | { "exit": true } },
+ *   { "acts": { "<invocation>": { "state": "failed", "code": "unavailable" } | { "hold": true } | { "exit": true } | { "waits": <ms> } },
  *     "checks": { "<invocation>": { "state": "done", "outcome": { … } } | { "hold": true } },
  *     "removes": { "<resource>": { "disposition": "retained", "message": "…" } },
- *     "observed": { "<step>": { "state": "reached" } } }
- * Anything not scripted is reached, removed, or not known.
+ *     "observed": { "<step>": { "state": "reached" } },
+ *     "check": false }
+ * Anything not scripted is reached, removed, or not known; `waits` makes nothing once stood down; `check: false` is a plugin with no `check`.
  */
 function standIn(file) {
   writeFileSync(`${file}.taken`, `${process.pid}\n`);
@@ -240,9 +289,21 @@ function standIn(file) {
   const effect = (line) => appendFileSync(`${file}.effects`, `${line}\n`);
   const step = (kind) => (manifest.steps ?? []).find((each) => `${manifest.id}/${each.id}` === kind || each.id === kind);
   const made = (manifest.resources ?? [])[0]?.schema;
+  const check = async (attempt) => {
+    const said = script().checks?.[attempt.invocation] ?? null;
+    return said?.hold ? new Promise(() => {}) : said;
+  };
   return {
+    ...(script().check === false ? {} : { check }),
     act: async (call) => {
       const said = script().acts?.[call.invocation] ?? {};
+      if (said.waits) {
+        await new Promise((done) => {
+          const timer = setTimeout(done, said.waits);
+          call.signal?.addEventListener('abort', () => { clearTimeout(timer); done(); }, { once: true });
+        });
+        if (call.signal?.aborted) return { state: 'failed', code: 'stood-down', evidence: { message: "the kit's stand-in world: stood down while it waited" } };
+      }
       effect(`act ${call.idempotencyKey}`);
       if (said.exit) process.exit(3);
       if (said.hold) return new Promise(() => {});
@@ -250,10 +311,6 @@ function standIn(file) {
       const evidence = { ...(schema ? { ref: `${schema}:${call.invocation}` } : {}), message: "the kit's stand-in world" };
       if (said.state === 'failed') return { state: 'failed', code: said.code ?? 'unavailable', evidence };
       return { state: 'reached', evidence, ...(made ? { resources: [{ schema: made, id: `r-${call.invocation}` }] } : {}) };
-    },
-    check: async (attempt) => {
-      const said = script().checks?.[attempt.invocation] ?? null;
-      return said?.hold ? new Promise(() => {}) : said;
     },
     remove: async (call) => {
       effect(`remove ${call.resource}`);

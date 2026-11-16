@@ -172,10 +172,13 @@ const answers = { ...points, ...kit.calls };
 
 // Each frame answered as its handler settles, never after the one before it; a throw is a refusal said in this plugin's name.
 const answer = async (frame) => {
+  const notified = frame.id === undefined;
   try {
-    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
+    const result = await answers[frame.method.slice(5)](frame.params ?? {});
+    if (!notified) send({ jsonrpc: '2.0', id: frame.id, result });
   } catch (error) {
-    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
+    if (notified) say(`${frame.method}: ${String(error?.message ?? error)}`);
+    else send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
   }
 };
 
