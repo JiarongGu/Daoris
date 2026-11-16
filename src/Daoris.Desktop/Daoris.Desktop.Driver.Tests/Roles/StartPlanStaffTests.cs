@@ -187,6 +187,17 @@ public sealed class StartPlanStaffTests : IDisposable
         var settled = await Plan().ResolveAsync(CancellationToken.None);
 
         Assert.Equal("2", settled.Chosen!.From);
+        Assert.Equal([("1", StaffPasses.Capped)], settled.Passes.Select(pass => (pass.Entry.From, pass.Code)));
+    }
+
+    [Fact]
+    public async Task A_role_with_no_policy_never_picks_a_holder_whose_account_a_spend_cap_cools_until_its_reset()
+    {
+        AccountCooling.Cool(_home, new CoolingEntry("cool", "account-1", Now.AddHours(24), false, SpendCaps.Window, Now, "s0"), Now);
+
+        var settled = await Plan().ResolveAsync(CancellationToken.None);
+
+        Assert.Equal("2", settled.Chosen!.From);
         Assert.Equal([("1", StartPasses.Cooling)], settled.Passes.Select(pass => (pass.Entry.From, pass.Code)));
     }
 

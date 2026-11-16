@@ -61,7 +61,7 @@ public sealed class SpendCapsTests : IDisposable
         var (second, _) = SpendCaps.WaitAfter([At(8, 36)], [], At(11, 36));
         var (many, _) = SpendCaps.WaitAfter(Enumerable.Range(0, 12).Select(i => At(0, 0).AddHours(i)).ToList(), [], At(12, 0));
 
-        Assert.Equal(SpendCaps.Unlearned * 2, second);
+        Assert.Equal(SpendCaps.Latest, second);
         Assert.Equal(SpendCaps.Latest, many);
     }
 
@@ -75,7 +75,7 @@ public sealed class SpendCapsTests : IDisposable
         var again = SpendCaps.Learn(_home, "codex", "account-1", first, At(8, 50));
 
         Assert.Equal((SpendCaps.Window, false, At(8, 36) + SpendCaps.Unlearned), (learned.Window, learned.Stated, learned.Until));
-        Assert.Equal(At(8, 50) + SpendCaps.Unlearned * 2, again.Until);
+        Assert.Equal(At(8, 50) + SpendCaps.Latest, again.Until);
         Assert.Equal([At(8, 36), At(8, 50)], SpendCaps.Moments(_home, "codex", "account-1"));
         Assert.Empty(SpendCaps.Moments(_home, "codex", "account-2"));
     }
@@ -97,5 +97,34 @@ public sealed class SpendCapsTests : IDisposable
 
         now = now + SpendCaps.Unlearned + TimeSpan.FromMinutes(1);
         Assert.Null(roster.CoolingOf("codex-acp", "account-1"));
+    }
+
+    [Fact]
+    public void A_cap_that_names_no_reset_is_not_guessed_short_but_cools_a_day_and_says_so()
+    {
+        var now = At(8, 36);
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "codex", "account-1"));
+
+        var (entry, _) = roster.Limited("codex-acp", "account-1", Refusal, "s1")!.Value;
+
+        Assert.Equal(now.AddHours(24), entry.Until);
+        Assert.Contains("a day", CoolingWords.Why(entry), StringComparison.Ordinal);
+        Assert.DoesNotContain("reopened before", CoolingWords.Why(entry), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_cap_that_states_its_reset_cools_until_it_and_not_until_the_learned_wait()
+    {
+        var now = At(8, 36);
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "codex", "account-1"));
+
+        var (entry, seen) = roster.Limited("codex-acp", "account-1", Refusal + " Try again at 4:05 PM.", "s1")!.Value;
+
+        Assert.True(entry.Stated);
+        Assert.True(SpendCaps.Is(seen));
+        Assert.Equal(At(16, 5) + AccountLimits.Margin, entry.Until);
+        Assert.NotEqual(SpendCaps.Window, entry.Window);
     }
 }
