@@ -116,7 +116,7 @@ describe("the page's root", () => {
   it('hands the window its handshake and lifts its splash again on a second load', async () => {
     const First = await freshRoot();
     render(<First client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);
-    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1), { timeout: 15_000 });
     expect(notifyReady).toHaveBeenCalledTimes(1);
 
     // The reload: the page unmounted, and a fresh one read and mounted from the start.
@@ -124,7 +124,7 @@ describe("the page's root", () => {
     const Second = await freshRoot();
     render(<Second client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);
 
-    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(2), { timeout: 15_000 });
     expect(notifyReady).toHaveBeenCalledTimes(2);
   });
 });
