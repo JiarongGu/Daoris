@@ -43,7 +43,9 @@ const credit = (who, ours) => (ours ? 'Daoris' : `outside: ${who ?? 'someone in 
  */
 export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
   const asked = declared(attempt.options);
-  const answered = (state, code, message, url) => ({ state, ...(code ? { code } : {}), evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), message: fit(message) } });
+  // `by` is the identity Azure DevOps credits with the fact (`outside: <name>`, or Daoris), kept beside the words, not only in them.
+  const answered = (state, code, message, url, by) => ({ state, ...(code ? { code } : {}),
+    evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, ...(url ? { url } : {}), ...(by ? { by } : {}), message: fit(message) } });
   if (!unit) return answered('failed', 'no-unit', `no unit awaits this step at ${attempt.subjectRevision}`);
   const deadline = Date.parse(attempt.deadlineAt);
   const ends = Number.isFinite(deadline) ? deadline - MARGIN : Date.now() + 3600 * 1000;
@@ -108,16 +110,27 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
       .filter((each) => each.releaseDefinition?.id === definition.id && commitOf(each, known) === commit);
     const linkOf = (release) => release._links?.web?.href ?? `${repo.base}/${encodeURIComponent(repo.project)}/_releaseProgress?releaseId=${release.id}&_a=release-pipeline-progress`;
 
-    // A release the holder named (done outside Daoris, with its link) is read and taken where it carries the landed commit.
+    // A release the holder named (done outside Daoris, with its link) is read and taken where it carries the landed commit or one after it.
     const named = /^\d+$/.test(String(attempt.options?.release ?? '')) ? Number(attempt.options.release) : Number(/releaseId=(\d+)/.exec(String(attempt.options?.release ?? ''))?.[1] ?? NaN);
+    /** The commit a release carries, reading its artifact's build where it is none of the landed commit's. */
+    const carriedBy = async (held, known) => {
+      const read = commitOf(held, known);
+      if (read) return read;
+      const build = (held.artifacts ?? []).find((each) => each.type === 'Build')?.definitionReference?.version?.id;
+      return /^\d+$/.test(String(build ?? '')) ? (await project(repo, 'GET', `/build/builds/${build}`)).json?.sourceVersion ?? null : null;
+    };
+    /** Whether `carries` descends from the landed commit: the landed commit is their merge base. */
+    const after = async (carries) => ((await call(repo, 'GET', `/commits/${carries}/mergebases?otherCommitId=${commit}`)).json?.value ?? [])
+      .some((base) => base.commitId === commit);
 
     const release = await until(async () => {
       const known = await builds();
       if (Number.isFinite(named)) {
         const held = (await releases(repo, 'GET', `/releases/${named}`)).json;
-        const carries = held ? commitOf(held, known) : null;
+        const carries = held ? await carriedBy(held, known) : null;
         if (carries === commit) return held;
-        throw new Refusal('target-changed', `release ${named} carries ${carries ? carries.slice(0, 8) : 'no commit read'}, not the landed ${short}`);
+        if (carries && await after(carries)) return { ...held, after: carries };
+        throw new Refusal('target-changed', `release ${named} carries ${carries ? carries.slice(0, 8) : 'no commit read'}, which is neither the landed ${short} nor after it`);
       }
       const found = await made(known);
       if (found.length > 0) return found.sort((a, b) => a.id - b.id)[0];
@@ -153,7 +166,8 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
     if (!release) return answered('failed', 'timeout', `${told ? told.split('|')[1] : `nothing of ${of} was read`} The step's deadline passed.`);
     const link = linkOf(release);
     const by = release.made ? 'Daoris' : credit(release.createdBy?.displayName, /^Made by Daoris/.test(release.description ?? ''));
-    if (id === 'release-create') return answered('reached', null, `${release.name} of ${of} carries ${short}, created by ${by}.`, link);
+    const carried = release.after ? `${release.after.slice(0, 8)}, after the landed ${short}` : short;
+    if (id === 'release-create') return answered('reached', null, `${release.name} of ${of} carries ${carried}, created by ${by}.`, link, by);
 
     // The stage's facts, read from the release as Azure DevOps holds it now.
     let started = false;
@@ -166,7 +180,10 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
       const step = (environment.deploySteps ?? []).at(-1);
       const notStarted = ['notStarted', 'undefined'].includes(environment.status);
       if (id === 'release-start') {
-        if (!notStarted) return answered('reached', null, `${name} of ${read.name} started by ${started ? 'Daoris' : credit(step?.requestedBy?.displayName, /Daoris/.test(environment.comment ?? ''))}.`, link);
+        if (!notStarted) {
+          const starter = started ? 'Daoris' : credit(step?.requestedBy?.displayName, /Daoris/.test(environment.comment ?? ''));
+          return answered('reached', null, `${name} of ${read.name} started by ${starter}.`, link, starter);
+        }
         if (asked.action === 'observe') {
           tell('deployer', `Waiting on the deployer: start ${name} of ${read.name} in Azure DevOps.`, link);
           return undefined;
@@ -183,9 +200,10 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
         }
         if (approvals.length === 0) return answered('reached', null, `${name} of ${read.name} asks no approval.`, link);
         const rejected = approvals.find((each) => each.status === 'rejected');
-        if (rejected) return answered('failed', 'rejected', `${name} of ${read.name} was rejected by outside: ${rejected.approvedBy?.displayName ?? rejected.approver?.displayName ?? 'its approver'}.`, link);
+        const approver = (each) => `outside: ${each?.approvedBy?.displayName ?? each?.approver?.displayName ?? 'its approver'}`;
+        if (rejected) return answered('failed', 'rejected', `${name} of ${read.name} was rejected by ${approver(rejected)}.`, link, approver(rejected));
         const pending = approvals.find((each) => each.status === 'pending');
-        if (!pending) return answered('reached', null, `${name} of ${read.name} approved by outside: ${approvals.at(-1)?.approvedBy?.displayName ?? approvals.at(-1)?.approver?.displayName ?? 'its approver'}.`, link);
+        if (!pending) return answered('reached', null, `${name} of ${read.name} approved by ${approver(approvals.at(-1))}.`, link, approver(approvals.at(-1)));
         // The card names the target, the build and its branch; its Approve and Reject are the holder's own press (approve-release).
         tell('approver', `Waiting on the approver: approve ${name} of ${read.name}, ${of}, carrying ${short} from \`${branch}\`; asked of ${pending.approver?.displayName ?? 'its approvers'}. Approve or reject it here or in Azure DevOps.`, link);
         return undefined;

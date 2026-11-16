@@ -19,6 +19,7 @@ import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid
 import { stepTitle } from './said';
 import { CheckHeld } from './wait/CheckHeld';
 import { FailedStepHeld } from './wait/FailedStepHeld';
+import { ReleaseStepDoors } from './release/ReleaseStepDoors';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
 import { roleSaid } from './stepRoles';
@@ -229,6 +230,8 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
+      {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}
+      <ReleaseStepDoors run={run} step={step} />
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}

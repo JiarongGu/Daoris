@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.3.0",
-  "changes": "The release is five steps of its own (release-target, release-create, release-start, release-approve, release-watch), each settled on the fact Azure DevOps holds, whoever made it: a release is matched by the landed commit across its builds, made once keyed by its effect, and waited for with no fixed give-up. Every act re-reads its target against the merged branch's route and refuses target-changed off it. A refused key waits on the credentials keeper. approve-release is the approver's own press.",
+  "version": "4.4.0",
+  "changes": "A release its holder names settles create where its commit is the landed one or descends from it, and is refused naming the commit it carries otherwise. Each release step's evidence carries the identity Azure DevOps credits (`by`) beside its words. The window's approval card runs approve-release, still no agent's tool.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
