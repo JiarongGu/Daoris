@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent supervisor's attempt, with a stub turn and a stand-in door: answering, leaving, failing and timing out, answering late after
-/// a revoke, a limited end moving to the next choice, no choice ready leaving the subject to the person, and the person's word ending a
-/// running turn, its result dropped.
+/// An agent supervisor's attempt, with a stub turn and a stand-in door: answering, leaving, failing, timing out, answering late after a
+/// revoke, a limited end moving to the next choice, no choice leaving the subject to the person, the person's word ending a turn.
 /// </summary>
 public sealed class SupervisePassTests : IDisposable
 {
@@ -76,15 +75,7 @@ public sealed class SupervisePassTests : IDisposable
     private static Task<SuperviseRunEnd> Ended(string state, string? words = null) =>
         Task.FromResult(new SuperviseRunEnd(state, words, "t-1", OpinionPosture.RulesAndCopy, 1200, "opus"));
 
-    private static async Task Until(Func<bool> done)
-    {
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (!done())
-        {
-            Assert.True(DateTime.UtcNow < until, "the attempt did not end");
-            await Task.Delay(20);
-        }
-    }
+    private static Task Until(Func<bool> done) => Poll.Until(done, () => "the attempt did not end");
 
     private static SupervisorAttempt? Last(Daoris.Driver.Driver driver) => driver.Context.Supervisor.Attempts.Of(Point.Subject).LastOrDefault();
 
