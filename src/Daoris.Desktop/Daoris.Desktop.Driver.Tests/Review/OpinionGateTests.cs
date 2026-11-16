@@ -277,6 +277,26 @@ public sealed class OpinionGateTests
         Assert.Equal("Waits for a second opinion: read again by Codex (OpenAI), the commits made in answer.", reading.Says);
     }
 
+    /// <summary>
+    /// A recheck its reviewer's account limit or spend cap ended has read nothing: it is read again (by the next ready holder, or at
+    /// the reset), never passed over as though it had. One that failed otherwise stands as its outcome.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_a_cap_ended_is_read_again_and_one_that_failed_otherwise_stands()
+    {
+        var world = new World();
+        world.Opinions["o1"] = Opinion(weights: [OpinionViews.Must]);
+        world.Delivered["o1"] = new OpinionDelivered(null, null, Answers(Fixed, (OpinionViews.Must, OpinionViews.Fixed))) { Recheck = "o2" };
+        world.Opinions["o2"] = Opinion("o2", state: "failed", tip: Fixed, pass: "recheck") with { Why = OpinionViews.Limited };
+        var limited = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")] }, world);
+
+        world.Opinions["o2"] = Opinion("o2", state: "failed", tip: Fixed, pass: "recheck");
+        var ended = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")] }, world);
+
+        Assert.Equal(OpinionGateStates.ReadAgain, limited.State);
+        Assert.NotEqual(OpinionGateStates.ReadAgain, ended.State);
+    }
+
     [Fact]
     public async Task A_recheck_that_withdraws_the_must_settles_the_work_it_read()
     {
@@ -638,7 +658,7 @@ public sealed class OpinionGateTests
             Assert.Equal(owedAfter <= 0 || advanced, OpinionLook.MadeSince(landed.Landing("s1")!, due));
             if (closed is not null)
             {
-                Assert.Equal(closed, await OpinionLook.ClosesAsync(due, Quest(), [Quest()], config, landed, CancellationToken.None));
+                Assert.Equal(closed, await OpinionLook.ClosesAsync(due, Quest(), [Quest()], config, landed, CancellationToken.None, new SessionTrees(Path.Combine(scratch, "home"))));
             }
         }
         finally

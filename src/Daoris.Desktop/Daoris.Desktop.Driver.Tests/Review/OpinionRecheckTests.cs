@@ -275,6 +275,62 @@ public sealed class OpinionRecheckTests : IDisposable
         Assert.Equal([2], delivered.Disputes!.First);
     }
 
+    /// <summary>
+    /// A recheck its reviewer's account cap ended read nothing: the next look asks it again of the rule's next holder that is ready,
+    /// said once (<c>opinion.handed-on</c>), the limited one staying the failed record it was; asked, no later look asks another.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_a_cap_ended_is_asked_again_of_the_next_ready_holder_and_said_once()
+    {
+        var (host, git, tip, fix, _) = Answered();
+        var client = host.Client();
+        var said = new List<string>();
+        client.LandingLined += line => said.Add(line.Event);
+        var seen = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var driver = Driver(client, git, (ask, choice) =>
+        {
+            if (_passes.Count == 1)
+            {
+                // Codex's spend cap ends the recheck, and its account cools until the reset.
+                host.Opinion("op2", "s1", state: "failed", why: OpinionViews.Limited, pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base);
+                AccountCooling.Cool(_home, new CoolingEntry("codex", null, seen.AddHours(3), Stated: false, "cap", seen, "r-op2"), seen);
+                return new OpinionPassRun("failed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "failed", Limited = true };
+            }
+
+            host.Opinion("op3", "s1", weights: [], pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base, adapter: choice.Reviewer!);
+            return new OpinionPassRun("completed  second opinion op3", true) { Opinion = "op3", Session = "r-op3", State = "completed" };
+        });
+        var asked = AskedAt(tip) with { Rule = Rule with { Reviewers = ["codex-acp", "claude-code-acp"] } };
+        await driver.DeliverAsync("op1", asked);
+        host.Take("s1");
+        host.Answer("op1", 1, "fixed", commit: fix);
+        await driver.DeliverAsync("op1", asked);
+        Assert.Equal("op2", new OpinionDeliveries(_home).Read("op1").Recheck);
+
+        await driver.DeliverAsync("op1", asked);
+        await driver.DeliverAsync("op1", asked);
+
+        Assert.Equal(["codex-acp", "claude-code-acp"], _passes.Select(pass => pass.Choice.Reviewer));
+        Assert.Equal("op3", new OpinionDeliveries(_home).Read("op1").Recheck);
+        Assert.Single(said, code => code == "opinion.handed-on");
+    }
+
+    /// <summary>A driver over <paramref name="client"/> whose passes <paramref name="pass"/> answers once chosen, each kept in order.</summary>
+    private Daoris.Driver.Driver Driver(ServiceClient client, StandInGit git, Func<OpinionPassAsk, ReviewerChoice, OpinionPassRun> pass)
+    {
+        var (adapters, roster) = Machine();
+        return new Daoris.Driver.Driver(client, DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
+        {
+            OpinionGit = git.Read,
+            Passes = (ask, choice, _) =>
+            {
+                if (!choice.Chosen) return Task.FromResult(OpinionPassRun.Unavailable(choice));
+                _passes.Add((ask, choice));
+                return Task.FromResult(pass(ask, choice));
+            },
+        };
+    }
+
     // ——— What waits for the person (design §6.6).
 
     /// <summary>

@@ -122,8 +122,10 @@ public static class OpinionGate
                 state = state with { Answers = answers };
                 var recheck = kept.Recheck is { } again ? await reads.Opinion(again).ConfigureAwait(false) : null;
                 state = state with { Recheck = recheck };
+                // A recheck an account's limit or spend cap ended read nothing, so it is read again, by the next ready holder or at the reset.
                 if ((kept.Recheck is null && kept.RecheckWhy is null && OpinionRechecks.WhyNot(first, answers, facts.Rule!.Rule) is null)
                     || recheck is { State: not (OpinionViews.Failed or OpinionViews.GivenState) }
+                    || recheck is { State: OpinionViews.Failed, Why: OpinionViews.Limited }
                     || recheck is { State: OpinionViews.GivenState, Given: false })
                 {
                     return state with { State = OpinionGateStates.ReadAgain };

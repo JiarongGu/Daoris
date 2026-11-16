@@ -210,7 +210,7 @@ public abstract class ReviewLandingFixture : IDisposable
 
     /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it, or null where it is still owed.</summary>
     protected Task<string?> ClosesAsync(OpinionDue due) =>
-        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None);
+        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None, new SessionTrees(_home));
 
     protected static async Task<string> HeadAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
 

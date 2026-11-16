@@ -54,9 +54,10 @@ public static class OpinionLook
     /// Its run's process: under a named workflow, whether its version still reads at the occasion. One that cannot be
     /// read here closes nothing, since it may read once it can. Null reads the rule live.
     /// </param>
+    /// <param name="trees">The home's trees, whose kept reads (<see cref="WorkAsync"/>) say what the tree holds.</param>
     public static async Task<string?> ClosesAsync(
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
-        IWorkplaceProcess? process = null, SessionTrees? trees = null)
+        SessionTrees trees, IWorkplaceProcess? process = null)
     {
         // In a closure graph its submission is the done it waits on.
         if (!QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
@@ -76,39 +77,40 @@ public static class OpinionLook
             return OpinionDueClosed.Past;
         }
 
-        var unlanded = await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false);
-        if (unlanded == 0) return OpinionDueClosed.Landed;
+        var work = await WorkAsync(due.Tree, trees, ct).ConfigureAwait(false);
+        if (work is { Commits: 0 }) return OpinionDueClosed.Landed;
 
         // An older landing that squashed the tree's work holds it while the tree stands at the commit it squashed, or
         // behind it (the record's own word), though no branch of the person's holds those commits.
-        if (unlanded > 0 && landing?.Squashed is { } squashed
+        if (work is { Commits: > 0 } && landing?.Squashed is { } squashed
             && await TreeRefs.IsAncestorAsync(due.Tree, "HEAD", squashed, ct).ConfigureAwait(false))
         {
             return OpinionDueClosed.Landed;
         }
 
-        return await HeldByPatchAsync(due.Tree, trees, ct).ConfigureAwait(false) ? OpinionDueClosed.Landed : null;
+        return work is { Landed: true } ? OpinionDueClosed.Landed : null;
     }
 
-    /// <summary>Whether the line holds the tree's commits under ids of their own (a replay), as the review reads the tree.</summary>
-    private static async Task<bool> HeldByPatchAsync(string tree, SessionTrees? trees, CancellationToken ct) =>
-        trees is not null && await trees.WorkAsync(tree, ct).ConfigureAwait(false) is { } work && (work.Commits == 0 || work.Landed);
+    /// <summary>
+    /// What the tree holds as the review reads it (<see cref="TreeWork"/>): its commits no branch of the person's holds, and whether the
+    /// line holds them by patch (a replay). Kept while the tree's <c>HEAD</c>, its repository's refs, its files and the home's records stand
+    /// (<see cref="TreeReadMemo"/>), so an opinion owed look after look on a tree that did not move asks git nothing.
+    /// </summary>
+    private static Task<TreeWork?> WorkAsync(string tree, SessionTrees trees, CancellationToken ct) =>
+        TreeReadMemo.Of(trees.Context.Home).Begin(trees).WorkAsync(tree, ct);
 
     /// <summary>
     /// Why an opinion owed on a chat run is closed now, or null where it is still owed: <c>off</c> where
     /// its run's process does not read at its occasion, <c>gone</c> with its tree, and <c>landed</c> once a landing of its line is recorded
     /// after it fell owed or its tree holds nothing the line does not. Never <c>undone</c>: a chat run serves no quest whose done it waits on.
     /// </summary>
-    public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, IWorkplaceProcess process, CancellationToken ct, SessionTrees? trees = null)
+    public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, IWorkplaceProcess process, CancellationToken ct, SessionTrees trees)
     {
         var reads = process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
         if (!reads) return OpinionDueClosed.Off;
         if (TreeFolders.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
         if (landed.Landing(due.Session) is { } landing && MadeSince(landing, due)) return OpinionDueClosed.Landed;
-        return await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0
-               || await HeldByPatchAsync(due.Tree, trees, ct).ConfigureAwait(false)
-            ? OpinionDueClosed.Landed
-            : null;
+        return await WorkAsync(due.Tree, trees, ct).ConfigureAwait(false) is { Commits: 0 } or { Landed: true } ? OpinionDueClosed.Landed : null;
     }
 
     /// <summary>
