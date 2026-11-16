@@ -175,12 +175,13 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
-    public void A_person_s_task_declares_a_tasks_outcome_or_an_approvals_and_no_other_and_the_refusal_is_no_outcome()
+    public void A_person_s_task_declares_a_tasks_outcome_an_approvals_or_a_decisions_own_and_the_refusal_is_no_outcome()
     {
         Assert.Null(NodeDeclarations.Problem(Declared()));
         Assert.Null(NodeDeclarations.Problem(Declared("done")));
         Assert.Null(NodeDeclarations.Problem(Declared("approved")));
-        foreach (var other in new[] { new[] { "merged", "closed" }, ["rejected", "approved"], ["approved", "rejected"], ["rejected"], ["done", "approved"] })
+        Assert.Null(NodeDeclarations.Problem(Declared("merged", "closed")));
+        foreach (var other in new[] { new[] { "merged" }, ["rejected", "approved"], ["approved", "rejected"], ["rejected"], ["done", "approved"] })
         {
             Assert.Equal("outcomes", NodeDeclarations.Problem(Declared(other)));
         }

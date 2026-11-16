@@ -5,15 +5,16 @@ import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 import { isReturnAct, RETURN_ACTS, ReturnChoice, returnWaits } from './return/ReturnChoice';
+import { DecidePress, decideOutcomes } from './task/DecidePress';
 import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
-  'not-task', 'not-waiting', 'not-return',
+  'not-task', 'not-waiting', 'not-return', 'not-outcome',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, 'decide', ...RETURN_ACTS];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -42,6 +43,7 @@ export function NodeWord({ run, step, onWord }: {
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState<NodeAct | null>(null);
+  const [answer, setAnswer] = useState('');
   const [words, setWords] = useState('');
   const node = step.step.id;
 
@@ -56,13 +58,14 @@ export function NodeWord({ run, step, onWord }: {
   }
 
   const acts = (step.acts ?? []).filter((act): act is NodeAct => act !== 'changes' && ACTS.includes(act as NodeAct));
+  const outcomes = decideOutcomes(step.acts ?? []);
   const choosing = acts.some(isReturnAct) && returnWaits(step);
-  if (!onWord || acts.length === 0) return null;
+  if (!onWord || acts.length + outcomes.length === 0) return null;
 
-  const close = () => { setAsking(null); setWords(''); };
+  const close = () => { setAsking(null); setAnswer(''); setWords(''); };
   const send = (act: NodeAct, answered: Answered) => {
     const said = words.trim();
-    onWord({ run, node, act, words: said.length > 0 ? said : null })
+    onWord({ run, node, act, ...(act === 'decide' ? { outcome: answer } : {}), words: said.length > 0 ? said : null })
       .then((answer) => (answer.done ? answered.done() : answered.refused(nodeWordRefused(t, answer))))
       .catch((error: unknown) => answered.refused(sentence(error)));
   };
@@ -72,6 +75,11 @@ export function NodeWord({ run, step, onWord }: {
       {choosing && asking === null && <ReturnChoice run={run} step={step} onWord={onWord} refusal={(answer) => nodeWordRefused(t, answer)} />}
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
+          {outcomes.map((outcome) => (
+            <Button key={outcome} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setAnswer(outcome); setAsking('decide'); }}>
+              {t('workflow.run.node.decide', { outcome })}
+            </Button>
+          ))}
           {acts.filter(isTaskAct).map((act) => (
             <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
               {t(`workflow.run.node.${act}`)}
@@ -106,6 +114,9 @@ export function NodeWord({ run, step, onWord }: {
       )}
       {asking !== null && isTaskAct(asking) && (
         <TaskPress block act={asking} node={node} words={words} onWords={setWords} onConfirm={(answered) => send(asking, answered)} onClose={close} />
+      )}
+      {asking === 'decide' && (
+        <DecidePress outcome={answer} node={node} words={words} onWords={setWords} onConfirm={(answered) => send('decide', answered)} onClose={close} />
       )}
       {asking === 'send' && (
         <InlineConfirm

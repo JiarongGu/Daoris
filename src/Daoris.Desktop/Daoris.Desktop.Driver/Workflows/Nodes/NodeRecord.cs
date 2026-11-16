@@ -250,12 +250,18 @@ public static class NodeWordActs
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
+    /// <summary>
+    /// A decision's answer: a <c>human</c> step declaring its own outcomes reached with the outcome the word names
+    /// (<see cref="NodeWord.Outcome"/>), proposed by the holder its channel names or answered by the owner, and answered again until the run ends.
+    /// </summary>
+    public const string Decide = "decide";
+
     /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>
     public const string KeepYours = ReturnChoices.KeepYours, TakeSession = ReturnChoices.TakeSession, KeepBoth = ReturnChoices.KeepBoth;
 
     public static readonly IReadOnlyList<string> Choices = ReturnChoices.All;
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, Decide, KeepYours, TakeSession, KeepBoth];
 }
 
 /// <summary>
@@ -290,6 +296,15 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 
     /// <summary>The part of the chain a review's changes go to, by its quest (<see cref="ChangesParts"/>); null for the newest part.</summary>
     public string? Part { get; init; }
+
+    /// <summary>The outcome a <see cref="NodeWordActs.Decide"/> answers with, one its decision declares; null on every other act.</summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>
+    /// Who holds the actor a decision's proposal is from, as its channel names it (the release manager, the work's session); null where the
+    /// owner actor's holder says it at their own door, which confirms or overrules a proposal.
+    /// </summary>
+    public string? Holder { get; init; }
 
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;

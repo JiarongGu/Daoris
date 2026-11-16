@@ -74,7 +74,11 @@ public sealed class NodeLifecycleTests
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
         // A record's skip names its source and the attempt, never the person's words.
         (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
-        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By) { Source = NodeSource.Path, Words = "w", Scope = Run },
+        // A path's skip, or a decision's pass, which alone rewords a skip.
+        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By)
+        {
+            Source = row.From == NodeStates.Skipped ? NodeSource.Decision : NodeSource.Path, Words = "w", Scope = Run,
+        },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
         (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
@@ -87,6 +91,8 @@ public sealed class NodeLifecycleTests
         // A failed node is gone on without, by the person, for a request alone.
         NodeStates.Skipped when row is { From: NodeStates.Failed, By: NodeCause.Person } => authority.Kind == NodeKinds.Request ? null : NodeRefusal.NotSkippable,
         NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
+        // A decision is answered again until its run ends; every other kind's reach stands.
+        NodeStates.Reached when row.From == NodeStates.Reached && !authority.Reanswers => NodeRefusal.NotReanswered,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
         NodeStates.Skipped when row.By == NodeCause.Authority => authority.SkipBy is null ? NodeRefusal.NotAuthority : null,

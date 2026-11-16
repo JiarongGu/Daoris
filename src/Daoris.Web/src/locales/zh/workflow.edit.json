@@ -136,6 +136,7 @@
   "workflow.edit.option.isolate.overlap.go": "并行开始，并说明",
   "workflow.edit.option.isolate.overlap.wait": "等那项工作集成之后",
   "workflow.edit.refusal.isolate-entry": "打开工作树是工作流唯一的第一步，并直接连到工作本身。",
+  "workflow.edit.refusal.decision-unwired": "决策要按回答走路线：至少为它的一个结果从它连出一条 when 连线。",
   "workflow.edit.kind.claimed": "工作本身",
   "workflow.edit.kind.handed": "已交接",
   "workflow.edit.kind.push": "推送",

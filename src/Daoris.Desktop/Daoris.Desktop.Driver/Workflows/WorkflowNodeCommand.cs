@@ -6,7 +6,11 @@ namespace Daoris.Driver;
 /// <param name="Node">The node's id in the run's graph.</param>
 /// <param name="Words">Every word after the node's, joined as said; null where none.</param>
 /// <param name="Revision">The review record an <c>accept</c> names (<c>--at</c>), whole or by its first characters; null where none is named.</param>
-public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words, string? Revision = null);
+public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words, string? Revision = null)
+{
+    /// <summary>A <c>decide</c>'s answer, one of its decision's outcomes; null on every other act.</summary>
+    public string? Outcome { get; init; }
+}
 
 /// <summary>
 /// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> and <c>workflow accept &lt;run&gt; &lt;node&gt; [--at &lt;revision&gt;]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
@@ -50,8 +54,22 @@ public static class WorkflowNodeCommand
                 rest.RemoveRange(at, 2);
             }
 
+            // A decision's answer names its outcome before its reason.
+            string? outcome = null;
+            if (act == NodeWordActs.Decide)
+            {
+                if (rest.Count == 0 || rest[0].Trim().Length == 0)
+                {
+                    problem = "`workflow decide` names the outcome it answers with: `workflow decide <run> <node> <outcome> \"…\"`.";
+                    return null;
+                }
+
+                outcome = rest[0].Trim();
+                rest.RemoveAt(0);
+            }
+
             var words = string.Join(' ', rest).Trim();
-            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null, revision);
+            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null, revision) { Outcome = outcome };
         }
 
         problem = "`workflow skip` and `workflow stop` name a run and one of its nodes: `workflow skip <run> <node> \"…\"`.";
@@ -68,7 +86,7 @@ public static class WorkflowNodeCommand
         Func<DateTimeOffset>? clock = null, CancellationToken ct = default, IIntegrationDoor? door = null)
     {
         var variables = environment ?? instance?.Environment ?? Environment.GetEnvironmentVariable;
-        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words), ("revision", ask.Revision));
+        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words), ("revision", ask.Revision), ("outcome", ask.Outcome));
         return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowNode, payload, () => AloneAsync(ask, records, output, variables, clock, door, ct), output, ct);
     }
 
@@ -86,7 +104,8 @@ public static class WorkflowNodeCommand
             return 1;
         }
 
-        var done = await RunNodeWords.WordAsync(records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision)
+        var done = await RunNodeWords.WordAsync(
+                records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision, outcome: ask.Outcome)
             .ConfigureAwait(false);
         output.WriteLine(RunNodeWords.Said(done));
         return done.Done ? 0 : 1;
