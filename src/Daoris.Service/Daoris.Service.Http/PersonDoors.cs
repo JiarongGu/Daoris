@@ -121,8 +121,8 @@ public static class PersonDoors
     /// <summary>The refusal at a door that is the person's alone (§5.2).</summary>
     public static string PersonSentence(string act) =>
         $"Only the person can give {act}, and this call carried no key of theirs. Nothing was kept. In Daoris's window, "
-        + "press it there; from a terminal, run it again and confirm it in the window. An agent asks the actor it reports to "
-        + "instead (`question_ask`, a go-ahead, or its closing note); only an owner-class kind reaches the owner.";
+        + "press it there; from a terminal, run it again and confirm it in the window. An agent asks instead: "
+        + "`question_ask` (marked owner-class where it is the owner's alone), a go-ahead, or its closing note.";
 
     /// <summary>The refusal at the driver's own door (§5.2).</summary>
     public static string DriverSentence(string act) =>

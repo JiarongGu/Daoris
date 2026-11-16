@@ -3,9 +3,9 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>A driven session asks the actor it reports to what it cannot decide itself before it ends its turn on it: the question,
-/// the answers it offers with what it does on each, the one it recommends and by when, which the page draws at the conversation's end
-/// with each answer a press. Not a go-ahead, which <see cref="GoAheadTools"/> holds on the ask.
+/// <summary>A driven session asks what it cannot decide itself before it ends its turn on it: the question, the answers it offers
+/// with what it does on each, the one it recommends and by when, which the page draws at the conversation's end with each answer a
+/// press; an owner-class mark keeps it from every supervisor. Not a go-ahead, which <see cref="GoAheadTools"/> holds on the ask.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box judges.</param>
@@ -15,14 +15,12 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
 {
     [McpServerTool(Name = "question_ask")]
     [Description(
-        "Ask your reporting line what you cannot decide yourself (a choice the ticket leaves open, a conflict you cannot settle) "
-        + "before you end your turn waiting on it with your quest still taken. It goes to the actor you report to: your place's lead "
-        + "(its supervisor), passed up to the machine's head where none holds it; only an owner-class kind (see `owner`) reaches the "
-        + "owner. Whoever holds that actor sees it in this session's conversation, each answer you offer a press with what you will do "
-        + "on it; offer answers you would act on and recommend one where you have a reason. Help nobody on the line answers ends as gave "
-        + "up: report it so, with what you tried, never ask it again. Not for a go-ahead on an act outside this repository: "
-        + "`go_ahead_ask`. One question at a time: asking again replaces it. Then say in your last message that the work waits, commit "
-        + "what you have, and end your turn.")]
+        "Ask what you cannot decide yourself (a choice the ticket leaves open, a conflict you cannot settle) before you end your "
+        + "turn waiting on it with your quest still taken. It shows in this session's conversation, each answer you offer a press with "
+        + "what you will do on it, and a supervisor here may answer it unless you mark it owner-class (see `owner`): a marked question "
+        + "is the owner's alone, and a supervisor's answer to it is refused. Offer answers you would act on and recommend one where you "
+        + "have a reason. Not for a go-ahead on an act outside this repository: `go_ahead_ask`. One question at a time: asking again "
+        + "replaces it. Then say in your last message that the work waits, commit what you have, and end your turn.")]
     public async Task<string> AskAsync(
         [Description("The decision you need, at most 1000 characters: the question, not your report.")]
         string question,

@@ -145,8 +145,8 @@ public sealed class QuestReviewChoiceTests
         {
             HttpStatusCode.Forbidden,
             "Only the person can give a set-up step, and this call carried no key of theirs. Nothing was kept. In Daoris's window, "
-            + "press it there; from a terminal, run it again and confirm it in the window. An agent asks the actor it reports to "
-            + "instead (`question_ask`, a go-ahead, or its closing note); only an owner-class kind reaches the owner."
+            + "press it there; from a terminal, run it again and confirm it in the window. An agent asks instead: "
+            + "`question_ask` (marked owner-class where it is the owner's alone), a go-ahead, or its closing note."
         },
     };
 
