@@ -65,10 +65,6 @@ public sealed record WorkWatchFrame(int Generation, bool Resync, IReadOnlyList<W
 /// <summary>An event's evidence, the plugin's word: each part optional, the message 300 characters at most.</summary>
 public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message)
 {
-    /// <summary>
-    /// Who the outside system credits with the act (<c>outside: &lt;name&gt;</c>, or Daoris), a name of <see cref="WorkWire.NameChars"/> at
-    /// most; kept on the attempt its outcome settles (<see cref="NodeAttempt.By"/>). Null where the plugin names none.
-    /// </summary>
     public string? By { get; init; }
 }
 
@@ -97,7 +93,6 @@ public sealed record WorkOutcome(
     /// <summary>A failure's fix: one of its plugin's declared commands, which the person runs to put it right. Judged against the declaration where the run is read.</summary>
     public string? Needs { get; init; }
 
-    /// <summary>The actor a progress waits on (<see cref="WorkStates.Progress"/>); null on every other state.</summary>
     public string? Actor { get; init; }
 }
 
@@ -109,22 +104,12 @@ public sealed record WorkStepFrame(
     string Step, WorkOutcome Outcome, DateTimeOffset At, string Id,
     string? Repository = null, string? Branch = null, string? Commit = null, string? Invocation = null);
 
-/// <summary>
-/// A <see cref="HookPoints.Perform"/> request's params: one attempt, with its own key (<see cref="IdempotencyKey"/>, the same at every delivery
-/// of this attempt) and the key of the effect it is for (<see cref="EffectKey"/>, the same for every attempt on its target).
-/// </summary>
 public sealed record WorkPerformCall(
     string Unit, string Step, int StepVersion, string Invocation, string IdempotencyKey, string SubjectRevision,
     IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt)
 {
-    /// <summary>
-    /// The act's key (<see cref="EffectKeys"/>): a digest of its run, node, slot and target subject, written on the record before the first
-    /// send, so every attempt on that target, a retry's or a second holder's, names one act, which the plugin makes once. Null on an attempt
-    /// written without one (an older build's, or one an older build wrote over), whose own key is its effect (<see cref="Effect"/>).
-    /// </summary>
     public string? EffectKey { get; init; }
 
-    /// <summary>The effect this attempt is for: its <see cref="EffectKey"/>, else its own key.</summary>
     public string Effect => EffectKey ?? IdempotencyKey;
 
     /// <summary>
@@ -139,13 +124,8 @@ public sealed record WorkPerformCall(
 /// <summary>A <c>work/reconcile</c> request's params: what became of one attempt.</summary>
 public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision)
 {
-    /// <summary>
-    /// A holder's <i>Done outside Daoris</i> link, handed to the plugin's check, which reads the thing it names and settles or refuses it; null
-    /// on every other question. An older kit passes it over and answers what became of the attempt, naming no link.
-    /// </summary>
     public string? Link { get; init; }
 
-    /// <summary>The step's options as its graph writes them, sent with a link alone: the check reads the target the step would act on.</summary>
     public IReadOnlyDictionary<string, string> Options { get; init; } = ImmutableSortedDictionary<string, string>.Empty;
 }
 
@@ -155,7 +135,6 @@ public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = nu
     /// <summary>What the attempt created so far, whatever its state: taken as its receipts.</summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
 
-    /// <summary>The holder's link its plugin's check read (<see cref="WorkReconcileCall.Link"/>); null where the answer judged no link.</summary>
     public string? Link { get; init; }
 }
 

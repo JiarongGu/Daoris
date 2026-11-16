@@ -43,7 +43,6 @@ internal sealed class MemoryKind : ISupervisorKind
 
             foreach (var (subject, act) in subjects.Where(each => loop.Supervisor.RefersDoor(each.Subject)))
             {
-                // Listed where it waits on the line now: the machine's supervisor once the repository's left it.
                 if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered || !covered.Acts.Contains(act)) continue;
                 // A subject whose facts no longer read stopped waiting between the two reads: it is not listed.
                 if (await SupervisorDoorSubjects.FactsAsync(service, subject, ct).ConfigureAwait(false) is not { } facts) continue;

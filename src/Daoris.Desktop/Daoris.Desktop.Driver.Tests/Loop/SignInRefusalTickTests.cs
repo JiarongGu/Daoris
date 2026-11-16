@@ -230,7 +230,6 @@ public sealed class SignInRefusalTickTests : IDisposable
         Assert.Equal(
             [("account-1", "session/new"), ("account-2", "session/new"), ("account-2", "session/prompt")],
             runs.Select(run => (run["account"]!.GetValue<string>(), run["method"]!.GetValue<string>())));
-        // Signed out after a reading that said signed in: a sign-out nobody at Daoris made.
         Assert.Equal(new AccountRead(LoginState.Out, Seen, Seen, LoginState.In), AccountReads.Of(_home, "stub").Accounts["account-1"]);
         Assert.DoesNotContain(look.Considerations, c => c.Verdict == StartVerdict.Exhausted);
     }

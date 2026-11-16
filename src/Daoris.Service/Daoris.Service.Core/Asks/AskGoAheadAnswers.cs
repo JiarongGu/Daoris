@@ -23,7 +23,6 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
                 await standings.FindAsync(id, ct).ConfigureAwait(false));
         }
 
-        // A role's answer names the role and its agent (`role:<role> · <agent>`); the person's names no one.
         var answer = new GoAheadAnswer(approved, said, now) { By = by };
         var (found, decided) = await asks.DecideGoAheadsAsync<(GoAhead? Answered, bool WasWaiting, IReadOnlyList<int> Numbers)>(id, entries =>
         {

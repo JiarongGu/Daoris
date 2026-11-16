@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// <summary>A brainstorm's request as its verb writes it: written once, never changed.</summary>
 /// <param name="Agents">The adapters the request names, in order; empty for the machine's own agent.</param>
 /// <param name="Sources">The repository-relative paths the asker named with <c>--source</c>; null where none (and for a request written before the option).</param>
-/// <param name="Pass"><c>design</c> for a design pass (<see cref="DesignPasses"/>); null for a brainstorm, and for a request written before.</param>
 public sealed record BrainstormRequest(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, IReadOnlyList<string>? Sources = null,
     string? Pass = null);

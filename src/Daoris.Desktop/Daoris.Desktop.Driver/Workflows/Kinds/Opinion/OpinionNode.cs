@@ -20,7 +20,6 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
 
-    /// <summary>The second opinion's own role, the seeded one, where the step names none.</summary>
     public override string Role => StepRoles.Opinion;
 
     public override NodePart Part(NodeDeclaration node) =>

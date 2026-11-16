@@ -70,7 +70,6 @@ public static class AttentionStateSlice
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
             "convert", "gitAsk", "obligation", "step", "secondCheck",
-            // A design pass's closed question (DesignQuestionRows): its brainstorm, its words and its two options.
             "brainstorm", "design", "options",
         ],
         ["waiting"] = ["kind", "workspace"],

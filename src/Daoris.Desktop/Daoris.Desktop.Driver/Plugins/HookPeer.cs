@@ -245,7 +245,6 @@ public sealed class HookPeer(
             + "`{ \"disposition\": \"removed\" | \"already-gone\" | \"retained\" | \"failed\", \"proof\": …, \"message\": … }`.");
     }
 
-    /// <summary>An attempt's stand-down, told as a notification: a plugin that does not know the point answers nothing, as for any.</summary>
     public Task StandDownAsync(WorkStandDownCall call, CancellationToken ct) =>
         SendAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = WorkWire.StandDownMethod, ["params"] = WorkWire.StandDown(call) }, ct);
 

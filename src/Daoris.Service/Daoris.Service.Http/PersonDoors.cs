@@ -318,7 +318,6 @@ public static class PersonDoors
         // Only the person reopens a sealed submission, and only they choose whether its held step goes on.
         new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:reopened") },
         new("POST", "/api/quests/{id}/continue", DoorClass.Person, "the word to go on with a step its source's reopen held") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:rebound") },
-        // A go-ahead's answer: the person's, or a role's granted `goahead.answer` through the driver at low and medium risk.
         RoleAnswerDoors.GoAhead,
         new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session") { Marks = OwnerMark.None("the ask's own words (added), which never mark") },
         new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },

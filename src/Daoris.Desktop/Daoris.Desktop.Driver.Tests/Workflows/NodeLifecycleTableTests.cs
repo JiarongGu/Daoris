@@ -19,7 +19,6 @@ public sealed class NodeLifecycleTableTests
             "unknown>active:daoris", "unknown>reached:authority", "unknown>failed:authority",
             // The person settles what nothing else establishes.
             "unknown>reached:person", "unknown>failed:person",
-            // A step done outside Daoris is reached on its holder's word, with its link, under way or failed.
             "active>reached:person", "failed>reached:person",
             "unknown>ready:daoris", "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
