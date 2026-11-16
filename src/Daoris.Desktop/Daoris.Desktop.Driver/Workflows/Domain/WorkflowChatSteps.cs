@@ -61,9 +61,9 @@ internal static class WorkflowChatSteps
         if (landed is not null) return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Landed, Session = landed.Session, At = landed.At };
         var live = Live(newest);
         if (live && !chat.Between) return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Agent, At = newest.Created };
-        if (chat.Beyond > 0) return on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Land, Count = chat.Beyond, At = newest.Updated };
+        if (chat.Beyond > 0) return on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Detail = WorkflowRunDetails.Land, Count = chat.Beyond, At = newest.Updated };
         return live
-            ? on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Talk, At = newest.Updated }
+            ? on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Design, Detail = WorkflowRunDetails.Talk, At = newest.Updated }
             : on with { State = WorkflowRunStates.Stopped, Detail = WorkflowRunDetails.Stopped, At = newest.Updated };
     }
 
@@ -82,7 +82,7 @@ internal static class WorkflowChatSteps
         }
 
         if (!candidate || facts.Sessions.LastOrDefault() is not { } newest) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
-        return new WorkflowRunStep(cell, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept) { Session = newest.Id, At = newest.Updated };
+        return new WorkflowRunStep(cell, WorkflowRunStates.Waiting, WorkflowRunDetails.Accept) { Role = StepRoles.Acceptor, Session = newest.Id, At = newest.Updated };
     }
 
     /// <summary>
@@ -105,9 +105,9 @@ internal static class WorkflowChatSteps
         if (!candidate) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
         if (facts.Opinion is { State: OpinionGateStates.NotAsked, Asked: false } waits)
         {
-            return new WorkflowRunStep(cell, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtAccept)
+            return new WorkflowRunStep(cell, WorkflowRunStates.Waiting, WorkflowRunDetails.ChatAtAccept)
             {
-                Session = facts.Sessions.LastOrDefault()?.Id, Agent = waits.Rule?.Rule.Reviewers.FirstOrDefault(),
+                Role = StepRoles.Acceptor, Session = facts.Sessions.LastOrDefault()?.Id, Agent = waits.Rule?.Rule.Reviewers.FirstOrDefault(),
             };
         }
 

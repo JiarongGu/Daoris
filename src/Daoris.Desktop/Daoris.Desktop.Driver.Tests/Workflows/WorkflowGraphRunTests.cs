@@ -257,7 +257,7 @@ public sealed class WorkflowGraphRunTests
             Status(NodeKinds.Claimed, NodeStates.Reached, "quest:q1", "q1-moment"),
             Status("go", NodeStates.Active, Self)));
 
-        Assert.Equal((WorkflowRunStates.WaitingOnYou, "Waits for your go-ahead: deploy the release"), (Step(waiting, "go").State, WorkflowRunWords.Said(Step(waiting, "go"))));
+        Assert.Equal((WorkflowRunStates.Waiting, "Waiting on `approver`: you. Waits for your go-ahead: deploy the release"), (Step(waiting, "go").State, WorkflowRunWords.Said(Step(waiting, "go"))));
         Assert.Null(Step(waiting, "go").On);
         Assert.Equal("go", waiting.At);
 
@@ -292,7 +292,7 @@ public sealed class WorkflowGraphRunTests
 
         Assert.Equal(["claimed", "look", "handed"], run.Steps.Select(step => step.Step.Id));
         var look = Step(run, "look");
-        Assert.Equal((ReviewLevels.Chain, (string?)null, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.NotShown), (look.Added, look.Node, look.State, look.Detail));
+        Assert.Equal((ReviewLevels.Chain, (string?)null, WorkflowRunStates.Waiting, WorkflowRunDetails.NotShown), (look.Added, look.Node, look.State, look.Detail));
         Assert.Equal("look", run.At);
 
         var own = Derive(facts, GatesAndADeploy, record);
@@ -452,7 +452,7 @@ public sealed class WorkflowGraphRunTests
 
         var held = Derive(open with { Requests = [Asked("q9", "declined"), Asked("q8", "done")] }, ClaimedRequestsHanded, Record(statuses));
         var hold = Step(held, "requests");
-        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active, WorkRequests.DeclinedCode), (hold.State, hold.Detail, hold.Code));
+        Assert.Equal((WorkflowRunStates.Waiting, WorkflowGraphDetails.Active, WorkRequests.DeclinedCode), (hold.State, hold.Detail, hold.Code));
         Assert.Contains(NodeWordActs.Skip, hold.Acts!);
         Assert.Equal("requests", held.Graph!.At);
         Assert.Contains("A quest the work's sessions published was declined: it waits on you", WorkflowRunWords.Say([held], null));
@@ -476,7 +476,7 @@ public sealed class WorkflowGraphRunTests
         var requests = Graph(ClaimedRequestsHanded).Nodes.Single(node => node.Kind == NodeKinds.WorkRequests);
         var claimed = Graph(ClaimedRequestsHanded).Nodes.Single(node => node.Kind == NodeKinds.Claimed);
 
-        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(requests, NodeStates.Active, WorkRequests.DeclinedCode));
+        Assert.Equal((WorkflowRunStates.Waiting, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(requests, NodeStates.Active, WorkRequests.DeclinedCode));
         Assert.Equal((WorkflowRunStates.Working, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(requests, NodeStates.Active));
         Assert.Equal((WorkflowRunStates.Working, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(claimed, NodeStates.Active, WorkRequests.DeclinedCode));
         Assert.Equal((WorkflowRunStates.Done, WorkflowGraphDetails.Reached), WorkflowGraphRuns.StateOf(requests, NodeStates.Reached, WorkRequests.DeclinedCode));

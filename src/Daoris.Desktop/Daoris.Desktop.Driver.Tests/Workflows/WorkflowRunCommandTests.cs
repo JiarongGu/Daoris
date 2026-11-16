@@ -224,7 +224,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     {
         Assert.Equal(
             "Waits for your go-ahead #3: write the configuration to dev",
-            WorkflowRunWords.Said(Step(WorkflowKinds.Work, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.GoAhead) with
+            WorkflowRunWords.Said(Step(WorkflowKinds.Work, WorkflowRunStates.Waiting, WorkflowRunDetails.GoAhead) with
             {
                 GoAhead = 3, Words = "write the configuration to dev",
             }));
@@ -233,13 +233,13 @@ public sealed class WorkflowRunCommandTests : IDisposable
             WorkflowRunWords.Said(Step(WorkflowKinds.Work, WorkflowRunStates.Done, WorkflowRunDetails.Finished) with { Count = 1 }));
         Assert.Equal(
             "2 findings are disputed: musts the working session did not fix and no recheck withdrew.",
-            WorkflowRunWords.Said(Step(WorkflowKinds.Opinion, WorkflowRunStates.WaitingOnYou, OpinionGateStates.Disputed) with { Count = 2 }));
+            WorkflowRunWords.Said(Step(WorkflowKinds.Opinion, WorkflowRunStates.Waiting, OpinionGateStates.Disputed) with { Count = 2 }));
         Assert.Equal(
             "No second opinion could be had: every listed reviewer of another maker is cooling. The rule requires one, so the work waits for you.",
-            WorkflowRunWords.Said(Step(WorkflowKinds.Opinion, WorkflowRunStates.WaitingOnYou, OpinionGateStates.Unavailable) with { Code = "cooling" }));
+            WorkflowRunWords.Said(Step(WorkflowKinds.Opinion, WorkflowRunStates.Waiting, OpinionGateStates.Unavailable) with { Code = "cooling" }));
         Assert.Equal(
             "Waits for your look in `local`: shown at `01234567`.",
-            WorkflowRunWords.Said(Step(WorkflowKinds.Look, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Shown) with
+            WorkflowRunWords.Said(Step(WorkflowKinds.Look, WorkflowRunStates.Waiting, WorkflowRunDetails.Shown) with
             {
                 Environment = "local", Commit = Commit,
             }));
@@ -248,7 +248,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
             WorkflowRunWords.Said(Step(WorkflowKinds.Landing, WorkflowRunStates.CannotStart, WorkflowRunDetails.Refused) with { Code = "uncommitted" }));
         Assert.Equal(
             "Waits for you to merge it on the platform; `example.pull-request` last answered no state for it.",
-            WorkflowRunWords.Said(Step(WorkflowKinds.PullRequest, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Merging) with
+            WorkflowRunWords.Said(Step(WorkflowKinds.PullRequest, WorkflowRunStates.Waiting, WorkflowRunDetails.Merging) with
             {
                 Code = PullRequestStates.Unknown, Plugin = "example.pull-request",
             }));
@@ -262,7 +262,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     public void An_opinion_waiting_on_you_names_its_terminal_presses()
     {
         var current = new CurrentWorkflow([], [], "");
-        var opinion = Step(WorkflowKinds.Opinion, WorkflowRunStates.WaitingOnYou, OpinionGateStates.CommitsSince) with { Session = "s1", Count = 2 };
+        var opinion = Step(WorkflowKinds.Opinion, WorkflowRunStates.Waiting, OpinionGateStates.CommitsSince) with { Session = "s1", Count = 2 };
         var run = new WorkflowRun("engine", "aurora", current, ["q1"], [opinion]);
 
         var said = WorkflowRunWords.Say([run], session: null);

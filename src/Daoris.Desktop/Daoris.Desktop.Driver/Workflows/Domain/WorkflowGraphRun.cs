@@ -210,10 +210,13 @@ public static class WorkflowGraphRuns
             var needs = facts.Needs.GetValueOrDefault(node.Id);
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
+            // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
+            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status) : null;
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Role = StepRoles.Of(node),
+                Role = waits?.Role ?? StepRoles.Of(node),
+                Holder = waits?.Holder,
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
@@ -345,10 +348,10 @@ public static class WorkflowGraphRuns
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
         NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
-            (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
+            (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         // A decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>
-            (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
+            (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         NodeStates.Active => (WorkflowRunStates.Working, WorkflowGraphDetails.Active),
         NodeStates.Reached => (WorkflowRunStates.Done, WorkflowGraphDetails.Reached),
         NodeStates.Skipped => (WorkflowRunStates.Skipped, WorkflowGraphDetails.Skipped),
