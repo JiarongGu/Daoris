@@ -1,4 +1,4 @@
-// A release step's target as the window chooses it (RELEASEVALUES1): what the Azure DevOps plugin's `discover-releases` found, read
+// A release step's target as the window chooses it:what the Azure DevOps plugin's `discover-releases` found, read
 // defensively, and the values the one door (`SET_WORKFLOW_VALUES`, twin `daoris workflow values`) sets on each release step of a workflow.
 
 /** The actions a release step takes on its target, the plugin's own (`target.mjs`' ACTIONS). */
@@ -52,7 +52,7 @@ export const isReleaseKind = (kind: string | null | undefined): boolean => /^[^/
 /** The ids of a workflow's release steps, in their order: each takes the same target. */
 export const releaseNodesOf = (nodes: { id: string; kind: string }[]): string[] => nodes.filter((node) => isReleaseKind(node.kind)).map((node) => node.id);
 
-/** The plugin's approval command (APPROVEHERE1): the approver's own press, which no agent is handed. */
+/** The plugin's approval command:the approver's own press, which no agent is handed. */
 export const APPROVE_COMMAND = 'approve-release';
 
 /**

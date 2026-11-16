@@ -513,7 +513,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
             <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
           )}
         {item.step?.url && (
-          <p className="m-0 mt-0.5 text-small"><ExternalLink href={item.step.url}>{t('work.attention.actorOpen')}</ExternalLink></p>
+          <p className="m-0 mt-0.5 text-small"><ExternalLink href={item.step.url}>{t('work.attention.roleOpen')}</ExternalLink></p>
         )}
         {/* A plugin's wait with no page: its holder's *Done outside Daoris…*, said on the attempt out now with its link. */}
         {item.step?.held && acts.doneOutside && (

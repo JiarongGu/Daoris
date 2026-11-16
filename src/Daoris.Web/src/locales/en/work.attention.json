@@ -15,7 +15,7 @@
   "work.attention.requestAskedDeclinedWhy": "Quest #{{quest}} to `{{to}}` was declined, so the run holds here until you ask again or go on without it.",
   "work.attention.task": "waiting for your task",
   "work.attention.stepWhy": "{{node}}: waiting on `{{role}}`: {{holder}}. {{words}}",
-  "work.attention.actorOpen": "Open where you act",
+  "work.attention.roleOpen": "Open where you act",
   "work.attention.go-ahead": "needs your go-ahead",
   "work.attention.departure": "awaits your yes",
   "work.attention.review": "to review",

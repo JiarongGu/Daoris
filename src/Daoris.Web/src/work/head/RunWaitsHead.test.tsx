@@ -5,7 +5,7 @@ import '../../locales/i18n';
 import { RunWaitsHead } from './RunWaitsHead';
 import type { StepWaitRow } from '../attention/attentionPushed';
 
-// The session page's head (GAPWAITS1): each step of its run waiting on a role the person holds reads "<node>: waiting on <role>: you",
+// The session page's head:each step of its run waiting on a role the person holds reads "<node>: waiting on <role>: you",
 // with the step's own presses beside it, the same presses *What needs you*'s row offers; a plugin's wait with no page offers
 // *Done outside Daoris*. A notification about the step opens this session, so it opens at the step's line and press.
 

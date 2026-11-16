@@ -66,7 +66,7 @@ describe("a person's task on What needs you", () => {
     const item = await screen.findByRole('listitem', { name: '#q7' });
     expect(item).toHaveTextContent('sign: waiting on approver: you. Approve Production in Azure DevOps.');
     expect(within(item).getByRole('link')).toHaveAttribute('href', 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90');
-    expect(within(item).getByRole('button', { name: 'Pass over…' })).toBeTruthy();
+    expect(within(item).getByRole('button', { name: 'Not needed this run…' })).toBeTruthy();
   });
 
   it.each([['en', /waiting 3 ?h/i], ['zh', /已等待.*3/]])('says since when it has waited, in %s', async (language, said) => {

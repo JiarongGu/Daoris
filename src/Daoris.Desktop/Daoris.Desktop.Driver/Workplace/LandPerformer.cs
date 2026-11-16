@@ -182,6 +182,9 @@ public sealed class LandPerformer(
             return (entry.Last?.Code != LandingCode.Held ? Tried(entry, LandingCode.Held, tip: null, status: null) : Quiet(run, LandWaits.Held), null);
         }
 
+        // Refused for a cause that passes, it waits while the repository is still held, and its wait climbs the line past its deadline.
+        if (entry.Last is { Code: LandingCode.Busy } && LandRetries.StillHeld(home, entry.Tree) is not null) return (Waited(entry, run), null);
+
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false), run.Tip))
         {
@@ -234,6 +237,8 @@ public sealed class LandPerformer(
         var entry = choice.Entry;
         using var look = trees.OneLook();
         using var facts = GitFacts.Within();
+        // Due while it is judged and made, so the look's tidy does not start in its repository meanwhile.
+        using var due = LandRetries.Lands(home, entry.Repository);
 
         // The content proof, read at that moment: work no branch of the person's holds. A graph with a `land` judges it as its `content.holds` step.
         var unlanded = choice.Gate?.Process?.JudgesHolds == false ? null : await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false);
@@ -393,7 +398,8 @@ public sealed class LandPerformer(
         };
 
         var line = Words(code, landed);
-        if (LandTryNotes.Says(code))
+        var said = Retried(entry, code);
+        if (LandTryNotes.Says(code) && said)
         {
             var note = LandTryNotes.Of(code, landed, uncommitted, named, rebaseTold, carry);
             events.Keep(entry.Session, note, say: null);
@@ -404,6 +410,27 @@ public sealed class LandPerformer(
         log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted, _start?.Run));
         if (code is LandingCode.Landed or LandingCode.Advanced) Told?.Invoke(new WorkEvent(WorkEventKinds.WorkLanded, Now()) { Session = entry.Session, Quest = entry.Quest, Code = code });
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
+    }
+
+    /// <summary>
+    /// A try's code kept on its run's wait (<see cref="LandRetries"/>): a cause that passes begins it or goes on with it, said only where it
+    /// began; anything else ends it. False where nothing more is said.
+    /// </summary>
+    private bool Retried(LandEntry entry, string code)
+    {
+        if (_start is not { } start) return true;
+        if (code == LandingCode.Busy) return LandRetries.Refused(home, entry.Repository, start.Unit, start.Tip, Now());
+        LandRetries.End(start.Unit, start.Tip, LandingCode.Closes(code));
+        return true;
+    }
+
+    /// <summary>A wait whose cause still holds the repository: read again, and past its deadline climbed once, which the conversation is told.</summary>
+    private string? Waited(LandEntry entry, LandStart run)
+    {
+        var (wait, climbed) = LandRetries.Looked(home, entry.Repository, run.Unit, run.Tip, Now(),
+            () => LandRetries.Climb(home, entry.Repository, entry.Workspace, DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk));
+        if (climbed) events.Keep(entry.Session, LandTryNotes.Climbed(wait.Line ?? ""), say: null);
+        return Quiet(run, wait.Code == LandRetries.Climbed ? LandWaits.Climbed : LandWaits.Busy);
     }
 
     private void Ended(TreeLanding end)

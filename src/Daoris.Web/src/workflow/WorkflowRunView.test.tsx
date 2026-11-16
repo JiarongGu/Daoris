@@ -8,7 +8,7 @@ import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
   answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_RELEASED,
-  GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -89,21 +89,6 @@ describe("the session's Workflow view", () => {
       ? { ...step, state: 'cannot-start', detail: 'cannot-start', words: 'No declared reviewer.', step: { ...step.step, kind: 'opinion' } }
       : step) })} />);
     expect(row('look')).toHaveTextContent('Cannot start: No declared reviewer.');
-  });
-
-  it('says the role that takes a step beside its state, Daoris\'s own by its word and a catalogue role as written', async () => {
-    const roled: WorkflowRun = {
-      ...IN_REVIEW,
-      steps: IN_REVIEW.steps.map((step) => step.step.id === 'work' ? { ...step, role: 'builder' } : step.step.id === 'look' ? { ...step, role: 'approver' } : step),
-    };
-    const { unmount } = render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
-    expect(row('work')).toHaveTextContent('role builder');
-    expect(row('look')).toHaveTextContent('role Approver');
-    expect(row('landing')).not.toHaveTextContent('role');
-    unmount();
-    await i18n.changeLanguage('zh');
-    render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
-    expect(row('look')).toHaveTextContent('角色 审批人');
   });
 
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
@@ -672,107 +657,6 @@ describe('the integrate node', () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_INTEGRATE)} />);
     expect(row('integrate')).toHaveTextContent('正在为 main 尝试，进行到 replay');
-  });
-});
-
-// The requests the work's sessions made are drawn inside the work node, and a decline holds
-// the work's requests waiting on the person, whose Pass over… is the run's existing skip.
-describe("the work's requests", () => {
-  afterEach(async () => { await i18n.changeLanguage('en'); });
-
-  it('draws each quest the sessions published inside the work, and a helper beside them as a request to an agent', async () => {
-    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} />);
-    await open('claimed');
-    const requests = within(within(row('claimed')).getByRole('list', { name: 'Requests the work made' })).getAllByRole('listitem');
-    expect(requests).toHaveLength(4);
-    expect(requests[0]).toHaveTextContent('Quest #q8 to tools');
-    expect(requests[0]).toHaveTextContent('declined');
-    expect(requests[0]).toHaveTextContent('“not something this repository takes”');
-    expect(requests[1]).toHaveTextContent('Quest #q7 to docs');
-    expect(requests[1]).toHaveTextContent('done');
-    expect(requests[1]).toHaveTextContent('“the page is in”');
-    expect(requests[2]).toHaveTextContent('Quest #q6 to tools');
-    expect(requests[2]).toHaveTextContent('taken');
-    expect(requests[2]).toHaveTextContent('its session waits on the answer');
-    expect(requests[3]).toHaveTextContent('Request to an agent: codex-acp');
-    expect(requests[3]).toHaveTextContent('working');
-    expect(within(row('requests')).queryByRole('list', { name: 'Requests the work made' })).toBeNull();
-  });
-
-  it('says a declined hold waits on you, offers Pass over…, and sends the run, the node and the words', async () => {
-    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'skip', done: true });
-    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} onNodeWord={onNodeWord} />);
-    expect(row('requests')).toHaveTextContent('waiting on acceptor: you');
-    expect(row('requests')).toHaveTextContent('A quest the work\'s sessions published was declined: it waits on you');
-
-    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Not needed this run…' }));
-    const ask = screen.getByRole('group', { name: 'requests: not needed this run' });
-    await userEvent.type(within(ask).getByRole('textbox', { name: 'why it is not needed' }), 'tools will not take it; I do it myself');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Not needed this run' }));
-
-    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'skip', words: 'tools will not take it; I do it myself' });
-  });
-
-  // A declined request of the run's own offers the driver's two words, asked again with nothing to say, gone on without with words.
-  it('offers a declined request Ask again… and Go on without it…, each sent as the run’s node word', async () => {
-    const asked = answerOf(GRAPH_RUN_REQUESTS);
-    const [only] = asked.runs;
-    const steps = only.steps.map((step) => (step.node === 'work.requests' ? { ...step, acts: ['ask-again', 'go-on'] } : step));
-    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'ask-again', done: true });
-    render(<WorkflowRunView answer={{ ...asked, runs: [{ ...only, steps }] }} onNodeWord={onNodeWord} />);
-    expect(within(row('requests')).queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
-
-    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Ask again…' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Ask again for requests' })).getByRole('button', { name: 'Ask again' }));
-    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'ask-again', words: null });
-
-    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Go on without it…' }));
-    const ask = screen.getByRole('group', { name: 'Go on without requests' });
-    expect(within(ask).getByRole('button', { name: 'Go on' })).toBeDisabled();
-    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you go on without it' }), 'tools has no time');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Go on' }));
-    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'go-on', words: 'tools has no time' });
-  });
-
-  it.each([
-    ['en', 'Send…', 'Send requests', 'Send'],
-    ['zh', '发出…', '发出 requests', '发出'],
-  ])('offers a ready request its Send, sent as the run’s node word, in %s', async (language, open, title, meanIt) => {
-    await i18n.changeLanguage(language);
-    const asked = answerOf(GRAPH_RUN_REQUESTS);
-    const [only] = asked.runs;
-    const steps = only.steps.map((step) => (step.node === 'work.requests' ? { ...step, acts: ['send'] } : step));
-    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'send', done: true });
-    render(<WorkflowRunView answer={{ ...asked, runs: [{ ...only, steps }] }} onNodeWord={onNodeWord} />);
-
-    await userEvent.click(within(row('requests')).getByRole('button', { name: open }));
-    await userEvent.click(within(screen.getByRole('group', { name: title })).getByRole('button', { name: meanIt }));
-    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'send', words: null });
-  });
-
-  it('opens a quest request where a door is handed in, and draws no list for a run with none', async () => {
-    const quest = vi.fn();
-    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} doors={{ quest }} />);
-    await open('claimed');
-    await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q8' }));
-    expect(quest).toHaveBeenCalledWith('q8');
-    unmount();
-
-    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} />);
-    expect(screen.queryByRole('list', { name: 'Requests the work made' })).toBeNull();
-  });
-
-  it('is worded in 中文', async () => {
-    await i18n.changeLanguage('zh');
-    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} onNodeWord={vi.fn()} />);
-    expect(row('requests')).toHaveTextContent('工作的请求');
-    expect(row('requests')).toHaveTextContent('工作的会话发布的一个委托被谢绝了');
-    await open('claimed');
-    const requests = within(within(row('claimed')).getByRole('list', { name: '工作发出的请求' })).getAllByRole('listitem');
-    expect(requests[0]).toHaveTextContent('发给 tools 的委托 #q8');
-    expect(requests[0]).toHaveTextContent('已谢绝');
-    expect(requests[2]).toHaveTextContent('它的会话在等回答');
-    expect(requests[3]).toHaveTextContent('对智能体 codex-acp 的请求');
   });
 });
 

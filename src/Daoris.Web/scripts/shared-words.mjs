@@ -1,4 +1,4 @@
-// The census of window words shared by two things, beside the names check (WORDCLASH1, D309 point 4). The glossary holds one name per
+// The census of window words shared by two things, beside the names check. The glossary holds one name per
 // concept in each language; this holds that no other register of names the window shows gives one of its words to a second thing: the
 // driver's seeded roles (`Defaults/roles.json`, by id and English name) and the reporting line's levels (the string constants of the first
 // class in `Roles/ReportingLine.cs`, by code, which a wait's line names). Two things share a word where both say it and their Chinese

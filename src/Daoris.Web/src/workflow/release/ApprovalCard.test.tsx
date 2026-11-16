@@ -4,7 +4,7 @@ import '../../locales/i18n';
 import { ApprovalCard } from './ApprovalCard';
 import { approvalOf, canApproveHere } from './releaseTarget';
 
-// The approval card (APPROVEHERE1, D304 point 6): where the plugin can approve, *Approve* / *Reject* on the card under the holder's own
+// The approval card:where the plugin can approve, *Approve* / *Reject* on the card under the holder's own
 // sign-in, the card naming the target, the build and its source branch; otherwise *Open* in Daoris's browser. No agent is ever handed the
 // press: the plugin's command that makes it is no agent's tool.
 

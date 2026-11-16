@@ -10,7 +10,8 @@ internal static class InventoryWords
     /// and the service answer again. Another repository, a link, a hidden change, a refusal or uncommitted work stays until someone
     /// settles it, so nothing promises that the next try takes it.
     /// </summary>
-    internal static bool Frees(string why) => why is SweepKind.InUse or TidyKept.Busy or TidyKept.Starting or TidyKept.Sessions or TidyKept.Unread;
+    internal static bool Frees(string why) =>
+        why is SweepKind.InUse or TidyKept.Busy or TidyKept.Starting or TidyKept.Sessions or TidyKept.Unread or TidyKept.Landing;
 
     /// <summary>A guard's code, as a clause after "since": the look's tidy's codes, and the press's two kinds that keep a tree.</summary>
     internal static string KeptSaid(string why) => why switch
@@ -25,6 +26,7 @@ internal static class InventoryWords
         TidyKept.Unread => "git could not read one of its guards",
         TidyKept.Starting => "a session was starting in one of the repository's trees",
         TidyKept.Sessions => "the service did not say which sessions run",
+        TidyKept.Landing => "a landing was due in the repository",
         _ => $"the press's judgement keeps it ({why})",
     };
 

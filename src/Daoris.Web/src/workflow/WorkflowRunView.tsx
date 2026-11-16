@@ -14,7 +14,7 @@ import {
 } from './run';
 import { outcomeSaid } from './graphFlow';
 import { bindingProblemSaid } from './place/effective';
-import { whySaid } from './routeSaid';
+import { whySaid } from './place/routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
 import { CheckHeld } from './wait/CheckHeld';

@@ -3,7 +3,7 @@ import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
 import { accountAct, accountState, readLine, stateWhen, stateWord } from './agents';
 
-/** An account's sign-in state on its page, from the reading the start's walk ranks by (AUTHPROBE1). */
+/** An account's sign-in state on its page, from the reading the start's walk ranks by. */
 describe('an account’s sign-in state', () => {
   const now = new Date('2026-11-16T10:00:00Z');
   const base = { login: 'unknown' as const, read: '2026-11-16T09:57:00Z', key: null };

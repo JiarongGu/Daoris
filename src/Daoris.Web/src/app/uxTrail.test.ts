@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { recordTrail, type TrailEntry } from './uxTrail';
 
-// The UX trail's recorder (UXTRAIL1): the pages the person opens and the presses they make, each press named by its button's words and
+// The UX trail's recorder:the pages the person opens and the presses they make, each press named by its button's words and
 // the What needs you row it is in; never a field's value or typing.
 
 describe('recordTrail', () => {

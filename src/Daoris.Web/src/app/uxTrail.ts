@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { call } from '../bridge/call';
 import { useAttention } from '../bridge/attention';
 
-// The person's own UX trail (UXTRAIL1): opt-in, off by default, kept on the desktop only (`UX_TRAIL`, the driver's `UxTrail`). It records
+// The person's own UX trail:opt-in, off by default, kept on the desktop only (`UX_TRAIL`, the driver's `UxTrail`). It records
 // the pages the person opens and the presses they make, a press named by its button's words and the *What needs you* row it is in, and
 // when a row began waiting on them; never typing or a field's value. `tools/ux-trail.mjs` reads a trail: the time from a wait to its press.
 

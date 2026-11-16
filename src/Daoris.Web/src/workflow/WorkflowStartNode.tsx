@@ -5,7 +5,7 @@ import { LifeFlow } from '../design/canvas/LifeFlow';
 import { Button, Inline } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowRoute, WorkflowStart } from './current';
-import { type RouteScope, whySaid } from './routeSaid';
+import { type RouteScope, whySaid } from './place/routeSaid';
 
 /** What *Verify…* asks of a repository: a branch, or a commit, which `daoris gate verify` takes as `--branch` and `--commit`. */
 export type VerifyAsk = { branch: string } | { commit: string };

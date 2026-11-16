@@ -684,17 +684,17 @@ describe('work to review, worded', () => {
   });
 });
 
-/** A run held at a request the receiver declined, waiting on the person's *Pass over…*. */
+/** A run held at a request the receiver declined. */
 describe('a run held at a declined request, worded', () => {
   const pushed = row('request-declined', 'r7', '2026-10-30T11:00:00Z', {
     where: 'engine', declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
   });
 
-  it('says the work, its repository and the quest declined, offers Pass over… alone, and opens the run by its work', () => {
+  it('says the work, its repository and the quest declined, offers the skip alone, and opens the run by its work', () => {
     const item = words(pushed, { quests: [quest({ status: 'Taken' })] });
     expect(item).toMatchObject({
       id: 'r7', kind: 'request-declined', title: 'Expose a streaming budget on the chunk API', where: 'engine',
-      detail: 'Quest #q9 to `web` was declined, so the work holds here until you pass it over.',
+      detail: 'Quest #q9 to `web` was declined, so the work holds here until you say it is not needed this run.',
       declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
     });
     expect(attentionActs(item)).toEqual(['pass-over']);
@@ -713,7 +713,7 @@ describe('a run held at a declined request, worded', () => {
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
-      expect(words(pushed).detail).toBe('发往 `web` 的委托 #q9 被谢绝了，工作停在这里，直到你跳过它。');
+      expect(words(pushed).detail).toBe('发往 `web` 的委托 #q9 被谢绝了，工作停在这里，直到你说明本次不需要它。');
     } finally {
       await i18n.changeLanguage('en');
     }

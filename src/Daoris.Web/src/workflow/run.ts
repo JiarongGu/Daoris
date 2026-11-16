@@ -35,7 +35,7 @@ export interface RunStep {
   /** Who acts, as the record names it: a session's adapter, or a reviewer as the person reads it. */
   agent?: string | null;
   at?: string | null;
-  /** On a graph run, the role that takes the step: the one it names, else its kind's (`workflow.role.*`); none elsewhere. */
+  /** The role that takes the step: on a graph run the one it names, else its kind's (`workflow.role.*`); where it waits, the role it waits on. None elsewhere. */
   role?: string | null;
   environment?: string | null;
   commit?: string | null;
@@ -83,8 +83,6 @@ export interface RunStep {
    */
   integration?: { state: string; line: string; step?: string | null } | null;
   wait?: RunWait | null;
-  /** The role the step takes, or where it waits, the role it waits on (`WorkflowRunStep.Role`). */
-  role?: string | null;
   /** Where the step waits, the holder of the role it waits on, whoever it is: *waiting on `<role>`: `<holder>`*. None where it does not wait. */
   holder?: RunHolder | null;
 }

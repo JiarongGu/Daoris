@@ -3,7 +3,7 @@ import { lineLevels, readRegisters, shared, things } from '../../scripts/shared-
 import { load } from '../../scripts/names-check.mjs';
 
 /**
- * The census of window words shared by two things (WORDCLASH1): the glossary's terms, the driver's seeded roles and the reporting
+ * The census of window words shared by two things:the glossary's terms, the driver's seeded roles and the reporting
  * line's levels give no word to two things, so a level is never named by a word a seeded role or a term already says.
  */
 describe('the window words two things share', () => {

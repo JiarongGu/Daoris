@@ -4,7 +4,7 @@ import { Button, Inline } from '../../design/ui';
 import { sentence } from '../../locales/format';
 
 /**
- * **An approval's card** (APPROVEHERE1, D304 point 6): the wait's own words, which name the release, its definition, the build and its
+ * **An approval's card**:the wait's own words, which name the release, its definition, the build and its
  * source branch, then the channel the plugin allows. Where it can approve, *Approve* and *Reject* with an optional comment, made under
  * the holder's own sign-in by the plugin's approval command, which no agent is handed; otherwise *Open*, the system's page in Daoris's
  * browser, where the holder approves and the step settles on the approval observed.

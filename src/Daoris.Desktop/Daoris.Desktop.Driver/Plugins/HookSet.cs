@@ -505,8 +505,8 @@ public sealed class HookSet(
     }
 
     /// <summary>
-    /// An attempt's stand-down told to the plugin's current process, fenced as a performance is; a process not up, or one that cannot be
-    /// asked, is told nothing, since a stood-down attempt's outcome is a replay whatever it does.
+    /// An attempt's stand-down told to the plugin's current process, fenced as a performance is; one not up or not askable is told
+    /// nothing, since a stood-down attempt's outcome is a replay anyway.
     /// </summary>
     public void StandDown(string plugin, WorkStandDownCall call)
     {

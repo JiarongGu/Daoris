@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { summarise } from './ux-trail.mjs';
 
-// The UX trail's terminal reader (UXTRAIL1): from a trail's entries, the time from each step waiting on the person to their press in
+// The UX trail's terminal reader:from a trail's entries, the time from each step waiting on the person to their press in
 // its row, with the pages opened between, and the waits never pressed.
 
 const at = (minute, second = 0) => `2026-11-16T09:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}Z`;

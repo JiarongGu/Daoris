@@ -5,7 +5,7 @@ import { Button, Inline, SettingRow } from '../../design/ui';
 import { shellWord } from '../../lib/shellWord';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowStart } from '../../workflow/current';
-import { whySaid } from '../../workflow/routeSaid';
+import { whySaid } from '../../workflow/place/routeSaid';
 import type { IntegrationRequest } from './IntegrationDeclaration';
 
 /** What the landed route names, for its Setup and its press: a verification workflow's id, `current` for none, or the workspace's again. */

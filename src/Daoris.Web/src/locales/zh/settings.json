@@ -32,7 +32,7 @@
   "settings.notify.press": "终端请你确认的请求无论开关如何都会提醒：它的终端在等你的回答。",
   "settings.uxTrail.label": "记录使用轨迹",
   "settings.uxTrail.body": "这个窗口记录你打开的页面和按下的按钮，以及等你的一步过了多久才被按下，只保存在这台电脑上。从不记录你输入的内容或字段的值。默认关闭。",
-  "settings.uxTrail.state.on": "已开启：保存在主目录的 ux-trail 文件夹，每天一个文件。",
+  "settings.uxTrail.state.on": "已开启：保存在主文件夹下的 ux-trail 文件夹，每天一个文件。",
   "settings.uxTrail.state.off": "已关闭：不保存任何内容。",
   "settings.notify.on": "本机会提醒等你处理和已结束的事。",
   "settings.notify.off": "本机只会提醒终端请你确认的请求。通知里仍会列出全部。",
