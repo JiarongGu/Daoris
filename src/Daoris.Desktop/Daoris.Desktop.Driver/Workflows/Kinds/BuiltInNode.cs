@@ -38,6 +38,9 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual IReadOnlyList<string> RoleTakes => [];
 
+    /// <summary>The role a node of it names where its declaration names none: Daoris's own acts and observations are the operations role's.</summary>
+    public virtual string Role => StepRoles.Operations;
+
     public virtual string? Evidence => null;
 
     public abstract string? Title { get; }

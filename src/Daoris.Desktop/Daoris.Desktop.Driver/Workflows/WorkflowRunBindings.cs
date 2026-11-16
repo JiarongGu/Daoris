@@ -155,7 +155,7 @@ public static class WorkflowRunBindings
         foreach (var node in graph.Nodes.Where(node => node.Kind is NodeKinds.Claimed or NodeKinds.Opinion))
         {
             // Absent, null and empty name no role: the step takes its work's own.
-            if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
+            if (global::Daoris.Driver.StepRoles.Written(node) is not { } written || NodeOptions.Value(written) is null or "") continue;
             var where = $"{version}'s step `{node.Id}`";
             if (NodeOptions.Value(written) is not string role)
             {

@@ -20,7 +20,8 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
 
-    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Text(NodeOptionFields.Role)];
+    /// <summary>The second opinion's own role, the seeded one, where the step names none.</summary>
+    public override string Role => StepRoles.Opinion;
 
     public override NodePart Part(NodeDeclaration node) =>
         new(WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, Lowered: WorkflowKinds.Opinion);

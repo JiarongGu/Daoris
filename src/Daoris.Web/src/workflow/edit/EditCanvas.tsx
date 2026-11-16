@@ -7,6 +7,8 @@ import type { PresetWorkflow, SavedWorkflow, WorkflowListAnswer, WorkflowPalette
 import { howSaid, kindIn, plain, stepTitle } from './editWords';
 import { entriesOf, type GraphDraft, outcomesOf } from './graphDraft';
 import { presetName } from './presetWords';
+import { roleOf } from '../stepRoles';
+import { kindRole } from './StepRoleField';
 
 // The editor's canvas: the draft drawn through the one drawing (`graphFlow`) and the chart's
 // components, edited on through `ChartEdit`; and, while it holds no step, where to begin: a preset or a workflow saved here, so nothing
@@ -18,6 +20,7 @@ export function draftFlow(
 ): GraphFlow {
   const nodes = draft.nodes.map((node): DrawnNode => ({
     id: node.id, kind: node.kind, title: stepTitle(t, i18n, palette, node), outcomes: outcomesOf(node), open: () => select(node.id),
+    role: roleOf(node.node, palette ? kindRole(palette, node.kind) : null),
   }));
   const wires = draft.wires.filter((wire) => wire.from !== null).map((wire): DrawnWire => ({
     id: wire.id, kind: wire.kind, from: wire.from!, to: wire.to, outcome: wire.outcome, on: wire.on, says: plain(howSaid(t, wire, kindIn(draft, wire.from!))),

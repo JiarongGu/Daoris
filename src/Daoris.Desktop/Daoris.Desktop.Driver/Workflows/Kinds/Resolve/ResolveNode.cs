@@ -48,6 +48,9 @@ internal sealed class ResolveNode : BuiltInNode, IObserves, IStarts, IReadsSteps
 
     public override string? Title => "The resolution";
 
+    /// <summary>A problem in the work is the working role's to resolve, whoever the resolver option hands it to.</summary>
+    public override string Role => StepRoles.Design;
+
     public override NodeLook Look => NodeLook.Line;
 
     public override IReadOnlyList<string> Places => PlaceKind.GitAlone;

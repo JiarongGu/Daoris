@@ -60,6 +60,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// </summary>
     public string? Node { get; init; }
 
+    /// <summary>On a graph run, the role that takes the node (<see cref="StepRoles.Of"/>): the one it names, else its kind's; null elsewhere.</summary>
+    public string? Role { get; init; }
+
     /// <summary>
     /// What a graph run's node observes, one of <see cref="WorkflowGraphSubjects"/>: its
     /// <see cref="Quest"/>, or its <see cref="Branch"/> at <see cref="Commit"/>, or its landing there; null for the run itself.
