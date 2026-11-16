@@ -1114,7 +1114,7 @@ export function checkoutRerun(gates, named) {
 // ---------------------------------------------------------------------------------------------------
 // Flakes
 
-// What a gate's output says it failed: `merge-branch/test-output.mjs`.
+// The output readers: `merge-branch/test-output.mjs`.
 export { flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand };
 
 // ---------------------------------------------------------------------------------------------------
@@ -2500,7 +2500,7 @@ export async function runGates(root, gates, dir, {
 function clearLogs(dir) {
   mkdirSync(dir, { recursive: true });
   for (const name of readdirSync(dir)) {
-    if (/\.(log|partial|trx)$/.test(name)) rmSync(join(dir, name), { force: true });
+    if (/\.(log|partial|trx)$|^brief\.md$/.test(name)) rmSync(join(dir, name), { force: true });
   }
 }
 

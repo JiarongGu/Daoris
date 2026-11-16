@@ -15,8 +15,7 @@ describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurren
   test('--rerun runs a fixed gate again on the merge in place, and names the verdicts it kept and from when', async () => {
     const repo = scratch('rerun', [
       { name: 'first', run: 'node gate.mjs first' },
-      // Fails the first time only, as a gate does once the parent has fixed what it found; a blocking light gate, the one
-      // kind whose failure a merge's run does not keep going past.
+      // Fails the first time only, once fixed; a blocking light gate, the one failure a merge's run stops at.
       { name: 'test-map', run: 'node gate.mjs test-map 3 once' },
       { name: 'third', run: 'node gate.mjs third' },
     ]);
