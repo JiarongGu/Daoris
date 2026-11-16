@@ -8,6 +8,7 @@ import type { useSessionAtWork } from '../../bridge/sessions/atWork';
 import { type Notify, SESSION_ACTIVE } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { sentence } from '../../locales/format';
+import { ReleaseStepDoors } from '../../workflow/release/ReleaseStepDoors';
 import { WorkflowRunView } from '../../workflow/WorkflowRunView';
 import { noteIsInTheHead } from '../AttendedSession';
 import { AtWorkView } from '../atWork/AtWorkView';
@@ -245,6 +246,7 @@ export function useRegionSurfaces({
               ...(onOpenBranch ? { branch: onOpenBranch } : {}),
             }}
             controls={lookControl || opinionControl ? controls : undefined}
+            releaseDoors={(run, step) => <ReleaseStepDoors run={run} step={step} />}
             onNodeWord={runNodeWord.mutateAsync}
             onHeld={resolveHeld.mutateAsync}
           />

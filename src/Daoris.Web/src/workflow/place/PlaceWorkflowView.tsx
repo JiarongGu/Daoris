@@ -114,7 +114,6 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   editor?: WorkflowTabProps['editor'] & WorkflowPlanBridge;
   /** The repository or the workspace whose place it is. */
   name: string;
-  /** A repository's place, or a workspace's. */
   page?: 'repository' | 'workspace';
   /** The route chosen and the step whose cell shows, which the application keeps above the mounts; absent, the section keeps its own. */
   view?: PlaceView;

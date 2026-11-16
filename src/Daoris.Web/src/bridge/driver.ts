@@ -183,7 +183,6 @@ export type DriverState = {
   growth?: { repository: string; value: GrowthValue }[];
   /** And by workspace. */
   workspaceGrowth?: { workspace: string; value: GrowthValue }[];
-  /** Every place's risk and the owner's marks as set, a row per place (`machine`, `workspace/<name>`, `repository/<name>`). */
   placeRisk?: PlaceRiskRow[];
   /**
    * The access setups as set: what each repository's sessions start under, full access or the pauses it
@@ -621,10 +620,7 @@ export const useSetHeavyGates = () =>
 export const useSetSessionChecks = () =>
   useDriverChange('SET_SESSION_CHECKS');
 
-/**
- * A repository's own values on a node of a workflow it follows (a release step's target), set or cleared with the reason recorded
- * (`SET_WORKFLOW_VALUES`): `{ repository, workflow, node, values: { name: json }, clear, why }`. `daoris workflow values` is its twin.
- */
+/** A repository's own values on a node of a workflow it follows, set or cleared with the reason recorded. */
 export const useSetWorkflowValues = () =>
   useDriverChange('SET_WORKFLOW_VALUES');
 
