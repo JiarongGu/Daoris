@@ -277,6 +277,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null) =>
         Person.Word(unit, node, attempt, resolution, outcome, link, note, epoch);
 
+    /// <summary>Every holder's link on a plugin's step handed to its plugin's check, before <see cref="Resolve"/> applies the words (<see cref="WorkLinkChecks"/>).</summary>
+    public Task<IReadOnlyList<WorkPerformed>> CheckLinksAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct) =>
+        new WorkLinkChecks(records, port, clock).CheckAsync(declared, sends, ct);
+
     /// <summary>Every word on a held, failed or in-flight attempt applied; each attempt a done outside stood down has its plugin told.</summary>
     public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
     {
@@ -502,7 +506,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     };
 
     /// <summary>A failure of the call itself, not the loop ending: the attempt's outcome is unknown, never a second blind dispatch.</summary>
-    private static bool Unanswered(Exception error) =>
+    internal static bool Unanswered(Exception error) =>
         error is not OperationCanceledException && error is DriverException or IOException or TimeoutException or InvalidOperationException;
 
     /// <summary>

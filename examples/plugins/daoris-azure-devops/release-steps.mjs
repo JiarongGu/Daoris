@@ -41,7 +41,7 @@ const credit = (who, ours) => (ours ? 'Daoris' : `outside: ${who ?? 'someone in 
  * One release step's act. `say` is the console; `progress` tells Daoris what the step waits on as it changes. Answers reached or failed,
  * or, at the step's deadline with the fact still not made, `timeout` naming what it waited on.
  */
-export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
+export async function releaseStep(id, attempt, unit, say, progress = () => {}, once = false) {
   const asked = declared(attempt.options);
   // `by` is the identity Azure DevOps credits with the fact (`outside: <name>`, or Daoris), kept beside the words, not only in them.
   const answered = (state, code, message, url, by) => ({ state, ...(code ? { code } : {}),
@@ -55,6 +55,8 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
     told = `${role}|${message}`;
     progress({ ...(role ? { actor: role } : {}), url, message: fit(message), environment: undefined });
   };
+  /** What a wait came to with its fact still not made: read once (a check), not yet so; else its deadline passed. */
+  const late = (words, url) => (once ? answered('failed', 'not-yet', words, url) : answered('failed', 'timeout', `${words} The step's deadline passed.`, url));
 
   const repo = located(unit);
   /** Asks `read` until it answers or the step's deadline passes; a refused key waits on the credentials keeper, never failing. */
@@ -69,7 +71,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
         else if (!TRANSIENT.includes(error.code)) throw error;
         else say(`${error.message}; asked again.`);
       }
-      if (Date.now() + asked.every > ends) return undefined;
+      if (once || Date.now() + asked.every > ends) return undefined;
       await pause(asked.every);
     }
   };
@@ -86,7 +88,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
         : await releases(repo, 'GET', `/definitions/${asked.definition}`).then((answer) => (answer.status === 200 ? answer.json : null));
       return { commit: read.lastMergeCommit.commitId, target: read.targetRefName, repositoryId: (await call(repo, 'GET', '')).json?.id ?? repo.repository, all, definition };
     });
-    if (!context) return answered('failed', 'timeout', `${told ? told.split('|')[1] : 'The merged pull request was not read.'} The step's deadline passed.`);
+    if (!context) return late(told ? told.split('|')[1] : 'The merged pull request was not read.');
     const { commit, target, repositoryId, all, definition } = context;
     const branch = withoutHeads(target);
     const short = commit.slice(0, 8);
@@ -163,7 +165,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
       if (!/^\d+$/.test(String(posted.json?.id ?? ''))) throw new Refusal('rejected', `Azure DevOps refused to make a release of ${of} (${posted.status})`);
       return { ...posted.json, made: true };
     });
-    if (!release) return answered('failed', 'timeout', `${told ? told.split('|')[1] : `nothing of ${of} was read`} The step's deadline passed.`);
+    if (!release) return late(told ? told.split('|')[1] : `nothing of ${of} was read`);
     const link = linkOf(release);
     const by = release.made ? 'Daoris' : credit(release.createdBy?.displayName, /^Made by Daoris/.test(release.description ?? ''));
     const carried = release.after ? `${release.after.slice(0, 8)}, after the landed ${short}` : short;
@@ -213,9 +215,20 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}) {
       tell(null, `${name} of ${read.name} ${environment.status}.`, link);
       return undefined;
     });
-    return result ?? answered('failed', 'timeout', `${told ? told.split('|')[1] : 'its stage was not read'} The step's deadline passed.`, link);
+    return result ?? late(told ? told.split('|')[1] : 'its stage was not read', link);
   } catch (error) {
     if (error instanceof Refusal) return answered('failed', error.code, error.message);
     throw error;
   }
+}
+
+/**
+ * A holder's Done outside Daoris link on a release step, read once by the kit's `check` (`attempt.link`): the step read as it would act, the
+ * release the link names in place of one it would find and nothing made, started or approved (`observe`). Done where the fact is there, the
+ * link's release carrying the landed commit or one after it; failed where it is refused (`target-changed`, naming the commit it carries) or
+ * not yet so (`not-yet`, with what the step would wait on). The answer names the link it read.
+ */
+export async function linkCheck(id, attempt, unit, say) {
+  const read = await releaseStep(id, { ...attempt, options: { ...attempt.options, release: attempt.link, action: 'observe' } }, unit, say, () => {}, true);
+  return { state: read.state === 'reached' ? 'done' : 'failed', outcome: read, link: attempt.link };
 }

@@ -178,7 +178,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     failed to ready by the person, a new attempt its plugin is sent. *Done outside Daoris* (`done-outside`, the same door and verb with
     `<link> ["…"]`, the link required) settles a plugin's step under way, held or failed on its holder's word (`active`, `unknown` or
     `failed → reached` by the person, the link its evidence and the note its words), a step whose kind carries its proof as evidence
-    included, since the link is that proof; it is kept on the attempt as `happened` with its `link`, a word an older build reads. Skip
+    included, since the link is that proof; it is kept on the attempt as `happened` with its `link`, a word an older build reads. Before
+    the word is applied, a reconciling plugin's step hands the link to its plugin's check (`WorkLinkChecks`: `work/reconcile` with `link`
+    and the step's options, the kit's `check()` given `attempt.link`), which reads the thing named and never acts: a refusal takes the word
+    back with the check's code and words (a release of another commit, `target-changed`, naming the commit it carries; a stage not started,
+    `not-yet`), a settled link stays the holder's word credited to the identity the check read (`by`), and an answer naming no link (a kit
+    that reads none) or a plugin not up leaves the word its holder's. Skip
     (*Not needed this run*), stop (*End this work*) and done outside each stand the plugin's attempt in flight down (`StandDowns`): it
     settles `stood-down` with the act as its code, never a state of its own, its node's gate lifts so nothing holds the run, its plugin is
     told (`work/stand-down`, a notification), and its later outcome is not taken. A skip a proof-carrying step refuses names the
