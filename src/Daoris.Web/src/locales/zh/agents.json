@@ -400,7 +400,7 @@
   "agents.setup.roles.hold.act.files.allow-share": "允许跨仓库共用依赖",
   "agents.setup.roles.hold.act.landing.accept": "采纳工作以落地",
   "agents.setup.roles.hold.act.memory.keep": "保留或丢弃会话的记忆改动",
-  "agents.setup.roles.hold.act.memory.decide": "批准或拒绝记忆的结束",
+  "agents.setup.roles.hold.act.memory.decide": "批准或谢绝记忆的结束",
   "agents.setup.roles.hold.act.departure.accept": "采纳完成时的偏离",
   "agents.setup.roles.hold.act.landing.approve": "批准",
   "agents.setup.roles.hold.act.landing.reject": "驳回",
