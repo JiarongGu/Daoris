@@ -338,6 +338,14 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                 kept = Deliveries.Rechecked(view.Id, run.Opinion, run.Opinion is null ? run.Code ?? OpinionRechecks.Refused : null);
             }
         }
+        else if (kept.Recheck is { } ended
+                 && await Service.Opinions.ReadAsync(ended, ct).ConfigureAwait(false) is { State: OpinionViews.Failed, Why: OpinionViews.Limited } capped)
+        {
+            // A recheck its reviewer's account limit or spend cap ended read nothing: it is asked again of the rule's next holder that is
+            // ready, said once, the limited one kept as a failed record. With none ready it stays, asked again until the reset.
+            run = await RecheckAsync(view, reading, asked, ct, capped).ConfigureAwait(false);
+            if (run.Opinion is not null) kept = Deliveries.HandedOn(view.Id, ended, run.Opinion);
+        }
 
         var recheck = kept.Recheck is { } id ? await Service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;
         var disputes = OpinionDisputes.Of(reading, recheck);
@@ -358,9 +366,12 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
     /// <summary>
     /// The one recheck: a fresh pass by the same reviewer, walked again for its account, over the commits from the
-    /// first pass's tip to the working tree's tip as its turn ended, handed the first pass's findings and the answers.
+    /// first pass's tip to the working tree's tip as its turn ended, handed the first pass's findings and the answers. Where an account's
+    /// cool-off holds that reviewer, the rule's next holder that is ready reads it, as a first pass's walk goes on.
     /// </summary>
-    private async Task<OpinionPassRun> RecheckAsync(OpinionView first, OpinionReading reading, OpinionPassAsk asked, CancellationToken ct)
+    /// <param name="capped">The recheck a cap ended, asked again here: asked only of a holder that is ready, and said handed on.</param>
+    private async Task<OpinionPassRun> RecheckAsync(
+        OpinionView first, OpinionReading reading, OpinionPassAsk asked, CancellationToken ct, OpinionView? capped = null)
     {
         // Judged against every agent the line ran on, like the first pass.
         var records = OpinionWriters.ById(await Service.RecordsAsync(ct).ConfigureAwait(false));
@@ -383,11 +394,31 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             && records.GetValueOrDefault(first.Session) is { Asked: { } was } record
             ? [new ActorEffective(first.Door, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
             : null;
-        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
-            ReviewerChoice.ChooseAsync(
-                _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order,
-                catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home));
+        // The rule's other reviewers, walked where the first is held by a cool-off or this call passed its account.
+        IReadOnlyList<string> next = reviewers is [var only] && string.Equals(only, first.Door, StringComparison.OrdinalIgnoreCase)
+            ? [.. asked.Rule.Reviewers.Where(each => !string.Equals(each, first.Door, StringComparison.OrdinalIgnoreCase))]
+            : [];
+        async Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed)
+        {
+            var same = await ReviewerChoice.ChooseAsync(
+                    _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order,
+                    catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home))
+                .ConfigureAwait(false);
+            if (same.Chosen || next.Count == 0 || (same.Cooling is null && passed is not { Count: > 0 })) return same;
+            var other = await ReviewerChoice.ChooseAsync(
+                    _context.Harnesses, asked.Rule with { Reviewers = next }, wrote, _context.Config, asked.Workspace, ct, passed: passed,
+                    catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home))
+                .ConfigureAwait(false);
+            return other.Chosen ? other : same;
+        }
+
         var choice = await Walk(null).ConfigureAwait(false);
+        if (capped is not null)
+        {
+            if (!choice.Chosen) return OpinionPassRun.Unavailable(choice);
+            Service.LandingSaid(OpinionLines.HandedOn(first.Working, first.Occasion, capped.Id, capped.Session));
+        }
+
         var ask = asked with
         {
             Reask = Walk,

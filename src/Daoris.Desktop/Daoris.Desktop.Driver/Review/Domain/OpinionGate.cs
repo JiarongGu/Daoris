@@ -122,6 +122,12 @@ public static class OpinionGate
                 state = state with { Answers = answers };
                 var recheck = kept.Recheck is { } again ? await reads.Opinion(again).ConfigureAwait(false) : null;
                 state = state with { Recheck = recheck };
+                // A recheck a cap ended read nothing: cooling as such a first pass is, and asked again by the look's delivery.
+                if (recheck is { State: OpinionViews.Failed, Why: OpinionViews.Limited })
+                {
+                    return state with { State = OpinionGateStates.Unavailable, Code = ReviewerUnavailable.Cooling, Until = reads.Ready?.Invoke(recheck.Session) };
+                }
+
                 if ((kept.Recheck is null && kept.RecheckWhy is null && OpinionRechecks.WhyNot(first, answers, facts.Rule!.Rule) is null)
                     || recheck is { State: not (OpinionViews.Failed or OpinionViews.GivenState) }
                     || recheck is { State: OpinionViews.GivenState, Given: false })

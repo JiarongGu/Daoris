@@ -313,6 +313,53 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
+    /// An owed opinion stays owed look after look while it waits on the person: each judgment over a tree and refs that did
+    /// not move asks git nothing, so the look's opinions stage costs no queue for git's places however long it stays owed.
+    /// A commit in the tree is read at the next look.
+    /// </summary>
+    [Fact]
+    public async Task A_judgment_over_a_tree_that_did_not_move_starts_no_git()
+    {
+        var (host, tree, _) = await DoneAsync(required: false);
+        var driver = Driver(host);
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        await CommitAsync(tree, "later.ts", "more", "a commit nobody read");
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, []);
+        await driver.Running.SettledAsync();
+
+        var (still, started) = await JudgedCountingAsync(driver);
+        Assert.Equal((OpinionGateStates.CommitsSince, 1), (still.State, still.Since));
+        Assert.Empty(started);
+
+        await CommitAsync(tree, "later2.ts", "more again", "another commit nobody read");
+        var (moved, _) = await JudgedCountingAsync(driver);
+        Assert.Equal((OpinionGateStates.CommitsSince, 2), (moved.State, moved.Since));
+    }
+
+    /// <summary>One look's judgment of the one owed opinion, with every git it launched.</summary>
+    private static async Task<(OpinionGateState Gate, List<string> Started)> JudgedCountingAsync(Daoris.Driver.Driver driver)
+    {
+        var started = new List<string>();
+        var judged = new List<OpinionJudged>();
+        GitFlow.Started.Value = arguments =>
+        {
+            lock (started) started.Add(string.Join(' ', arguments));
+        };
+        try
+        {
+            await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+            await driver.Running.SettledAsync();
+        }
+        finally
+        {
+            GitFlow.Started.Value = null;
+        }
+
+        return (Assert.Single(judged).Gate, started);
+    }
+
+    /// <summary>
     /// A run bound to a graph version is asked its second opinion only once its record has begun its
     /// <c>opinion</c> node; while a check its graph places before the opinion waits, the look asks nothing, and once the pass begins the opinion
     /// the next look asks it.
