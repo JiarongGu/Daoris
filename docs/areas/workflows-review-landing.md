@@ -79,7 +79,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
    work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
    config changer, whose *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by
-   operations; "not needed" passes `config-change` on the record naming both holders.
+   operations; "not needed" passes `config-change` on the record naming both holders. Each step after the merge declares its role
+   (`role`: the release manager for the target, create, start and the decision; the approver for approve; operations for the watch and
+   the check; the config changer for the change), and the chart draws the decision's `not-needed` route as *Not needed this run*, never
+   as *No further step*.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;

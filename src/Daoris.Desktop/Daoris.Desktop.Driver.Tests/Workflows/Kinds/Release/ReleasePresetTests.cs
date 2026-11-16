@@ -49,6 +49,12 @@ public sealed class ReleasePresetTests : NodeRunFixture
         Assert.Contains(graph.Wires, wire => wire.From?.Node == "release-watch" && wire.To?.Node == "config-needed");
         Assert.Contains(graph.Wires, wire => wire.Kind == WireKinds.When && wire.From?.Node == "config-needed" && wire.Outcome == "needed" && wire.To?.Node == "config-change");
         Assert.Equal("check-release", graph.End);
+        // The preset declares the role of each step after the merge, so a run says whom it waits on without the kind's default.
+        Assert.Equal(
+            [("release-target", StepRoles.ReleaseManager), ("release-create", StepRoles.ReleaseManager), ("release-start", StepRoles.ReleaseManager),
+             ("release-approve", StepRoles.Approver), ("release-watch", StepRoles.Operations), ("config-needed", StepRoles.ReleaseManager),
+             ("config-change", StepRoles.ConfigChanger), ("check-release", StepRoles.Operations)],
+            graph.Nodes.SkipWhile(node => node.Id != "release-target").Select(node => (node.Id, node.Role)));
         // The bundled release step stays the older preset's, so saved versions of it keep it.
         Assert.Contains(NodeGraphs.Read(WorkflowDefaults.Of("release")!.GraphJson).Graph!.Nodes, node => node.Kind == NodeKinds.Release);
     }
