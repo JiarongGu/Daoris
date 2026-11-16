@@ -18,7 +18,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 
 | Where | Its job |
 |---|---|
-| `Roles/`, `Defaults/roles.json` | The catalogue and its seed (`RoleCatalog`), the one door and its verbs (`RoleDoor`, `RoleVerbs`), staffing (`RoleStaffing`, `ActorChoices`, `StartPlan`), policy (`StaffPolicy`, `StaffJudge`, `StaffLedger`), the rule supervisor (`SupervisorRules`, `SupervisorRuleBook`), the appointed shape (`RoleHold`, `AgentHold`), the decisions' memory, files and reads (`Supervisor*`), the steward's verb |
+| `Roles/`, `Defaults/roles.json` | The reporting line (`ReportingLine`, `OwnerClass`), the catalogue and its seed (`RoleCatalog`), the one door and its verbs (`RoleDoor`, `RoleVerbs`), staffing (`RoleStaffing`, `ActorChoices`, `StartPlan`), policy (`StaffPolicy`, `StaffJudge`, `StaffLedger`), the rule supervisor (`SupervisorRules`, `SupervisorRuleBook`), the appointed shape (`RoleHold`, `AgentHold`), the decisions' memory, files and reads (`Supervisor*`), the steward's verb |
 | `Loop/Supervise/`, `Loop/Look/` | An agent supervisor's look, attempt and read-only turn; the releases between turns; the second check's reading queue |
 | `Modules/Bridge/` | The decision door (`SupervisorDecisionDoor`, one row per kind under `SupervisorKinds/`), the steward's act rows |
 | `Modules/Platform/` | The roles' terminals this run (`StandingConfirmation`), the delegate proof, Ask Daoris's press views (`Views/`) and press record |
@@ -169,7 +169,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person's. The admission answers that supervisor's hold where its holder is the started terminal or an agent and the act is
     granted (else `not-staffed`, `not-started`, `not-granted`), and every later step asks it again, so a grant taken away stops the
     next one. `ROLES` answers it as `deciders`, worded on a place's Roles as *Who decides here*. Ask Daoris may explain the
-    supervisor, never overrule it. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
+    supervisor, never overrule it. The resolver is read as the reporting line (`ReportingLine`, D304 point 3): the lead is the
+    supervisor it finds below the machine, the head the machine's, the owner actor the top, held by the person. Help waits on the
+    first level that holds it; a level held by the person's rules or by nobody is held by the person there; a level nobody is
+    appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
+    `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner actor (`owner-class`); other help the head
+    leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
     the machine's supervisor of `ask-daoris`, granted `ask-daoris.report` and held by the person's rules, so it reads nothing until
     the person turns it on; the home's `second-check` step gives it its first choices once (Codex, then Claude Code · opus · high,
     40 starts a day each) unless the person's own record, staffing or supervisor stands. (D233, D272)
@@ -201,9 +206,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     a bound, only by the hold answering its place. The holder's verb is `sessions supervise <session> --kind <kind> --subject <id>
     --generation <g> --do <act> [--choice <label>]` or `--leave <bound>`; `SUPERVISOR_WAITING` lists the subjects a terminal
     holder's grants cover. (D208, D233)
-47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to ask the
-    person, a preference, an unrecorded or contradicting one, or one that directs it. (D208)
-48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's rule holds
+47. It never answers a go-ahead, an owner-class kind, an unrecorded or contradicting question, or one that directs it: its bounds
+    are a go-ahead, the seven owner-class kinds and those three. (D208, D304)
+48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
     the holder decides `go-on` once; on failures the quest's point is released as the quest's own *Try again*; on failures on one
     choice, a limited end and the moves bound the limit kind decides `move`, or on a limited end `wait`. Each is held for the role's
@@ -239,6 +244,14 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person's moves them all. A departure's accepted move names the role (`by`), so the owner's mark never reads it as theirs, and the
     session's head shows a held one with *Overrule*; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
     high-risk place holds none. (D208, D233, D296, D297)
+    A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
+    the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`) and listed to the hold that answers it now: the lead at the
+    repository, the head at the machine once the lead left it, nobody once the head left it (gave up). Its acts, kept at once with
+    their reading and no window: `recast` naming a reviewer the rule declares that the look's walk found installed (else
+    `not-offered-choice`), the DeepSeek harness only where `vacancy.prepaid` is granted too (else `not-granted`); `relax` (the work's
+    own makers read it after the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a
+    leave is its pass up. The look's next walk reads the newest act, and a walk whose reviewer holds the step journals `filled`, which
+    ends the vacancy and its acts, so the walk after it reads the rule's order again; the person's own ask is theirs. (D304)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a

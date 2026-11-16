@@ -32,7 +32,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
                 }
 
                 // The line's counts read again here, under the decision's lock, before anything is said; the question's
-                // mark is read again by the service's own step, which refuses `owner-question` from the file it reads.
+                // mark is read again by the service's own step, which refuses `owner-class` from the file it reads.
                 if (bound is not null && await bound(session, ct).ConfigureAwait(false) is { } held)
                 {
                     return book.Move(decision, SupervisorState.Stale, now, held);

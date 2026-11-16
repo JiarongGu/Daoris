@@ -43,12 +43,12 @@ public sealed class AskDaorisAnswerTests
     [Fact]
     public void A_leave_reads_by_its_bound_and_one_to_five_reasons()
     {
-        var (answer, _) = AskDaorisReport.Read(Block("\"leave\": \"preference\", \"reasons\": [ { \"says\": \"The packet cut every output.\", \"source\": \"count:limits\" } ]"));
+        var (answer, _) = AskDaorisReport.Read(Block("\"leave\": \"unrecorded\", \"reasons\": [ { \"says\": \"The packet cut every output.\", \"source\": \"count:limits\" } ]"));
 
         Assert.NotNull(answer);
-        Assert.Equal("preference", answer.Leave);
+        Assert.Equal("unrecorded", answer.Leave);
         Assert.Single(answer.Reasons);
-        Assert.Null(AskDaorisReport.Read(Block("\"leave\": \"preference\", \"reasons\": []")).Answer);
+        Assert.Null(AskDaorisReport.Read(Block("\"leave\": \"unrecorded\", \"reasons\": []")).Answer);
     }
 
     [Theory]

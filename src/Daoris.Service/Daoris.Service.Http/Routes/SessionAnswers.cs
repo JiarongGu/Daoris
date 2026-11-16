@@ -162,7 +162,7 @@ public static class SessionAnswers
         SessionSayRefusal.NoQuest => "no-quest",
         SessionSayRefusal.QuestionChanged => "question-changed",
         SessionSayRefusal.NotOfferedChoice => "not-offered-choice",
-        SessionSayRefusal.OwnerQuestion => "owner-question",
+        SessionSayRefusal.OwnerClass => "owner-class",
         SessionSayRefusal.GoAheadOpen => "go-ahead-open",
         SessionSayRefusal.GoAheadUnread => "go-ahead-unread",
         SessionSayRefusal.OwnerAnswered => "owner-answered",

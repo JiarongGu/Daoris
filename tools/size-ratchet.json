@@ -42,7 +42,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginStepsTests.cs": 43818,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionDeliveryTests.cs": 52573,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionResumeTickTests.cs": 43162,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Roles/SupervisorDecisionTests.cs": 42435,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Roles/SupervisorDecisionTests.cs": 42391,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs": 72081,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs": 42154,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs": 65315,

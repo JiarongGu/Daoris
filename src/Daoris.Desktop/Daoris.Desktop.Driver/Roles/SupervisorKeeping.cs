@@ -120,7 +120,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
         if ((Refused(answer.Reasons, answer.Choice.Length > 0, park.Counts) ?? Parked(answer.Question, park)) is { } refused) return refused;
         var filed = park.Filed!;
         // The agent's mark, any at all, makes the question the owner's; checked again at the release.
-        if (filed.Owner is not null) return SupervisorWhy.OwnerQuestion;
+        if (filed.Owner is not null) return SupervisorWhy.OwnerClass;
         if (!filed.Choices.Any(choice => string.Equals(choice.Label, answer.Choice, StringComparison.Ordinal))) return SupervisorWhy.NotOfferedChoice;
         if (park.GoAheadUnread) return SupervisorWhy.GoAheadUnread;
         if (park.GoAheadOpen) return SupervisorWhy.GoAheadOpen;

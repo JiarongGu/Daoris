@@ -309,7 +309,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
 
     /// <summary>
     /// A question its agent marked the owner's is not listed for the holder, and a covered terminal's answer to
-    /// it is refused <c>owner-question</c>, keeping nothing; the holder's defer on it is kept <c>left</c> over the same door, its bound on
+    /// it is refused <c>owner-class</c>, keeping nothing; the holder's defer on it is kept <c>left</c> over the same door, its bound on
     /// the row the page reads, and the page's own door is refused it as the answer is.
     /// </summary>
     [Fact]
@@ -352,7 +352,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
                 SupervisorSubject.Question("s1", "q-1"), generation, "", "sign-in", reasons).Proved(key!, nonce).Payload();
 
             var answered = await SendAsync("SUPERVISOR_DECIDE", Answer);
-            Assert.Equal((false, SupervisorWhy.OwnerQuestion), (answered.GetProperty("kept").GetBoolean(), answered.GetProperty("why").GetString()));
+            Assert.Equal((false, SupervisorWhy.OwnerClass), (answered.GetProperty("kept").GetBoolean(), answered.GetProperty("why").GetString()));
             Assert.Empty(loop.Supervisor.LiveOf("s1"));
 
             var page = await AnswerAsync(module, "SUPERVISOR_LEAVE", Defer(SupervisorProof.Nonce()));

@@ -19,6 +19,9 @@ public static class SupervisorKinds
 
     public const string Departure = "departure";
 
+    /// <summary>A step nobody is free to hold (a capped second opinion), a subject of the reporting line (<see cref="ReportingLine"/>).</summary>
+    public const string Vacancy = "vacancy";
+
     /// <summary>Ask Daoris's acts, read after its turns, observed and never decided; not the working role <c>ask-daoris</c>.</summary>
     public const string AskDaoris = "ask-daoris";
 
@@ -28,21 +31,27 @@ public static class SupervisorKinds
     public const string Move = "move";
     public const string Report = "report";
 
+    public const string Recast = "recast";
+    public const string Relax = "relax";
+    public const string Prepaid = "prepaid";
+    public const string Wait = "wait";
+
     private static readonly IReadOnlyDictionary<string, string[]> Named = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         [Question] = [Answer],
         [Course] = [GoOn],
-        [Limit] = [Move, "wait"],
+        [Limit] = [Move, Wait],
         [Allow] = ["once", "reject", "standing", "steward"],
         [Files] = ["allow-run", "allow-copy", "allow-share"],
         [Landing] = ["accept", "approve", "reject"],
         [Memory] = ["keep", "decide"],
         [Departure] = ["accept"],
+        [Vacancy] = [Recast, Relax, Prepaid, Wait],
         [AskDaoris] = [Report],
     };
 
     /// <summary>Every kind, in the editor's order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, Memory, Departure, AskDaoris];
+    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, Memory, Departure, Vacancy, AskDaoris];
 
     public static bool MachineOnly(string kind) => kind == AskDaoris;
 

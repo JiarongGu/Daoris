@@ -6,12 +6,13 @@ import { knownBound, type ParkQuestion, type SupervisorBound } from './parkQuest
 /** Each bound's words on the card, the agent's marks among them. */
 const BOUND_WORDS = {
   'go-ahead': 'work.park.bound.goAhead',
+  direction: 'work.park.bound.direction',
+  money: 'work.park.bound.money',
   'sign-in': 'work.park.bound.signIn',
-  access: 'work.park.bound.access',
-  spending: 'work.park.bound.spending',
-  delete: 'work.park.bound.delete',
-  'repository-asks': 'work.park.bound.repositoryAsks',
-  preference: 'work.park.bound.preference',
+  release: 'work.park.bound.release',
+  history: 'work.park.bound.history',
+  data: 'work.park.bound.data',
+  publish: 'work.park.bound.publish',
   unrecorded: 'work.park.bound.unrecorded',
   contradicts: 'work.park.bound.contradicts',
   instructed: 'work.park.bound.instructed',

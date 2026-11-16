@@ -22,6 +22,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Memory] = "memory",
         [SupervisorKinds.Departure] = "quest",
+        [SupervisorKinds.Vacancy] = "step",
         [SupervisorKinds.Allow] = "request",
         [SupervisorKinds.Files] = "text",
         [SupervisorKinds.AskDaoris] = "range",
@@ -33,6 +34,11 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     public static SupervisorSubject Question(string session, string question) => new(SupervisorKinds.Question, session, question);
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
+
+    public static SupervisorSubject Vacancy(string session, string chain, string repository) => new(SupervisorKinds.Vacancy, session, $"{chain}/{repository}");
+
+    public (string Chain, string Repository)? VacancyParts =>
+        Kind == SupervisorKinds.Vacancy && Id.IndexOf('/') is > 0 and var at && at < Id.Length - 1 ? (Id[..at], Id[(at + 1)..]) : null;
 
     public static SupervisorSubject Landing(string session, string run, string node, int attempt) =>
         new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");
