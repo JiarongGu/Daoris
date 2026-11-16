@@ -5,7 +5,7 @@
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its two steps, once per idempotency key (the kit's work.mjs keeps that): `pull-request` opens the pull request
 //  from the pushed branch, or finds the active one, and sets auto-complete where its options ask (auto-complete.mjs); `release` watches
-//  what the merged commit's release takes to its end (release.mjs). The branch and checkout come from the units `work/watch` tells it.
+//  what the merged commit's release takes to its end (release.mjs), each wait on the way a `progress` of its own id that settles nothing. The branch and checkout come from the units `work/watch` tells it.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
 //  DAORIS_PLUGIN_PRIVATE this plugin's own storage, where login keeps the token: never logged, sent only to the API as Basic's password
@@ -133,13 +133,22 @@ async function stateOf(frame) {
   };
 }
 
+const progressOf = (attempt) => {
+  let told = 0;
+  return ({ actor, environment, url, message }) => {
+    told += 1;
+    send({ jsonrpc: '2.0', method: 'work/step', params: { step: attempt.step, invocation: attempt.invocation, state: 'progress', ...(actor ? { actor } : {}),
+      evidence: { ...(url ? { url } : {}), ...(environment ? { environment } : {}), message: signed(message) }, at: new Date().toISOString(), id: `${attempt.invocation}-p${told}` } });
+  };
+};
+
 const kit = work({
   data: process.env.DAORIS_PLUGIN_DATA,
   send,
   say,
   act: async (attempt) => {
     if (stepOf(attempt) === 'pull-request') return within(async () => told(await pullRequest(attempt)));
-    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say)));
+    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say, progressOf(attempt))));
     return failed('unknown-step', `no step ${attempt.step}`);
   },
   // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.

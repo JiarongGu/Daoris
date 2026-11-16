@@ -23,8 +23,14 @@ public static class PersonWaitReader
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);
-                if ((WhyOf(node, status) ?? LeftOf(node, status, kept)) is not { } why || kept.Pending.Any(word => word.Node == node.Id)) continue;
-                waits.Add(new PersonWait(run.Run, node.Id, why, run.Binding.Repository, status.Since));
+                var held = StepWaiting.OnThePerson(kept, node, status);
+                if ((WhyOf(node, status) ?? LeftOf(node, status, kept) ?? (held is null ? null : PersonWaits.Actor)) is not { } why
+                    || kept.Pending.Any(word => word.Node == node.Id))
+                {
+                    continue;
+                }
+
+                waits.Add(new PersonWait(run.Run, node.Id, why, run.Binding.Repository, held?.At ?? status.Since) { Actor = held?.Actor });
             }
         }
 

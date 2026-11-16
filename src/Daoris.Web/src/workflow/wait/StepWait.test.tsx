@@ -40,6 +40,19 @@ describe('a step\'s wait', () => {
     }
   });
 
+  it('says a plugin step waiting on an actor by the actor and its holder, alike for you and an agent, with the page it is taken on', async () => {
+    const page = 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90';
+    const words = 'Release-12 of app-release: Approve Production in Azure DevOps: asked of Release Approvers.';
+    const approver = { code: 'actor', values: { actor: 'approver', holder: 'person', words, url: page, environment: 'Production' }, since: '2026-11-16T09:51:00Z' };
+    expect(waitSaid(t, 'daoris-azure-devops/release', approver)).toBe(`Waiting on \`approver\`: you. ${words}`);
+    expect(waitSaid(t, 'daoris-azure-devops/release', { ...approver, values: { ...approver.values, holder: 'agent', holderName: 'release-steward' } }))
+      .toBe(`Waiting on \`approver\`: \`release-steward\`. ${words}`);
+    render(<StepWait step={{ ...step('daoris-azure-devops/release', approver), state: 'waiting' } as RunStep} />);
+    expect(screen.getByRole('link', { name: 'Open where it is taken' }).getAttribute('href')).toBe(page);
+    await i18n.changeLanguage('zh');
+    expect(waitSaid(t, 'daoris-azure-devops/release', approver)).toBe(`等待 \`approver\`：你。${words}`);
+  });
+
   it('draws the wait under the step, and nothing for a step that waits on none', () => {
     const { rerender } = render(<StepWait step={step('merge', { code: 'root-dirty', since: '2026-11-09T14:02:00Z' })} />);
     expect(screen.getByText(/Waits for the repository's checkout to be clean/)).toBeTruthy();

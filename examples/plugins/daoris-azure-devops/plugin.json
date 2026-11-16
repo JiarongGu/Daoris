@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.1.0",
-  "changes": "A new read, discover-releases, lists what a repository's pipelines release through (each definition's stages with what starts them, its triggers and links, and each stage's proposed deploysOn) as candidates, choosing none. The release step's target names the deployable it releases (deployable) and the earliest act that deploys into it (deploysOn, push where undeclared); its holds and outcomes name that deployable, and a declared pipeline that no longer exists holds target-changed.",
+  "version": "4.2.0",
+  "changes": "The release step tells Daoris what its watched stage waits on as it changes, from its first look: an approval waits on its approver (who is asked, since when), a stage it observes that nothing started on its deployer, each with the release's page, so Daoris shows the step waiting on that actor. It approves and starts nothing for them. A no-release names the definition's newest releases and the build each carries.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

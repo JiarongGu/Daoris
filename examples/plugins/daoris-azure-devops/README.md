@@ -99,6 +99,7 @@ GET   {org}/{project}/_apis/git/repositories/{repo}/commits/{commit}/changes    
 GET   {org}/{project}/_apis/git/repositories/{repo}/items?path={yaml}&versionDescriptor.version={commit}…      a YAML pipeline's trigger
 GET   {vsrm}/{project}/_apis/release/definitions?artifactType=Build&artifactSourceId={projectId}:{pipeline}&$expand=…   a hold's candidates
 GET   {vsrm}/{project}/_apis/release/releases?definitionId=…&artifactTypeId=Build&sourceId=…&artifactVersionId={build}
+GET   {vsrm}/{project}/_apis/release/releases?definitionId=…&$top=3&$expand=artifacts   what a no-release found instead
 GET   {vsrm}/{project}/_apis/release/releases/{id}                             the declared stage's status and approvals, every so often
 POST  {vsrm}/{project}/_apis/release/releases                                  { definitionId, description, artifacts: [{ alias, instanceReference }] }, for create-and-start alone
 PATCH {vsrm}/{project}/_apis/release/releases/{id}/environments/{stage}         { status: inProgress }, for start-stage and create-and-start alone
@@ -115,12 +116,20 @@ releases. What it finds is only ever proposed: a definition's label, its trigger
 The build is the newest one of the merged commit on the target branch of the declared pipeline. It waits for that build to succeed, then
 looks for the declared definition's release made from exactly that build (its artifact under the definition's alias for the pipeline is
 that build). With `observe` or `start-stage`, a release none made within `findSeconds` fails `no-release` (*No release of Portal (#42) was
-made from build 20261110.41 (1a2b3c4d) within 600 s; the step's action does not create one.*). With `create-and-start`, it waits for a
+made from build 20261110.41 (1a2b3c4d) within 600 s; the step's action does not create one. It found Release-12 (#90) from build
+20261110.40, not this one.*): the definition's newest releases, one made by hand included, each with the build it carries. A release made by
+hand from that same build is found, as one its trigger made. With `create-and-start`, it waits for a
 release the definition's CD trigger makes where one takes the build's branch, and otherwise makes the release from that build, saying first
 which stages its creation starts by itself; the release's description names the attempt, and a retry after an interrupted creation finds
 the release it made rather than making a second. Several releases of the definition from one build fail `ambiguous`, listing them. Only the
 declared stage is watched, until it ends: a pending approval is said on the plugin's console and waited on, never given here, and the stage
-is started (once) only by `start-stage` and `create-and-start`. The step reaches when that stage ended as `success` asks, with the
+is started (once) only by `start-stage` and `create-and-start`. The watch's first look and each change of what the stage waits on are told to Daoris as a `progress`
+on the attempt (`work/step`, its own id, settling nothing), naming the actor whose act it is: `approver` for a pending approval, with whom
+Azure DevOps asks and since when (*Release-12 of app-release: Approve Production in Azure DevOps: asked of Release Approvers since
+2026-11-16 09:50 UTC.*), and `deployer` for a stage `observe` watches that nothing started; its evidence is the release's page and the
+stage. Once the stage goes on, a `progress` with no actor says so. Daoris draws the step as waiting on that actor, filled by its holder,
+and lists it in *What needs you*, its session in Sessions' Needs you, where the person holds it. A watch started again replaces what
+Daoris kept from before, its first look told whatever it finds. The step reaches when that stage ended as `success` asks, with the
 release's or the run's address as evidence and the stage's outcome in its message (*Release-12 of app-release from build 20261110.41
 (1a2b3c4d): Production succeeded after an approval by Release Approvers.*). A pipeline run's own stage is only observed.
 

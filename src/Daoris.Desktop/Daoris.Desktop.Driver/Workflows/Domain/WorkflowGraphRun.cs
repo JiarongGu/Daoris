@@ -202,6 +202,8 @@ public static class WorkflowGraphRuns
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
             var cannot = facts.Record?.Ended is null ? GraphCannotStart.Of(node, status.State, run.Process) : null;
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
+            var progress = StepWaiting.Of(facts.Record, node, status);
+            if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
@@ -221,7 +223,7 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }

@@ -66,6 +66,9 @@ public sealed record AttentionFacts
     /// <summary>The runs waiting on a person's task, as the runtime last governed them: each run, its node and the presses it waits for.</summary>
     public IReadOnlyList<JsonObject> Tasks { get; init; } = [];
 
+    /// <summary>The runs whose plugin step waits on an actor the person holds, as the runtime last governed them: each run, its node, the act and its page.</summary>
+    public IReadOnlyList<JsonObject> Actors { get; init; } = [];
+
     /// <summary>
     /// The integration's waits on the owner, as <see cref="AttentionStateSlice.IntegrationWaits"/> reads them: a candidate held for
     /// a decide, a superseded commit awaiting its answer, a landing whose integration waits for the owner's card, a declaration owed the

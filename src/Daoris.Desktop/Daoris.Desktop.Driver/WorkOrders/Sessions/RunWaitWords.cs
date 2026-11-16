@@ -6,12 +6,13 @@ internal static class RunWaitWords
     public static IEnumerable<string> Of(SessionGrouping row)
     {
         if (row.Waits is not { Count: > 0 } waits) yield break;
-        foreach (var wait in waits) yield return $"run {wait.Run} {What(wait.Why)} at `{wait.Node}`";
+        foreach (var wait in waits) yield return $"run {wait.Run} {What(wait)} at `{wait.Node}`";
         yield return $"daoris workflow run --session {row.Session}";
     }
 
-    private static string What(string why) => why switch
+    private static string What(PersonWait wait) => wait.Why switch
     {
+        PersonWaits.Actor => $"waits on `{wait.Actor}`, which you hold,",
         PersonWaits.Accept => "waits for your Accept",
         PersonWaits.Approval => "waits for your approval",
         PersonWaits.Task => "waits for your Done",

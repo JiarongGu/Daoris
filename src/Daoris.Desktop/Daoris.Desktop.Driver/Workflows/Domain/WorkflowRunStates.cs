@@ -17,6 +17,8 @@ public static class WorkflowRunStates
     /// <summary>It waits for an agent's answer: a set-up shown again, findings answered, a question another repository answers.</summary>
     public const string WaitingOnAgent = "waiting-on-agent";
 
+    public const string Waiting = "waiting";
+
     /// <summary>What it waits on could not be read, which is never taken as passed or failed.</summary>
     public const string NotKnown = "not-known";
 

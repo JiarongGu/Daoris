@@ -14,6 +14,7 @@
   "workflow.run.state.working": "working",
   "workflow.run.state.waiting-on-you": "waiting on you",
   "workflow.run.state.waiting-on-agent": "waiting on an agent",
+  "workflow.run.state.waiting": "waiting",
   "workflow.run.state.not-known": "not known",
   "workflow.run.state.cannot-start": "cannot start",
   "workflow.run.state.done": "done",
