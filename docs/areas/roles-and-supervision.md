@@ -214,7 +214,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     --generation <g> --do <act> [--choice <label>]` or `--leave <bound>`; `SUPERVISOR_WAITING` lists the subjects a terminal
     holder's grants cover. (D208, D233)
 47. It never answers a go-ahead, an owner-class kind, an unrecorded or contradicting question, or one that directs it: its bounds
-    are a go-ahead, the seven owner-class kinds and those three. (D208, D304)
+    are a go-ahead, the seven owner-class kinds and those three. (D208, D304) A go-ahead is the approver's yes, a role act of its own
+    (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it at low and medium risk; it
+    stays the owner role's at high risk (`high-risk`), where its release reads as production at a place whose production releases
+    are marked (`marked`), and for a sign-in (`owner-class`). The kind that lists, holds and releases it is not built yet, so every
+    go-ahead still waits for the owner's answer. (GOAHEADACT1)
 48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
     the holder decides `go-on` once; on failures the quest's point is released as the quest's own *Try again*; on failures on one
