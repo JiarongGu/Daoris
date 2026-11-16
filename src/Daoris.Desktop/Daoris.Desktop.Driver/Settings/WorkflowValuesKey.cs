@@ -96,7 +96,7 @@ public static class WorkflowValuesKey
     public static string WhyOf(string repository, string workflow, string node) => $"{repository.Trim()}/{workflow}/{node}";
 
     /// <summary>
-    /// The one door's judge (RELEASEVALUES1): a node's values set, each named option's JSON value laid over what it kept, or the node's
+    /// The one door's judge: a node's values set, each named option's JSON value laid over what it kept, or the node's
     /// values taken away with <paramref name="values"/> null, and the reason recorded beside them. The window's route and the
     /// <c>daoris workflow values</c> verb both call it before anything is written, so they refuse alike.
     /// </summary>

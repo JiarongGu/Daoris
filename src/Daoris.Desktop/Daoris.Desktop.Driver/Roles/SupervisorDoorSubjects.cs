@@ -57,7 +57,7 @@ public static class SupervisorDoorSubjects
             ? AskWords.Of(ask).GoAheads?.FirstOrDefault(each => each.Number == parts.Number)
             : null;
 
-    /// <summary>What a role's answer to <paramref name="goAhead"/> is pinned to: its number, kind, target and act (D306).</summary>
+    /// <summary>What a role's answer to <paramref name="goAhead"/> is pinned to: its number, kind, target and act.</summary>
     public static GoAheadPin Pin(GoAheadView goAhead) => new(goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act);
 
     /// <summary>A departed quest's pin: its status, hold, last move and answers, digested, so a done redone or answered again is another.</summary>

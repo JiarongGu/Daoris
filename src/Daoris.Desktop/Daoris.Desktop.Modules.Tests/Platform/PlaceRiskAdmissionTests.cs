@@ -4,7 +4,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PLACERISK1: the roles' admission reads the place's risk record at each act, so a place the owner holds high admits no appointed role's
+/// The roles' admission reads the place's risk record at each act, so a place the owner holds high admits no appointed role's
 /// act and its decisions wait on the owner role; and the record is the owner's, pressed by an agent only on the owner's card.
 /// </summary>
 public sealed class PlaceRiskAdmissionTests : IDisposable

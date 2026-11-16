@@ -196,7 +196,7 @@ public sealed class BrainstormFiles(string home)
             writer.WriteEndObject();
         });
 
-    /// <summary>The document, as JSON and as its Markdown rendering, and its consultation record (D308) beside them.</summary>
+    /// <summary>The document, as JSON and as its Markdown rendering, and its consultation record beside them.</summary>
     public void WriteDocument(string id, BrainstormDocument document)
     {
         Bytes(PathOf(id, "document.json"), BrainstormDocuments.Json(document));

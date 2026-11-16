@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The go-ahead kind (GOAHEADACT1): an appointed role granted <c>goahead.answer</c> answers a go-ahead at low and medium risk, held for the
+/// The go-ahead kind: an appointed role granted <c>goahead.answer</c> answers a go-ahead at low and medium risk, held for the
 /// role's window with <i>Overrule</i> and pinned to its number, kind, target and act, then posted as the role's yes or no; a marked
 /// production release, a high-risk place and a sign-in stay the owner role's, refused below it with nothing kept.
 /// </summary>

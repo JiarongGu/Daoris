@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The levels of the reporting line above a step, in climbing order, each named by the supervisor holding it (D309 point 4): the
+/// The levels of the reporting line above a step, in climbing order, each named by the supervisor holding it: the
 /// repository's supervisor or its workspace's, the machine's, then the owner role. The window's word census reads these codes
 /// (<c>scripts/shared-words.mjs</c>), so no level takes a word a seeded role or a glossary term already says.
 /// </summary>
@@ -119,7 +119,7 @@ public sealed record LineWait(LineLevel? At, IReadOnlyList<LinePass> Passed)
 /// holder or passes it up.
 /// </summary>
 /// <remarks>
-/// No level is the person's by default (D305): a level held by the person's rules or by nobody is the person's only where the place's
+/// No level is the person's by default: a level held by the person's rules or by nobody is the person's only where the place's
 /// risk record marks it (<see cref="PlaceMarks.Line"/>), else it is vacant, as is a level nobody is appointed to or whose holder is not
 /// granted the act; a vacant level passes help up, saying why. A home whose record is unwritten reads such a level as the person's, the
 /// older reading, until no home on a supported update path lacks the record. An unreadable role record or workspace map holds both
@@ -191,7 +191,7 @@ public sealed record ReportingLine(LineLevel Place, LineLevel Machine)
         if (hold.Holder is not (RoleHolders.Agent or RoleHolders.Terminal))
         {
             var heldBy = hold.Holder is null ? "nobody" : "your rules";
-            // The person holds a level only by the owner's line mark (D305); a home whose record is unwritten reads it as before the record.
+            // The person holds a level only by the owner's line mark; a home whose record is unwritten reads it as before the record.
             return risk is not { Written: true } || risk.OwnerHoldsLine(role.Scope, kind)
                 ? new(level, role.Id, LineHolders.Person, $"`{role.Id}` is held by {heldBy}, and the level is marked yours")
                 : new(level, role.Id, null, $"`{role.Id}` is held by {heldBy} and no mark makes the level yours");

@@ -105,7 +105,7 @@ public static class LandingCode
 
     /// <summary>
     /// Another of Daoris's writes held the repository or the tree when the landing came to write (its trees being cleaned up, its branches
-    /// brought up to date, another landing, a tree being reserved), so nothing was written: a cause that passes. The yes stands, and it is tried
+    /// brought up to date, another landing, a tree being reserved), so nothing is written: a cause that passes. The yes stands, and it is tried
     /// again by itself once the cause clears, never asked of the person again; its wait has a deadline (<see cref="LandRetries"/>).
     /// </summary>
     public const string Busy = "busy";

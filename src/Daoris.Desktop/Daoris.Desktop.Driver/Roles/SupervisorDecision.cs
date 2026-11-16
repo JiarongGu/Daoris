@@ -33,7 +33,7 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
 
     public string? Role { get; init; }
 
-    /// <summary>On a <c>not-granted</c> refusal, the grant that was missing (<see cref="ActSpends"/>).</summary>
+    /// <summary>On a <c>not-granted</c> refusal, the grant lacking (<see cref="ActSpends"/>).</summary>
     public string? Missing { get; init; }
 }
 

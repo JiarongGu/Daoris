@@ -163,7 +163,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
         foreach (var _ in book.Attempts.CloseUnended(now)) log?.Info("supervisor.attempt-failed", ("why", SupervisorWhy.Restarted));
         foreach (var subject in book.Attempts.EndedSubjects()) book.Closed.TryAdd(subject, SupervisorState.Interrupted);
 
-        // A row whose decision was closed here, or whose file is gone, holds nothing any more.
+        // A row whose decision is closed here, or whose file is gone, holds nothing any more.
         foreach (var id in held.Keys) book.Held.Drop(id);
         return swept;
     }

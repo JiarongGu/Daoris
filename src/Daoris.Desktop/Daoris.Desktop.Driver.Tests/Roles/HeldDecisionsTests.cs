@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A role's held decisions and their overrule windows are a table a restart reads back (DURABLEWINDOW1, D309 point 1): an agent's held
+/// A role's held decisions and their overrule windows are a table a restart reads back: an agent's held
 /// answer keeps its answer and what is left of its window across a restart, one whose window closed meanwhile applies at the next look,
 /// one the owner overruled stays overruled, and a terminal's hold, which ends with its run, goes stale as before.
 /// </summary>

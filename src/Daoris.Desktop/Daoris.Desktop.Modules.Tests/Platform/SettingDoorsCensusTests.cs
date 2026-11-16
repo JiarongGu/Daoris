@@ -95,7 +95,7 @@ public sealed class SettingDoorsCensusTests
     /// <summary>
     /// Each key of the driver's file a step or a door reads by its own <c>Key</c> (each <c>…Key</c> type's, by reflection) and the window's
     /// setting that writes it: a key with none is a value only an edit of the file sets, which is how a release target came to be edited by
-    /// hand (RELEASEVALUES1). Seen failing first on <c>workflowValues</c>.
+    /// hand. Seen failing first on <c>workflowValues</c>.
     /// </summary>
     internal static IReadOnlyDictionary<string, string> ConfigDoors { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {

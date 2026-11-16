@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>The kinds of failure the evidence routine reads from the day's records.</summary>
 public static class EvidenceKinds
 {
-    /// <summary>A run or session ended because it was stopped, not because it finished.</summary>
+    /// <summary>A run or session ended by being stopped, not by finishing.</summary>
     public const string StoppedRun = "stopped-run";
 
     /// <summary>A step, request or question that waited with no holder, or on one never told.</summary>

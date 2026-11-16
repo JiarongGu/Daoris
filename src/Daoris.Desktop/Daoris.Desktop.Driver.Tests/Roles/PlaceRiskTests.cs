@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLACERISK1: each place's risk and the owner's marks are one record in <c>driver.json</c>, read narrowest first with destination marks
+/// Each place's risk and the owner's marks are one record in <c>driver.json</c>, read narrowest first with destination marks
 /// covering every place under them; the home's migration writes today's implicit person-holds as line marks, moving no routing.
 /// </summary>
 public sealed class PlaceRiskTests : IDisposable

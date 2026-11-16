@@ -63,7 +63,7 @@ public sealed class DriverRoutes(DriverContext context)
 
     /// <summary>
     /// A repository's own values over a node of a workflow it follows (a release step's target), set or cleared with the reason recorded,
-    /// judged by <see cref="WorkflowValuesKey.Apply"/> before anything is written; <c>daoris workflow values</c> is its twin (RELEASEVALUES1).
+    /// judged by <see cref="WorkflowValuesKey.Apply"/> before anything is written; <c>daoris workflow values</c> is its twin.
     /// </summary>
     [DriverRoute("SET_WORKFLOW_VALUES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_WORKFLOW_VALUES", Repository = "repository")]

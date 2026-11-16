@@ -55,7 +55,7 @@ internal sealed class VacancyKind : ISupervisorKind
         var admitted = judge.Admit(SupervisorKinds.Vacancy, place, act == LinePasses.Left ? null : act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
-        // A re-cast names a reviewer the vacancy offered; and every grant on the act's chain covers what it spends (D306).
+        // A re-cast names a reviewer the vacancy offered; and every grant on the act's chain covers what it spends.
         if (OpinionCasting.Refusal(kept, act, agent) is { } refused) return SupervisorDecided.Refused(refused);
         var role = judge.Supervising(SupervisorKinds.Vacancy, place).Role;
         if (act != LinePasses.Left && ActSpends.Missing([role?.Hold?.Acts ?? []], SupervisorKinds.Qualified(SupervisorKinds.Vacancy, act), OpinionCasting.Spends(act, agent))
@@ -83,7 +83,7 @@ internal sealed class VacancyKind : ISupervisorKind
         if (left.Keys.Any(LineLevels.IsBelowMachine)) return new RolePlace();
         if (loop.Pipe?.StandingConfirmation is not { } judge) return new RolePlace(Repository: repository);
         var place = judge.Placed(repository);
-        // A level below the machine holding none of the vacancy's acts is vacant (D305): the vacancy passes up to the machine's, never to nobody.
+        // A level below the machine holding none of the vacancy's acts is vacant: the vacancy passes up to the machine's, never to nobody.
         return judge.Supervising(SupervisorKinds.Vacancy, place).Role is { Scope.Rank: > 0 } && SupervisorDecisionDoor.Covered(judge, SupervisorKinds.Vacancy, place) is null
             ? new RolePlace()
             : place;

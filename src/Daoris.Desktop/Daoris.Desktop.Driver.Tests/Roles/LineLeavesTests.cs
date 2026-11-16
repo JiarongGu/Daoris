@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every kind's leave climbs the reporting line (D304 point 3): each leave records the level that made it (<see cref="LineLeaves"/>), and
+/// Every kind's leave climbs the reporting line: each leave records the level that made it (<see cref="LineLeaves"/>), and
 /// <see cref="ReportingLine.Climb"/> with that map says where the subject waits now. A leave by a level below the machine passes the subject to
 /// the machine's supervisor; only an owner-class bound reaches the owner role; other help the machine's supervisor leaves ends as gave up.
 /// </summary>
