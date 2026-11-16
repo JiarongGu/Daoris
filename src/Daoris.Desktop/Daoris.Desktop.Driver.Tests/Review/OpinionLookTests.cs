@@ -301,7 +301,7 @@ public sealed class OpinionLookTests : IDisposable
         {
             Offered = ["codex-acp"],
         });
-        casts.Keep("q1", "reports", new OpinionCast(at.AddMinutes(1), "s1", LineActors.Lead, "reports-lead", SupervisorKinds.Recast, "codex-acp", "its reset passed"));
+        casts.Keep("q1", "reports", new OpinionCast(at.AddMinutes(1), "s1", LineLevels.Repository, "reports-supervisor", SupervisorKinds.Recast, "codex-acp", "its reset passed"));
         var driver = Driver(host);
 
         await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);

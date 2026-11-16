@@ -20,7 +20,7 @@ public sealed class TeamRolesTests
         Assert.Equal([RoleWork.Plan], lead.Takes);
         Assert.Equal([RoleWork.Orient], scout.Takes);
         Assert.All(new[] { lead, scout }, role => Assert.Equal(RoleScope.Everywhere, role.Scope));
-        Assert.Equal(("Lead", "负责人", "Scout", "侦察"), (lead.Name.In("en"), lead.Name.In("zh"), scout.Name.In("en"), scout.Name.In("zh")));
+        Assert.Equal(("Lead", "主导", "Scout", "侦察"), (lead.Name.In("en"), lead.Name.In("zh"), scout.Name.In("en"), scout.Name.In("zh")));
         Assert.All(new[] { "lead", "scout" }, id =>
         {
             Assert.Contains(id, ActorChoices.Ids);
