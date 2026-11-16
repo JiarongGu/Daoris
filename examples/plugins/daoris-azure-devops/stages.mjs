@@ -28,6 +28,20 @@ const UNDER_WAY = { inProgress: 'deploying', queued: 'queued', scheduled: 'sched
 const approvalsOf = (environment) => [...(environment.preDeployApprovals ?? []), ...(environment.postDeployApprovals ?? [])];
 const pendingOf = (environment) => approvalsOf(environment).find((approval) => approval.status === 'pending');
 const whoOf = (approval) => approval?.approvedBy?.displayName ?? approval?.approver?.displayName ?? 'its approvers';
+const sinceOf = (iso) => (Number.isFinite(Date.parse(iso ?? '')) ? ` since ${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '');
+
+/**
+ * What the declared stage waits on where only someone outside the step moves it: the actor whose act it is, the act in words and the
+ * stage; null while it deploys, ends or waits on nothing. An approval is the approver's, a stage the step observes that nothing started
+ * its deployer's. The act stays theirs, in Azure DevOps: no call here approves or deploys for them.
+ */
+export function waitOf(environment, target) {
+  const name = environment.name;
+  const pending = pendingOf(environment);
+  if (pending) return { actor: 'approver', environment: name, act: `Approve ${name} in Azure DevOps: asked of ${whoOf(pending)}${sinceOf(pending.createdOn)}` };
+  if (!NOT_STARTED.includes(environment.status) || target.action !== 'observe') return null;
+  return { actor: 'deployer', environment: name, act: `Deploy ${name} in Azure DevOps: nothing started it, and the step observes it` };
+}
 
 /** The declared stage of a classic release in words: how it ended, or where it stands. */
 function environmentWords(environment, seen, target) {
@@ -53,9 +67,10 @@ function environmentWords(environment, seen, target) {
  * `{ verdict: 'missing' }` where the release holds no such stage. Where the action starts it and nothing has, it is started here once, by
  * the token, for Azure DevOps' approvals and gates to decide.
  */
-export async function watchRelease(repo, id, target, ends, say, commit) {
+export async function watchRelease(repo, id, target, ends, say, commit, tell = () => {}) {
   const seen = { started: false, approval: null };
   let last = null;
+  let told = null;
   const verdict = await until(async () => {
     const release = (await releases(repo, 'GET', `/releases/${id}`)).json;
     if (!release) return undefined;
@@ -65,6 +80,13 @@ export async function watchRelease(repo, id, target, ends, say, commit) {
     const pending = pendingOf(environment);
     if (pending && !seen.approval) say(`${environment.name} waits on an approval by ${whoOf(pending)}.`);
     if (pending) seen.approval = whoOf(pending);
+    // Each change of what the stage waits on is told once: a wait, and its end while the stage goes on; an end is the step's own outcome.
+    const ended = WELL[environment.status] || FAILED.includes(environment.status);
+    const waits = ended ? null : waitOf(environment, target);
+    if (!ended && (waits?.act ?? null) !== (told?.act ?? null)) {
+      tell(waits ?? { environment: environment.name, act: `${environment.name} ${UNDER_WAY[environment.status] ?? environment.status}` });
+      told = waits;
+    }
     if (NOT_STARTED.includes(environment.status) && !seen.started && target.action !== 'observe') {
       const set = await releases(repo, 'PATCH', `/releases/${id}/environments/${environment.id}`,
         { status: 'inProgress', comment: `Started by Daoris for ${commit.slice(0, 8)}.`, scheduledDeploymentTime: null });

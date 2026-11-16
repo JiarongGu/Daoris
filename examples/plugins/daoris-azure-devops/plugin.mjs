@@ -133,13 +133,26 @@ async function stateOf(frame) {
   };
 }
 
+/**
+ * An attempt's progress as a `work/step` frame Daoris keeps on the attempt and never settles it by: `progress`, the actor its act waits
+ * on where one does, and its words and page. Each its own id, so no later frame, the completion above all, is read as its replay.
+ */
+const progressOf = (attempt) => {
+  let told = 0;
+  return ({ actor, environment, url, message }) => {
+    told += 1;
+    send({ jsonrpc: '2.0', method: 'work/step', params: { step: attempt.step, invocation: attempt.invocation, state: 'progress', ...(actor ? { actor } : {}),
+      evidence: { ...(url ? { url } : {}), ...(environment ? { environment } : {}), message: signed(message) }, at: new Date().toISOString(), id: `${attempt.invocation}-p${told}` } });
+  };
+};
+
 const kit = work({
   data: process.env.DAORIS_PLUGIN_DATA,
   send,
   say,
   act: async (attempt) => {
     if (stepOf(attempt) === 'pull-request') return within(async () => told(await pullRequest(attempt)));
-    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say)));
+    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say, progressOf(attempt))));
     return failed('unknown-step', `no step ${attempt.step}`);
   },
   // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.
