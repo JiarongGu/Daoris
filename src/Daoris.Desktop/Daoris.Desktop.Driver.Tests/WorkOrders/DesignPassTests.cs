@@ -170,7 +170,7 @@ public sealed class DesignPassTests
         }
         finally
         {
-            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
     }
 }

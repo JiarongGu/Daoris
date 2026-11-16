@@ -14,7 +14,7 @@ public sealed class UxTrailTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Discard(_home);
     }
 
     /// <summary>Entries as the bridge reads a window's: what it does not name is not read.</summary>
