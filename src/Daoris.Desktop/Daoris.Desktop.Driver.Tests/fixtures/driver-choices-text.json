@@ -747,6 +747,21 @@
       "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb."
     },
     {
+      "name": "risk alone, said",
+      "argv": [
+        "risk"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: this machine: low (default).",
+        "  No record is written yet: Daoris writes it at its next start."
+      ],
+      "err": [],
+      "after": null,
+      "changed": "PLACERISK1: a place's risk and the owner's marks are one record of their own, new with this verb; with nothing to set it says what stands."
+    },
+    {
       "name": "line",
       "argv": [
         "line",

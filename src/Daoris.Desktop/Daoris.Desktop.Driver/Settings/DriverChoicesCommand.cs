@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -25,7 +25,7 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
-        "brainstorms", "workflow", "keep", "role", "terminal", MachineSettingsSaid.Every,
+        "brainstorms", "workflow", "keep", "role", "terminal", "risk", MachineSettingsSaid.Every,
     ];
 
     public const string Usage =
@@ -34,6 +34,7 @@ public static class DriverChoicesCommand
                daoris place drive|undrive|hold|resume <repository>
                daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
+               daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> [<branch>|--clear] [--commit merge|rebase|squash] [--batch <1 to 8>]
                       [--order arrival|apart] [--gates declared|none] [--unreached|--reached split|hold|land] [--integrate-line <branch>];
