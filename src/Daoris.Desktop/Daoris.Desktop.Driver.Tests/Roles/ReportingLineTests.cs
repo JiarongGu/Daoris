@@ -64,11 +64,22 @@ public sealed class ReportingLineTests
     }
 
     [Fact]
-    public void A_level_held_by_the_persons_rules_is_held_by_the_person_there()
+    public void A_level_held_by_the_persons_rules_is_the_persons_only_where_the_owner_marked_it()
     {
-        var rules = Line(Machine());
-        Assert.Equal((LineActors.Head, LineHolders.Person), (rules.Climb(ownerClass: false).At!.Actor, rules.Climb(ownerClass: false).At!.Holder));
-        Assert.Equal("waiting on head: you · passed up: lead: " + rules.Lead.Why, rules.Climb(ownerClass: false).Said());
+        // REPORTLINE1b (D305): no level is the person by default. Unmarked, a level held by rules is vacant and the help passes up.
+        var unmarked = ReportingLine.Of([Machine()], SupervisorKinds.Vacancy, AtEngine, Placed, SupervisorKinds.Recast, new PlaceRiskBook(new Dictionary<string, PlaceRisk>()));
+        Assert.True(unmarked.Head.Vacant);
+        Assert.True(unmarked.Climb(ownerClass: false).GaveUp);
+
+        // The migration's line mark at the machine keeps today's routing: the person holds the level there.
+        var marked = ReportingLine.Of([Machine()], SupervisorKinds.Vacancy, AtEngine, Placed, SupervisorKinds.Recast,
+            PlaceRiskBook.Unwritten.Apply(new PlaceRiskEdit { Mark = [PlaceMarks.Line] }));
+        Assert.Equal((LineActors.Head, LineHolders.Person), (marked.Climb(ownerClass: false).At!.Actor, marked.Climb(ownerClass: false).At!.Holder));
+        Assert.Equal("waiting on head: you · passed up: lead: " + marked.Lead.Why, marked.Climb(ownerClass: false).Said());
+
+        // A home whose record is not written yet reads the line as before it.
+        var older = Line(Machine());
+        Assert.Equal(LineHolders.Person, older.Climb(ownerClass: false).At!.Holder);
     }
 
     [Fact]

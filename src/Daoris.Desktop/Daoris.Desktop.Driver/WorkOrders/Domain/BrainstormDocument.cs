@@ -57,6 +57,9 @@ public sealed record BrainstormDocument(
     string Id, string Question, string Packet, IReadOnlyList<BrainstormPassRecord> Passes, IReadOnlyList<BrainstormRow> Rows,
     IReadOnlyList<(BrainstormMember Member, string Why)> LeftOut, IReadOnlyList<string> Needs, string? Unranked)
 {
+    /// <summary>A design pass's comparison, where its reader gave one; null for a brainstorm's, and for an unranked document.</summary>
+    public DesignComparison? Comparison { get; init; }
+
     /// <summary>The makers whose generators answered, each once.</summary>
     public IReadOnlyList<string> Makers =>
     [
@@ -130,7 +133,7 @@ public static class BrainstormDocuments
             return new BrainstormRow(group.Rank, group.Title, group.Idea, group.Why, members, [.. Daoris(members), .. group.Flags]);
         }).ToList();
         var left = synthesis.LeftOut.Select(drop => (new BrainstormMember(drop.Id, byId[drop.Id].By, byId[drop.Id].Proposal), drop.Why)).ToList();
-        return new BrainstormDocument(id, packet.Question, packet.Digest, passes, rows, left, needs, null);
+        return new BrainstormDocument(id, packet.Question, packet.Digest, passes, rows, left, needs, null) { Comparison = synthesis.Comparison };
     }
 
     /// <summary>
@@ -226,6 +229,7 @@ public static class BrainstormDocuments
             writer.WriteStartArray("needs");
             foreach (var need in document.Needs) writer.WriteStringValue(need);
             writer.WriteEndArray();
+            DesignDocuments.Json(writer, document.Comparison);
             writer.WriteStartArray("passes");
             foreach (var pass in document.Passes)
             {
@@ -319,6 +323,7 @@ public static class BrainstormDocuments
             foreach (var need in document.Needs) text.Append("- ").Append(need).Append('\n');
         }
 
+        DesignDocuments.Markdown(text, document.Comparison);
         text.Append("\n## Passes\n\n");
         foreach (var pass in document.Passes)
         {

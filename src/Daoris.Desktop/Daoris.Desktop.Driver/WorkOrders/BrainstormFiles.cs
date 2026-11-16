@@ -6,8 +6,10 @@ namespace Daoris.Driver;
 /// <summary>A brainstorm's request as its verb writes it: written once, never changed.</summary>
 /// <param name="Agents">The adapters the request names, in order; empty for the machine's own agent.</param>
 /// <param name="Sources">The repository-relative paths the asker named with <c>--source</c>; null where none (and for a request written before the option).</param>
+/// <param name="Pass"><c>design</c> for a design pass (<see cref="DesignPasses"/>); null for a brainstorm, and for a request written before.</param>
 public sealed record BrainstormRequest(
-    string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, IReadOnlyList<string>? Sources = null);
+    string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, IReadOnlyList<string>? Sources = null,
+    string? Pass = null);
 
 /// <summary>Where a brainstorm stands, as the driver alone writes it.</summary>
 /// <param name="Packet">The digest of the packet frozen for it; null before the look froze one.</param>
@@ -93,7 +95,7 @@ public sealed class BrainstormFiles(string home)
                 ? [.. paths.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!)]
                 : [];
             return new BrainstormRequest(
-                id, question, Text(element, "repository"), agents, Moments.Read(element, "at") ?? DateTimeOffset.UnixEpoch, sources);
+                id, question, Text(element, "repository"), agents, Moments.Read(element, "at") ?? DateTimeOffset.UnixEpoch, sources, Text(element, "pass"));
         }
     }
 
@@ -194,11 +196,12 @@ public sealed class BrainstormFiles(string home)
             writer.WriteEndObject();
         });
 
-    /// <summary>The document, as JSON and as its Markdown rendering.</summary>
+    /// <summary>The document, as JSON and as its Markdown rendering, and its consultation record (D308) beside them.</summary>
     public void WriteDocument(string id, BrainstormDocument document)
     {
         Bytes(PathOf(id, "document.json"), BrainstormDocuments.Json(document));
         Bytes(PathOf(id, "document.md"), System.Text.Encoding.UTF8.GetBytes(BrainstormDocuments.Markdown(document)));
+        Bytes(PathOf(id, "consultation.json"), Consultations.Json(Consultations.Of(document, Request(id)?.Pass ?? "brainstorm")));
     }
 
     public string? DocumentText(string id) => ReadText(PathOf(id, "document.md"));

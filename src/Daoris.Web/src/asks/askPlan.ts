@@ -25,6 +25,8 @@ export type AskPlanAnswer = { key: string; words: string; at: string };
 export type AskPlanRevision = {
   scope: string | null; revision: number; depth: number; why: string; parts: AskPlanPart[]; edges: AskPlanEdge[]; flags: AskPlanFlag[];
   releases: AskPlanRelease[]; questions: AskPlanQuestion[]; answers: AskPlanAnswer[];
+  /** `one-scope`: its parts merge with no checks each and are checked once at the end; null for each part checked, as before. */
+  integration?: 'one-scope' | 'per-part' | null;
 };
 
 /** A session on the ask's team: its `role` (`lead`), the part it serves (null for the ask's own plan) and the newest revision it wrote. */
@@ -68,6 +70,7 @@ export function askPlanOf(raw: unknown): AskPlan | null {
       revision: typeof plan.revision === 'number' ? plan.revision : 1,
       depth: typeof plan.depth === 'number' ? plan.depth : 1,
       why: text(plan.why),
+      integration: plan.integration === 'one-scope' || plan.integration === 'per-part' ? plan.integration : null,
       parts: rows(plan.parts).filter((part) => typeof part.id === 'string').map((part) => ({
         id: text(part.id), repository: text(part.repository), quest: typeof part.quest === 'string' ? part.quest : null,
         outcome: text(part.outcome), lanes: words(part.lanes), claims: words(part.claims),

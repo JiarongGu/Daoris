@@ -421,6 +421,7 @@
   "person.route.SET_DRIVABLE": "更改 Daoris 是否驱动一个仓库",
   "person.route.SET_GROWTH": "更改智能体能否开设仓库或房间",
   "person.route.SET_HAND_OVER": "更改会话何时可以转交",
+  "person.route.SET_PLACE_RISK": "更改某个地方的风险或你在其上的标记",
   "person.route.SET_HELPERS": "更改会话可以请求哪些助手",
   "person.route.SET_HELP_MODE": "更改问道衍的访问权限",
   "person.route.SET_HELP_GRANT": "更改问道衍无需询问可以做什么",

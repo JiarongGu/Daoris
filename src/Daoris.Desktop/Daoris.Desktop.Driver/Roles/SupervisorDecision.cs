@@ -20,6 +20,9 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public TimeSpan? Window { get; init; }
 
     public string? Role { get; init; }
+
+    /// <summary>On a <c>not-granted</c> refusal, the grant that was missing (<see cref="ActSpends"/>).</summary>
+    public string? Missing { get; init; }
 }
 
 /// <summary>The admission where no judge is wired: no terminal holds the supervisor, so every act is refused.</summary>
@@ -93,6 +96,12 @@ public static class SupervisorWhy
     public const string NotStarted = "not-started";
 
     public const string NotGranted = "not-granted";
+
+    /// <summary>The place's risk record holds the place high (<see cref="PlaceRiskBook"/>): no appointed role acts there, its decisions wait on the owner role.</summary>
+    public const string HighRisk = "high-risk";
+
+    /// <summary>The act's destination is one the owner marked at the place (<see cref="PlaceMarks"/>): it stays the owner role's.</summary>
+    public const string Marked = "marked";
 
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>
     public const string RoleChanged = "role-changed";

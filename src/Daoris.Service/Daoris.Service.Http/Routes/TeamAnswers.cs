@@ -30,7 +30,7 @@ internal static class TeamAnswers
             edge.Evidence is { } evidence ? new AskPlanEvidenceResponse(evidence.Repository, evidence.File, evidence.Range, evidence.Blob) : null,
             edge.Waived, DeliveryGraph.Stale([edge], seen).Count > 0))],
         Questions(DeliveryGraph.Open(plan, seen)),
-        [.. plan.Answers.Select(answer => new AskPlanAnswerResponse(answer.Key, answer.Words, answer.At))]);
+        [.. plan.Answers.Select(answer => new AskPlanAnswerResponse(answer.Key, answer.Words, answer.At))]) { Integration = plan.Integration };
 
     private static string Use(DeliveryUse use) => $"{use.Resource} ({use.Mode})";
 }

@@ -14,6 +14,9 @@ public sealed record TeamPlan(string Ask, string? Scope, int Revision, string? B
     /// <summary>The line's commit the plan reads, where the writer names one.</summary>
     public string? Base { get; init; }
 
+    /// <summary>How its parts are integrated (<see cref="TeamIntegration"/>): <c>one-scope</c> or <c>per-part</c>; null, as before, is per part.</summary>
+    public string? Integration { get; init; }
+
     /// <summary>The parts, each stripped of the claims the judge refused.</summary>
     public IReadOnlyList<TeamPart> Parts { get; init; } = [];
 

@@ -16,8 +16,9 @@ internal static class BrainstormDoor
 
     /// <summary>The ask: the words as typed, which the desk trims and judges.</summary>
     public static AskBrainstorm Ask(
-        string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources, string? id, bool meeting) =>
-        new(question, repository, agents, meeting ? Meeting : null, id, sources.Count > 0 ? sources : null);
+        string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources, string? id, bool meeting,
+        bool design = false) =>
+        new(question, repository, agents, meeting ? Meeting : null, id, sources.Count > 0 ? sources : null, design ? DesignPasses.Design : null);
 
     /// <summary>
     /// One press through the service: its sentence printed, 0 where the desk did it, 1 where it refused or no service answers.

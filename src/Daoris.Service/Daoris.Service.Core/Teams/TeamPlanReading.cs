@@ -32,6 +32,11 @@ public static class TeamPlanReading
             text.AppendLine(plan.Scope is null
                 ? $"Plan for ask `#{plan.Ask}`, revision {plan.Revision}: {plan.Why}"
                 : $"Split of part `{plan.Scope}`, revision {plan.Revision}, depth {plan.Depth}: {plan.Why}");
+            if (TeamIntegration.IsOneScope(plan))
+            {
+                text.AppendLine("  One scope: the parts merge into the ask's branch with no gate each; the full set and two reviews, wide and close, run once at its end.");
+            }
+
             foreach (var part in plan.Parts)
             {
                 var quest = rows.FirstOrDefault(row => row.Part == part.Id)?.Quest;

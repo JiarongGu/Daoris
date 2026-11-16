@@ -202,7 +202,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// </summary>
     private async Task<string> FreezeAsync(BrainstormRequest request, Snapshot snapshot, BrainstormFiles files, CancellationToken ct)
     {
-        var packet = await AssembleAsync(request.Question, request.Repository, snapshot, ct, request.Sources).ConfigureAwait(false);
+        var packet = DesignPasses.Is(request) ? DesignPasses.Packet(request)
+            : await AssembleAsync(request.Question, request.Repository, snapshot, ct, request.Sources).ConfigureAwait(false);
         files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
         files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, Clock.GetUtcNow()));
         var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
@@ -358,7 +359,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var plan = Generators(request, rule, workspace);
             var generators = plan.Select(each => each.Allowed
                 ? PassAsync<BrainstormAnswer>(
-                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, bytes, BrainstormInstruction.Generator(digest), null,
+                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, bytes, DesignPasses.Generator(request, digest), null,
                     text =>
                     {
                         var check = BrainstormAnswers.Check(text, sources);
@@ -403,11 +404,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 // The synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
                 var generated = plan.First(each => each.Pass == answered[0].By.Pass).Entry;
                 var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
-                    id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, BrainstormInstruction.Synthesizer(digest),
+                    id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, DesignPasses.Synthesizer(request, digest),
                     BrainstormSyntheses.Anonymous(handed),
                     text =>
                     {
-                        var check = BrainstormSyntheses.Check(text, handed);
+                        var check = DesignPasses.Check(request, text, handed);
                         return (check.Synthesis, check.Codes);
                     }, files, minutes.Synthesis * Minute, deadline - minutes.Challenge * Minute, stop.Token, ct, entry: generated, workspace: workspace)
                     .ConfigureAwait(false);

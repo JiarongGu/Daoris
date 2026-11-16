@@ -12,9 +12,11 @@ namespace Daoris.Contracts.Brainstorms;
 /// <param name="Repository">The one whose knowledge the packet is frozen from; none for the question alone.</param>
 /// <param name="Id">The caller's own, which makes the ask idempotent.</param>
 /// <param name="Sources">The repository's paths the packet takes in; a meeting takes none.</param>
+/// <param name="Pass"><c>design</c> for a design pass: the question is the purpose brief, the packet holds it alone, and the
+/// synthesis is a comparison naming the route, what would flip it, a trial and the owner's questions; none for a brainstorm.</param>
 public sealed record AskBrainstorm(
     string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null, string? Kind = null, string? Id = null,
-    IReadOnlyList<string?>? Sources = null) : IRoute<BrainstormActionResponse>
+    IReadOnlyList<string?>? Sources = null, string? Pass = null) : IRoute<BrainstormActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/brainstorms";

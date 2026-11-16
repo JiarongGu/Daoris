@@ -87,9 +87,11 @@ public sealed record LineWait(LineLevel? At, IReadOnlyList<LinePass> Passed)
 /// holder or passes it up.
 /// </summary>
 /// <remarks>
-/// A level held by the person's rules or by nobody is held by the person there, as the resolver makes such a decision the person's. A
-/// level nobody is appointed to, or whose holder is not granted the act, is vacant and passes help up, saying why. An
-/// unreadable record or workspace map holds both levels for the person, since what it would decide cannot be read.
+/// No level is the person's by default (D305): a level held by the person's rules or by nobody is the person's only where the place's
+/// risk record marks it (<see cref="PlaceMarks.Line"/>), else it is vacant, as is a level nobody is appointed to or whose holder is not
+/// granted the act; a vacant level passes help up, saying why. A home whose record is unwritten reads such a level as the person's, the
+/// older reading, until no home on a supported update path lacks the record. An unreadable role record or workspace map holds both
+/// levels for the person, since what it would decide cannot be read.
 /// </remarks>
 public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
 {
@@ -97,7 +99,8 @@ public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
     public static LineLevel Owner { get; } = new(LineActors.Owner, null, LineHolders.Person, "the owner actor, the top of every line");
 
     /// <summary>The line above help of <paramref name="kind"/> at <paramref name="place"/>, each level read for <paramref name="act"/> where one is named.</summary>
-    public static ReportingLine Of(IReadOnlyList<RoleSlot> slots, string kind, RolePlace place, RuleWiderPlaces? wider = null, string? act = null)
+    public static ReportingLine Of(
+        IReadOnlyList<RoleSlot> slots, string kind, RolePlace place, RuleWiderPlaces? wider = null, string? act = null, PlaceRiskBook? risk = null)
     {
         var found = SupervisorResolution.Find(slots, kind, place, wider);
         var machine = SupervisorResolution.Find(slots, kind, new RolePlace());
@@ -108,10 +111,10 @@ public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
         }
 
         var lead = found.Role.Scope.Rank > 0
-            ? Level(LineActors.Lead, found.Role, kind, act)
+            ? Level(LineActors.Lead, found.Role, kind, act, risk)
             : new LineLevel(LineActors.Lead, null, null, $"no lead is appointed: no supervisor of {Named(place)} decides `{kind}`");
         var head = machine.Role is { } role
-            ? Level(LineActors.Head, role, kind, act)
+            ? Level(LineActors.Head, role, kind, act, risk)
             : new LineLevel(LineActors.Head, null, LineHolders.Person, machine.Held ?? "no head is appointed, so you hold it");
         return new(lead, head);
     }
@@ -150,12 +153,16 @@ public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
         return new(ownerClass ? Owner : null, passed);
     }
 
-    private static LineLevel Level(string actor, RoleRecord role, string kind, string? act)
+    private static LineLevel Level(string actor, RoleRecord role, string kind, string? act, PlaceRiskBook? risk)
     {
         var hold = role.Hold!;
         if (hold.Holder is not (RoleHolders.Agent or RoleHolders.Terminal))
         {
-            return new(actor, role.Id, LineHolders.Person, $"`{role.Id}` is held by {(hold.Holder is null ? "nobody" : "your rules")}, so you hold it");
+            var heldBy = hold.Holder is null ? "nobody" : "your rules";
+            // The person holds a level only by the owner's line mark (D305); a home whose record is unwritten reads it as before the record.
+            return risk is not { Written: true } || risk.OwnerHoldsLine(role.Scope, kind)
+                ? new(actor, role.Id, LineHolders.Person, $"`{role.Id}` is held by {heldBy}, and the level is marked yours")
+                : new(actor, role.Id, null, $"`{role.Id}` is held by {heldBy} and no mark makes the level yours");
         }
 
         if (act is not null && !hold.Acts.Contains(SupervisorKinds.Qualified(kind, act), StringComparer.Ordinal))

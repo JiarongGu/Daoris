@@ -15,6 +15,7 @@ internal static class TeamPlanCodec
         writer.WriteString("why", plan.Why);
         writer.WriteString("at", Moments.Write(plan.At));
         if (plan.Base is { } baseCommit) writer.WriteString("base", baseCommit);
+        if (plan.Integration is { } integration) writer.WriteString("integration", integration);
         writer.WriteNumber("depth", plan.Depth);
         Array(writer, "parts", plan.Parts, WritePart);
         Array(writer, "edges", plan.Edges, WriteEdge);
@@ -38,6 +39,7 @@ internal static class TeamPlanCodec
             JsonFields.Text(root, "why") ?? "", Moments.Read(root, "at") ?? DateTimeOffset.UnixEpoch)
         {
             Base = JsonFields.Text(root, "base"),
+            Integration = JsonFields.Text(root, "integration"),
             Depth = (int)(JsonFields.Number(root, "depth") ?? 1),
             Parts = [.. JsonFields.Items(root, "parts").Select(ReadPart)],
             Edges = [.. JsonFields.Items(root, "edges").Select(edge => new TeamEdge(

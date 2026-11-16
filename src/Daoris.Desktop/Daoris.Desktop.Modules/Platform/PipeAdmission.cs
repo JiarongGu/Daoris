@@ -137,6 +137,19 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             delegated = PipeTerminalTier.Judge(pipe);
         }
 
+        // The owner's records are never an agent's to set: a session's proved press goes on the owner's card in every mode, and a process in
+        // an agents' job proving no key is refused.
+        if (judged is null && @class == PipeClass.Person && PipeOwnerOnly.Governs(request))
+        {
+            if (claim is null && pipe.StandingConfirmation.Caller.Place(connection.Client) == StandingPlace.InAgentJob)
+            {
+                _log.Info("owner-only.refused", ("route", $"{request.Module}.{request.Type}"), ("door", PipeDoor.Terminal));
+                return (IpcJson.Serialize(pipe.Refuse(request, PipeOwnerOnly.Refused, PipeOwnerOnly.RefusedSentence)), null);
+            }
+
+            if (claim is not null && delegated is { Tier: PipeDelegateTier.Covered }) delegated = pipe.Delegate.Asking(delegated, claim, connection);
+        }
+
         if (judged is null && delegated is { Tier: PipeDelegateTier.Covered } && PipeGrowth.Governs(request) && pipe.Growth is { } growth)
         {
             return (null, PipeGrowth.ThenAsync(pipe, growth, request, delegated, claim, connection, ruled => Accept(request, key, connection, hold, claim, ruled)));

@@ -37,6 +37,8 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
+        [Description("The ask's own plan only: `one-scope` merges the parts into the ask's branch with no gate each and runs the full set and two reviews once at the end; `per-part` gates each part. None keeps the standing one.")]
+        string? integration = null,
         [Description("To read: the blob each path holds now, as `{path: blob}`; a pack pointer or release order's evidence (`repository:file`) differing is named stale.")]
         Dictionary<string, string>? seen = null,
         [Description("To read: answer the plans whole as JSON, which `node tools/team-briefs.mjs` composes each part's brief from.")]
@@ -59,7 +61,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
 
         var save = new TeamSave(target, parts, edges ?? [], why ?? "")
         {
-            Scope = scope?.Scope, Expect = revision ?? 0, By = session, Base = baseCommit,
+            Scope = scope?.Scope, Expect = revision ?? 0, By = session, Base = baseCommit, Integration = integration,
             Deployables = deployables ?? [], Releases = releases ?? [], Questions = questions ?? [],
         };
         return (await teams.SaveAsync(save, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Message;
