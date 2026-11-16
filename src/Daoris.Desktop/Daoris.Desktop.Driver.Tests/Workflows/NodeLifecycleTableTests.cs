@@ -29,7 +29,7 @@ public sealed class NodeLifecycleTableTests
             // An opinion's gate passes it over where nothing is asked of it.
             "active>skipped:authority",
             "blocked>skipped:daoris", "ready>skipped:daoris", "invalidated>skipped:daoris",
-            "skipped>blocked:person", "skipped>invalidated:daoris",
+            "skipped>blocked:person", "skipped>invalidated:daoris", "reached>reached:authority", "skipped>skipped:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
             "active>invalidated:daoris", "reached>invalidated:daoris", "failed>invalidated:daoris", "rejected>invalidated:daoris",
             "unknown>invalidated:daoris",

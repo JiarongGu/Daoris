@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.NodeLifecycleRows;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -11,8 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class NodeLifecycleTests
 {
-    private const string Unit = "unit-a";
-
     private static readonly string[] Causes = [NodeCause.Daoris, NodeCause.Authority, NodeCause.Person];
 
     private static readonly NodeScope Run = new("graph-1", "run-1");
@@ -30,13 +29,6 @@ public sealed class NodeLifecycleTests
         };
 
     private static readonly NodePerform Retrying = new(Idempotent: true, Reconcile: false, ["unavailable"]);
-
-    /// <summary>The binding an attempt starts on: what Daoris's evaluation hands the start.</summary>
-    private static NodeAcceptance Bind(int attempt, string node = "n1") => new(Unit, "tip-1", "graph-1", node, 1, attempt);
-
-    /// <summary>That binding reached, with its evidence.</summary>
-    private static NodeAcceptance Accept(int attempt, string node = "n1") =>
-        Bind(attempt, node) with { Evidence = new NodePort("acme/receipt@1", $"{node}#{attempt}", "tip-1", null) };
 
     private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt), Scope = Run };
 
@@ -74,24 +66,11 @@ public sealed class NodeLifecycleTests
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
         // A record's skip names its source and the attempt, never the person's words.
         (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
-        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By) { Source = NodeSource.Path, Words = "w", Scope = Run },
+        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By) { Source = row.From == NodeStates.Skipped ? NodeSource.Decision : NodeSource.Path, Words = "w", Scope = Run },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
         (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
         _ => new NodeMove(row.To, row.By),
-    };
-
-    /// <summary>What a kind's authority forbids of a row, and nothing else: a person's judgement, a failure, a skip.</summary>
-    private static string? Forbidden(NodeTransition row, NodeAuthority authority) => row.To switch
-    {
-        // A failed node is gone on without, by the person, for a request alone.
-        NodeStates.Skipped when row is { From: NodeStates.Failed, By: NodeCause.Person } => authority.Kind == NodeKinds.Request ? null : NodeRefusal.NotSkippable,
-        NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
-        NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
-        NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
-        NodeStates.Skipped when row.By == NodeCause.Authority => authority.SkipBy is null ? NodeRefusal.NotAuthority : null,
-        NodeStates.Skipped when row.By != NodeCause.Daoris && !authority.PersonSkips => NodeRefusal.NotSkippable,
-        _ => null,
     };
 
     // ---- the one table (canary 43)
@@ -139,10 +118,6 @@ public sealed class NodeLifecycleTests
             }
         }
     }
-
-    /// <summary>That binding reached on the person's word: its evidence the person's, never a plugin's reference.</summary>
-    private static NodeAcceptance OnWord(int attempt) =>
-        Bind(attempt) with { Evidence = new NodePort(NodeSource.Person, $"person:n1#{attempt}", "tip-1", null) };
 
     /// <summary>
     /// The person's word settles a held attempt of a plugin's performed node, reached or failed as the person's and never

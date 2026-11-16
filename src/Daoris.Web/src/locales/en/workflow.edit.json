@@ -136,6 +136,7 @@
   "workflow.edit.option.isolate.overlap.go": "Starts beside it, said",
   "workflow.edit.option.isolate.overlap.wait": "Waits until that work is integrated",
   "workflow.edit.refusal.isolate-entry": "Opening a tree is the workflow's one first step, wired straight into the work.",
+  "workflow.edit.refusal.decision-unwired": "A decision routes its answer: wire a when from it on at least one of its outcomes.",
   "workflow.edit.kind.claimed": "The work",
   "workflow.edit.kind.handed": "Handed on",
   "workflow.edit.kind.push": "The push",

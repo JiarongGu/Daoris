@@ -137,7 +137,7 @@ export interface CheckHeldAnswer {
  * What the person may say of a graph run's node: pass it over for the run, or stop it; a declined request's ask again and go
  * on; a review's changes, with their words.
  */
-export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
+export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'decide' | 'keep-yours' | 'take-session' | 'keep-both';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {
@@ -150,13 +150,14 @@ export interface NodeWordKept {
 /**
  * What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. An Accept names the record drawn
  * (`attempt`, `revision`), the second opinion's token it answers (`answers`) and that it passes the unchecked dones it named (`unchecked`);
- * a send-back names its `part`; `whole` makes a stop the review's Stop.
+ * a send-back names its `part`; `whole` makes a stop the review's Stop; a `decide` names its decision's `outcome`.
  */
 export interface NodeWordAsk {
   run: string;
   node: string;
   act: NodeAct;
   words: string | null;
+  outcome?: string | null;
   attempt?: number | null;
   revision?: string | null;
   answers?: string | null;

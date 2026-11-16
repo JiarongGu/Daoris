@@ -139,7 +139,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     with it. An unbound step after a review, its tip unread, binds the commit the review accepted. A step's commits stay on
     `refs/daoris/steps/<run>/<node>/<attempt>` until the run ends settled. (D190, D259, D260)
 18. The runtime is the record's one writer: a door keeps the person's word (skip, stop, send, ask again, go on, accept,
-    changes, done, approve, reject) and the next pass applies it; no run ends while a word waits. A failed plugin step's run step
+    changes, done, approve, reject, decide with its outcome and, for a proposal, its holder) and the next pass applies it; no run ends
+    while a word waits, and a decision's answer may change until the run ends. A failed plugin step's run step
     holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
     `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
     failed to ready by the person, a new attempt its plugin is sent. A performed attempt's `progress` (`work/step` bound to its
@@ -434,6 +435,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 51. A `human` node is a manual operation, reached by the person's *Done* or, for an approval, *Approve* with an optional note, or
     rejected by *Reject* with a reason, as a review's changes are. Its outcome (`done`, `approved`, or none) routes a `when` wire, a
     rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
+    One declaring two or more outcomes of its own is a per-run decision (`HumanDecisions`, D304 point 5), answered by `decide` with
+    one of them (`daoris workflow decide <run> <node> <outcome> "why"`; the run's view offers each outcome); another is refused
+    `not-outcome`, and a save refuses a decision no `when` wire leaves on any outcome (`decision-unwired`). A word naming a holder
+    is a proposal and stands as the answer at once, held for the owner's word: the owner's same answer confirms it, another
+    overrules it, and the owner may answer again until the run ends (`reached → reached` on the same binding, so the old outcome's
+    route lapses); a holder's proposal after the owner's answer is refused `not-waiting`. The step a `when` from the decision leads to
+    on another outcome is skipped by the decision (`WireDecisions`), its words the decision's line ("Not needed: proposed by
+    release manager (why), confirmed by the owner"), and what follows it goes on as after any skip; it takes the line's newer words
+    as the owner confirms, and is judged again once a changed answer opens its route. A step closed only behind a skipped one is not
+    skipped: it reads that skip. The channels naming a holder (a hand-back's proposal, the release manager's step, an appointed
+    agent) and a marked destination's wait for the owner's confirmation are not built yet: the window and the terminal are the
+    owner's.
 52. A system's `apply` hands the adapter the plan its review record names, never a newer one, one apply at a time per system; no
     such plan reaches it with *nothing applied*, an empty one with *changed nothing*. A system declaring its precondition `none` is
     read before and after each write. `stale`, `changed-while-applying` and `apply-refused` fail it, naming each resource's present

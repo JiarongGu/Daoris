@@ -238,6 +238,9 @@ public static class NodeSource
     /// <summary>The path into a sink: the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
     public const string Path = "path";
 
+    /// <summary>A decision's answer: the step its outcome's route closed is passed on the record, naming who proposed and who confirmed it (<see cref="WireDecisions"/>).</summary>
+    public const string Decision = "decision";
+
     /// <summary>
     /// The exits of the declared gates as Daoris's executor runs them: what reaches and
     /// fails a <c>check</c>.
@@ -338,6 +341,9 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 
     /// <summary>The source an observed reach of a pressed kind carries: a <c>review</c> seen landed is git's, never the person's.</summary>
     public string? ObservedBy { get; init; }
+
+    /// <summary>Whether a reach is answered again on its binding until its run ends: a person's step's, offered on a decision alone.</summary>
+    public bool Reanswers { get; init; }
 }
 
 /// <summary>The authority by kind: each kind's unit's (<see cref="INodeKind.Authority"/>), a plugin's own node's from its declaration.</summary>
