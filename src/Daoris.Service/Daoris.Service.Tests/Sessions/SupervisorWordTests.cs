@@ -180,8 +180,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
         Assert.Equal(SessionSayRefusal.OwnerClass, (await Release(parked.Id)).Refusal);
         Assert.Empty((await Record(parked.Id)).Said);
 
-        // A mark this build does not know, an older build's `access` among them, is still the agent's word that the question is the
-        // owner's: the safe side.
+        // A mark this build does not know, an older build's among them, still marks it the owner's: the safe side.
         File(parked.Id, Question, owner: "access");
         Assert.Equal(SessionSayRefusal.OwnerClass, (await Release(parked.Id)).Refusal);
 

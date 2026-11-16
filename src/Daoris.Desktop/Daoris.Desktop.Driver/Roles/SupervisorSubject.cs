@@ -35,7 +35,6 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
 
-    /// <summary>A second opinion nobody is free to give: its step named by the gate's chain and the repository, <c>chain/repository</c>.</summary>
     public static SupervisorSubject Vacancy(string session, string chain, string repository) => new(SupervisorKinds.Vacancy, session, $"{chain}/{repository}");
 
     public (string Chain, string Repository)? VacancyParts =>

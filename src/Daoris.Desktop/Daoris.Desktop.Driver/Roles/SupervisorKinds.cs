@@ -19,11 +19,7 @@ public static class SupervisorKinds
 
     public const string Departure = "departure";
 
-    /// <summary>
-    /// A step nobody is free to hold (every reviewer of a second opinion capped): a subject of the reporting line's lead
-    /// (<see cref="ReportingLine"/>), which re-casts it on another family or account, relaxes the family difference with a record, spends the
-    /// prepaid balance or waits for the reset; its leave passes it up the line.
-    /// </summary>
+    /// <summary>A step nobody is free to hold (a capped second opinion), a subject of the reporting line (<see cref="ReportingLine"/>).</summary>
     public const string Vacancy = "vacancy";
 
     /// <summary>Ask Daoris's acts, read after its turns, observed and never decided; not the working role <c>ask-daoris</c>.</summary>
@@ -35,7 +31,6 @@ public static class SupervisorKinds
     public const string Move = "move";
     public const string Report = "report";
 
-    /// <summary>The vacancy's acts: another family or account cast, the family difference relaxed, the prepaid balance spent, the reset waited for.</summary>
     public const string Recast = "recast";
     public const string Relax = "relax";
     public const string Prepaid = "prepaid";

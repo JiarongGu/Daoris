@@ -41,12 +41,10 @@ public sealed class QuestionBox(string? home)
     public const string Suffix = ".question.json";
 
     /// <summary>
-    /// The owner-class kinds an agent marks a question with, doctrine rule 1's closed list: direction and targets, money and budgets,
-    /// sign-ins and credentials, a release the owner marked as theirs, a history rewrite, deleting their data, publishing to people
-    /// outside. A marked question climbs the reporting line to the owner actor and no supervisor below answers it; the mark only narrows,
-    /// so an unmarked question is still judged by its holder. The driver's <c>OwnerClass.Kinds</c> and the page's <c>OWNER_MARKS</c> name
-    /// the same seven; both readers take any mark as one, so a question an older build marked (<c>access</c>, <c>spending</c>,
-    /// <c>delete</c>, <c>repository-asks</c>, <c>preference</c>) stays the owner's until it is answered or asked again.
+    /// The owner-class kinds an agent marks a question with, doctrine rule 1's closed list. A marked question reaches the owner actor and no
+    /// supervisor below answers it; the mark only narrows. The driver's <c>OwnerClass.Kinds</c> and the page's <c>OWNER_MARKS</c> name the
+    /// same seven; both readers take any mark as one, so a question an older build marked (<c>access</c>, <c>spending</c>, <c>delete</c>,
+    /// <c>repository-asks</c>, <c>preference</c>) stays the owner's until it is answered or asked again.
     /// </summary>
     public static readonly IReadOnlyList<string> OwnerMarks = ["direction", "money", "sign-in", "release", "history", "data", "publish"];
 

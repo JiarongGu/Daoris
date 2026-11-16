@@ -110,10 +110,7 @@ public static class SupervisorWhy
     public const string OwnerAnswered = "owner-answered";
     public const string Form = "form";
 
-    /// <summary>
-    /// The question carries the agent's <c>owner</c> mark, an owner-class kind never answered below the owner actor: refused at the keeping
-    /// and again at the release.
-    /// </summary>
+    /// <summary>The question carries an owner-class mark, never answered below the owner actor: refused at the keeping and the release.</summary>
     public const string OwnerClass = LinePasses.OwnerClass;
 
     /// <summary>The line's answers-alone count is at the answers-alone bound: refused at the keeping and again at the release.</summary>
@@ -143,9 +140,8 @@ public static class SupervisorWhy
 }
 
 /// <summary>
-/// The bounds a holder leaves a decision by, as <c>SUPERVISOR_DEFER</c> names them: a go-ahead, the seven owner-class kinds an
-/// asking agent may also mark its question with (<see cref="OwnerClass"/>, <see cref="QuestionFiles"/>'s <c>owner</c>), and the three
-/// only the holder's judgement reaches.
+/// The bounds a holder leaves a decision by (<c>SUPERVISOR_DEFER</c>): a go-ahead, the owner-class kinds an agent may also mark its
+/// question with (<see cref="QuestionFiles"/>'s <c>owner</c>), and the three only the holder's judgement reaches.
 /// </summary>
 public static class SupervisorBounds
 {

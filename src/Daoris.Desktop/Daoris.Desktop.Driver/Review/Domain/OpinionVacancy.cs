@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A second opinion nobody is free to give: every declared reviewer held (cooling, signed out, none installed or refused), a subject of the
-/// reporting line's lead (D304 point 3) rather than a wait with nobody asked.
+/// reporting line's lead rather than a wait with nobody asked.
 /// </summary>
 /// <param name="Code">Why no reviewer reads it (<see cref="ReviewerUnavailable"/>).</param>
 /// <param name="Until">The first reset among the reviewers cooling; none where none is.</param>

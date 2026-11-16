@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The actors above a step's on the reporting line, in climbing order (D304 point 3).</summary>
+/// <summary>The actors above a step's on the reporting line, in climbing order.</summary>
 public static class LineActors
 {
     /// <summary>The place's: the repository's or its workspace's supervisor.</summary>
@@ -66,12 +66,12 @@ public sealed record LineLevel(string Actor, string? Role, string? Holder, strin
 /// <summary>One level help passed, with its code (<see cref="LinePasses"/>) and the sentence that says why.</summary>
 public sealed record LinePass(string Actor, string Code, string Said);
 
-/// <summary>Where help waits on the line, with every level it passed; no level is gave up, the passes being what was tried.</summary>
+/// <summary>Where help waits on the line, with every level it passed; no level is gave up, its passes what it tried.</summary>
 public sealed record LineWait(LineLevel? At, IReadOnlyList<LinePass> Passed)
 {
     public bool GaveUp => At is null;
 
-    /// <summary><c>waiting on lead: `role`</c>, with what it passed; or <c>gave up: …</c> with what was tried.</summary>
+    /// <summary><c>waiting on lead: `role`</c>, with what it passed; or <c>gave up: …</c> with what it tried.</summary>
     public string Said()
     {
         var passed = string.Join("; ", Passed.Select(pass => $"{pass.Actor}: {pass.Said}"));

@@ -3,10 +3,9 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>A driven session records what it cannot decide itself before it ends its turn on it (the park's ask design §2), addressed
-/// to the actor it reports to (D304 point 3): the question, the answers it offers with what it does on each, the one it recommends and
-/// by when, which the page draws at the conversation's end with each answer a press. Not a go-ahead, which <see cref="GoAheadTools"/>
-/// holds on the ask.
+/// <summary>A driven session asks the actor it reports to what it cannot decide itself before it ends its turn on it: the question,
+/// the answers it offers with what it does on each, the one it recommends and by when, which the page draws at the conversation's end
+/// with each answer a press. Not a go-ahead, which <see cref="GoAheadTools"/> holds on the ask.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box judges.</param>

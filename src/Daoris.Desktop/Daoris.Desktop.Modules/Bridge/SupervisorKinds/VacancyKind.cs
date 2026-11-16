@@ -66,7 +66,7 @@ internal sealed class VacancyKind : ISupervisorKind
 
     /// <summary>
     /// Where the vacancy waits now: at the repository until a level leaves it, then at the machine, the head's place; null once the head
-    /// left it too, gave up with what was tried.
+    /// left it too, gave up with what it tried.
     /// </summary>
     private static RolePlace? Up(DriverLoop loop, IReadOnlyList<OpinionCast> casts, string repository)
     {

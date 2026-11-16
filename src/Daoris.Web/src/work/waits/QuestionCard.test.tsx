@@ -141,7 +141,6 @@ describe('QuestionCard', () => {
     expect(screen.getByText('Asked of you alone: money or a budget')).toBeInTheDocument();
     unmount();
 
-    // An older build's mark reads as one no word names.
     const { unmount: older } = render(<QuestionCard question={{ ...QUESTION, owner: 'spending' }} />);
     expect(screen.getByText('Asked of you alone')).toBeInTheDocument();
     older();

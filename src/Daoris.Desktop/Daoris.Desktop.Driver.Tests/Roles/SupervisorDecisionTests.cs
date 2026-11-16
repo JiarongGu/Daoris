@@ -634,7 +634,7 @@ public sealed class SupervisorDecisionTests : IDisposable
 
         Assert.Empty(refused.LiveOf(Session));
 
-        // A go-ahead, the seven owner-class kinds and the holder's three are the bounds a defer may name.
+        // The bounds a defer may name.
         Assert.Equal(
             ["go-ahead", "direction", "money", "sign-in", "release", "history", "data", "publish", "unrecorded", "contradicts", "instructed"],
             SupervisorBounds.All);

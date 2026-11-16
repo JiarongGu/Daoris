@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The reporting line read off the supervisor resolver (D304 point 3): the place's lead, the machine's head, then the owner actor. Help
-/// waits on the first level that holds it; a level nobody is appointed to passes it up naming why; an owner-class kind is refused below
-/// the owner actor; other help its head leaves ends as gave up with what was tried, never as a question to the owner actor.
+/// The reporting line read off the supervisor resolver: the place's lead, the machine's head, then the owner actor. Help waits on the
+/// first level that holds it; a level nobody is appointed to passes it up naming why; an owner-class kind is refused below the owner
+/// actor; other help its head leaves ends as gave up with what it tried, never as a question to the owner actor.
 /// </summary>
 public sealed class ReportingLineTests
 {
