@@ -25,7 +25,6 @@ internal sealed class AgentSupervisorDesk(DriverLoop loop) : ISupervisorDesk
         return new SupervisorBlockKept(decided.Kept, decided.Why);
     }
 
-    /// <summary>A listed subject as the look reads it, from the row each kind lists; null where it does not read.</summary>
     internal static SupervisorWaiting? Row(object listed)
     {
         var row = JsonSerializer.SerializeToElement(listed);

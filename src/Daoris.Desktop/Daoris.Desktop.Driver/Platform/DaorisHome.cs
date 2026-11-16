@@ -444,7 +444,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
     public static readonly HomeEntry Places = new("places", HomeCategory.Work, "work/places/*/*", "work/places/*/*");
     public static readonly HomeEntry Plans = new("plans", HomeCategory.Work, "work/plans/*", "work/plans/*");
-    // The evidence routine's days, one file each with its proposed class rows and their states, and the classes declined.
     public static readonly HomeEntry Evidence = new("evidence", HomeCategory.Work, "work/evidence/*", "work/evidence/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");

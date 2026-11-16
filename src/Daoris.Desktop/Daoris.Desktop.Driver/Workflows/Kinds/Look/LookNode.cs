@@ -25,7 +25,6 @@ public sealed class LookNode : BuiltInNode, IObserves, IAsksReads
 
     public override string? Title => "Your look";
 
-    /// <summary>The tester tries the work hands-on before it lands.</summary>
     public override string Role => StepRoles.Tester;
 
     public override NodeLook Look => NodeLook.You;

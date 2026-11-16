@@ -75,7 +75,6 @@ export async function standIn() {
     if (request.method === 'GET' && /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/[0-9a-f]+\/changes$/.test(path)) {
       return [200, { changeCounts: { edit: api.changes.length }, changes: api.changes.map((each) => ({ item: { path: each } })) }];
     }
-    // A commit's merge bases with another, from `parents` (a commit's parents by id): the other where it is this one or among its ancestors.
     const bases = /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/([0-9a-f]+)\/mergebases$/.exec(path);
     if (bases && request.method === 'GET') {
       const seen = new Set();

@@ -33,7 +33,6 @@ public sealed class DriverPartsTests : IDisposable
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
                 "reviews", "opinions", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
                 "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "door-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
-                // The stored sign-ins read, then the sign-outs nobody at Daoris made claimed.
                 "stored-sign-ins", "sign-outs",
                 "through-notices"],
             order.Select(part => part.Name));

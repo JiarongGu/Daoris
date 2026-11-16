@@ -10,16 +10,8 @@ public interface IDecisionAdmission
     /// <summary>The hold of the supervisor answering <paramref name="kind"/> at <paramref name="place"/>; a null act is a leave, needing no grant.</summary>
     DecisionAdmitted Admit(string kind, RolePlace place, string? act);
 
-    /// <summary>
-    /// The hold answering <paramref name="subject"/> where it waits now on the reporting line (<see cref="LineClimb"/>): its place's until a
-    /// level there left it, then the machine's; refused <c>passed-up</c> once the climb left no supervisor to hold it.
-    /// </summary>
     DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) => Admit(subject.Kind, place, act);
 
-    /// <summary>
-    /// The place's risk and the owner's marks as they stand now, which a held go-ahead's release judges again (<see cref="GoAheadAuthority.OwnersOwn"/>);
-    /// where the admission reads none, high, as a risk record that does not read is.
-    /// </summary>
     PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
 }
 
@@ -33,7 +25,6 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
 
     public string? Role { get; init; }
 
-    /// <summary>On a <c>not-granted</c> refusal, the grant that was missing (<see cref="ActSpends"/>).</summary>
     public string? Missing { get; init; }
 }
 
@@ -109,10 +100,8 @@ public static class SupervisorWhy
 
     public const string NotGranted = "not-granted";
 
-    /// <summary>The place's risk record holds the place high (<see cref="PlaceRiskBook"/>): no appointed role acts there, its decisions wait on the owner role.</summary>
     public const string HighRisk = "high-risk";
 
-    /// <summary>The act's destination is one the owner marked at the place (<see cref="PlaceMarks"/>): it stays the owner role's.</summary>
     public const string Marked = "marked";
 
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>

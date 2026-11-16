@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GRANTSPEND1 (D306): every supervisor kind's act and every steward act declares what it spends and its pin; an act is admitted only where
+/// Every supervisor kind's act and every steward act declares what it spends and its pin; an act is admitted only where
 /// every grant on its chain covers both its name and its spend, a refusal naming the grant missing; an act lapses with its subject.
 /// </summary>
 public sealed class ActSpendsTests

@@ -62,22 +62,15 @@ export function work({ data, send, say, act, check, remove, observe }) {
     settle(attempt, outcome);
   };
 
-  /** The effect an attempt is for: its `effectKey`, the same for every attempt on its target, else its own key. */
   const effectOf = (attempt) => attempt.effectKey ?? attempt.idempotencyKey;
 
-  /** The attempt that made, or is making, the act an attempt is for, where it is another attempt: null where this one is to make it. */
   const holderOf = (attempt) => {
     const key = journal.get('effects', effectOf(attempt));
     return key && key !== attempt.idempotencyKey ? journal.get('attempts', key) ?? null : null;
   };
 
-  /** This process's acts under way, by effect: an attempt on the same effect waits for its end rather than acting beside it. */
   const acting = new Map();
 
-  /**
-   * An attempt an earlier process began, or one it could not tell: only the platform can say what became of it, asked of the attempt that
-   * holds its act. Its answer settles that attempt, and this one, where it is not known, only for waiting on it.
-   */
   const asked = async (attempt) => {
     const holder = holderOf(attempt) ?? attempt;
     const waited = holder !== attempt && attempt.state === 'unknown';

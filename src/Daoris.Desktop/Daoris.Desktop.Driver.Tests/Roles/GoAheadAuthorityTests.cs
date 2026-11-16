@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Who answers a go-ahead (GOAHEADACT1, D304 point 4): the approver's yes is a role act, <c>goahead.answer</c>, an appointed role's at
+/// Who answers a go-ahead: the approver's yes is a role act, <c>goahead.answer</c>, an appointed role's at
 /// low and medium risk where its grants cover it; the owner role's at high risk, at a place whose production releases the owner marked
 /// (failing closed: a release, write or run there is the owner's unless its plugin names its stage non-production), and for a sign-in.
 /// </summary>
@@ -49,7 +49,7 @@ public sealed class GoAheadAuthorityTests
         Assert.Equal(SupervisorWhy.HighRisk, GoAheadAuthority.Refusal(At(PlaceRisks.High), "write", Granted));
         Assert.Equal(SupervisorWhy.OwnerClass, GoAheadAuthority.Refusal(At(PlaceRisks.Low), "sign-in", Granted));
         Assert.Equal(GoAheadAuthority.Act, GoAheadAuthority.Refusal(At(PlaceRisks.Low), "write", [["question.answer"]]));
-        // Every grant on the chain covers it, a delegate never more than its delegator (D306).
+        // Every grant on the chain covers it, a delegate never more than its delegator.
         Assert.Equal(GoAheadAuthority.Act, GoAheadAuthority.Refusal(At(PlaceRisks.Low), "write", [[GoAheadAuthority.Act], []]));
     }
 }

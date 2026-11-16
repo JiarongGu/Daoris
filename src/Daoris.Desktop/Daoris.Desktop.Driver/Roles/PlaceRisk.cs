@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A place's risk, which decides what an appointed role may hold there (D304 point 4, D305): low, medium or high.</summary>
+/// <summary>A place's risk, which decides what an appointed role may hold there: low, medium or high.</summary>
 public static class PlaceRisks
 {
     public const string Low = "low";
@@ -20,11 +20,11 @@ public static class PlaceRisks
 /// <summary>
 /// The owner's marks on a place: what stays the owner role's whatever its risk. A destination's mark (<see cref="ProductionReleases"/>) covers
 /// the place and every place under it; a line's mark (<see cref="Line"/>, <c>line.&lt;kind&gt;</c>) is the owner holding that place's level of
-/// the reporting line alone, the one way the person holds a level (D305).
+/// the reporting line alone, the one way the person holds a level.
 /// </summary>
 public static class PlaceMarks
 {
-    /// <summary>The place's production releases: their approval stays the owner role's (D304 point 4, D309 point 5).</summary>
+    /// <summary>The place's production releases: their approval stays the owner role's.</summary>
     public const string ProductionReleases = "release.production";
 
     /// <summary>The owner role holds this place's supervisor level for every kind; <see cref="LineOf"/> for one kind.</summary>
@@ -178,7 +178,7 @@ public sealed record PlaceRiskBook(IReadOnlyDictionary<string, PlaceRisk> Places
         return new(places);
     }
 
-    /// <summary>The record written as <c>driver.json</c> keeps it, the empty record included, so a migrated home says it was written.</summary>
+    /// <summary>The record written as <c>driver.json</c> keeps it, the empty record included, so a migrated home says it is written.</summary>
     public void Write(Utf8JsonWriter writer)
     {
         if (!Written) return;

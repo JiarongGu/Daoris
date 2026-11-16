@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// GRANTSPEND1 (D306): only the owner widens what agents may do. A role write that grants an agent acts is one of the owner's presses: an
+/// Only the owner widens what agents may do. A role write that grants an agent acts is one of the owner's presses: an
 /// agent's goes on the owner's card in every mode, and one from an agents' job proving no key is refused; any other role write is not.
 /// </summary>
 public sealed class PipeOwnerOnlyTests

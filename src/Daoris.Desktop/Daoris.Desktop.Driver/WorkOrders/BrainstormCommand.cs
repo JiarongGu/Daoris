@@ -90,7 +90,6 @@ public static class BrainstormCommand
 
     private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
     {
-        // A design pass: the question is the purpose brief, frozen alone (DesignPasses); the desk refuses a source beside it.
         var design = rest.Contains("--design", StringComparer.Ordinal);
         rest = [.. rest.Where(word => word != "--design")];
         string? repository = null;

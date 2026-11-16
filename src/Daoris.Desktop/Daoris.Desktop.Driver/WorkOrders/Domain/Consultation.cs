@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One giver of a consultation (D308): its pass and role, its maker, adapter and account, its <c>Mode</c> (<c>independent</c>: from
+/// One giver of a consultation: its pass and role, its maker, adapter and account, its <c>Mode</c> (<c>independent</c>: from
 /// one neutral brief with no sight of another answer; <c>review</c>: reads candidates), the digest of what it read, whether it saw
 /// another answer, and which of independence's conditions did not hold.
 /// </summary>
@@ -14,8 +14,8 @@ public sealed record ConsultationGiver(
     string Pass, string Role, string Mode, string Maker, string Adapter, string? Account, string Read, bool SawAnother, IReadOnlyList<string> NotHeld);
 
 /// <summary>
-/// A consultation as its record stands: what was consulted (<c>Kind</c> and <c>Subject</c>), each giver, and the decider's one line
-/// on whether it changed the decision, null until the decider says it. Independence is recorded, never assumed.
+/// A consultation as its record stands: what it consults (<c>Kind</c> and <c>Subject</c>), each giver, and the decider's one line
+/// on whether it changes the decision, null until the decider says it. Independence is recorded, never assumed.
 /// </summary>
 public sealed record Consultation(string Kind, string Subject, IReadOnlyList<ConsultationGiver> Givers, string? Changed = null)
 {
@@ -51,7 +51,7 @@ public static class Consultations
     }
 
     /// <summary>
-    /// A second opinion's consultation (D308), from the host's view of it and the working session's answers: one giver in <c>review</c>
+    /// A second opinion's consultation, from the host's view of it and the working session's answers: one giver in <c>review</c>
     /// mode, since it reads a candidate and its evidence, with the reviewer's maker and product, what it read, and whether it saw another
     /// answer (a recheck reads the first pass's findings). Its label decides what did not hold: one of the work's own families is
     /// <c>same-maker</c>, said as not independent, and an undeclared maker is <c>maker-not-declared</c>. The decider's line is the
@@ -100,7 +100,7 @@ public static class Consultations
                 writer.WriteString("role", giver.Role);
                 writer.WriteString("mode", giver.Mode);
                 writer.WriteString("maker", giver.Maker);
-                // The door it came through, as a brainstorm's members say it: the old seam's word is never a new record's (D232).
+                // The door it came through, as a brainstorm's members say it: the old seam's word is never a new record's.
                 writer.WriteString("door", giver.Adapter);
                 if (giver.Account is null) writer.WriteNull("account");
                 else writer.WriteString("account", giver.Account);

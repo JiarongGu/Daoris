@@ -163,7 +163,6 @@ export async function release(attempt, unit, say, progress = () => {}) {
     }
     const [chosen] = found;
     const link = web(chosen, `_releaseProgress?releaseId=${chosen.id}&_a=release-pipeline-progress`);
-    // The card names the target, the build and its source branch, so an approval is given knowing what it releases.
     const tell = (standing) => progress({ ...standing, url: link,
       message: fit(`${lead}${chosen.name} of ${definition.name} (#${definition.id}), build ${numberOf(build)} from \`${branch}\`: ${standing.act}.`) });
     const watched = await watchRelease(repo, chosen.id, asked, ends, say, commit, tell);

@@ -137,8 +137,6 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             delegated = PipeTerminalTier.Judge(pipe);
         }
 
-        // The owner's records are never an agent's to set: a session's proved press goes on the owner's card in every mode, and a process in
-        // an agents' job proving no key is refused.
         if (judged is null && @class == PipeClass.Person && PipeOwnerOnly.Governs(request))
         {
             if (claim is null && pipe.StandingConfirmation.Caller.Place(connection.Client) == StandingPlace.InAgentJob)

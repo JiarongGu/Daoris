@@ -35,7 +35,6 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps
 
     public override string? Title => "Your Accept";
 
-    /// <summary>The acceptor decides on the work at a revision.</summary>
     public override string Role => StepRoles.Acceptor;
 
     public override NodeLook Look => NodeLook.You;

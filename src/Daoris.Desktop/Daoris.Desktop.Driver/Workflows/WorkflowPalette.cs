@@ -47,7 +47,6 @@ public sealed record PalettePlugin(string Plugin, IReadOnlyList<PaletteStep> Ste
 /// <summary>What a step graph may hold.</summary>
 public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnlyList<PaletteWire> Wires, IReadOnlyList<PalettePlugin> Plugins)
 {
-    /// <summary>The roles a step may name without the catalogue (<see cref="StepRoles.All"/>), in the editor's order.</summary>
     public IReadOnlyList<string> Roles { get; init; } = StepRoles.All;
 
     /// <summary>

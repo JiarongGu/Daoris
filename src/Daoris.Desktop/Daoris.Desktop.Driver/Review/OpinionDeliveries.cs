@@ -37,7 +37,7 @@ public sealed class OpinionDeliveries(string home)
     /// <summary>The answers as read when the working session's turn ended: the latest reading stands.</summary>
     public OpinionDelivered Answered(string opinion, OpinionReading reading) => Keep(opinion, kept => kept with { Answered = reading });
 
-    /// <summary>The opinion's consultation record, <c>consultation.json</c> beside its delivery (D308), in the brainstorm's shape; a write that fails is lost.</summary>
+    /// <summary>The opinion's consultation record, <c>consultation.json</c> beside its delivery, in the brainstorm's shape; a write that fails is lost.</summary>
     public void Consulted(OpinionView view, OpinionReading? answered)
     {
         if (PathOf(view.Id) is not { } path) return;

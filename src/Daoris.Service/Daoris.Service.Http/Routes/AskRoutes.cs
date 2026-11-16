@@ -191,7 +191,6 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
     // session's go-aheads waiting is that park's answer, and the sentence says which parks go on and which still wait.
     private async Task<Answer<AskActionResponse>> AnswerGoAheadAsync(AnswerGoAhead request, HttpContext http, CancellationToken ct)
     {
-        // A role's answer comes through the driver's form, which judged its grant and the place's risk; the gate first, as every role door's.
         if (host.Gate.Refused(http, RoleAnswerDoors.GoAhead, form: request.Role is not null) is { } refused) return refused;
         if (!int.TryParse(request.Number, NumberStyles.None, CultureInfo.InvariantCulture, out var n) || n < 1)
         {

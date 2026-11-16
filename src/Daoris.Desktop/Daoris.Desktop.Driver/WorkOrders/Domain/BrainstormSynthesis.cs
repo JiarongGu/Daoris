@@ -28,7 +28,6 @@ public sealed record BrainstormDropped(string Id, string Why);
 /// <summary>A synthesis validated: its groups by rank, and what it left out.</summary>
 public sealed record BrainstormSynthesized(IReadOnlyList<BrainstormGroup> Groups, IReadOnlyList<BrainstormDropped> LeftOut)
 {
-    /// <summary>A design pass's comparison beside the ranking (<see cref="DesignPasses"/>); null for a brainstorm's.</summary>
     public DesignComparison? Comparison { get; init; }
 }
 

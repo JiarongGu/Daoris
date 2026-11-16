@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record LineLeave(DateTimeOffset At, string Level, string? Role, string? Bound, string Reading);
 
 /// <summary>
-/// The leaves kept on each supervisor's subject, every kind's (D304 point 3): <c>line.leaves</c> in the subject's session's decisions folder,
+/// The leaves kept on each supervisor's subject, every kind's: <c>line.leaves</c> in the subject's session's decisions folder,
 /// one JSON line per leave, appended and never rewritten, each naming the level that made it. The vacancy kind keeps its own beside its gate
 /// (<see cref="OpinionCasts"/>), and a subject that names no session (a proposed widening) keeps none: its leave is final as before.
 /// </summary>
@@ -67,9 +67,9 @@ public sealed class LineLeaves(string home)
 }
 
 /// <summary>
-/// Where a subject waits now, read with <see cref="ReportingLine.Climb"/> over the levels that left it (D304 point 3): its place's supervisor
+/// Where a subject waits now, read with <see cref="ReportingLine.Climb"/> over the levels that left it: its place's supervisor
 /// until that level left it, then the machine's; only an owner-class bound reaches the owner role, and other help the machine's supervisor
-/// leaves, or that finds no supervisor above, ends as gave up with what was tried.
+/// leaves, or that finds no supervisor above, ends as gave up with what it tried.
 /// </summary>
 public static class LineClimb
 {

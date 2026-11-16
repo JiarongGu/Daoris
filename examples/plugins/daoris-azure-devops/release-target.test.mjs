@@ -150,8 +150,7 @@ test('a wrong build is refused: the declared pipeline\'s build of another commit
   assert.deepEqual([...writes(elsewhere), ...writes(failed), ...writes(another)], []);
 });
 
-test('ACTPIN1: a build of a branch another definition\'s trigger takes is refused target-changed on the main line\'s definition, the route its choice', async (t) => {
-  // The work merged into a branch whose automatic release is another definition, while the main line's is the declared one.
+test('a build of a branch another definition\'s trigger takes is refused target-changed on the main line\'s definition, the route its choice', async (t) => {
   const two = [{ id: 42, name: 'Portal', on: ['main'], environments: [environment(402, 'Prod')] },
     { id: 43, name: 'Portal-feature', on: ['dev'], environments: [environment(403, 'Test')] }];
   const api = await line({ definitions: two });

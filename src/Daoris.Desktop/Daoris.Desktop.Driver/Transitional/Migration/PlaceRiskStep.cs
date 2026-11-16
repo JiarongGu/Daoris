@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The place risk record (<see cref="PlaceRiskBook"/>) written once into <c>driver.json</c> with today's implicit person-holds made explicit, so
-/// no live routing moves (D305): the machine's level and each supervisor's level held by the person's rules or by nobody gain the owner's
+/// no live routing moves: the machine's level and each supervisor's level held by the person's rules or by nobody gain the owner's
 /// <c>line</c> mark there, every place left low. Nothing is written where the record already stands.
 /// </summary>
 /// <remarks>

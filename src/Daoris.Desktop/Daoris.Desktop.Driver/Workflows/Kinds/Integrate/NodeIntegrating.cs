@@ -53,8 +53,6 @@ internal sealed class NodeIntegrating(
         {
             Unit = unit, Tip = landed.Tip, Request = NodeOptions.Text(node, "request"), Conflicts = NodeOptions.Text(node, "conflicts"),
         };
-        // A part's worker lands on its ask's branch through the same queue, its request tagged so the train reads it; a one-scope part lands
-        // with no gates only where the doors ask the scope's two reviews.
         if ((governed.Scope?.Quest?.Records.Quest ?? governed.Unit.Records.Quest) is { } quest
             && await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans(), reviewed(), ct).ConfigureAwait(false) is { } train)
         {

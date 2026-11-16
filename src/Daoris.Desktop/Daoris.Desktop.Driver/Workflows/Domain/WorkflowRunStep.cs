@@ -79,10 +79,6 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
         init => holder = value;
     }
 
-    /// <summary>
-    /// Whether an agent is still at the step: working, or the second opinion's working session answering its findings, which the step's detail
-    /// says (<see cref="OpinionGateStates.WithSession"/>). The run's sequencing reads this, never the holder.
-    /// </summary>
     public bool AgentAt => State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
 
     /// <summary>

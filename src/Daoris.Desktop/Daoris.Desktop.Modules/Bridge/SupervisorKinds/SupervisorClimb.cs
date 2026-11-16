@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Every kind's leave climbs the reporting line (D304 point 3): a leave records the level that made it (<see cref="LineLeaves"/>), and the
+/// Every kind's leave climbs the reporting line: a leave records the level that made it (<see cref="LineLeaves"/>), and the
 /// subject is listed, kept and released at the level <see cref="ReportingLine.Climb"/> finds with that map: the place's supervisor until it
 /// left the subject, then the machine's. A leave by a level below the machine, of a bound no owner-class kind names, where the machine's
 /// supervisor holds the kind, is kept as <c>left</c> with nothing final; every other leave is the kind's own, final at once, the owner
-/// role's for an owner-class bound and otherwise ended as gave up with what was tried. The vacancy kind journals its own leaves beside its
+/// role's for an owner-class bound and otherwise ended as gave up with what it tried. The vacancy kind journals its own leaves beside its
 /// gate and Ask Daoris's kind is the machine's alone, so neither climbs here; nor, yet, do the allow and files kinds.
 /// </summary>
 internal static class SupervisorClimb

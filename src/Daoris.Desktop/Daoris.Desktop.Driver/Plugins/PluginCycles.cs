@@ -40,7 +40,6 @@ public static class PluginCycles
     /// <summary>How long an outcome, or an event sent again, is waited for.</summary>
     private static readonly TimeSpan Hearing = TimeSpan.FromSeconds(10);
 
-    /// <summary>Whether the trial counts <paramref name="heard"/> as <paramref name="invocation"/>'s completion: bound to it, and of a kind that completes (<see cref="WorkFrameKinds"/>).</summary>
     public static bool Completes(WorkStepFrame heard, string invocation) => heard.Invocation == invocation && WorkFrameKinds.Completes(heard.Outcome.State);
 
     /// <summary>The fixture a new performer gets (<see cref="PluginKit.CycleFixture"/>): the defaults written out, its step named.</summary>

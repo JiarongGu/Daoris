@@ -24,7 +24,6 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
 
         var now = clock();
         var status = StatusOf(record, node.Id);
-        // Who the outside system credits with the act is kept with the outcome, a stale one's too: the record says who made it.
         var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation, By = outcome.Evidence?.By };
         if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown))
         {
@@ -32,7 +31,6 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
             return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
         }
 
-        // A wait for access at its deadline climbs the reporting line to the owner role and is held there, never failed.
         if (AccessWaits.Is(attempt, outcome)) return Hold(record, AccessWaits.Held(attempt, outcome.State, generation, now), AccessWaits.Climbed);
 
         // A check's reach and failure are its kind's own source, the gates' exits as the executor ran them.

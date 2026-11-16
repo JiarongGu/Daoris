@@ -403,7 +403,6 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         writer.WriteNumber("stepVersion", attempt.Call.StepVersion);
         writer.WriteString("invocation", attempt.Call.Invocation);
         writer.WriteString("idempotencyKey", attempt.Call.IdempotencyKey);
-        // A property an older build passes over, and drops where it writes the record again: the attempt then reads its own key as its effect.
         if (attempt.Call.EffectKey is { } effect) writer.WriteString("effectKey", effect);
         writer.WriteString("subjectRevision", attempt.Call.SubjectRevision);
         writer.WriteStartArray("inputs");

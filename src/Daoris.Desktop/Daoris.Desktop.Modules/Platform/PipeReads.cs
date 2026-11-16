@@ -215,7 +215,6 @@ internal static class PipeReads
             ? "true" : "false",
         p => Raw(Field(p, "chosen")));
 
-    /// <summary>The place's row of the risk record as <c>STATE</c> answers it, by the place the press names.</summary>
     public static PipeGround PlaceRisk() => Setting("STATE", ["repository", "workspace"], _ => null,
         (a, p) => Fp(Raw(Named(At(a, "placeRisk"), "place", Daoris.Driver.PlaceRiskBook.KeyOf(Text(p, "workspace"), Text(p, "repository"))))));
 

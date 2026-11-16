@@ -3,11 +3,6 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The decisions' files under the home: written once, their state lines appended, and read back as history, for the card after a
-/// restart and the start's sweep; a decision's behaviour is decided from memory (<see cref="SupervisorBook"/>), which a restart fills
-/// again only from a held decision's row in <c>held_decisions</c> whose file still says it (<see cref="HeldDecisions"/>).
-/// </summary>
 internal sealed class SupervisorDecisionFiles(string home)
 {
     private const string DecisionsSuffix = QuestionSupervisorDecisions.DecisionsSuffix;

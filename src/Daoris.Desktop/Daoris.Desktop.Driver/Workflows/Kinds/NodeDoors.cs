@@ -15,7 +15,6 @@ public sealed class NodeDoors
     private NodeDoors(ImmutableDictionary<string, INodeDoor> doors, Action<string, string>? say = null, bool reviewed = false) =>
         (_doors, _say, ScopeReviewed) = (doors, say, reviewed);
 
-    /// <summary>Whether the wiring these doors were built from asks a scope's two reviews (<see cref="NodeDoorWiring.ScopeReviewed"/>).</summary>
     public bool ScopeReviewed { get; }
 
     /// <summary>No door: nothing is started on one.</summary>

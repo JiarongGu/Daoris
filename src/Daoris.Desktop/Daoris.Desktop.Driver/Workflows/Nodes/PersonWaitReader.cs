@@ -6,11 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class PersonWaitReader
 {
-    /// <summary>
-    /// Every step of a run not ended whose wait (<see cref="StepWaiting.Read"/>, the one reading of every step's wait) the person holds, by
-    /// run and then by the graph's order, and the step a run ended failed at.
-    /// </summary>
-    /// <param name="record">A unit's node record, or null where it does not read.</param>
     public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record)
     {
         var waits = new List<PersonWait>();

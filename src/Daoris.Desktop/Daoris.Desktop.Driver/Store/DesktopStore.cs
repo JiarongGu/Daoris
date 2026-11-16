@@ -44,7 +44,6 @@ public sealed class DesktopStore : IDisposable
 
     public const int SessionEventSpentVersion = IntegrationPartsVersion + 1;
 
-    /// <summary>The version whose step makes <c>held_decisions</c>, a role's held decisions and their windows (<see cref="HeldDecisions"/>).</summary>
     public const int HeldDecisionsVersion = SessionEventSpentVersion + 1;
 
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The reporting line read off the supervisor resolver, each level named by the supervisor holding it (D309 point 4): the repository's
+/// The reporting line read off the supervisor resolver, each level named by the supervisor holding it: the repository's
 /// or the workspace's supervisor, the machine's, then the owner role. Help waits on the first level that holds it; a level nobody is
 /// appointed to passes it up naming why; an owner-class kind is refused below the owner role; other help the machine's supervisor leaves
 /// ends as gave up with what it tried, never as a question to the owner role.
@@ -71,7 +71,7 @@ public sealed class ReportingLineTests
     [Fact]
     public void A_level_held_by_the_persons_rules_is_the_persons_only_where_the_owner_marked_it()
     {
-        // REPORTLINE1b (D305): no level is the person by default. Unmarked, a level held by rules is vacant and the help passes up.
+        // No level is the person by default. Unmarked, a level held by rules is vacant and the help passes up.
         var unmarked = ReportingLine.Of([Machine()], SupervisorKinds.Vacancy, AtEngine, Placed, SupervisorKinds.Recast, new PlaceRiskBook(new Dictionary<string, PlaceRisk>()));
         Assert.True(unmarked.Machine.Vacant);
         Assert.True(unmarked.Climb(ownerClass: false).GaveUp);

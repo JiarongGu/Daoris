@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The owner's records, which no agent sets (D305, D306): a place's risk and marks. A press of one that proves a session's key (Ask Daoris's
+/// The owner's records, which no agent sets: a place's risk and marks. A press of one that proves a session's key (Ask Daoris's
 /// in full access included) goes on the owner's card in every mode, so it runs only on the owner's yes; a process in an agents' job that
 /// proves none is refused; the window and the owner's own terminal set it.
 /// </summary>

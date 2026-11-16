@@ -214,7 +214,6 @@ public static class AskDoorViews
         this ServiceClient service, string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false,
         RoleAnswerWire? role = null)
     {
-        // A role's answer (its `role` form, the driver's) is kept as the role's, never the person's.
         var sent = await service.SendAsync(
             new AnswerGoAhead(
                 ask.Trim().TrimStart('#'), number.ToString(CultureInfo.InvariantCulture), approved ? "approved" : "refused",

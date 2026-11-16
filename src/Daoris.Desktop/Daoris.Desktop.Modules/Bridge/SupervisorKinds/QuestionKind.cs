@@ -44,7 +44,6 @@ internal sealed class QuestionKind : ISupervisorKind
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
             // A question its agent marked the owner's is never the holder's to look at.
             if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
-            // Listed where it waits on the line now: the machine's supervisor once the repository's left it.
             var subject = SupervisorSubject.Question(record.Session, asked.Id);
             if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
             waiting.Add(new

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What an act may spend beyond its decision (D306): money, a sign-in, or a destination outside the repository.</summary>
+/// <summary>What an act may spend beyond its decision: money, a sign-in, or a destination outside the repository.</summary>
 public static class ActSpending
 {
     public const string None = "none";
@@ -16,9 +16,9 @@ public static class ActSpending
 public sealed record ActSpend(string Spends, string? Covered, string Pin);
 
 /// <summary>
-/// The census of every supervisor kind's act and every steward act (D306, GRANTSPEND1): each declares what it spends and its pin. An act is
+/// The census of every supervisor kind's act and every steward act: each declares what it spends and its pin. An act is
 /// admitted only where every grant on its chain (the role that acts, and each role that allowed it) lists both the act and the grant that
-/// covers what it spends; a refusal names the grant that was missing. A new act with no row here fails the census test.
+/// covers what it spends; a refusal names the grant it lacks. A new act with no row here fails the census test.
 /// </summary>
 public static class ActSpends
 {

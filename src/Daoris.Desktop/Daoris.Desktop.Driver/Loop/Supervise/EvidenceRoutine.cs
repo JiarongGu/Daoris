@@ -11,7 +11,7 @@ public interface IEvidenceRecords
 /// <summary>The records door an accepted class row reaches the backlog through; the routine never writes the backlog's file itself.</summary>
 public interface IEvidenceBacklog
 {
-    /// <summary>Whether the row was taken.</summary>
+    /// <summary>Whether the row is taken.</summary>
     Task<bool> AppendAsync(EvidenceRow row, CancellationToken ct);
 }
 

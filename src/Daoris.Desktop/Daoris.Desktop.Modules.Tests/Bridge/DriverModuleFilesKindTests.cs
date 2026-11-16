@@ -33,7 +33,6 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
 
     private sealed record Door(DriverLoop Loop, StandingConfirmation Judge, Func<string, Func<string, object>, Task<JsonElement>> Send, string Key, ServiceProvider Services, InstancePipe Pipe) : IDisposable
     {
-        /// <summary>The whole answer, a refusal at the pipe's own judge included.</summary>
         public Func<string, Func<string, object>, Task<JsonElement>> Raw { get; init; } = null!;
 
         public void Dispose()
@@ -163,10 +162,6 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
         Assert.Null(await SupervisorDecisionDoor.FactsAsync(door.Loop, waiting, "f1", default));
     }
 
-    /// <summary>
-    /// A share spends a destination outside the repository, which no grant covers, so it stays the owner role's even for a
-    /// workspace's supervisor granted every files act: not listed, refused in the admission naming the spend, and nothing written.
-    /// </summary>
     [Fact]
     public async Task A_share_spends_a_destination_no_grant_covers_so_it_is_the_owner_s_and_not_listed()
     {

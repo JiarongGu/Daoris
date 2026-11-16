@@ -66,7 +66,7 @@ test('create waits on the release manager while the build runs, with no fixed gi
   assert.match(again.step.params.evidence.message, /created by Daoris/);
 });
 
-test('ACTPIN1 at every step: the main line\'s definition with a build from dev is refused target-changed, the route its choice', async (t) => {
+test('at every step: the main line\'s definition with a build from dev is refused target-changed, the route its choice', async (t) => {
   const api = await line({ made: [{ id: 90, build: 41 }] });
 
   const { step: done } = await step(t, api, 'release-start', { releaseDefinition: 42, stage: 402 });
@@ -243,7 +243,7 @@ test('a Done outside link on a step whose unit no step awaits any more is read a
   assert.deepEqual([read.state, read.outcome.state], ['done', 'reached']);
 });
 
-test('ACCESSSTEP1: a refused key waits on the credentials keeper with the page that fixes it, and is never failed for access', async (t) => {
+test('a refused key waits on the credentials keeper with the page that fixes it, and is never failed for access', async (t) => {
   const api = await line();
 
   const { step: done, progress } = await step(t, api, 'release-create', {}, { token: 'a-revoked-token', deadlineAt: new Date(Date.now() + 5600).toISOString() });

@@ -78,7 +78,7 @@ public static class ChatNoteCodes
     public static readonly NoteCode LandingLineHolds = new("landing.line-holds", []);
     public static readonly NoteCode LandingQueued = new("landing.queued", []);
 
-    // A landing another of Daoris's writes held, tried again by itself (LANDRETRY1); past its deadline, the line it climbed to.
+    // A landing another of Daoris's writes held, tried again by itself; past its deadline, the line it climbed to.
     public static readonly NoteCode LandingBusy = new("landing.busy", ["minutes"]);
     public static readonly NoteCode LandingClimbed = new("landing.climbed", ["line"]);
 

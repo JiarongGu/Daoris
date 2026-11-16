@@ -24,7 +24,6 @@ public sealed class GoAheadNode : BuiltInNode, IObserves
     /// <summary>None: a go-ahead is named by its step's id.</summary>
     public override string? Title => null;
 
-    /// <summary>The approver says yes to the one act it is bound to.</summary>
     public override string Role => StepRoles.Approver;
 
     public override NodeLook Look => NodeLook.You;

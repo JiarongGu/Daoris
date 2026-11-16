@@ -57,7 +57,6 @@ public sealed record BrainstormDocument(
     string Id, string Question, string Packet, IReadOnlyList<BrainstormPassRecord> Passes, IReadOnlyList<BrainstormRow> Rows,
     IReadOnlyList<(BrainstormMember Member, string Why)> LeftOut, IReadOnlyList<string> Needs, string? Unranked)
 {
-    /// <summary>A design pass's comparison, where its reader gave one; null for a brainstorm's, and for an unranked document.</summary>
     public DesignComparison? Comparison { get; init; }
 
     /// <summary>The makers whose generators answered, each once.</summary>

@@ -80,19 +80,12 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
     /// <summary>The outcome the person named with <i>it happened</i> on a held decision; null on every other word and attempt.</summary>
     public string? Decision { get; init; }
 
-    /// <summary>What its plugin last said of it while it runs, the actor it waits on among it; null where nothing is said.</summary>
     public StepProgress? Progress { get; init; }
 
-    /// <summary>
-    /// The link its holder's <i>Done outside Daoris</i> gave (<see cref="HeldResolutions.DoneOutside"/>), kept with <see cref="Resolution"/>
-    /// <c>happened</c>: an older build reads that word and ignores this field. Null on every attempt no holder said is done outside.
-    /// </summary>
     public string? Link { get; init; }
 
-    /// <summary>The note its holder gave with <see cref="Link"/>, where they gave one.</summary>
     public string? Note { get; init; }
 
-    /// <summary>When its plugin's check answered <see cref="Link"/>, which the word waits for (<see cref="LinkHolds"/>); an older build passes over it.</summary>
     public DateTimeOffset? LinkChecked { get; init; }
 
     /// <summary>

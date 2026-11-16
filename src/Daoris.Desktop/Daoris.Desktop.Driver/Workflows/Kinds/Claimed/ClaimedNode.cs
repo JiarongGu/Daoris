@@ -12,7 +12,6 @@ internal sealed class ClaimedNode : BuiltInNode, IObserves
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Quest;
 
-    /// <summary>The working role that does the work, the role its work is taken by where the step names none.</summary>
     public override string Role => StepRoles.Design;
 
     /// <summary>

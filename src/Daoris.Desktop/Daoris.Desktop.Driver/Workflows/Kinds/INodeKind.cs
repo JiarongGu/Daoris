@@ -48,10 +48,6 @@ public interface INodeKind
     /// <summary>The works a role must take to take a node of this kind, the step's own first; none where no agent session takes it.</summary>
     IReadOnlyList<string> RoleTakes { get; }
 
-    /// <summary>
-    /// The role that takes a node of this kind where its declaration names none (<see cref="StepRoles"/>): read, never written into a version.
-    /// A plugin's step is the operations role's until its declaration names its own.
-    /// </summary>
     string Role => StepRoles.Operations;
 
     /// <summary>The schema a <c>data</c> wire takes from its evidence port where its declaration names none: an observed built-in's record; else null.</summary>

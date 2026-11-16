@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The UX trail (UXTRAIL1): kept on the desktop only, off until the person turns it on, and never more than the pages opened and the
+/// The UX trail: kept on the desktop only, off until the person turns it on, and never more than the pages opened and the
 /// presses made. Whatever else a window sends (a field's value, typing, a field this build does not name) is not kept.
 /// </summary>
 public sealed class UxTrailTests : IDisposable

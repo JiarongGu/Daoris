@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The go-ahead kind (GOAHEADACT1): a go-ahead a session asked for on its ask, its subject <c>{ session, goahead }</c> naming the newest
+/// The go-ahead kind: a go-ahead a session asked for on its ask, its subject <c>{ session, goahead }</c> naming the newest
 /// session that asked it and the ask's number. Listed where a role granted <c>goahead.answer</c> may answer it (<see cref="GoAheadAuthority"/>:
 /// low and medium risk, never at a place whose production releases are marked but a push, nor a sign-in); its decide answers approved or
 /// refused, pinned to the go-ahead's number, kind, target and act, held for the role's window with <i>Overrule</i> in the held decisions'
@@ -81,7 +81,7 @@ internal sealed class GoAheadKind : ISupervisorKind
         // The go-ahead as it stands, pinned to its number, kind, target and act; one answered since is no longer the role's to answer.
         var goAhead = await SupervisorDoorSubjects.GoAheadAsync(service, subject, ct).ConfigureAwait(false);
         var open = goAhead is { Answer: null };
-        // The place's risk and the owner's marks as they stand at the answer, and every grant on the role's chain (D306); a leave needs none.
+        // The place's risk and the owner's marks as they stand at the answer, and every grant on the role's chain; a leave needs none.
         var refused = !open ? SupervisorWhy.Answered : act == SupervisorDoorActs.Hold ? null : Refusal(judge, repository, goAhead!);
         var answer = new SupervisorDoorAnswer(subject, repository, generation, act, choice, reasons, holder) { Pin = open ? SupervisorDoorSubjects.Pin(goAhead!).Said : null };
         var kept = await loop.Supervisor.DoorAsync(answer, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);

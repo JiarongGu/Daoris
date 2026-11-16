@@ -47,7 +47,7 @@ public static class ScopeLanding
 
     /// <summary>
     /// What a run's check sends at the end of its ask, and the reviews the end asks: for an ask's delivery run whose plan is one scope, the
-    /// full set (every declared gate, no reached reading) and the two reviews; for any other run, or a plan not read, the send as it was
+    /// full set (every declared gate, no reached reading) and the two reviews; for any other run, or a plan not read, the send unchanged
     /// and no review. The plan is read once per send, so the end follows the standing revision.
     /// </summary>
     public static async Task<ScopeEnd> EndAsync(string home, VerifySend send, ITrainPlans? plans, IReadOnlyList<ScopeReviewer> offered, CancellationToken ct)
