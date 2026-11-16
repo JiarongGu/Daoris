@@ -82,6 +82,7 @@ internal sealed class ContentHolds(TreeContext context)
         IReadOnlyList<string>? changed = null;
         // What the line lacks of the branch's commits, from the first form whose per-commit reading found any lacking.
         IReadOnlyList<LandingCommit>? lacks = null;
+        var byPatch = false;
         foreach (var (form, formRef, formId) in forms)
         {
             var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
@@ -130,6 +131,7 @@ internal sealed class ContentHolds(TreeContext context)
             {
                 if (replay.Held) return ContentProof.Of(new ContentHold(form, Squash: false) { Replayed = true, OnLine = true }, formRef, formId);
                 lacks ??= replay.Lacks;
+                byPatch |= replay.ByPatch;
             }
 
             // A squash carried it with other work, so merging it into the line adds nothing.
@@ -139,7 +141,7 @@ internal sealed class ContentHolds(TreeContext context)
             }
         }
 
-        var notHeld = unread is null ? ContentProof.NotHeld with { Lacks = lacks } : ContentProof.UnreadBy(unread);
+        var notHeld = unread is null ? ContentProof.NotHeld with { Lacks = lacks, ByPatch = byPatch } : ContentProof.UnreadBy(unread);
         if (changed is null) return notHeld;
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
         var (refsCode, byDate, refsErr) = await BranchesByDate.ReadAsync(cwd, ct).ConfigureAwait(false);

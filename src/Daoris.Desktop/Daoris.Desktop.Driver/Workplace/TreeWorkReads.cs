@@ -82,7 +82,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         // branch of work already there.
         if (work.Commits is not > 0 || judged is null) return await CountedAsync(work).ConfigureAwait(false);
         back ??= new TreeWalkBack();
-        var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, back, ct).ConfigureAwait(false);
+        var (found, lacks, byPatch) = await HeldWorkAsync(tree, judged, own, here, back, ct).ConfigureAwait(false);
         // The proof's status of a tree held by content lists its paths: the count.
         if (found is not null && !known && back.Paths is { } paths)
         {
@@ -92,8 +92,10 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
 
         // Where the line holds some of its commits under ids of their own (a landing replayed them, and the session is told
         // to rebase and made more), only the commits it lacks are work to land, as the landing's plan counts them.
+        // Every commit on the line by patch counts none, though the line has gone on and changed the files since: a landing carries nothing.
         return await CountedAsync(found is not null ? work with { Held = found }
             : lacks is { Count: > 0 } && lacks.Count < work.Commits ? work with { Commits = lacks.Count }
+            : byPatch && lacks is null ? work with { Commits = 0 }
             : work).ConfigureAwait(false);
     }
 
@@ -154,7 +156,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// branch or detached: the same read of the head, not a second one.</param>
     /// <param name="read">The tree's repository and branch as a landing read them; null reads them here.</param>
     /// <returns>Where the work is held; else, where the line holds some of its commits, those it lacks.</returns>
-    private async Task<(HeldWork? Held, IReadOnlyList<LandingCommit>? Lacks)> HeldWorkAsync(
+    private async Task<(HeldWork? Held, IReadOnlyList<LandingCommit>? Lacks, bool ByPatch)> HeldWorkAsync(
         string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, TreeWalkBack back, CancellationToken ct)
     {
         try
@@ -162,7 +164,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var full = Path.GetFullPath(tree);
             // Its repository, and the branch the discard below names, in one start; a landing's own read, where it hands one.
             var here = read ?? await TreeGit.CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
-            if (here.Code != 0) return (null, null);
+            if (here.Code != 0) return (null, null, false);
             var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
             var (workspace, repository) = context.OwnerOf(full);
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -174,23 +176,23 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             }
 
             var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
-            if (proof.Hold is not { } held) return (null, proof.Lacks);
+            if (proof.Hold is not { } held) return (null, proof.Lacks, proof.ByPatch);
 
             back.Declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
             var (stays, paths) = await StaysOfAsync(full, root, back.Declared, ct).ConfigureAwait(false);
             back.Paths = paths;
-            if (stays is not null) return (new HeldWork(held, null, stays), null);
+            if (stays is not null) return (new HeldWork(held, null, stays), null, false);
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
             var named = here.Branch.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : follows.BranchOfTree(full)?.Branch ?? "HEAD";
             return (await DiscardedNameAsync(root, named, judged, ct).ConfigureAwait(false) is { } keeps
                 ? new HeldWork(held, keeps, null)
-                : new HeldWork(held, null, "every name for a ref to keep its commits at is taken"), null);
+                : new HeldWork(held, null, "every name for a ref to keep its commits at is taken"), null, false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
             // A comparison that could not be made proves nothing: its commits are offered to land as ancestry counted them.
-            return (null, null);
+            return (null, null, false);
         }
     }
 

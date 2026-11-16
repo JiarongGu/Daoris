@@ -29,6 +29,12 @@ internal sealed record ContentProof(ContentHold? Hold, string? Unread)
     internal IReadOnlyList<LandingCommit>? Lacks { get; init; }
 
     /// <summary>
+    /// Every commit of the branch is on the line by patch (<see cref="ReplayHolds.Reading.ByPatch"/>), though the work is not held as the
+    /// files stand: nothing is left to land, and the work is never an end a discard may rest on.
+    /// </summary>
+    internal bool ByPatch { get; init; }
+
+    /// <summary>
     /// The commits a refusal names as not taken, one a line: those the line lacks where the reading found them, else
     /// <paramref name="unlanded"/>, the ones ancestry counted, as git's <c>--oneline</c> listed them.
     /// </summary>

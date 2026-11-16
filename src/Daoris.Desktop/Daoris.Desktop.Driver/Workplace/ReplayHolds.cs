@@ -20,7 +20,11 @@ internal static class ReplayHolds
 {
     /// <summary>What the per-commit reading found: every commit on the line (<paramref name="Held"/>), or the commits the line lacks.</summary>
     /// <param name="Lacks">The commits a landing would carry, oldest first: never empty; null where all are held, or none is lacked.</param>
-    internal sealed record Reading(bool Held, IReadOnlyList<LandingCommit>? Lacks);
+    /// <param name="ByPatch">
+    /// Every commit is on the line by patch, whether or not the files they changed still read so there: a line that went on and changed a
+    /// file since holds the work no less, and a landing has nothing to carry (<see cref="Held"/> is the stricter word, the files as they stand).
+    /// </param>
+    internal sealed record Reading(bool Held, IReadOnlyList<LandingCommit>? Lacks, bool ByPatch = false);
 
     /// <summary>
     /// Whether the line at <paramref name="lineTip"/> holds every commit of <paramref name="tip"/> beyond it, as a landing reads them, and has
@@ -50,7 +54,7 @@ internal static class ReplayHolds
 
         if (await LineHolds.JudgeAsync(cwd, tip, lineTip, line, ct).ConfigureAwait(false) is not { } held || held.Commits.Count == 0) return null;
         if (held.Kept.Count > 0) return new(false, held.Kept);
-        if (differs.Count == 0) return new(true, null);
+        if (differs.Count == 0) return new(true, null, ByPatch: true);
 
         // The line's own commits since the branch left it, newest first, each marked `=` where it holds one of the branch's patches, with
         // the files it changed: one log. Newest by the graph, never by date: commits made in one second list in either order by date.
@@ -61,7 +65,7 @@ internal static class ReplayHolds
                 "--name-only", $"{lineTip}...{tip}",
             ],
             ct).ConfigureAwait(false);
-        return code != 0 ? null : new(LastChangedByPatch(log, differs), null);
+        return code != 0 ? null : new(LastChangedByPatch(log, differs), null, ByPatch: true);
     }
 
     /// <summary>
