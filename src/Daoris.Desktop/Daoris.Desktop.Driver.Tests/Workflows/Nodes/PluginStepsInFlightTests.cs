@@ -105,4 +105,43 @@ public sealed class PluginStepsInFlightTests : NodeRunFixture
         Assert.Equal((AttemptStates.Sent, role), (kept.State, kept.Progress?.Actor));
         Assert.Equal(inFlight, runtime.PluginStepsInFlight());
     }
+
+    /// <summary>
+    /// A watch, a step whose plugin declares it acts on nothing outside (<c>perform.acts: false</c>), only observes: cut off by a swap it loses
+    /// nothing, and its plugin watches again after the restart, so however long it runs it holds no update.
+    /// </summary>
+    [Fact]
+    public async Task A_watch_that_acts_on_nothing_never_holds_the_install()
+    {
+        var watch = Step with { Id = Plugin + "/deploy", Kind = Plugin + "/deploy", Perform = Step.Perform! with { Acts = false } };
+        var runtime = Governing();
+
+        await runtime.PassAsync(RunLook() with { Steps = () => [watch, Build, Deployed] }, CancellationToken.None);
+
+        Assert.Equal(AttemptStates.Sent, Assert.Single(Files.Read(RunUnit)!.Attempts).State);
+        Assert.Equal(0, runtime.PluginStepsInFlight());
+    }
+
+    /// <summary>
+    /// An attempt whose outcome is not known holds an update for <see cref="PluginStepsInFlight.UnknownBound"/> from when it was first counted
+    /// so, then the install goes on: the restart asks its plugin after it, as it would after any stop.
+    /// </summary>
+    [Fact]
+    public async Task An_attempt_not_known_holds_the_install_for_a_bounded_time()
+    {
+        var runtime = Governing();
+        await RunPassAsync(runtime);
+        var record = Files.Read(RunUnit)!;
+        Files.Write(record with { Attempts = [record.Attempts[0] with { State = AttemptStates.Unknown }] });
+
+        Assert.Equal(1, runtime.PluginStepsInFlight());
+        _now += PluginStepsInFlight.UnknownBound - TimeSpan.FromMinutes(1);
+        Assert.Equal(1, runtime.PluginStepsInFlight());
+        _now += TimeSpan.FromMinutes(2);
+        Assert.Equal(0, runtime.PluginStepsInFlight());
+
+        // Sent again and answered going on, it holds again, and a later unknown has its own bound.
+        Files.Write(record);
+        Assert.Equal(1, runtime.PluginStepsInFlight());
+    }
 }

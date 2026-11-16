@@ -232,6 +232,7 @@ public static class PluginSteps
             }
 
             if (Flag(declaredPerform, "idempotent", false) is not { } idempotent) return Broken(PluginStepCodes.Idempotent);
+            if (Flag(declaredPerform, "acts", true) is not { } acts) return Broken(PluginStepCodes.Acts);
             if (declaredPerform.TryGetProperty("reconcile", out var reconcile) && !Is(reconcile, ReconcilePoint)) return Broken(PluginStepCodes.Reconcile);
 
             var transient = new List<string>();
@@ -245,7 +246,7 @@ public static class PluginSteps
                 }
             }
 
-            perform = new NodePerform(idempotent, reconcile.ValueKind == JsonValueKind.String, transient);
+            perform = new NodePerform(idempotent, reconcile.ValueKind == JsonValueKind.String, transient) { Acts = acts };
         }
 
         var step = new NodeDeclaration(kind, kind, version, reach)
@@ -362,6 +363,7 @@ public static class PluginSteps
         {
             var said = new List<string>();
             if (perform.Idempotent) said.Add("idempotent");
+            if (!perform.Acts) said.Add("watches only");
             if (perform.Reconcile) said.Add("reconciled");
             if (perform.Transient.Count > 0) said.Add($"transient {string.Join(", ", perform.Transient)}");
             parts.AddRange(said.Count > 0 ? said : ["perform declared"]);
@@ -396,6 +398,7 @@ public static class PluginSteps
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",
+        PluginStepCodes.Acts => $"step `{name}`'s `acts` must be `true` or `false`: whether it acts outside, or only watches, which no update waits on.",
         PluginStepCodes.PerformPoint => $"step `{name}` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.",
         "transient" => $"step `{name}`'s `transient` must list the failure codes worth retrying, once each, in lowercase letters, digits and dashes, and only with a `retry` of more than one attempt.",
         PluginStepCodes.Resources => "`resources` must be an array of what the plugin's steps create.",
@@ -419,6 +422,9 @@ public static class PluginStepCodes
     public const string StepTwice = "step-twice";
     public const string Idempotent = "idempotent";
     public const string Reconcile = "reconcile";
+
+    /// <summary>A <c>perform</c> whose <c>acts</c> is not <c>true</c> or <c>false</c>.</summary>
+    public const string Acts = "acts";
 
     /// <summary>A performed step whose manifest's <c>hooks.points</c> does not name <c>work/perform</c>.</summary>
     public const string PerformPoint = "perform-point";

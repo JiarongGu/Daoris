@@ -50,6 +50,7 @@ public sealed class PluginStepsTests : IDisposable
         {
             parts.Add("perform");
             if (perform.Idempotent) parts.Add("idempotent");
+            if (!perform.Acts) parts.Add("watches");
             if (perform.Reconcile) parts.Add("reconcile");
             if (perform.Transient.Count > 0) parts.Add("transient=" + string.Join("+", perform.Transient));
         }
@@ -72,7 +73,9 @@ public sealed class PluginStepsTests : IDisposable
     [InlineData("a whole performed step", """, "steps": [{ "id": "deploy", "version": 2, "reach": "performed", "inputs": { "release": "acme.build/artifact@1" }, "outputs": { "preview": "acme.deploy/preview@1", "log": "acme.deploy/log@1" }, "evidence": { "schema": "acme.deploy/receipt@1" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] }, "timeoutSeconds": 600, "skippable": false, "rejectable": true, "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] } }] """, null, null, "acme.deploy/deploy@2 performed in release=acme.build/artifact@1 out log=acme.deploy/log@1,preview=acme.deploy/preview@1 evidence acme.deploy/receipt@1 retry 3/5+30 timeout 600 no-skip reject perform idempotent reconcile transient=unavailable+rate-limited+timeout", "")]
     [InlineData("a retry with no delays, reconciled", """, "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 2 }, "perform": { "reconcile": "work/reconcile", "transient": ["unavailable"] } }] """, null, null, "acme.deploy/deploy@1 performed retry 2/ perform reconcile transient=unavailable", "")]
     [InlineData("a retry of one attempt is none", """, "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 1 } }] """, null, null, "acme.deploy/deploy@1 performed retry 1/", "")]
-    [InlineData("perform naming no point", """, "steps": [{ "id": "deploy", "reach": "performed", "perform": {} }] """, null, null, "acme.deploy/deploy@1 performed perform", "")]
+    [InlineData("a watch that acts on nothing", """, "steps": [{ "id": "watch", "reach": "performed", "perform": { "idempotent": true, "acts": false } }] """, null, null, "acme.deploy/watch@1 performed perform idempotent watches", "")]
+    [InlineData("acts that is not true or false", """, "steps": [{ "id": "watch", "reach": "performed", "perform": { "acts": "no" } }] """, "acts", "step `watch`'s `acts` must be `true` or `false`: whether it acts outside, or only watches, which no update waits on.", "", "")]
+    [InlineData("perform naming no point",""", "steps": [{ "id": "deploy", "reach": "performed", "perform": {} }] """, null, null, "acme.deploy/deploy@1 performed perform", "")]
     [InlineData("two steps, in their order", """, "steps": [{ "id": "build", "reach": "performed" }, { "id": "deployed", "reach": "observed", "skippable": true, "rejectable": false }] """, null, null, "acme.deploy/build@1 performed; acme.deploy/deployed@1 observed", "")]
     [InlineData("a version written 1.0", """, "steps": [{ "id": "deploy", "version": 1.0, "reach": "performed" }] """, null, null, "acme.deploy/deploy@1 performed", "")]
     [InlineData("an id of 40", """, "steps": [{ "id": "abcdefghijabcdefghijabcdefghijabcdefghij", "reach": "observed" }] """, null, null, "acme.deploy/abcdefghijabcdefghijabcdefghijabcdefghij@1 observed", "")]

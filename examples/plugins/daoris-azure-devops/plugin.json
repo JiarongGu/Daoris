@@ -124,7 +124,7 @@
       "id": "release-watch", "title": { "en": "Watch the stage", "zh": "跟踪阶段" },
       "about": { "en": "Watches the declared stage to its end: reached where it ends as its success asks, failed where it fails or is cancelled.", "zh": "跟踪所声明的阶段直到结束：按成功要求结束则完成，失败或取消则失败。" },
       "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
-      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "perform": { "point": "work/perform", "idempotent": true, "acts": false, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 7200
     }
   ],
