@@ -97,9 +97,7 @@ const ORGANISMS = new Set<string>([
   // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
   './work/head/SessionPlaceHold.tsx',
-  // The run's waits on the head: it holds the attention, the held's and the node's word presses, so the rows it draws hold none.
   './work/head/RunWaitsHead.tsx',
-  // The release step's doors: they hold the plugin's command and the workflow values' door, so the approval card and the target form are handed the presses.
   './workflow/release/ReleaseStepDoors.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',

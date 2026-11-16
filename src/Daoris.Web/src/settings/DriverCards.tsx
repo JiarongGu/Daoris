@@ -65,7 +65,6 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
   /** A change to this machine's git access, a loosening confirmed in its row first. */
   onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
-  /** The UX trail's switch; absent where the shell does not answer it, and the row is absent. */
   uxTrail?: UxTrailShown;
 }) {
   const { t } = useTranslation();
