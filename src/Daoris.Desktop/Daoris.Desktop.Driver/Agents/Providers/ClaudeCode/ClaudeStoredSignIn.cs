@@ -19,11 +19,14 @@ internal sealed class ClaudeStoredSignIn : IStoredSignIn
     public StoredSignInShape? Read(string profileHome)
     {
         var path = Path.Combine(profileHome, FileName);
+        byte[]? bytes = null;
         try
         {
             if (!File.Exists(path)) return null;
             var written = new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
-            using var document = JsonDocument.Parse(File.ReadAllBytes(path));
+            bytes = File.ReadAllBytes(path);
+            // Parsed over the bytes read, never copied out of them, and those bytes cleared once the shape is read.
+            using var document = JsonDocument.Parse(bytes.AsMemory());
             if (document.RootElement.ValueKind != JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("claudeAiOauth", out var oauth) || oauth.ValueKind != JsonValueKind.Object)
             {
@@ -41,9 +44,16 @@ internal sealed class ClaudeStoredSignIn : IStoredSignIn
             // A store that does not read says nothing: neither signed in nor cleared.
             return null;
         }
-
-        // Presence alone: a non-empty string. The value is never read past its length.
-        static bool There(JsonElement oauth, string name) =>
-            oauth.TryGetProperty(name, out var token) && token.ValueKind == JsonValueKind.String && token.GetString() is { Length: > 0 };
+        finally
+        {
+            if (bytes is not null) System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+        }
     }
+
+    /// <summary>
+    /// Presence alone: a string that is not empty, judged against the JSON's own bytes. No string of the value is made: it is never decoded,
+    /// so it can be neither kept nor logged.
+    /// </summary>
+    internal static bool There(JsonElement oauth, string name) =>
+        oauth.TryGetProperty(name, out var token) && token.ValueKind == JsonValueKind.String && !token.ValueEquals(""u8);
 }

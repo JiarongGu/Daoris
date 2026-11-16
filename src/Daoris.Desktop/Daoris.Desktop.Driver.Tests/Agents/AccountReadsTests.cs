@@ -68,6 +68,27 @@ public sealed class AccountReadsTests : IDisposable
         Assert.Equal(new AccountRead(LoginState.In, Ten.AddMinutes(5)), AccountReads.Of(_home, "claude-code").Accounts["account-1"]);
     }
 
+    /// <summary>
+    /// A renewal that timed out reads unanswered between a sign-in and the sign-out its agent made: the unanswered reading is nothing known, so
+    /// the sign-out still says it followed the sign-in, and is one nobody at Daoris made. A sign-out read again after one unanswered is not new.
+    /// </summary>
+    [Fact]
+    public void A_sign_out_after_an_unanswered_reading_still_follows_the_sign_in_before_it()
+    {
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.In, Ten);
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Unknown, Ten.AddMinutes(1));
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Unknown, Ten.AddMinutes(2));
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Out, Ten.AddMinutes(3));
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Out, Ten);
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Unknown, Ten.AddMinutes(1));
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Out, Ten.AddMinutes(2));
+
+        var accounts = AccountReads.Of(_home, "claude-code").Accounts;
+        Assert.Equal(new AccountRead(LoginState.Out, Ten.AddMinutes(3), Ten.AddMinutes(3), LoginState.In), accounts["account-1"]);
+        Assert.True(SignInStates.Of(accounts["account-1"]).NotByPerson);
+        Assert.False(SignInStates.Of(accounts["account-2"]).NotByPerson);
+    }
+
     /// <summary>A removed account is forgotten, so one made later under its name starts never read.</summary>
     [Fact]
     public void A_removed_account_is_forgotten_and_the_rest_stand()

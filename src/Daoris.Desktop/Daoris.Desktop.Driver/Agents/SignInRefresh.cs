@@ -12,7 +12,8 @@ namespace Daoris.Driver;
 /// <para><b>When</b>: a start's walk, once it has counted the account, takes the account's lock to wait out a question in flight
 /// (<c>RosterWalk.WaitedOutAsync</c>); holding it, it renews where the store's access token expires within <see cref="Margin"/>.
 /// A start beside it waits on the same lock and finds the token fresh. Not where a session of Daoris's already runs on the
-/// account, whose own process renews the token it holds. The renewal is the agent's own status question, which refreshes an expired
+/// account, whose own process renews the token it holds: there a start reads the store as it stands, and its session may refresh at
+/// the moment the running one does, which no lock of Daoris's reaches (the area's rule 33 says so). The renewal is the agent's own status question, which refreshes an expired
 /// token to answer, bounded by its patience; its answer is kept as the account's reading.</para>
 /// </remarks>
 internal static class SignInRefresh
