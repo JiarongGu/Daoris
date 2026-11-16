@@ -233,7 +233,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/IntegrationVerdictProcessTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/MachineAdmissionTests.cs": 3,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionDeliveryTests.cs": 3,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionLookTests.cs": 9,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionLookTests.cs": 8,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionRecheckTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionResumeTickTests.cs": 6,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/ReviewTreeTests.cs": 1,

@@ -8,7 +8,7 @@ public static class StaffRoster
     /// <c>Release</c> gives a refused start's reservation back with its account count. <paramref name="settled"/> and <paramref name="clock"/> are a test's.
     /// </summary>
     public static StaffLedger StaffFor(this HarnessRoster roster, string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null) =>
-        (StaffLedger)roster.StartLedger(() => new StaffLedger(home, settled, clock));
+        (StaffLedger)roster.StartLedger(() => new StaffLedger(home, settled, clock) { Owner = agent => roster.Adapters.OwnerOfAgent(agent).Value });
 
     /// <summary>The ledger when a start has asked for it; null before.</summary>
     internal static StaffLedger? Staff(this HarnessRoster roster) => roster.StartLedgerMade as StaffLedger;

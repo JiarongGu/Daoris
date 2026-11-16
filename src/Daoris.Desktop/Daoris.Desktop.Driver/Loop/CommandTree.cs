@@ -79,7 +79,7 @@ public static class CommandTree
             "ask" when verb is not null && AskActs.Words.TryGetValue(verb, out var act) => ["ask", act, .. after],
             "ask-daoris" => ["help", .. rest],
             "gate" => [verb == "run" ? "run-heavy" : "verify", .. after],
-            "place" when verb is "access" or "heavy" or "checks" => [verb, .. after],
+            "place" when verb is "access" or "heavy" or "checks" or "checkout" => [verb, .. after],
             "place" when verb is not null && CommandWords.Group("place")!.Verbs.Contains(verb, StringComparer.Ordinal) => ["driver", .. rest],
             "plugin" when verb is not null && PluginCommand.Verbs.Contains(verb, StringComparer.Ordinal) => ["plugin", .. rest],
             "plugin" => ["plugins", .. rest],
