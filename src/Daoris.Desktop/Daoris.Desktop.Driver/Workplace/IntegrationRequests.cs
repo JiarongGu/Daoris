@@ -152,8 +152,13 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
                 + "Nothing was requested."));
         }
 
+        // A part of an ask built as one scope lands on the ask's branch with no gates: the full set runs once at the scope's end.
         var resolved = (rule ?? new LandingIntegrate()).Resolved();
-        return (resolved with { Request = ask.Request ?? request, Conflicts = ask.Conflicts ?? resolved.Conflicts, Line = ask.Train is { } part ? TrainBranch.Of(part.Ask) : resolved.Line }, null);
+        return (resolved with
+        {
+            Request = ask.Request ?? request, Conflicts = ask.Conflicts ?? resolved.Conflicts, Line = ask.Train is { } part ? TrainBranch.Of(part.Ask) : resolved.Line,
+            Gates = ask.Train is { OneScope: true } ? LandingIntegrate.NoGates : resolved.Gates,
+        }, null);
     }
 
     /// <summary>

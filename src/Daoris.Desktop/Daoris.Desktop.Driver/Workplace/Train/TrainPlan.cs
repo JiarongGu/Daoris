@@ -18,6 +18,9 @@ public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadO
 /// </summary>
 public sealed record TrainPlan(string Ask, int Revision, IReadOnlyList<TrainPlanPart> Parts)
 {
+    /// <summary>How the parts are integrated (<see cref="ScopeLanding"/>): <c>one-scope</c> or <c>per-part</c>; null, an older answer's, is per part.</summary>
+    public string? Integration { get; init; }
+
     /// <summary>The ask's own plan out of the service's answer; null where the ask has none yet.</summary>
     public static TrainPlan? Of(AskPlanResponse answer)
     {
@@ -26,7 +29,7 @@ public sealed record TrainPlan(string Ask, int Revision, IReadOnlyList<TrainPlan
             part.Id,
             Named(own.Edges, part.Id, "after"),
             Named(own.Edges, part.Id, "orders")) { Quest = part.Quest, Repository = part.Repository }).ToList();
-        return new TrainPlan(answer.Ask, own.Revision, parts);
+        return new TrainPlan(answer.Ask, own.Revision, parts) { Integration = own.Integration };
     }
 
     private static HashSet<string> Named(IReadOnlyList<AskPlanEdgeResponse> edges, string part, string kind) =>

@@ -13,6 +13,8 @@ public static class TrainPartOf
         var pieces = publishKey.Split('/');
         if (pieces.Length != 3 || pieces[0].Length == 0 || pieces[1].Length == 0 || !int.TryParse(pieces[2], out _)) return null;
         if (await plans.OfAsync(pieces[0], ct).ConfigureAwait(false) is not { } plan) return null;
-        return plan.Parts.Any(part => part.Id == pieces[1] && part.Quest == quest) ? new TrainRef(pieces[0], pieces[1]) : null;
+        return plan.Parts.Any(part => part.Id == pieces[1] && part.Quest == quest)
+            ? new TrainRef(pieces[0], pieces[1]) { OneScope = !ScopeLanding.GatesEachPart(plan.Integration) }
+            : null;
     }
 }
