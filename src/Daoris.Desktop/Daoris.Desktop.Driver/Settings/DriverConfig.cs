@@ -257,6 +257,9 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, string> WorkspaceGrowth { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Every place's risk and the owner's marks (<see cref="PlaceRiskBook"/>), the owner's alone to set; unwritten until the home's migration writes it.</summary>
+    public PlaceRiskBook PlaceRisk { get; init; } = PlaceRiskBook.Unwritten;
+
     /// <summary>
     /// The person's brainstorm policy on this machine: who may start one, the agents it runs and its minutes. Resolved by
     /// <see cref="BrainstormRules.Resolve"/>, edited by <see cref="BrainstormRules.Apply"/>; null is the default.

@@ -70,6 +70,7 @@ internal static class DriverConfigReader
             WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
             Growth = GrowthKey.Map(root, "growth"),
             WorkspaceGrowth = GrowthKey.Map(root, "workspaceGrowth"),
+            PlaceRisk = PlaceRiskBook.Read(root),
             Brainstorms = BrainstormKey.Machine(root),
             WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
             Commits =CommitKey.Map(root, "commits"),

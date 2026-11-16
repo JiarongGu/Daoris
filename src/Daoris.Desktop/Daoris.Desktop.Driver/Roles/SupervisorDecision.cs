@@ -94,6 +94,12 @@ public static class SupervisorWhy
 
     public const string NotGranted = "not-granted";
 
+    /// <summary>The place's risk record holds the place high (<see cref="PlaceRiskBook"/>): no appointed role acts there, its decisions wait on the owner role.</summary>
+    public const string HighRisk = "high-risk";
+
+    /// <summary>The act's destination is one the owner marked at the place (<see cref="PlaceMarks"/>): it stays the owner role's.</summary>
+    public const string Marked = "marked";
+
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>
     public const string RoleChanged = "role-changed";
     public const string NotParked = "not-parked";

@@ -27,6 +27,8 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     {
         var slots = owner.SlotsNow();
         var effective = SupervisorResolution.Find(slots, kind, place, owner.Wider()).Role;
+        // The place's risk casts who may act there: at high risk no appointed role holds an act, and its decisions wait on the owner role.
+        if (act is not null && !owner.RiskAt(place).RoleMayHold()) return DecisionAdmitted.Refused(SupervisorWhy.HighRisk);
         if (AppointedStaffing.Ordered(effective?.Hold))
         {
             // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.

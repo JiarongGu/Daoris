@@ -242,8 +242,18 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     the service shows. A keep or a drop names the staged rows its pin holds and the service moves exactly those, each still staged
     on the session's own page or none, so a row staged since, or by a session it continues, waits to be judged on its own; the
     person's moves them all. A departure's accepted move names the role (`by`), so the owner's mark never reads it as theirs, and the
-    session's head shows a held one with *Overrule*; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
-    high-risk place holds none. (D208, D233, D296, D297)
+    session's head shows a held one with *Overrule*; an act applies only where a role holding it is set for the scope and the place's
+    risk record (rule 49a) lets a role hold it. (D208, D233, D296, D297, D305)
+49a. Each place's risk (low, medium or high) and the owner's marks are one record, `placeRisk` in `driver.json` (`PlaceRiskBook`), keyed
+    `machine`, `workspace/<name>`, `repository/<name>`; a place it does not name is low and unmarked, the narrowest risk set stands, and a
+    destination's mark (`release.production`: the place's production releases stay the owner role's) covers every place under it. The
+    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*), `daoris settings risk`, and Ask
+    Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
+    (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
+    decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line;
+    the home's migration (`place-risk`) wrote today's person-held levels (the machine's seed and every supervisor held by rules or nobody)
+    as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
+    rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`) and listed to the hold that answers it now: the lead at the
     repository, the head at the machine once the lead left it, nobody once the head left it (gave up). Its acts, kept at once with
