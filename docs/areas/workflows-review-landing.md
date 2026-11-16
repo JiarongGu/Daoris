@@ -519,7 +519,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-PIPELINE1 g, h**: this repository's pipeline on the install, a stage after the check.
 - **WORKFLOWEDIT1c**, **LANDNODE1j**, **REVIEWFLOW1c**, **LANDPRESS1**: the installed window.
 - **PROCSTEPS1** (`docs/2026-11-09-process-steps-design.md`): `resolve`'s loop resolvers, `merge`, `tidy`'s removals, the cut-over.
-- **Actors** (D304): workflows written in actors that do not tell a person from an agent. Today a step's authority is its kind's
+- **Roles** (D304 to D309): workflows written in roles that do not tell a person from an agent, evolved in place in one scope (D309), the reporting line kept apart from authority (D305), acts spending only what their grants cover (D306) and re-checked at their effect (D307), consultations recording their mode (D308). Today a step's authority is its kind's
   (`human` the person's, plugin steps the plugin's), a step done outside Daoris is recordable only by stop, which ends the run, and a
   wait shows its holder only where a kind reads one; the rows DONEBYHOLDER1 to ACTORTRIAL1 move each, tried first on the work
   workspace's release path.
