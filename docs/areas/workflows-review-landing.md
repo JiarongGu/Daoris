@@ -64,7 +64,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
    `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
    while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
-   the evidence's `by` beside its words. Create matches a release by the landed commit its artifact carries, across every build of that
+   the evidence's `by` beside its words; the wire reads it (`WorkEvidence.By`) and the attempt its outcome settles keeps it on the unit's
+   record (`by`, which an older build passes over and drops where it writes the record again). Create matches a release by the landed commit its artifact carries, across every build of that
    commit, or reads the release its holder names (`release` option), taken where its commit is the landed one or descends from it (the
    landed commit is their merge base) and else refused `target-changed`, naming the commit it carries; it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
    end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect

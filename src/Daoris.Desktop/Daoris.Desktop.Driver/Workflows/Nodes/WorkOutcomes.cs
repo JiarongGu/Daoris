@@ -24,7 +24,8 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
 
         var now = clock();
         var status = StatusOf(record, node.Id);
-        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation };
+        // Who the outside system credits with the act is kept with the outcome, a stale one's too: the record says who made it.
+        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation, By = outcome.Evidence?.By };
         if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown))
         {
             var stale = With(record, attempt, settled);

@@ -63,7 +63,14 @@ public sealed record WatchedUnit(
 public sealed record WorkWatchFrame(int Generation, bool Resync, IReadOnlyList<WatchedUnit> Units);
 
 /// <summary>An event's evidence, the plugin's word: each part optional, the message 300 characters at most.</summary>
-public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message);
+public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message)
+{
+    /// <summary>
+    /// Who the outside system credits with the act (<c>outside: &lt;name&gt;</c>, or Daoris), a name of <see cref="WorkWire.NameChars"/> at
+    /// most; kept on the attempt its outcome settles (<see cref="NodeAttempt.By"/>). Null where the plugin names none.
+    /// </summary>
+    public string? By { get; init; }
+}
 
 /// <summary>An output a reached step names: a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
 public sealed record WorkOutput(string Ref, string? Revision);
@@ -525,6 +532,7 @@ public static class WorkWire
             if (evidence.Url is not null) written["url"] = evidence.Url;
             if (evidence.Environment is not null) written["environment"] = evidence.Environment;
             if (evidence.Message is not null) written["message"] = evidence.Message;
+            if (evidence.By is not null) written["by"] = evidence.By;
             into["evidence"] = written;
         }
 
@@ -601,12 +609,13 @@ public static class WorkWire
                 || !Optional(said, "ref", RefChars, out var reference) || !Optional(said, "url", UrlChars, out var url)
                 || (url is not null && !IsWebPage(url))
                 || !Optional(said, "environment", NameChars, out var environment)
-                || !Words(said, "message", MessageChars, out var message))
+                || !Words(said, "message", MessageChars, out var message)
+                || !Optional(said, "by", NameChars, out var by))
             {
                 return null;
             }
 
-            evidence = new WorkEvidence(reference, url, environment, message);
+            evidence = new WorkEvidence(reference, url, environment, message) { By = by };
         }
 
         field = "outputs";
