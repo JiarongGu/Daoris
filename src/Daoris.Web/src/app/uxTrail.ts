@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { call } from '../bridge/call';
+import { readUxTrail, sendUxTrail, setUxTrail } from '../bridge/uxTrail';
 import { useAttention } from '../bridge/attention';
 
 // The person's own UX trail:opt-in, off by default, kept on the desktop only (`UX_TRAIL`, the driver's `UxTrail`). It records
@@ -60,9 +60,9 @@ const KEY = ['ux-trail'] as const;
 /** Whether the trail is on, and the press that turns it on or off: Settings' row. */
 export const useUxTrail = () => {
   const client = useQueryClient();
-  const read = useQuery({ queryKey: KEY, queryFn: async () => ((await call('UX_TRAIL', {})) as { on?: boolean } | null)?.on === true });
+  const read = useQuery({ queryKey: KEY, queryFn: readUxTrail });
   const set = useMutation({
-    mutationFn: async (on: boolean) => ((await call('UX_TRAIL', { on })) as { on?: boolean } | null)?.on === true,
+    mutationFn: setUxTrail,
     onSuccess: (on) => client.setQueryData(KEY, on),
   });
   return { on: read.data ?? false, set };
@@ -79,7 +79,7 @@ export function useUxTrailRecorder() {
     const stop = recordTrail({ doc: document, keep: (entry) => queue.current.push(entry), page: () => location.pathname + location.search + location.hash });
     const flush = setInterval(() => {
       const entries = queue.current.splice(0);
-      if (entries.length > 0) void call('UX_TRAIL', { entries }).catch(() => {});
+      if (entries.length > 0) void sendUxTrail(entries).catch(() => {});
     }, 5000);
     return () => { stop(); clearInterval(flush); };
   }, [on]);
