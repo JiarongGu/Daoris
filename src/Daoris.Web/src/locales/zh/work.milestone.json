@@ -81,6 +81,7 @@
   "work.milestone.held.recorded": "你对 {{node}} 的答复已记下：下一次查看时生效。",
   "work.milestone.held.why.unknown": "已询问它的插件，但插件说不清它的结果",
   "work.milestone.held.why.no-reconcile": "它的步骤没有声明任何询问结果的方式",
+  "work.milestone.held.why.access-climbed": "它等待凭据管理人已到期限，已上交给所有者：请修好密钥或登录，再重试",
   "work.milestone.held.why.no-outcome": "它的插件说已完成，却没有给出结果",
   "work.milestone.held.why.not-current": "这个步骤已离开这次尝试，而它的效果可能仍在进行",
   "work.milestone.held.why.not-on-word": "无法采纳你“已发生”的答复：它的产出只能由插件给出",

@@ -2,6 +2,7 @@
   "settings.risk.label": "风险与你的标记",
   "settings.risk.body": "任命的角色在这里能决定多少。低风险和中风险时，你任命的角色回答其授权覆盖的事，并留出时间供你推翻；高风险时没有角色作答，每项决定都等你处理。标记让某类操作无论风险高低都归你：这个地方的生产发布。只有你能设置：智能体对它的按键在任何模式下都会放到你的确认卡上。",
   "settings.risk.twin.workspace": "`daoris settings risk {{workspace}} low|medium|high --mark release.production`",
+  "settings.risk.twin.repository": "`daoris settings risk {{workspace}} --repository {{repository}} low|medium|high --mark release.production`",
   "settings.risk.choice": "{{name}} 的风险",
   "settings.risk.values.low": "低",
   "settings.risk.values.medium": "中",

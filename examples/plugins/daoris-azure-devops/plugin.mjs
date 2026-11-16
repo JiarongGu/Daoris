@@ -14,7 +14,7 @@ import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { release } from './release.mjs';
-import { STEPS, releaseStep } from './release-steps.mjs';
+import { STEPS, linkCheck, releaseStep } from './release-steps.mjs';
 import { wayWords, within } from './browser.mjs';
 import { work } from './work.mjs';
 import { run } from './commands.mjs';
@@ -155,7 +155,12 @@ const kit = work({
   },
   // An earlier process's attempt: the active pull request says if it made one; a release's steps read their fact before they make it, so
   // start again, and a release the first made under its effect is found, never made twice.
+  // A holder's Done outside Daoris link on a release step is read once, never acted on, and answered with the link it read.
   check: (attempt) => within(async () => {
+    if (attempt.link && STEPS.includes(stepOf(attempt))) {
+      const read = await linkCheck(stepOf(attempt), attempt, unitOf(attempt), say);
+      return { ...read, outcome: told(read.outcome) };
+    }
     if (stepOf(attempt) === 'release' || STEPS.includes(stepOf(attempt))) return { state: 'not-started' };
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;

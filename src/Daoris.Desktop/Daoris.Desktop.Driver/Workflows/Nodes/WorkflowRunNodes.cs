@@ -184,10 +184,10 @@ public static class WorkflowRunNodes
         // both, and the comparison stands at the opinion. The review gate holds the look's set-up while an agent still reads the opinion, which
         // schema 1 draws as the look not reached (WorkflowRuns.Derive): that hold is the gate's, not the graph's. Otherwise schema 1's look goes
         // on beside the opinion as the graph's does. Either way, no difference; a look schema 1 holds for another reason is still one.
-        var open = counted.FirstOrDefault(node => node.Kind == NodeKinds.Opinion && !Settled(node.Id)) is { } opinion ? steps[opinion.Id].State : null;
+        var open = counted.FirstOrDefault(node => node.Kind == NodeKinds.Opinion && !Settled(node.Id)) is { } opinion ? steps[opinion.Id] : null;
         bool Beside(NodeDeclaration node) => open is not null && node.Kind == NodeKinds.Look && steps[node.Id].State switch
         {
-            WorkflowRunStates.NotReached => open is WorkflowRunStates.Working or WorkflowRunStates.WaitingOnAgent,
+            WorkflowRunStates.NotReached => open.AgentAt,
             WorkflowRunStates.CannotStart or WorkflowRunStates.Skipped => false,
             _ => true,
         };
@@ -271,8 +271,8 @@ public static class WorkflowRunNodes
         WorkflowRunStates.NotKnown => NodeStates.Unknown,
         WorkflowRunStates.Failed => NodeAuthorities.Of(node)?.FailureBy is null ? NodeStates.Active : NodeStates.Failed,
         WorkflowRunStates.Stopped => NodeStates.Stopped,
-        WorkflowRunStates.WaitingOnAgent when node.Kind == NodeKinds.Look && step.Detail == WorkflowRunDetails.NotYet => NodeStates.Rejected,
-        WorkflowRunStates.Working or WorkflowRunStates.WaitingOnYou or WorkflowRunStates.WaitingOnAgent or WorkflowRunStates.Waiting => NodeStates.Active,
+        WorkflowRunStates.Waiting when node.Kind == NodeKinds.Look && step.Detail == WorkflowRunDetails.NotYet => NodeStates.Rejected,
+        WorkflowRunStates.Working or WorkflowRunStates.Waiting => NodeStates.Active,
         _ => null,
     };
 

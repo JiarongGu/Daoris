@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
-import { type GraphRun, knownState, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { landRetrySaid } from './landRetrySaid';
+import { type GraphRun, knownState, type RunHolder, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { stepTitle } from './said';
 
 // What a run says in the reader's language: each step's state and the row
@@ -84,8 +84,14 @@ export function checkWord(t: TFunction, step: RunStep): string | null {
   }
 }
 
-/** A step's status word: a check's verdict where it has one, else its state's. */
-export const stepWord = (t: TFunction, step: RunStep): string => checkWord(t, step) ?? stateSaid(t, step.state);
+/** A step's status word: a check's verdict where it has one, a wait's *waiting on `<role>`: `<holder>`*, else its state's. */
+export const stepWord = (t: TFunction, step: RunStep): string => {
+  const check = checkWord(t, step);
+  if (check) return check;
+  if (step.state !== 'waiting' || !step.role || !step.holder) return stateSaid(t, step.state);
+  const holder = step.holder.kind === 'agent' ? step.holder.name ?? t('workflow.run.holder.anAgent') : t('workflow.run.holder.you');
+  return t('workflow.run.state.waitingOn', { role: step.role, holder });
+};
 
 /** What a check says under its status word, where it says more; null where the word says it all. */
 function checkSaid(t: TFunction, step: RunStep): string | null {
@@ -104,10 +110,29 @@ function checkSaid(t: TFunction, step: RunStep): string | null {
 }
 
 /**
- * What a step's state says (design §5.2's *Said*), or null where the state's word says it all (not reached). A state or a
- * detail the page has no words for is said as recorded, never dropped.
+ * The one line of every wait, whoever holds it (the driver's `StepWaiting.Line`): *Waiting on `<role>`: you.* or *: `<agent>`.* The holder's
+ * word is the only part that differs; *you* is how the window names the person's holding.
+ */
+export function waitingOnSaid(t: TFunction, role: string, holder: RunHolder): string {
+  const who = holder.kind === 'agent' ? `\`${holder.name ?? t('workflow.run.holder.anAgent')}\`` : t('workflow.run.holder.you');
+  return t('workflow.run.waitingOn', { role, holder: who });
+}
+
+/**
+ * What a step's state says (design §5.2's *Said*), or null where the state's word says it all (not reached). A waiting step leads with
+ * the line of every wait (`waitingOnSaid`), then says what its detail says. A state or a detail the page has no words for is said as
+ * recorded, never dropped.
  */
 export function runSaid(t: TFunction, step: RunStep): string | null {
+  const said = detailSaid(t, step);
+  // A plugin's wait says its own line, the driver's `StepWaiting.Said`, which is this one with its words and page.
+  const own = step.wait?.code === 'actor' || step.wait?.code === 'progress';
+  if (step.state !== 'waiting' || !step.role || !step.holder || own) return said;
+  const line = waitingOnSaid(t, step.role, step.holder);
+  return said === null ? line : `${line} ${said}`;
+}
+
+function detailSaid(t: TFunction, step: RunStep): string | null {
   const { kind } = step.step;
   if (step.state === 'not-reached') return null;
   if (step.node) return nodeSaid(t, step, step.node);
@@ -139,7 +164,7 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'opinion.unavailable': {
       const why = t(`workflow.run.opinionWhy.${OPINION_WHY.includes(step.code ?? '') ? step.code : 'other'}`);
       // Required, it waits on the person; not, it is passed over and holds nothing (the second-agent design §8.4).
-      return t(step.state === 'waiting-on-you' ? at : 'workflow.run.said.opinion.unavailableOptional', { why });
+      return t(step.state === 'waiting' ? at : 'workflow.run.said.opinion.unavailableOptional', { why });
     }
     case 'opinion.settled': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.settledAnyone');
     // A chat run's opinion, asked by the person's Accept and naming the reviewer it asks.
@@ -318,16 +343,25 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
 
   const kind = at.step.kind;
   // A chat run's conversation, the person's turn to talk or its work waiting for their Accept.
-  if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on', 'talk', 'land'].includes(at.detail)) {
+  if (kind === 'work' && at.state === 'waiting' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on', 'talk', 'land'].includes(at.detail)) {
     return t(`workflow.run.short.work.${at.detail}`);
   }
 
   // A reopened submission waits on its own agent, not on another repository as the state's short words say.
   if (kind === 'work' && at.detail === 'reopened') return t('workflow.run.short.work.reopened');
 
-  const key = `workflow.run.short.${kind}.${at.state}`;
-  const known = SHORT[kind]?.includes(at.state) ?? false;
-  return known ? t(key) : stateSaid(t, at.state);
+  // A wait is one state; which short words it takes is read off its detail (an agent still answering, a set-up shown again), never its holder.
+  const word = at.state === 'waiting' ? waitWord(kind, at.detail) : at.state;
+  const known = SHORT[kind]?.includes(word) ?? false;
+  return known ? t(`workflow.run.short.${kind}.${word}`) : stateSaid(t, at.state);
+}
+
+/** The short words a waiting step of this kind takes, by its detail: another kind's, or a detail with none of its own, is `waiting`. */
+function waitWord(kind: string, detail: string): string {
+  if (kind === 'work' && detail === 'awaits') return 'awaits';
+  if (kind === 'opinion' && detail === 'with-session') return 'answering';
+  if (kind === 'look' && ['not-yet', 'not-held'].includes(detail)) return 'again';
+  return 'waiting';
 }
 
 /**
@@ -348,9 +382,9 @@ export function placeSaid(t: TFunction, run: WorkflowRun, named: boolean): strin
 
 /** The short phrases each kind words, by state; any other is the state's word. */
 const SHORT: Record<string, readonly string[]> = {
-  work: ['working', 'waiting-on-agent', 'failed', 'stopped'],
-  opinion: ['working', 'waiting-on-agent', 'waiting-on-you', 'not-known'],
-  look: ['waiting-on-you', 'working', 'waiting-on-agent'],
-  landing: ['waiting-on-you', 'working', 'cannot-start', 'not-known', 'stopped'],
-  'pull-request': ['waiting-on-you', 'cannot-start', 'not-known', 'stopped'],
+  work: ['working', 'awaits', 'failed', 'stopped'],
+  opinion: ['working', 'answering', 'waiting', 'not-known'],
+  look: ['waiting', 'working', 'again'],
+  landing: ['waiting', 'working', 'cannot-start', 'not-known', 'stopped'],
+  'pull-request': ['waiting', 'cannot-start', 'not-known', 'stopped'],
 };

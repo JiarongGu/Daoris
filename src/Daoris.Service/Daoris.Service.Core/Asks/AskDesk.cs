@@ -101,8 +101,8 @@ public sealed class AskDesk
 
     /// <summary>The person's answer to a go-ahead; see <see cref="AskGoAheadAnswers.AnswerAsync"/>.</summary>
     public Task<GoAheadAnswerOutcome> AnswerGoAheadAsync(
-        string id, int number, bool approved, string? words, DateTimeOffset now, CancellationToken ct = default) =>
-        goAheads.AnswerAsync(id, number, approved, words, now, ct);
+        string id, int number, bool approved, string? words, DateTimeOffset now, CancellationToken ct = default, string? by = null) =>
+        goAheads.AnswerAsync(id, number, approved, words, now, ct, by);
 
     /// <summary>The person sets the ask's review choice; see <see cref="AskChoices.ChooseReviewAsync"/>.</summary>
     public Task<AskOutcome> ChooseReviewAsync(string id, string? choice, string? words, DateTimeOffset now, CancellationToken ct = default) =>

@@ -50,14 +50,14 @@ internal static class WorkflowReviewSteps
                 on with { State = WorkflowRunStates.Working, Session = gate.State == OpinionGateStates.ReadAgain ? gate.Recheck?.Session ?? on.Session : on.Session },
             OpinionGateStates.WithSession => on with
             {
-                State = WorkflowRunStates.WaitingOnAgent, Session = opinion?.HandedTo ?? opinion?.Working ?? gate.Session,
+                State = WorkflowRunStates.Waiting, Role = StepRoles.Design, Holder = new StepHolder(StepHolders.Agent), Session = opinion?.HandedTo ?? opinion?.Working ?? gate.Session,
                 Count = opinion?.Findings?.Count,
             },
-            OpinionGateStates.Disputed => on with { State = WorkflowRunStates.WaitingOnYou, Session = gate.Session, Count = gate.Disputes?.Count },
-            OpinionGateStates.CommitsSince => on with { State = WorkflowRunStates.WaitingOnYou, Session = gate.Session, Count = gate.Since },
+            OpinionGateStates.Disputed => on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Session = gate.Session, Count = gate.Disputes?.Count },
+            OpinionGateStates.CommitsSince => on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Session = gate.Session, Count = gate.Since },
             OpinionGateStates.Unavailable => on with
             {
-                State = gate.Required ? WorkflowRunStates.WaitingOnYou : WorkflowRunStates.Skipped, Session = gate.Session, At = gate.Until,
+                State = gate.Required ? WorkflowRunStates.Waiting : WorkflowRunStates.Skipped, Role = gate.Required ? StepRoles.Acceptor : null, Session = gate.Session, At = gate.Until,
             },
             OpinionGateStates.Settled => on with { State = WorkflowRunStates.Done, Count = opinion?.Findings?.Count },
             OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered => on with
@@ -138,21 +138,21 @@ internal static class WorkflowReviewSteps
             {
                 State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Reviewed, Commit = setUp?.Commit, At = gate.Verdict?.At, Session = setUpSession,
             },
-            ReviewStates.NotShown => on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.NotShown },
+            ReviewStates.NotShown => on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Tester, Detail = WorkflowRunDetails.NotShown },
             ReviewStates.CannotStart => on with { State = WorkflowRunStates.CannotStart, Detail = WorkflowRunDetails.Unread, Words = gate.Says },
             ReviewStates.BeingSetUp => on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.BeingSetUp, Session = setUpSession },
             ReviewStates.Shown => on with
             {
-                State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Shown, Commit = setUp?.Commit, At = setUp?.At, Session = setUpSession,
+                State = WorkflowRunStates.Waiting, Role = StepRoles.Tester, Detail = WorkflowRunDetails.Shown, Commit = setUp?.Commit, At = setUp?.At, Session = setUpSession,
             },
             ReviewStates.NotYet => on with
             {
-                State = WorkflowRunStates.WaitingOnAgent, Detail = WorkflowRunDetails.NotYet, Commit = setUp?.Commit, Words = gate.Verdict?.Words,
+                State = WorkflowRunStates.Waiting, Role = StepRoles.Design, Holder = new StepHolder(StepHolders.Agent), Detail = WorkflowRunDetails.NotYet, Commit = setUp?.Commit, Words = gate.Verdict?.Words,
                 At = gate.Verdict?.At, Session = setUpSession,
             },
             ReviewStates.NotHeld => on with
             {
-                State = WorkflowRunStates.WaitingOnAgent, Detail = WorkflowRunDetails.NotHeld, Commit = setUp?.Commit, Session = setUpSession,
+                State = WorkflowRunStates.Waiting, Role = StepRoles.Design, Holder = new StepHolder(StepHolders.Agent), Detail = WorkflowRunDetails.NotHeld, Commit = setUp?.Commit, Session = setUpSession,
             },
             _ => on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.Unread, Words = gate.Says },
         };

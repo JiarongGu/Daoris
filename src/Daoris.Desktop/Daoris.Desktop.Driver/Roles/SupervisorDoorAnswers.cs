@@ -30,7 +30,7 @@ public sealed record SupervisorDoorDue(string Id, SupervisorSubject Subject, str
     public string? Turn { get; init; }
 
     /// <summary>Whether the answer is a yes: a keep, an approve, an accept.</summary>
-    public bool Yes => Choice is null or Keep or Approve;
+    public bool Yes => Choice is null or Keep or Approve or Approved;
 }
 
 /// <summary>
@@ -47,6 +47,9 @@ public sealed record DoorRelease(
 public static class SupervisorDoorActs
 {
     public const string Keep = "keep", Decide = "decide", Drop = "drop", Approve = "approve", Decline = "decline", Accept = "accept", Hold = "hold";
+
+    /// <summary>A go-ahead's yes and no, as the service's door takes them.</summary>
+    public const string Approved = "approved", Refused = "refused";
 
     /// <summary>The memory subject's id naming a session's staged changes, beside an end's operation id.</summary>
     public const string Staged = "staged";
@@ -116,7 +119,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
             refused ??= book.ClosedWhy(subject);
             var left = answer.Do == Hold;
-            var admitted = admission.Admit(subject.Kind, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
+            var admitted = admission.Admit(subject, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
             refused ??= admitted.Why ?? (admitted.Generation != answer.Generation ? SupervisorWhy.RoleChanged : null);
             refused ??= left || Offered(subject.Kind, answer.Do, answer.Choice) ? null : SupervisorWhy.NotOffered;
             refused ??= SupervisorKeeping.Refused(answer.Reasons, true, null);
@@ -167,7 +170,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 }
 
                 if (due.State != SupervisorState.Held) return null;
-                var admitted = admission.Admit(due.Subject.Kind, new RolePlace(Repository: due.Repository), due.Do);
+                var admitted = admission.Admit(due.Subject, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
                     ? await release.Why(due.Due(), ct).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;
@@ -228,7 +231,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             var kind = Json.Text(root, "kind");
-            if (kind is not (SupervisorKinds.Memory or SupervisorKinds.Departure)
+            if (kind is not (SupervisorKinds.Memory or SupervisorKinds.Departure or SupervisorKinds.GoAhead)
                 || !root.TryGetProperty("subject", out var wire) || SupervisorSubject.Read(kind, wire) is not { } subject)
             {
                 return null;
@@ -250,9 +253,13 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
         }
     }
 
-    // A memory act offers its yes and no; a departure's accept offers none.
-    private static bool Offered(string kind, string act, string? choice) =>
-        kind == SupervisorKinds.Memory ? choice is not null && Choices(act).Contains(choice, StringComparer.Ordinal) : act == Accept && choice is null;
+    // A memory act offers its yes and no; a go-ahead's answer its approved and refused; a departure's accept offers none.
+    private static bool Offered(string kind, string act, string? choice) => kind switch
+    {
+        SupervisorKinds.Memory => choice is not null && Choices(act).Contains(choice, StringComparer.Ordinal),
+        SupervisorKinds.GoAhead => act == SupervisorKinds.Answer && choice is Approved or Refused,
+        _ => act == Accept && choice is null,
+    };
 
     /// <summary>The agent an answer is the holder's: an agent's harness, model and effort, or the holder's kind (a started terminal).</summary>
     public static string AgentOf(SupervisorHolder holder) =>

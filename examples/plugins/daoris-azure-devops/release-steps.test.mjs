@@ -4,7 +4,7 @@
 // (APPROVEHERE1); a refused key waits on the credentials keeper, never failing for access (ACCESSSTEP1).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, unitAt } from './stand-in.mjs';
+import { POINTS, RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, start, tip, unitAt } from './stand-in.mjs';
 import { effectOf } from './release-steps.mjs';
 
 const MERGED = 'c'.repeat(40);
@@ -120,6 +120,29 @@ test('a release the holder named settles create where its commit is the landed o
   assert.equal(descends.params.evidence.by, 'outside: A Person');
   assert.deepEqual([elsewhere.params.state, elsewhere.params.code], ['failed', 'target-changed']);
   assert.match(elsewhere.params.evidence.message, /release 92 carries eeeeeeee, which is neither the landed cccccccc nor after it/);
+  assert.deepEqual(writes(api), []);
+});
+
+test("a Done outside Daoris link is read by the step's check: a release of another commit is refused naming the commit it holds, the landed one's settles", async (t) => {
+  const OTHER = 'e'.repeat(40);
+  const api = await line({ made: [{ id: 91, build: 41 }, { id: 92, build: 46 }, { id: 93, build: 41, status: 'notStarted' }] });
+  api.builds.push({ id: 46, buildNumber: '20261116.46', definition: { id: 7 }, repository: { id: 'repo-1' }, sourceBranch: 'refs/heads/dev', sourceVersion: OTHER });
+  const plugin = start(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) });
+  await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
+  await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [unitAt(checkout('https://dev.azure.com/acme/Proj/_git/app'), [STEP('release-create')], { line: 'dev', pullRequest: `${WEB}/pullrequest/1` })] });
+  const check = async (id, link, key) => (await plugin.ask('hook/work/reconcile', { unit: 'app:daoris/work', step: STEP(id), invocation: `i-${key}`, idempotencyKey: key,
+    subjectRevision: tip, options: { ...FAST, ...TARGET }, link })).result;
+
+  const elsewhere = await check('release-create', `${WEB}/_releaseProgress?releaseId=92`, 'k-2');
+  const landed = await check('release-create', `${WEB}/_releaseProgress?releaseId=91`, 'k-3');
+  const unstarted = await check('release-start', `${WEB}/_releaseProgress?releaseId=93`, 'k-4');
+
+  assert.deepEqual([elsewhere.state, elsewhere.outcome.code, elsewhere.link], ['failed', 'target-changed', `${WEB}/_releaseProgress?releaseId=92`]);
+  assert.match(elsewhere.outcome.evidence.message, /release 92 carries eeeeeeee, which is neither the landed cccccccc nor after it/);
+  assert.deepEqual([landed.state, landed.outcome.state, landed.outcome.evidence.by, landed.link], ['done', 'reached', 'outside: A Person', `${WEB}/_releaseProgress?releaseId=91`]);
+  // A stage the link's release has not started is refused as not yet so, read once and never started by the check.
+  assert.deepEqual([unstarted.state, unstarted.outcome.code], ['failed', 'not-yet']);
+  assert.match(unstarted.outcome.evidence.message, /Waiting on the deployer: start Test of Release-93/);
   assert.deepEqual(writes(api), []);
 });
 

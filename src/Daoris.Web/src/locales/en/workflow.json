@@ -29,6 +29,7 @@
   "workflow.graph.end": "Work done here",
   "workflow.graph.endStill": "Steps after it still run",
   "workflow.graph.noFurther": "No further step",
+  "workflow.graph.notNeeded": "Not needed this run",
   "workflow.graph.noFurtherSays": "when it comes to `{{outcome}}`, nothing follows",
   "workflow.graph.holds": "Daoris makes sure · {{count}}",
   "workflow.graph.holdsOpen": "▾ Daoris makes sure · {{count}}",

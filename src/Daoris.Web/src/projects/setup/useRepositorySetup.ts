@@ -6,6 +6,8 @@ import {
   useGitRemotes, useSetGitAccess, useSetGitUse, useTools,
 } from '../../bridge/shell';
 import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '../../settings/repository/GitAccess';
+import { repositoryRisk } from '../../settings/place/PlaceRisk';
+import { useSetPlaceRisk } from '../../bridge/repositories/placeRisk';
 import type { Answered } from '../../work/InlineConfirm';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
@@ -63,6 +65,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const setHelpers = useSetHelpers();
   const setHandOver = useSetHandOver();
   const setGrowth = useSetGrowth();
+  const setPlaceRisk = useSetPlaceRisk();
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
   const setChecks = useSetSessionChecks();
@@ -401,7 +404,18 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     sessions,
     reach,
     git,
-    busy: setLine.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
+    // Its risk and the owner's marks, the owner's alone: its own row over its workspace's and the machine's; none where the answer lacks the record.
+    risk: Array.isArray(state?.placeRisk)
+      ? {
+          ...repositoryRisk(state.placeRisk, repository, workspace),
+          workspace,
+          onChange: (change) => setPlaceRisk.mutate({ workspace, repository, ...change }, {
+            onSuccess: () => notify(t('settings.risk.saved', { name: repository })),
+            onError: onDriverError,
+          }),
+        }
+      : null,
+    busy: setLine.isPending || setPlaceRisk.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setGrowth.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
       || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending
       || setGitAccess.isPending,

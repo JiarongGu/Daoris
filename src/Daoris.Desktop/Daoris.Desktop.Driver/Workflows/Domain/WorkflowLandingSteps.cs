@@ -59,7 +59,7 @@ internal static class WorkflowLandingSteps
             return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Automatic };
         }
 
-        return on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Accept, At = newest.Updated };
+        return on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Detail = WorkflowRunDetails.Accept, At = newest.Updated };
     }
 
     /// <summary>
@@ -100,6 +100,6 @@ internal static class WorkflowLandingSteps
             return on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.AskFailed, Code = failed.Code, Plugin = failed.Plugin, At = failed.At };
         }
 
-        return on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Merging, Code = kept?.State, At = kept?.AskedAt };
+        return on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Detail = WorkflowRunDetails.Merging, Code = kept?.State, At = kept?.AskedAt };
     }
 }

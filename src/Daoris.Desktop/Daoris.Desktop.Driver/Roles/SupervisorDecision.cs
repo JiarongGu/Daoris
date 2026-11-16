@@ -9,6 +9,12 @@ public interface IDecisionAdmission
 {
     /// <summary>The hold of the supervisor answering <paramref name="kind"/> at <paramref name="place"/>; a null act is a leave, needing no grant.</summary>
     DecisionAdmitted Admit(string kind, RolePlace place, string? act);
+
+    /// <summary>
+    /// The hold answering <paramref name="subject"/> where it waits now on the reporting line (<see cref="LineClimb"/>): its place's until a
+    /// level there left it, then the machine's; refused <c>passed-up</c> once the climb left no supervisor to hold it.
+    /// </summary>
+    DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) => Admit(subject.Kind, place, act);
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>
@@ -133,6 +139,9 @@ public static class SupervisorWhy
 
     /// <summary>The person stopped the line or paused its quest (<see cref="OwnerHolds"/>); a wait on a point that is no limited end's.</summary>
     public const string OwnerHeld = "owner-held";
+
+    /// <summary>The subject climbed past every supervisor of its line (<see cref="LineClimb"/>): the owner role's, or ended as gave up.</summary>
+    public const string PassedUp = "passed-up";
     public const string NoWait = "no-wait";
     public const string NotHeld = "not-held";
     public const string NotOffered = "not-offered";

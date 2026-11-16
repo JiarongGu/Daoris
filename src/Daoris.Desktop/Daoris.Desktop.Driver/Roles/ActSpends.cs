@@ -43,6 +43,8 @@ public static class ActSpends
         ["memory.keep"] = Free("the staged rows' ids"),
         ["memory.decide"] = Free("the end's id"),
         ["departure.accept"] = Free("the quest's state and answers"),
+        // What a go-ahead lets through is judged by the place's risk and the owner's marks (GoAheadAuthority), never spent by the grant alone.
+        [GoAheadAuthority.Act] = Free("the go-ahead's number, kind, target and act"),
         // A re-cast naming the prepaid harness spends its balance: the prepaid grant covers it.
         ["vacancy.recast"] = new(ActSpending.Money, "vacancy.prepaid", "the vacancy, until a walk fills it"),
         ["vacancy.relax"] = Free("the vacancy, until a walk fills it"),

@@ -22,6 +22,8 @@ import { SetupSection } from './SetupParts';
 import { type GitIdentityShown } from '../../settings/git/Git';
 import { type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
 import { type GitAccessEdit, type ResolvedGitClass } from '../../settings/repository/GitAccess';
+import { type InheritedRisk, type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import { shellWord } from '../../lib/shellWord';
 import { setupSections } from './setupSections';
 import { setupRows } from './setupRows';
 import { setupSaid } from './setupSaid';
@@ -208,6 +210,11 @@ export type RepositorySetupProps = {
   sessions?: SessionsSetup | null;
   reach?: ReachSetup | null;
   git?: GitSetup | null;
+  /**
+   * Its risk and the owner's marks (`repositoryRisk`): its own row, else the one it takes from its workspace or the machine, and the press
+   * that sets its own (`SET_PLACE_RISK` with `{ repository }`); drawn beside its access, absent where the driver answers no record.
+   */
+  risk?: RepositoryRiskSetup | null;
   /** A change on its way: every control waits for it. */
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -223,6 +230,14 @@ export type RepositorySetupProps = {
   lead?: readonly FoldSpec[];
   /** The integration declaration and its acceptance are the place page's Gates, drawn once there: this section draws neither. */
   gatesApart?: boolean;
+};
+
+/** A repository's risk row as Setup draws it: what stands and where from, its workspace for the twin, and the press for this repository. */
+export type RepositoryRiskSetup = {
+  row?: PlaceRiskRow;
+  inherited?: InheritedRisk;
+  workspace: string;
+  onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void;
 };
 
 /** The sections the place's page draws under its Sessions: the access, the sessions' own rows and the reach; the heavy gates went to *More*. */
@@ -256,7 +271,7 @@ export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', '
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, lands = null, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false }: RepositorySetupProps) {
+export function RepositorySetup({ repository, lands = null, driving, work, access, heavy, landed, sessions, reach, git, risk, busy = false, open, openAgain, only, lead = [], gatesApart = false }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const { drivingLine, line, lineOwn, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, workParts, accessShown, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid, opensItself } = setupSaid({ t, driving, work, landed, gatesApart, lands, sessions, reach, access, git, heavy });
   const { sections, lineRow, landingRow, commitsRow, reviewRow, opinionRow, landedRow, integrationRow, heavyRows, heavySaid } = setupRows({ driving, drivingLine, t, repository, busy, i18n, line, work, lineOwn, lands, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, landed, gatesApart, heavy });
@@ -273,6 +288,16 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
 
   return (
     <div className="grid">
+      {risk && (!only || only.includes('access')) && (
+        <PlaceRiskSetting
+          name={repository}
+          twin={t('settings.risk.twin.repository', { workspace: shellWord(risk.workspace, '<workspace>'), repository: shellWord(repository, '<repository>') })}
+          row={risk.row}
+          inherited={risk.inherited}
+          busy={busy}
+          onChange={risk.onChange}
+        />
+      )}
       {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => (
         <SetupSection
           // Keyed by the repository, so another repository's page opens its own sections afresh.

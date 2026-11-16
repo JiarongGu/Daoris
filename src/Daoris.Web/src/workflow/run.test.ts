@@ -25,16 +25,20 @@ describe('a run as the page reads it', () => {
   });
 
   it("wears open's hue for the person's wait, green for done, red only for a failure, and no hue for any other", () => {
-    expect(runTone('waiting-on-you')).toBe('open');
+    expect(runTone('waiting', { kind: 'person' })).toBe('open');
     expect(runTone('done')).toBe('done');
     expect(runTone('failed')).toBe('declined');
-    for (const state of ['working', 'waiting-on-agent', 'not-known', 'cannot-start', 'skipped', 'stopped', 'not-reached', 'later']) {
-      expect(runTone(state)).toBe('neutral');
+    // A wait an agent holds wears no hue, and nothing else tells the two apart.
+    expect(runTone('waiting', { kind: 'agent', name: 'codex-acp' })).toBe('neutral');
+    expect(runTone('waiting')).toBe('neutral');
+    for (const state of ['working', 'not-known', 'cannot-start', 'skipped', 'stopped', 'not-reached', 'later']) {
+      expect(runTone(state, { kind: 'person' })).toBe('neutral');
     }
   });
 
   it('knows the states the driver spells, and keeps a newer one as recorded', () => {
-    expect(knownState('waiting-on-agent')).toBe(true);
+    expect(knownState('waiting')).toBe(true);
+    expect(knownState('waiting-on-you')).toBe(false);
     expect(knownState('waiting-on-service')).toBe(false);
   });
 

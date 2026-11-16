@@ -176,7 +176,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person's only where the place's risk record marks it (`line`, rule 49a), else vacant, the older reading kept while a home's record
     is unwritten; a level nobody is appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
     `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner role (`owner-class`); other help the
-    machine's supervisor leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
+    machine's supervisor leaves ends as gave up with what was tried. Every kind's leave climbs it: each is recorded with the level that
+    made it (`LineLeaves`, `line.leaves` in the subject's session's decisions folder), and `ReportingLine.Climb` with that map says where
+    the subject waits; one the repository's or the workspace's supervisor leaves is listed, kept and released to the machine's supervisor
+    where an agent or a started terminal holds it, the admission answering that hold for the subject (`passed-up` once none is above), while
+    a leave naming an owner-class bound, the machine's own, or one with no holder above is final at once as before. The vacancy kind
+    climbs by its own journal; the allow and files kinds' leaves stay final until their listings read the line. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
     the machine's supervisor of `ask-daoris`, granted `ask-daoris.report` and held by the person's rules, so it reads nothing until
     the person turns it on; the home's `second-check` step gives it its first choices once (Codex, then Claude Code · opus · high,
     40 starts a day each) unless the person's own record, staffing or supervisor stands. (D233, D272)
@@ -209,24 +214,27 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     over its route's bytes with the subject whole: the kind's typed reference, unchanged while it waits (a question's `{ session,
     question }`, a point's, a landing's, an allow's, a files ask's). Each kind is one row listing its waiting subjects and keeping a
     decision against the subject as it stands. On a question it answers a parked session's recorded question with one offered
-    choice and one to five sourced reasons (`question-changed` where it no longer waits); any subject may be left to the owner with
-    a bound, only by the hold answering its place. The holder's verb is `sessions supervise <session> --kind <kind> --subject <id>
+    choice and one to five sourced reasons (`question-changed` where it no longer waits); any subject may be left with a bound, only
+    by the hold answering it where it waits on the line, and the leave climbs (rule 41). The holder's verb is `sessions supervise <session> --kind <kind> --subject <id>
     --generation <g> --do <act> [--choice <label>]` or `--leave <bound>`; `SUPERVISOR_WAITING` lists the subjects a terminal
     holder's grants cover. (D208, D233)
 47. It never answers a go-ahead, an owner-class kind, an unrecorded or contradicting question, or one that directs it: its bounds
     are a go-ahead, the seven owner-class kinds and those three. (D208, D304) A go-ahead is the approver's yes, a role act of its own
     (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it at low and medium risk; it
     stays the owner role's at high risk (`high-risk`), where its release reads as production at a place whose production releases
-    are marked (`marked`), and for a sign-in (`owner-class`). The kind that lists, holds and releases it is not built yet, so every
-    go-ahead still waits for the owner's answer. (GOAHEADACT1)
+    are marked (`marked`), and for a sign-in (`owner-class`). The `goahead` kind lists each open go-ahead (`{ session, goahead }`:
+    the newest session that asked it, and `<ask>/<number>`) only where its place's supervisor may answer it, holds an `approved` or
+    `refused` for the role's window with *Overrule* as a door answer (rule 49's table), pinned to its number, kind, target and act
+    (`GoAheadPin`), and releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
+    older build as the person's) and refuses a keyless caller; its leave climbs the line. (GOAHEADACT1)
 48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
     the holder decides `go-on` once; on failures the quest's point is released as the quest's own *Try again*; on failures on one
     choice, a limited end and the moves bound the limit kind decides `move`, or on a limited end `wait`. Each is held for the role's
     window with *Overrule*, then released between turns through the count's own door with the admission, the rules and the
     person's own holds (`owner-held`) read again first, never while a session runs, and said on its line; a go-on resets the count
-    as the person's press does. A decide on a point the line passed is `answered`, on one never reached `not-referred`; a leave is
-    the person's at once. No course act stops, ends or moves a session. With no started holder the point waits for the person
+    as the person's press does. A decide on a point the line passed is `answered`, on one never reached `not-referred`; a leave
+    climbs the line (rule 41), the person's at once only where it ends there. No course act stops, ends or moves a session. With no started holder the point waits for the person
     (`supervisor.unreferred`). A restart reads back the held decisions rule 49 keeps in its table; the sweep closes every other held
     and released decision stale (a course's go-on among them) and remembers each subject final to the person as closed
     (`overruled`). Decisions read back as `SESSION_SUPERVISOR`'s `courses`, with *Overrule* while held. (D229, D233)
@@ -263,7 +271,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 49a. Each place's risk (low, medium or high) and the owner's marks are one record, `placeRisk` in `driver.json` (`PlaceRiskBook`), keyed
     `machine`, `workspace/<name>`, `repository/<name>`; a place it does not name is low and unmarked, the narrowest risk set stands, and a
     destination's mark (`release.production`: the place's production releases stay the owner role's) covers every place under it. The
-    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*), `daoris settings risk`, and Ask
+    owner sets it once with one press and its twins: a place's Settings row (*Risk and your marks*: a workspace's on its page, a
+    repository's beside its sessions' access, its own row over the one it takes from its workspace or the machine, said as where it
+    comes from, each press `SET_PLACE_RISK` naming that repository), `daoris settings risk`, and Ask
     Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
     (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
     decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line;

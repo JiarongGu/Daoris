@@ -63,7 +63,14 @@ public sealed record WatchedUnit(
 public sealed record WorkWatchFrame(int Generation, bool Resync, IReadOnlyList<WatchedUnit> Units);
 
 /// <summary>An event's evidence, the plugin's word: each part optional, the message 300 characters at most.</summary>
-public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message);
+public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message)
+{
+    /// <summary>
+    /// Who the outside system credits with the act (<c>outside: &lt;name&gt;</c>, or Daoris), a name of <see cref="WorkWire.NameChars"/> at
+    /// most; kept on the attempt its outcome settles (<see cref="NodeAttempt.By"/>). Null where the plugin names none.
+    /// </summary>
+    public string? By { get; init; }
+}
 
 /// <summary>An output a reached step names: a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
 public sealed record WorkOutput(string Ref, string? Revision);
@@ -130,13 +137,26 @@ public sealed record WorkPerformCall(
 }
 
 /// <summary>A <c>work/reconcile</c> request's params: what became of one attempt.</summary>
-public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision);
+public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision)
+{
+    /// <summary>
+    /// A holder's <i>Done outside Daoris</i> link, handed to the plugin's check, which reads the thing it names and settles or refuses it; null
+    /// on every other question. An older kit passes it over and answers what became of the attempt, naming no link.
+    /// </summary>
+    public string? Link { get; init; }
+
+    /// <summary>The step's options as its graph writes them, sent with a link alone: the check reads the target the step would act on.</summary>
+    public IReadOnlyDictionary<string, string> Options { get; init; } = ImmutableSortedDictionary<string, string>.Empty;
+}
 
 /// <summary><c>work/reconcile</c>'s answer: its state, and the outcome where it is done or failed.</summary>
 public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = null)
 {
     /// <summary>What the attempt created so far, whatever its state: taken as its receipts.</summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
+
+    /// <summary>The holder's link its plugin's check read (<see cref="WorkReconcileCall.Link"/>); null where the answer judged no link.</summary>
+    public string? Link { get; init; }
 }
 
 /// <summary>What <c>work/cleanup</c> answers of one receipt: three are terminal, and <see cref="Failed"/> is tried again on a back-off.</summary>
@@ -282,15 +302,27 @@ public static class WorkWire
         return written;
     }
 
-    /// <summary><c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>.</summary>
-    public static JsonObject Reconcile(WorkReconcileCall call) => new()
+    /// <summary>
+    /// <c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>, and a holder's link with the step's
+    /// options where the question is a link's check (<see cref="WorkReconcileCall.Link"/>).
+    /// </summary>
+    public static JsonObject Reconcile(WorkReconcileCall call)
     {
-        ["unit"] = call.Unit,
-        ["step"] = call.Step,
-        ["invocation"] = call.Invocation,
-        ["idempotencyKey"] = call.IdempotencyKey,
-        ["subjectRevision"] = call.SubjectRevision,
-    };
+        var written = new JsonObject
+        {
+            ["unit"] = call.Unit,
+            ["step"] = call.Step,
+            ["invocation"] = call.Invocation,
+            ["idempotencyKey"] = call.IdempotencyKey,
+            ["subjectRevision"] = call.SubjectRevision,
+        };
+        if (call.Link is not { } link) return written;
+        written["link"] = link;
+        var options = new JsonObject();
+        foreach (var (name, text) in call.Options.OrderBy(pair => pair.Key, StringComparer.Ordinal)) options[name] = OptionValue(text);
+        written["options"] = options;
+        return written;
+    }
 
     /// <summary><c>work/cleanup</c>'s params: <c>{ receipt, resource, idempotencyKey }</c>.</summary>
     public static JsonObject Cleanup(WorkCleanupCall call) => new()
@@ -418,7 +450,8 @@ public static class WorkWire
             ReconcileStates.Failed => outcome?.State == WorkStates.Failed,
             _ => outcome is null,
         };
-        return fits ? new WorkReconcileAnswer(state, outcome) { Resources = resources } : null;
+        if (!Optional(answer, "link", UrlChars, out var link)) return null;
+        return fits ? new WorkReconcileAnswer(state, outcome) { Resources = resources, Link = link } : null;
     }
 
     /// <summary>
@@ -525,6 +558,7 @@ public static class WorkWire
             if (evidence.Url is not null) written["url"] = evidence.Url;
             if (evidence.Environment is not null) written["environment"] = evidence.Environment;
             if (evidence.Message is not null) written["message"] = evidence.Message;
+            if (evidence.By is not null) written["by"] = evidence.By;
             into["evidence"] = written;
         }
 
@@ -601,12 +635,13 @@ public static class WorkWire
                 || !Optional(said, "ref", RefChars, out var reference) || !Optional(said, "url", UrlChars, out var url)
                 || (url is not null && !IsWebPage(url))
                 || !Optional(said, "environment", NameChars, out var environment)
-                || !Words(said, "message", MessageChars, out var message))
+                || !Words(said, "message", MessageChars, out var message)
+                || !Optional(said, "by", NameChars, out var by))
             {
                 return null;
             }
 
-            evidence = new WorkEvidence(reference, url, environment, message);
+            evidence = new WorkEvidence(reference, url, environment, message) { By = by };
         }
 
         field = "outputs";

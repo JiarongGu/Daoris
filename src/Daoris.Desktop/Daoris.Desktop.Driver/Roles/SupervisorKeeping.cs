@@ -37,7 +37,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
             }
 
             // The generation rechecked at the keeping, under the decision's lock: a revoke between the judgement and here keeps nothing.
-            var admitted = admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: park.Repository), SupervisorKinds.Answer);
+            var admitted = admission.Admit(SupervisorSubject.Question(answer.Session, answer.Question), new RolePlace(Repository: park.Repository), SupervisorKinds.Answer);
             if (admitted is not { Why: null, Generation: { } generation } || generation != answer.Generation)
             {
                 log?.Info("supervisor.refused", ("why", SupervisorWhy.RoleChanged));
@@ -86,7 +86,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
             }
 
             refused ??= book.ClosedWhy(SupervisorSubject.Question(defer.Session, defer.Question));
-            if (refused is null && (admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: park.Repository), act: null) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
+            if (refused is null && (admission.Admit(SupervisorSubject.Question(defer.Session, defer.Question), new RolePlace(Repository: park.Repository), act: null) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
             {
                 refused = SupervisorWhy.RoleChanged;
             }
