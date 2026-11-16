@@ -359,8 +359,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     that passes (`busy`: another of Daoris's writes held the checkout when its branch came to be written, as the look's tidy, an update
     or another landing does, or its delivery or its tree's landing hold was taken) keeps the Accept too and is never asked again: it is
     tried at the first look the checkout is free, through the same delivery key, so it lands once. Each such wait has a deadline
-    (`LandRetries.Deadline`); past it the wait climbs the reporting line above the landing (`ReportingLine.Climb`), said once in the
-    conversation and on the run's step, and is still tried at each look. Any other refusal nothing changed is
+    (`LandRetries.Deadline`), judged at a look that finds the checkout still held and at each refusal again, so a cause no look reads (a
+    delivery or a landing hold taken here) climbs too; past it the wait climbs the reporting line above the landing
+    (`ReportingLine.Climb`), said once in the conversation and on the run's step, and is still tried at each look. Any other refusal nothing changed is
     tried again only when a tip moves or the person presses, and work landed at its bound tip is done with its landing. A refusal
     for the repository's own checkout's uncommitted work (`root-dirty`) waits on that checkout and lands with no press once its
     status changes. A line holding every commit closes the entry `line-holds`; a merge waiting in integration is `queued`, made
