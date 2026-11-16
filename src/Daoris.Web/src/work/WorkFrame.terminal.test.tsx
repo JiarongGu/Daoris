@@ -95,7 +95,6 @@ describe('the terminal in the Work frame (CONSOLE4b)', () => {
 
   it('opens in the attended session\'s repository when its record names no tree of its own', async () => {
     frame('s1a2b3c4');
-    // The record must have arrived before the tab is pressed, as it has on the window.
     await screen.findAllByText(/zeta/);
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Terminal' }));
