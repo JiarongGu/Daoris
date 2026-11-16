@@ -21,6 +21,7 @@ import { CheckHeld } from './wait/CheckHeld';
 import { FailedStepHeld } from './wait/FailedStepHeld';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
+import { roleSaid } from './stepRoles';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -113,16 +114,17 @@ function Routes({ routes }: { routes: Route[] }) {
  * came to stand there.
  */
 function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; children?: ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n: language } = useTranslation();
   const notTaken = notTakenIn(run, step);
   const when = step.at && step.state !== 'not-reached' ? ago(step.at) : null;
-  if (!pill && !here && !when && !children) return null;
+  if (!pill && !here && !when && !children && !step.role) return null;
   return (
     <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
       {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
       {here && (
         <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
       )}
+      {step.role && <span className="text-meta text-ink-soft">{t('workflow.run.role', { role: roleSaid(t, language, step.role) })}</span>}
       {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
       {children}
     </p>

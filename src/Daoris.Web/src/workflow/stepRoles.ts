@@ -13,7 +13,8 @@ const record = (value: unknown): Record<string, unknown> =>
 
 /**
  * The role a step's JSON names itself: its `role`, else the `role` option an agent step named it by before the field (read, never
- * written); null where it names none, and its kind's is read.
+ * written); null where it names none, and its kind's is read. The one reader of that option on this page, as `StepRoles.Named` is the
+ * driver's: both end when no kept version names a role by its option (the roles-since floor).
  */
 export function namedRole(node: Record<string, unknown>): string | null {
   if (typeof node.role === 'string' && node.role) return node.role;

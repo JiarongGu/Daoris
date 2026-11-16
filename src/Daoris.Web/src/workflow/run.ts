@@ -29,6 +29,8 @@ export interface RunStep {
   /** Who acts, as the record names it: a session's adapter, or a reviewer as the person reads it. */
   agent?: string | null;
   at?: string | null;
+  /** On a graph run, the role that takes the step: the one it names, else its kind's (`workflow.role.*`); none elsewhere. */
+  role?: string | null;
   environment?: string | null;
   commit?: string | null;
   branch?: string | null;

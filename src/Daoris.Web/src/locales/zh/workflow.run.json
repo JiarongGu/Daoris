@@ -22,6 +22,7 @@
   "workflow.run.state.failed": "失败",
   "workflow.run.state.stopped": "已停止",
   "workflow.run.state.unknown": "{{state}}",
+  "workflow.run.role": "角色 {{role}}",
   "workflow.run.thisSession": "本会话",
   "workflow.run.chatChecks": "它的检查（`{{checks}}`）还没有对对话强制执行，所以它的工作树不受其约束。",
   "workflow.run.said.recorded": "按原文显示：{{state}}，{{detail}}。",
