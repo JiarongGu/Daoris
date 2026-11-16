@@ -173,14 +173,12 @@ public sealed class DependencyStoreTests : IDisposable
 
         await StageAsync(tree);
 
-        // Its own record, by size and write time: a large web repository's never-stored install hashed every file of it at each fresh open.
         var placement = TreeFilesRecord.Read(Home, tree)!.Of("deps/")!;
         Assert.Equal("installed", placement.How);
         Assert.All(placement.Manifest!.Files, file => Assert.Equal("", file.Hash));
         TreeFilesStep.Hand(Home, tree);
         Assert.Contains(StartNoteCodes.StartedDepsKept.Code, Codes(await StageAsync(tree)));
 
-        // A write time moved, its bytes the same, counts as a change: no hash was kept to clear it.
         var index = Path.Combine(tree, "deps", "pkg", "index.js");
         File.SetLastWriteTimeUtc(index, File.GetLastWriteTimeUtc(index).AddMinutes(-5));
         var left = Assert.Single((await StageAsync(tree)).Said, each => each.Parts.Any(part => part.Code == StartNoteCodes.StartedDepsLeft.Code));

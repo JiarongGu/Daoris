@@ -365,9 +365,8 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     }
 
     /// <summary>
-    /// Daoris's own install of one dependency, under its admission: recorded <c>installing</c> first, judged against the status it began
-    /// from, its writes beside its folder sorted into companions and other writes, grouped with each earlier placement it changed, and
-    /// sealed where the judgement holds; a failed one takes its mark and its half folder away.
+    /// Daoris's own install of one dependency, under its admission: marked <c>installing</c>, judged against the status it began from, its beside
+    /// writes sorted, grouped with each earlier placement it changed, hashed and sealed only where nothing refuses it; a failure clears its mark and folder.
     /// </summary>
     private async Task InstallAsync(StoreDependency dependency, string key, CancellationToken ct)
     {

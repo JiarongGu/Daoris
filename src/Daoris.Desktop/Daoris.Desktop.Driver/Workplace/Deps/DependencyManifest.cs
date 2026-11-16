@@ -4,22 +4,16 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// A file of a dependency's folder: its path inside the folder, its size, its content's hash (empty where it was read by stat alone) and
-/// its write time.
-/// </summary>
+/// <summary>A file of a dependency's folder: its path inside the folder, its size, its content's hash (empty, unhashed) and its write time.</summary>
 internal sealed record ManifestFile(string Path, long Size, string Hash, long Written);
 
 /// <summary>A link of a dependency's folder: its path inside the folder, and where it leads, relative to the tree's top.</summary>
 internal sealed record ManifestLink(string Path, string Target, bool Folder);
 
 /// <summary>
-/// What a dependency's folder holds, read never following a link and passing over its rule's <c>caches</c>: each file's size and hash,
-/// each folder, and each link's target within the tree. A store entry keeps one beside its copy; a placement's record keeps the copy's,
-/// with each file's write time, so a take reads it again stat first and hashes only a file whose stat differs. A folder the store will
-/// not take (an install that wrote beside its folder, a group's, a companion) is read by stat alone, unhashed, since a large web
-/// repository's never-stored install was hashed file by file at every fresh open for nothing; with no hash to clear a moved write time,
-/// its record reads that file as changed.
+/// What a dependency's folder holds, read never following a link and passing over its rule's <c>caches</c>: each file's size, hash and
+/// write time, each folder, and each link's target in the tree. A store entry keeps one beside its copy, a placement's record the copy's,
+/// read again stat first, a file hashed only where its stat differs; a folder the store will not take is read by stat alone, unhashed.
 /// </summary>
 internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IReadOnlyList<string> Folders, IReadOnlyList<ManifestLink> Links)
 {
@@ -32,7 +26,7 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
 
     /// <summary>
     /// The folder <paramref name="folder"/> of <paramref name="tree"/> read whole; <paramref name="outside"/> names the first link that
-    /// leads outside the tree, which no store entry or placement may hold. Each file is hashed only where <paramref name="hashed"/>.
+    /// leads outside the tree, which no store entry or placement may hold; a file is hashed only where <paramref name="hashed"/>.
     /// </summary>
     internal static DependencyManifest Read(string tree, string folder, IReadOnlyList<string> caches, out string? outside, bool hashed, CancellationToken ct = default)
     {
@@ -82,7 +76,7 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
     /// <summary>
     /// Why <paramref name="folder"/> of <paramref name="tree"/> no longer holds what this record says, or null where it does: a file,
     /// folder or link missing, changed or added outside <paramref name="caches"/>, a file's stat read first and its hash only where the
-    /// stat differs.
+    /// stat differs, a file never hashed then changed.
     /// </summary>
     internal string? Differs(string tree, string folder, IReadOnlyList<string> caches)
     {

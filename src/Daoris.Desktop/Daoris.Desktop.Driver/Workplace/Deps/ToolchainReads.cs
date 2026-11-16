@@ -3,9 +3,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// One reading of a tree's keys: each <c>toolchain</c> command run once at the tree's root for each environment it runs in, its output
 /// handed to every key that names it. The npm signature gives each <c>package.json</c> folder the same three reads, and a key reads
-/// them before any install of the stage runs, so their input is the same for every folder: run per folder, a large web repository's
-/// files stage spent most of its read starting npm again (FILESSLOW1). Kept for one reading only, never written: the environment's
-/// values may be secret, and a toolchain changes between stages.
+/// them before any install of the stage runs, so their input is the same for every folder: run per folder, they are most of a large
+/// web repository's read of its keys. Kept for one reading only, never written: the environment's values may be secret, and a
+/// toolchain changes between stages.
 /// </summary>
 internal sealed class ToolchainReads(string home, string tree)
 {
