@@ -39,7 +39,7 @@ public sealed class ShippedDeliveryWordsTests
         var named = WorkflowDefaults.All.Select(each => each.DeliveryWords).GroupBy(each => each.Id).ToList();
 
         Assert.Equal(
-            ["merge-after-accept", "merge-automatic", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "in-place"],
+            ["merge-after-accept", "merge-automatic", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "in-place", "pull-request-release"],
             named.Select(group => group.Key));
         Assert.All(named, group => Assert.Single(group.Select(each => each.Name).Distinct()));
         Assert.Equal(named.Count, named.Select(group => group.First().Name).Distinct().Count());
