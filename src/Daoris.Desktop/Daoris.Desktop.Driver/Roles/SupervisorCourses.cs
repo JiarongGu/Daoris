@@ -79,7 +79,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             refused ??= book.ClosedWhy(course.Subject);
             // One point is asked once: a question decision of the holder still moving on the line answers for it first.
             if (refused is null && book.Live.Values.Any(each => each.Session == course.Session && !SupervisorStates.Final(each.State))) refused = SupervisorWhy.Answered;
-            var admitted = admission.Admit(course.Kind, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.Hold ? null : course.Do);
+            var admitted = admission.Admit(course.Subject, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.Hold ? null : course.Do);
             refused ??= admitted.Why ?? (admitted.Generation != course.Generation ? SupervisorWhy.RoleChanged : null);
             if (refused is not null)
             {
@@ -118,7 +118,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var reached = await book.UnderAsync(due.Session, () =>
             {
                 if (due.State != SupervisorState.Held) return Task.FromResult<SupervisorState?>(null);
-                var admitted = admission.Admit(due.Kind, new RolePlace(Repository: due.Repository), due.Do);
+                var admitted = admission.Admit(SupervisorSubject.Point(due.Session, due.Point, due.Kind), new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation ? line.Why(due.Session, due.Point) : SupervisorWhy.RoleChanged;
                 if (why is null && line.Running(due.Session)) return Task.FromResult<SupervisorState?>(null);
                 if (why is null && !line.GoOn(due.Session, due.Do)) why = SupervisorWhy.Answered;

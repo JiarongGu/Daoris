@@ -116,7 +116,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
             refused ??= book.ClosedWhy(subject);
             var left = answer.Do == Hold;
-            var admitted = admission.Admit(subject.Kind, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
+            var admitted = admission.Admit(subject, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
             refused ??= admitted.Why ?? (admitted.Generation != answer.Generation ? SupervisorWhy.RoleChanged : null);
             refused ??= left || Offered(subject.Kind, answer.Do, answer.Choice) ? null : SupervisorWhy.NotOffered;
             refused ??= SupervisorKeeping.Refused(answer.Reasons, true, null);
@@ -167,7 +167,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 }
 
                 if (due.State != SupervisorState.Held) return null;
-                var admitted = admission.Admit(due.Subject.Kind, new RolePlace(Repository: due.Repository), due.Do);
+                var admitted = admission.Admit(due.Subject, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
                     ? await release.Why(due.Due(), ct).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;

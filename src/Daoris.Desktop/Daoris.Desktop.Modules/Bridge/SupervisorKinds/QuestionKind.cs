@@ -40,13 +40,16 @@ internal sealed class QuestionKind : ISupervisorKind
         var waiting = new List<object>();
         foreach (var record in records.Where(each => each.Parked && !each.Teammate))
         {
-            if (record.Repository is not { } repository || SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: repository)) is not { } covered) continue;
+            if (record.Repository is not { } repository) continue;
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
             // A question its agent marked the owner's is never the holder's to look at.
             if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
+            // Listed where it waits on the line now: the machine's supervisor once the repository's left it.
+            var subject = SupervisorSubject.Question(record.Session, asked.Id);
+            if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
             waiting.Add(new
             {
-                Kind, Subject = SupervisorSubject.Question(record.Session, asked.Id).Wire(), Repository = repository, Asked = Moments.Write(asked.At),
+                Kind, Subject = subject.Wire(), Repository = repository, Asked = Moments.Write(asked.At),
                 covered.Generation, covered.Acts,
             });
         }
@@ -59,6 +62,6 @@ internal sealed class QuestionKind : ISupervisorKind
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await SupervisedParks.ReadAsync(loop, service, subject.Session, ct).ConfigureAwait(false) is not { } park) return (null, SupervisorWhy.NotParked);
-        return SupervisorDecisionDoor.Covers(loop, generation, subject.Kind, park.Repository) is { } uncovered ? (null, uncovered) : (park, null);
+        return SupervisorDecisionDoor.Covers(loop, generation, subject, park.Repository) is { } uncovered ? (null, uncovered) : (park, null);
     }
 }
