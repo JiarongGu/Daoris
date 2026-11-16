@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// the repository is free (<see cref="StillHeld"/>), and that try is the landing a second Accept would make, behind the same delivery key and
 /// landing record, so it lands once.</para>
 /// <para><b>Each wait has a deadline.</b> Past <see cref="Deadline"/> from its first refusal the wait climbs the reporting line above the landing
-/// (<see cref="Climb"/>), said once in the conversation and on the run's step, and is still tried at each look.</para>
+/// (<see cref="LandingWaitLines"/>), said once in the conversation and on the run's step, and is still tried at each look.</para>
 /// <para><b>The tidy yields to a due landing</b> (<see cref="Due"/>): one being judged and made now, or one waiting here.</para>
 /// </remarks>
 public static class LandRetries
@@ -34,7 +34,7 @@ public static class LandRetries
     /// <summary>One landing's wait: where, since when, when a look last read it, and the line it climbed to once it did.</summary>
     public sealed record Wait(string Home, string Repository, string Code, DateTimeOffset Since, DateTimeOffset Seen)
     {
-        /// <summary><see cref="LineWait.Said"/> once the wait climbed; null before.</summary>
+        /// <summary>The line climbed, as said (<see cref="ILandingWaitLine.Climb"/>), once the wait climbed; null before.</summary>
         public string? Line { get; init; }
 
         /// <summary>What the run's step says while its <c>land</c> waits (<see cref="NodeObservation.Holds"/>): a code, and the line after a bar once climbed.</summary>
@@ -57,7 +57,7 @@ public static class LandRetries
     /// look's is (<see cref="Looked"/>), so a cause no look reads (the tree's landing hold, its delivery held here) climbs the line too.
     /// </summary>
     /// <returns>Whether the wait began now, and whether it climbed at this refusal.</returns>
-    internal static (bool Began, bool Climbed) Refused(string home, string repository, string unit, string tip, DateTimeOffset now, Func<LineWait> climb)
+    internal static (bool Began, bool Climbed) Refused(string home, string repository, string unit, string tip, DateTimeOffset now, Func<string> climb)
     {
         var began = false;
         Waits.AddOrUpdate(Key(unit, tip),
@@ -76,11 +76,11 @@ public static class LandRetries
     /// A look that found the cause still there: the wait read again now, and past its deadline climbed once (<paramref name="climb"/> asked only
     /// then). True where it climbed at this look.
     /// </summary>
-    internal static (Wait Wait, bool Climbed) Looked(string home, string repository, string unit, string tip, DateTimeOffset now, Func<LineWait> climb)
+    internal static (Wait Wait, bool Climbed) Looked(string home, string repository, string unit, string tip, DateTimeOffset now, Func<string> climb)
     {
         var wait = Waits.GetValueOrDefault(Key(unit, tip)) ?? new(Homes.Full(home), repository, Busy, now, now);
         var climbs = wait.Code == Busy && now - wait.Since >= Deadline;
-        wait = climbs ? wait with { Code = Climbed, Seen = now, Line = climb().Said() } : wait with { Seen = now };
+        wait = climbs ? wait with { Code = Climbed, Seen = now, Line = climb() } : wait with { Seen = now };
         Waits[Key(unit, tip)] = wait;
         return (wait, climbs);
     }
@@ -94,23 +94,6 @@ public static class LandRetries
 
     /// <summary>What still holds the repository <paramref name="tree"/> belongs to alone, as its holder said it; null where it is free (or only starts hold it).</summary>
     internal static string? StillHeld(string home, string tree) => TreeLock.RefusedBy(home, tree);
-
-    /// <summary>
-    /// The reporting line above a landing at <paramref name="repository"/> (<see cref="ReportingLine"/>), climbed for its <c>accept</c>. A role
-    /// record that cannot be read holds the place's level for the person, as the line reads one.
-    /// </summary>
-    internal static LineWait Climb(string home, string repository, string? workspace, PlaceRiskBook risk)
-    {
-        try
-        {
-            return ReportingLine.Of(RoleCatalog.ReadHome(home).Slots, SupervisorKinds.Landing, new RolePlace(workspace, repository),
-                new RuleWiderPlaceStore(home).Read(), "accept", risk).Climb(ownerClass: false);
-        }
-        catch (DriverException error)
-        {
-            return new(new LineLevel(LineLevels.Repository, null, LineHolders.Person, error.Message), []);
-        }
-    }
 
     /// <summary>Hold <paramref name="repository"/> as due while a landing in it is judged and made, so no tidy starts there meanwhile.</summary>
     public static IDisposable Lands(string home, string repository)

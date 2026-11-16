@@ -8,7 +8,7 @@ internal sealed record SupervisorAskWords(string GoAheads, string Beneath);
 
 /// <summary>
 /// What the roles ask of Work orders, which keeps the question files and the ask's record and sits above Roles:
-/// the supervisor's print reads the session's question and the ask's words. Work orders implements this and installs it when the driver loads
+/// the supervisor's print reads the session's question and the ask's words, and the open go-aheads the ask a line is on. Work orders implements this and installs it when the driver loads
 /// (<c>WorkOrders/Work/RolesWorkOrdersWiring.cs</c>); each operation does exactly what its caller would do itself.
 /// </summary>
 internal interface IRolesWorkOrders
@@ -21,6 +21,9 @@ internal interface IRolesWorkOrders
     /// <c>AskWords.ReadOfSessionAsync</c>), its go-aheads and its owner's words beneath the quest <paramref name="questId"/>.
     /// </summary>
     Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string session, string questId, CancellationToken ct);
+
+    /// <summary>The ask a session's line is on, read from its entry's key; null for a line on no ask (see <c>AskWords.AskOfEntry</c>).</summary>
+    string? AskOfEntry(string? entry);
 }
 
 internal static class RolesWorkOrders

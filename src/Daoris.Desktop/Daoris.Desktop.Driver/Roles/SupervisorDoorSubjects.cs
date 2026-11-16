@@ -53,7 +53,7 @@ public static class SupervisorDoorSubjects
 
     public static async Task<GoAheadView?> GoAheadAsync(ServiceClient service, SupervisorSubject subject, CancellationToken ct) =>
         subject.GoAheadParts is { } parts && await service.FindAskAsync(parts.Ask, ct).ConfigureAwait(false) is { } ask
-            ? AskWords.Of(ask).GoAheads?.FirstOrDefault(each => each.Number == parts.Number)
+            ? ask.GoAheads?.FirstOrDefault(each => each.Number == parts.Number)
             : null;
 
     public static GoAheadPin Pin(GoAheadView goAhead) => new(goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act);

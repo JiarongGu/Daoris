@@ -23,7 +23,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 | The root | The run (`TransportRun`, `DoorInput`, `ProtocolWords`, `HarnessCapture`, `NativeFrame`; `SessionProcesses`, never sent to the service); the protocol door (`Acp.cs`, a root wiring `Acp*` units); the roster (`HarnessRoster` and its `Roster*`, `Account*`, `Usage*` and `Binary*` units, `AgentErrors`, `HarnessSettings`, `AgentOffers`); what a session is handed (`ConnectorPlans`, `SessionServers`, `ServerKeeper`, `PermissionRules`, `RuleProposals`, `SpawnSkills`, `TargetPrompt`, `Spawning`); the terminal's `daoris agent …` verbs (`AgentsCommand`), each refusing a flag it does not take (`AgentVerbFlags`) |
 | `Turn/` | The protocol turn's registered stages (`docs/index/registered.md`), its wiring interfaces and the open prompts' gate (`OpenPrompts`) |
 | `Layer/` | Lyntai's agent layer, compiled only under `DaorisLyntaiLayer` (rule 47) |
-| Beside Agents | `Events/Readings/` (a run's `WireReading`s), `Knowledge/` (the provider sheet, `IAgentFacts`), `Loop/Session/` (a spawn's assembly), `Plugins/` |
+| Beside Agents | `Events/Readings/` (a run's `WireReading`s), `Knowledge/` (the provider sheet, `IAgentFacts`; an account's sign-in state, `SignInState`, which the profile report carries), `WorkOrders/SignInLooks.cs` (the look's passes for stored sign-ins and sign-outs), `Loop/Session/` (a spawn's assembly), `Plugins/` |
 
 ## Its rules
 

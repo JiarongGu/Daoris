@@ -29,7 +29,7 @@ public sealed class OpinionConsultationTests : IDisposable
     [InlineData(ReviewerLabels.AnotherMaker, new string[0])]
     public void A_same_maker_opinion_says_it_is_not_independent(string label, string[] notHeld)
     {
-        var giver = Assert.Single(Consultations.OfOpinion(View(label), null).Givers);
+        var giver = Assert.Single(OpinionConsultations.Of(View(label), null).Givers);
 
         Assert.Equal((Consultations.ReviewMode, "OpenAI", "Codex", "the diff and its two tests", false), (giver.Mode, giver.Maker, giver.Adapter, giver.Read, giver.SawAnother));
         Assert.Equal(notHeld, giver.NotHeld);
@@ -39,7 +39,7 @@ public sealed class OpinionConsultationTests : IDisposable
     [Fact]
     public void A_recheck_saw_another_answer()
     {
-        var giver = Assert.Single(Consultations.OfOpinion(View(ReviewerLabels.AnotherMaker, rechecks: "op0"), null).Givers);
+        var giver = Assert.Single(OpinionConsultations.Of(View(ReviewerLabels.AnotherMaker, rechecks: "op0"), null).Givers);
 
         Assert.True(giver.SawAnother);
         Assert.Equal([Consultations.SawAnother], giver.NotHeld);
@@ -49,9 +49,9 @@ public sealed class OpinionConsultationTests : IDisposable
     [Fact]
     public void The_deciders_line_is_how_many_findings_changed_the_work()
     {
-        Assert.Null(Consultations.OfOpinion(View(ReviewerLabels.AnotherMaker), null).Changed);
+        Assert.Null(OpinionConsultations.Of(View(ReviewerLabels.AnotherMaker), null).Changed);
         Assert.Equal("1 of 2 findings changed the work",
-            Consultations.OfOpinion(View(ReviewerLabels.AnotherMaker), Answers(OpinionViews.Fixed, OpinionViews.Rejected)).Changed);
+            OpinionConsultations.Of(View(ReviewerLabels.AnotherMaker), Answers(OpinionViews.Fixed, OpinionViews.Rejected)).Changed);
     }
 
     /// <summary>🔴 The record is kept beside the opinion's delivery in the brainstorm's shape.</summary>

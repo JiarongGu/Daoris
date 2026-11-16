@@ -3,7 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The kinds of decision a supervisor answers, each waiting somewhere for an allow or a choice, and each kind's acts, which a supervisor's
 /// <c>authority</c> grants as <c>kind.act</c>. A closed vocabulary of the build, as the works are: a supervisor's <c>decides</c> names
-/// kinds of it, and one naming none is its scope's generic supervisor, answering what no supervisor of a kind takes there.
+/// kinds of it, and one naming none is its scope's generic supervisor, answering what no supervisor of a kind takes there. Kept with the
+/// settings, below Roles, since a place's line mark in <c>driver.json</c> names a kind (<see cref="PlaceMarks.LineOf"/>).
 /// </summary>
 public static class SupervisorKinds
 {

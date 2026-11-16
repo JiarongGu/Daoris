@@ -22,7 +22,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), a folder moved across volumes (`FolderMove`: a failed copy leaves the target as it was), the one-time placing into D172's places (`HomePlacing`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
-| `Drv/Workplace/` | Going back refused while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port |
+| `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
 | `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
@@ -252,7 +252,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
   steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
   `Drv/Install/InstallUpdate.cs`.
-- **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
+- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.
 - **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must

@@ -133,15 +133,21 @@ public sealed class StepRolesTests : IDisposable
     public void A_going_back_past_the_first_build_that_saved_a_role_is_refused()
     {
         var file = JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json("tester")}} } ] }""");
-        WorkflowRolesSince.Keep(_home, JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json(null)}} } ] }"""), "1.40.0");
-        Assert.Null(WorkflowRolesSince.Read(_home));
+        WorkflowRolesSinceStore.Keep(_home, JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json(null)}} } ] }"""), "1.40.0");
+        Assert.Null(WorkflowRolesSinceStore.Read(_home));
 
-        WorkflowRolesSince.Keep(_home, file, "1.40.0");
-        WorkflowRolesSince.Keep(_home, file, "1.41.0");
-        Assert.Equal("1.40.0", WorkflowRolesSince.Read(_home));
-        Assert.Equal(WorkflowRolesSince.Code, WorkflowRolesSince.Refused(_home, "1.39.2")?.Code);
-        Assert.Null(WorkflowRolesSince.Refused(_home, "1.40.0"));
+        WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
+        WorkflowRolesSinceStore.Keep(_home, file, "1.41.0");
+        Assert.Equal("1.40.0", WorkflowRolesSinceStore.Read(_home));
+        Assert.Equal(WorkflowRolesSince.Code, WorkflowRolesSinceStore.Refused(_home, "1.39.2")?.Code);
+        Assert.Null(WorkflowRolesSinceStore.Refused(_home, "1.40.0"));
         Assert.Equal(WorkflowRolesSince.Code, InstallRollback.Refused(_home, "1.39.2", "1.41.0")?.Code);
+
+        // The rule alone, on the kept build as a value: none kept refuses nothing, and a build already kept is never closed again.
+        Assert.Null(WorkflowRolesSince.Refused(null, "1.39.2"));
+        Assert.Equal(WorkflowRolesSince.Code, WorkflowRolesSince.Refused("1.40.0", "1.39.2")?.Code);
+        Assert.Equal("1.40.0", WorkflowRolesSince.Closes(null, file, "1.40.0"));
+        Assert.Null(WorkflowRolesSince.Closes("1.40.0", file, "1.41.0"));
     }
 
     /// <summary>
@@ -163,9 +169,9 @@ public sealed class StepRolesTests : IDisposable
         {
             var file = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, graph), []).Result!;
             Assert.DoesNotContain(file["versions"]![0]!["graph"]!["nodes"]!.AsArray(), node => node!.AsObject().ContainsKey("role"));
-            Assert.Null(WorkflowRolesSince.Closes(_home, file, "1.40.0"));
-            WorkflowRolesSince.Keep(_home, file, "1.40.0");
-            Assert.Null(WorkflowRolesSince.Read(_home));
+            Assert.Null(WorkflowRolesSinceStore.Closes(_home, file, "1.40.0"));
+            WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
+            Assert.Null(WorkflowRolesSinceStore.Read(_home));
         }
 
         // A shipped default names no kind's own role, so a copy saved of it keeps the shipped digest.
@@ -173,9 +179,9 @@ public sealed class StepRolesTests : IDisposable
 
         var named = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, JsonNode.Parse(Json(StepRoles.Operations))), []).Result!;
         Assert.Equal(StepRoles.Operations, (string?)named["versions"]![0]!["graph"]!["nodes"]![1]!["role"]);
-        Assert.Equal("1.40.0", WorkflowRolesSince.Closes(_home, named, "1.40.0"));
-        WorkflowRolesSince.Keep(_home, named, "1.40.0");
-        Assert.Null(WorkflowRolesSince.Closes(_home, named, "1.41.0"));
+        Assert.Equal("1.40.0", WorkflowRolesSinceStore.Closes(_home, named, "1.40.0"));
+        WorkflowRolesSinceStore.Keep(_home, named, "1.40.0");
+        Assert.Null(WorkflowRolesSinceStore.Closes(_home, named, "1.41.0"));
     }
 
     private static NodeGraph Graph(string? role) => NodeGraphs.Read(Json(role)).Graph!;

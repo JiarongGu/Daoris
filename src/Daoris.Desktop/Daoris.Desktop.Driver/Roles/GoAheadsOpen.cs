@@ -20,7 +20,7 @@ public static class GoAheadsOpen
         if (!appointed.Any(Answers)) return [];
         var live = records.Where(record => !SessionStates.IsEnded(record.State)).ToList();
         var on = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var ask in live.Select(record => AskWords.AskOfEntry(record.Entry)).OfType<string>()) on.TryAdd(ask.TrimStart('#'), ask);
+        foreach (var ask in live.Select(record => RolesWorkOrders.Current.AskOfEntry(record.Entry)).OfType<string>()) on.TryAdd(ask.TrimStart('#'), ask);
         if (on.Count == 0) return [];
         var open = new List<OpenGoAhead>();
         foreach (var ask in await asks(ct).ConfigureAwait(false))

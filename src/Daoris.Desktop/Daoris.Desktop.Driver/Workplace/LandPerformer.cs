@@ -438,8 +438,7 @@ public sealed class LandPerformer(
         return Quiet(run, wait.Code == LandRetries.Climbed ? LandWaits.Climbed : LandWaits.Busy);
     }
 
-    private LineWait Climb(LandEntry entry) =>
-        LandRetries.Climb(home, entry.Repository, entry.Workspace, DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk);
+    private string Climb(LandEntry entry) => LandingWaitLines.Current.Climb(home, entry.Repository, entry.Workspace);
 
     /// <summary>The wait climbed at this look: said once in the conversation, and on the run's step as its wait reads.</summary>
     private void Climbed(LandEntry entry, LandStart run)

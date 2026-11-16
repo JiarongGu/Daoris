@@ -43,7 +43,7 @@ public sealed class OpinionDeliveries(string home)
         if (PathOf(view.Id) is not { } path) return;
         try
         {
-            AtomicFile.WriteBytes(Path.Combine(Path.GetDirectoryName(path)!, ConsultationFile), Consultations.Json(Consultations.OfOpinion(view, answered)));
+            AtomicFile.WriteBytes(Path.Combine(Path.GetDirectoryName(path)!, ConsultationFile), Consultations.Json(OpinionConsultations.Of(view, answered)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

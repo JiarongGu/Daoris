@@ -42,7 +42,7 @@ public static class WorkflowStore
         var store = WorkflowPorts.Store(home);
         var version = Add(store, WorkflowPorts.Runs(home), add, kept);
         // A version naming a step's role keeps the build a going back may not pass (WorkflowRolesSince).
-        WorkflowRolesSince.Keep(home, store.Load(add.Id)?.File, UpdateRefusal.Running);
+        WorkflowRolesSinceStore.Keep(home, store.Load(add.Id)?.File, UpdateRefusal.Running);
         return version;
     }
 

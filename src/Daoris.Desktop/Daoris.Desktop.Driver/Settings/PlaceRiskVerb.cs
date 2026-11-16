@@ -30,7 +30,7 @@ public sealed class PlaceRiskVerb : ChoiceVerb
     public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         var edit = Read(args);
-        var now = before.PlaceRisk.At(new RolePlace(edit.Workspace, edit.Repository));
+        var now = before.PlaceRisk.At(edit.Workspace, edit.Repository);
         world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk} ({now.Source}){Marks(now.Marks)}.");
         if (!before.PlaceRisk.Written) world.Instance.Out.WriteLine("  No record is written yet: Daoris writes it at its next start.");
         return 0;
@@ -64,7 +64,7 @@ public sealed class PlaceRiskVerb : ChoiceVerb
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {
-            var now = after.At(new RolePlace(edit.Workspace, edit.Repository));
+            var now = after.At(edit.Workspace, edit.Repository);
             world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk}{Marks(now.Marks)}.");
             world.Instance.Out.WriteLine($"  Written to {path}.");
             return 0;

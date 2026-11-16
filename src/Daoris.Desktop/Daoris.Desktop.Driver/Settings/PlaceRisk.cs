@@ -80,7 +80,8 @@ public sealed record PlaceRiskEdit
 /// <summary>
 /// Every place's risk and the owner's marks, one record (<c>placeRisk</c> in <c>driver.json</c>), keyed by place: <c>machine</c>,
 /// <c>workspace/&lt;name&gt;</c>, <c>repository/&lt;name&gt;</c>. A place it does not name is low and unmarked. Set once by the owner through one
-/// press and its twins; read by the roles' admission, the reporting line and the go-ahead.
+/// press and its twins; read by the roles' admission, the reporting line and the go-ahead, through a role's scope and place
+/// (<see cref="PlaceRiskScopes"/>).
 /// </summary>
 /// <remarks>
 /// <see cref="Written"/> is false where <c>driver.json</c> holds no record at all (a home the migration has not reached, or one an older build
@@ -101,38 +102,26 @@ public sealed record PlaceRiskBook(IReadOnlyDictionary<string, PlaceRisk> Places
     public const string MachineSource = "machine";
     public const string DefaultSource = "default";
 
-    /// <summary>The key of the place a scope names.</summary>
-    public static string KeyOf(RoleScope scope) => scope.Kind switch
-    {
-        RoleScope.Repository => $"repository/{scope.Id}",
-        RoleScope.Workspace => $"workspace/{scope.Id}",
-        _ => MachineKey,
-    };
-
     /// <summary>The key of the place an edit names: the repository's, else the workspace's, else the machine's.</summary>
     public static string KeyOf(string? workspace, string? repository) =>
         Trimmed(repository) is { } r ? $"repository/{r}" : Trimmed(workspace) is { } w ? $"workspace/{w}" : MachineKey;
 
-    /// <summary>The record set on exactly the place <paramref name="scope"/> names; none where nothing is.</summary>
-    public PlaceRisk? Own(RoleScope scope) => Places.GetValueOrDefault(KeyOf(scope));
-
-    /// <summary>What stands at <paramref name="place"/>: the narrowest risk set, and every destination mark from the machine down.</summary>
-    public PlaceRiskNow At(RolePlace place)
+    /// <summary>
+    /// What stands at the place <paramref name="workspace"/> and <paramref name="repository"/> name, both none the machine: the narrowest risk
+    /// set, and every destination mark from the machine down.
+    /// </summary>
+    public PlaceRiskNow At(string? workspace, string? repository)
     {
         var chain = new List<(string Source, PlaceRisk? Risk)>
         {
-            (OwnSource, Trimmed(place.Repository) is { } r ? Places.GetValueOrDefault($"repository/{r}") : null),
-            (place.Repository is null ? OwnSource : WorkspaceSource, Trimmed(place.Workspace) is { } w ? Places.GetValueOrDefault($"workspace/{w}") : null),
-            (place is { Repository: null, Workspace: null } ? OwnSource : MachineSource, Places.GetValueOrDefault(MachineKey)),
+            (OwnSource, Trimmed(repository) is { } r ? Places.GetValueOrDefault($"repository/{r}") : null),
+            (repository is null ? OwnSource : WorkspaceSource, Trimmed(workspace) is { } w ? Places.GetValueOrDefault($"workspace/{w}") : null),
+            (repository is null && workspace is null ? OwnSource : MachineSource, Places.GetValueOrDefault(MachineKey)),
         };
         var set = chain.FirstOrDefault(each => each.Risk is not null);
         IReadOnlyList<string> marks = [.. chain.SelectMany(each => each.Risk?.Marks ?? []).Where(PlaceMarks.Destination).Distinct(StringComparer.Ordinal)];
         return set.Risk is { } risk ? new(risk.Risk, set.Source, marks) : new(PlaceRisks.Low, DefaultSource, marks);
     }
-
-    /// <summary>Whether the owner holds the level of the reporting line at <paramref name="scope"/> for <paramref name="kind"/>, by a line's mark.</summary>
-    public bool OwnerHoldsLine(RoleScope scope, string kind) =>
-        Own(scope) is { } own && (own.Marked(PlaceMarks.Line) || own.Marked(PlaceMarks.LineOf(kind)));
 
     /// <summary>
     /// One change made, or its refusal thrown in the record's words with nothing changed: the risk set where one is named, the marks added
