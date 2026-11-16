@@ -17,9 +17,8 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
     [Description(
         "Ask what you cannot decide yourself (a choice the ticket leaves open, a conflict you cannot settle) before you end your "
         + "turn waiting on it with your quest still taken. It shows in this session's conversation, each answer you offer a press with "
-        + "what you will do on it, and a supervisor here may answer it unless you mark it owner-class (see `owner`): a marked question "
-        + "is the owner's alone, and a supervisor's answer to it is refused. Offer answers you would act on and recommend one where you "
-        + "have a reason. Not for a go-ahead on an act outside this repository: `go_ahead_ask`. One question at a time: asking again "
+        + "what you will do on it; a supervisor here may answer it unless you mark it `owner`, which keeps it the owner's alone. Offer "
+        + "answers you would act on and recommend one where you have a reason. Not for a go-ahead on an act outside this repository: `go_ahead_ask`. One question at a time: asking again "
         + "replaces it. Then say in your last message that the work waits, commit what you have, and end your turn.")]
     public async Task<string> AskAsync(
         [Description("The decision you need, at most 1000 characters: the question, not your report.")]
@@ -33,7 +32,7 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         [Description("Why you recommend it, at most 300 characters. Only with `recommend`.")]
         string? why = null,
         [Description(
-            "Only where the question is owner-class, the owner actor's alone and never answered below it: `direction` (what to build, "
+            "Only where the owner alone may answer it: `direction` (what to build, "
             + "a target), `money` (spending, a budget, a paid account beyond the work's runs), `sign-in` (a credential or account), "
             + "`release` (a release the owner marked as theirs), `history` (rewriting history), `data` (deleting the owner's data), "
             + "`publish` (publishing to people outside beyond what the repository declares). Otherwise leave it out.")]

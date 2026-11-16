@@ -9,16 +9,15 @@ using Xunit.Abstractions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The size of the tool definitions every session is handed at its start. Every caller is listed the same tools (McpRoleFilterTests),
-/// so one measure is each caller's. A number over budget needs a reason or a cut.
+/// The size of the tool definitions every session is handed at its start, the same for every caller (McpRoleFilterTests): over budget needs a reason or a cut.
 /// </summary>
 public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
     /// <summary>
-    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 41,776 of the other tools, with
-    /// the descriptions cut to what an agent needs to call them, plus <see cref="PlanBudget"/> for the plan door and helper_ask's part (170).
+    /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,393 of the other tools (the
+    /// design comparison <see cref="SynthesisBudget"/> holds among them), descriptions cut to what an agent needs, plus <see cref="PlanBudget"/>.
     /// </summary>
-    internal const int ListingBudget = 48_900;
+    internal const int ListingBudget = 50_700;
 
     /// <summary>One tool's definition may not exceed this many characters.</summary>
     internal const int ToolBudget = 2_600;
@@ -31,10 +30,13 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
 
     /// <summary>
     /// The second tool over <see cref="ToolBudget"/>: team_plan writes a plan whole in one call, so its schema carries the shapes of a
-    /// part (with its requirements and pack), an edge, a deployable, a release order and a question; its text is already cut to what
-    /// the shapes do not say, and a second tool for some of them would be a second way to write a plan.
+    /// part (with its requirements and pack), an edge, a deployable, a release order, a question and the ask's integration; its text is
+    /// already cut to what the shapes do not say, and a second tool for some of them would be a second way to write a plan.
     /// </summary>
-    internal const int PlanBudget = 7_000;
+    internal const int PlanBudget = 7_250;
+
+    /// <summary>The third: brainstorm_synthesize carries a design pass's comparison, its trial and owner questions, in the one synthesis.</summary>
+    internal const int SynthesisBudget = 3_400;
 
     /// <summary>The tokens a model reads in JSON text, at about three characters each.</summary>
     internal static int EstimatedTokens(int characters) => (characters + 2) / 3;
@@ -59,7 +61,7 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
         foreach (var (name, characters) in tools) output.WriteLine($"{characters,7} {name}");
 
         Assert.True(total <= ListingBudget, $"{total} characters is over the {ListingBudget} budget: cut or give the reason");
-        var heavy = tools.Where(tool => tool.Characters > tool.Name switch { "quest_publish" => PublishBudget, "team_plan" => PlanBudget, _ => ToolBudget }).Select(tool => $"{tool.Name} {tool.Characters}").ToList();
+        var heavy = tools.Where(tool => tool.Characters > tool.Name switch { "quest_publish" => PublishBudget, "team_plan" => PlanBudget, "brainstorm_synthesize" => SynthesisBudget, _ => ToolBudget }).Select(tool => $"{tool.Name} {tool.Characters}").ToList();
         Assert.True(heavy.Count == 0, "over " + ToolBudget + ": " + string.Join(", ", heavy));
     }
 }
