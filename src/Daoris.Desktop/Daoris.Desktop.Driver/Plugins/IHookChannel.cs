@@ -87,4 +87,7 @@ public interface IHookChannel : IAsyncDisposable
     Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct) =>
         Task.FromException<WorkCleanupAnswer>(PluginFailures.Mark(
             new DriverException($"this channel does not answer `{PluginSteps.CleanupPoint}`."), PluginEvents.Errored));
+
+    /// <summary>An attempt's stand-down told (<see cref="PluginSteps.StandDownPoint"/>): a notification, so nothing is awaited of it.</summary>
+    Task StandDownAsync(WorkStandDownCall call, CancellationToken ct) => Task.CompletedTask;
 }

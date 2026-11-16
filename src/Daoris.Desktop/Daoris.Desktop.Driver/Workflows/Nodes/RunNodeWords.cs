@@ -287,6 +287,8 @@ public static class RunNodeWords
             }
 
             next = WorkPerformer.Kept(next, moved, word.Source + "-" + word.Act, now);
+            // Not needed this run, or the work ended: the plugin's attempt in flight stands down, so the run waits on it no more.
+            if (word.Act is NodeWordActs.Skip or NodeWordActs.Stop) next = StandDowns.Settle(next, node.Id, standing.Attempt, word.Act);
             if (word is { Act: NodeWordActs.Changes, Part: { } part }) next = next with { Fired = [.. next.Fired, ChangesParts.Key(node.Id, standing.Attempt, part)] };
             if (word.Act == NodeWordActs.Changes) next = next with { Repairs = [.. next.Repairs.Where(each => each.Node != node.Id)] };
             applied.Add((word, null));
@@ -379,7 +381,9 @@ public static class RunNodeWords
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
         (NodeRefusal.NotSkippable, _) =>
-            $"workflow: `{done.Node}` is a step its kind never lets be passed over, since a skip would read as its proof: stop it instead.",
+            $"workflow: `{done.Node}` on run {done.Run} is not passed over, since a skip would read as its proof: if it was done outside Daoris, say so "
+            + "with its link (Done outside Daoris on its step, or `daoris work held <unit> <node> <attempt> done-outside <link> [\"…\"]`), and the run "
+            + "goes on; ending this work (`daoris workflow stop`) ends the run and leaves its quest to close by your word.",
         (NodeRefusal.NotInTable, NodeWordActs.Skip) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to pass over.",
         (NodeRefusal.NotInTable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to stop.",

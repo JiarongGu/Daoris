@@ -64,7 +64,8 @@ public static class HeldAttempts
 {
     /// <summary>The usage of <c>daoris work held</c>, as the terminal says it when its words are not understood.</summary>
     public const string Usage =
-        "usage: daoris work held [--unit <id>]  |  daoris work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)";
+        "usage: daoris work held [--unit <id>]  |  daoris work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)\n"
+        + "       daoris work held <unit> <node> <attempt> done-outside <link> [\"…\"]  (a plugin's step under way, held or failed, done outside Daoris)";
 
     /// <summary>
     /// Every attempt held on the records that read, every close unknown with its node still on it (<see cref="QuestClosing.Unanswered"/>),
@@ -188,13 +189,16 @@ public static class HeldAttempts
             return 0;
         }
 
-        if (args is not [var unit, var node, var number, var word] || !int.TryParse(number, out var attempt) || attempt < 1)
+        // Done outside Daoris takes its link, and a note where one is given; every other word stands alone.
+        var outside = args is [_, _, _, HeldResolutions.DoneOutside, _] or [_, _, _, HeldResolutions.DoneOutside, _, _];
+        if ((!outside && args.Count != 4) || args.Count < 4 || !int.TryParse(args[2], out var attempt) || attempt < 1)
         {
             error.WriteLine(Usage);
             return 2;
         }
 
-        var done = Word(records, unit, node, attempt, word, clock);
+        var (unit, node, word) = (args[0], args[1], args[3]);
+        var done = Word(records, unit, node, attempt, word, clock, link: outside ? args[4] : null, note: args.Count == 6 ? args[5] : null);
         (done.What == PerformedWhat.Worded ? output : error).WriteLine(Said(done, attempt, word));
         return done.What == PerformedWhat.Worded ? 0 : 1;
     }
@@ -203,8 +207,10 @@ public static class HeldAttempts
     /// The person's word on a held attempt, from either door (<see cref="WorkPerformer.Word"/>): recorded under the record's lock, the lease
     /// asked inside it, and applied by the loop holding the lease at its next pass.
     /// </summary>
-    public static WorkPerformed Word(NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null, string? outcome = null) =>
-        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome);
+    public static WorkPerformed Word(
+        NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null, string? outcome = null,
+        string? link = null, string? note = null) =>
+        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome, link, note);
 
     /// <summary>A terminal sends nothing to a plugin: the word is recorded, and the loop holding the lease applies it.</summary>
     private sealed class Unperformed : IWorkPerformPort
@@ -220,7 +226,13 @@ public static class HeldAttempts
     /// <summary>The sentence a door says for what the person's word came to: recorded, or refused and why.</summary>
     public static string Said(WorkPerformed done, int attempt, string resolution) => (done.What, done.Code) switch
     {
+        (PerformedWhat.Worded, _) when resolution == HeldResolutions.DoneOutside =>
+            $"work: {done.Node} (attempt {attempt}) of {done.Unit} is recorded as done outside Daoris, with your link; the next look settles it, "
+            + "stands its attempt down and goes on with the run.",
         (PerformedWhat.Worded, _) => $"work: your word `{resolution}` on {done.Node} (attempt {attempt}) of {done.Unit} is recorded; the next look applies it.",
+        (_, WorkPerformer.NoLink) => $"work: done outside Daoris takes the link that shows it was done (the release, the change, the page), and none was given.",
+        (_, WorkPerformer.NotAttempt) when resolution == HeldResolutions.DoneOutside =>
+            $"work: {done.Node} (attempt {attempt}) of {done.Unit} is not under way, held or failed on that attempt now, so there is nothing to settle as done outside.",
         (_, WorkPerformer.NotHeld) => "work: this process does not hold the home, so it records nothing: the desktop holds it while it runs, so say it there, or close the desktop and run this again.",
         (_, WorkPerformer.Unreadable) => $"work: the node record of {done.Unit} does not read, so nothing on it is changed.",
         (_, WorkPerformer.Worded) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} already has your word, which the next look applies.",

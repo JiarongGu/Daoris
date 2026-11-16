@@ -164,7 +164,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     while a word waits, and a decision's answer may change until the run ends. A failed plugin step's run step
     holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
     `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
-    failed to ready by the person, a new attempt its plugin is sent. A performed attempt's `progress` (`work/step` bound to its
+    failed to ready by the person, a new attempt its plugin is sent. *Done outside Daoris* (`done-outside`, the same door and verb with
+    `<link> ["…"]`, the link required) settles a plugin's step under way, held or failed on its holder's word (`active`, `unknown` or
+    `failed → reached` by the person, the link its evidence and the note its words), a step whose kind carries its proof as evidence
+    included, since the link is that proof; it is kept on the attempt as `happened` with its `link`, a word an older build reads. Skip
+    (*Not needed this run*), stop (*End this work*) and done outside each stand the plugin's attempt in flight down (`StandDowns`): it
+    settles `stood-down` with the act as its code, never a state of its own, its node's gate lifts so nothing holds the run, its plugin is
+    told (`work/stand-down`, a notification), and its later outcome is not taken. A skip a proof-carrying step refuses names the
+    done-outside press, and ending the work leaves its quest to close by the person's word. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
     rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor

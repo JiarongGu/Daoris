@@ -52,6 +52,12 @@ public static class PluginSteps
     public const string CleanupPoint = "work/cleanup";
 
     /// <summary>
+    /// The point a plugin is told on that an attempt stood down: its step was skipped, stopped or done outside Daoris, so what the attempt
+    /// still watches or waits for is no longer wanted. A notification, answered by nothing; a later outcome of it is a replay.
+    /// </summary>
+    public const string StandDownPoint = "work/stand-down";
+
+    /// <summary>
     /// A schema's name, <c>&lt;owner&gt;/&lt;name&gt;@&lt;version&gt;</c> (<c>acme.deploy/receipt@1</c>, <c>daoris/quest.close@1</c>): its
     /// owner a plugin id by <see cref="PluginCatalog.IsId"/>, the one owner of that shape; its name words of lowercase letters
     /// and digits parted by single dots or dashes; its version a whole number from 1. Compared ordinally, and with

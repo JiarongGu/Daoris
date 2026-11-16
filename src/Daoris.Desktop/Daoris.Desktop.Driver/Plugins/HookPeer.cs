@@ -245,6 +245,10 @@ public sealed class HookPeer(
             + "`{ \"disposition\": \"removed\" | \"already-gone\" | \"retained\" | \"failed\", \"proof\": …, \"message\": … }`.");
     }
 
+    /// <summary>An attempt's stand-down, told as a notification: a plugin that does not know the point answers nothing, as for any.</summary>
+    public Task StandDownAsync(WorkStandDownCall call, CancellationToken ct) =>
+        SendAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = WorkWire.StandDownMethod, ["params"] = WorkWire.StandDown(call) }, ct);
+
     /// <summary>
     /// A request among at most <see cref="WorkBounds.CallsInFlight"/>: one past them waits the peer's patience for a place,
     /// and is late where none comes, so a plugin that answers nothing holds four attempts, never every one Daoris has.

@@ -55,8 +55,8 @@ public sealed class NodeLifecycleTests
     /// <summary>The move a row asks for, as its cause would make it.</summary>
     private static NodeMove MoveFor(NodeTransition row, NodeAuthority authority, NodeStatus status) => (row.To, row.By) switch
     {
-        // The person settles a held attempt on their own word, their evidence the person's.
-        (NodeStates.Reached, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = OnWord(status.Attempt) },
+        // The holder's word, with the link of a step done outside.
+        (NodeStates.Reached, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = OnWord(status.Attempt), Link = "l" },
         (NodeStates.Failed, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Code = HeldResolutions.DidNot },
         (NodeStates.Reached, _) => new NodeMove(row.To, row.By) { Source = authority.ReachBy, Attempt = status.Attempt, Acceptance = Accept(status.Attempt) },
         (NodeStates.Failed, _) => new NodeMove(row.To, row.By)

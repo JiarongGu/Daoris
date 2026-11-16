@@ -7,10 +7,21 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class PluginFailureHeld
 {
+    /// <remarks>
+    /// A failure kept for the person offers <i>Try again</i> and <i>Done outside Daoris</i>; a step whose attempt is under way or held offers
+    /// <i>Done outside Daoris</i> alone (DONEBYHOLDER1). The word kept reads <c>done-outside</c> where it carries its link.
+    /// </remarks>
     public static WorkflowRunHeld? Of(NodeRecord? record, NodeDeclaration node, NodeStatus status)
     {
-        if (record is null || status.State != NodeStates.Failed || NodeKit.Of(node.Kind) is not PluginStep) return null;
-        if (record.Newest(node.Id) is not { } attempt || !WorkPerformer.KeptFailure(record, attempt)) return null;
-        return new WorkflowRunHeld(record.Unit, attempt.Attempt, attempt.Resolution is null ? HeldResolutions.Failure : []) { Resolution = attempt.Resolution };
+        if (record is null || NodeKit.Of(node.Kind) is not PluginStep || record.Newest(node.Id) is not { } attempt) return null;
+        var word = attempt.Link is not null ? HeldResolutions.DoneOutside : attempt.Resolution;
+        if (status.State == NodeStates.Failed && WorkPerformer.KeptFailure(record, attempt))
+        {
+            return new WorkflowRunHeld(record.Unit, attempt.Attempt, word is null ? [.. HeldResolutions.Failure, HeldResolutions.DoneOutside] : []) { Resolution = word };
+        }
+
+        return StandDowns.Outside(record, attempt)
+            ? new WorkflowRunHeld(record.Unit, attempt.Attempt, word is null ? [HeldResolutions.DoneOutside] : []) { Resolution = word }
+            : null;
     }
 }
