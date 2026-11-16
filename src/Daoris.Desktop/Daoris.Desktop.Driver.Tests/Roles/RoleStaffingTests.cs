@@ -292,7 +292,7 @@ public sealed class RoleStaffingTests : IDisposable
         var own = new[] { "RoleStaffing.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs", "DriverConfigDisk.cs", "StaffPolicy.cs", "StaffLedger.cs" };
         var naming = Production()
             .Where(path => !own.Contains(Path.GetFileName(path)))
-            .Where(path => File.ReadAllText(path).Contains("RoleStaffing", StringComparison.Ordinal))
+            .Where(path => SourceTexts.Of(path).Contains("RoleStaffing", StringComparison.Ordinal))
             .Select(Relative)
             .Order(StringComparer.Ordinal)
             .ToList();

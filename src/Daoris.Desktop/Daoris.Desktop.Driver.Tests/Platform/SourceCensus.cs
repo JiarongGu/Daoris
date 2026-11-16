@@ -8,10 +8,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static partial class SourceCensus
 {
-    /// <summary>The driver's sources by file name, as read now.</summary>
+    /// <summary>The driver's sources by file name, from the run's one scan (<see cref="SourceTexts"/>): each file is read from disk once.</summary>
     public static List<(string File, string Source)> Driver(Func<string, bool>? within = null) =>
         [.. SourceFiles.All(SourceFiles.DriverProject, "*.cs").Where(path => within?.Invoke(path) ?? true)
-            .Select(path => (Path.GetFileName(path), File.ReadAllText(path)))];
+            .Select(path => (Path.GetFileName(path), SourceTexts.Of(path)))];
 
     /// <summary>Each field of <paramref name="sources"/> whose declared type <paramref name="holds"/> matches, as <c>File Field</c>.</summary>
     public static SortedSet<string> Fields(IEnumerable<(string File, string Source)> sources, Regex holds) =>
@@ -42,7 +42,7 @@ internal static partial class SourceCensus
     public static List<string> Unproved(IReadOnlyCollection<string> found, IReadOnlyCollection<string> listed, string what) =>
         [.. listed.Where(member => !Problems(found, listed.Where(each => each != member).ToList(), what).Contains($"{member} {what} and is not listed"))];
 
-    private static string Code(string source) => LineComment().Replace(source.Replace("\r\n", "\n"), "");
+    private static string Code(string source) => SourceTexts.Code(source);
 
     [GeneratedRegex(@"^[ \t]*(?:(?:private|internal|public|protected|static|readonly|volatile)[ \t]+)+(?<type>[^=;{}\n]+?)[ \t]+(?<name>_?[A-Za-z]\w*)[ \t]*(?:=(?!>)|;)", RegexOptions.Multiline)]
     private static partial Regex Field();
@@ -50,7 +50,4 @@ internal static partial class SourceCensus
     // A method's name followed by its parameters, where a default value would read as a field's.
     [GeneratedRegex(@"\w[ \t]*\(")]
     private static partial Regex Call();
-
-    [GeneratedRegex(@"//[^\n]*")]
-    private static partial Regex LineComment();
 }

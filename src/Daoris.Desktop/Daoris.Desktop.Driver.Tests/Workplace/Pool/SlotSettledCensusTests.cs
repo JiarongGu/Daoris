@@ -51,7 +51,7 @@ public sealed partial class SlotSettledCensusTests
     {
         var driver = SourceFiles.Project(SourceFiles.DriverProject);
         return [.. SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Select(file => (File: Path.GetRelativePath(driver, file).Replace('\\', '/'), Source: File.ReadAllText(file)))
+            .Select(file => (File: Path.GetRelativePath(driver, file).Replace('\\', '/'), Source: SourceTexts.Of(file)))
             .Where(each => each.File.StartsWith("Workplace/Pool/", StringComparison.Ordinal))];
     }
 

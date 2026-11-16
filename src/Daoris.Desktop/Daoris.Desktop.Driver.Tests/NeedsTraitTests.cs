@@ -66,7 +66,7 @@ public sealed class NeedsTraitTests
     {
         var files = new[] { SourceFiles.DriverTestsProject, SourceFiles.ModulesTestsProject }
             .SelectMany(project => SourceFiles.All(project, "*.cs"))
-            .Select(path => (path, File.ReadAllText(path)));
+            .Select(path => (path, SourceTexts.Of(path)));
 
         Assert.Empty(Missing(files));
     }

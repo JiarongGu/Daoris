@@ -14,7 +14,7 @@ public sealed class BuildDoorConsolesCensusTests
     public void No_terminal_console_asks_a_door_of_its_own_but_reads_Builds_whole_order_through_set_up()
     {
         var own = SourceFiles.All("Daoris.Desktop.Driver.Host", "*.cs")
-            .Where(path => Regex.IsMatch(File.ReadAllText(path), @"\bAdoption\s*\.\s*Unadopted\s*\(|\bSessionsConsole\s*\.\s*Unadopted\s*\(|catch\s*\(DriverException[^)]*UnknownDoorException"))
+            .Where(path => Regex.IsMatch(SourceTexts.Of(path), @"\bAdoption\s*\.\s*Unadopted\s*\(|\bSessionsConsole\s*\.\s*Unadopted\s*\(|catch\s*\(DriverException[^)]*UnknownDoorException"))
             .Select(Path.GetFileName)
             .ToList();
 

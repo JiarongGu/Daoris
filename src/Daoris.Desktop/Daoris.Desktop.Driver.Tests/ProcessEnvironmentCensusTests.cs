@@ -62,7 +62,7 @@ public sealed class ProcessEnvironmentCensusTests
         var found = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
         {
-            var text = File.ReadAllText(path);
+            var text = SourceTexts.Of(path);
             if (Setting(text) > 0) found[Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/')] = text;
         }
 

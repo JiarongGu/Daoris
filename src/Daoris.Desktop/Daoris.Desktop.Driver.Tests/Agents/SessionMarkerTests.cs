@@ -28,7 +28,7 @@ public sealed partial class SessionMarkerTests
         {
             foreach (var file in SourceFiles.All(project, "*.cs"))
             {
-                var count = Handed().Matches(File.ReadAllText(file)).Count;
+                var count = Handed().Matches(SourceTexts.Of(file)).Count;
                 if (count > 0) found[$"{project}/{Path.GetRelativePath(SourceFiles.Project(project), file).Replace('\\', '/')}"] = count;
             }
         }

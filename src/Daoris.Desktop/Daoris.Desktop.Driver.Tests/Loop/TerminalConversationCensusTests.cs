@@ -24,7 +24,7 @@ public sealed class TerminalConversationCensusTests
         (@"\bSessionOutput\b", "a session's output buffer"),
     ];
 
-    private static string Bare(string file) => Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
+    private static string Bare(string file) => Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
 
     private static IEnumerable<(string Project, string File, string Source)> Sources() =>
         Projects

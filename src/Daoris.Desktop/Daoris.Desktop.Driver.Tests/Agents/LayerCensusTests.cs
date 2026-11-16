@@ -123,6 +123,6 @@ public sealed class LayerCensusTests
     {
         var root = EveryChildIsHandedTheToolsTests.SourceRoot();
         return Projects.SelectMany(project => SourceFiles.All(project, "*.cs"))
-            .Select(file => (Path.GetRelativePath(root, file).Replace('\\', '/'), File.ReadAllText(file).Replace("\r\n", "\n")));
+            .Select(file => (Path.GetRelativePath(root, file).Replace('\\', '/'), SourceTexts.Of(file).Replace("\r\n", "\n")));
     }
 }

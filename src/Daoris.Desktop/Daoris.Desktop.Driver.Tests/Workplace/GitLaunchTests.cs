@@ -221,7 +221,7 @@ public sealed class GitLaunchTests
         // The trees' git: GitRuns' GitStart, the git policy's resolution of it for the adapter's three runners, and ActSteps' held act
         // counted at the seam as GitRunner.Held. The rest are other seams' starts, none of them a git start of the trees'.
         var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Select(file => (Path.GetFileName(file), File.ReadAllText(file)))));
+            .Select(file => (Path.GetFileName(file), SourceTexts.Of(file)))));
         Assert.True(problems.Count == 0, string.Join('\n', problems));
 
         // These two are the seam's shape, a count by design: one call per runner, one launch per runner, through the policy's seam.
