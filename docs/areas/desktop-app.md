@@ -201,11 +201,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`work/head/startedFrom.tsx`). *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start
     was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162) A rail row is the
-    session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`): the steps of its run's bound workflow version marked
-    passed, now, to come or failed (`SESSION_GROUPS`' `passage`, read in .NET by `RunPassageReader` on the run's newest session), one
-    sentence of whom it waits on (you only where *needs you* placed it, which a check never does; its step while `awaiting-step`;
-    its agent; its start), and, for a session of more than one turn, each turn beneath it with what woke it, its agent, its account
-    by the person's name for it and what its record spent on that record's last turn. An ask's at-work view counts its quests by
+    session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`) in one status line that never grows its height:
+    one sentence of whom it waits on, at which step of how many (you only where *needs you* placed it, which a check never does;
+    its step while `awaiting-step`; its agent; its start), cut with an ellipsis. Its tip holds the steps of its run's bound
+    workflow version marked passed, now, to come or failed (`SESSION_GROUPS`' `passage`, read in .NET by `RunPassageReader` on the
+    run's newest session) and, for a session of more than one turn, each turn with what woke it, its agent, its account by the
+    person's name for it and what its record spent on that record's last turn, one to a line. An ask's at-work view counts its quests by
     where they stand: landed (Done), waiting on you, in checks or opinion (`awaiting-step`), being worked, not started
     (`work/atWork/askStanding.ts`), a declined quest in none. (D293)
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
