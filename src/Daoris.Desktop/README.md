@@ -40,7 +40,7 @@ and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Drive
 `Agents/Contract/` names the provider contract as records (AGENTPROVIDER1 row a, D213: `Provider`, `AgentDoor`, typed ids, `Known<T>`) and
 `Agents/Registry/` holds `ProviderRegistry` (`Built()`, `Joined`, `Resolve`), which answers each door's account owner and facts once. Row b adds the ports
 (`ISpawn`, the dialects, `IUsageQuestion`, `AgentRun`), `Providers.Built()`, the one registration list, and the stand-ins written on the contract
-in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as adapters; the stand-in flag, the roster's listing and the verbs'
+in `Agents/Providers/Stub/`, which the readers read as `AgentDoor`s; the stand-in flag, the roster's listing and the verbs'
 operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
 and door, each one a provider cannot pass yet held in its own `pending.json` (beside its `provider.json`; a provider with no folder keeps it under
 `Driver.Tests/fixtures/providers/<id>/`) with the row that makes it pass.
@@ -339,8 +339,8 @@ Workflows port; Review's `SessionTreeGates` answers the same gate as the `Landin
 with `ReviewAsync` and `OpinionAsync`), the second opinion's part being `Review/TreeGateOpinions.cs`. The look reads its world as
 `IWorkplaceLandingWorld`; Review's `IReviewLandingWorld` adds the opinions (`IOpinionWorld`), and `ServiceReviewLandingWorld` is Review's. A
 second opinion a held landing is owed goes through `IWorkplaceReview`, which `Review/WorkplaceReviewWiring.cs` installs. The press on a chat
-run's work (`ChatPresses`, `ChatLandCommand`) and an entry's Accept (`EntryAccepts`) are Review's, since they read the gate and press the
-opinion; the entry's lead is Workplace's `EntryLandings.LeadOf`. The words the trees and the review spell alike are Workplace's, and
+run's work (`ChatPresses`) and an entry's Accept (`EntryAccepts`) are Review's, since they read the gate and press the
+opinion; the entry's lead is Workplace's `RunParts.LeadOfAsync`. The words the trees and the review spell alike are Workplace's, and
 `ReviewDoors`, `SessionChecks`, `OpinionTree`, `OpinionSource` and `HeavyStep` alias or answer through them: the landing doors
 (`LandingDoors`), the checks' file suffix (`SessionHomeFiles.ChecksSuffix`), the opinion copy's prefix (`PassLeftovers.OpinionCopyPrefix`), a
 commit rule's two sources and the system shell (`GeneratedWriters.SystemShell`). The folders a review step shows from
@@ -408,11 +408,9 @@ holds it; a session handed no server sends none, and an adapter that does not re
 Since CONTEXTONE1d (D230 point 3) every session's spawn, of every kind and on either door, is equipped by `Driver.Equip`: its
 toolchain's environment, then the adapter's `ToolsUpFront`, which on both Claude Code doors is `ENABLE_TOOL_SEARCH=false` (HELP5), so the
 connector's tools come with the first request rather than behind a tool search; Codex holds them already and is handed nothing. The
-switch loads every MCP server the session has, the repository's own too, so since CONTEXTONE1d2 the connector lists a session only its
-row of the call layer's table (`CallTable`, read by the work of the record its `DAORIS_SESSION_ID` names, which every spawn carries and a
-repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
-build 25; a chat 22; an intake 15; a helper 12), Ask Daoris every tool but the brainstorm turns, the helper ask and the memory changes
-(`CoreSetTests` holds each row). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
+switch loads every MCP server the session has, the repository's own too, so the connector lists and serves every tool to every caller
+(each tool's class is `ToolClasses`, held by its census), and a subagent's call is its session's, named by the `DAORIS_SESSION_ID` every spawn
+carries and a repository's own `.mcp.json` server inherits. Nothing new rides the spawn.
 Every Claude session's own settings file (Claude Code's rule language, `ClaudeRules`, handed by `--settings` on the pipe door and
 `_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) is written for every such session, rules or
 none, and says nothing of the account's auto-memory, synced skills and plugins or connectors: the account's own settings decide them, as for
@@ -423,7 +421,7 @@ Since CONTEXTONE1c every session's first prompt ends with its standing block (`S
 every start sets: `SessionTarget.Block` for a quest's session, an intake, a helper, a partner, a reviewer and a brainstorm's pass;
 `ChatPlace.Block` for a conversation and Ask Daoris). It says where things are (the repository's documents, code and history, the
 knowledge and memory tools, the checkouts it may read, its indexes and code map; on a harness that loads none itself, its skills' folders,
-`ISessionAdapter.LoadsTreeSkills`; past a cut `AGENTS.md`, `ISessionAdapter.InstructionFileLimit`, its rules by their knowledge ids),
+`InstructionsPart.LoadsTreeSkills`; past a cut `AGENTS.md`, `InstructionsPart.FileLimit`, its rules by their knowledge ids),
 the routing for a build, design or chat (`RoutingStanding` judges, the block words it), the person's choices on this machine (the
 standing answer), the repository's and workspace's facts, and at a move the memory the line read, which the brief hands on
 (`ComposedBrief.Memory`). A kind with no repository (Ask Daoris, an intake, a brainstorm's pass) gets the workspace's part alone. It is
@@ -666,7 +664,7 @@ What is said sits in `Events/` (FOUNDATION1 mod-vii, D212): the chain and the ch
 `PartnerWhy`), `SetupSwap`, `CoolingEntry`, `ModelRefusal`, `TurnModels`, the instruction account an event carries (`InstructionAccount`, `HandedSection`, `HandedCut`) and the look's deadline
 (`LookDeadline`). It names no type of a subdomain above it. What a lower reading needs of a higher type is a port the events declare and the higher type answers by being it
 (`ISessionEvents`, which the context's `SessionEvents` is; `IHarnessEnding`, `ITransientEpisode` and `IResumeRefused`, which the agents' `HarnessEnding`, `TransientEpisode` and
-`AcpResumeRefused` are); where a home topic's files are is a registry the owners answer when the driver's assembly loads (`HomeTopics`, answered by `HelpHomeTopic`, `PluginHomeTopic`,
+`AcpResumeRefused` are); where a home topic's files are is a registry the owners answer when the driver's assembly loads (`HomeTopics`, answered by `PluginHomeTopic`,
 `WorkflowHomeTopic`, `WordsHomeTopic` in the workplace's folder and `AccountsHomeTopic` in the agents'), a topic nobody answers throwing where a watch asks for it. The GitDoor, the launcher
 and PieceStart compile none of it.
 
@@ -1006,8 +1004,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
   NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
   SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (the kit's `TaskbarOverlay`, a
-  number on a circle, *9+* past nine as `WaitingBadge.Label` says, put back on each
-  `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍) — games`, the taskbar's hover and Alt-Tab's label. What it
+  number on a circle, *9+* past nine as `WaitingBadge.Label` says) and in its title, `(3) Daoris (道衍) — games`, the taskbar's hover and Alt-Tab's label. What it
   says is `WaitingBadge`'s, and what each window wears `WaitingCount`'s, in the modules where they are tested; a utility
   window's page never sends it. Each count carries the order its page told it in, kept per window, and the module never
   wears one told before the count that window wears (SESSBADGE1): the page waits on no answer, so two told close

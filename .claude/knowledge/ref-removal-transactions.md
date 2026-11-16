@@ -46,7 +46,7 @@ The trap succeeds wrongly: every one of these deleted without an error.
   and only where the caller admits one (the tidy, the sweep and a tree's removal admit the person's alone). None found is a
   refusal, never a fallback to the line (`ContentHolds.HolderOf`, `PersonsRef`).
 - **The same for a recovery or kept ref.** It goes only in a transaction that verifies the branch, or the holder, at a commit
-  shown to hold what the ref keeps (`ContentHolds.DropKeptAsync`, `DropKeptVerifiedAsync`), so it outlives any put-back that did
+  shown to hold what the ref keeps (`ContentHolds.DropKeptVerifiedAsync`), so it outlives any put-back that did
   not happen.
 - **A ref that must be absent is `verify <ref>` with no id**, beside the `create` that rests on its absence.
 - **A refused transaction is read, not assumed.** After one, the branch is gone only on git's own "missing"; any other answer is

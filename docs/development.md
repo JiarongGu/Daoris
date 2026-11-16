@@ -26,7 +26,7 @@ the Lyntai checkout beside this one (or named by the argument or `DAORIS_LYNTAI_
 and reruns do nothing while the tip is packed. The service's, the desktop's and the contracts generator's package props import that
 file (the generator restores the desktop modules' graph, so it restores the same packs); delete it to restore the released pins. The merge tool copies it into its gate trees; copy
 the main checkout's into a worktree that builds the layer. Lyntai's agent layer is only in the local build, so the driver references it, and
-compiles `Agents/Layer/`, only while the file is there (`DaorisLyntaiLayer`); without it the driver builds as it did before the
+compiles `Agents/Layer/`, only while the file is there (the driver project's Lyntai-layer condition, set by that file); without it the driver builds as it did before the
 layer, which is what the CI builds. A change to the layer's reference is built both ways: with the file, then with it moved
 aside and the projects restored again.
 
