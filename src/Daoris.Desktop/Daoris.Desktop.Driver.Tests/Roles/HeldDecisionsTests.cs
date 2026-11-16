@@ -27,6 +27,8 @@ public sealed class HeldDecisionsTests : IDisposable
     {
         public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
             new(generation, null) { Window = TimeSpan.FromMinutes(10), Role = "daoris-landing" };
+
+        public PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.Low, "repository/reports", []);
     }
 
     private static readonly SupervisorHolder Codex = SupervisorHolders.OfAgent(new("daoris-landing", 3, "codex-acp", "gpt-5", "high", "gpt-5", "read-only", "t1"));
@@ -68,6 +70,26 @@ public sealed class HeldDecisionsTests : IDisposable
         Assert.Empty(posted);
         Assert.Equal([SupervisorState.WentOn], await after.ReleaseDoorsAsync(Posting(posted), At.AddMinutes(11)));
         Assert.Equal(kept.Decision, Assert.Single(posted).Id);
+    }
+
+    /// <summary>🔴 A held go-ahead answer is read back after a restart as a memory keep is, its pin kept, and goes out when its window closes.</summary>
+    [Fact]
+    public async Task A_held_go_ahead_answer_is_read_back_after_a_restart()
+    {
+        var pin = new GoAheadPin(2, "write", "staging", "the dashboard's configuration");
+        var answer = new SupervisorDoorAnswer(SupervisorSubject.GoAhead("s1", "a7", 2), "reports", Agent, SupervisorKinds.Answer, SupervisorDoorActs.Approved,
+            [new SupervisorReason("The write is the plan's own step on staging.", "the ask's plan")], Codex) { Pin = pin.Said };
+        var kept = await Decisions().DoorAsync(answer, null, At);
+        Assert.True(kept.Kept, kept.Why);
+
+        var after = Decisions();
+        Assert.Empty(after.SweepAtStart(At.AddMinutes(4)));
+        var held = Assert.Single(after.DoorsOf("s1"));
+        Assert.Equal((kept.Decision, SupervisorState.Held), (held.Id, held.State));
+
+        var posted = new List<SupervisorDoorDue>();
+        Assert.Equal([SupervisorState.WentOn], await after.ReleaseDoorsAsync(Posting(posted), At.AddMinutes(11)));
+        Assert.Equal(pin.Said, Assert.Single(posted).Pin);
     }
 
     /// <summary>🔴 A held answer whose window closed during the restart applies at the next look, the admission asked again.</summary>

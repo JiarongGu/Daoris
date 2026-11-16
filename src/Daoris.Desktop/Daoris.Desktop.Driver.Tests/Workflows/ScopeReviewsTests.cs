@@ -14,11 +14,21 @@ public sealed class ScopeReviewsTests
     [Fact]
     public void A_one_scope_plan_gates_no_part_and_runs_the_full_set_once_at_its_end()
     {
-        Assert.False(ScopeLanding.GatesEachPart("one-scope"));
-        Assert.True(ScopeLanding.GatesEachPart("per-part"));
-        Assert.True(ScopeLanding.GatesEachPart(null));
+        Assert.False(ScopeLanding.GatesEachPart("one-scope", reviewed: true));
+        Assert.True(ScopeLanding.GatesEachPart("per-part", reviewed: true));
+        Assert.True(ScopeLanding.GatesEachPart(null, reviewed: true));
         Assert.Equal(ScopeLanding.Full, ScopeLanding.EndTier("one-scope"));
         Assert.Null(ScopeLanding.EndTier(null));
+    }
+
+    /// <summary>🔴 Doctrine rule 3's two reviews stand in for the part gates: until both are wired, a one-scope plan gates each part.</summary>
+    [Fact]
+    public void A_one_scope_plan_keeps_each_parts_gates_until_the_two_reviews_are_wired()
+    {
+        Assert.True(ScopeLanding.GatesEachPart("one-scope", reviewed: false));
+        Assert.False(NodeDoors.Wired(new NodeDoorWiring("home", () => true)).ScopeReviewed);
+        Assert.False(NodeDoors.Wired(new NodeDoorWiring("home", () => true) { Reviewers = _ => [] }).ScopeReviewed);
+        Assert.True(NodeDoors.Wired(new NodeDoorWiring("home", () => true) { Reviewers = _ => [], ScopeReviews = (_, _) => { } }).ScopeReviewed);
     }
 
     [Fact]

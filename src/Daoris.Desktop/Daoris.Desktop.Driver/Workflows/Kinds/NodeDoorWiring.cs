@@ -28,6 +28,9 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>Where a scope's two reviews are asked, by its delivery run.</summary>
     public Action<string, IReadOnlyList<ScopeReview>>? ScopeReviews { get; init; }
 
+    /// <summary>Whether a scope's two reviews are wired, both who offers them and where they are asked: only then does a one-scope part land with no gates.</summary>
+    public bool ScopeReviewed => Reviewers is not null && ScopeReviews is not null;
+
     /// <summary>The door a unit's <c>integrate</c> asks; the home's own where none is handed.</summary>
     public IIntegrationDoor? Integration { get; init; }
 

@@ -24,11 +24,25 @@ public sealed class GoAheadAnswerTests : IDisposable
 
     private sealed class Holds(params string[] granted) : IDecisionAdmission
     {
+        /// <summary>The place's risk and marks as they stand now; a test raises or marks it inside the window.</summary>
+        public PlaceRiskNow Now { get; set; } = Risk(PlaceRisks.Low);
+
         public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
             act is null || granted.Contains(SupervisorKinds.Qualified(kind, act))
                 ? new("g-1", null) { Window = TimeSpan.FromMinutes(10), Role = "reports-supervisor" }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
+
+        public PlaceRiskNow RiskAt(RolePlace place) => Now;
     }
+
+    private static DoorRelease Posting(List<SupervisorDoorDue> posted) => new(
+        (_, _) => Task.FromResult<string?>(null),
+        (due, _) =>
+        {
+            posted.Add(due);
+            return Task.FromResult<string?>(null);
+        },
+        (_, _) => Task.FromResult<bool?>(true));
 
     private static readonly GoAheadPin Write = new(2, "write", "staging", "the dashboard's configuration");
 
@@ -42,7 +56,7 @@ public sealed class GoAheadAnswerTests : IDisposable
     public async Task An_appointed_role_answers_a_low_risk_go_ahead_and_it_holds_for_overrule_then_goes_out_as_the_roles()
     {
         var decisions = new QuestionSupervisorDecisions(_home, new Holds(GoAheadAuthority.Act));
-        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low), Write.Kind, Write.On, Write.Act, [[GoAheadAuthority.Act]]);
+        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low), Write.Kind, [[GoAheadAuthority.Act]]);
 
         var kept = await decisions.DoorAsync(Answer(Write), refused, At);
 
@@ -65,12 +79,33 @@ public sealed class GoAheadAnswerTests : IDisposable
     {
         var decisions = new QuestionSupervisorDecisions(_home, new Holds(GoAheadAuthority.Act));
         var release = new GoAheadPin(3, GoAheadAuthority.Release, "production", "release 4.2 of the reports app");
-        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low, PlaceMarks.ProductionReleases), release.Kind, release.On, release.Act, [[GoAheadAuthority.Act]]);
+        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low, PlaceMarks.ProductionReleases), release.Kind, [[GoAheadAuthority.Act]]);
 
         var kept = await decisions.DoorAsync(Answer(release), refused, At);
 
         Assert.Equal((false, SupervisorWhy.Marked), (kept.Kept, kept.Why));
         Assert.True(decisions.RefersDoor(SupervisorSubject.GoAhead("s1", "a7", 3)));
+    }
+
+    /// <summary>
+    /// 🔴 Risk and marks are judged again at the release: a place the owner marks or raises to high risk inside the window keeps the held
+    /// yes from going out, nothing posted, and the go-ahead is the owner role's again.
+    /// </summary>
+    [Theory]
+    [InlineData(PlaceRisks.Low, PlaceMarks.ProductionReleases)]
+    [InlineData(PlaceRisks.High, null)]
+    public async Task A_place_marked_or_raised_inside_the_window_keeps_the_held_yes_from_going_out(string risk, string? mark)
+    {
+        var admission = new Holds(GoAheadAuthority.Act);
+        var decisions = new QuestionSupervisorDecisions(_home, admission);
+        Assert.True((await decisions.DoorAsync(Answer(Write), null, At)).Kept);
+
+        admission.Now = mark is null ? Risk(risk) : Risk(risk, mark);
+        var posted = new List<SupervisorDoorDue>();
+
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseDoorsAsync(Posting(posted), At.AddMinutes(11)));
+        Assert.Empty(posted);
+        Assert.Equal(SupervisorState.Stale, Assert.Single(decisions.DoorsOf("s1")).State);
     }
 
     [Fact]

@@ -22,6 +22,18 @@ public sealed class PipeOwnerOnlyTests
             """{ "changes": [ { "change": "set", "id": "build", "role": { "takes": ["build"] } }, { "change": "set", "id": "steward", "role": { "kind": "steward", "authority": ["drive"], "holder": "agent" } } ] }""")));
     }
 
+    /// <summary>🔴 A terminal is held by an agent too, and an unstaffed role granted acts is one start away: only rules receive acts with no card.</summary>
+    [Fact]
+    public void A_role_granting_acts_to_any_holder_but_rules_is_the_owner_s_to_write()
+    {
+        Assert.True(PipeOwnerOnly.Governs(Press("SET_ROLE",
+            """{ "change": "set", "id": "supervisor", "role": { "kind": "supervisor", "authority": ["goahead.answer"], "holder": "terminal" } }""")));
+        Assert.True(PipeOwnerOnly.Governs(Press("SET_ROLE",
+            """{ "change": "set", "id": "landing", "role": { "kind": "supervisor", "authority": ["landing.accept"] } }""")));
+        Assert.True(PipeOwnerOnly.Governs(Press("SET_ROLES",
+            """{ "changes": [ { "change": "set", "id": "supervisor", "role": { "kind": "supervisor", "authority": ["landing.accept"], "holder": "terminal" } } ] }""")));
+    }
+
     [Fact]
     public void A_role_held_by_rules_or_granting_nothing_is_not()
     {

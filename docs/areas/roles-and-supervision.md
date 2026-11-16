@@ -60,7 +60,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
    `course.go-on` and `limit.move`. The `allow` kind decides a held permission request, a widening and a working session's asked
    press (never Ask Daoris's) before the person's card, a leave or ten minutes falling to the card. The `files` kind decides an
    act a person's `ask` in the rule file held, writing the act's own text into the person's own layer of each repository it
-   reaches, never the machine's; an ask naming the person is no supervisor's. No supervisor record is written before the home's
+   reaches, never the machine's; an ask naming the person, and a share (its destination no grant covers, rule 43), is no supervisor's. No supervisor record is written before the home's
    `supervisor-kinds` step (`not-converted`). (D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or removing a
    role touches no running session; a continuation reads the role that takes its work now. (D212)
@@ -200,12 +200,15 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     generation is its role's id and revision, read at every admission, so any write of the role makes a decision kept under the old
     one `role-changed`. Any caller writes the roles: `driver role` from a process an agents' job holds acts as from the person's
     terminal, and a holder's act from inside such a job is judged by its proof alone; only a caller the system cannot place is
-    refused (`untold`). A write of a role an agent holds with acts granted is the owner's alone (`PipeOwnerOnly`): an agent's press
+    refused (`untold`). A write granting acts to a role held by anything but the person's rules (an agent, a terminal, which an
+    agent's session holds too, or no holder yet) is the owner's alone (`PipeOwnerOnly`): an agent's press
     of it goes on the owner's card in every mode, and one from an agents' job proving no key is refused (`owner-only`). Every act
     of a supervisor kind and of the steward declares in one census what it spends (money, a sign-in, a destination) and its pin,
     the subject it lapses with (`ActSpends`); it is admitted only where every grant on its chain lists both the act and the grant
-    covering its spend, a spend no grant covers staying the owner role's, and a refusal names the grant missing (`missing`).
-    (D208, D209, D233, D284, D306)
+    covering its spend, a spend no grant covers staying the owner role's, and a refusal names the grant missing (`missing`). The
+    common admission asks it for every kind (`SupervisorGrants.Missing`), so a landing's `approve` and a files ask's `allow-share`,
+    whose destination no grant covers, are never a supervisor's; a spend a grant does cover (a re-cast naming the prepaid harness)
+    is asked again by its kind with the use. (D208, D209, D233, D284, D306)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris writes,
     running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The verb sends
@@ -221,11 +224,17 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 47. It never answers a go-ahead, an owner-class kind, an unrecorded or contradicting question, or one that directs it: its bounds
     are a go-ahead, the seven owner-class kinds and those three. (D208, D304) A go-ahead is the approver's yes, a role act of its own
     (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it at low and medium risk; it
-    stays the owner role's at high risk (`high-risk`), where its release reads as production at a place whose production releases
-    are marked (`marked`), and for a sign-in (`owner-class`). The `goahead` kind lists each open go-ahead (`{ session, goahead }`:
-    the newest session that asked it, and `<ask>/<number>`) only where its place's supervisor may answer it, holds an `approved` or
+    stays the owner role's at high risk (`high-risk`), for a sign-in (`owner-class`), and at a place whose production releases are
+    marked for every kind but a push (`marked`), failing closed: a release, write or run there is the role's only where its release
+    target's stage, as its plugin names it (`ReleaseStage`), is not production, never judged from the asker's words, which may be in
+    any language or name a system by its own name; no go-ahead carries a plugin's stage yet, so each waits on the owner role there.
+    The service reads a target's environment in Chinese as in English (`生产`, `线上`, `正式` read as production). The `goahead` kind
+    lists each open go-ahead (`{ session, goahead }`: the newest live session that asked it, and `<ask>/<number>`) only where its
+    place's supervisor may answer it, reading nothing where no role a terminal or an agent holds is granted `goahead.answer` and
+    otherwise one list of the open asks (`GoAheadsOpen`); it holds an `approved` or
     `refused` for the role's window with *Overrule* as a door answer (rule 49's table), pinned to its number, kind, target and act
-    (`GoAheadPin`), and releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
+    (`GoAheadPin`), judges the place's risk and marks again at the release, a place marked or raised meanwhile going stale, and
+    releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
     older build as the person's) and refuses a keyless caller; its leave climbs the line. (GOAHEADACT1)
 48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
@@ -241,12 +250,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in one
     conditional step that asks the admission again. An answer, a landing and a door answer held under an agent's hold are also a row
     of the desktop store's `held_decisions` (`HeldDecisions`, its file's text and its moment), dropped at its first move off held; the
-    start's sweep reads each row back whose file still says it and still ends `held`, its window as it stood, so one whose window
+    start's sweep reads each row back whose file still says it and still ends `held` (a go-ahead's answer among the door answers), its window as it stood, so one whose window
     closed during the restart goes on at the next look and one overruled stays overruled. A terminal's hold ends with its run, so its
     held decisions go stale at the restart; an older build has no table and closes them as before, and a row whose file it closed is
     dropped. (D309) Its word is `From: supervisor`, never the person's; an unattributable one is
-    quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review`, or `approve` or `reject` of a
-    `human` approval, kept against the step as it waits on that attempt and naming the review record's revision, is refused
+    quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review`, or `reject` of a
+    `human` approval (its `approve` spends a destination no grant covers, so it is the owner role's, rule 43), kept against the step as it waits on that attempt and naming the review record's revision, is refused
     `answered` once it moved, `go-ahead-open` under a `go-ahead` and `owner-held` on a line the person stopped or paused. Its
     release reads all again, a moved record going stale, and keeps the node's word on the run's record with its author, which the
     pass applies or drops; a person's word supersedes it, and a `return`'s per-file choice offers a supervisor no act. The head's
