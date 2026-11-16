@@ -19,7 +19,7 @@ public sealed class QuestHoldsNodeTests
     [Theory]
     [InlineData(null, "yes", "held for your yes")]
     [InlineData(EvidenceCodes.MissingHold, "evidence", "held for its evidence's verdict")]
-    [InlineData(EvidenceCodes.Departed, "evidence", "held for its evidence's verdict")]
+    [InlineData(EvidenceCodes.Departed, "yes", "held for your yes")]
     public void A_held_done_keeps_it_active_with_why_unless_its_option_lets_that_hold_go(string? code, string option, string why)
     {
         var held = QuestUnit(Quest("Done", held: true, hold: code));

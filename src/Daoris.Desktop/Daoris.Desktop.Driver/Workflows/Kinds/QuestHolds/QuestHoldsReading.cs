@@ -23,8 +23,9 @@ internal static class QuestHoldsReading
         null => "its quest was not read",
         { Status: "Declined" } => "its quest was declined",
         _ when !QuestResults.Judged(quest) => "its quest's done is not in, or was taken back",
-        { Held: true, Hold: null } when yes => HeldForYes,
-        { Held: true, Hold: { } code } when evidence && code != EvidenceCodes.Unreviewed => "its done is held for its evidence's verdict",
+        { Held: true, Hold: null or EvidenceCodes.Departed } when yes => HeldForYes,
+        { Held: true, Hold: { } code } when evidence && code is not (EvidenceCodes.Unreviewed or EvidenceCodes.Departed) =>
+            "its done is held for its evidence's verdict",
         _ when yes => UncheckedDones.Of(quest),
         _ => null,
     };

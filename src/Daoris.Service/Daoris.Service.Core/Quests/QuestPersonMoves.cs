@@ -27,8 +27,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     /// <summary>
     /// The person accepts a done's departure from what they required, or a done held for its evidence
     /// as it stands: what it held goes on — the chain's next step is published now, and a quest waiting
-    /// on it resumes at the driver's next look. Only a held quest takes a yes; any other is refused saying why, as a
-    /// state, not a malformed ask.
+    /// on it resumes at the driver's next look. Only a held done takes a yes, closed or submitted while its run keeps it Taken,
+    /// by the one rule (<see cref="Quest.Hold"/>); any other is refused saying what waits, as a state, not a malformed ask.
     /// </summary>
     public async Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? by = null)
     {
@@ -47,16 +47,22 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
                 // A role's yes accepts a departure alone: evidence awaited, beside a departure or not, is the person's to accept.
                 { Hold: not null } when by is not null && !QuestAcceptOperation.RolesToAccept(standing) =>
                     $"Quest `#{standing.Id}` is held for its evidence or review, which a role's yes does not accept: it waits for you.",
-                { Status: not QuestStatus.Done } =>
-                    $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
-                    + "required waits for your yes.",
-                // A yes accepts a departure or its evidence, never a review: said for what it is.
+                // A yes accepts a departure or its evidence, never a reopen's hold or a review: each said for what it is.
+                { Hold: QuestHold.SourceReopened } =>
+                    $"Quest `#{standing.Id}` is held by your reopen of the work it grew from, which a yes does not lift: go on with it "
+                    + $"(`daoris quest go-on {standing.Id}`), or abandon it.",
+                { Judged: false, Status: QuestStatus.Taken } =>
+                    $"Quest `#{standing.Id}` is Taken and its done is not in yet: a done that departs from what you required, "
+                    + "closed or submitted in its run, waits for your yes.",
+                { Judged: false } =>
+                    $"Quest `#{standing.Id}` is {standing.Status}: only a done that departs from what you required, closed or "
+                    + "submitted in its run, waits for your yes.",
                 { Hold: QuestHold.Unreviewed } =>
                     $"Quest `#{standing.Id}` waits for your review in `{standing.SetUpIn}`, which a yes does not give: say "
                     + "`reviewed` once you have looked at what it shows, or skip the review for this work.",
                 { Accepted: { } at } =>
                     $"Quest `#{standing.Id}`'s departure was already accepted, {QuestWords.When(at)}: nothing waits for a yes.",
-                _ => $"Quest `#{standing.Id}` closed done departing from none of what you required: nothing waits for a yes.",
+                _ => $"Quest `#{standing.Id}`'s done departs from none of what you required: nothing waits for a yes.",
             }, Quest: null);
         }
 

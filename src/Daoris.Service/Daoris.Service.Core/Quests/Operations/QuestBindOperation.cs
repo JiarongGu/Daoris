@@ -14,6 +14,8 @@ internal sealed class QuestBindOperation : IQuestOperation
     /// <summary>How a quest names the run that closes it, so no run is read as a graph's digest.</summary>
     public static string RunClosure(string run) => "run:" + run;
 
+    public static bool NamesRun(string? closure) => closure?.StartsWith("run:", StringComparison.Ordinal) == true;
+
     /// <summary>
     /// The driver's bind at a session's first start in a workflow's run, before its agent can say <c>done</c>: once, on an open quest or one
     /// this machine holds taken, before any submission. Its agent's done is then a submission and the run's end writes its Done.

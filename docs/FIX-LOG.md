@@ -43,6 +43,23 @@ repository.
   first), `GroupsStateSliceTests.A_start_s_first_judgement_places_the_archived_and_the_ended_before_any_tree_is_judged` (timed out
   at 5 s on the parts' ten-second wait, red first), `HelpTreeWalkTests.A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement`.
 
+## 2026-11-16 - A submitted done's refused yes read as a deadlock at its run's holds (DEPARTLOCK1)
+
+- **Symptom:** on the install a run's quest, its done submitted with a departure (Taken under D293), answered a `daoris quest accept`
+  with "is Taken: only a quest closed done with a departure from what you required waits for your yes", read as a lock between D293
+  and the accept; the run's `quest.holds` step said its done was "held for its evidence's verdict".
+- **Root cause:** no lock: the quest's moves show the person's accept applied at 02:14:35 and `holds` reached at 02:14:42, since the
+  accept judges `Quest.Hold`, which holds a Taken submission as a done since 2bd2bb696e (FABRIC-CLOSE1a). The refused yes was a second
+  one, and its refusal kept 1b1ef103e9's (DRIFT1d) `Status: not Done` case first, so every Taken quest, an accepted one included, was
+  told only a closed done takes a yes. The holds' words came from 8c62213eb4 (LANDNODE1k): `QuestHoldsReading` read the service's
+  `departed` code as an evidence verdict, so the `yes` option did not govern a departure and a closed run read it as nothing the
+  person lifts.
+- **Fix (e00c13dce6):** the refusal judges a submitted done as a closed one and names what waits (a reopen's hold, a done not in yet, a review, a
+  yes already given); `quest.holds` reads `departed` as the yes's hold; a submitted done's answer says its run waits on the yes and
+  writes its Done at its end. **Verified:** `RunDepartureAcceptTests` (the accept on a submitted departure, green on main; the second
+  yes, the early yes and the done's answer, red first), `QuestHoldsNodeTests` (the departed row, red first),
+  `AttentionRunDepartureTests` (the What-needs-you row with its words, green on main).
+
 ## 2026-11-16 - An opinion owed on a replayed landing never closed (OPINIONDUE1)
 
 - **Symptom:** on the install the due for session 4a9b01af (quest ba5c8968fdf5, landed as main's fd9baed4c3) stayed open with no
