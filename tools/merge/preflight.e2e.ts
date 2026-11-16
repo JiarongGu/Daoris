@@ -30,10 +30,10 @@ function toolEnvironment(): Record<string, string> {
 
 // Each gate fails where its own `work/<name>.broken` exists, saying where, as a test runner would.
 const GATE = [
-  "import { existsSync } from 'node:fs';",
+  "import { existsSync, readFileSync } from 'node:fs';",
   'const name = process.argv[2];',
   "if (existsSync(`work/${name}.broken`)) { console.error(`AssertionError: ${name} is broken\\n    at work/${name}.check:3:1`); process.exit(1); }",
-  "console.log(`${name} passed; ratchet since ${process.env.DAORIS_RATCHET_SINCE}`);",
+  "console.log(`${name} passed; ratchet since ${existsSync('_fixtures/test-timing/run-start.json') ? JSON.parse(readFileSync('_fixtures/test-timing/run-start.json', 'utf8')).startedAt : 'none'}; ${Object.keys(process.env).filter((key) => /^DAORIS_/i.test(key)).length} DAORIS_ names`);",
   '',
 ].join('\n');
 
@@ -53,7 +53,7 @@ test('a preflight in the branch\'s worktree runs the gates its merge would, ever
     git(root, 'init', '--quiet', '--template=', '-b', 'main');
     // Main stands red in `two` already; the branch brings `one`'s red.
     write(root, {
-      '.gitignore': 'local/\n',
+      '.gitignore': 'local/\n_fixtures/\n',
       'gate.mjs': GATE,
       'work/two.broken': 'x\n',
       'daoris.gates.json': `${JSON.stringify({ gates: ['one', 'two', 'three'].map((name) => ({ name, run: `node gate.mjs ${name}` })) }, null, 2)}\n`,
@@ -88,8 +88,10 @@ test('a preflight in the branch\'s worktree runs the gates its merge would, ever
     assert.match(out, /FAIL\s+one\s/);
     assert.match(out, /FAIL\s+two\s/);
     assert.match(out, /PASS\s+three\s/, 'a failure stops no gate after it');
-    const since = Number(/ratchet since (\d+)/.exec(readFileSync(join(tree, 'local', 'scratch', 'merge-feature-pre', 'three.log'), 'utf8'))?.[1]);
+    const said = readFileSync(join(tree, 'local', 'scratch', 'merge-feature-pre', 'three.log'), 'utf8');
+    const since = Number(/ratchet since (\d+)/.exec(said)?.[1]);
     assert.ok(since >= started && since <= Date.now(), 'a time ratchet inside a gate judges only the records written since the run began');
+    assert.match(said, /; 0 DAORIS_ names/, 'no DAORIS_ variable reaches a gate');
 
     const brief = join(tree, 'local', 'scratch', 'merge-feature-pre', 'brief.md');
     assert.ok(existsSync(brief), out);

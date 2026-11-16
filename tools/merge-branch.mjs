@@ -58,7 +58,7 @@
  * A builder's `--preflight` runs its merge's own gates in its worktree (`merge/preflight.ts`). A red of a merge, a candidate, a
  * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
  * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
- * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Every run's gates get `DAORIS_RATCHET_SINCE`, its start.
+ * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet.
  *
  * ## A fixed gate re-runs alone
  *
@@ -2536,7 +2536,11 @@ function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(),
 } = {}) {
-  ratchetSince = { DAORIS_RATCHET_SINCE: String(since) };
+  // A time ratchet inside a gate judges only the records since this run began; no DAORIS_ variable may reach a gate to say so.
+  if (isIgnored(root, '_fixtures/test-timing/run-start.json')) {
+    mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
+    writeFileSync(join(root, '_fixtures/test-timing/run-start.json'), `${JSON.stringify({ startedAt: since })}\n`);
+  }
   const commit = headCommit(root);
   const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
@@ -5193,11 +5197,9 @@ export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
 let acceptedPass = [];
 
 /** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), ...ratchetSince } });
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
 /** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
-const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), ...ratchetSince, MERGE_GATES_RUN: '1' } });
-/** The run's start, which a time ratchet inside a gate judges records from, so an earlier run's records fail none (`runRecorded`). */
-let ratchetSince = {};
+const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
