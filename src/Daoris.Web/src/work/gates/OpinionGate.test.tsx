@@ -183,4 +183,20 @@ describe('the second opinion’s gate', () => {
 
     expect(screen.getByRole('region', { name: '第二意见' })).toHaveTextContent('它用了多少41,200 / 200,000 的上下文');
   });
+
+  it('says how it was consulted: a same-maker opinion is not independent, and a recheck saw another answer, in both languages', async () => {
+    const sameMaker = { ...DETAIL, first: { ...DETAIL.first!, label: 'same-agent' }, recheck: { ...DETAIL.first!, id: 'op-2', pass: 'recheck' } };
+    const { unmount } = render(<OpinionGate gate={GATES.disputed} detail={sameMaker} />);
+
+    expect(gate()).toHaveTextContent('Consulted as a review of the work: not independent, the same maker as the work.');
+    expect(gate()).toHaveTextContent("The recheck read the first pass's findings, so it saw another answer.");
+    unmount();
+
+    render(<OpinionGate gate={GATES.disputed} detail={DETAIL} />);
+    expect(gate()).toHaveTextContent('Consulted as a review of the work: independent of its makers.');
+    expect(gate()).not.toHaveTextContent('saw another answer');
+
+    await i18n.changeLanguage('zh');
+    expect(screen.getByRole('region', { name: '第二意见' })).toHaveTextContent('以审阅这项工作的方式征询：独立于它的厂商。');
+  });
 });
