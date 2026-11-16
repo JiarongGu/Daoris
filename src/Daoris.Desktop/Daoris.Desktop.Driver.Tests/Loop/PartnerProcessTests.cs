@@ -103,12 +103,7 @@ public sealed class PartnerProcessTests : IDisposable
     private async Task SettleAsync(Daoris.Driver.Driver driver, Func<PartnerState?, bool> done)
     {
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
-        var until = DateTime.UtcNow.AddSeconds(60);
-        while (!done(Files.ReadState(Piece)))
-        {
-            Assert.True(DateTime.UtcNow < until, $"the piece did not settle: {File.ReadAllText(Files.PathOf(Piece, "state"))}");
-            await Task.Delay(50);
-        }
+        await Poll.Until(() => done(Files.ReadState(Piece)), () => $"the piece did not settle: {File.ReadAllText(Files.PathOf(Piece, "state"))}");
     }
 
     /// <summary>

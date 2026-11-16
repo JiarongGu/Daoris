@@ -98,15 +98,7 @@ public sealed class SessionTreeLockTickTests : IDisposable
         return script;
     }
 
-    private static async Task UntilAsync(Func<bool> condition)
-    {
-        var patience = DateTime.UtcNow + Poll.Patience;
-        while (!condition())
-        {
-            Assert.True(DateTime.UtcNow < patience, "the condition never held");
-            await Task.Delay(50);
-        }
-    }
+    private static Task UntilAsync(Func<bool> condition) => Poll.Until(condition);
 
     private void Git(params string[] arguments)
     {

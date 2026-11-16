@@ -116,19 +116,9 @@ public sealed class HelperLookTests : IDisposable
 
     private async Task Until(Func<bool> done)
     {
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (!done())
-        {
-            if (DateTime.UtcNow > until)
-            {
-                var held = Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Helpers))
-                    ? string.Join(" | ", Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers)).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"))
-                    : "no helpers folder";
-                throw new TimeoutException($"the helper's pass did not settle. {held}");
-            }
-
-            await Task.Delay(20);
-        }
+        await Poll.Until(done, () => "the helper's pass did not settle. " + (Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Helpers))
+            ? string.Join(" | ", Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers)).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"))
+            : "no helpers folder"));
     }
 
     private async Task<List<string>> Look(Daoris.Driver.Driver driver, int taken = 0, IReadOnlyList<SessionView>? active = null)
