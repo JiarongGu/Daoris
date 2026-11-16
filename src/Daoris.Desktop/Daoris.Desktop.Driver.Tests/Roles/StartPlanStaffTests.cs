@@ -182,7 +182,7 @@ public sealed class StartPlanStaffTests : IDisposable
     public async Task A_weighted_pick_whose_accounts_all_cool_falls_to_the_next_by_weight()
     {
         Policy("weight", ",\"weight\":3", ",\"weight\":1");
-        AccountCooling.Cool(_home, new CoolingEntry("cool", "account-1", Now.AddHours(2), true, "weekly", Now, "s0"), Now);
+        AccountCooling.Cool(_home, new CoolingEntry("cool", "account-1", Now.AddHours(24), true, "weekly", Now, "s0"), Now);
 
         var settled = await Plan().ResolveAsync(CancellationToken.None);
 
