@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Daoris.Driver;
 using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
@@ -15,7 +17,23 @@ public static class PipeOwnerOnly
     public const string RefusedSentence =
         "This is the owner's to set: a place's risk and marks, and what agents may do, are widened by the owner alone. An agent's press goes on the owner's card through its own session's key. Nothing was changed.";
 
-    /// <summary>Whether <paramref name="request"/> sets one of the owner's records.</summary>
-    public static bool Governs(IpcRequest request) =>
-        string.Equals(request.Module, DriverModule.Name, StringComparison.OrdinalIgnoreCase) && request.Type == "SET_PLACE_RISK";
+    /// <summary>Whether <paramref name="request"/> sets one of the owner's records: a place's risk, or a role granting an agent acts.</summary>
+    public static bool Governs(IpcRequest request)
+    {
+        if (!string.Equals(request.Module, DriverModule.Name, StringComparison.OrdinalIgnoreCase)) return false;
+        return request.Type switch
+        {
+            "SET_PLACE_RISK" => true,
+            "SET_ROLE" => request.Payload is { } payload && GrantsAgent(payload),
+            "SET_ROLES" => request.Payload is { ValueKind: JsonValueKind.Object } batch && batch.TryGetProperty("changes", out var changes)
+                && changes.ValueKind == JsonValueKind.Array && changes.EnumerateArray().Any(GrantsAgent),
+            _ => false,
+        };
+    }
+
+    /// <summary>Whether one role change writes an appointed role an agent holds with any act granted (D306: an agent never grants agents acts).</summary>
+    private static bool GrantsAgent(JsonElement change) =>
+        change.ValueKind == JsonValueKind.Object && change.TryGetProperty("role", out var role) && role.ValueKind == JsonValueKind.Object
+        && role.TryGetProperty("holder", out var holder) && holder.ValueKind == JsonValueKind.String && holder.GetString() == RoleHolders.Agent
+        && role.TryGetProperty("authority", out var acts) && acts.ValueKind == JsonValueKind.Array && acts.GetArrayLength() > 0;
 }

@@ -20,6 +20,9 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public TimeSpan? Window { get; init; }
 
     public string? Role { get; init; }
+
+    /// <summary>On a <c>not-granted</c> refusal, the grant that was missing (<see cref="ActSpends"/>).</summary>
+    public string? Missing { get; init; }
 }
 
 /// <summary>The admission where no judge is wired: no terminal holds the supervisor, so every act is refused.</summary>

@@ -193,7 +193,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     generation is its role's id and revision, read at every admission, so any write of the role makes a decision kept under the old
     one `role-changed`. Any caller writes the roles: `driver role` from a process an agents' job holds acts as from the person's
     terminal, and a holder's act from inside such a job is judged by its proof alone; only a caller the system cannot place is
-    refused (`untold`). (D208, D209, D233, D284)
+    refused (`untold`). A write of a role an agent holds with acts granted is the owner's alone (`PipeOwnerOnly`): an agent's press
+    of it goes on the owner's card in every mode, and one from an agents' job proving no key is refused (`owner-only`). Every act
+    of a supervisor kind and of the steward declares in one census what it spends (money, a sign-in, a destination) and its pin,
+    the subject it lapses with (`ActSpends`); it is admitted only where every grant on its chain lists both the act and the grant
+    covering its spend, a spend no grant covers staying the owner role's, and a refusal names the grant missing (`missing`).
+    (D208, D209, D233, D284, D306)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris writes,
     running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The verb sends
@@ -368,7 +373,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 - **Staffing:** `RoleStaffing.Set`, the one writer; another reader of an order goes through `RoleOrders` (`OrderReadersCensusTests`).
 - **A policy field:** `StaffPolicy`, `StaffJudge`, then `StaffCapabilities.Fields`.
 - **A supervisor count or action:** `SupervisorRules`, the count in `Course/Domain/LineCounts.cs`, read through `SupervisorRuleBook`.
-- **A decision kind:** a row under `Modules/Bridge/SupervisorKinds/` and its typed subject.
+- **A decision kind:** a row under `Modules/Bridge/SupervisorKinds/` and its typed subject; each act's spend and pin in `ActSpends`.
 - **A steward act:** a row in `StewardActRows` naming its person's route, its name in `StewardActNames`, the web's `ACTS`, its words
   in both catalogues.
 - **An Ask Daoris door, only where one is wanted:** a view in `Modules/Platform/Views/` registered in `PressViews.All`, its
