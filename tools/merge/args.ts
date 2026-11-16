@@ -19,8 +19,9 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --passed [--light]',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs <branch> --preview',
-  '       node tools/merge-branch.mjs <branch> --message <file under local/> [--one-at-a-time] [--no-commit-check]',
-  '       node tools/merge-branch.mjs --queue [--recheck]',
+  '       node tools/merge-branch.mjs <branch> --message <file under local/> [--keep-going] [--one-at-a-time] [--no-commit-check]',
+  '       node tools/merge-branch.mjs --preflight [--base <ref>] [--one-at-a-time]   (in a branch\'s worktree: its merge\'s gates, every one to its end)',
+  '       node tools/merge-branch.mjs --queue [--recheck | --known]',
   '       node tools/merge-branch.mjs --drop-batch [<branch> [--batch <branch>…]]',
 ].join('\n');
 
@@ -41,7 +42,7 @@ export type Options = {
   autoPrune: boolean; full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
   beside: boolean; besideCommit: string | null; ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean; ciStage: boolean;
   ciNight: boolean; preview: boolean; messageFile: string | null; queue: boolean; recheck: boolean; queueRun: boolean; daorisVerify: boolean;
-  noTimeout?: boolean; commit?: boolean;
+  noTimeout?: boolean; commit?: boolean; preflight?: boolean; base?: string | null; known?: boolean; mainWatch?: string | null;
 };
 
 const usageError = (message: string): Refusal => new Refusal(message, 2, true);
@@ -60,8 +61,16 @@ export function parseArgs(argv: string[]): Options {
   let besideNext = false;
   let ciNext = false;
   let messageNext = false;
+  let baseNext = false;
   const flags: string[] = [];
   for (const arg of argv) {
+    // The word after --base is the ref a preflight judges against.
+    if (baseNext) {
+      baseNext = false;
+      if (arg.startsWith('-')) throw usageError('--base names its ref: --preflight --base <ref>');
+      options.base = arg;
+      continue;
+    }
     // The word after --message is its file.
     if (messageNext) {
       messageNext = false;
@@ -92,11 +101,18 @@ export function parseArgs(argv: string[]): Options {
     } else if (arg === '--watch') options.watch = true;
     else if (arg === '--stop') options.stop = true;
     else if (arg === '--preview') options.preview = true;
+    else if (arg === '--preflight') options.preflight = true;
+    else if (arg === '--base') {
+      if (options.base) throw usageError('--base is given once');
+      baseNext = true;
+    }
     else if (arg === '--message') {
       if (options.messageFile !== null) throw usageError('--message is given once');
       messageNext = true;
     } else if (arg === '--queue') options.queue = true;
     else if (arg === '--recheck') options.recheck = true;
+    else if (arg === '--known') options.known = true;
+    else if (arg === '--main-watch') continue;
     else if (arg === '--queue-run') options.queueRun = true;
     else if (arg === '--daoris-verify') options.daorisVerify = true;
     else if (arg === '--beside') {
@@ -136,14 +152,31 @@ export function parseArgs(argv: string[]): Options {
     }
   }
   if (messageNext) throw usageError('--message names its file: --message <file under local/>');
+  if (baseNext) throw usageError('--base names its ref: --preflight --base <ref>');
+  if (options.base && !options.preflight) throw usageError("--base is the preflight's: --preflight --base <ref>");
+  if (options.preflight) {
+    // The branch is the worktree's own; the run keeps going past every failure, so --keep-going would change nothing.
+    if (options.branches.length) throw usageError("--preflight takes no branch: it gates the branch this worktree has out");
+    if (flags.some((flag) => !['--preflight', '--base', '--one-at-a-time'].includes(flag))) throw usageError('--preflight takes only --base <ref> and --one-at-a-time: it runs every gate to its end');
+    return options;
+  }
+  // The watch of main after a landing, started by the landing: the commit it gates and nothing else.
+  const watchAt = argv.indexOf('--main-watch');
+  if (watchAt >= 0) {
+    if (argv.length !== 2 || watchAt !== 0) throw usageError('--main-watch <commit> is the watch of main, started by a landing: it takes its commit and nothing else');
+    return { ...options, branches: [], mainWatch: argv[1] as string };
+  }
   // The queue's verbs, each alone with what it takes.
+  if (options.known && !options.queue) throw usageError("--known is the queue's: --queue --known names main's red the watch found as known");
   if (options.recheck && !options.queue) throw usageError("--recheck is the queue's: --queue --recheck rechecks a stop on the base");
   if (options.queueRun) {
     if (flags.length > 1 || options.branches.length) throw usageError('--queue-run is the runner, started by the queue: it takes nothing else');
     return options;
   }
   if (options.queue) {
-    if (flags.some((flag) => !['--queue', '--recheck'].includes(flag)) || options.branches.length) throw usageError('--queue takes only --recheck: it says the queue, or rechecks its stop');
+    if (flags.some((flag) => !['--queue', '--recheck', '--known'].includes(flag)) || options.branches.length || (options.recheck && options.known)) {
+      throw usageError("--queue takes only --recheck or --known: it says the queue, rechecks its stop, or names main's red known");
+    }
     return options;
   }
   if (options.preview) {
@@ -152,7 +185,7 @@ export function parseArgs(argv: string[]): Options {
   }
   if (options.messageFile !== null) {
     if (options.branches.length !== 1) throw usageError('--message queues one branch: <branch> --message <file>');
-    if (flags.some((flag) => !['--message', '--one-at-a-time', '--no-commit-check'].includes(flag))) throw usageError('<branch> --message <file> takes only --one-at-a-time and --no-commit-check');
+    if (flags.some((flag) => !['--message', '--keep-going', '--one-at-a-time', '--no-commit-check'].includes(flag))) throw usageError('<branch> --message <file> takes only --keep-going, --one-at-a-time and --no-commit-check');
     return options;
   }
   if (options.dropBatch && options.branches.length) {

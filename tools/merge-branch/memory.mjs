@@ -1,0 +1,99 @@
+/**
+ * The machine's free memory as the merge tool reads it before a heavy gate (`readMemory`), and whether a gate that failed died
+ * of memory (`memoryDeath`). `tools/merge-branch.mjs` exports each again under its own name and holds the wait itself
+ * (`memoryGate`), its *A heavy gate waits for memory* says why.
+ */
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
+
+/**
+ * What a gate that died of memory leaves in its log: .NET's `OutOfMemoryException` (the sensitive scan's), "cannot
+ * allocate memory" (Go's runtime under esbuild, web-rules'; POSIX's ENOMEM), "out of memory" (V8's heap, a worker's
+ * `DataCloneError`, cmd's and git's "Out of memory."), and Windows' "the paging file is too small" (its commit limit). A sign
+ * directly inside quotes is a value shown, as an assertion shows what it expected, not a process that died of it.
+ */
+const MEMORY_SIGNS = [/OutOfMemoryException/, /cannot allocate memory/i, /\bout of memory\b/i, /the paging file is too small/i]
+  .map((sign) => new RegExp(`(?<!["'\`])${sign.source}(?!["'\`])`, sign.flags));
+
+/** Windows' statuses for an allocation the machine refused, as cmd and npm pass them on, unsigned. */
+const MEMORY_EXITS = new Map([[0xC0000017, 'STATUS_NO_MEMORY'], [0xC000012D, 'STATUS_COMMITMENT_LIMIT']]);
+
+const clip = (text, width = 120) => (text.length > width ? `${text.slice(0, width - 1)}…` : text);
+
+/**
+ * Whether a gate that failed died of memory: an exit of `MEMORY_EXITS`, signed or not, or a line of its log with a
+ * sign of `MEMORY_SIGNS`. What said so, `{ said }`, or null. POSIX has no exit of its own for it: the kernel's killer sends the
+ * SIGKILL any kill sends, so there a death of memory is read from what it printed.
+ */
+export function memoryDeath(log, ...codes) {
+  for (const code of codes) {
+    const status = typeof code === 'number' && code < 0 ? code + 2 ** 32 : code;
+    if (MEMORY_EXITS.has(status)) return { said: `exit 0x${status.toString(16).toUpperCase()}, ${MEMORY_EXITS.get(status)}` };
+  }
+  for (const line of String(log ?? '').replace(/\r\n/g, '\n').split('\n')) {
+    if (MEMORY_SIGNS.some((sign) => sign.test(line))) return { said: `"${clip(line.trim())}"` };
+  }
+  return null;
+}
+
+// One CIM query: the free physical memory and the free commit (`FreeVirtualMemory`, the commit limit less the commit charge).
+const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
+
+const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
+
+/** What a failed command said: its first `error:` or `fatal:` line, else its first line. */
+const firstSaid = (text) => {
+  const all = text.replace(/\r\n/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean);
+  return all.find((line) => /^(?:error|fatal):/.test(line)) ?? all[0] ?? 'no reason given';
+};
+
+/** The CIM query's answer in bytes: its fields are in KB, and one it leaves out or empties is null. */
+export function parseWindowsMemory(text) {
+  const parsed = JSON.parse(String(text).replace(/^﻿/, '').trim());
+  return { physical: kilobytes(parsed?.FreePhysicalMemory), commit: kilobytes(parsed?.FreeVirtualMemory) };
+}
+
+/** Linux's free commit from `/proc/meminfo`: `CommitLimit` less `Committed_AS`, in bytes, or null when either is missing. */
+export function parseMeminfo(text) {
+  const field = (name) => {
+    const found = new RegExp(`^${name}:\\s+(\\d+)\\s*kB`, 'm').exec(text);
+    return found ? Number(found[1]) * 1024 : null;
+  };
+  const limit = field('CommitLimit');
+  const committed = field('Committed_AS');
+  return { commit: limit === null || committed === null ? null : Math.max(0, limit - committed) };
+}
+
+/**
+ * The machine's free memory, read once, in bytes: `physical`, `commit` (null where it cannot be read, with `why`),
+ * and `total`, its physical memory in all. On Windows one CIM query reads `Win32_OperatingSystem`'s FreePhysicalMemory and
+ * FreeVirtualMemory, the free commit; a query that fails leaves Node's free memory. Linux holds a
+ * process to a commit limit only under strict overcommit (`vm.overcommit_memory` 2), so only there is it read; elsewhere there
+ * is none to read, and the free physical memory judges alone.
+ */
+export function readMemory({ platform = process.platform, run = spawnSync, freemem = osFreemem, totalmem = osTotalmem, read = (path) => readFileSync(path, 'utf8') } = {}) {
+  const total = totalmem();
+  const without = (why, physical = null) => ({ physical: physical ?? freemem(), commit: null, total, why });
+  if (platform === 'win32') {
+    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', MEMORY_QUERY], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+    if (result.error) return without(`the memory query could not start: ${result.error.message}`);
+    if (result.status !== 0) return without(`the memory query failed: ${firstSaid(result.stderr || result.stdout || '')}`);
+    try {
+      const { physical, commit } = parseWindowsMemory(result.stdout);
+      return commit === null ? without('the memory query named no free commit', physical) : { physical: physical ?? freemem(), commit, total };
+    } catch (error) {
+      return without(`the memory query answered what could not be read: ${error?.message ?? error}`);
+    }
+  }
+  if (platform === 'linux') {
+    try {
+      if (read('/proc/sys/vm/overcommit_memory').trim() !== '2') return without('Linux holds no process to a commit limit unless vm.overcommit_memory is 2');
+      const { commit } = parseMeminfo(read('/proc/meminfo'));
+      return commit === null ? without('/proc/meminfo names no commit limit') : { physical: freemem(), commit, total };
+    } catch (error) {
+      return without(`its commit could not be read: ${error?.message ?? error}`);
+    }
+  }
+  return without(`${platform} keeps no commit limit to read`);
+}

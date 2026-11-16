@@ -327,7 +327,7 @@ import { createHash } from 'node:crypto';
 import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
-import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
+import { constants as osConstants, cpus as osCpus, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -360,7 +360,7 @@ import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
 import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
 import { chooseGates } from './merge/choose-gates.ts';
-import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
+import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor, failsFast } from './merge/reach.ts';
 import {
   isProcessGate, isProcessLane, isHeavyGate, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
@@ -378,6 +378,13 @@ import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mjs';
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
+import { briefGates, briefText, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
+import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
+import {
+  flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand,
+} from './merge-branch/test-output.mjs';
+import { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory } from './merge-branch/memory.mjs';
+import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, readWatch, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { appendHeavy, hasRunner, heavyStanding, readHeavy, startAfterLanding, startDetached } from './merge/heavy-after.ts';
@@ -1099,152 +1106,8 @@ export function checkoutRerun(gates, named) {
 // ---------------------------------------------------------------------------------------------------
 // Flakes
 
-const FAILED_TEST = /^\s+Failed (\S.*?) \[[^\]]*\]\s*$/;
-const SUMMARY = /^\s*(?:Passed|Failed)!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+)/;
-
-/** The simple name of a test's class: the segment before the method, a nested class's outer name. */
-export const testClass = (test) => (test.split('.').at(-2) ?? '').split('+')[0];
-const short = (test) => test.split('.').slice(-2).join('.');
-
-/**
- * What a `dotnet test` run says it failed: each failed test once (a theory by its method), how many
- * `Failed` lines there were, and the summary lines' counts summed (a solution prints one per project).
- */
-export function testSummary(output) {
-  const summary = { failed: [], failedLines: 0, failedCount: 0, passedCount: 0, summaries: 0 };
-  for (const line of output.replace(/\r\n/g, '\n').split('\n')) {
-    const failed = FAILED_TEST.exec(line);
-    if (failed) {
-      summary.failedLines += 1;
-      const test = failed[1].replace(/\(.*$/, '');
-      if (!summary.failed.includes(test)) summary.failed.push(test);
-      continue;
-    }
-    const counts = SUMMARY.exec(line);
-    if (counts) {
-      summary.summaries += 1;
-      summary.failedCount += Number(counts[1]);
-      summary.passedCount += Number(counts[2]);
-    }
-  }
-  return summary;
-}
-
-/**
- * Whether a failed run's failures are re-run alone: all of them named, and all real-process tests. The caller
- * asks only of a Process gate, where every test is one, so the default says yes.
- */
-export function flakeDecision(output, isProcess = () => true) {
-  const summary = testSummary(output);
-  if (summary.summaries === 0) return { rerun: [], reason: 'the suite printed no result: it did not build, or its run was cut off' };
-  if (summary.failedLines === 0) return { rerun: [], reason: 'no failing test is named: the run failed outside a test' };
-  if (summary.failedLines !== summary.failedCount) {
-    return { rerun: [], reason: `${summary.failedCount} failed but ${summary.failedLines} are named` };
-  }
-  const others = summary.failed.filter((test) => !isProcess(test));
-  if (others.length) return { rerun: [], reason: `not a real-process test: ${others.map(short).join(', ')}` };
-  return { rerun: summary.failed };
-}
-
-export const rerunCommand = (run, test) => `${run.trim()} --no-build --filter "FullyQualifiedName=${test}"`;
-
-/**
- * Whether a Playwright run's failures are re-run alone: all of them in timed specs (a title path through
- * `timed`), all named. Read from the summary the run ends with (`N failed`, then one spec per line), which the list and dot
- * reporters both print, so a retry's lines above it and the `[project] ›` prefix do not matter. `playwright` is false for a
- * log with no such summary; `rerun` is then each failed spec's `file:line`, once.
- */
-export function timedDecision(output) {
-  const own = ownOutput(output);
-  const at = own.findLastIndex((line) => /^\s*\d+ failed\s*$/.test(line));
-  if (at < 0) return { playwright: false, rerun: [], reason: 'it printed no Playwright summary of failed specs' };
-  const count = Number(/\d+/.exec(own[at])[0]);
-  const specs = [];
-  for (const line of own.slice(at + 1)) {
-    const spec = /^\s+(?:\[[^\]]+\]\s+›\s+)?(\S+?):(\d+):\d+\s+›\s+(.*?)\s*$/.exec(line);
-    if (!spec) break;
-    specs.push({ location: `${spec[1].replaceAll('\\', '/')}:${spec[2]}`, timed: line.includes(' › timed › ') });
-  }
-  if (specs.length !== count) return { playwright: true, rerun: [], reason: `${count} failed but ${specs.length} are named` };
-  const others = specs.filter((spec) => !spec.timed);
-  if (others.length) return { playwright: true, rerun: [], reason: `not a timed spec: ${[...new Set(others.map((spec) => spec.location.replace(/^.*\//, '')))].join(', ')}` };
-  return { playwright: true, rerun: [...new Set(specs.map((spec) => spec.location))] };
-}
-
-/** The gate's command run for the specs named, alone: `npm run` forwards what follows its second `--` to Playwright. */
-export const timedRerunCommand = (run, specs) => `${run.trim()} -- -- ${specs.join(' ')}`;
-
-/**
- * The folders a gate's `node --test` runs in, read from the npm scripts the gate's command runs (`npm run x`,
- * `npm test`, with `-w <package>` to a workspace) and the `&&` steps of each; none for a gate that runs no node test.
- */
-export function nodeTestDirs(root, gate) {
-  const found = [];
-  const seen = new Set();
-  const read = (dir) => {
-    try { return JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')); } catch { return null; }
-  };
-  const workspace = (name) => (read(root)?.workspaces ?? []).map((entry) => join(root, entry)).find((dir) => read(dir)?.name === name) ?? null;
-  const walk = (command, dir) => {
-    for (const part of command.split('&&')) {
-      const step = part.trim();
-      if (/^node --test\b/.test(step)) {
-        if (!found.includes(dir)) found.push(dir);
-        continue;
-      }
-      const npm = /^npm (?:run )?([\w:.-]+)(?:\s+(?:-w|--workspace)[ =](\S+))?/.exec(step);
-      if (!npm) continue;
-      const from = npm[2] ? workspace(npm[2]) : dir;
-      const key = `${from}|${npm[1]}`;
-      const script = from && !seen.has(key) ? read(from)?.scripts?.[npm[1]] : null;
-      seen.add(key);
-      if (typeof script === 'string') walk(script, from);
-    }
-  };
-  walk(gate.run.trim(), gate.cwd ? join(root, gate.cwd) : root);
-  return found;
-}
-
-/**
- * Whether a `node --test` run's failures are re-run alone: all named in its `✖ failing tests` list (a
- * `test at <file>:<line>` line, then `✖ <title> (<ms>)`), and the list as long as the run's `ℹ fail` counts say. `rerun` is each
- * file's failed titles, once, with the file as node printed it.
- */
-export function nodeTestDecision(output) {
-  const lines = output.replace(/\r\n/g, '\n').split('\n');
-  let summaries = 0;
-  let failedCount = 0;
-  let named = 0;
-  const files = new Map();
-  lines.forEach((line, i) => {
-    const total = /^ℹ fail (\d+)\s*$/.exec(line);
-    if (total) {
-      summaries += 1;
-      failedCount += Number(total[1]);
-      return;
-    }
-    const at = /^test at (.+?):\d+:\d+\s*$/.exec(line);
-    const test = at && /^✖ (.*?)(?: \(\d+(?:\.\d+)?ms\))?\s*$/.exec(lines[i + 1] ?? '');
-    if (!test) return;
-    named += 1;
-    const file = at[1].replaceAll('\\', '/');
-    if (!files.has(file)) files.set(file, []);
-    if (!files.get(file).includes(test[1])) files.get(file).push(test[1]);
-  });
-  if (summaries === 0) return { node: false, rerun: [], reason: 'no failed node test is named: it printed no node test result' };
-  if (named === 0) return { node: true, rerun: [], reason: 'no failed node test is named: the run failed outside a test' };
-  if (named !== failedCount) return { node: true, rerun: [], reason: `${failedCount} failed but ${named} are named` };
-  return { node: true, rerun: [...files].map(([file, tests]) => ({ file, tests })) };
-}
-
-/**
- * One test of a file run alone, by its own title as node printed it, anchored: node matches a nested test by its own name too.
- * A character a shell reads inside double quotes is matched by a dot; the rest that a pattern reads is escaped.
- */
-export const nodeTestRerunCommand = (file, title) => {
-  const pattern = title.replace(/(["%$`\\!])|([.*+?^${}()|[\]])/g, (match, shell) => (shell ? '.' : `\\${match}`));
-  return `node --test --test-name-pattern="^${pattern}$" ${file}`;
-};
+// What a gate's output says it failed: `merge-branch/test-output.mjs`.
+export { flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, testClass, testSummary, timedDecision, timedRerunCommand };
 
 // ---------------------------------------------------------------------------------------------------
 // Where a Process half's time goes
@@ -1340,23 +1203,6 @@ export function rerunPassed(output) {
 export { abnormalEnd as processExit };
 
 /**
- * The lines of a gate's log that are the gate's own: after the steps before it (`command` names the
- * gate's, and its output starts after the last `$ <command>` line), and without what this tool writes
- * around a step (`$ …`, `(exited …)`, `could not start: …`), npm's lines around a script
- * (`> pkg@version script`, `> command`, `npm error …`), and blank lines.
- */
-export function ownOutput(log, command) {
-  const all = log.replace(/\r\n/g, '\n').split('\n');
-  const from = command === undefined ? -1 : all.lastIndexOf(`$ ${command}`);
-  return all.slice(from + 1).filter((line) => line.trim()
-    && !/^\$ /.test(line)
-    && !/^\(exited /.test(line)
-    && !/^could not start: /.test(line)
-    && !/^> /.test(line)
-    && !/^npm (?:error|ERR!|warn|WARN|notice)\b/.test(line));
-}
-
-/**
  * A rehearsal's report of a failed check: the rehearsal kit's `FAIL` line (and vitest's for a failed
  * file, inside `test:web`), vitest's summary, and Playwright's.
  */
@@ -1408,90 +1254,8 @@ export function memoryNeed(gate) {
   return 0;
 }
 
-/**
- * What a gate that died of memory leaves in its log: .NET's `OutOfMemoryException` (the sensitive scan's), "cannot
- * allocate memory" (Go's runtime under esbuild, web-rules'; POSIX's ENOMEM), "out of memory" (V8's heap, a worker's
- * `DataCloneError`, cmd's and git's "Out of memory."), and Windows' "the paging file is too small" (its commit limit). A sign
- * directly inside quotes is a value shown, as an assertion shows what it expected, not a process that died of it.
- */
-const MEMORY_SIGNS = [/OutOfMemoryException/, /cannot allocate memory/i, /\bout of memory\b/i, /the paging file is too small/i]
-  .map((sign) => new RegExp(`(?<!["'\`])${sign.source}(?!["'\`])`, sign.flags));
-
-/** Windows' statuses for an allocation the machine refused, as cmd and npm pass them on, unsigned. */
-const MEMORY_EXITS = new Map([[0xC0000017, 'STATUS_NO_MEMORY'], [0xC000012D, 'STATUS_COMMITMENT_LIMIT']]);
-
-const clip = (text, width = 120) => (text.length > width ? `${text.slice(0, width - 1)}…` : text);
-
-/**
- * Whether a gate that failed died of memory: an exit of `MEMORY_EXITS`, signed or not, or a line of its log with a
- * sign of `MEMORY_SIGNS`. What said so, `{ said }`, or null. POSIX has no exit of its own for it: the kernel's killer sends the
- * SIGKILL any kill sends, so there a death of memory is read from what it printed.
- */
-export function memoryDeath(log, ...codes) {
-  for (const code of codes) {
-    const status = typeof code === 'number' && code < 0 ? code + 2 ** 32 : code;
-    if (MEMORY_EXITS.has(status)) return { said: `exit 0x${status.toString(16).toUpperCase()}, ${MEMORY_EXITS.get(status)}` };
-  }
-  for (const line of String(log ?? '').replace(/\r\n/g, '\n').split('\n')) {
-    if (MEMORY_SIGNS.some((sign) => sign.test(line))) return { said: `"${clip(line.trim())}"` };
-  }
-  return null;
-}
-
-// One CIM query: the free physical memory and the free commit (`FreeVirtualMemory`, the commit limit less the commit charge).
-const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
-
-const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
-
-/** The CIM query's answer in bytes: its fields are in KB, and one it leaves out or empties is null. */
-export function parseWindowsMemory(text) {
-  const parsed = JSON.parse(String(text).replace(/^﻿/, '').trim());
-  return { physical: kilobytes(parsed?.FreePhysicalMemory), commit: kilobytes(parsed?.FreeVirtualMemory) };
-}
-
-/** Linux's free commit from `/proc/meminfo`: `CommitLimit` less `Committed_AS`, in bytes, or null when either is missing. */
-export function parseMeminfo(text) {
-  const field = (name) => {
-    const found = new RegExp(`^${name}:\\s+(\\d+)\\s*kB`, 'm').exec(text);
-    return found ? Number(found[1]) * 1024 : null;
-  };
-  const limit = field('CommitLimit');
-  const committed = field('Committed_AS');
-  return { commit: limit === null || committed === null ? null : Math.max(0, limit - committed) };
-}
-
-/**
- * The machine's free memory, read once, in bytes: `physical`, `commit` (null where it cannot be read, with `why`),
- * and `total`, its physical memory in all. On Windows one CIM query reads `Win32_OperatingSystem`'s FreePhysicalMemory and
- * FreeVirtualMemory, the free commit; a query that fails leaves Node's free memory. Linux holds a
- * process to a commit limit only under strict overcommit (`vm.overcommit_memory` 2), so only there is it read; elsewhere there
- * is none to read, and the free physical memory judges alone.
- */
-export function readMemory({ platform = process.platform, run = spawnSync, freemem = osFreemem, totalmem = osTotalmem, read = (path) => readFileSync(path, 'utf8') } = {}) {
-  const total = totalmem();
-  const without = (why, physical = null) => ({ physical: physical ?? freemem(), commit: null, total, why });
-  if (platform === 'win32') {
-    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', MEMORY_QUERY], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
-    if (result.error) return without(`the memory query could not start: ${result.error.message}`);
-    if (result.status !== 0) return without(`the memory query failed: ${gitSays(result.stderr || result.stdout || '')}`);
-    try {
-      const { physical, commit } = parseWindowsMemory(result.stdout);
-      return commit === null ? without('the memory query named no free commit', physical) : { physical: physical ?? freemem(), commit, total };
-    } catch (error) {
-      return without(`the memory query answered what could not be read: ${error?.message ?? error}`);
-    }
-  }
-  if (platform === 'linux') {
-    try {
-      if (read('/proc/sys/vm/overcommit_memory').trim() !== '2') return without('Linux holds no process to a commit limit unless vm.overcommit_memory is 2');
-      const { commit } = parseMeminfo(read('/proc/meminfo'));
-      return commit === null ? without('/proc/meminfo names no commit limit') : { physical: freemem(), commit, total };
-    } catch (error) {
-      return without(`its commit could not be read: ${error?.message ?? error}`);
-    }
-  }
-  return without(`${platform} keeps no commit limit to read`);
-}
+// The memory read and the death of it: `merge-branch/memory.mjs`.
+export { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory };
 
 const gbOf = (bytes) => (bytes / GB).toFixed(1);
 const needOf = (gb) => (Number.isInteger(gb) ? String(gb) : gb.toFixed(1));
@@ -2555,7 +2319,7 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
     results.set(gates[i].name, result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
-    if (stops(result) && !keepGoing) {
+    if (stops(result) && failsFast(keepGoing, result.gate.name)) {
       stopped = true;
       for (const skipped of gates.slice(i + 1)) print(notRunLine(skipped));
       break;
@@ -2642,7 +2406,7 @@ export async function runGates(root, gates, dir, {
     heard(result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
-    if (stops(result) && !keepGoing) stopped = true;
+    if (stops(result) && failsFast(keepGoing, result.gate.name)) stopped = true;
   };
   const light = (async () => {
     const waiting = [...schedule.light];
@@ -2762,8 +2526,9 @@ const flowSeams = () => ({
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false,
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(),
 } = {}) {
+  ratchetSince = { DAORIS_RATCHET_SINCE: String(since) };
   const commit = headCommit(root);
   const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
   const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
@@ -2834,9 +2599,10 @@ async function gateMerge(root, state, plan) {
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
   for (const line of selectionLines(selection)) console.log(line);
   const results = await withFinalRatchet(() => runRecorded(root, gates, dir, {
-    keepGoing: state.keepGoing,
+    keepGoing: state.keepGoing || 'blocking',
     oneAtATime: state.oneAtATime === true,
     branch,
+    since: started,
     kind: 'merge',
     onResult: (result) => {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
@@ -2860,7 +2626,8 @@ async function gateMerge(root, state, plan) {
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map(gateNamed).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
     const memory = memoryLine(failed);
     if (memory) console.log(memory);
-    console.log('  The merge is left in place. Read the failing log and fix it in the merge; then');
+    await briefRed(root, results.filter((result) => result.verdict === 'FAIL'), { dirs: [dir], title: `Red brief: the merge of ${branch}`, ran: `${count(failed.length, 'gate')} of ${results.length} failed on the merge of ${branch} into ${MAIN}.`, mark: mainMarker(root, dir) });
+    console.log('  The merge is left in place. Read the brief and fix it in the merge; then');
     console.log(`  node tools/merge-branch.mjs --rerun ${names} runs it again, keeping each other verdict no path your fix changes reaches (and runs what did not run),`);
     console.log('  or --continue gates the merge again whole. Or git merge --abort.');
     return 1;
@@ -2994,9 +2761,11 @@ async function rerunGates(root, options) {
   state.results = { [branch]: results };
   state.unbudgeted ||= timeoutState.off;
   const ran = await withFinalRatchet(() => runRecorded(root, gates, dir, {
-    keepGoing: state.keepGoing || options.keepGoing,
+    keepGoing: state.keepGoing || options.keepGoing || 'blocking',
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
+    // A gate run again judges the whole merge's timing records, as its last ratchet does.
+    ...(state.ratchetSince ? { since: state.ratchetSince } : {}),
     kind: 'merge',
     onResult: (result) => {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
@@ -5416,9 +5185,11 @@ export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
 let acceptedPass = [];
 
 /** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), ...ratchetSince } });
 /** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
-const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
+const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), ...ratchetSince, MERGE_GATES_RUN: '1' } });
+/** The run's start, which a time ratchet inside a gate judges records from, so an earlier run's records fail none (`runRecorded`). */
+let ratchetSince = {};
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
@@ -5583,13 +5354,13 @@ function requireQueueHome(root, home, { run = false } = {}) {
  * The scope tree at `commit` (§4.1, *Where*): a detached worktree of its own, made where none stands, reset and moved where it
  * stands; its builds and dependencies stay warm between candidates. A merge left open there is aborted: the queue leaves none.
  */
-function prepareScopeTree(home, commit) {
-  const path = join(home, SCOPE_TREE);
+function prepareScopeTree(home, commit, at = SCOPE_TREE) {
+  const path = join(home, at);
   const listed = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((one) => samePath(one.path, path));
   if (!listed) {
-    if (existsSync(path)) throw new Refusal(`${SCOPE_TREE} is a folder git does not list as a worktree: --prune removes what a removal left, or look at it`);
+    if (existsSync(path)) throw new Refusal(`${at} is a folder git does not list as a worktree: --prune removes what a removal left, or look at it`);
     git(home, ['worktree', 'add', '--detach', path, commit]);
-    console.log(`the scope tree: made at ${commit.slice(0, 7)} (${SCOPE_TREE})`);
+    console.log(`made at ${commit.slice(0, 7)}: ${at}`);
   } else {
     requireOwnTree(path);
     git(path, ['merge', '--abort'], { allowFail: true });
@@ -5736,6 +5507,59 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
   };
 }
 
+/** The red brief of a run's failed results, written into each of `dirs` and said; each failure marked by `mark` (REDBRIEF1). */
+async function briefRed(root, failed, { tree = root, dirs, title, ran, mark }) {
+  const gates = await briefGates(failed, {
+    signed: (result) => failuresOf(tree, result, result.trx ?? result.gate.scopedTrx), read: (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null), shown: (file) => shown(root, file), mark,
+  });
+  const files = dirs.map((dir) => writeBrief(dir, briefText({ title, ran, gates })));
+  console.log(`  the red brief, every failing gate with its cause and whether main fails it too: ${files.map((file) => shown(root, file)).join(', ')}`);
+}
+
+/** A failure's selection run on main's tip in `root`'s main tree (`MAIN_TREE`), made and readied on the first ask, then marked. */
+function mainMarker(root, dir) {
+  const home = verdictsHome(root);
+  const tip = git(root, ['rev-parse', MAIN]).out.trim();
+  let probe = null;
+  return async (failure) => {
+    try {
+      probe ??= (() => {
+        const tree = prepareScopeTree(root, tip, MAIN_TREE);
+        installDependencies(tree);
+        copyPrivateFiles(home, tree, privateGateFiles(home));
+        return prefixRunner(tree, { base: tip, members: [] }, readPlan(tree), dir);
+      })();
+      const outcome = await probe(failure, 0);
+      return markOfProbe(outcome, signatureKey(outcome.signature ?? {}) === signatureKey(failure.signature), tip.slice(0, 7));
+    } catch (error) {
+      return { on: 'unchecked', why: `its check on main could not run: ${String(error?.message ?? error).split('\n')[0]}` };
+    }
+  };
+}
+
+/** `--preflight [--base <ref>]`: the merge's own gates for this worktree's branch, run here, every one to its end (GATEPREFLIGHT1). */
+async function preflightVerb(root, options) {
+  const facts = preflightFacts(root, options.base ?? MAIN, git);
+  for (const line of facts.lines) console.log(line);
+  const home = verdictsHome(root);
+  const plan = readPlan(root);
+  const choice = scopedChoice(home, root, { plan, base: facts.from, tip: facts.tip });
+  const dir = join(root, SCRATCH, `merge-${slug(facts.branch)}`);
+  clearLogs(dir);
+  const { gates } = scopedGates(home, root, plan, choice, dir);
+  console.log(`the merge's gates: ${choice.set.run.map((entry) => entry.name).join(', ')}${choice.set.kept.length ? `; kept, their pass standing on this tree: ${choice.set.kept.map((entry) => entry.name).join(', ')}` : ''}`);
+  for (const entry of choice.set.deferred) console.log(`  deferred, as its merge defers it: ${entry.name}, ${entry.why}`);
+  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true });
+  const failed = results.filter((result) => result.verdict === 'FAIL');
+  if (!failed.length) {
+    console.log(`merge-branch: the preflight of ${facts.branch} passed: ${count(results.length, 'gate')} of its merge's ran green here.`);
+    return 0;
+  }
+  await briefRed(root, failed, { dirs: [dir], title: `Red brief: the preflight of ${facts.branch}`, ran: `${count(failed.length, 'gate')} of ${results.length} failed on ${facts.branch} at ${facts.tip.slice(0, 7)}, judged against ${facts.base} at ${facts.baseTip.slice(0, 7)}.`, mark: mainMarker(root, dir) });
+  console.log(`merge-branch: the preflight of ${facts.branch} failed ${count(failed.length, 'gate')}: ${failed.map(gateNamed).join(', ')}. Fix the branch's reds and run it again; main's own reds are main's.`);
+  return 1;
+}
+
 /** The open known red a failure's signature matches, with its expiry and where it is last seen (§5.2), or null. */
 function knownFor(home, failure) {
   const key = signatureKey(failure.signature);
@@ -5749,7 +5573,7 @@ function knownFor(home, failure) {
  * `run`, `kept` and `deferred`. The queue's runner gates its candidate by it, and the declared runner's `plan` and `run` answer it:
  * `gates: reached` is today's scoped set for this repository.
  */
-function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
+export function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
   const treeId = contentTree(tree);
   const standing = standingFor(tree, treeId);
   const lanes = readLanes(tree)?.lanes ?? [];
@@ -5931,7 +5755,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // The run's step trees and its halt are the watch's, so a drop ends the gates running and starts no more; this
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
-      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
+      keepGoing: candidate.members.some((each) => each.keepGoing) || 'blocking', byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
@@ -6011,6 +5835,13 @@ async function runCandidateWatched(home, candidate, watch) {
   const outcome = candidateOutcome(judgements, candidate.members, policy);
   if (outcome.action === 'dropped') return drained(home, candidate, withConfirms(run), { ...gone(), why: watch.trees.ended });
   fileJudged(home, candidate, outcome);
+  // One brief for every red the run found, each marked by its run on the base, in each member's merge folder (REDBRIEF1).
+  const judgedOf = (failure, result) => judgements.find((each) => each.failure.gate === result.gate.name && each.failure.test === failure.test)?.judged;
+  await briefRed(home, failed, {
+    tree, dirs: candidate.members.map((each) => join(home, SCRATCH, `merge-${slug(each.branch)}`)), title: `Red brief: the candidate ${sha} (${run.members.map((each) => each.branch).join(', ')})`,
+    ran: `${count(failed.length, 'gate')} of ${results.length} failed on the candidate ${sha}, formed on ${MAIN} at ${candidate.base.slice(0, 7)}.`,
+    mark: async (failure, result) => (judgedOf(failure, result) ? markOfJudgement(judgedOf(failure, result), candidate.members) : { on: 'unchecked', why: 'the queue did not judge it' }),
+  });
   // Each failure that did not recur is a sighting, in a record of its own and never among the known red's flakes.
   for (const { failure, confirm } of outcome.sightings ?? []) appendSighting(home, sightingOf({ failure, candidate, confirm, policy: policy.unconfirmed, at: nowIso() }));
   appendScopeRun(home, withConfirms({
@@ -6086,6 +5917,8 @@ async function queueStep(home) {
   }
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
+  // A red on main the watch found starts no merge and lands none until it is fixed or named known (MAINWATCH1).
+  if ((['run', 'promote'].includes(action) || (action === 'none' && queue.queued.length)) && mainRedHold(home, mainTip)) return 'wait';
   if (action === 'promoted') {
     // C4: the member that held a contained one has promoted, so the contained one is settled with it: the record's contained, read
     // under the lock, so one dropped since is not settled.
@@ -6409,6 +6242,7 @@ async function enqueueVerb(root, options) {
     if (queued.refused) return queued;
     const last = queued.queue.queued.at(-1);
     if (options.oneAtATime) last.oneAtATime = true;
+    if (options.keepGoing) last.keepGoing = true;
     return { queue: queued.queue, request: queued.entry.request, place: queued.queue.queued.length, ahead: queue.candidate ? queue.candidate.members.length : 0 };
   });
   if (out.refused) throw new Refusal(out.refused);
@@ -6473,6 +6307,7 @@ function dropHolder(home, queue, tip) {
  */
 async function waitOutcome(home, branch, tip, request) {
   let said = null;
+  const since = Date.now();
   for (;;) {
     let queue = readQueue(home);
     let standing = requestStanding(queue, { branch, tip, request });
@@ -6483,10 +6318,11 @@ async function waitOutcome(home, branch, tip, request) {
     }
     const ending = waitSaid(standing, { branch, request, holder: standing.back?.handedBack?.how === 'dropped' ? dropHolder(home, queue, tip) : null });
     if (ending) {
-      for (const line of ending.lines) console.log(line);
+      const brief = join(home, SCRATCH, `merge-${slug(branch)}`, 'brief.md');
+      for (const line of [...ending.lines, ...(ending.code && existsSync(brief) && statSync(brief).mtimeMs >= since ? [`  the red brief: ${shown(home, brief)}`] : [])]) console.log(line);
       return ending.code;
     }
-    const now = queue.stop ? `stopped: ${queue.stop.said}` : queue.candidate?.state === 'held' ? `held on ${queue.candidate.held?.on}: ${queue.candidate.held?.why}` : null;
+    const now = queue.stop ? `stopped: ${queue.stop.said}` : queue.mainRed ? `held: ${queue.mainRed}` : queue.candidate?.state === 'held' ? `held on ${queue.candidate.held?.on}: ${queue.candidate.held?.why}` : null;
     if (now && now !== said) console.log(`  the queue is ${now}`);
     said = now;
     // A wait started by a test ends with the test, as its runner does, and starts no runner for it.
@@ -6500,9 +6336,69 @@ async function waitOutcome(home, branch, tip, request) {
   }
 }
 
+/** `--main-watch <commit>`: the cheap suites on a landed tip in the watch's tree, every one to its end, then on main's newest tip until it holds still (MAINWATCH1). */
+async function mainWatchVerb(root, options) {
+  const home = verdictsHome(root);
+  const lock = join(home, MAIN_WATCH_LOCK);
+  try {
+    writeFileSync(lock, String(process.pid), { flag: 'wx' });
+  } catch {
+    if (pidAlive(Number(readFileSync(lock, 'utf8')))) return console.log(`${WATCH_PREFIX} a watch runs (${MAIN_WATCH_LOCK}); it watches main's newest tip as it ends`) ?? 0;
+    writeFileSync(lock, String(process.pid));
+  }
+  lowerPriority();
+  try {
+    for (let commit = git(home, ['rev-parse', options.mainWatch]).out.trim(), red = false; ; commit = mainTipOf(home)) {
+      if (readWatch(home).some((run) => run.commit === commit && run.state !== 'running')) return red ? 1 : 0;
+      const sha = commit.slice(0, 7);
+      const at = nowIso();
+      appendWatch(home, { commit, state: 'running', at, pid: process.pid });
+      const tree = prepareScopeTree(home, commit, MAIN_WATCH_TREE);
+      installDependencies(tree);
+      copyPrivateFiles(home, tree, privateGateFiles(home));
+      const dir = join(home, SCRATCH, `main-watch-${sha}`);
+      clearLogs(dir);
+      const results = await runRecorded(tree, watchGates(readPlan(tree)), dir, { keepGoing: true, oneAtATime: true, kind: 'watch' });
+      const failed = results.filter((result) => result.verdict === 'FAIL' && result.cause !== 'memory');
+      if (failed.length) await briefRed(home, failed, { tree, dirs: [dir], title: `Red brief: main at ${sha}`, ran: `${count(failed.length, 'gate')} of the ${results.length} cheap suites failed on ${MAIN} at ${sha}.`, mark: async () => ({ on: 'main', why: `this is ${MAIN} (${sha})` }) });
+      const failures = failed.flatMap((result) => failuresOf(tree, result, result.trx).map((each) => ({ gate: each.gate, unit: each.unit, test: each.test, key: signatureKey(each.signature), message: each.failure?.message ?? each.signature.message ?? '', signature: each.signature })));
+      red = failed.length > 0;
+      appendWatch(home, { commit, state: red ? 'red' : 'green', at, ended: nowIso(), brief: red ? shown(home, join(dir, 'brief.md')) : null, failures });
+      console.log(`${WATCH_PREFIX} ${red ? `RED ${sha}: ${failed.map(gateNamed).join(', ')}; the queue's next merge waits until it is fixed or named known` : `GREEN ${sha}: ${count(results.length, 'cheap suite')} passed`}`);
+    }
+  } finally {
+    rmSync(lock, { force: true });
+  }
+}
+
+/** Main's red the watch found, neither fixed nor named known, holds the queue's next merge; said once, and a moved tip watched (MAINWATCH1). */
+function mainRedHold(home, mainTip) {
+  const findings = readFindings(home).findings.filter((each) => each.state === 'red' && !knownRedStanding(each).expired);
+  const held = watchHold(readWatch(home), { mainTip, alive: pidAlive, known: (failure) => findings.some((each) => each.gate === failure.gate && each.key === failure.key) });
+  if (held.watchOn) startWatch(held.watchOn, { start: (args, file) => startDetached(home, args, file) }).forEach((line) => console.log(`${nowIso()} ${line}`));
+  const now = held.hold ? held.why : null;
+  const was = withQueue(home, (queue) => ((queue.mainRed ?? null) === now ? { was: now } : { queue: { ...queue, mainRed: now }, was: queue.mainRed ?? null })).was;
+  if (held.hold && was !== held.why) console.log(`${nowIso()} ${held.why}`);
+  return held.hold;
+}
+
+/** `--queue --known`: each failure of main's red the watch found filed as a known red, so the queue's next merge goes on. */
+function nameKnown(home) {
+  const red = readWatch(home).filter((run) => run.state === 'green' || run.state === 'red').at(-1);
+  if (red?.state !== 'red') return console.log('merge-branch: the watch found no red on main to name') ?? 0;
+  let findings = readFindings(home);
+  for (const each of red.failures) {
+    findings = fileSighting(findings, { gate: each.gate, unit: each.unit, test: each.test, fingerprint: { test: each.test, exception: '', at: null, message: each.message }, signature: each.signature, message: each.message, lines: [each.message], commit: red.commit, at: nowIso(), kind: 'watch' }).record;
+  }
+  writeFindings(home, findings);
+  console.log(`merge-branch: ${count(red.failures.length, 'failure')} of ${MAIN} at ${red.commit.slice(0, 7)} named known red (local/ci-findings.json); the queue's next merge goes on, and the CI clears each once it passes`);
+  return 0;
+}
+
 /** `--queue` says the queue and the admission record; `--queue --recheck` asks the runner to recheck a stop now. */
 async function queueVerb(root, options) {
   const home = verdictsHome(root);
+  if (options.known) return nameKnown(home);
   if (options.recheck) {
     requireQueueHome(root, home, { run: true });
     const merged = (tip) => git(home, ['merge-base', '--is-ancestor', tip, MAIN], { allowFail: true }).status === 0;
@@ -6519,6 +6415,7 @@ async function queueVerb(root, options) {
   for (const line of queueLines(queue, { branchTip: (branch) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], { allowFail: true }).out.trim() || null })) console.log(line);
   const stale = staleRun(queue, pidAlive);
   if (stale) console.log(`stale: ${stale}; --queue --recheck starts the runner, which resumes it`);
+  if (queue.mainRed) console.log(`held: ${queue.mainRed}`);
   console.log(queue.runner && pidAlive(queue.runner.pid) ? `runner: pid ${queue.runner.pid}, since ${queue.runner.started}` : 'runner: none runs');
   const admission = readAdmission(home);
   console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
@@ -6553,6 +6450,8 @@ export async function main(argv) {
   // The queue's verbs.
   if (options.queueRun) return queueRunVerb(root);
   if (options.queue) return queueVerb(root, options);
+  if (options.preflight) return preflightVerb(root, options);
+  if (options.mainWatch) return mainWatchVerb(root, options);
   if (options.preview) return previewVerb(root, options);
   if (options.messageFile !== null) return enqueueVerb(root, options);
   if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);

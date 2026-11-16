@@ -39,13 +39,17 @@ Build the brief's feature across its lanes by the change path, reading the range
 - Red first, filtered: `dotnet build <project> -nodeReuse:false`, then
   `dotnet test <project> --no-build --filter FullyQualifiedName~<Class>`; `node --test <file>`; `npx vitest run <files>`.
 - Before the hand-back: `npm run quick`; `i18n:check` and `names:check -- --strict` where a catalogue changed; a
-  `Process` class you touched, filtered, with `src/Daoris.Desktop/process.runsettings`.
-- **Never run** a whole suite, `npm run verify`, a `Process` half, a rehearsal, the desktop window, a publish,
-  `tools/merge-branch.mjs`, or anything of the owner's install.
+  `Process` class you touched, filtered, with `src/Daoris.Desktop/process.runsettings`; then, committed and merged with
+  main, **the preflight**: `node tools/merge-branch.mjs --preflight` in your worktree runs your merge's own gates, every
+  one to its end. Hand back on its pass, or with its brief (`local/scratch/merge-<branch>/brief.md`): fix each red it
+  marks the branch's; name each it marks main's.
+- **Never run** a whole suite, `npm run verify`, a `Process` half, a rehearsal, the desktop window, a publish, any
+  other verb of `tools/merge-branch.mjs`, or anything of the owner's install.
 - A watch exits on its outcome, never `tail -f | grep`. Leave nothing running (`dotnet build-server shutdown`);
   report a flake.
 
 ## The hand-back, under 250 words
 
 The branch; the commits (sha, subject); the files by lane; the shape; the decision, or none; what to look at on the
-window; the tests added and which failed first; what was left out and why; the outcome in one line.
+window; the tests added and which failed first; the preflight's result, and its brief's path where red; what was left
+out and why; the outcome in one line.
