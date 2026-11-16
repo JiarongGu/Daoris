@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.NodeLifecycleRows;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -9,13 +10,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Every outcome is bound to its attempt and a reach to its attempt's whole binding, a
 /// dispatched attempt is reconciled before another starts, a move returns what it cleared, and a skip holds for its graph and run.
 /// </summary>
-public sealed partial class NodeLifecycleTests
+public sealed class NodeLifecycleTests
 {
-    private const string Unit = "unit-a";
-
     private static readonly string[] Causes = [NodeCause.Daoris, NodeCause.Authority, NodeCause.Person];
 
     private static readonly NodeScope Run = new("graph-1", "run-1");
+
+    /// <summary>Every built-in kind, and a plugin's own node: the same table for each.</summary>
+    public static TheoryData<string> Kinds() => new([.. NodeKit.Kinds, "acme.deploy/deploy"]);
 
     private static NodeDeclaration Declared(string kind, NodeRetry? retry = null, bool rejectable = false) =>
         new("n1", kind, 1, NodeKit.Row(kind)?.Reach ?? NodeReach.Performed)
@@ -27,13 +29,6 @@ public sealed partial class NodeLifecycleTests
         };
 
     private static readonly NodePerform Retrying = new(Idempotent: true, Reconcile: false, ["unavailable"]);
-
-    /// <summary>The binding an attempt starts on: what Daoris's evaluation hands the start.</summary>
-    private static NodeAcceptance Bind(int attempt, string node = "n1") => new(Unit, "tip-1", "graph-1", node, 1, attempt);
-
-    /// <summary>That binding reached, with its evidence.</summary>
-    private static NodeAcceptance Accept(int attempt, string node = "n1") =>
-        Bind(attempt, node) with { Evidence = new NodePort("acme/receipt@1", $"{node}#{attempt}", "tip-1", null) };
 
     private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt), Scope = Run };
 
@@ -56,6 +51,27 @@ public sealed partial class NodeLifecycleTests
         Assert.Equal((status.State, move.To, (string?)null), (status.State, move.To, moved.Refused));
         return moved.Status;
     }
+
+    /// <summary>The move a row asks for, as its cause would make it.</summary>
+    private static NodeMove MoveFor(NodeTransition row, NodeAuthority authority, NodeStatus status) => (row.To, row.By) switch
+    {
+        // The person settles a held attempt on their own word, their evidence the person's.
+        (NodeStates.Reached, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = OnWord(status.Attempt) },
+        (NodeStates.Failed, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Code = HeldResolutions.DidNot },
+        (NodeStates.Reached, _) => new NodeMove(row.To, row.By) { Source = authority.ReachBy, Attempt = status.Attempt, Acceptance = Accept(status.Attempt) },
+        (NodeStates.Failed, _) => new NodeMove(row.To, row.By)
+        {
+            Source = authority.FailureBy ?? NodeSource.Plugin, Attempt = status.Attempt, Code = "deploy-failed", Transient = true,
+        },
+        (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
+        // A record's skip names its source and the attempt, never the person's words.
+        (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
+        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By) { Source = row.From == NodeStates.Skipped ? NodeSource.Decision : NodeSource.Path, Words = "w", Scope = Run },
+        (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
+        (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
+        (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
+        _ => new NodeMove(row.To, row.By),
+    };
 
     // ---- the one table (canary 43)
 
@@ -102,10 +118,6 @@ public sealed partial class NodeLifecycleTests
             }
         }
     }
-
-    /// <summary>That binding reached on the person's word: its evidence the person's, never a plugin's reference.</summary>
-    private static NodeAcceptance OnWord(int attempt) =>
-        Bind(attempt) with { Evidence = new NodePort(NodeSource.Person, $"person:n1#{attempt}", "tip-1", null) };
 
     /// <summary>
     /// The person's word settles a held attempt of a plugin's performed node, reached or failed as the person's and never
