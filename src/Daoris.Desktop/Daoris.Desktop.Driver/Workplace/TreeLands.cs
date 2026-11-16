@@ -117,7 +117,7 @@ internal sealed class TreeLands
         // Named by its session and the branch its tree stands on, for a door that waits behind it.
         using var hold = await LandingHolds.TakeAsync(context.Home, path, ct, by: new LandingHolder(subject.Session, TreeTips.Branch(path)))
             .ConfigureAwait(false);
-        if (hold is null) return new(false, StillLanding) { Refusal = LandingCode.Refused };
+        if (hold is null) return new(false, StillLanding) { Refusal = LandingCode.Busy };
 
         // A delivery is read under the tree's hold and held in this process while it lands, so a press and a pass of one delivery
         // land it once and a restart's settlement never writes beside it; one delivered while this waited is said so, and nothing more lands.
@@ -162,6 +162,9 @@ internal sealed class TreeLands
             landed = Closed(await press.LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold,
                 hold.Waited ? null : uncommitted, beside, entry).ConfigureAwait(false));
         }
+
+        // Another of Daoris's writes held the checkout when the branch came to be written: a cause that passes, tried again by itself.
+        if (!landed.Landed && entry.Delivering is { Held: true }) landed = landed with { Refusal = LandingCode.Busy };
 
         // Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo.
         if (landed.Landed) RefMoves.Mine(context.Home, repository);
