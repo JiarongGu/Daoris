@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
+import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
 import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
 import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 
@@ -269,6 +269,27 @@ test('TIMELOAD1: stampLoad marks the records of a run with its peak load, and a 
     const free = await settleLoaded({ scan, free: () => true, measure: (u) => { runs.push(u); writeFileSync(join(dir, 'reached-x-1.trx'), trx([['N.slow', '00:00:05']])); }, world });
     assert.deepEqual(runs, [['N']]);
     assert.deepEqual([free.unmeasured, Object.keys(free.scanned.over)], [[], []], 'measured alone, it is judged by that time');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('TIMELOAD1: inside a run, only the records the run wrote are judged; the tree\'s older slow ones are never a red', () => {
+  const dir = join('_fixtures', 'time-ratchet-run-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    assert.equal(runStart(dir, {}), null, 'with no marker every record is judged');
+    writeFileSync(join(dir, 'stale.trx'), trx([['S.stale', '00:00:57']]));
+    const old = new Date(Date.now() - 3_600_000);
+    utimesSync(join(dir, 'stale.trx'), old, old);
+    writeFileSync(join(dir, 'run-start.json'), JSON.stringify({ startedAt: Date.now() - 60_000 }));
+    writeFileSync(join(dir, 'fresh.trx'), trx([['F.fine', '00:00:01']]));
+    const since = runStart(dir, {});
+    assert.ok(since !== null);
+    assert.deepEqual(scanRecords(dir, '.', { since }).over, {}, 'the stale record is not read');
+    assert.deepEqual(Object.keys(scanRecords(dir, '.').over), ['S.stale'], 'without the run start it is');
+    assert.equal(runStart(dir, { DAORIS_RATCHET_SINCE: '42' }), 42, 'the tool\'s own start wins over the marker');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

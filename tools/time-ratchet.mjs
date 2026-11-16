@@ -12,7 +12,8 @@
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
  * Only a timing taken alone is judged: a record marked with more than one heavy run under way (`tools/time-load.mjs`) is kept as
- * "under load" and fails nothing; a test timed only so is measured again alone when the machine is free, else said unmeasured.
+ * "under load" and fails nothing. Run inside a merge or preflight, with `DAORIS_RATCHET_SINCE` or a `run-start.json` marker, it judges
+ * only the records that run wrote. A test timed only under load is measured again alone when the machine is free, else said unmeasured.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -230,6 +231,22 @@ export function measureAlone(root, units) {
 }
 
 /**
+ * When the run this ratchet is part of began, so only the records that run wrote are judged and the tree's older ones (a candidate's,
+ * measured under load) are never a red: `DAORIS_RATCHET_SINCE` (epoch ms) from the tool that runs the checks, else the run marker
+ * `run-start.json` (`{ "startedAt": <epoch ms> }`) it writes in the records' folder; null with neither (every record is judged).
+ */
+export function runStart(dir, env = process.env) {
+  const named = Number(env.DAORIS_RATCHET_SINCE);
+  if (env.DAORIS_RATCHET_SINCE && Number.isFinite(named)) return named;
+  try {
+    const marked = Number(JSON.parse(readFileSync(join(dir, 'run-start.json'), 'utf8')).startedAt);
+    return Number.isFinite(marked) ? marked : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * A scan's tests timed only under load, measured again alone when the machine is free (`free()`), else left unmeasured: the scan
  * (the second one after a measurement) and the keys still timed only under load. They fail nothing for time.
  */
@@ -247,14 +264,15 @@ export async function settleLoaded({ scan, free, measure, world }) {
 
 async function main() {
   const at = process.argv.indexOf('--since');
-  const since = at >= 0 ? Number(process.argv[at + 1]) : null;
-  if (since === null && process.env.MERGE_GATES_RUN === '1') {
+  const explicit = at >= 0 ? Number(process.argv[at + 1]) : null;
+  if (explicit === null && process.env.MERGE_GATES_RUN === '1') {
     console.log("time-ratchet: stands aside inside a merge: the merge tool runs it once after every gate, on the records its own gates wrote");
     return 0;
   }
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'time-ratchet.json');
   const dir = join(root, '_fixtures', 'test-timing');
+  const since = explicit ?? runStart(dir);
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
