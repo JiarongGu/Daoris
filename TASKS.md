@@ -27,6 +27,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
   API-billed fallback, no duplicate workers or repeated checks (2026-10-27). A proof that needs an account's model runs once, at the
   least that proves it, and its spend is reported (D240 point 7).
 - A method that proves itself in the steward's development (a co-design pass from a purpose brief, a prior-art survey and a comparison; a scope built in waves and verified once; an independent review before landing; a day's failures turned into class rows) is adopted by Daoris itself in the same scope: in `canon/` for every repository it serves, and as a feature where Daoris runs the work (a workflow, a role's routine, Ask Daoris), so its own sessions work the way the steward does (2026-11-16, METHODS1).
+- Every time breach has its why (2026-11-17): a test or gate over its time is classed by cause (a process or real git in a unit test, disk beyond its temp folder, the network, a wall-clock wait, a full source scan, or load alone) and taken down that cause's path: a unit test is fast and pure, so one that is not moves to an adapter's package behind a twin-proved fake, a heavy domain separates into a package of its own, and one that is fast alone but still times out is reviewed for separation too.
 - A dependency a row names ("after X") completes before the row starts. Installed proofs are batched against one staged build.
   Owner-only work (downloads, account spending, installation, publication, decisions) keeps its grants and holds.
 
