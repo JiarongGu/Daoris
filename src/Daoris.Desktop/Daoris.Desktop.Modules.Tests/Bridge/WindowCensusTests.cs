@@ -24,6 +24,7 @@ public sealed class WindowCensusTests
         ["STEWARD_DESK"] = "the steward's desk this run, held by the standing confirmation's judge (STEWARDROLE1c)",
         ["SESSION_HOLDS"] = "the terminal holds the pipe keeps, read whole from memory (RPC1g1)",
         ["SESSION_LET_GO"] = "the pipe's hold of one conversation, ended in memory (RPC1g1)",
+        ["UX_TRAIL"] = "the trail's switch, read once as the module is built and held; its writes are made off the window's thread (UXTRAIL1)",
         ["SYSTEM_OPEN_FOLDER"] = "the folder an id names, resolved from the code's tables and the loop's home; only the file manager's start waits, off the window's thread (WIRING1e)",
     };
 

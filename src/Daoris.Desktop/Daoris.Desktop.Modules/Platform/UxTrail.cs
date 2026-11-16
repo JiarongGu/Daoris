@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The person's own UX trail (UXTRAIL1, D304's trial criterion on finding the press): the pages they open and the presses they make, and
 /// when a step began waiting on them, kept on this desktop only under the home's <see cref="Folder"/>, one file a day, and only while they
-/// turned it on (Settings → Agents and sessions). Never a field's value or typing: an entry keeps only the fields this class names, each
+/// turned it on (Settings → Driver). Never a field's value or typing: an entry keeps only the fields this class names, each
 /// a string clipped to <see cref="Longest"/>, and a kind it does not name is not kept. <c>tools/ux-trail.mjs</c> prints a trail's summary.
 /// </summary>
 /// <remarks>

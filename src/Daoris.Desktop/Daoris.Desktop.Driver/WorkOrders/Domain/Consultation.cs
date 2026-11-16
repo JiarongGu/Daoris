@@ -100,7 +100,8 @@ public static class Consultations
                 writer.WriteString("role", giver.Role);
                 writer.WriteString("mode", giver.Mode);
                 writer.WriteString("maker", giver.Maker);
-                writer.WriteString("adapter", giver.Adapter);
+                // The door it came through, as a brainstorm's members say it: the old seam's word is never a new record's (D232).
+                writer.WriteString("door", giver.Adapter);
                 if (giver.Account is null) writer.WriteNull("account");
                 else writer.WriteString("account", giver.Account);
                 writer.WriteString("read", giver.Read);
