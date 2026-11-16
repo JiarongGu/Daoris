@@ -939,7 +939,7 @@ describe('a group a door brings into view', () => {
     const brought = vi.fn();
     show(<SessionRail notify={() => {}} group="needs-you" onGroupBrought={brought} />);
 
-    // No list until the reader answers: by its record alone it was done.
+    // No list until the reader answers: by its record alone it is done.
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
     expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
     expect(brought).not.toHaveBeenCalled();

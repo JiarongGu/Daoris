@@ -49,10 +49,7 @@ public sealed class HelpTreeWalkTests
         Assert.Equal([SessionGroups.Normal(kept)], read.Trees.Keys);
     }
 
-    /// <summary>
-    /// SESSIONFLASH1: a reader that does not wait, the groups slice, answers at once with what the parts judged and walks nothing
-    /// while their first judgement is to come, the facts not begun or their wait not passed; once it passed, it walks as a door does.
-    /// </summary>
+    /// <summary>A reader that does not wait walks nothing before the parts' first judgement or its wait has passed, then as a door.</summary>
     [Fact]
     public async Task A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement()
     {
@@ -76,7 +73,6 @@ public sealed class HelpTreeWalkTests
         Assert.Empty(waiting.Trees);
         Assert.Equal(0, Volatile.Read(ref walked));
 
-        // A door waits the rest of the wait and walks; past it, the reader that does not wait walks too.
         await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(Poll.Patience);
         var past = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, waits: false).WaitAsync(Poll.Patience);
 

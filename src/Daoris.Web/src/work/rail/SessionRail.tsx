@@ -44,9 +44,8 @@ import { limitWaitLines } from '../waits/limitWait';
  *
  * **By state, a session is where the driver's one reader places it** (`useSessionGroups`): the page asks
  * and never derives a group of its own. Until its first answer the rail draws its rows' outline, never a list placed by the
- * records alone, which that answer would take rows out of (SESSIONFLASH1); a record that began after the answer is placed by
- * its record alone (`groups.ts`) until the next. **A browser has no driver to ask**, so
- * its list is the arrangement by repository; and the monitor's list, the present tense only,
+ * records alone, which that answer would take rows out of; a record begun after it is placed by its record (`groups.ts`) until
+ * the next. **A browser has no driver to ask**, so its list is by repository; and the monitor's, the present tense only,
  * asks nothing and keeps it too.
  *
  * **A row's acts are the one owner's**: each row is offered what the one rule offers it
@@ -175,8 +174,6 @@ export function SessionRail({
   if (bringing && !compact && query) setQuery('');
   const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
   useBringGroup(bringing ? groupHeading('sessions', group) : null, answered, onGroupBrought);
-  // The records held and the reader not answered yet: no list is drawn, since one placed by the records alone holds every part,
-  // archived line and ended intake as a row of its own, which the reader's first answer takes away (SESSIONFLASH1).
   const placing = sessions.data !== undefined && !answered;
 
   const questFor = new Map((quests.data ?? []).map((quest): [string, Quest] => [quest.id, quest]));

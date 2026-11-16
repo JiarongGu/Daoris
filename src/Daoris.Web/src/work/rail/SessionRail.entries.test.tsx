@@ -91,12 +91,8 @@ describe('the session rail over entries (SESSONE1c)', () => {
     expect(screen.queryByText(/^Intake/)).toBeNull();
   });
 
-  /**
-   * SESSIONFLASH1, the owner's words: "when app open we display a list of session which then gone after a few second or minutes".
-   * Placed by the records alone, the list drew all eleven, the archived line among them, until the reader's first answer took
-   * them away; it draws none until that answer, so its first list is the one it keeps.
-   */
-  it("draws no list before the reader's first answer, so what it first shows stays", async () => {
+  /** The owner's words: "when app open we display a list of session which then gone after a few second or minutes". */
+  it("draws no list before the reader's first answer, so the eleven records and the archived line never flash", async () => {
     GROUPINGS = EVIDENCE_GROUPINGS.map((row) => (row.session.startsWith('ap00001') ? { ...row, group: 'archived', archived: true } : row));
     ENTRIES = EVIDENCE_ENTRIES.map((entry) => (entry.leading === 'ap000013' ? { ...entry, group: 'archived' } : entry));
     let answer = () => {};
@@ -107,7 +103,6 @@ describe('the session rail over entries (SESSONE1c)', () => {
     });
     show();
 
-    // The records read, and the reader asked and not answered.
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
     await new Promise((resolve) => { setTimeout(resolve, 200); });
     expect(screen.queryAllByRole('heading', { level: 3 })).toEqual([]);

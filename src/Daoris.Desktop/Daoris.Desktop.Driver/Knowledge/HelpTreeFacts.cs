@@ -114,10 +114,9 @@ internal static class HelpTreeFacts
     /// <para><b>As fresh as the parts.</b> A part is judged on its repository's <c>refs</c> wake, its rest holding a burst to one judgement
     /// each half minute (<see cref="HelpFacts.TreesRules"/>); at once as the look lands with its trees moved; on the configuration; and at its
     /// deadline. Where the facts never started (a terminal, a test), every tree is walked, as before.</para>
-    ///
     /// <para><b>Or not waited for</b> (<paramref name="waits"/> false, the groups slice's, which hears the parts land): while the parts'
     /// first judgement is to come, the facts not begun or their wait not passed, the look is answered at once with the trees they judged,
-    /// none walked, so a start's first list waits on no git (SESSIONFLASH1). Past that wait it walks as a door does.</para>
+    /// none walked, so a start's first list waits on no git. Past that wait it walks as a door does.</para>
     /// </remarks>
     /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>), as the parts read it.</param>
     /// <param name="walk"><see cref="SessionTrees.WorkAsync"/>, git's walk of one tree; a test hands its own.</param>
