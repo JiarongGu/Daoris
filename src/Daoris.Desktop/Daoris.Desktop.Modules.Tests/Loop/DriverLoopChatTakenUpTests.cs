@@ -38,7 +38,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         var coming = loop.ComeUpAsync(client, chat);
         await entered.Task.WaitAsync(Poll.Patience);
         Assert.Equal(1, loop.Work().Turns);
-        Assert.False(InstallUpdate.Idle(loop.Work().Driven, loop.Work().Turns));
+        Assert.False(loop.Work().Idle);
         release.TrySetResult();
         await coming.WaitAsync(Poll.Patience);
     }

@@ -14,9 +14,11 @@ export type UpdateState = {
   state: 'none' | 'waiting' | 'draining' | 'applying' | 'refused';
   staged: { id: string; version: string; commit?: string | null; at?: string | null } | null;
   mode: UpdateMode | null;
-  /** Driven sessions still running, and conversations with a turn in flight: what the drain waits on. */
+  /** Driven sessions still running, conversations with a turn in flight and runs' plugin steps in flight: what the drain waits on. */
   driven: number;
   turns: number;
+  /** A release or a deploy sent to its plugin and not settled; absent where the answer has none. */
+  steps?: number;
   /** Why the staged build is not being installed: the check's code, which this words, and the driver's sentence. */
   problem: { code: string; message: string } | null;
   /** How the last swap ended, said once at the start after it, until dismissed: what this banner shows. */
@@ -67,6 +69,7 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
     (code && WHY.has(code) ? t(`update.why.${code}`) : fallback ?? code ?? '');
   const version = named(staged?.version, staged?.commit);
   const running = update.driven + update.turns;
+  const steps = update.steps ?? 0;
 
   return (
     <div role="status" aria-label={t('update.label')} className="grid border-b border-line bg-raised text-small text-ink-soft">
@@ -90,6 +93,7 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
               <>
                 {t('update.draining', { version })}
                 {running > 0 && <> {t('update.running', { count: running })}</>}
+                {steps > 0 && <> {t('update.steps', { count: steps })}</>}
               </>
             )}
             {state === 'applying' && t('update.applying', { version })}

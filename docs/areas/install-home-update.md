@@ -160,14 +160,17 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 **Updating**
 
 37. The person's word on a staged build is `data/update.json`: when idle (the default, also when absent or unreadable), now,
-    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it.
-    (from D139, D50)
+    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it,
+    and `--stage --not-now` writes *not now* for the build it stages once nothing is staged and before the build is, one act, so
+    no idle install races a cancel. (from D139, D50, D301)
 38. While it drains, the loop starts nothing new but still looks: endings are reported, plugins told, sync runs. A press that
     starts a process or changes a repository through git waits for the restart; one that starts no process goes on: a stop, a
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
     every press waits. (from D139)
-39. Idle is no driven session running and no conversation's turn in flight. A conversation between turns, a parked session
-    and the terminal are idle. (from D139)
+39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
+    performs that is recorded, sent or unknown on a run that goes on, read from the run records (`PluginStepsInFlight`), so a
+    release or a deploy is never cut off and left not known. A conversation between turns, a parked session, the terminal, a
+    held or settled attempt, Daoris's own steps and an ended run's are idle; the banner names the steps it waits on. (from D139, D301)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
     version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says

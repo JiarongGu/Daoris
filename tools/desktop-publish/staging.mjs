@@ -18,6 +18,22 @@ export const BUILD_MANIFEST = 'build.json';
 export const SWAP_JOURNAL = 'swap.json';
 export const MANIFEST_SCHEMA = 1;
 
+/**
+ * The person's word on a staged build, beside the install: `data/update.json`, the home's `update` entry (`HomeEntry.Update`),
+ * and the word that holds a build *not now* (`UpdateMode.NotNow`), as `daoris update --cancel` and the banner write them.
+ */
+export const UPDATE_REQUEST = Object.freeze([HOME, 'update.json']);
+export const NOT_NOW = 'not-now';
+
+/**
+ * The build `build` held *not now*, written as `InstallUpdate.Write` writes the word: its mode, its build and the moment in UTC to
+ * the second, beside then renamed, LF. The desktop reads it at its next look and leaves the build staged while work goes on.
+ */
+export function holdNotNow(install, build, at = new Date()) {
+  const word = { mode: NOT_NOW, build, at: at.toISOString().replace(/\.\d+Z$/, 'Z') };
+  writeAtomic(join(install, ...UPDATE_REQUEST), `${JSON.stringify(word, null, 2)}\n`);
+}
+
 /** What every staged build must carry, by its manifest paths: `StagedBuild.Required`, in its order. */
 export const STAGED_REQUIRED = Object.freeze([LAUNCHER, MARKER, `${SHELL_HOME[0]}/${SHELL_EXE}`, `${SHELL_HOME[0]}/Daoris.Desktop.App.dll`]);
 
@@ -104,10 +120,14 @@ export function stageRefusal(to, { service = false } = {}) {
  * executables: Windows refuses its rename while something still holds a file in it, the scanner most often,
  * so the rename is tried for half a minute, and then the build is copied into place with its manifest written last.
  * Whatever reads `update/staged/` reads the manifest first, so a half copy is nothing staged, never a broken build.
+ *
+ * `notNow`, a build's id, stages it held in one act (`--not-now`): its word is written once nothing is staged and before the build
+ * is, so the desktop never meets it staged without the word, and no idle look installs it before a cancel could say so.
  */
-export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {} } = {}) {
+export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {}, notNow = null } = {}) {
   const staged = join(install, ...STAGED);
   rmSync(staged, { recursive: true, force: true });
+  if (notNow) holdNotNow(install, notNow);
   try {
     renameHeld(staging, staged, { tries, waitMs, ...(rename ? { rename } : {}) });
     return staged;

@@ -52,6 +52,12 @@ describe("Settings' update row", () => {
     expect(screen.queryByText('Staged')).toBeNull();
   });
 
+  it('while draining, names every kind of work it waits on, a plugin step in flight among them', () => {
+    draw(standing({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 1, turns: 2, steps: 1 }));
+
+    expect(screen.getByText(/Waits on 1 driven session, 2 conversations mid-turn, and 1 plugin step in flight\./)).toBeTruthy();
+  });
+
   it('holds its words while one is on its way', async () => {
     const { onSay } = draw(standing({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 1 }), true);
 

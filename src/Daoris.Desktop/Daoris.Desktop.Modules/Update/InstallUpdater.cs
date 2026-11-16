@@ -3,8 +3,18 @@ using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
 
-/// <summary>What the drain waits on: driven sessions this loop runs, and conversations with a turn in flight.</summary>
-public sealed record UpdateWork(int Driven, int Turns);
+/// <summary>
+/// What the drain waits on: driven sessions this loop runs, conversations with a turn in flight, and the runs' plugin steps in flight,
+/// which the updater reads from the run records itself (<see cref="PluginStepsInFlight"/>).
+/// </summary>
+public sealed record UpdateWork(int Driven, int Turns)
+{
+    /// <summary>The runs' plugin steps in flight: a release or a deploy sent to its plugin and not settled.</summary>
+    public int Steps { get; init; }
+
+    /// <summary>Whether the work allows the update (<see cref="InstallUpdate.Idle"/>).</summary>
+    public bool Idle => InstallUpdate.Idle(Driven, Turns, Steps);
+}
 
 /// <summary>The staged build, as the banner names it: no path of this machine's.</summary>
 public sealed record UpdateBuild(string Id, string Version, string? Commit, DateTimeOffset? At);
@@ -30,7 +40,14 @@ public sealed record UpdateOutcome(string Phase, string? Build, string? Version,
 /// </param>
 public sealed record UpdateState(
     string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome,
-    UpdateOutcome? Last, DateTimeOffset? Since = null);
+    UpdateOutcome? Last, DateTimeOffset? Since = null)
+{
+    /// <summary>
+    /// The plugin steps in flight the drain waits on, beside <see cref="Driven"/> and <see cref="Turns"/>
+    /// (<see cref="UpdateWork.Steps"/>): read while it drains and as it applies, none otherwise.
+    /// </summary>
+    public int Steps { get; init; }
+}
 
 /// <summary>The states an update is in, as the page reads them.</summary>
 public static class UpdateStates
@@ -53,7 +70,7 @@ public static class UpdateStates
 
 /// <summary>
 /// The application's half of an install's update: it watches what is staged and what the person
-/// said of it, holds the loop's starts while it drains, and once no driven session runs and no turn is in flight — or at
+/// said of it, holds the loop's starts while it drains, and once no driven session runs and no turn or plugin step is in flight — or at
 /// once on *Update now* — checks the build, starts the launcher with <c>--update --after &lt;pid&gt;</c> and closes the
 /// application the way the person's close does. At the next start it says once how the swap ended.
 /// </summary>
@@ -263,7 +280,7 @@ public sealed class InstallUpdater(
             return Publish(new UpdateState(UpdateStates.Waiting, staged, mode, 0, 0, null, Outcome(), Last()));
         }
 
-        var now = work();
+        var now = Work();
         if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, request, now, "now").ConfigureAwait(false);
 
         DateTimeOffset? since;
@@ -273,16 +290,25 @@ public sealed class InstallUpdater(
             {
                 _drainedFor = id;
                 _drainSince = Now;
-                log.Info("update.draining", ("build", id), ("driven", now.Driven), ("turns", now.Turns));
+                log.Info("update.draining", ("build", id), ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
             }
 
             since = _drainSince;
         }
 
-        return InstallUpdate.Idle(now.Driven, now.Turns)
+        return now.Idle
             ? await ApplyAsync(id, staged, mode, request, now, "idle").ConfigureAwait(false)
-            : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since));
+            : Publish(Drains(staged, mode, now, since));
     }
+
+    /// <summary>
+    /// The work the drain waits on: the loop's sessions and turns, and the runs' plugin steps in flight, read from the home's run
+    /// records (<see cref="PluginStepsInFlight"/>), so a release or a deploy sent to its plugin is never cut off by the swap.
+    /// </summary>
+    private UpdateWork Work() => work() with { Steps = PluginStepsInFlight.Count(home) };
+
+    private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now, DateTimeOffset? since) =>
+        new(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since) { Steps = now.Steps };
 
     /// <summary>
     /// The person's word, from the screen, written to the request the terminal writes, for the build staged now,
@@ -414,9 +440,9 @@ public sealed class InstallUpdater(
             // before it moves a file.
             if (UpdateRefusal.Of(install!, home, staged?.Version, Running) is var (code, why)) refused = new UpdateProblem(code, why);
             // What began after the look read no work (a turn a press let through opened, a helper the look
-            // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
-            // closes whatever runs, so it reads nothing.
-            else if (by == "idle" && work() is var again && !InstallUpdate.Idle(again.Driven, again.Turns))
+            // started, a conversation the window began, a plugin step a pass sent) is read again now that no press passes, and the drain
+            // goes on for it. *Update now* closes whatever runs, so it reads nothing.
+            else if (by == "idle" && Work() is { Idle: false } again)
             {
                 DateTimeOffset? since;
                 lock (_gate)
@@ -425,7 +451,7 @@ public sealed class InstallUpdater(
                     since = _drainSince;
                 }
 
-                return Publish(new UpdateState(UpdateStates.Draining, staged, mode, again.Driven, again.Turns, null, Outcome(), Last(), since));
+                return Publish(Drains(staged, mode, again, since));
             }
         }
         catch
@@ -449,7 +475,10 @@ public sealed class InstallUpdater(
             waited = drained is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
         }
 
-        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), drained));
+        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), drained)
+        {
+            Steps = now.Steps,
+        });
         bool started;
         try
         {

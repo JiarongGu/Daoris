@@ -1,7 +1,7 @@
 import { createContext, type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
-import { ago, clockOf, sentence } from '../locales/format';
+import { ago, clockOf, list, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
 import { askerSaid, type PipeAsker } from './askerSaid';
@@ -290,7 +290,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   update?: UpdateState;
   onSayUpdate?: (mode: UpdateMode) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   // That the last Confirm is held by an update's drain, so the card says what the drain waits on while it lasts.
@@ -454,13 +454,13 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
           <p className="m-0 text-warn">
             {(() => {
               const time = update.since ? clockOf(update.since) : '';
-              const sessions = t('person.drainSessions', { count: update.driven });
-              const turns = t('person.drainTurns', { count: update.turns });
-              if (update.driven + update.turns === 0) return t('person.drainNothing', { time });
-              const what = update.driven > 0 && update.turns > 0
-                ? t('person.drainBoth', { sessions, turns })
-                : update.driven > 0 ? sessions : turns;
-              return t('person.drainWaits', { what, time });
+              const what = [
+                update.driven > 0 ? t('person.drainSessions', { count: update.driven }) : null,
+                update.turns > 0 ? t('person.drainTurns', { count: update.turns }) : null,
+                (update.steps ?? 0) > 0 ? t('person.drainSteps', { count: update.steps }) : null,
+              ].filter((part): part is string => part !== null);
+              if (what.length === 0) return t('person.drainNothing', { time });
+              return t('person.drainWaits', { what: list(what, i18n.language), time });
             })()}
           </p>
           <p className="m-0 text-ink-soft">{t('person.drainDoor')}</p>

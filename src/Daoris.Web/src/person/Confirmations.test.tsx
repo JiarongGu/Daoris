@@ -360,13 +360,13 @@ describe("the window's confirmation of a terminal's press", () => {
   // 14:05 of the day the test runs: the card says a moment of today by its time alone, and a fixed date read as another day's after it.
   const today = new Date();
   const DRAIN: UpdateState = {
-    state: 'draining', staged: { id: 'b1', version: '0.1.9' }, mode: 'when-idle', driven: 2, turns: 1, problem: null, outcome: null, last: null,
+    state: 'draining', staged: { id: 'b1', version: '0.1.9' }, mode: 'when-idle', driven: 2, turns: 1, steps: 1, problem: null, outcome: null, last: null,
     since: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 5).toISOString(),
   };
 
   it.each([
-    ['en', 'Confirm', 'Install later', 'Waiting for 2 sessions and 1 turn to finish, since 14:05.', 'daoris update --cancel'],
-    ['zh', '确认', '稍后安装', '正在等待 2 个会话和 1 轮对话完成，自 14:05 起。', 'daoris update --cancel'],
+    ['en', 'Confirm', 'Install later', 'Waiting for 2 sessions, 1 turn, and 1 plugin step to finish, since 14:05.', 'daoris update --cancel'],
+    ['zh', '确认', '稍后安装', '正在等待 2 个会话、1 轮对话和1 个插件步骤完成，自 14:05 起。', 'daoris update --cancel'],
   ])('says what a drain waits on and since when under a held Confirm, and offers Install later (%s)', async (language, confirm, later, waits, door) => {
     await i18n.changeLanguage(language);
     const onSayUpdate = vi.fn();
