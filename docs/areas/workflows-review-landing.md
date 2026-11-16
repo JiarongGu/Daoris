@@ -491,13 +491,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     performs them; their contract is `docs/2026-11-09-process-steps-design.md`. Built beneath them: `rebase` replays work in
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
-55. Every step of a live run that only the person moves is read from the bound runs, never stored: an active `review`, `human` or
-    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step waiting on an actor the person holds (`actor`,
-    naming the actor), and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
-    alone). Sessions places the run's newest session in Needs you with
-    its `waits`, opening the run's view, and *What needs you* lists each with its presses; an actor's row (`ActorWaits`) carries the act
-    in its plugin's words and its page, and no press: the act is taken there. Both read an actor's wait by one reading,
-    `StepWaiting.OnThePerson`.
+55. Every step's wait is read by one reading, `StepWaiting.Read`, from the bound runs, never stored: the wait it stands at
+    (`PersonWaits.All`: an active `review`, `human` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
+    waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
+    `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
+    done alone)), the role it waits on and that role's holder; until a step names its role, each wait has its own (`StepWaiting.RoleOf`),
+    a vacancy and a failure kept the line's `lead`. The waits whose role the person holds are theirs: Sessions places the run's newest
+    session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
+    page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
+    rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
+    that settle it (never its stop), a plugin's words and page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a
+    vacancy are answered.
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.

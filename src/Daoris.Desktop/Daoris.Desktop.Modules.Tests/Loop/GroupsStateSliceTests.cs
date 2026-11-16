@@ -168,7 +168,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Deletable = true, Lands = new LandOffer("daoris/s1", "s1", 3, 1),
             Discards = new DiscardOffer("daoris/s1", "s1", new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/kept/s1", null)),
             Calling = new RunningCall("npm test", At),
-            Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At), new PersonWait("q1", "release", PersonWaits.Actor, "engine", At) { Actor = "approver" }],
+            Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At), new PersonWait("q1", "release", PersonWaits.Actor, "engine", At) { Role = "approver" }],
             Passage = new RunPassage("q1", "integrated", 3, [new PassageStep("check", "check", RunPassageReader.Current)]),
             Line = new LineStanding(SessionGroup.Working, SessionGroup.Working, "working", "h1", LineRole.Helper),
         };

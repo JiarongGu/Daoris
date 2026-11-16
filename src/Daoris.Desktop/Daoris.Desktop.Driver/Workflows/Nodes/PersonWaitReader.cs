@@ -1,12 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The run steps that wait on the person (<see cref="PersonWaits"/>). **Read, never stored**, as <see cref="HumanTasks"/> are: from the runs
+/// The run steps that wait on the person (<see cref="PersonWaits"/>). **Read, never stored**, as <see cref="HeldSteps"/> are: from the runs
 /// bound here and each run's node record read now, so a step the person's word is kept on, or that moved on, waits on no one.
 /// </summary>
 public static class PersonWaitReader
 {
-    /// <summary>Every step of a run not ended that waits on the person, by run and then by the graph's order, and each step left failed.</summary>
+    /// <summary>
+    /// Every step of a run not ended whose wait (<see cref="StepWaiting.Read"/>, the one reading of every step's wait) the person holds, by
+    /// run and then by the graph's order, and the step a run ended failed at.
+    /// </summary>
     /// <param name="record">A unit's node record, or null where it does not read.</param>
     public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record)
     {
@@ -15,22 +18,21 @@ public static class PersonWaitReader
         {
             if (run.Ended is { Outcome: RunOutcomes.Failed, Node: { Length: > 0 } failed } ended)
             {
-                waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At));
+                waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At) { Role = StepWaiting.RoleOf(PersonWaits.Left) });
                 continue;
             }
 
             if (run.Ended is not null || run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
             foreach (var node in graph.Nodes)
             {
-                var status = WorkPerformer.StatusOf(kept, node.Id);
-                var held = StepWaiting.OnThePerson(kept, node, status);
-                if ((WhyOf(node, status) ?? LeftOf(node, status, kept) ?? (held is null ? null : PersonWaits.Actor)) is not { } why
+                if (StepWaiting.Read(kept, node, WorkPerformer.StatusOf(kept, node.Id)) is not { } wait
+                    || wait.Holder.Kind != StepHolders.Person
                     || kept.Pending.Any(word => word.Node == node.Id))
                 {
                     continue;
                 }
 
-                waits.Add(new PersonWait(run.Run, node.Id, why, run.Binding.Repository, held?.At ?? status.Since) { Actor = held?.Actor });
+                waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role });
             }
         }
 
@@ -43,26 +45,4 @@ public static class PersonWaitReader
         var files = new NodeRecordFiles(home);
         return Of(new GraphRuns(files).Read(), files.Read);
     }
-
-    /// <summary>A step failed and kept for the person, no word on it yet: the declined request has a row of its own.</summary>
-    private static string? LeftOf(NodeDeclaration node, NodeStatus status, NodeRecord record) =>
-        status.State == NodeStates.Failed && !(node.Kind == NodeKinds.Request && status.Code == RequestOptions.DeclinedCode)
-        && record.Attempts.LastOrDefault(attempt => attempt.Node == node.Id && attempt.Attempt == status.Attempt) is { Resolution: null } attempt
-        && WorkPerformer.KeptFailure(record, attempt)
-            ? PersonWaits.Left
-            : null;
-
-    internal static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
-    {
-        NodeStates.Unknown => PersonWaits.Held,
-        NodeStates.Active => NodeKit.Of(node.Kind) switch
-        {
-            ReviewNode => PersonWaits.Accept,
-            HumanNode => HumanNode.Presses(node).Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task,
-            GoAheadNode => PersonWaits.GoAhead,
-            ReturnNode when status.Code == ReturnNode.BothChanged => PersonWaits.Choose,
-            _ => null,
-        },
-        _ => null,
-    };
 }

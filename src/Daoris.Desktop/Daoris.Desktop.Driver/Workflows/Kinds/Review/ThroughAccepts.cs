@@ -47,7 +47,7 @@ public static class ThroughAccepts
                 continue;
             }
 
-            if (PersonWaitReader.WhyOf(node, status) is not null) return null;
+            if (StepWaiting.Read(null, node, status) is not null) return null;
             if (node.Kind is NodeKinds.Look or NodeKinds.Opinion or NodeKinds.QuestHolds or NodeKinds.ContentHolds or NodeKinds.WorkRequests
                 && status.State == NodeStates.Active)
             {

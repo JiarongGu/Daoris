@@ -26,17 +26,18 @@ import { composeAttention } from '../../bridge/shell';
 import { AttentionBand } from './AttentionBand';
 import { obligationOf } from './attention';
 
-/** A run waiting on its `human` node, as .NET pushes the row (`HumanTaskRows`). */
-const waiting = (acts: string[], since: string | null = null) => ({
-  kind: 'task', id: 'q7/sign', since, workspace: 'aurora', where: 'engine', task: { run: 'q7', node: 'sign', acts, work: 'q7' },
+/** A run waiting on its `human` node, as .NET pushes the row (`HumanTaskRows`): its wait on a role the person holds, and its presses. */
+const waiting = (acts: string[], since: string | null = null, over: Record<string, unknown> = {}) => ({
+  kind: 'step', id: 'q7/sign', since, workspace: 'aurora', where: 'engine',
+  step: { run: 'q7', node: 'sign', why: acts.includes('approve') ? 'approval' : 'task', role: acts.includes('approve') ? 'approver' : 'worker', holder: 'person', presses: acts, work: 'q7', ...over },
 });
 
-function start(acts: string[], since: string | null = null) {
+function start(acts: string[], since: string | null = null, over: Record<string, unknown> = {}) {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
   invoke.mockImplementation(async (_target: string, route: string, ask?: { payload?: { act?: string } }) =>
     route === 'WORKFLOW_NODE' ? { run: 'q7', node: 'sign', act: ask?.payload?.act, done: true } : {});
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([['rows', { 'task:q7/sign': waiting(acts, since) }], ['sessions', {}]]), true));
+  client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([['rows', { 'step:q7/sign': waiting(acts, since, over) }], ['sessions', {}]]), true));
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
@@ -57,7 +58,15 @@ afterEach(async () => {
 
 describe("a person's task on What needs you", () => {
   it('is keyed by its run and node, as the other waits are', () => {
-    expect(obligationOf(waiting(['done']))).toBe('task:q7/sign');
+    expect(obligationOf(waiting(['done']))).toBe('step:q7/sign');
+  });
+
+  it('says a plugin step’s wait on a role the person holds, the act in its plugin’s words, its page, and its pass over', async () => {
+    start(['skip'], null, { why: 'actor', role: 'approver', words: 'Approve Production in Azure DevOps.', url: 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90' });
+    const item = await screen.findByRole('listitem', { name: '#q7' });
+    expect(item).toHaveTextContent('sign: waiting on approver: you. Approve Production in Azure DevOps.');
+    expect(within(item).getByRole('link')).toHaveAttribute('href', 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90');
+    expect(within(item).getByRole('button', { name: 'Pass over…' })).toBeTruthy();
   });
 
   it.each([['en', /waiting 3 ?h/i], ['zh', /已等待.*3/]])('says since when it has waited, in %s', async (language, said) => {
@@ -69,7 +78,7 @@ describe("a person's task on What needs you", () => {
   it('presses Done with the note the person gave, as the run’s node word', async () => {
     start(['done']);
     const item = await screen.findByRole('listitem', { name: '#q7' });
-    expect(item).toHaveTextContent('The run waits at sign for your Done.');
+    expect(item).toHaveTextContent('sign: waiting on worker: you.');
     await userEvent.click(within(item).getByRole('button', { name: 'Done…' }));
     const asking = within(item).getByRole('group', { name: 'Done…' });
     await userEvent.type(within(asking).getByRole('textbox'), 'tagged by hand');
@@ -78,8 +87,8 @@ describe("a person's task on What needs you", () => {
   });
 
   it.each([
-    ['en', 'Approve…', 'Approve', 'Reject…', 'Reject', 'The run waits at sign for your Approve or Reject.'],
-    ['zh', '批准…', '批准', '驳回…', '驳回', '进展停在 sign，等你批准或驳回。'],
+    ['en', 'Approve…', 'Approve', 'Reject…', 'Reject', 'sign: waiting on approver: you.'],
+    ['zh', '批准…', '批准', '驳回…', '驳回', 'sign：等待 approver：你。'],
   ])('offers an approval its Approve, a note left out where none is given, and its Reject, which waits for its reason, in %s', async (language, approveOpen, approve, rejectOpen, reject, why) => {
     await i18n.changeLanguage(language);
     start(['approve', 'reject']);

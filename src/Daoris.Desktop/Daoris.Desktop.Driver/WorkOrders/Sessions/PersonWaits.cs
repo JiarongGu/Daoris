@@ -8,14 +8,14 @@ namespace Daoris.Driver;
 /// <param name="Since">When the step came to stand where it does; null on a record written before it carried a clock.</param>
 public sealed record PersonWait(string Run, string Node, string Why, string Repository, DateTimeOffset? Since)
 {
-    /// <summary>The actor an <see cref="PersonWaits.Actor"/> wait is on, as its plugin names it; null on every other.</summary>
-    public string? Actor { get; init; }
+    /// <summary>The role it waits on (<see cref="StepWaiting.Read"/>): a plugin's actor as its plugin names it, else its wait's role.</summary>
+    public string Role { get; init; } = "";
 }
 
 /// <summary>
 /// What a run step waits on the person for: a review's Accept, a person's task or approval, a go-ahead, an attempt held unknown for
-/// them, and a plugin step's actor they hold. Workflows reads the steps (<see cref="PersonWaitReader"/>); Sessions' groups and *What needs you* place the session each run
-/// stands for by them.
+/// them, a plugin step's role they hold, and a second opinion nobody is free to give. Workflows reads the steps
+/// (<see cref="PersonWaitReader"/>); Sessions' groups and *What needs you* place the session each run stands for by them.
 /// </summary>
 public static class PersonWaits
 {
@@ -37,9 +37,15 @@ public static class PersonWaits
     /// <summary>A <c>return</c> holding files changed on both sides for the person's choice of each.</summary>
     public const string Choose = "choose";
 
-    /// <summary>A plugin step waiting on an actor the person holds (<see cref="StepWaiting"/>): its act is taken on its plugin's page.</summary>
+    /// <summary>A plugin step waiting on a role the person holds (<see cref="StepWaiting"/>): its act is taken on its plugin's page.</summary>
     public const string Actor = "actor";
 
     /// <summary>A step failed and kept for the person, or the step a run ended failed at, after its quest's done: what follows it never ran.</summary>
     public const string Left = "left";
+
+    /// <summary>An <c>opinion</c> its gate holds for want of a reviewer: the vacancy goes up to the line's lead (<see cref="OpinionVacancy"/>).</summary>
+    public const string Vacant = "vacant";
+
+    /// <summary>Every wait a step can stand at: what the census of <i>What needs you</i> holds a row with a press for, each.</summary>
+    public static IReadOnlyList<string> All { get; } = [Accept, Approval, Task, GoAhead, Held, Choose, Actor, Left, Vacant];
 }

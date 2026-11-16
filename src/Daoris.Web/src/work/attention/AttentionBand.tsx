@@ -383,10 +383,10 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     // The run's own request is asked again or gone on without by the same door's other two words.
     // A person's task is pressed by the same door, on its run and node.
     passOver: (item, words, answered, act) => {
-      const node = item.task?.node ?? item.declined?.node;
+      const node = item.step?.node ?? item.declined?.node;
       if (!node) { answered.done(); return; }
       run(item, async () => {
-        const answer = await runNodeWord.mutateAsync({ run: item.task?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
+        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },
