@@ -8,8 +8,10 @@ namespace Daoris.Desktop.Driver.Tests.Workflows;
 /// its approver), the attempt keeps it unsettled, and the run's step reads waiting on that actor, filled by its holder, with the act and the
 /// release's page, never working with nothing said. Seen failing first.
 /// </summary>
-public sealed class StepWaitingTests
+public sealed class StepWaitingTests : IDisposable
 {
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-stepwaiting-" + Guid.NewGuid().ToString("N")[..8]);
+
     private const string Plugin = "daoris-azure-devops";
     private const string Tip = "0123456789abcdef0123456789abcdef01234567";
     private const string Page = "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90";
@@ -50,22 +52,45 @@ public sealed class StepWaitingTests
         Assert.Equal("actor", named);
     }
 
-    [Fact]
-    public void A_progress_is_kept_on_the_attempt_out_and_settles_nothing_and_the_record_keeps_it_through_a_write()
+    /// <summary>A run's record as the runtime keeps it: the release step active on its attempt, which the record holds a status for.</summary>
+    private static NodeRecord Holding(NodeAttempt attempt) => new("run:q7")
     {
-        var record = new NodeRecord("run:q7") { Attempts = [Sent] };
+        Statuses = new Dictionary<string, NodeStatus> { ["release"] = new("run:q7", "release", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1 } },
+        Attempts = [attempt with { RecordedAt = Now, Generation = 1, Deliveries = 1 }],
+    };
 
-        var (next, result) = WorkHearing.Progressed(record, "run:q7", "i-1", Kept);
+    public void Dispose()
+    {
+        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+    }
+
+    [Fact]
+    public void A_progress_is_kept_on_the_attempt_out_and_settles_nothing()
+    {
+        var (next, result) = WorkHearing.Progressed(Holding(Sent), "run:q7", "i-1", Kept);
 
         Assert.Equal(PerformedWhat.Noted, result.What);
         var kept = Assert.Single(next!.Attempts);
         Assert.Equal(AttemptStates.Sent, kept.State);
         Assert.Equal(Kept, kept.Progress);
 
-        var settled = new NodeRecord("run:q7") { Attempts = [Sent with { State = AttemptStates.Settled }] };
-        var (unchanged, replay) = WorkHearing.Progressed(settled, "run:q7", "i-1", Kept);
+        var (unchanged, replay) = WorkHearing.Progressed(Holding(Sent with { State = AttemptStates.Settled }), "run:q7", "i-1", Kept);
         Assert.Null(unchanged);
         Assert.Equal(PerformedWhat.Replay, replay.What);
+    }
+
+    [Fact]
+    public void A_wait_the_record_keeps_reads_back_the_same_after_a_restart_and_a_progress_going_on_with_its_parts_unsaid()
+    {
+        var (waiting, _) = WorkHearing.Progressed(Holding(Sent), "run:q7", "i-1", Kept);
+        new NodeRecordFiles(_home, () => true).Write(waiting!);
+
+        var read = new NodeRecordFiles(_home, () => true).Read("run:q7")!;
+
+        Assert.Equal(NodeRecordFiles.ToJson(waiting!), NodeRecordFiles.ToJson(read));
+        Assert.Equal(Kept, StepWaiting.Of(read, Release, read.Statuses["release"]));
+        var going = Kept with { Actor = null, Url = null, Environment = null };
+        Assert.Equal(going, Assert.Single(NodeRecordFiles.Parse(NodeRecordFiles.ToJson(Holding(Sent with { Progress = going })))!.Attempts).Progress);
     }
 
     [Fact]
