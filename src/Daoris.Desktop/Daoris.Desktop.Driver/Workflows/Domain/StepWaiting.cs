@@ -13,7 +13,7 @@ public static class StepWaiting
     /// <summary>The wait's code where it goes on and its plugin said where it stands.</summary>
     public const string Going = "progress";
 
-    /// <summary>The progress of the plugin node's attempt out now, or null where it stands otherwise or nothing was said.</summary>
+    /// <summary>The progress of the plugin node's attempt out now, or null where it stands otherwise or its plugin said none.</summary>
     public static StepProgress? Of(NodeRecord? record, NodeDeclaration node, NodeStatus status) =>
         status.State == NodeStates.Active && NodeKit.IsPlugin(node.Kind)
         && record?.Newest(node.Id) is { State: AttemptStates.Recorded or AttemptStates.Sent, Progress: { } progress } attempt

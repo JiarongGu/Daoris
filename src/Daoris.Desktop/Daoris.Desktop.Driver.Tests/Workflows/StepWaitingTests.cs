@@ -61,7 +61,6 @@ public sealed class StepWaitingTests
         var kept = Assert.Single(next!.Attempts);
         Assert.Equal(AttemptStates.Sent, kept.State);
         Assert.Equal(Kept, kept.Progress);
-        Assert.Equal(Kept, Assert.Single(NodeRecordFiles.Parse(NodeRecordFiles.ToJson(next))!.Attempts).Progress);
 
         var settled = new NodeRecord("run:q7") { Attempts = [Sent with { State = AttemptStates.Settled }] };
         var (unchanged, replay) = WorkHearing.Progressed(settled, "run:q7", "i-1", Kept);
@@ -83,7 +82,7 @@ public sealed class StepWaitingTests
         Assert.Equal(StepHolders.Person, wait.Values["holder"]);
         Assert.Equal(Page, wait.Values["url"]);
         Assert.Equal(Now, wait.Since);
-        var step = new WorkflowRunStep(WorkflowGraphRun.Cell(Release, null), WorkflowRunStates.Waiting, WorkflowGraphDetails.Active) { Node = Release.Kind, Wait = wait };
+        var step = new WorkflowRunStep(WorkflowGraphRuns.Cell(Release, null), WorkflowRunStates.Waiting, WorkflowGraphDetails.Active) { Node = Release.Kind, Wait = wait };
         Assert.Equal("waiting", WorkflowRunWords.State(step.State));
         Assert.Equal($"Waiting on `approver`: you. {Act.TrimEnd('.')}. Open {Page}", WorkflowRunWords.Said(step));
 

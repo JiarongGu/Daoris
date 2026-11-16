@@ -202,7 +202,6 @@ public static class WorkflowGraphRuns
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
             var cannot = facts.Record?.Ended is null ? GraphCannotStart.Of(node, status.State, run.Process) : null;
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
-            // A plugin's attempt that waits on an actor stands waiting, its wait naming the actor, its holder, the act and its page.
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);

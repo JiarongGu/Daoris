@@ -11,7 +11,7 @@ import { accountRowWorded } from './accountWords';
 import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
-import { taskRead } from './taskRead';
+import { actorRead, taskRead } from './taskRead';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
@@ -407,11 +407,8 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     // The run's work as its quest names it, and the presses its task waits for.
     case 'task':
       return row.task ? { ...base, ...taskRead(row.task, questOf(row.task.work)?.title) } : { ...base, title: `#${row.id}` };
-    // The run's work as its quest names it, the actor its step waits on (the person holds it) with the act, and the page it is taken on.
     case 'actor':
-      return row.actor
-        ? { ...base, title: questOf(row.actor.work)?.title ?? `#${row.actor.run}`, detail: i18n.t('work.attention.actorWhy', { actor: row.actor.actor, node: row.actor.node, words: row.actor.words ?? '' }).trim(), actor: row.actor }
-        : { ...base, title: `#${row.id}` };
+      return row.actor ? { ...base, ...actorRead(row.actor, questOf(row.actor.work)?.title) } : { ...base, title: `#${row.id}` };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
     case 'plan-question':

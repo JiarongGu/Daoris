@@ -17,10 +17,6 @@ public static class WorkflowRunStates
     /// <summary>It waits for an agent's answer: a set-up shown again, findings answered, a question another repository answers.</summary>
     public const string WaitingOnAgent = "waiting-on-agent";
 
-    /// <summary>
-    /// It waits on the actor its plugin names, filled by its holder (<see cref="StepWaiting"/>): said alike whoever holds it, the person or an
-    /// agent, its wait naming both, the act and its page.
-    /// </summary>
     public const string Waiting = "waiting";
 
     /// <summary>What it waits on could not be read, which is never taken as passed or failed.</summary>

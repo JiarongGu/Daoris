@@ -15,13 +15,9 @@ public static class WorkStates
 
     public const string Unknown = "unknown";
 
-    /// <summary>
-    /// Not an outcome: what a performed attempt stands at while it runs, bound to its invocation, naming the <c>actor</c> it waits on where
-    /// one does (<see cref="StepProgress"/>). Kept on the attempt and replaced by the next; it never settles it.
-    /// </summary>
+    /// <summary>Not an outcome: a running attempt's word, naming the actor it waits on where one does (<see cref="StepProgress"/>).</summary>
     public const string Progress = "progress";
 
-    /// <summary>The outcomes: what settles an attempt or an observed step.</summary>
     public static readonly IReadOnlyList<string> All = [Reached, Failed, Unknown];
 }
 
@@ -337,7 +333,6 @@ public static class WorkWire
         field = "step";
         if (Text(@params, "step") is not { } step || !IsStep(step)) return null;
 
-        // A progress binds to the attempt it names: an observed step's event is an outcome or nothing.
         var bound = @params.TryGetProperty("invocation", out var named) && named.ValueKind == JsonValueKind.String;
         var outcome = ReadOutcome(@params, out field, progress: bound);
         if (outcome is null) return null;
