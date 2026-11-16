@@ -113,9 +113,10 @@ public static class RunNodeWords
     /// </param>
     /// <param name="outcome">A <c>decide</c>'s answer, one of its decision's outcomes.</param>
     /// <param name="holder">Who holds the actor a decide's proposal is from, as its channel names it; null for the owner's own word.</param>
+    /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>): an ended one is refused; null names none.</param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
-        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null)
+        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -142,6 +143,11 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
+            if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(bound.Unit, node, status.Attempt, given) is { } holding)
+            {
+                return (null, Refuse(StepTenureFiles.EndedEpoch) with { Detail = StepTenureFiles.Said(holding), State = status.State });
+            }
+
             var word = new NodeWord(node, act, words, now)
             {
                 By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),

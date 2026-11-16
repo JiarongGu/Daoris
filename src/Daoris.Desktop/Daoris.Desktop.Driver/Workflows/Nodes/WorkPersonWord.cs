@@ -10,8 +10,16 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     /// while it is still held and has no word, under the record's lock with the lease asked inside it, so only the lease's holder records it.
     /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
     /// </summary>
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null)
+    /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>); null for a word that names none.</param>
+    public WorkPerformed Word(
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null)
     {
+        // A word from a holder whose epoch has ended is refused, the step's holder now named: the step stays with its holder of now.
+        if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(unit, node, attempt, given) is { } holding)
+        {
+            return new(unit, node, PerformedWhat.Refused, StepTenureFiles.EndedEpoch) { Detail = StepTenureFiles.Said(holding) };
+        }
+
         if (resolution == HeldResolutions.DoneOutside) return Outside(unit, node, attempt, outcome, link, note);
         if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
         var now = clock();

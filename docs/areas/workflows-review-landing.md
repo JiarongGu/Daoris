@@ -175,7 +175,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
     rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
-    until a role takes one, and an approver at a destination marked as the person's stays theirs. A run ends when its graph's end settles or
+    until a role takes one, and an approver at a destination marked as the person's stays theirs. Each holder's tenure of an attempt,
+    `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`), which no older
+    build reads: a hand-over is a new epoch and restarts nothing, and a word naming an ended epoch (an attempt's word or a run's) is refused
+    `ended-epoch`, naming who holds the step now and since when; a word naming no epoch, as every door's does today, is taken as before. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands

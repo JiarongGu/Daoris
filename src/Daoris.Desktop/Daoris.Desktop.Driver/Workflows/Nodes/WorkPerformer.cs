@@ -273,8 +273,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return done;
     }
 
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null) =>
-        Person.Word(unit, node, attempt, resolution, outcome, link, note);
+    public WorkPerformed Word(
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null) =>
+        Person.Word(unit, node, attempt, resolution, outcome, link, note, epoch);
 
     /// <summary>Every word on a held, failed or in-flight attempt applied; each attempt a done outside stood down has its plugin told.</summary>
     public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
