@@ -48,19 +48,25 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    twin `daoris workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>`, both through
    `WorkflowValuesKey.Apply`, which refuses a value that is no JSON or a change with no reason and records the reason beside the values
    (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
-   or `target-changed` failure listed, never by editing the file. `SettingDoorsCensusTests` holds every key of the driver's file a step
+   or `target-changed` failure listed, never by editing the file: on the run's step failed so, the window's form (`ReleaseStepDoors`)
+   asks the plugin's `discover-releases`, the holder picks a definition (with its pipeline and trigger branches), a stage and an action
+   with a reason, and the door sets the choice on every release step of the workflow. `SettingDoorsCensusTests` holds every key of the driver's file a step
    reads to a setting of the window's and its verb. (D288, RELEASEVALUES1)
 3c. A release target keeps to its route (ACTPIN1, D307): the Azure DevOps plugin reads each release definition's continuous-deployment
    trigger at the act, and the branch the merged build ran on routes to the definitions whose trigger takes it (`routes.mjs`). A failure
    for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
-   approval's card names the release, its definition, the build and its source branch.
+   approval's card names the release, its definition, the build and its source branch (APPROVEHERE1): where the plugin declares
+   `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
+   holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
+   observed. No release step approves, whatever its action.
 3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
    `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
-   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris). Create
-   matches a release by the landed commit its artifact carries, across every build of that commit, or reads the release its holder names
-   (`release` option); it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
+   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
+   the evidence's `by` beside its words. Create matches a release by the landed commit its artifact carries, across every build of that
+   commit, or reads the release its holder names (`release` option), taken where its commit is the landed one or descends from it (the
+   landed commit is their merge base) and else refused `target-changed`, naming the commit it carries; it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
    end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
    key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
    deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or

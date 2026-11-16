@@ -104,6 +104,42 @@ test('an approval waits on its approver, naming the target, the commit and its b
   assert.deepEqual(writes(api), []);
 });
 
+test('a release the holder named settles create where its commit is the landed one or descends from it, else is refused naming its commit', async (t) => {
+  const LATER = 'd'.repeat(40);
+  const OTHER = 'e'.repeat(40);
+  const api = await line({ made: [{ id: 91, build: 45 }, { id: 92, build: 46 }] });
+  api.builds.push({ id: 45, buildNumber: '20261116.45', definition: { id: 7 }, repository: { id: 'repo-1' }, sourceBranch: 'refs/heads/dev', sourceVersion: LATER },
+    { id: 46, buildNumber: '20261116.46', definition: { id: 7 }, repository: { id: 'repo-1' }, sourceBranch: 'refs/heads/dev', sourceVersion: OTHER });
+  api.parents[LATER] = [MERGED];
+
+  const descends = (await step(t, api, 'release-create', { release: `${WEB}/_releaseProgress?releaseId=91` })).step;
+  const elsewhere = (await step(t, api, 'release-create', { release: '92' })).step;
+
+  assert.equal(descends.params.state, 'reached');
+  assert.match(descends.params.evidence.message, /^Release-91 of Portal-feature \(#43\) carries dddddddd, after the landed cccccccc, created by outside: A Person\./);
+  assert.equal(descends.params.evidence.by, 'outside: A Person');
+  assert.deepEqual([elsewhere.params.state, elsewhere.params.code], ['failed', 'target-changed']);
+  assert.match(elsewhere.params.evidence.message, /release 92 carries eeeeeeee, which is neither the landed cccccccc nor after it/);
+  assert.deepEqual(writes(api), []);
+});
+
+test('each step credits the identity Azure DevOps names on its evidence, beside its words; an approval is never made by any step', async (t) => {
+  const byHand = await line({ made: [{ id: 90, build: 41, status: 'inProgress', steps: [{ requestedBy: { displayName: 'A Person' } }],
+    approvals: [{ id: 7, status: 'approved', approvedBy: { displayName: 'The Owner' } }] }] });
+  const marked = await line({ made: [{ id: 90, build: 41, status: 'queued', approvals: [{ id: 7, status: 'pending', approver: { displayName: 'Release Approvers' } }] }] });
+
+  const started = (await step(t, byHand, 'release-start')).step;
+  const approved = (await step(t, byHand, 'release-approve')).step;
+  const asked = await Promise.all(['observe', 'start-stage', 'create-and-start'].map((action) =>
+    step(t, marked, 'release-approve', { action }, { deadlineAt: new Date(Date.now() + 5400).toISOString() })));
+
+  assert.equal(started.params.evidence.by, 'outside: A Person');
+  assert.equal(approved.params.evidence.by, 'outside: The Owner');
+  // Whatever the action, the approval stays its approver's: no step approves, so no agent holding the step does.
+  assert.ok(asked.every(({ progress }) => progress.some((frame) => frame.params.actor === 'approver')));
+  assert.deepEqual(marked.calls.filter((call) => /\/approvals\//.test(call.path)), []);
+});
+
 test('ACCESSSTEP1: a refused key waits on the credentials keeper with the page that fixes it, and is never failed for access', async (t) => {
   const api = await line();
 

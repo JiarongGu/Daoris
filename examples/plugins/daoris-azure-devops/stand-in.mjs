@@ -31,7 +31,7 @@ const PROJECT = '/acme/Proj/_apis';
 export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
-    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, lose: null, files: {}, changes: [],
+    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, lose: null, files: {}, changes: [], parents: {},
     session: 'out', lapses: 0, signInPage: false, renews: true, navigated: null,
   };
   api.navigated = (url) => { if (api.renews && url.includes('/_apis/connectionData')) api.session = 'in'; };
@@ -74,6 +74,13 @@ export async function standIn() {
     }
     if (request.method === 'GET' && /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/[0-9a-f]+\/changes$/.test(path)) {
       return [200, { changeCounts: { edit: api.changes.length }, changes: api.changes.map((each) => ({ item: { path: each } })) }];
+    }
+    // A commit's merge bases with another, from `parents` (a commit's parents by id): the other where it is this one or among its ancestors.
+    const bases = /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/([0-9a-f]+)\/mergebases$/.exec(path);
+    if (bases && request.method === 'GET') {
+      const seen = new Set();
+      for (let next = [bases[1]]; next.length > 0; next = next.flatMap((each) => api.parents[each] ?? [])) next.forEach((each) => seen.add(each));
+      return [200, { value: seen.has(query('otherCommitId')) ? [{ commitId: query('otherCommitId') }] : [] }];
     }
     if (request.method === 'GET' && path === `${PROJECT}/build/builds`) {
       const wanted = query('definitions')?.split(',').map(Number);
