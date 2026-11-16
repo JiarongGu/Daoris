@@ -25,6 +25,7 @@ const meta: Meta<typeof DriverCards> = {
     facts: FACTS,
     minutes: { cooloff: SETTINGS.find((each) => each.key === 'cooloff')!, quiet: SETTINGS.find((each) => each.key === 'quiet')! },
     busy: { access: false },
+    uxTrail: { on: false, pending: false, onChange: nothing },
     onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing,
   },
   decorators: [storyWidths.wide],

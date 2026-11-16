@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { landRetrySaid } from './landRetrySaid';
+import { landRetrySaid } from './place/landRetrySaid';
 import { type GraphRun, knownState, type RunHolder, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { stepTitle } from './said';
 

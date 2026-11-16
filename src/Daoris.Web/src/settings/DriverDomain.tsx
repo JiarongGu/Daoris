@@ -7,6 +7,7 @@ import { terminalActsOf } from '../person/terminalActs';
 import { type MachineSetting, SETTINGS } from '../bridge/generated/routes';
 import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
+import { useUxTrail } from '../app/uxTrail';
 import { DriverCards } from './DriverCards';
 import { accessToast } from './repository/Access';
 import type { SettingsDomainProps } from './domains';
@@ -51,10 +52,12 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // This machine's sessions' access: the default under every workspace's and repository's.
   const setAccess = useSetAccess();
   const setGitAccess = useSetGitAccess();
+  const trail = useUxTrail();
   const onError = failure(notify);
 
   return (
     <DriverCards
+      uxTrail={{ on: trail.on, pending: trail.set.isPending, onChange: (on) => trail.set.mutate(on) }}
       minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), manifest: settingOf('manifest') }}
       facts={{
         pluginsFolder,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../locales/i18n';
+import i18n from '../../locales/i18n';
 import { landRetrySaid } from './landRetrySaid';
 
 // LANDRETRY1: a run's `land` refused for a cause that passes says it is tried again by itself, and past its deadline names the line
