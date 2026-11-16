@@ -32,10 +32,10 @@ const placedAt = (graph: unknown, rem: number, options: Partial<Parameters<typeo
 describe('the shipped workflows, read from the driver\'s own data', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('are the thirteen this drawing is proved over, so a default added or changed is looked at here', () => {
+  it('are the fourteen this drawing is proved over, so a default added or changed is looked at here', () => {
     expect(SHIPPED.map((each) => each.id)).toEqual([
       'ask-delivery', 'branch-to-push', 'documents', 'in-copy', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept',
-      'merge-automatic', 'plan-review-apply', 'pull-request', 'release', 'team-part',
+      'merge-automatic', 'plan-review-apply', 'pull-request-release', 'pull-request', 'release', 'team-part',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
     expect([release.nodes.length, release.wires.length, release.end]).toEqual([12, 15, 'line']);
@@ -127,7 +127,11 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     expect(release.edges.find((edge) => edge.to === none[0]!.id)).toMatchObject({ from: 'find', style: 'when', port: 'none', label: 'none' });
     // The routed outcome stays an edge to its step.
     expect(release.edges.find((edge) => edge.from === 'find' && edge.to === 'release')).toMatchObject({ style: 'when', port: 'release', label: 'release' });
-    for (const each of SHIPPED.filter((one) => one.id !== 'release')) {
+    // A decision's "not needed" routes by no `when` wire: the step it closes is passed and the check after it goes on.
+    const decided = draw(shipped('pull-request-release').graph);
+    const notNeeded = decided.nodes.filter((node) => node.title === 'No further step');
+    expect(notNeeded.map((node) => decided.edges.find((edge) => edge.to === node.id)?.from)).toEqual(['config-needed']);
+    for (const each of SHIPPED.filter((one) => !['release', 'pull-request-release'].includes(one.id))) {
       expect(draw(each.graph).nodes.some((node) => node.title === 'No further step'), each.id).toBe(false);
     }
   });

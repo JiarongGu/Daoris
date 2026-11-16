@@ -25,6 +25,8 @@
   "workflow.shipped.ask-delivery.for": "For a planned ask: it waits until every part of its plan has landed on the ask's branch, the whole is checked together, and you accept it once; then the ask's branch lands on the line.",
   "workflow.shipped.in-copy.name": "In-copy workflow",
   "workflow.shipped.in-copy.for": "For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
+  "workflow.shipped.pull-request-release.name": "Pull request and release workflow",
+  "workflow.shipped.pull-request-release.for": "For a repository on Azure DevOps that releases: you review the work, a plugin pushes its branch and opens a pull request; once it is merged the release runs as steps of its own (target, create, start, approve, watch), each settled on what Azure DevOps holds, whoever made it. Then the release manager proposes whether a config change is needed and the owner confirms it; the config changer changes the live config where it is needed, and operations checks the release.",
 
   "workflow.shipped.delivery.merge-after-accept.name": "Merge after you accept",
   "workflow.shipped.delivery.merge-after-accept.for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
@@ -34,6 +36,8 @@
   "workflow.shipped.delivery.branch-to-push.for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
   "workflow.shipped.delivery.pull-request.name": "A pull request",
   "workflow.shipped.delivery.pull-request.for": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge.",
+  "workflow.shipped.delivery.pull-request-release.name": "A pull request, then its release",
+  "workflow.shipped.delivery.pull-request-release.for": "For a repository on Azure DevOps that releases: you review the work, a plugin pushes its branch and opens a pull request, and once it is merged its release runs as steps of the run, to the config change and the release's check.",
   "workflow.shipped.delivery.integrated.name": "Integrated into the line",
   "workflow.shipped.delivery.integrated.for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
   "workflow.shipped.delivery.integrated-no-press.name": "Integrated with no press",

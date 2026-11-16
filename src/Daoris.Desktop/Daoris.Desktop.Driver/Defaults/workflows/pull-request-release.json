@@ -1,0 +1,63 @@
+{
+  "id": "pull-request-release",
+  "order": 13,
+  "name": "Pull request and release workflow",
+  "for": "For a repository on Azure DevOps that releases: you review the work, Daoris pushes its branch and the Azure DevOps plugin opens a pull request; once it is merged the release runs as its own steps (target, create, start, approve, watch), each settled on what Azure DevOps holds whoever made it; then the release manager proposes whether a config change is needed and the owner confirms it, the config changer changes the live config where it is, and operations checks the release.",
+  "delivery": {
+    "name": "A pull request, then its release",
+    "for": "For a repository on Azure DevOps that releases: you review the work, a plugin pushes its branch and opens a pull request, and once it is merged its release runs as steps of the run, to the config change and the release's check."
+  },
+  "setUp": false,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["work"],
+    "end": "check-release",
+    "nodes": [
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+      { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
+      { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
+      { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
+      { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
+      { "id": "pull-request", "kind": "daoris-azure-devops/pull-request", "version": 1, "reach": "performed" },
+      { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
+      { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
+      { "id": "tree", "kind": "release", "version": 1, "reach": "performed" },
+      { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" },
+      { "id": "release-target", "kind": "daoris-azure-devops/release-target", "version": 1, "reach": "performed" },
+      { "id": "release-create", "kind": "daoris-azure-devops/release-create", "version": 1, "reach": "performed" },
+      { "id": "release-start", "kind": "daoris-azure-devops/release-start", "version": 1, "reach": "performed" },
+      { "id": "release-approve", "kind": "daoris-azure-devops/release-approve", "version": 1, "reach": "performed" },
+      { "id": "release-watch", "kind": "daoris-azure-devops/release-watch", "version": 1, "reach": "performed" },
+      { "id": "config-needed", "kind": "human", "version": 1, "reach": "pressed", "outcomes": ["needed", "not-needed"] },
+      { "id": "config-change", "kind": "human", "version": 1, "reach": "pressed" },
+      { "id": "check-release", "kind": "human", "version": 1, "reach": "pressed" }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
+      { "id": "i", "kind": "after", "from": "holds", "to": "content" },
+      { "id": "ck", "kind": "after", "from": "content", "to": "check" },
+      { "id": "b", "kind": "after", "from": "check", "to": "review" },
+      { "id": "cb", "kind": "back", "from": "check", "on": "failed", "to": "work" },
+      { "id": "e", "kind": "after", "from": "review", "to": "landing" },
+      { "id": "c", "kind": "after", "from": "landing", "to": "push" },
+      { "id": "d", "kind": "after", "from": "push", "to": "pull-request" },
+      { "id": "m", "kind": "after", "from": "pull-request", "to": "monitor" },
+      { "id": "t", "kind": "when", "from": "monitor", "to": "tidy", "outcome": "merged" },
+      { "id": "r", "kind": "after", "from": "tidy", "to": "tree" },
+      { "id": "x", "kind": "when", "from": "monitor", "to": "closed", "outcome": "closed" },
+      { "id": "rt", "kind": "when", "from": "monitor", "to": "release-target", "outcome": "merged" },
+      { "id": "rc", "kind": "after", "from": "release-target", "to": "release-create" },
+      { "id": "rs", "kind": "after", "from": "release-create", "to": "release-start" },
+      { "id": "ra", "kind": "after", "from": "release-start", "to": "release-approve" },
+      { "id": "rw", "kind": "after", "from": "release-approve", "to": "release-watch" },
+      { "id": "cn", "kind": "after", "from": "release-watch", "to": "config-needed" },
+      { "id": "cg", "kind": "when", "from": "config-needed", "to": "config-change", "outcome": "needed" },
+      { "id": "kn", "kind": "after", "from": "config-needed", "to": "check-release" },
+      { "id": "kg", "kind": "after", "from": "config-change", "to": "check-release" }
+    ]
+  }
+}

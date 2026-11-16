@@ -65,7 +65,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
    deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
    sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1). Saved
-   versions keep the bundled `release` step.
+   versions keep the bundled `release` step; the shipped `pull-request-release` preset names the five steps after its Azure DevOps pull
+   request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
+   work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
+   config changer, whose *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by
+   operations; "not needed" passes `config-change` on the record naming both holders.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
