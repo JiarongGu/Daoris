@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The trees a door reads that no part has judged are walked a few at once, never one after another: the Sessions list's groups
-/// wait on these walks at a start, before the machine's facts have begun, and each walk's git queues behind the first look's.
+/// The trees a door reads that no part has judged are walked a few at once, never one after another: the route's groups wait on
+/// these walks before the machine's facts have begun, and each walk's git queues behind the first look's.
 /// </summary>
 public sealed class HelpTreeWalkTests
 {
