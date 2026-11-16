@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A workflow given a second opinion can run it: the copy names the shipped opinion role, and a choice of it where the repository declares no
+/// A workflow given a second opinion can run it: the copy takes the shipped opinion role, naming none, and a choice of it where the repository declares no
 /// reviewers says the one press that declares them, rather than a run later drawing the node as unable to start.
 /// </summary>
 public sealed class OpinionSetupTests
@@ -17,11 +17,12 @@ public sealed class OpinionSetupTests
     }
 
     [Fact]
-    public void The_copy_with_an_opinion_names_the_shipped_opinion_role()
+    public void The_copy_with_an_opinion_takes_the_shipped_opinion_role_naming_none()
     {
         var node = Copy().Nodes.Single(each => each.Kind == NodeKinds.Opinion);
 
-        Assert.Equal(StepRoles.Opinion, node.Role);
+        Assert.Equal(StepRoles.Opinion, StepRoles.Of(node));
+        Assert.Null(node.Role);
         Assert.False(node.Options.ContainsKey(NodeOptionFields.Role));
     }
 
