@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDEDBYPATCH1: the session list's landing offer is read by patch, as the tree's work reads it, so a landing that replayed a tree's
+/// The session list's landing offer is read by patch, as the tree's work reads it, so a landing that replayed a tree's
 /// commit (same patch, new id) and merged the replay leaves no "not landed" line. A line that went on and changed the same lines again
 /// holds the patch but not the work, and stays to review (<c>ReviewLandedTests</c>), which is the rule, not an id-only reading.
 /// </summary>

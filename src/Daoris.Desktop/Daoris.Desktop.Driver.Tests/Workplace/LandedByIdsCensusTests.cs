@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The census of the readings of "landed" by commit ids alone (LANDEDBYPATCH1): a landing that replays a tree's commit leaves the same patch
+/// The census of the readings of "landed" by commit ids alone: a landing that replays a tree's commit leaves the same patch
 /// under a new id, so a judgement of a session's work that counts ids says "not landed" for ever. What judges whether a session's work landed
 /// reads <c>SessionTrees.WorkAsync</c> (by patch, as the tree's work reads it); the id-only counts (<c>UnlandedAsync</c>,
 /// <c>UnlandedInTreeAsync</c>, <c>UnlandedHereAsync</c>) are named here, each with why it may count ids, and a new caller is refused until it
@@ -23,8 +23,8 @@ public sealed class LandedByIdsCensusTests
         ["Workplace/LandPerformer.cs"] = "the landing's gate: a count of zero closes a landing, a count above zero goes on to the per-commit reading that carries replays",
         ["Workplace/UnheldTips.cs"] = "whether a branch's tip is held by a branch of the person's, for the clean-up of branches, not a session's work",
         ["Workplace/Git/GitRepository.cs"] = "the port's own git read",
-        // Ends where the opinion look reads the tree's work: LOOKOPINIONS1 moves it, and the entry goes with it.
-        ["Review/OpinionLook.cs"] = "an opinion owed's close, read beside the tree's work by patch (OPINIONDUE1)",
+        // Ends where the opinion look reads the tree's work alone: the entry goes with the count.
+        ["Review/OpinionLook.cs"] = "an opinion owed's close, read beside the tree's work by patch",
     };
 
     [Fact]
