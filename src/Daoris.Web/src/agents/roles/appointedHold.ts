@@ -12,6 +12,7 @@ export const DECISION_KINDS: Readonly<Record<string, readonly string[]>> = {
   landing: ['landing.accept', 'landing.approve', 'landing.reject'],
   memory: ['memory.keep', 'memory.decide'],
   departure: ['departure.accept'],
+  vacancy: ['vacancy.recast', 'vacancy.relax', 'vacancy.prepaid', 'vacancy.wait'],
   'ask-daoris': ['ask-daoris.report'],
 };
 
