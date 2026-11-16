@@ -13,11 +13,11 @@ namespace Daoris.Driver;
 /// one on a record the runtime does not govern or at a node its graph does not declare (a retired repository, a version that no longer
 /// reads), and one whose plugin's process is down, neither of which the runtime asks after; and one whose step waits on a role's act
 /// outside its plugin (its progress names the role, an approver, a deployer, whoever holds it), which its plugin's watch resumes after a
-/// restart. Read through the runtime (<see cref="NodeRuntime.PluginStepsInFlight"/>), never written.
+/// restart; and a watch, whose plugin declares it acts on nothing (<see cref="NodePerform.Acts"/>). Read through the runtime (<see cref="NodeRuntime.PluginStepsInFlight"/>), never written.
 /// </remarks>
 public static class PluginStepsInFlight
 {
-    /// <summary>How long an attempt whose outcome is not known holds an update, from when it is first counted so (D301's amendment).</summary>
+    /// <summary>How long an attempt whose outcome is not known holds an update, from when it is first counted so.</summary>
     public static readonly TimeSpan UnknownBound = TimeSpan.FromMinutes(15);
 
     /// <summary>Whether an attempt is a plugin's step sent, or perhaps sent, and not settled.</summary>

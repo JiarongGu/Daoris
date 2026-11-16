@@ -22,7 +22,6 @@ export type ReviewFacts = {
   ways: number;
   part: string[];
   reach: string[];
-  /** The build below which the save closes going back, said first; null where it closes none. */
   closesBelow: string | null;
 };
 

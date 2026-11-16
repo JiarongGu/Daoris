@@ -221,7 +221,7 @@ public sealed class TreeLock : IDisposable
         }
         catch (DirectoryNotFoundException)
         {
-            // No lock of the home was ever taken, so nothing holds this one.
+            // A home with no lock folder holds no lock.
             return null;
         }
         catch (IOException)

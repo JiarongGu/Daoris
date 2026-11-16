@@ -61,10 +61,6 @@ public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<
 
     public IReadOnlyList<string> Transient { get => transient; init => transient = Copied(value); }
 
-    /// <summary>
-    /// Whether the step acts outside: true unless its manifest says <c>"acts": false</c>, a watch that only observes, which an update's drain
-    /// never waits on (<see cref="PluginStepsInFlight"/>), since cut off it loses nothing and its plugin watches again after the restart.
-    /// </summary>
     public bool Acts { get; init; } = true;
 
     private static ImmutableArray<string> Copied(IReadOnlyList<string> codes) =>

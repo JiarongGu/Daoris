@@ -422,8 +422,6 @@ public static class PluginStepCodes
     public const string StepTwice = "step-twice";
     public const string Idempotent = "idempotent";
     public const string Reconcile = "reconcile";
-
-    /// <summary>A <c>perform</c> whose <c>acts</c> is not <c>true</c> or <c>false</c>.</summary>
     public const string Acts = "acts";
 
     /// <summary>A performed step whose manifest's <c>hooks.points</c> does not name <c>work/perform</c>.</summary>

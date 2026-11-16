@@ -158,7 +158,6 @@ public sealed class NodeRuntime(
         ? Daoris.Driver.PluginStepsInFlight.Count(governed.Values, records.Read, plugin => port.GenerationOf(plugin) is not null, _unknown, clock())
         : 0;
 
-    /// <summary>When each attempt not known was first counted so: an update waits on it for a bounded time.</summary>
     private readonly UnknownAttempts _unknown = new();
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);

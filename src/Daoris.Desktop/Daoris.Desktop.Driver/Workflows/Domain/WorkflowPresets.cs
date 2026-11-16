@@ -62,7 +62,6 @@ public static class WorkflowPresets
         if (gates.Count == 0) wires.Add(new JsonObject { ["id"] = lead["id"]!.DeepClone(), ["kind"] = "after", ["from"] = from, ["to"] = into });
         foreach (var gate in gates)
         {
-            // Each names no role: it takes its kind's, as the place's catalogue gives its work, and closes no going back.
             var added = new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" };
             nodes.Add(added);
             wires.Add(new JsonObject { ["id"] = $"{gate}-in", ["kind"] = "after", ["from"] = from, ["to"] = gate });

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Claude Code's stored sign-in is read for its shape and never decoded (CREDRACE1): whether a token is there is judged on the JSON's own
-/// bytes, so no string of a credential's value is made, to be kept, logged or left for the collector.
+/// Claude Code's stored sign-in is read for its shape and never decoded: whether a token is there is judged on the JSON's own bytes, so no
+/// string of a credential's value is made, to be kept, logged or left for the collector.
 /// </summary>
 public sealed class ClaudeStoredSignInTests
 {

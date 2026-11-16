@@ -68,10 +68,7 @@ public sealed class AccountReadsTests : IDisposable
         Assert.Equal(new AccountRead(LoginState.In, Ten.AddMinutes(5)), AccountReads.Of(_home, "claude-code").Accounts["account-1"]);
     }
 
-    /// <summary>
-    /// A renewal that timed out reads unanswered between a sign-in and the sign-out its agent made: the unanswered reading is nothing known, so
-    /// the sign-out still says it followed the sign-in, and is one nobody at Daoris made. A sign-out read again after one unanswered is not new.
-    /// </summary>
+    /// <summary>A timed-out renewal reads unanswered between a sign-in and the sign-out: the sign-out still follows the sign-in.</summary>
     [Fact]
     public void A_sign_out_after_an_unanswered_reading_still_follows_the_sign_in_before_it()
     {

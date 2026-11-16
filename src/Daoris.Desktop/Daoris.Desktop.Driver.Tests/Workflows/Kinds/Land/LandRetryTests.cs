@@ -131,7 +131,7 @@ public sealed class LandRetryTests : GraphRunFixture
         var held = DeliveryRuns.Hold(_home, DeliveryStore.KeyOf(Work.Session, start.Tip, DeliveryMethods.Branch, "main"));
         Assert.NotNull(held);
 
-        // No lock of the repository was ever taken in this home, and nothing holds it: a look tries the landing at once.
+        // A home with no lock folder holds no lock: a look tries the landing at once.
         Assert.Null(LandRetries.StillHeld(_home, tree));
         using (held)
         {

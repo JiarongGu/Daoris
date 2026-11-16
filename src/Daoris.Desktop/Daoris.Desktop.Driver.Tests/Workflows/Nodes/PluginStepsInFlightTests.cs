@@ -113,6 +113,17 @@ public sealed class PluginStepsInFlightTests : NodeRunFixture
     [Fact]
     public async Task A_watch_that_acts_on_nothing_never_holds_the_install()
     {
+        // A manifest says it in its step's `perform`; anything but true or false there is refused by its code.
+        using var manifest = System.Text.Json.JsonDocument.Parse("""
+            { "id": "acme.deploy", "hooks": { "command": ["node", "p.mjs"], "points": ["work/perform"] },
+              "steps": [{ "id": "watch", "reach": "performed", "perform": { "acts": false } }, { "id": "deploy", "reach": "performed", "perform": {} }] }
+            """);
+        Assert.Equal(new[] { false, true }, PluginSteps.Read(Plugin, manifest.RootElement).Steps.Select(step => step.Perform!.Acts));
+        using var broken = System.Text.Json.JsonDocument.Parse("""
+            { "id": "acme.deploy", "hooks": { "command": ["node", "p.mjs"], "points": ["work/perform"] }, "steps": [{ "id": "watch", "reach": "performed", "perform": { "acts": "no" } }] }
+            """);
+        Assert.Equal(PluginStepCodes.Acts, PluginSteps.Read(Plugin, broken.RootElement).Code);
+
         var watch = Step with { Id = Plugin + "/deploy", Kind = Plugin + "/deploy", Perform = Step.Perform! with { Acts = false } };
         var runtime = Governing();
 
@@ -122,10 +133,7 @@ public sealed class PluginStepsInFlightTests : NodeRunFixture
         Assert.Equal(0, runtime.PluginStepsInFlight());
     }
 
-    /// <summary>
-    /// An attempt whose outcome is not known holds an update for <see cref="PluginStepsInFlight.UnknownBound"/> from when it was first counted
-    /// so, then the install goes on: the restart asks its plugin after it, as it would after any stop.
-    /// </summary>
+    /// <summary>An attempt not known holds an update for <see cref="PluginStepsInFlight.UnknownBound"/> from its first count, then the install goes on.</summary>
     [Fact]
     public async Task An_attempt_not_known_holds_the_install_for_a_bounded_time()
     {
