@@ -4,8 +4,7 @@ import { keys } from '../../data/queries';
 import { TIDIED_EVENTS } from '../../projects/workspace/WorkspaceTidied';
 import type { LogFilters, LogReading, LogSince } from '../../settings/Logs';
 
-// The machine log: what the page reports into it, and Settings → Logs reading it back. Its scope, `logs/`, holds what the
-// window keeps of what the person did on the screen: this log, and the person's UX trail (`uxTrail.ts`).
+// The machine log: what the page reports into it, and Settings → Logs reading it back.
 
 /** The longest string the page reports: the machine log keeps a clue, never a paragraph. */
 export const LOG_TEXT = 120;

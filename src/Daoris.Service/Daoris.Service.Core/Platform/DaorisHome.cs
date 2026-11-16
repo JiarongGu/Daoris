@@ -383,7 +383,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json", "data/terminal-acts.json");
-    // The person's UX trail, one file a day; named here, never read by the service.
     public static readonly HomeEntry UxTrail = new("ux-trail", HomeCategory.Data, "data/ux-trail", "data/ux-trail");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
