@@ -22,7 +22,6 @@ internal interface IRolesWorkOrders
     /// </summary>
     Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string session, string questId, CancellationToken ct);
 
-    /// <summary>The ask a session's line is on, read from its entry's key; null for a line on no ask (see <c>AskWords.AskOfEntry</c>).</summary>
     string? AskOfEntry(string? entry);
 }
 

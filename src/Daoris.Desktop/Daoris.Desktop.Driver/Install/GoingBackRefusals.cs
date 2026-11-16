@@ -7,10 +7,7 @@ internal interface IGoingBackRefusal
     (string Code, string Sentence)? Refused(string home, string? staged, string? running);
 }
 
-/// <summary>
-/// The refusal of a going back the update's doors ask: the deliveries it waits on are Workplace's and the saved workflows' floor
-/// Workflows', which installs it.
-/// </summary>
+/// <summary>The refusal of a going back the update's doors ask: it reads the deliveries and the workflows' floor, so Workflows installs it.</summary>
 internal static class GoingBackRefusals
 {
     private static IGoingBackRefusal? _current;

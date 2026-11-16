@@ -17,10 +17,7 @@ public static class InstallRollback
     /// <summary>The code of the refusal a stale delivery makes.</summary>
     public const string Deliveries = "deliveries";
 
-    /// <summary>
-    /// <see cref="Refusal"/> with its code: <see cref="WorkflowRolesSince.Code"/> below the workflows' floor, <see cref="Deliveries"/> while a
-    /// delivery is unresolved; null otherwise.
-    /// </summary>
+    /// <summary><see cref="Refusal"/> with its code: the floor's, or <see cref="Deliveries"/> while a delivery is unresolved; null otherwise.</summary>
     public static (string Code, string Sentence)? Refused(string home, string? staged, string? running)
     {
         if (!(Numbered(staged) is { } older && Numbered(running) is { } newer && older < newer)) return null;
