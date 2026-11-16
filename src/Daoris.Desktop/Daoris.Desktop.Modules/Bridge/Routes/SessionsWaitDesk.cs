@@ -83,6 +83,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
             Courses = _loop.Supervisor.CoursesOf(press.Id).Select(SupervisorCourseRow).ToList(),
             Landings = _loop.Supervisor.LandingsOf(press.Id).Select(view => SupervisorLandingRow(view, LandingWork.Of(_loop.Home, view))).ToList(),
             Allows = _loop.Supervisor.AllowsOf(press.Id).Select(SupervisorAllowRow).ToList(),
+            Doors = _loop.Supervisor.DoorsOf(press.Id).Select(SupervisorDoorRow).ToList(),
             Counts = SessionCountsWire.Counts(facts),
             Acts = SessionCountsWire.Acts(facts),
         };
@@ -144,6 +145,20 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         GoesOnAt = Moments.Write(view.GoesOnAt),
         StateAt = Moments.Write(view.StateAt),
         view.Earlier,
+    };
+
+    internal static object SupervisorDoorRow(SupervisorDoorView view) => new
+    {
+        view.Id,
+        view.Kind,
+        view.Subject,
+        view.Do,
+        view.Choice,
+        view.Role,
+        view.Agent,
+        State = SupervisorStates.Spell(view.State),
+        KeptAt = Moments.Write(view.KeptAt),
+        GoesOnAt = Moments.Write(view.GoesOnAt),
     };
 
     /// <summary>One course decision as the page reads it: the point's count, value, rule and place, the act and where it stands, no sentence.</summary>

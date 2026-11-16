@@ -225,7 +225,17 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     run's work in its repository (`LandingSessions`): a chain's quests for a chain's run, and for an ask's delivery run, which has no
     quest, the quests its ask gave that repository, so the ask's one review is answered as a chain's. Who answers a review is the
     place's appointment, never the step's: a place appoints a landing supervisor held by an agent and granted `landing.accept`, or
-    none, and its reviews wait for the person. (D208, D233, D296)
+    none, and its reviews wait for the person. The `memory` kind's `keep` (a session's staged changes, `keep` or `drop`) and `decide`
+    (an end, `approve` or `decline`) and the `departure` kind's `accept` (a done held by its departure alone; one held for its
+    evidence, review or a reopened source is the person's) are held and overruled the same way, each listed and prompted with its
+    facts (the staged rows and their texts; the end's target, reason and proposer; the departure beside what the quest required),
+    a subject whose facts do not compose is said and skipped, never silently. Each answer is pinned to what it judged (the staged
+    rows' ids, the end's id, the quest's state and answers digested) as a landing is to its revision; its release reads the pin
+    again, a changed one going stale (`subject-changed`), writes `released`, then posts to the service's own door with the role
+    named (its `role` form, the driver's), never as the person's, and a post a restart cut off after `released` is settled by what
+    the service shows. A departure's accepted move names the role (`by`), so the owner's mark never reads it as theirs, and the
+    session's head shows a held one with *Overrule*; with no per-place risk declaration, an act applies only where a role holding it is set for the scope, and a
+    high-risk place holds none. (D208, D233, D296, D297)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a

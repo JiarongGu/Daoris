@@ -42,8 +42,8 @@ describe('a line’s supervision', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   it('reads an older driver’s answer as none', () => {
-    expect(readSupervision({ decisions: [] })).toEqual({ counts: [], acts: [], courses: [], landings: [], allows: [] });
-    expect(readSupervision(null)).toEqual({ counts: [], acts: [], courses: [], landings: [], allows: [] });
+    expect(readSupervision({ decisions: [] })).toEqual({ counts: [], acts: [], courses: [], landings: [], allows: [], doors: [] });
+    expect(readSupervision(null)).toEqual({ counts: [], acts: [], courses: [], landings: [], allows: [], doors: [] });
   });
 
   it('draws each count with what it stands at and the rule that acts on it, and says when it is not known', () => {

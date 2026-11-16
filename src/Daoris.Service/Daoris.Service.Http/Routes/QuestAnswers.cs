@@ -110,7 +110,7 @@ public sealed class QuestAnswers(HostWiring host)
         new(quest, [.. moves.Select(move => new QuestMoveResponse(
             QuestMoves.Spell(move.Kind), move.At, move.Machine, move.Sequence, move.Number, move.Applied, move.From?.ToString(),
             move.Attempted?.ToString(), move.Dismisses is { } named ? new QuestMoveRefResponse(named.Machine, named.Sequence) : null,
-            move.WaitsOn, move.Session, move.Evidence, move.SetUp, move.Verdict, move.Hold))]);
+            move.WaitsOn, move.Session, move.Evidence, move.SetUp, move.Verdict, move.Hold, move.By))]);
 
     // What a door hands the exchange: a half left out, or a whole one, arrives blank and is refused there naming which, the same
     // sentence every door gives; so does an evidence item naming both or neither.

@@ -112,7 +112,7 @@ public sealed class SupervisePassTests : IDisposable
         var files = new SupervisorWaiting(SupervisorKinds.Files, SupervisorSubject.Ask("engine", "2026-11-09T09:00:00Z", "run(npm ci)", "npm ci"), "engine", "agent:supervisor@0", ["allow-run"]);
         var (driver, asked, _) = Driver((_, _) => Ended("completed", Leave));
 
-        Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: null), default));
+        Assert.Contains("could not read what it stands on", await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: null), default));
         Assert.Empty(asked);
 
         Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: "act: run(npm ci)"), default));

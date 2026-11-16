@@ -11,16 +11,20 @@ internal sealed class QuestAcceptOperation : IQuestOperation
 {
     public QuestOperationKind Kind => QuestOperationKind.Accepted;
 
-    /// <summary>A yes carries nothing but a note a row from another machine may say.</summary>
+    /// <summary>A yes carries a note a row from another machine may say, and the appointed role that said it; an older build reads neither.</summary>
     public void WritePayload(Utf8JsonWriter writer, QuestOperation operation)
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
         QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        if (operation.By is not null) writer.WriteString("by", operation.By);
         writer.WriteEndObject();
     }
 
-    public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read;
+    public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) =>
+        payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("by", out var by) && by.ValueKind == JsonValueKind.String
+            ? read with { By = by.GetString() }
+            : read;
 
     /// <summary>
     /// A yes that lost takes the step it published with it, as a lost close's does, while the done stands unaccepted; one that
@@ -40,14 +44,15 @@ internal sealed class QuestAcceptOperation : IQuestOperation
     /// The quest as it now stands, whether this call accepted it (false for a quest nothing holds), and the step it published; a null
     /// quest means no such id.
     /// </returns>
-    internal async Task<QuestMove> AcceptAsync(QuestTx tx, string id, DateTimeOffset now)
+    /// <param name="by">The appointed role whose yes it is (<see cref="QuestOperation.By"/>); null for the person's own.</param>
+    internal async Task<QuestMove> AcceptAsync(QuestTx tx, string id, DateTimeOffset now, string? by = null)
     {
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
         if (QuestLog.Replay(history) is not { } quest) return new QuestMove(await tx.FindAsync(id).ConfigureAwait(false), Moved: false);
 
-        // A departure or its evidence takes a yes, and a review's hold does not.
-        var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now);
-        if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
+        // A departure or its evidence takes a yes, and a review's hold does not; a role's yes takes a departure alone.
+        var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now, By: by);
+        if (!QuestLog.Applies(quest, judged) || (by is not null && quest.Hold != QuestHold.Departed)) return new QuestMove(quest, Moved: false);
 
         var accepted = QuestLog.Step(quest, await tx.AppendAsync(judged).ConfigureAwait(false))!;
         await tx.WriteCacheAsync(accepted).ConfigureAwait(false);

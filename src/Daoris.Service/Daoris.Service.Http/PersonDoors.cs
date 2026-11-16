@@ -313,7 +313,7 @@ public static class PersonDoors
         new("POST", "/api/channel/line", DoorClass.Person, "a message on a line's own channel") { Marks = OwnerMark.None("a message on a line's own channel, which names no quest") },
         .. ChannelMemberRoutes.Doors,
         new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel") { Marks = OwnerMark.None("a read mark") },
-        new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:accepted") },
+        RoleAnswerDoors.Accept,
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done") },
         // Only the person reopens a sealed submission, and only they choose whether its held step goes on.
         new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:reopened") },
@@ -325,10 +325,9 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         // The person's held word moved to the head, theirs to move as saying it is.
         new("POST", "/api/sessions/{id}/move", DoorClass.Person, "words moved to a session's head") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
-        // Until a second opinion may approve, the person is every memory end's approver,
-        // and only they keep or drop what an ended session staged.
-        new("POST", "/api/memory/{id}/decide", DoorClass.Person, "a memory end's approval") { Marks = OwnerMark.None("a memory row, no quest") },
-        new("POST", "/api/sessions/{id}/memory", DoorClass.Person, "an ended session's memory changes kept or dropped") { Marks = OwnerMark.None("a memory row, no quest") },
+        // A memory end's approver and a staged session's keep or drop: the person, or a role appointed to it through the driver.
+        RoleAnswerDoors.Decide,
+        RoleAnswerDoors.Keep,
         new("POST", "/api/asks/{id}/close", DoorClass.Agent, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
         new("DELETE", "/api/asks/{id}", DoorClass.Agent, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Agent, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
@@ -430,10 +429,14 @@ public static class PersonDoors
         return @class is DoorClass.Driver or DoorClass.Person ? act : null;
     }
 
-    // The routes' own judgements of their forms: `respond` with `whileOpen` true; a `set-up` naming no session.
+    /// <summary>Whether <paramref name="body"/> makes a form of <paramref name="door"/> that is the driver's alone, as a role's answer is.</summary>
+    public static bool DriversForm(Door door, JsonElement? body) => door.Form is { Class: DoorClass.Driver } && MakesForm(door, body);
+
+    // The routes' own judgements of their forms: `respond` with `whileOpen` true; a `set-up` naming no session; a role's answer.
     private static bool MakesForm(Door door, JsonElement? body) =>
         ReferenceEquals(door, Respond) ? Property(body, "whileOpen") is { ValueKind: JsonValueKind.True }
-        : ReferenceEquals(door, SetUp) && Property(body, "session") is null or { ValueKind: JsonValueKind.Null };
+        : ReferenceEquals(door, SetUp) ? Property(body, "session") is null or { ValueKind: JsonValueKind.Null }
+        : RoleAnswerDoors.Makes(door, body);
 
     private static JsonElement? Property(JsonElement? body, string name)
     {

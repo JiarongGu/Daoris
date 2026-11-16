@@ -38,7 +38,8 @@ internal static class SupervisorInstruction
         prompt.Append("Answer with your last message holding exactly one block, and nothing after it:\n\n");
         prompt.Append(SupervisorBlock.Opening).Append('\n')
             .Append("{ \"kind\": \"").Append(waiting.Kind).Append("\", \"subject\": { ").Append(subject).Append(" }, \"do\": \"<act>\", ")
-            .Append(waiting.Kind == SupervisorKinds.Question ? "\"choice\": \"<one offered label, exactly>\", " : "")
+            .Append(waiting.Kind == SupervisorKinds.Question ? "\"choice\": \"<one offered label, exactly>\", "
+                : waiting.Kind == SupervisorKinds.Memory ? "\"choice\": \"<keep or drop for keep; approve or decline for decide>\", " : "")
             .Append("\"reasons\": [ { \"says\": \"…\", \"source\": \"<where: a file and line, a decision, or count:<name>>\" } ] }\n")
             .Append(SupervisorBlock.Closing).Append("\n\n");
         prompt.Append("or, to leave it to the person, the same block with \"leave\": \"<bound>\" in place of \"do\" and \"choice\". ")

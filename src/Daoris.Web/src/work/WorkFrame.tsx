@@ -21,7 +21,7 @@ import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
 import { coolingFor } from './say';
-import { type FrameIntent, outputsOfIntent } from '../menus/commands';
+import { type FrameIntent, memoryOfIntent, outputsOfIntent } from '../menus/commands';
 import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
@@ -264,10 +264,14 @@ export function WorkFrame({
     setReviewing({ run, over: following?.id ?? null, attempt });
     openView('outputs');
   };
+  // The session a door opened at its Memory section, counted so each opening brings the section into view again.
+  const [memorySeek, setMemorySeek] = useState<{ session: string; n: number } | null>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
     const run = outputsOfIntent(intent);
+    const memoryOf = memoryOfIntent(intent);
     if (run) onReviewRun(run);
+    else if (memoryOf) setMemorySeek((was) => ({ session: memoryOf, n: (was?.n ?? 0) + 1 }));
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
     else if (intent === 'workflow') openView('workflow');
@@ -433,6 +437,7 @@ export function WorkFrame({
             roster={roster}
             nameOf={nameOf}
             agentRoster={agentRoster}
+            memorySeek={memorySeek}
             following={following}
             atWorkHeld={atWorkHeld}
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}

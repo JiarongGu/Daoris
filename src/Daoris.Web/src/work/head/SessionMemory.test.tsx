@@ -19,6 +19,23 @@ const row = (over: Partial<MemoryRow> & { id: string; kind: string }): MemoryRow
 afterEach(async () => { cleanup(); await i18n.changeLanguage('en'); });
 
 describe("a session's memory", () => {
+  it("is brought into view where What needs you's memory row opened the session, and only then", () => {
+    const scrolled = vi.fn();
+    const was = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrolled;
+    try {
+      const rows = [row({ id: 'w1', kind: 'write' })];
+      const { rerender } = render(<SessionMemory ended onDecide={vi.fn()} onKeep={vi.fn()} rows={rows} />);
+      expect(scrolled).not.toHaveBeenCalled();
+
+      rerender(<SessionMemory ended onDecide={vi.fn()} onKeep={vi.fn()} rows={rows} seek={1} />);
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      expect(scrolled.mock.instances[0]).toBe(screen.getByRole('region', { name: 'Memory' }));
+    } finally {
+      Element.prototype.scrollIntoView = was;
+    }
+  });
+
   it('shows a dispute and a proposed end of one entry as two decisions, only the end pressed by the person', async () => {
     const onDecide = vi.fn();
     render(<SessionMemory ended={false} onDecide={onDecide} onKeep={vi.fn()} rows={[

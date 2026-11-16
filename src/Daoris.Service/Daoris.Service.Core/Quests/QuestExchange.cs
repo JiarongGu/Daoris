@@ -170,8 +170,8 @@ public sealed class QuestExchange
         closes.CloseOutcomeAsync(id, key, token, named, now, ct);
 
     /// <summary>The person accepts a done's departure or a done held for its evidence; see <see cref="QuestPersonMoves.AcceptAsync"/>.</summary>
-    public Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
-        personMoves.AcceptAsync(id, now, ct);
+    public Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? by = null) =>
+        personMoves.AcceptAsync(id, now, ct, by);
 
     /// <summary>The person reopens a sealed submission; see <see cref="QuestPersonMoves.ReopenAsync"/>.</summary>
     public Task<QuestRespondOutcome> ReopenAsync(

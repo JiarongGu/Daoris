@@ -83,12 +83,26 @@ export type AllowRead = {
   stateAt: string;
 };
 
-/** What the head and *Details* say of the supervisor on one line. */
-export type LineSupervision = {
-  counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[]; landings?: LandingRead[]; allows?: AllowRead[];
+/** A role's answer at a door that waits on the person (`memory` on `staged` or an end, `departure` on a quest), as `SESSION_SUPERVISOR` answers it. */
+export type DoorRead = {
+  id: string;
+  kind: string;
+  subject: string;
+  do: string;
+  choice?: string | null;
+  role: string;
+  agent: string;
+  state: string;
+  keptAt: string;
+  goesOnAt: string;
 };
 
-export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [], landings: [], allows: [] };
+/** What the head and *Details* say of the supervisor on one line. */
+export type LineSupervision = {
+  counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[]; landings?: LandingRead[]; allows?: AllowRead[]; doors?: DoorRead[];
+};
+
+export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [], landings: [], allows: [], doors: [] };
 
 /** The answer read defensively: an older driver answers none of the fields. */
 export function readSupervision(answer: unknown): LineSupervision {
@@ -99,8 +113,15 @@ export function readSupervision(answer: unknown): LineSupervision {
     courses: Array.isArray(read.courses) ? read.courses : [],
     landings: Array.isArray(read.landings) ? read.landings : [],
     allows: Array.isArray(read.allows) ? read.allows : [],
+    doors: Array.isArray(read.doors) ? read.doors : [],
   };
 }
+
+/** What the role answered at the door and when it takes effect, in one sentence: the role and its agent as configured, never translated. */
+export const doorSays = (t: TFunction, door: DoorRead): string =>
+  t(`work.supervision.door.${door.choice ?? door.do}`, {
+    role: door.role, agent: door.agent, quest: door.subject, at: stamp(door.goesOnAt), defaultValue: door.choice ?? door.do,
+  });
 
 export const allowSays = (t: TFunction, allow: AllowRead): string =>
   t(`work.supervision.allow.${allow.do}`, { when: ago(allow.keptAt), defaultValue: allow.do });

@@ -15,8 +15,8 @@ public sealed record SupervisorDecideForm(
 
     public byte[] Canonical => SupervisorProof.Canonical(SupervisorRoutes.Decide, Subject, Generation, Do, Choice, Reasons);
 
-    /// <summary>Whether <paramref name="act"/> of <paramref name="kind"/> names one of the subject's offered labels.</summary>
-    public static bool Chooses(string kind, string act) => kind == SupervisorKinds.Question && act == SupervisorKinds.Answer;
+    /// <summary>Whether <paramref name="act"/> of <paramref name="kind"/> names an offered label: a question's answer, a memory act's yes or no.</summary>
+    public static bool Chooses(string kind, string act) => (kind == SupervisorKinds.Question && act == SupervisorKinds.Answer) || kind == SupervisorKinds.Memory;
 
     /// <summary>The form <paramref name="payload"/> is, or null where it is anything more or less.</summary>
     public static SupervisorDecideForm? Read(JsonElement? payload)

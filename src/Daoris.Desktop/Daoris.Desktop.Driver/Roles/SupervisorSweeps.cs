@@ -99,7 +99,8 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
     /// <summary>
     /// The start's sweep, before the first look's carry-ons: every kind's decision file read only to close it, <c>held</c> and <c>released</c>
     /// to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final to the owner,
-    /// one whose state line never reached its file among them, or whose agent attempts ended, remembered as closed. Memory is empty.
+    /// one whose state line never reached its file among them, or whose agent attempts ended, remembered as closed. Memory is empty but
+    /// for a door answer left <c>released</c>, kept again for the release to settle by what the service shows (<see cref="DoorRelease.Made"/>).
     /// </summary>
     /// <returns>The sessions with a decision the sweep closed, whose waiting supervisor's words the look takes back.</returns>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
@@ -112,7 +113,15 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
             foreach (var file in Directory.EnumerateFiles(folder, "*.json"))
             {
                 var id = Path.GetFileNameWithoutExtension(file);
-                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
+                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || book.Doors.ContainsKey(id)
+                    || Decided(session, id) is not { } earlier) continue;
+                if (earlier.State == SupervisorState.Released && SupervisorDoorAnswers.Recover(book.Files, session, id) is { } door)
+                {
+                    // Its post may have applied before the restart: only the service knows, so the release reads it, never a guess here.
+                    book.Doors[id] = door;
+                    continue;
+                }
+
                 var closed = earlier.State switch
                 {
                     SupervisorState.Released when earlier.Made => SupervisorState.WentOn,
@@ -147,5 +156,6 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
         book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State, false)
         : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point, course.Kind), course.State, false)
         : SupervisorLandingView.Read(book.Files, session, id) is { } landing ? (landing.Subject, landing.State, landed?.Invoke(landing) == true)
+        : SupervisorDoorAnswers.Recover(book.Files, session, id) is { } door ? (door.Subject, door.State, false)
         : null;
 }
