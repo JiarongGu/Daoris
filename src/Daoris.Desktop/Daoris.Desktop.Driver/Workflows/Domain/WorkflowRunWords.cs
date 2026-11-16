@@ -81,14 +81,9 @@ public static class WorkflowRunWords
         WorkflowRunStates.Failed, WorkflowRunStates.Stopped,
     ];
 
-    /// <summary>
-    /// What a step's state says, or null where the state's word says it all (not reached). A waiting step leads with the one line of every wait
-    /// (<see cref="StepWaiting.Line"/>), whoever holds it, then says what its detail says.
-    /// </summary>
     public static string? Said(WorkflowRunStep step)
     {
         var said = Detail(step);
-        // A plugin's wait says its own line, which is this one with its words and page.
         var own = step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going };
         return step is { State: WorkflowRunStates.Waiting, Role: { } role, Holder: { } holder } && !own
             ? said is null ? StepWaiting.Line(role, holder) : $"{StepWaiting.Line(role, holder)} {said}"

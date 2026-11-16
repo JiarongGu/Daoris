@@ -23,10 +23,6 @@ namespace Daoris.Driver;
 /// <para><b>One lock per session</b>, async, which may be held across a call to the service; every move is made under it, and the lock
 /// order is the decision's, then the judge's briefly (inside <see cref="IDecisionAdmission"/>, never across an await), then the ledger's
 /// step inside the service.</para>
-///
-/// <para><b>A restart reads back what an agent's hold kept held</b>: the start's sweep (<see cref="SweepAtStart"/>) takes each such
-/// decision back from <c>held_decisions</c> (<see cref="HeldDecisions"/>) with its window as it stood, and closes every other file,
-/// <c>held</c> and <c>released</c> to <c>stale</c> and <c>admitted</c> to <c>interrupted</c>, remembering each closed question as the owner's.</para>
 /// </remarks>
 public sealed class QuestionSupervisorDecisions
 {

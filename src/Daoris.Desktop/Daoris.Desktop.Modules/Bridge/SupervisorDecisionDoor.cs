@@ -59,7 +59,6 @@ public static class SupervisorDecisionDoor
     internal static async Task<IReadOnlyList<object>> AllWaitingAsync(DriverLoop loop, CancellationToken ct)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
-        // Read where each subject waits on the line now, so a subject its place's supervisor left lists to the machine's.
         var admission = new PipeDecisionAdmission(loop);
         var records = (await service.RecordsAsync(ct).ConfigureAwait(false)).ToList();
         var waiting = new List<object>();
@@ -79,7 +78,6 @@ public static class SupervisorDecisionDoor
         if (RowOf(subject.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
         if (loop.Pipe?.StandingConfirmation is null || loop.Service is null) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
         if (await PlaceAsync(loop, row, subject).ConfigureAwait(false) is not { } place) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
-        // Where the subject waits on the line now: the machine's supervisor once its place's left it.
         var admitted = new PipeDecisionAdmission(loop).Admit(subject, place, act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);

@@ -141,11 +141,6 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// <summary>What an agent performing the step is to bring about, or null: a step that declares one is performed by an agent (<see cref="StepAgents"/>).</summary>
     public AuthoredText? Goal { get; init; }
 
-    /// <summary>
-    /// The role that takes the step, by its id (<see cref="StepRoles"/>), or null: none named, and its kind's default is read
-    /// (<see cref="StepRoles.Of"/>), never written into the version. A role, never a holder: the save refuses a person or an agent named here. In
-    /// equality, the hash and a graph's digest, the digest's only where it is named, so a version from before the field keeps its own.
-    /// </summary>
     public string? Role { get; init; }
 
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;

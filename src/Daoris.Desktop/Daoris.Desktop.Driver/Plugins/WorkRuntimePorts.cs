@@ -25,10 +25,6 @@ public interface IWorkPerformPort
     Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct) =>
         Task.FromException<(WorkCleanupAnswer, int)>(new DriverException($"plugin `{plugin}` is asked to clean only on the work wire, and this port has none."));
 
-    /// <summary>
-    /// An attempt stood down told to <paramref name="plugin"/>'s current process (<see cref="PluginSteps.StandDownPoint"/>): sent and not
-    /// awaited, since its outcome is a replay whatever the process does; a process not up is told nothing.
-    /// </summary>
     void StandDown(string plugin, WorkStandDownCall call)
     {
     }

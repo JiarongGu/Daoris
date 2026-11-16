@@ -11,10 +11,6 @@ public static class WorkflowRunStates
     /// <summary>Someone is at it and nobody needs to act yet: an agent, the set-up step, Daoris's own look.</summary>
     public const string Working = "working";
 
-    /// <summary>
-    /// It waits on a role, whoever holds it (<see cref="WorkflowRunStep.Role"/>, <see cref="WorkflowRunStep.Holder"/>): the person's press, an
-    /// agent's answer or a plugin's step alike. The one waiting state.
-    /// </summary>
     public const string Waiting = "waiting";
 
     /// <summary>What it waits on could not be read, which is never taken as passed or failed.</summary>

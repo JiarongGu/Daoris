@@ -60,10 +60,6 @@ public static class BrainstormInstruction
         + "`sources` stays empty. At most eight parts, the most foundational first. Put what the brief leaves open in `needs`.\n\n"
         + "You change nothing: your design is a claim a person reads beside another maker's, and nobody can ask you anything after.\n";
 
-    /// <summary>
-    /// A design pass's comparison reader: the synthesizer's grouping and ranking, by value over effort, and beside it the route,
-    /// the evidence that would flip it, a trial with its criteria written first, and the owner's closed questions.
-    /// </summary>
     public static string Comparer(string digest) =>
         Synthesizer(digest).Replace("You change nothing", "Then compare. You change nothing", StringComparison.Ordinal)
         + "\nBeside `groups` and `leftOut`, give `comparison`: `{ route, why, flips: [...], trial: { area, baseline, keep: [...], "

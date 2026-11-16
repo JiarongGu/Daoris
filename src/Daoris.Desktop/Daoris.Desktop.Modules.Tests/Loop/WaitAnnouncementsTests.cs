@@ -103,10 +103,6 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
         Assert.Empty(Said());
     }
 
-    /// <summary>
-    /// A run's step waiting on a role the person holds is announced once, on the session its run's waits placed in Needs you, which a
-    /// notification's click opens: that session's head reads the step's wait with its presses. Its own switch, a park's, is read apart.
-    /// </summary>
     [Fact]
     public async Task A_step_waiting_on_the_person_is_announced_once_on_the_session_its_run_placed()
     {

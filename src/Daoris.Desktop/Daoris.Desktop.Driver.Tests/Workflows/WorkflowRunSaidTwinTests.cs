@@ -61,9 +61,6 @@ public sealed class WorkflowRunSaidTwinTests
         Assert.Equal(Text(row, "said"), WorkflowRunWords.Said(step));
     }
 
-    /// <summary>
-    /// A wait is said alike whoever holds it: the person's holding and an agent's differ in the holder's word alone.
-    /// </summary>
     [Fact]
     public void A_wait_held_by_an_agent_and_one_held_by_the_person_are_said_alike_but_for_the_holder()
     {

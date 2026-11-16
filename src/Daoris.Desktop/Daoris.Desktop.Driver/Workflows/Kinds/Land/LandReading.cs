@@ -47,10 +47,6 @@ internal static class LandReading
             : NodeObserving.Seen(reading, null, "nothing was handed on yet");
     }
 
-    /// <summary>
-    /// A <c>land</c>'s wait on a cause that passes, as its run's step says it (<see cref="LandRetries.Wait.Holds"/>), so a landing tried again by
-    /// itself or climbing the line never reads as plain working; null where none waits.
-    /// </summary>
     private static string? Waiting(NodeReading reading) =>
         reading.Node.Kind == NodeKinds.Land && reading.Binding.SubjectRevision is { } tip ? LandRetries.Waiting(reading.Unit.Id, tip)?.Holds : null;
 }

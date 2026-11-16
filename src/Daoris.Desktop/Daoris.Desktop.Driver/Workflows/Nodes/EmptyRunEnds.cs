@@ -36,10 +36,6 @@ public static class EmptyRunEnds
     /// <summary>The session records did not read at the look, so no run at its end is known to have a session waiting on it.</summary>
     public const string SessionsUnread = "sessions-unread";
 
-    /// <summary>
-    /// The run ended failed at a step its holder may still settle (done outside, tried again, or its work ended), which governs the run again:
-    /// a failure is no end of the work, so the sessions awaiting its later steps wait on.
-    /// </summary>
     public const string FailedHeld = "failed-held";
 
     // The last reason said for each run, by home and run.

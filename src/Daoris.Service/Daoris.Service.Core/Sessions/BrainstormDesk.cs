@@ -175,10 +175,6 @@ public sealed class BrainstormDesk(string? home)
 
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>
-    /// A pass that is not a design pass, or a design pass with named sources, refused: a design pass's packet holds its purpose
-    /// brief alone, never the repository's history, so no source may be named for it.
-    /// </summary>
     private static BrainstormOutcome? DesignRefusal(string? pass, IReadOnlyList<string?>? sources)
     {
         if (Blank(pass) is not { } named) return null;

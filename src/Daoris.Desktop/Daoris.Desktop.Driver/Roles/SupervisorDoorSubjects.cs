@@ -51,13 +51,11 @@ public static class SupervisorDoorSubjects
         return Staged(ops) is { Count: > 0 } staged ? string.Join(",", staged.Select(op => Json.Text(op, "id")).OfType<string>().Order(StringComparer.Ordinal)) : null;
     }
 
-    /// <summary>The go-ahead a subject names, as its ask holds it now; none where the ask or the number no longer reads.</summary>
     public static async Task<GoAheadView?> GoAheadAsync(ServiceClient service, SupervisorSubject subject, CancellationToken ct) =>
         subject.GoAheadParts is { } parts && await service.FindAskAsync(parts.Ask, ct).ConfigureAwait(false) is { } ask
             ? AskWords.Of(ask).GoAheads?.FirstOrDefault(each => each.Number == parts.Number)
             : null;
 
-    /// <summary>What a role's answer to <paramref name="goAhead"/> is pinned to: its number, kind, target and act.</summary>
     public static GoAheadPin Pin(GoAheadView goAhead) => new(goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act);
 
     /// <summary>A departed quest's pin: its status, hold, last move and answers, digested, so a done redone or answered again is another.</summary>

@@ -51,10 +51,6 @@ public static class PluginSteps
     /// <summary>The point a plugin removes what it created on: a resource's <c>cleanup</c> names it.</summary>
     public const string CleanupPoint = "work/cleanup";
 
-    /// <summary>
-    /// The point a plugin is told on that an attempt stood down: its step is skipped, stopped or done outside Daoris, so what the attempt
-    /// still watches or waits for is no longer wanted. A notification, answered by nothing; a later outcome of it is a replay.
-    /// </summary>
     public const string StandDownPoint = "work/stand-down";
 
     /// <summary>

@@ -16,13 +16,8 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
 
     public SupervisorAttempts Attempts { get; } = new(home);
 
-    /// <summary>The held decisions and their windows a restart reads back (<c>held_decisions</c>).</summary>
     public HeldDecisions Held { get; } = new(home);
 
-    /// <summary>
-    /// Keep <paramref name="id"/>'s row while it is held (<paramref name="to"/> <c>held</c>), or let it go at its first move off held
-    /// (<paramref name="from"/> <c>held</c>): the one bookkeeping of the table every kind's move calls.
-    /// </summary>
     public void Window(SupervisorState from, SupervisorState to, Func<HeldDecisionRow> row, string id)
     {
         if (to == SupervisorState.Held) Held.Hold(row());

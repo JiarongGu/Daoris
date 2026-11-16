@@ -27,7 +27,6 @@ public sealed record GoAheadRequest(string Session, string? Quest, DateTimeOffse
 /// <summary>The person's answer to a go-ahead: yes or no, their words where they gave any, and when.</summary>
 public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At)
 {
-    /// <summary>The role that answered, as <c>role:&lt;role&gt; · &lt;agent&gt;</c>; null for the person's own answer. An older build reads it as the person's.</summary>
     public string? By { get; init; }
 }
 
