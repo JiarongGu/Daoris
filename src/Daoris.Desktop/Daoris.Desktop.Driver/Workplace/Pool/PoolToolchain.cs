@@ -14,12 +14,13 @@ internal static class PoolToolchain
         var read = await StoreDependencyRules.ReadAsync(site.Home, slot, site.Repository, head, ct).ConfigureAwait(false);
         var lines = new List<string>();
         var asked = new HashSet<string>(StringComparer.Ordinal);
+        var reads = new ToolchainReads(site.Home, slot);
         foreach (var rule in read.Rules.Rules.Select(each => each.Rule).Where(rule => rule.Kind is FileKind.Dependency or FileKind.Intermediate or FileKind.Cache))
         {
             foreach (var command in rule.Toolchain ?? [])
             {
                 if (!asked.Add(command)) continue;
-                var answer = await DependencyCommands.RunAsync(site.Home, slot, command, slot, InstallEnvironment.Of(rule), DependencyCommands.ReadBound, ct).ConfigureAwait(false);
+                var answer = await reads.ReadAsync(command, InstallEnvironment.Of(rule), ct).ConfigureAwait(false);
                 lines.Add($"{command}\t{answer.Code}\t{DependencyKeys.Hash(DependencyKeys.Tokened(answer.Output, slot))}");
             }
         }

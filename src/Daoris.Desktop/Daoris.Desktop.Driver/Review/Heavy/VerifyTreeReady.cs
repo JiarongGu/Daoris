@@ -26,8 +26,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
         var head = await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false);
         if (head is null) return null;
         var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
-        var keys = new List<string>();
-        foreach (var dependency in deps.Each) keys.Add(await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, keys, ct).ConfigureAwait(false));
+        var keys = await DependencyKeys.EachAsync(home, tree, head, repository, deps.Each, ct).ConfigureAwait(false);
         var declared = TreePrepDeclared.Read(checkout);
         return Of(keys, declared.Regenerate, TreeLocalInputs.Declared(checkout), checkout);
     }

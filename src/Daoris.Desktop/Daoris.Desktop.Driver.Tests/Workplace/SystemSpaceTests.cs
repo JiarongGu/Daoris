@@ -210,7 +210,7 @@ public sealed class SystemSpaceTests : IDisposable
         {
             var tree = Path.Combine(_home, "tree-" + key);
             Write(Path.Combine(tree, "deps", "a.js"), bytes);
-            var manifest = DependencyManifest.Read(tree, "deps", [], out _);
+            var manifest = DependencyManifest.Read(tree, "deps", [], out _, hashed: true);
             Assert.True(DependencyStore.Seal(_home, key, tree, "deps", manifest, CancellationToken.None));
             File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(_home, key), "placed"), new DateTime(2026, 10, day, 6, 0, 0, DateTimeKind.Utc));
         }

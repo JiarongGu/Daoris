@@ -15,8 +15,18 @@ internal static class DependencyKeys
 {
     internal const string TreeToken = "<tree>";
 
+    /// <summary>The key of each of <paramref name="dependencies"/> in rule order, its toolchain reads shared (<see cref="ToolchainReads"/>).</summary>
+    internal static async Task<IReadOnlyList<string>> EachAsync(
+        string home, string tree, string commit, string repository, IReadOnlyList<StoreDependency> dependencies, CancellationToken ct)
+    {
+        var reads = new ToolchainReads(home, tree);
+        var keys = new List<string>();
+        foreach (var dependency in dependencies) keys.Add(await KeyAsync(home, tree, commit, repository, dependency, keys, reads, ct).ConfigureAwait(false));
+        return keys;
+    }
+
     internal static async Task<string> KeyAsync(
-        string home, string tree, string commit, string repository, StoreDependency dependency, IReadOnlyList<string> before, CancellationToken ct)
+        string home, string tree, string commit, string repository, StoreDependency dependency, IReadOnlyList<string> before, ToolchainReads reads, CancellationToken ct)
     {
         var rule = dependency.Rule;
         var environment = InstallEnvironment.Of(rule);
@@ -25,7 +35,7 @@ internal static class DependencyKeys
         lines.Add($"install\t{rule.Install}");
         foreach (var command in rule.Toolchain ?? [])
         {
-            var read = await DependencyCommands.RunAsync(home, tree, command, tree, environment, DependencyCommands.ReadBound, ct).ConfigureAwait(false);
+            var read = await reads.ReadAsync(command, environment, ct).ConfigureAwait(false);
             lines.Add($"toolchain\t{command}\t{read.Code}\t{Hash(Tokened(read.Output, tree))}");
         }
 

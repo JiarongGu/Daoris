@@ -85,13 +85,8 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         if (deps.Rules.Unread is { } unread) _said.Add(Noted.Of(StartNoteCodes.StartedFilesUnread, $"this machine's file rules for `{repository}` do not read ({unread}), so Daoris held every install and copy they could restrict here.", ("repository", repository), ("why", unread)));
 
         if (unworked && !await WriteBackAsync(ct).ConfigureAwait(false)) return Stop();
-        var before = new List<string>();
-        foreach (var dependency in deps.Each)
-        {
-            var key = await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, before, ct).ConfigureAwait(false);
-            before.Add(key);
-            _keys[dependency.Path] = key;
-        }
+        var keys = await DependencyKeys.EachAsync(home, tree, head, repository, deps.Each, ct).ConfigureAwait(false);
+        foreach (var (dependency, key) in deps.Each.Zip(keys)) _keys[dependency.Path] = key;
 
         if (!Groups(unworked)) return Stop();
         At("files.deps");
@@ -423,16 +418,17 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             return;
         }
 
-        var manifest = DependencyManifest.Read(tree, dependency.Folder, dependency.Caches, out var outside, ct);
         var (companions, others) = InstallWrites.Of(tree, changes.Beside, _rules!);
         var current = TreeFilesRecord.Read(home, tree)!;
         var changed = DependencyGroups.Changed(tree, current, dependency.Path, _order);
         var held = FillHeld.Of(before, dependency, current, _rules!, _floor);
-        var why = dependency.Rule.Bound == true ? DepsWhy.BoundToTree()
+        var refused = dependency.Rule.Bound == true ? DepsWhy.BoundToTree()
             : changes.Beside.Count > 0 ? DepsWhy.WroteBeside(changes.Beside[0])
             : held is not null ? DepsWhy.HeldIgnored(held)
             : changed.Count > 0 ? DepsWhy.GroupFormed(changed[0].TrimEnd('/'))
-            : FillJudgement.Unsealable(tree, dependency.Folder, manifest, outside, (dependency.Rule.Secret ?? []).Select(name => environment.TryGetValue(name, out var value) ? value : ""));
+            : null;
+        var manifest = DependencyManifest.Read(tree, dependency.Folder, dependency.Caches, out var outside, hashed: refused is null, ct);
+        var why = refused ?? FillJudgement.Unsealable(tree, dependency.Folder, manifest, outside, (dependency.Rule.Secret ?? []).Select(name => environment.TryGetValue(name, out var value) ? value : ""));
         var sealedHere = why is null && DependencyStore.Seal(home, key, tree, dependency.Folder, manifest, ct);
         if (why is null && !sealedHere) why = DepsWhy.SealFailed();
         var placement = new TreePlacement(dependency.Path, key, sealedHere ? "sealed" : "installed", outside is null ? manifest : null) { Companions = companions, Others = others };

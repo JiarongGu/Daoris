@@ -80,7 +80,7 @@ public sealed class DependencyStoreTests : IDisposable
     private static IReadOnlyList<string?> Codes(TreeFilesOutcome outcome) => [.. outcome.Said.SelectMany(each => each.Parts).Select(part => part.Code)];
 
     private async Task<string> KeyAsync(string tree, FileRule rule, IReadOnlyList<string>? before = null, string repository = "engine", string path = "deps/") =>
-        await DependencyKeys.KeyAsync(Home, tree, (await WorkingTree.HeadAsync(tree))!, repository, new StoreDependency(path, rule), before ?? [], CancellationToken.None);
+        await DependencyKeys.KeyAsync(Home, tree, (await WorkingTree.HeadAsync(tree))!, repository, new StoreDependency(path, rule), before ?? [], new ToolchainReads(Home, tree), CancellationToken.None);
 
     [Fact]
     public async Task Each_key_input_moves_the_key_and_an_absent_key_file_is_keyed_as_absent()
@@ -163,6 +163,28 @@ public sealed class DependencyStoreTests : IDisposable
         Assert.Contains(why, line.Note);
         Assert.Empty(DependencyStore.Entries(Home));
         Assert.True(Directory.Exists(Path.Combine(tree, "deps", "pkg")), "the tree keeps its own install");
+    }
+
+    [Fact]
+    public async Task An_install_the_store_will_not_take_is_recorded_by_stat_unhashed_and_kept_by_it_at_the_carry_on()
+    {
+        await MakeAsync("beside");
+        var tree = await TreeAsync("t1");
+
+        await StageAsync(tree);
+
+        // Its own record, by size and write time: a large web repository's never-stored install hashed every file of it at each fresh open.
+        var placement = TreeFilesRecord.Read(Home, tree)!.Of("deps/")!;
+        Assert.Equal("installed", placement.How);
+        Assert.All(placement.Manifest!.Files, file => Assert.Equal("", file.Hash));
+        TreeFilesStep.Hand(Home, tree);
+        Assert.Contains(StartNoteCodes.StartedDepsKept.Code, Codes(await StageAsync(tree)));
+
+        // A write time moved, its bytes the same, counts as a change: no hash was kept to clear it.
+        var index = Path.Combine(tree, "deps", "pkg", "index.js");
+        File.SetLastWriteTimeUtc(index, File.GetLastWriteTimeUtc(index).AddMinutes(-5));
+        var left = Assert.Single((await StageAsync(tree)).Said, each => each.Parts.Any(part => part.Code == StartNoteCodes.StartedDepsLeft.Code));
+        Assert.Equal(DepsWhy.Changed, left.Parts[0].Values.Single(value => value.Key == "why").Value);
     }
 
     [Theory]
@@ -341,7 +363,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
         Write("deps/a/index.js", "a");
         Write("deps/b.js", "b");
         IReadOnlyList<string> caches = [".cache/"];
-        var record = DependencyManifest.Read(Tree, "deps", caches, out var outside);
+        var record = DependencyManifest.Read(Tree, "deps", caches, out var outside, hashed: true);
         Assert.Null(outside);
         Assert.Null(record.Differs(Tree, "deps", caches));
 
@@ -360,7 +382,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     public void Eviction_goes_by_days_since_last_placed_and_then_by_size()
     {
         Write("deps/a.bin", new string('a', 1000));
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         foreach (var key in new[] { "old", "mid", "new" }) Assert.True(DependencyStore.Seal(Home, key, Tree, "deps", manifest, CancellationToken.None));
         var now = DateTimeOffset.UtcNow;
         File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "old"), "placed"), now.AddDays(-40).UtcDateTime);
@@ -384,7 +406,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     {
         Write("deps/sub/a.bin", "a");
         Write("deps/top.json", "{}");
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
         FileStream? held = null;
         var waits = 0;
@@ -415,7 +437,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     {
         Write("deps/sub/a.bin", "a");
         Write("deps/top.json", "{}");
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
         FileStream? held = null;
         var waits = 0;
@@ -442,7 +464,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     public void A_seal_that_cannot_copy_a_file_says_so_and_leaves_no_half_folder_in_the_store()
     {
         Write("deps/a.bin", "a");
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         File.Delete(Path.Combine(Tree, "deps", "a.bin"));
 
         Assert.False(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
@@ -453,7 +475,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     public void A_placement_that_cannot_copy_a_file_throws_the_io_failure_the_stage_says_and_leaves_no_half_folder()
     {
         Write("deps/sub/a.bin", "a");
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
         DependencyStore.Copying.Value = _ => throw new IOException("the disk is full");
         try
@@ -472,7 +494,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     public void The_daily_eviction_sweeps_the_folders_a_cut_off_seal_or_a_failed_eviction_left_once_a_day_old()
     {
         Write("deps/a.bin", "a");
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         Assert.True(DependencyStore.Seal(Home, "kept", Tree, "deps", manifest, CancellationToken.None));
         var root = DependencyStore.RootOf(Home);
         var now = DateTimeOffset.UtcNow;
@@ -493,7 +515,7 @@ public sealed class DependencyStorePiecesTests : IDisposable
     public void The_daily_eviction_takes_an_entry_past_the_kind_s_thirty_days_and_waits_a_day_before_the_next()
     {
         Write("deps/a.bin", new string('a', 1000));
-        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         foreach (var key in new[] { "old", "new" }) Assert.True(DependencyStore.Seal(Home, key, Tree, "deps", manifest, CancellationToken.None));
         var now = DateTimeOffset.UtcNow;
         File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "old"), "placed"), now.AddDays(-31).UtcDateTime);
