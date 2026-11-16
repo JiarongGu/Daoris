@@ -110,4 +110,54 @@ public sealed class OpinionVacancyTests : IDisposable
         Assert.Equal(["codex-acp"], OpinionCasting.Reviewers(["codex-acp"], null, Working));
         Assert.Null(OpinionVacancy.Of(new ReviewerChoice("codex-acp", ReviewerLabels.AnotherMaker, null, "reads it")));
     }
+
+    /// <summary>The look's <c>vacant</c> on <paramref name="casts"/>, offering the declared reviewers its walk found installed.</summary>
+    private static void Vacant(OpinionCasts casts, IReadOnlyList<string> declared, params ReviewerTried[] tried)
+    {
+        var walk = new ReviewerChoice(null, null, ReviewerUnavailable.Cooling, "nobody free") { Tried = tried };
+        casts.Keep(Chain, Engine, new OpinionCast(At, "s1", OpinionCasting.Step, OpinionCasting.Step, OpinionCasting.Vacant, "codex-acp", ReviewerUnavailable.Cooling)
+        {
+            Offered = OpinionCasting.Offered(declared, walk),
+        });
+    }
+
+    private static ReviewerTried Tried(string agent, string held) => new(agent, ReviewerLabels.AnotherMaker, held, "held");
+
+    [Fact]
+    public void A_recast_names_a_declared_reviewer_installed_and_the_prepaid_one_only_where_its_act_is_granted()
+    {
+        var casts = new OpinionCasts(_home);
+        Vacant(casts, ["codex-acp", "gemini", OpinionCasting.PrepaidAgent],
+            Tried("codex-acp", ReviewerHeld.Cooling), Tried("gemini", ReviewerHeld.NotInstalled), Tried(OpinionCasting.PrepaidAgent, ReviewerHeld.Cooling));
+        var kept = casts.Read(Chain, Engine, "s1");
+        string? PrepaidUngranted(string act) => act == SupervisorKinds.Prepaid ? SupervisorWhy.NotGranted : null;
+
+        Assert.Equal(["codex-acp", OpinionCasting.PrepaidAgent], Assert.Single(kept).Offered);
+        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "claude-code-acp", PrepaidUngranted));
+        Assert.Equal(SupervisorWhy.NotOfferedChoice, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "gemini", PrepaidUngranted));
+        Assert.Equal(SupervisorWhy.NotGranted, OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent, PrepaidUngranted));
+        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, OpinionCasting.PrepaidAgent, _ => null));
+        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Recast, "codex-acp", PrepaidUngranted));
+        Assert.Null(OpinionCasting.Refusal(kept, SupervisorKinds.Wait, null, PrepaidUngranted));
+    }
+
+    [Fact]
+    public async Task A_filled_vacancy_ends_its_acts_and_the_next_walk_follows_the_rules_order()
+    {
+        IReadOnlyList<string> declared = ["codex-acp", "gemini"];
+        var casts = new OpinionCasts(_home);
+        Vacant(casts, declared, Tried("codex-acp", ReviewerHeld.Cooling), Tried("gemini", ReviewerHeld.Cooling));
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(1), "s1", LineActors.Lead, "engine-lead", LinePasses.Left, null, "no reset is stated"));
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(2), "s1", LineActors.Head, AppointedRoles.Supervisor, SupervisorKinds.Recast, "gemini", "gemini resets first"));
+        Assert.Equal(["gemini", "codex-acp"], OpinionCasting.Reviewers(declared, OpinionCasting.Newest(casts.Read(Chain, Engine, "s1")), Working));
+
+        casts.Keep(Chain, Engine, new OpinionCast(At.AddMinutes(3), "s1", OpinionCasting.Step, OpinionCasting.Step, OpinionCasting.Filled, "gemini", "op1"));
+        var filled = casts.Read(Chain, Engine, "s1");
+        var reviewers = OpinionCasting.Reviewers(declared, OpinionCasting.Newest(filled), Working);
+
+        Assert.Equal(declared, reviewers);
+        Assert.False(OpinionCasting.Waiting(filled));
+        Assert.Empty(OpinionCasting.Left(filled));
+        Assert.Equal("codex-acp", (await Walk(reviewers, free: "codex-acp")).Reviewer);
+    }
 }

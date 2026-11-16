@@ -406,7 +406,7 @@
   "agents.setup.roles.hold.act.memory.keep": "keep or drop a session's memory changes",
   "agents.setup.roles.hold.act.memory.decide": "approve or decline a memory end",
   "agents.setup.roles.hold.act.departure.accept": "accept a done's departure",
-  "agents.setup.roles.hold.act.vacancy.recast": "hand a step to another maker's agent or another account",
+  "agents.setup.roles.hold.act.vacancy.recast": "hand a step to another installed reviewer its rule names",
   "agents.setup.roles.hold.act.vacancy.relax": "let the work's own maker read it, on the record",
   "agents.setup.roles.hold.act.vacancy.prepaid": "spend DeepSeek's prepaid balance",
   "agents.setup.roles.hold.act.vacancy.wait": "wait for the reset",

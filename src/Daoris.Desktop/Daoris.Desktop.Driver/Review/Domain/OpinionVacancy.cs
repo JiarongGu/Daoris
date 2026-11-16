@@ -44,7 +44,11 @@ public sealed record OpinionVacancy(string Code, DateTimeOffset? Until, string? 
 /// <param name="Act">One of the vacancy's acts (<see cref="SupervisorKinds.Vacancy"/>), or <see cref="LinePasses.Left"/>.</param>
 /// <param name="Agent">The agent a re-cast names; none for the other acts.</param>
 /// <param name="Why">The holder's reading, which the record and a pass up carry.</param>
-public sealed record OpinionCast(DateTimeOffset At, string Session, string Actor, string Role, string Act, string? Agent, string Why);
+public sealed record OpinionCast(DateTimeOffset At, string Session, string Actor, string Role, string Act, string? Agent, string Why)
+{
+    /// <summary>On the look's <c>vacant</c>, the declared reviewers its walk found installed: the agents a re-cast may name.</summary>
+    public IReadOnlyList<string> Offered { get; init; } = [];
+}
 
 /// <summary>What the journalled acts make of the next walk, and of the line.</summary>
 public static class OpinionCasting
@@ -57,6 +61,34 @@ public static class OpinionCasting
 
     /// <summary>The actor whose step stands vacant: the second opinion.</summary>
     public const string Step = "opinion";
+
+    /// <summary>The act the look journals when a walk's reviewer holds the step: the vacancy is filled, and every act on it ends.</summary>
+    // Ended by its fill, not at its Until: a reviewer back early fills it before any reset, and a vacancy signed out or refused has none.
+    public const string Filled = "filled";
+
+    /// <summary>The acts on the vacancy that stands now: those kept after the newest <see cref="Filled"/>, in the order kept.</summary>
+    public static IReadOnlyList<OpinionCast> Current(IReadOnlyList<OpinionCast> casts) =>
+        [.. Enumerable.Reverse(casts).TakeWhile(cast => cast.Act != Filled).Reverse()];
+
+    /// <summary>The declared reviewers <paramref name="walk"/> found installed, each once: the agents a re-cast of its vacancy may name.</summary>
+    public static IReadOnlyList<string> Offered(IReadOnlyList<string> declared, ReviewerChoice walk) =>
+    [
+        .. declared.Where(agent => walk.Tried.Any(tried => string.Equals(tried.Reviewer, agent, StringComparison.OrdinalIgnoreCase)
+            && tried.Held is not (ReviewerHeld.NotInstalled or ReviewerHeld.PinNotInstalled))).Distinct(StringComparer.OrdinalIgnoreCase),
+    ];
+
+    /// <summary>
+    /// Why the decision door refuses <paramref name="act"/> on the vacancy <paramref name="casts"/> stand at, in its words: a re-cast naming
+    /// no reviewer the vacancy offered (<see cref="SupervisorWhy.NotOfferedChoice"/>), or the prepaid harness where its own act's admission,
+    /// as <paramref name="refused"/> answers it, refuses (<see cref="SupervisorWhy.NotGranted"/>); none where the act may be kept.
+    /// </summary>
+    public static string? Refusal(IReadOnlyList<OpinionCast> casts, string act, string? agent, Func<string, string?> refused)
+    {
+        if (act != SupervisorKinds.Recast) return null;
+        var offered = Current(casts).LastOrDefault(cast => cast.Act == Vacant)?.Offered ?? [];
+        if (agent is null || !offered.Contains(agent, StringComparer.Ordinal)) return SupervisorWhy.NotOfferedChoice;
+        return string.Equals(agent, PrepaidAgent, StringComparison.OrdinalIgnoreCase) ? refused(SupervisorKinds.Prepaid) : null;
+    }
 
     /// <summary>
     /// The reviewers the next walk reads after <paramref name="cast"/>: a re-cast's agent first; the prepaid harness first; relaxed, the
@@ -71,8 +103,9 @@ public static class OpinionCasting
             _ => reviewers,
         };
 
-    /// <summary>The newest act that shapes a walk, its leaves apart.</summary>
-    public static OpinionCast? Newest(IEnumerable<OpinionCast> casts) => casts.Where(cast => cast.Act is not (LinePasses.Left or Vacant)).MaxBy(cast => cast.At);
+    /// <summary>The newest act on the vacancy standing now that shapes a walk, its leaves apart; none once a walk filled it.</summary>
+    public static OpinionCast? Newest(IReadOnlyList<OpinionCast> casts) =>
+        Current(casts).Where(cast => cast.Act is not (LinePasses.Left or Vacant)).MaxBy(cast => cast.At);
 
     /// <summary>
     /// Whether the newest journalled act leaves the vacancy waiting on the line: the look's <c>vacant</c>, or a level's leave; a level's
@@ -80,9 +113,12 @@ public static class OpinionCasting
     /// </summary>
     public static bool Waiting(IReadOnlyList<OpinionCast> casts) => casts.Count > 0 && casts[^1].Act is Vacant or LinePasses.Left;
 
-    /// <summary>The levels whose newest act passed the vacancy up, each with its reading, as <see cref="ReportingLine.Climb"/> reads them.</summary>
-    public static IReadOnlyDictionary<string, string> Left(IEnumerable<OpinionCast> casts) =>
-        casts.GroupBy(cast => cast.Actor, StringComparer.Ordinal).Select(level => level.MaxBy(cast => cast.At)!)
+    /// <summary>
+    /// The levels whose newest act passed the vacancy standing now up, each with its reading, as <see cref="ReportingLine.Climb"/> reads
+    /// them; a filled vacancy's leaves are spent, so the next waits on the lead again.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Left(IReadOnlyList<OpinionCast> casts) =>
+        Current(casts).GroupBy(cast => cast.Actor, StringComparer.Ordinal).Select(level => level.MaxBy(cast => cast.At)!)
             .Where(cast => cast.Act == LinePasses.Left).ToDictionary(cast => cast.Actor, cast => cast.Why, StringComparer.Ordinal);
 
     private static IReadOnlyList<string> First(string agent, IReadOnlyList<string> reviewers) =>

@@ -5,9 +5,10 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The vacancy kind: a second opinion nobody is free to give, its subject <c>{ session, step }</c> naming the gate's chain and repository.
 /// It waits on the reporting line's level that holds it now: the lead at the repository (the head where no lead is appointed), and the
-/// head at the machine once the lead left it. Its decide re-casts (naming the agent), relaxes the family difference, spends the prepaid
-/// balance or waits, journalled at once beside the gate (<see cref="OpinionCasts"/>), which the look's next walk reads; its leave is its
-/// pass up, and the head's ends it as gave up, listed to nobody.
+/// head at the machine once the lead left it. Its decide re-casts (naming a reviewer the vacancy offered, the prepaid one only with
+/// <c>vacancy.prepaid</c> granted), relaxes the family difference, spends the prepaid balance or waits, journalled at once beside the gate
+/// (<see cref="OpinionCasts"/>), which the look's next walk reads until a walk fills it; its leave is its pass up, and the head's ends it
+/// as gave up, listed to nobody.
 /// </summary>
 internal sealed class VacancyKind : ISupervisorKind
 {
@@ -54,6 +55,11 @@ internal sealed class VacancyKind : ISupervisorKind
         var admitted = judge.Admit(SupervisorKinds.Vacancy, place, act == LinePasses.Left ? null : act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
+        // A re-cast names a reviewer the vacancy offered, and the prepaid one spends money: its own act's grant too.
+        if (OpinionCasting.Refusal(kept, act, agent, other => judge.Admit(SupervisorKinds.Vacancy, place, other).Why) is { } refused)
+        {
+            return SupervisorDecided.Refused(refused);
+        }
 
         var role = judge.Supervising(SupervisorKinds.Vacancy, place).Role;
         var actor = role is { Scope.Rank: > 0 } ? LineActors.Lead : LineActors.Head;

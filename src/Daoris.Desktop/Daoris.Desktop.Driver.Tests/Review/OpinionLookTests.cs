@@ -291,6 +291,32 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
+    /// A vacancy a line level answered is filled once a reviewer holds the step: the look journals it beside the gate, so the act that
+    /// answered it shapes no later walk.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_that_opens_on_a_vacancy_fills_it_and_its_act_shapes_no_later_walk()
+    {
+        var (host, _, _) = await DoneAsync(required: false);
+        var casts = new OpinionCasts(_home);
+        var at = DateTimeOffset.UtcNow.AddMinutes(-5);
+        casts.Keep("q1", "reports", new OpinionCast(at, "s1", OpinionCasting.Step, OpinionCasting.Step, OpinionCasting.Vacant, "codex-acp", ReviewerUnavailable.Cooling)
+        {
+            Offered = ["codex-acp"],
+        });
+        casts.Keep("q1", "reports", new OpinionCast(at.AddMinutes(1), "s1", LineActors.Lead, "reports-lead", SupervisorKinds.Recast, "codex-acp", "its reset passed"));
+        var driver = Driver(host);
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+
+        var kept = casts.Read("q1", "reports", "s1");
+        Assert.Equal((OpinionCasting.Filled, "codex-acp", "op1"), (kept[^1].Act, kept[^1].Agent, kept[^1].Why));
+        Assert.Null(OpinionCasting.Newest(kept));
+        Assert.False(OpinionCasting.Waiting(kept));
+    }
+
+    /// <summary>
     /// XAGENT1g3: commits made after the opinion read are kept as the route says them, the count and the sentence the same.
     /// </summary>
     [Fact]

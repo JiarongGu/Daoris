@@ -404,7 +404,7 @@
   "agents.setup.roles.hold.act.memory.keep": "保留或丢弃会话的记忆改动",
   "agents.setup.roles.hold.act.memory.decide": "批准或谢绝记忆的结束",
   "agents.setup.roles.hold.act.departure.accept": "采纳完成时的偏离",
-  "agents.setup.roles.hold.act.vacancy.recast": "把步骤交给另一厂商的智能体或另一个账户",
+  "agents.setup.roles.hold.act.vacancy.recast": "把步骤交给其规则列出的另一位已安装的阅读者",
   "agents.setup.roles.hold.act.vacancy.relax": "让做这项工作的同一厂商来读，记录在案",
   "agents.setup.roles.hold.act.vacancy.prepaid": "动用 DeepSeek 的预付余额",
   "agents.setup.roles.hold.act.vacancy.wait": "等待重置",

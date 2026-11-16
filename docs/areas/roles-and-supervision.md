@@ -247,9 +247,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`) and listed to the hold that answers it now: the lead at the
     repository, the head at the machine once the lead left it, nobody once the head left it (gave up). Its acts, kept at once with
-    their reading and no window: `recast` naming an agent of another maker or account, `relax` (the work's own makers read it after
-    the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a leave is its pass up. The
-    look's next walk reads the newest act; the person's own ask is theirs. (D304)
+    their reading and no window: `recast` naming a reviewer the rule declares that the look's walk found installed (else
+    `not-offered-choice`), the DeepSeek harness only where `vacancy.prepaid` is granted too (else `not-granted`); `relax` (the work's
+    own makers read it after the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a
+    leave is its pass up. The look's next walk reads the newest act, and a walk whose reviewer holds the step journals `filled`, which
+    ends the vacancy and its acts, so the walk after it reads the rule's order again; the person's own ask is theirs. (D304)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a
