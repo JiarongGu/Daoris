@@ -105,6 +105,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   unanswerable: 'word',
   // A question the ask's delivery plan asks that only the person can settle: nothing running is held by it, but a release waits.
   'plan-question': 'word',
+  // A design pass's closed question: its answer is drafted as a decision the person keeps.
+  'design-question': 'word',
   left: 'word',
   review: 'ready',
 };
@@ -220,7 +222,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'step', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question',
+  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable', 'plan-question', 'design-question',
   'left', 'review',
 ];
 
@@ -413,6 +415,16 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         where: askWhere(row.ask ?? ''),
         detail: row.question ? planQuestionDetail(row.question) : null,
         ask: row.ask,
+      };
+    // A design pass's closed question: what yes and no change, as its comparison wrote them; an answer drafts a decision to keep.
+    case 'design-question':
+      return {
+        ...base,
+        title: row.design?.question ?? row.id,
+        detail: row.design
+          ? [i18n.t('work.attention.designYes', { text: row.design.yes }), i18n.t('work.attention.designNo', { text: row.design.no }),
+            i18n.t('work.attention.designWhere', { where: row.design.where })].join(' · ')
+          : null,
       };
     case 'trust':
       return {
