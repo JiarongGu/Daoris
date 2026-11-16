@@ -2136,6 +2136,11 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       // `universal` runs at every merge and every full run; `check` is skipped by the lane table for a file like this.
       repo.branch('b1', { 'qgate.mjs': envGate(record, '', 'universal') });
       // A gate run again on the checkout answers 1 while the full set lacks a verdict (`check` has none here): the gate ran all the same.
+      const treeNoGatePassed = (name: string) => {
+        writeFileSync(join(repo.root, name), `${name}\n`);
+        repo.git('add', name);
+        repo.git('commit', '--quiet', '-m', `${name}${TRAILER}`);
+      };
       const seenAfter = (what: string, status: number | null, out: string) => {
         assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)), `${what}: ${status} ${out}`);
         assert.ok(existsSync(record), `${what}: the check gate ran: ${out}`);
@@ -2150,8 +2155,10 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       repo.git('commit', '--quiet', '-m', `Merge b1${TRAILER}`);
       const again = await repo.run(['--rerun', 'universal'], direct);
       seenAfter('--rerun with none open', again.status, again.out);
+      treeNoGatePassed('full.txt');
       const full = await repo.run(['--full'], direct);
       seenAfter('--full', full.status, full.out);
+      treeNoGatePassed('beside.txt');
       const beside = await repo.run(['--full', '--beside'], direct);
       seenAfter('--full --beside', beside.status, beside.out);
     } finally {
