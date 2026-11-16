@@ -150,9 +150,9 @@ describe("the session's Workflow view", () => {
     await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
     const release = await waitFor(() => within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'release')!);
 
-    await userEvent.click(within(release).getByRole('button', { name: 'Pass over…' }));
-    await userEvent.type(within(side).getByRole('textbox', { name: 'why you pass it over' }), 'nobody raises it');
-    await userEvent.click(within(side).getByRole('button', { name: 'Pass over' }));
+    await userEvent.click(within(release).getByRole('button', { name: 'Not needed this run…' }));
+    await userEvent.type(within(side).getByRole('textbox', { name: 'why it is not needed' }), 'nobody raises it');
+    await userEvent.click(within(side).getByRole('button', { name: 'Not needed this run' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE',
       { payload: { run: 'q1', node: 'release', act: 'skip', words: 'nobody raises it' } }));

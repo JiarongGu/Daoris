@@ -8,6 +8,8 @@ import { Button, Dot, Icon, Inline } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
+import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../../workflow/run';
+import { FailedStepHeld } from '../../workflow/wait/FailedStepHeld';
 import {
   ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type StepWaitRow, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
   type QuietWait,
@@ -233,6 +235,8 @@ export type AttentionActs = {
   handOver?: (item: Attention, yes: boolean) => void;
   /** The person's word on a plugin step's attempt held for them: `daoris work held`'s. */
   held?: (item: Attention, resolution: HeldResolution) => void;
+  /** A `step` row's plugin wait with no page said done outside Daoris, with its link, on the attempt out now. */
+  doneOutside?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
   /** The node records' folder opened, where the person mends one that does not read. */
   openRecords?: (item: Attention) => void;
   /** A tool call held for the person answered with the option they pressed, by its agent's id. */
@@ -508,6 +512,10 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
           )}
         {item.step?.url && (
           <p className="m-0 mt-0.5 text-small"><ExternalLink href={item.step.url}>{t('work.attention.actorOpen')}</ExternalLink></p>
+        )}
+        {/* A plugin's wait with no page: its holder's *Done outside Daoris…*, said on the attempt out now with its link. */}
+        {item.step?.held && acts.doneOutside && (
+          <FailedStepHeld step={{ step: { id: item.step.node }, held: item.step.held } as unknown as RunStep} onHeld={acts.doneOutside} />
         )}
       </div>
       {(offered.length > 0 || onOpen || onRun || setAside) && (

@@ -153,7 +153,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
         notify(
           said,
           // A park is the one that is WAITING on somebody, as a held tool call is; an ending, or an answer, is news.
-          item.kind === 'Parked' || item.kind === 'QuestParked' || item.kind === 'Holding' ? 'error' : 'ok');
+          item.kind === 'Parked' || item.kind === 'QuestParked' || item.kind === 'Holding' || item.kind === 'Step' ? 'error' : 'ok');
       }
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     });

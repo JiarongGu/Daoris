@@ -251,7 +251,7 @@
   "workflow.run.node.stopSays": "在 {{node}} 终止这项工作：它仍在进行的尝试会撤下，等它的步骤都不再继续，其余部分也都不能再动时这次进展就结束，它的委托留给你来关闭。Daoris 下次查看时会应用它。",
   "workflow.run.node.stopWords": "原因，如果你想说",
   "workflow.run.node.stopMeanIt": "终止这项工作",
-  "workflow.run.node.asked.skip": "你的跳过已保存，Daoris 下次查看时会应用它。",
+  "workflow.run.node.asked.skip": "你说明本次不需要它，已保存，Daoris 下次查看时会应用它。",
   "workflow.run.node.asked.stop": "你的停止已保存，Daoris 下次查看时会应用它。",
   "workflow.run.node.send": "发出…",
   "workflow.run.node.sendTitle": "发出 {{node}}",

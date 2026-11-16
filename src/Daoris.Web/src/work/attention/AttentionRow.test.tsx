@@ -357,14 +357,14 @@ describe('settling one where it stands', () => {
     expect(screen.getByText('request declined')).toBeInTheDocument();
     expect(screen.getByText('engine')).toBeInTheDocument();
     expect(screen.getByText('web', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button').filter((button) => button.textContent === 'Pass over…')).toHaveLength(1);
+    expect(screen.getAllByRole('button').filter((button) => button.textContent === 'Not needed this run…')).toHaveLength(1);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Pass over…' }));
-    const asking = screen.getByRole('group', { name: 'Pass over…' });
+    await userEvent.click(screen.getByRole('button', { name: 'Not needed this run…' }));
+    const asking = screen.getByRole('group', { name: 'Not needed this run…' });
     // The skip keeps the person's words, so it is not sent without them.
-    expect(within(asking).getByRole('button', { name: 'Pass over' })).toBeDisabled();
+    expect(within(asking).getByRole('button', { name: 'Not needed this run' })).toBeDisabled();
     await userEvent.type(within(asking).getByRole('textbox'), 'web will not take it');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
+    await userEvent.click(within(asking).getByRole('button', { name: 'Not needed this run' }));
     expect(acts.passOver).toHaveBeenCalledWith(REQUEST_DECLINED, 'web will not take it', answeredByAct);
   });
 
@@ -373,7 +373,7 @@ describe('settling one where it stands', () => {
     try {
       render(<AttentionRow item={REQUEST_DECLINED} acts={everyAct()} onOpen={vi.fn()} />);
       expect(screen.getByText('委托被谢绝')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '跳过…' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '本次不需要…' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -838,7 +838,7 @@ describe('an ask under the row answers inside itself', () => {
     },
     { name: 'opinion-anyway', item: OPINION, open: 'Go on anyway…', move: 'Go on anyway', handler: 'opinionAnyway' },
     {
-      name: 'pass-over', item: REQUEST_DECLINED, open: 'Pass over…', move: 'Pass over', handler: 'passOver',
+      name: 'pass-over', item: REQUEST_DECLINED, open: 'Not needed this run…', move: 'Not needed this run', handler: 'passOver',
       prepare: async (ask) => { await userEvent.type(within(ask).getByRole('textbox'), 'web will not take it'); },
     },
   ];

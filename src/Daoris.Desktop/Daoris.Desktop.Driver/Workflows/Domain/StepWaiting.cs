@@ -153,6 +153,12 @@ public sealed record HeldStep(
 
     /// <summary>Where in the window its act is taken where no press of its own settles it (<see cref="StepWaiting.OpensRun"/>).</summary>
     public string? Opens { get; init; }
+
+    /// <summary>
+    /// The attempt out now of a plugin's role wait with no page, which its <i>Done outside Daoris</i> (<see cref="HeldResolutions.DoneOutside"/>)
+    /// is said on; null on every other wait.
+    /// </summary>
+    public WorkflowRunHeld? Held { get; init; }
 }
 
 /// <summary>
@@ -188,9 +194,14 @@ public static class HeldSteps
         }
 
         var presses = RunNodeWords.Acts(node, status).Where(act => act != NodeWordActs.Stop).ToList();
+        // A plugin's role wait with no page is acted on where nothing observes it: its holder says it was done outside, with the link.
+        var held = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
+            && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
+        if (held is not null) presses.Add(HeldResolutions.DoneOutside);
         return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, presses, work, wait.Since)
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
+            Held = held,
         };
     }
 }
