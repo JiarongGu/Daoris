@@ -82,6 +82,10 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     private AccountRead? ReadOf(string agent, string account) => AccountReads.Of(_home, agent).Accounts.GetValueOrDefault(account);
 
+    /// <summary>A reading's word and moment, apart from since when it said so and what it replaced.</summary>
+    private (LoginState, DateTimeOffset) WordOf(string agent, string account) =>
+        ReadOf(agent, account) is { } read ? (read.Login, read.At) : throw new Xunit.Sdk.XunitException($"`{account}` of `{agent}` is not read.");
+
     // ——— The reading: signed out, with when, as a reading would be.
 
     [Fact]
@@ -92,7 +96,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         roster.SignedOut("fake", "account-1");
 
-        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
         var report = await roster.ReportAsync("fake", FakeConfig);
         var account = Assert.Single(report!.Profiles);
         Assert.Equal((LoginState.Out, (DateTimeOffset?)Seen), (account.Login, account.Read));
@@ -259,7 +263,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         // The person signed in again since: the one fresh reading says so, it is kept, and the start runs on the account.
         Assert.Equal(["account-1"], asked);
         Assert.Equal(("account-1", true), (next.Profile, next.Allowed));
-        Assert.Equal(new AccountRead(LoginState.In, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal((LoginState.In, Seen), WordOf("fake", "account-1"));
     }
 
     [Fact]
@@ -276,7 +280,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         Assert.Equal(["account-1"], asked);
         Assert.Equal(["account-2", "account-2", "account-2"], new[] { next, after, later }.Select(selection => selection.Profile));
-        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
     }
 
     /// <summary>
@@ -299,7 +303,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal("account-1", retried.Profile);
         Assert.Equal(["account-1"], asked);
         Assert.Equal(("account-2", "account-2"), (next.Profile, after.Profile));
-        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
     }
 
     /// <summary>
@@ -543,7 +547,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         var said = runner.SignedOut(new ChatAgent(roster.Adapters, roster.Adapters.Door("fake")), "account-1", Refusal);
 
-        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
         Assert.Equal(
             "The agent refused the `fake` account `account-1` for its sign-in, so it reads signed out and Daoris starts nothing "
             + "more on it until it is signed in: `daoris agent login fake --account account-1`, or Agents → the agent's page → "

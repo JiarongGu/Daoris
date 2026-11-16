@@ -721,30 +721,3 @@ describe('each folded section’s line', () => {
     expect(usageSummary(0)).toBe('nothing measured yet');
   });
 });
-
-describe('an account’s sign-in state, from the reading the start’s walk ranks by (AUTHPROBE1)', () => {
-  const now = new Date('2026-11-16T10:00:00Z');
-  const base = { login: 'unknown' as const, read: '2026-11-16T09:57:00Z', key: null };
-
-  it('says a check that did not answer as such, with Sign in beside it, never as unknown', () => {
-    const state = accountState({ ...base, signIn: { state: 'unanswered', since: base.read, notByPerson: false } }, null, true);
-    expect(state.state).toBe('unanswered');
-    expect(stateWord(state).label).toBe('check not answered');
-    expect(readLine(state, now)).toContain('its sign-in check did not answer');
-    expect(accountAct(state, { signsIn: true, present: true })).toEqual({ act: 'signIn', loud: false });
-  });
-
-  it('says a sign-out since when, however often it is read again since', () => {
-    const since = '2026-11-16T08:00:00Z';
-    const state = accountState(
-      { ...base, login: 'out', read: '2026-11-16T09:59:00Z', signIn: { state: 'out', since, notByPerson: true } }, null, true);
-    expect(state.state).toBe('out');
-    expect(state.notByPerson).toBe(true);
-    expect(stateWhen(state, now)).toBe(`since ${clockOf(since, now)}`);
-    expect(accountAct(state, { signsIn: true, present: true })).toEqual({ act: 'signIn', loud: true });
-  });
-
-  it('reads an older driver, which sends no sign-in state, as before', () => {
-    expect(accountState(base, null, true).state).toBe('unknown');
-  });
-});

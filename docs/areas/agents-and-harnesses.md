@@ -181,7 +181,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home; a start on another
     agent is on another account. A resume judges that account as the walk does: a whole window with its reset ahead cools it
     until then, unless the person picked it. (D131, D137, D206)
-33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150)
+33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150) An
+    agent that declares its stored sign-in (`IStoredSignIn`, Claude Code's `.credentials.json`) is read for its shape alone,
+    whether each token is there and when the access token expires, never a value. A start that has counted its account renews
+    the sign-in once, under the account's lock, where the stored token expires within ten minutes and no session of Daoris's runs
+    on it (`SignInRefresh`), so starts and resumes on one account together find it fresh and none of their sessions spends the
+    single-use refresh token beside another. Each look reads the stores, and one its agent cleared reads signed out at once
+    (`StoredSignIns`). (CREDRACE1)
 
 **Usage, limits and errors**
 

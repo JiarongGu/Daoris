@@ -53,7 +53,7 @@ public static class SignOutNotices
 /// The look's claim of the sign-outs nobody at Daoris made (<see cref="SignOutNotices"/>), so each is in <i>Done and failed</i>
 /// once, the news keeping a dismissed one dismissed.
 /// </summary>
-[LookPass("sign-outs", LookPhase.After, "plugin-commands")]
+[LookPass("sign-outs", LookPhase.After, "stored-sign-ins")]
 internal sealed class SignOutsLook(ILookWiring wiring) : ILookPass
 {
     public Task RunAsync(LookRound round, CancellationToken ct)

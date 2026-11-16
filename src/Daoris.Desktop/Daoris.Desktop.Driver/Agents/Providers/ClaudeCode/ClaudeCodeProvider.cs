@@ -46,6 +46,8 @@ internal static class ClaudeCodeProvider
             LoginPorts: null,
             // Its user-tier settings, `model` and `effortLevel` among them; the protocol door's are this one's.
             SettingsFile: AgentSettings.FileName,
+            // Its stored sign-in's shape, renewed once before sessions start on it together and read at each look (CREDRACE1).
+            StoredSignIn: new ClaudeStoredSignIn(),
             // Its maker fixes an account's weekly reset at one time each week.
             WeekFixed: true);
         var tables = new TablesPart(
