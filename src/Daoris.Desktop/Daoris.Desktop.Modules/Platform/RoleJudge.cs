@@ -31,10 +31,11 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         if (act is not null && !owner.RiskAt(place).RoleMayHold()) return DecisionAdmitted.Refused(SupervisorWhy.HighRisk);
         if (AppointedStaffing.Ordered(effective?.Hold))
         {
-            // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.
-            if (act is not null && !SupervisorGrants.Covers(effective!, kind, act))
+            // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory; its grants cover the act and
+            // what it spends (the census), or the refusal names the grant missing.
+            if (act is not null && SupervisorGrants.Missing(effective!, kind, act) is { } missing)
             {
-                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = SupervisorKinds.Qualified(kind, act) };
+                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
             }
 
             var revision = slots.First(slot => slot.Id == effective!.Id).Revision;
@@ -44,9 +45,9 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         lock (state.Gate)
         {
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
-            if (act is not null && !SupervisorGrants.Covers(effective, kind, act))
+            if (act is not null && SupervisorGrants.Missing(effective, kind, act) is { } missing)
             {
-                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = SupervisorKinds.Qualified(kind, act) };
+                return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
             }
             return state.HoldOf(effective.Id) is { } hold
                 ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id }

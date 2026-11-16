@@ -5,9 +5,11 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The go-ahead kind (GOAHEADACT1): a go-ahead a session asked for on its ask, its subject <c>{ session, goahead }</c> naming the newest
 /// session that asked it and the ask's number. Listed where a role granted <c>goahead.answer</c> may answer it (<see cref="GoAheadAuthority"/>:
-/// low and medium risk, never a marked production release nor a sign-in); its decide answers approved or refused, pinned to the go-ahead's
-/// number, kind, target and act, held for the role's window with <i>Overrule</i> in the held decisions' table, then posted to the service's
-/// go-ahead door as the role's answer (<see cref="SupervisorDoorAnswers"/>); its leave climbs the line.
+/// low and medium risk, never at a place whose production releases are marked but a push, nor a sign-in); its decide answers approved or
+/// refused, pinned to the go-ahead's number, kind, target and act, held for the role's window with <i>Overrule</i> in the held decisions'
+/// table, its risk and marks judged again at the release, then posted to the service's go-ahead door as the role's answer
+/// (<see cref="SupervisorDoorAnswers"/>); its leave climbs the line. Its listing reads the service only where a role could answer one
+/// (<see cref="GoAheadsOpen"/>).
 /// </summary>
 internal sealed class GoAheadKind : ISupervisorKind
 {
@@ -17,33 +19,29 @@ internal sealed class GoAheadKind : ISupervisorKind
     {
         var waiting = new List<object>();
         if (loop.Service is not { } service || loop.Pipe?.StandingConfirmation is not { } judge) return waiting;
-        foreach (var ask in records.Select(record => AskWords.AskOfEntry(record.Entry)).OfType<string>().Distinct(StringComparer.Ordinal))
+        IReadOnlyList<OpenGoAhead> open;
+        try
         {
-            IReadOnlyList<GoAheadView> goAheads;
-            try
-            {
-                goAheads = await service.FindAskAsync(ask, ct).ConfigureAwait(false) is { } found ? AskWords.Of(found).GoAheads ?? [] : [];
-            }
-            catch (DriverException)
-            {
-                // A host that answers no ask lists no go-ahead for a supervisor; the ask's page reads them as it does.
-                continue;
-            }
+            open = await GoAheadsOpen.ReadAsync(judge.Appointed(), records, service.AsksAsync, ct).ConfigureAwait(false);
+        }
+        catch (DriverException)
+        {
+            // A host that answers no ask lists no go-ahead for a supervisor; the ask's page reads them as it does.
+            return waiting;
+        }
 
-            foreach (var goAhead in goAheads.Where(each => each.Answer is null && each.Asked.Count > 0))
+        foreach (var (ask, goAhead, repository, session) in open)
+        {
+            var subject = SupervisorSubject.GoAhead(session, ask, goAhead.Number);
+            if (!loop.Supervisor.RefersDoor(subject) || SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
+            // Only a go-ahead a role may answer here is listed: a marked place's, a high-risk place's and a sign-in wait on the owner role.
+            if (Refusal(judge, repository, goAhead) is not null) continue;
+            waiting.Add(new
             {
-                if (records.LastOrDefault(each => each.Session == goAhead.Asked[^1].Session) is not { Repository: { } repository } session) continue;
-                var subject = SupervisorSubject.GoAhead(session.Session, ask, goAhead.Number);
-                if (!loop.Supervisor.RefersDoor(subject) || SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
-                // Only a go-ahead a role may answer here is listed: a marked one, a high-risk place's and a sign-in wait on the owner role.
-                if (Refusal(judge, repository, goAhead) is not null) continue;
-                waiting.Add(new
-                {
-                    Kind, Subject = subject.Wire(), Repository = repository, covered.Generation, Acts = (IReadOnlyList<string>)[SupervisorKinds.Answer],
-                    Choices = (IReadOnlyList<string>)[SupervisorDoorActs.Approved, SupervisorDoorActs.Refused],
-                    GoAhead = new { goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act },
-                });
-            }
+                Kind, Subject = subject.Wire(), Repository = repository, covered.Generation, Acts = (IReadOnlyList<string>)[SupervisorKinds.Answer],
+                Choices = (IReadOnlyList<string>)[SupervisorDoorActs.Approved, SupervisorDoorActs.Refused],
+                GoAhead = new { goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act },
+            });
         }
 
         return waiting;
@@ -90,11 +88,12 @@ internal sealed class GoAheadKind : ISupervisorKind
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
     }
 
-    // Why a role may not answer it at the repository's place now: the owner role's code, else the grant missing on the role's chain.
+    // Why a role may not answer it at the repository's place now: the owner role's code, else the grant missing on the role's chain. A
+    // go-ahead carries no stage its plugin names yet, so at a place whose production releases are marked it fails closed.
     private static string? Refusal(StandingConfirmation judge, string repository, GoAheadView goAhead)
     {
         var place = judge.Placed(repository);
         var grants = judge.Supervising(SupervisorKinds.GoAhead, place).Role?.Hold?.Acts ?? [];
-        return GoAheadAuthority.Refusal(judge.RiskAt(place), goAhead.Kind, goAhead.On, goAhead.Act, [grants]);
+        return GoAheadAuthority.Refusal(judge.RiskAt(place), goAhead.Kind, [grants], stage: null);
     }
 }

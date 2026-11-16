@@ -87,7 +87,7 @@ public sealed class NodeRuntime(
         () => SessionsRead))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
-        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans))!;
+        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans, () => Doors.ScopeReviewed))!;
 
     private NodeRequesting? _requesting;
 

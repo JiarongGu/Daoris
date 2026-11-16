@@ -34,6 +34,6 @@ public static class TeamKinds
         DriverConfig config, QuestView quest, string? ask, string? workspace, WorkflowTaskChoice? task, ITrainPlans plans, CancellationToken ct)
     {
         if (task is not null || ask is null || Chosen(config, quest.To, workspace, Part) is not { } part) return task;
-        return await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans, ct).ConfigureAwait(false) is null ? task : part;
+        return await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans, reviewed: false, ct).ConfigureAwait(false) is null ? task : part;
     }
 }

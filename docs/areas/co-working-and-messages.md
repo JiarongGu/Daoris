@@ -201,7 +201,7 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     (`DecisionDrafts`: the repository's next number, the chosen side as the comparison worded it, its route as why, the other side
     as what it rejected), never as the person's words. Every brainstorm
     keeps `consultation.json` beside its document (D308): each answered giver's mode (`independent` for a generator, `review` for the
-    synthesis), maker, adapter, account, the packet it read and whether it saw another answer; two generators of one maker each say
+    synthesis), maker, door, account, the packet it read and whether it saw another answer; two generators of one maker each say
     `same-maker`, and the record counts no independence. The decider's line (`changed`) stays null until one is said. A second
     opinion keeps one in the same shape beside its delivery once the working session answered (`Consultations.OfOpinion`): one
     `review` giver with the reviewer's maker, product and what it read; its label says what did not hold (`same-maker` for the work's

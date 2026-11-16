@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-// A run's `land` refused for a cause that passes (LANDRETRY1): the driver keeps the wait on the step's words as a code
+// A run's `land` refused for a cause that passes: the driver keeps the wait on the step's words as a code
 // (`LandRetries.Wait.Holds`), `busy` while it is tried again by itself, `climbed|<line>` once past its deadline the wait climbed the
 // reporting line, the line as the driver says it. Anything else is no wait of this kind, and the caller says the step as before.
 

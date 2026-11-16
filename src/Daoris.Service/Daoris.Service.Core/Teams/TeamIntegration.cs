@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// How an ask's parts are integrated (the canon's scope mode, METHODS1): <c>per-part</c>, each part's landing on the ask's branch
+/// How an ask's parts are integrated (the canon's scope mode): <c>per-part</c>, each part's landing on the ask's branch
 /// gated by its own checks, as a plan written before reads; or <c>one-scope</c>, the parts merged into the ask's branch with no gate
 /// each, and the full set and two reviews (wide and close) run once on the branch before it lands. The ask's own plan names it;
 /// a revision that names none keeps the standing one.

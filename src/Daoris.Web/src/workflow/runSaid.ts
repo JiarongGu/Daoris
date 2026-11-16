@@ -239,7 +239,6 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       if ((node === 'quest.holds' || node === 'content.holds') && step.words) {
         return t('workflow.run.graph.said.holds', { why: step.words.replace(/\.+$/, '') });
       }
-      // A landing tried again by itself, or whose wait climbed the reporting line, says so rather than plain working.
       if (node === 'land' && step.words) {
         const retry = landRetrySaid(t, step.words);
         if (retry) return retry;

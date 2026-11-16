@@ -13,7 +13,10 @@ import { definitionsTaking, offRoute, routeWords, routed } from './routes.mjs';
 const EVIDENCE = 'azure-devops-pull-request/release@1';
 const MARGIN = 5000;
 const ACCESS = ['unauthorized', 'no-token', 'signed-out'];
-const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+const pause = (ms, signal) => new Promise((done) => {
+  const timer = setTimeout(done, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(timer); done(); }, { once: true });
+});
 const numberOf = (build) => build.buildNumber ?? build.id;
 const at = (ms) => new Date(ms).toISOString().slice(11, 16);
 
@@ -59,9 +62,14 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
   const late = (words, url) => (once ? answered('failed', 'not-yet', words, url) : answered('failed', 'timeout', `${words} The step's deadline passed.`, url));
 
   const repo = located(unit);
+  /** Refused once Daoris stood the attempt down (`attempt.signal`, the kit's): read before every write and in every wait, so nothing is made after it. */
+  const standing = (what) => {
+    if (attempt.signal?.aborted) throw new Refusal('stood-down', `stood down (${attempt.signal.reason ?? 'by Daoris'}) before ${what}, so nothing was made`);
+  };
   /** Asks `read` until it answers or the step's deadline passes; a refused key waits on the credentials keeper, never failing. */
   const until = async (read) => {
     for (;;) {
+      standing('its next read');
       try {
         const got = await read();
         if (got !== undefined) return got;
@@ -72,7 +80,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
         else say(`${error.message}; asked again.`);
       }
       if (once || Date.now() + asked.every > ends) return undefined;
-      await pause(asked.every);
+      await pause(asked.every, attempt.signal);
     }
   };
 
@@ -114,6 +122,10 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
 
     // A release the holder named (done outside Daoris, with its link) is read and taken where it carries the landed commit or one after it.
     const named = /^\d+$/.test(String(attempt.options?.release ?? '')) ? Number(attempt.options.release) : Number(/releaseId=(\d+)/.exec(String(attempt.options?.release ?? ''))?.[1] ?? NaN);
+    // A link that names no release settles nothing: the step reads the release it names, never one it would find in its place.
+    if (String(attempt.options?.release ?? '').trim() !== '' && !Number.isFinite(named)) {
+      return answered('failed', 'no-release', `the link names no release (no releaseId), so nothing of ${of} is read for it`);
+    }
     /** The commit a release carries, reading its artifact's build where it is none of the landed commit's. */
     const carriedBy = async (held, known) => {
       const read = commitOf(held, known);
@@ -129,7 +141,11 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
       const known = await builds();
       if (Number.isFinite(named)) {
         const held = (await releases(repo, 'GET', `/releases/${named}`)).json;
-        const carries = held ? await carriedBy(held, known) : null;
+        if (!/^\d+$/.test(String(held?.id ?? ''))) throw new Refusal('no-release', `release ${named} was not found in ${repo.project}`);
+        if (Number(held.releaseDefinition?.id) !== definition.id) {
+          throw new Refusal('target-changed', `release ${named} is of definition #${held.releaseDefinition?.id ?? '?'}, not the step's #${definition.id}`);
+        }
+        const carries = await carriedBy(held, known);
         if (carries === commit) return held;
         if (carries && await after(carries)) return { ...held, after: carries };
         throw new Refusal('target-changed', `release ${named} carries ${carries ? carries.slice(0, 8) : 'no commit read'}, which is neither the landed ${short} nor after it`);
@@ -147,15 +163,18 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
         return undefined;
       }
       if (!['succeeded', 'partiallySucceeded'].includes(build.result)) throw new Refusal('build-failed', `build ${numberOf(build)} of ${short} ${build.result ?? 'ended'}, so no release takes it`);
-      // Continuous deployment is given its time from the build's end; then the release manager makes the release, where the action lets it.
+      // CD has its time from the build's end; only `create-and-start` makes the release here, else CD (or, observed, its holder) makes it.
       const finished = Date.parse(build.finishTime ?? '') || Date.now();
       const cdUntil = Math.min(ends, (Number.isFinite(finished) ? finished : Date.now()) + asked.find);
-      if (asked.action === 'observe' || Date.now() < cdUntil) {
+      if (asked.action !== 'create-and-start' || Date.now() < cdUntil) {
         tell('release-manager', asked.action === 'observe'
           ? `Waiting on the release manager: create a release of ${of} from build ${numberOf(build)} in Azure DevOps; until ${at(ends)} UTC.`
-          : `Waiting on the release manager: build ${numberOf(build)} succeeded, its continuous deployment has until ${at(cdUntil)} UTC to make the release.`, buildLink);
+          : asked.action === 'start-stage'
+            ? `Waiting on the release manager: build ${numberOf(build)} / CD, the release of ${of} its continuous deployment makes; until ${at(ends)} UTC.`
+            : `Waiting on the release manager: build ${numberOf(build)} succeeded, its continuous deployment has until ${at(cdUntil)} UTC to make the release.`, buildLink);
         return undefined;
       }
+      standing(`it made a release of ${of}`);
       const effect = effectOf(definition.id, commit);
       say(`creating a release of ${of} from build ${numberOf(build)} (effect ${effect}).`);
       const alias = aliasOf(definition, asked.pipeline);
@@ -190,9 +209,20 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
           tell('deployer', `Waiting on the deployer: start ${name} of ${read.name} in Azure DevOps.`, link);
           return undefined;
         }
+        // Started here already, and Azure DevOps not showing it yet: waited for, never started a second time.
+        if (started) {
+          tell(null, `${name} of ${read.name} was started by Daoris; Azure DevOps does not show it started yet.`, link);
+          return undefined;
+        }
+        standing(`it started ${name} of ${read.name}`);
         const set = await releases(repo, 'PATCH', `/releases/${release.id}/environments/${environment.id}`, { status: 'inProgress', comment: `Started by Daoris for ${short}.`, scheduledDeploymentTime: null });
-        if (set.status !== 200) throw new Refusal('rejected', `Azure DevOps did not start ${name} (${set.status})`);
-        started = true;
+        if (set.status === 200) {
+          started = true;
+          return undefined;
+        }
+        const again = (await releases(repo, 'GET', `/releases/${release.id}`)).json;
+        const shown = (again?.environments ?? []).find((each) => Number(each.definitionEnvironmentId) === asked.stage);
+        if (!shown || ['notStarted', 'undefined'].includes(shown.status)) throw new Refusal('rejected', `Azure DevOps did not start ${name} (${set.status})`);
         return undefined;
       }
       if (id === 'release-approve') {

@@ -47,8 +47,8 @@ public sealed class ScopeRunTests : IDisposable
     public async Task A_two_part_one_scope_plan_merges_both_with_no_gates_and_asks_the_full_set_and_two_reviews_once()
     {
         var plans = new Plans(ScopeLanding.OneScope);
-        var api = await TrainPartOf.ReadAsync("q1", "a1/api/1", plans, default);
-        var web = await TrainPartOf.ReadAsync("q2", "a1/web/1", plans, default);
+        var api = await TrainPartOf.ReadAsync("q1", "a1/api/1", plans, reviewed: true, default);
+        var web = await TrainPartOf.ReadAsync("q2", "a1/web/1", plans, reviewed: true, default);
         Assert.True(api!.OneScope);
         Assert.True(web!.OneScope);
 
@@ -72,11 +72,21 @@ public sealed class ScopeRunTests : IDisposable
         Assert.Equal(["claude", "codex"], end.Reviews.Select(review => review.Adapter));
     }
 
+    /// <summary>🔴 With no reviewers wired nothing asks the scope's two reviews, so a one-scope plan's parts keep their gates.</summary>
+    [Fact]
+    public async Task A_one_scope_plan_with_no_reviewers_wired_keeps_each_parts_gates()
+    {
+        var api = await TrainPartOf.ReadAsync("q1", "a1/api/1", new Plans(ScopeLanding.OneScope), reviewed: false, default);
+
+        Assert.False(api!.OneScope);
+        Assert.Equal(LandingIntegrate.Declared, IntegrationRequests.NodeJudgement(Ask("work/api", api), Landed("work/api"), Gated).Policy!.Gates);
+    }
+
     [Fact]
     public async Task A_per_part_plan_gates_each_part_and_its_end_check_is_its_own()
     {
         var plans = new Plans(ScopeLanding.PerPart);
-        var api = await TrainPartOf.ReadAsync("q1", "a1/api/1", plans, default);
+        var api = await TrainPartOf.ReadAsync("q1", "a1/api/1", plans, reviewed: true, default);
         Assert.False(api!.OneScope);
         Assert.Equal(LandingIntegrate.Declared, IntegrationRequests.NodeJudgement(Ask("work/api", api), Landed("work/api"), Gated).Policy!.Gates);
 

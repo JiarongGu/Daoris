@@ -14,4 +14,8 @@ internal sealed class PipeDecisionAdmission(DriverLoop loop) : IDecisionAdmissio
 
     public DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) =>
         SupervisorClimb.PlaceOf(loop, subject, place) is { } now ? Admit(subject.Kind, now, act) : DecisionAdmitted.Refused(SupervisorWhy.PassedUp);
+
+    /// <summary>The judge's risk record at <paramref name="place"/>, its workspace placed; with no pipe, high.</summary>
+    public PlaceRiskNow RiskAt(RolePlace place) =>
+        loop.Pipe?.StandingConfirmation is { } judge ? judge.RiskAt(place) : new PlaceRiskNow(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
 }

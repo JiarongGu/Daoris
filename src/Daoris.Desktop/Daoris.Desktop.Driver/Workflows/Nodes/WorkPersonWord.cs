@@ -109,6 +109,17 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
                 foreach (var attempt in current.Attempts.Where(attempt => HasWord(current, attempt)))
                 {
                     if (declared(record.Unit, attempt.Node) is not { } node) continue;
+
+                    // A link no check has answered waits for it, never applied on the word alone; at its deadline its wait climbs the line.
+                    if (LinkHolds.Waits(record, attempt, node))
+                    {
+                        if (!LinkHolds.Due(attempt, node, clock())) continue;
+                        var climbed = LinkHolds.Held(attempt, clock());
+                        record = With(record, attempt, climbed);
+                        said.Add(new(record.Unit, node.Id, PerformedWhat.NotTaken, LinkHolds.Climbed) { Detail = climbed.Progress?.Words });
+                        continue;
+                    }
+
                     var (next, result) = Settle(record, attempt, node);
                     record = next;
                     said.Add(result);
@@ -139,9 +150,14 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     {
         var unit = record.Unit;
         var status = StatusOf(record, node.Id);
+        // The refusal stays on the attempt, a held one's code or an in-flight one's words, so its holder reads why.
         NodeRecord TakenBack(string code) => With(record, attempt, attempt with
         {
-            Resolution = null, ResolvedAt = null, Link = null, Note = null, Decision = null, Code = attempt.State == AttemptStates.Held ? code : attempt.Code,
+            Resolution = null, ResolvedAt = null, Link = null, Note = null, Decision = null, LinkChecked = null,
+            Code = attempt.State == AttemptStates.Held ? code : attempt.Code,
+            Progress = StandDowns.InFlight(attempt) && attempt.State != AttemptStates.Held
+                ? new StepProgress(null, $"Done outside Daoris was not taken ({code}).", null, null, clock())
+                : attempt.Progress,
         });
 
         if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown or NodeStates.Failed))

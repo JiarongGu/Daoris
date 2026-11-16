@@ -30,7 +30,10 @@ public sealed class LinkCheckTests : IDisposable
 
     private readonly Port _port = new();
 
-    private readonly DateTimeOffset _now = new(2026, 11, 16, 9, 0, 0, TimeSpan.Zero);
+    private DateTimeOffset _now = new(2026, 11, 16, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>The outputs the first step declares, none unless a test says so.</summary>
+    private IReadOnlyDictionary<string, string> _outputs = new Dictionary<string, string>();
 
     public void Dispose()
     {
@@ -57,14 +60,17 @@ public sealed class LinkCheckTests : IDisposable
             return Task.FromResult((Answer, 1));
         }
 
-        public int? GenerationOf(string plugin) => 1;
+        public bool Up { get; set; } = true;
+
+        public int? GenerationOf(string plugin) => Up ? 1 : null;
     }
 
     private NodeRecordFiles Files => new(_home, () => true);
 
     private WorkPerformer Performer() => new(Files, _port, () => _now);
 
-    private NodeDeclaration? Declared(string unit, string node) => Graph.Nodes.FirstOrDefault(each => each.Id == node);
+    private NodeDeclaration? Declared(string unit, string node) =>
+        Graph.Nodes.FirstOrDefault(each => each.Id == node) is { } found && found.Id == "release-create" ? found with { Outputs = _outputs } : Graph.Nodes.FirstOrDefault(each => each.Id == node);
 
     private NodeRecord Record() => Files.Read(Unit)!;
 
@@ -114,6 +120,67 @@ public sealed class LinkCheckTests : IDisposable
 
         Assert.Equal((NodeStates.Reached, NodeSource.Person), (Status("release-create").State, Status("release-create").By));
         Assert.Equal("outside: A Person", Assert.Single(Record().Attempts).By);
+    }
+
+    [Fact]
+    public async Task A_link_applied_is_not_asked_again_so_it_spends_no_send_on_a_later_pass()
+    {
+        var performer = await WordedAsync();
+        _port.Answer = Judged(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(null, Link, null, "Release-92 carries cccccccc.")));
+
+        foreach (var _ in new[] { 1, 2 })
+        {
+            await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None);
+            performer.Resolve(Declared);
+        }
+
+        Assert.Single(_port.Asked);
+        Assert.Equal(NodeStates.Reached, Status("release-create").State);
+    }
+
+    [Fact]
+    public async Task A_link_its_plugin_cannot_check_is_held_never_applied_on_the_word_alone_and_past_its_deadline_climbs_the_line()
+    {
+        var performer = await WordedAsync();
+        _port.Up = false;
+
+        Assert.Empty(await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None));
+        performer.Resolve(Declared);
+
+        Assert.Equal(NodeStates.Active, Status("release-create").State);
+        var held = Assert.Single(Record().Attempts);
+        Assert.Equal((HeldResolutions.Happened, Link), (held.Resolution, held.Link));
+
+        _now += WorkPerformer.DefaultTimeout + TimeSpan.FromMinutes(1);
+        var climbed = Assert.Single(performer.Resolve(Declared));
+        Assert.Equal(LinkHolds.Climbed, climbed.Code);
+        Assert.StartsWith("waiting on", Assert.Single(Record().Attempts).Progress!.Words, StringComparison.Ordinal);
+        Assert.Empty(performer.Resolve(Declared));
+        Assert.Equal(NodeStates.Active, Status("release-create").State);
+
+        _port.Up = true;
+        _port.Answer = Judged(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(null, Link, null, "Release-92 carries cccccccc.")));
+        await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None);
+        performer.Resolve(Declared);
+        Assert.Equal(NodeStates.Reached, Status("release-create").State);
+    }
+
+    [Fact]
+    public async Task Done_outside_is_not_offered_on_a_step_declaring_outputs_and_a_word_the_table_refuses_keeps_its_refusal()
+    {
+        var performer = await WordedAsync();
+        _outputs = new Dictionary<string, string> { ["pull-request"] = "daoris-azure-devops/pull-request@1" };
+        _port.Answer = Judged(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(null, Link, null, "Release-92 carries cccccccc.")));
+
+        await performer.CheckLinksAsync(Declared, WorkSends.Unbounded, CancellationToken.None);
+        var refused = Assert.Single(performer.Resolve(Declared));
+
+        Assert.Equal(NodeRefusal.NotOnWord, refused.Code);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Null(attempt.Link);
+        Assert.Contains(NodeRefusal.NotOnWord, attempt.Progress?.Words, StringComparison.Ordinal);
+        var offered = PluginFailureHeld.Of(Record(), Declared(Unit, "release-create")!, Status("release-create"));
+        Assert.DoesNotContain(HeldResolutions.DoneOutside, offered?.Words ?? []);
     }
 
     [Fact]

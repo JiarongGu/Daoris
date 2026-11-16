@@ -19,7 +19,6 @@ import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid
 import { stepTitle } from './said';
 import { CheckHeld } from './wait/CheckHeld';
 import { FailedStepHeld } from './wait/FailedStepHeld';
-import { ReleaseStepDoors } from './release/ReleaseStepDoors';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
 import { roleSaid } from './stepRoles';
@@ -176,12 +175,13 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
  * are `StepBrief`s. On the flowchart the node wears the state's pill itself, so its mark is drawn without it, and without
  * the routes, which its edges draw.
  */
-function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, onHeld }: {
+function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, onNodeWord, onHeld }: {
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
   doors?: RunDoors;
   control?: ReactNode;
+  releaseDoors?: ReleaseDoors;
   pill?: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
@@ -231,7 +231,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
       {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}
-      <ReleaseStepDoors run={run} step={step} />
+      {releaseDoors?.(run, step)}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
@@ -341,12 +341,15 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   return null;
 }
 
+type ReleaseDoors = (run: WorkflowRun, step: RunStep) => ReactNode;
+
 /** One run: what it follows, where it stands in a few words, then its chart with each step's place. */
-function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
+function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHeld }: {
   run: WorkflowRun;
   here?: string | null;
   doors?: RunDoors;
   controls?: Partial<Record<string, ReactNode>>;
+  releaseDoors?: ReleaseDoors;
   /** Several runs are drawn, so each says its repository first. */
   named: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
@@ -370,6 +373,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
           here={here === id}
           doors={doors}
           control={id === at ? controls?.[id] : undefined}
+          releaseDoors={releaseDoors}
           pill={pill}
           onNodeWord={onNodeWord}
           onHeld={onHeld}
@@ -457,7 +461,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onHeld, onRetry }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, releaseDoors, onNodeWord, onHeld, onRetry }: {
   /** What the shell answered; absent while it is read, or where it is refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -468,6 +472,8 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
   doors?: RunDoors;
   /** Each owner's control where the step the run stands at waits on a press, by the step's id. */
   controls?: Partial<Record<string, ReactNode>>;
+  /** A release step's target form and approval card, drawn by the container that holds their requests. */
+  releaseDoors?: ReleaseDoors;
   /**
    * The person's skip or stop of a graph run's node, answered by the driver; absent where nothing presses it, and only a
    * word kept is drawn.
@@ -509,6 +515,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
           here={here}
           doors={doors}
           controls={controls}
+          releaseDoors={releaseDoors}
           named={answer.runs.length > 1}
           onNodeWord={onNodeWord}
           onHeld={onHeld}

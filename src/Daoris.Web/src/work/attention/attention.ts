@@ -44,7 +44,6 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   unclosed: 'holding',
   // A run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
-  // A run whose step waits on a role the person holds stands still until they press it, or act where its page is.
   step: 'holding',
   // A stale one holds nothing and waits for the person's word instead (`attentionGroup`).
   'go-ahead': 'holding',
@@ -106,7 +105,6 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   unanswerable: 'word',
   // A question the ask's delivery plan asks that only the person can settle: nothing running is held by it, but a release waits.
   'plan-question': 'word',
-  // A design pass's closed question: its answer is drafted as a decision the person keeps.
   'design-question': 'word',
   left: 'word',
   review: 'ready',

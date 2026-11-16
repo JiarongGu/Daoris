@@ -366,7 +366,6 @@ export const notTakenBy = (run: WorkflowRun, step: RunStep): boolean => run.grap
 /** Whether a step waits on a role the person holds: it waits, and they fill its role. */
 export const stepWaitsOnYou = (step: RunStep): boolean => step.state === 'waiting' && holdsIt(step.holder);
 
-/** Whether a run waits on a role the person holds now: the step it stands at does. */
 export const waitsOnYou = (run: WorkflowRun): boolean => {
   const at = standsAt(run);
   return at !== null && stepWaitsOnYou(at);

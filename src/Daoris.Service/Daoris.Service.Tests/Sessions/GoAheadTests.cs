@@ -381,8 +381,23 @@ public sealed class GoAheadTests : GoAheadFixture
     [InlineData("localhost", "local")]
     [InlineData("the Analytics API", "analytics api")]
     [InlineData("  the ", "")]
+    [InlineData("生产", "production")]
+    [InlineData("生产环境", "production")]
+    [InlineData("线上 报表", "production")]
+    [InlineData("测试环境", "test")]
+    [InlineData("开发", "development")]
     public void Where_an_act_lands_reads_an_environments_usual_names_as_one(string said, string on) =>
         Assert.Equal(on, GoAheadAct.Where(said));
+
+    /// <summary>🔴 Production reads the same in Chinese as in English: a word holding one of the table's Chinese names reads as it.</summary>
+    [Theory]
+    [InlineData("生产", true)]
+    [InlineData("正式环境", true)]
+    [InlineData("线上", true)]
+    [InlineData("测试", false)]
+    [InlineData("Portal CD", false)]
+    public void Production_reads_in_Chinese_as_in_English(string said, bool production) =>
+        Assert.Equal(production, GoAheadAct.ReadsAsProduction(said));
 
     [Theory]
     [InlineData("dashboard configuration", "write", "production", "configuration dashboard")]
