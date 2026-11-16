@@ -235,7 +235,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        rows.AddRange(HumanTaskRows.Of(facts.Steps));
+        rows.AddRange(HumanTaskRows.Of(facts.Steps, facts.Groups));
 
         // A candidate the policy held for the owner's decide, a superseded commit awaiting
         // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the

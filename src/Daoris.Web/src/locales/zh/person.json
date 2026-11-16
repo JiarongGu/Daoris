@@ -430,7 +430,7 @@
   "person.route.WORKFLOW_SAVE": "保存工作流的一个版本",
   "person.route.WORKFLOW_USE": "为一处选择工作流",
   "person.route.WORKFLOW_KIND": "为工作区声明一种工作类型",
-  "person.route.WORKFLOW_NODE": "跳过、停止、再次委托或不等回复而继续一次进展中的一步",
+  "person.route.WORKFLOW_NODE": "说明一次进展中的一步本次不需要、在这一步终止这项工作、再次委托或不等回复而继续",
   "person.route.WORKFLOW_VERIFY": "验证一个仓库的某个分支或提交",
   "person.route.SET_HEAVY_GATES": "更改一个仓库的重型检查",
   "person.route.SET_HOLD": "暂停一个仓库的工作，或将其放开",

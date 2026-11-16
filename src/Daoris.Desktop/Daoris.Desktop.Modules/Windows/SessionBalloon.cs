@@ -104,6 +104,8 @@ public static partial class SessionBalloon
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
+        [Prefix + "step.title"] = "{{repository}}: a step is waiting on a role you hold",
+        [Prefix + "step.body"] = "Open Daoris at its step to answer it.",
         // The tray menu's one item: said in the window's language like the balloons, English before a page hands words.
         [Prefix + "reloadPage"] = "Reload the page of every window",
     };
@@ -148,6 +150,7 @@ public static partial class SessionBalloon
             HeldCallAnnouncements.AttentionKind => (
                 repository == HelpRoom.Repository ? Word(Prefix + "holding.help") : Fill(Word(Prefix + "holding.title"), named),
                 Written(Prefix + "holding.body")),
+            HeldCallAnnouncements.StepKind => (Fill(Word(Prefix + "step.title"), named), Word(Prefix + "step.body")),
             // A terminal's press: its act by its route's words, never the route; the event's English is not said.
             PipeConfirmations.AttentionKind => (Word(Prefix + "confirming.title"), Act(facts, handed) is { } act
                 ? Fill(Word(Prefix + "confirming.body"), new Dictionary<string, string>(StringComparer.Ordinal) { ["act"] = act })
@@ -178,7 +181,7 @@ public static partial class SessionBalloon
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
         kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or PipeConfirmations.RestoredKind
-            or HeldCallAnnouncements.AttentionKind
+            or HeldCallAnnouncements.AttentionKind or HeldCallAnnouncements.StepKind
             ? BalloonIcon.Warning
             : BalloonIcon.Info;
 

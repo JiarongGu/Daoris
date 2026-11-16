@@ -91,6 +91,21 @@ describe("the session's Workflow view", () => {
     expect(row('look')).toHaveTextContent('Cannot start: No declared reviewer.');
   });
 
+  it('says the role that takes a step beside its state, Daoris\'s own by its word and a catalogue role as written', async () => {
+    const roled: WorkflowRun = {
+      ...IN_REVIEW,
+      steps: IN_REVIEW.steps.map((step) => step.step.id === 'work' ? { ...step, role: 'builder' } : step.step.id === 'look' ? { ...step, role: 'approver' } : step),
+    };
+    const { unmount } = render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
+    expect(row('work')).toHaveTextContent('role builder');
+    expect(row('look')).toHaveTextContent('role Approver');
+    expect(row('landing')).not.toHaveTextContent('role');
+    unmount();
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(roled)} here="work" />);
+    expect(row('look')).toHaveTextContent('角色 审批人');
+  });
+
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 
@@ -528,29 +543,29 @@ describe("the person's skip and stop of a graph run's node", () => {
 
   it('offers them under a node the table takes them on, and nowhere else, and none where nothing presses them', () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
-    expect(within(row('release')).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
-    expect(within(row('release')).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
-    expect(within(row('claimed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
-    expect(within(row('handed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
+    expect(within(row('release')).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: 'End this work…' })).toBeInTheDocument();
+    expect(within(row('claimed')).queryByRole('button', { name: 'End this work…' })).toBeNull();
+    expect(within(row('handed')).queryByRole('button', { name: 'End this work…' })).toBeNull();
     unmount();
 
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} />);
-    expect(screen.queryByRole('button', { name: 'Pass over…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
   });
 
   it('asks for the words a skip keeps before it is pressed, then sends the run, the node, the act and the words', async () => {
     const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'release', act: 'skip', done: true });
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
 
-    await userEvent.click(within(row('release')).getByRole('button', { name: 'Pass over…' }));
-    const ask = screen.getByRole('group', { name: 'Pass over release for this run' });
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Not needed this run…' }));
+    const ask = screen.getByRole('group', { name: 'release: not needed this run' });
     expect(within(ask).getByText(/what waits on it goes on without it/)).toBeInTheDocument();
-    expect(within(ask).getByRole('button', { name: 'Pass over' })).toBeDisabled();
-    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you pass it over' }), 'nobody raises it');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Pass over' }));
+    expect(within(ask).getByRole('button', { name: 'Not needed this run' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'why it is not needed' }), 'nobody raises it');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Not needed this run' }));
 
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'skip', words: 'nobody raises it' });
-    expect(screen.queryByRole('group', { name: 'Pass over release for this run' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'release: not needed this run' })).toBeNull();
   });
 
   it('sends a stop with no words, and says a refusal in the ask by its code, the driver\'s sentence for one it has no words for', async () => {
@@ -559,13 +574,13 @@ describe("the person's skip and stop of a graph run's node", () => {
       .mockResolvedValueOnce({ run: 'q1', node: 'release', act: 'stop', done: false, refused: 'something-new', message: 'workflow: a newer refusal.' });
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
 
-    await userEvent.click(within(row('release')).getByRole('button', { name: 'Stop…' }));
-    const ask = screen.getByRole('group', { name: 'Stop release for this run' });
-    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'End this work…' }));
+    const ask = screen.getByRole('group', { name: 'End this work at release' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'End this work' }));
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'stop', words: null });
     expect(await within(ask).findByRole('alert')).toHaveTextContent("release already has your word, which Daoris's next look applies.");
 
-    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    await userEvent.click(within(ask).getByRole('button', { name: 'End this work' }));
     expect(await within(ask).findByRole('alert')).toHaveTextContent('workflow: a newer refusal.');
   });
 
@@ -573,35 +588,35 @@ describe("the person's skip and stop of a graph run's node", () => {
     const promoted = { run: 'q1', node: 'release', act: 'stop', done: false, refused: 'promoted', message: 'workflow: promoted.' };
     const onNodeWord = vi.fn().mockResolvedValue(promoted);
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
-    await userEvent.click(within(row('release')).getByRole('button', { name: 'Stop…' }));
-    const ask = screen.getByRole('group', { name: 'Stop release for this run' });
-    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'End this work…' }));
+    const ask = screen.getByRole('group', { name: 'End this work at release' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'End this work' }));
     expect(await within(ask).findByRole('alert')).toHaveTextContent('release has promoted onto the line, and nothing reverses the line, so there is nothing to stop.');
     unmount();
 
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
-    await userEvent.click(within(row('release')).getByRole('button', { name: '停止…' }));
+    await userEvent.click(within(row('release')).getByRole('button', { name: '终止这项工作…' }));
     const zh = screen.getByRole('group', { name: /release/ });
-    await userEvent.click(within(zh).getAllByRole('button', { name: '停止' })[0]);
+    await userEvent.click(within(zh).getAllByRole('button', { name: '终止这项工作' })[0]);
     expect(await within(zh).findByRole('alert')).toHaveTextContent('release 已并入主线，主线无法撤回，所以没有可停止的。');
   });
 
   it('draws a word kept on its node, with its words, until it is applied, and offers nothing more there', () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} onNodeWord={vi.fn()} />);
-    expect(row('release')).toHaveTextContent("Your skip is kept, and Daoris's next look applies it.");
+    expect(row('release')).toHaveTextContent("Your word that it is not needed this run is kept, and Daoris's next look applies it.");
     expect(row('release')).toHaveTextContent('“nobody raises it for this work”');
-    expect(within(row('release')).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+    expect(within(row('release')).queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
   });
 
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
-    expect(within(row('release')).getByRole('button', { name: '跳过…' })).toBeInTheDocument();
-    expect(within(row('release')).getByRole('button', { name: '停止…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: '本次不需要…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: '终止这项工作…' })).toBeInTheDocument();
     unmount();
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} />);
-    expect(row('release')).toHaveTextContent('你的跳过已保存，Daoris 下次查看时会应用它。');
+    expect(row('release')).toHaveTextContent('你说明本次不需要它，已保存，Daoris 下次查看时会应用它。');
   });
 });
 
@@ -690,10 +705,10 @@ describe("the work's requests", () => {
     expect(row('requests')).toHaveTextContent('waiting on you');
     expect(row('requests')).toHaveTextContent('A quest the work\'s sessions published was declined: it waits on you');
 
-    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Pass over…' }));
-    const ask = screen.getByRole('group', { name: 'Pass over requests for this run' });
-    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you pass it over' }), 'tools will not take it; I do it myself');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Pass over' }));
+    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Not needed this run…' }));
+    const ask = screen.getByRole('group', { name: 'requests: not needed this run' });
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'why it is not needed' }), 'tools will not take it; I do it myself');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Not needed this run' }));
 
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'skip', words: 'tools will not take it; I do it myself' });
   });
@@ -705,7 +720,7 @@ describe("the work's requests", () => {
     const steps = only.steps.map((step) => (step.node === 'work.requests' ? { ...step, acts: ['ask-again', 'go-on'] } : step));
     const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'ask-again', done: true });
     render(<WorkflowRunView answer={{ ...asked, runs: [{ ...only, steps }] }} onNodeWord={onNodeWord} />);
-    expect(within(row('requests')).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+    expect(within(row('requests')).queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
 
     await userEvent.click(within(row('requests')).getByRole('button', { name: 'Ask again…' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'Ask again for requests' })).getByRole('button', { name: 'Ask again' }));

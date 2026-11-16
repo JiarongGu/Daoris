@@ -96,7 +96,6 @@ function LandEditor({ editor, graph, workflow, lines, onReads }: {
   return (
     <LandOptions
       palette={editor.palette}
-      roles={editor.roles}
       graph={graph}
       workflow={workflow}
       lines={lines}

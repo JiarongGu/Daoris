@@ -76,8 +76,8 @@ beforeEach(() => {
         return null;
       }
       case 'WORKFLOW_SAVE': {
-        const graph = payload.graph as { nodes: { id: string; options?: { role?: string } }[] };
-        const named = graph.nodes.find((node) => node.options?.role && !roles.some((each) => each.id === node.options!.role));
+        const graph = payload.graph as { nodes: { id: string; role?: string }[] };
+        const named = graph.nodes.find((node) => node.role && !roles.some((each) => each.id === node.role));
         const answer: WorkflowSaveAnswer = named
           ? { ...HOLDS, done: false, refused: 'refused', version: null, problems: [{ code: 'role', wire: null, node: named.id, words: 'no such role.' }] }
           : { ...HOLDS, id: String(payload.id), version: 1, written: !payload.plan, message: payload.plan ? 'planned' : 'saved as the page.' };
@@ -154,8 +154,10 @@ describe('a step\'s Taken by', () => {
     await user.click(review);
     await user.click(await screen.findByRole('button', { name: 'Save as a new workflow' }));
     await waitFor(() => expect(asked('WORKFLOW_SAVE').some((each) => each.plan === false)).toBe(true));
-    const written = asked('WORKFLOW_SAVE').find((each) => each.plan === false)!.graph as { nodes: { id: string; options?: { role?: string } }[] };
-    expect(written.nodes.find((node) => node.id === 'work')?.options?.role).toBe('designer-2');
+    const written = asked('WORKFLOW_SAVE').find((each) => each.plan === false)!.graph as { nodes: { id: string; role?: string; options?: { role?: string } }[] };
+    const work = written.nodes.find((node) => node.id === 'work');
+    expect(work?.role).toBe('designer-2');
+    expect(work?.options?.role).toBeUndefined();
     await user.click(await screen.findByRole('button', { name: 'Use here' }));
     await waitFor(() => expect(asked('WORKFLOW_USE')).toHaveLength(1));
   });

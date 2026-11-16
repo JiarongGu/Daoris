@@ -315,18 +315,18 @@ describe('What needs you on a machine', () => {
     start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
 
     const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    await userEvent.click(within(item).getByRole('button', { name: 'Pass over…' }));
-    const asking = within(item).getByRole('group', { name: 'Pass over…' });
+    await userEvent.click(within(item).getByRole('button', { name: 'Not needed this run…' }));
+    const asking = within(item).getByRole('group', { name: 'Not needed this run…' });
     await userEvent.type(within(asking).getByRole('textbox'), 'again');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
+    await userEvent.click(within(asking).getByRole('button', { name: 'Not needed this run' }));
 
     expect(await within(item).findByRole('alert')).toHaveTextContent("requests already has your word, which Daoris's next look applies.");
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'again' } });
 
     await userEvent.clear(within(asking).getByRole('textbox'));
     await userEvent.type(within(asking).getByRole('textbox'), 'web will not take it');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
-    await waitFor(() => expect(within(item).queryByRole('group', { name: 'Pass over…' })).toBeNull());
+    await userEvent.click(within(asking).getByRole('button', { name: 'Not needed this run' }));
+    await waitFor(() => expect(within(item).queryByRole('group', { name: 'Not needed this run…' })).toBeNull());
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'web will not take it' } });
   });
 
@@ -339,7 +339,7 @@ describe('What needs you on a machine', () => {
     start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
 
     const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    expect(within(item).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+    expect(within(item).queryByRole('button', { name: 'Not needed this run…' })).toBeNull();
     await userEvent.click(within(item).getByRole('button', { name: 'Ask again…' }));
     await userEvent.click(within(within(item).getByRole('group', { name: 'Ask again…' })).getByRole('button', { name: 'Ask again' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'ask', act: 'ask-again' } }));

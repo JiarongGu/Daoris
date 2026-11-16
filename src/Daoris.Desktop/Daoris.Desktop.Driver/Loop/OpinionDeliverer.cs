@@ -442,6 +442,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         var reading = await OpinionAnswers.ReadAsync(view, session, tree, _context.OpinionGit, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)
             with { Steered = steered };
         Deliveries.Answered(view.Id, reading);
+        Deliveries.Consulted(view, reading);
         // The machine log's line for it: counts only.
         Service.LandingSaid(OpinionLines.Answered(view.Id, reading));
         var noted = OpinionAnswers.Told(view, reading);

@@ -115,4 +115,27 @@ public sealed class StepWaitCensusTests
         var vacancy = (JsonObject)Assert.Single(Rows(FactsAt(PersonWaits.Vacant)))["step"]!;
         Assert.Equal((StepWaiting.OpensRun, AppointedRoles.Supervisor),(vacancy["opens"]!.GetValue<string>(), vacancy["role"]!.GetValue<string>()));
     }
+
+    /// <summary>
+    /// A plugin's role wait with no page is acted on outside Daoris, where nothing observes it: its row offers <i>Done outside Daoris</i> on
+    /// the attempt out now, its link the evidence; one with a page is taken on the page and observed there.
+    /// </summary>
+    [Fact]
+    public void A_plugins_role_wait_with_no_page_offers_done_outside_daoris_on_its_attempt()
+    {
+        var (node, record) = StepAt(PersonWaits.Actor)!.Value;
+        var attempt = record.Attempts[0];
+        var bare = record with { Attempts = [attempt with { Progress = attempt.Progress! with { Url = null } }] };
+
+        var row = (JsonObject)Assert.Single(Rows(new AttentionFacts
+        {
+            Steps = [JsonSerializer.SerializeToNode(HeldSteps.Step(Run, "engine", "aurora", Run, node, bare), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+        }))["step"]!;
+        Assert.Contains(HeldResolutions.DoneOutside, ((JsonArray)row["presses"]!).Select(each => each!.GetValue<string>()));
+        Assert.Equal((Unit, 1), (row["held"]!["unit"]!.GetValue<string>(), row["held"]!["attempt"]!.GetValue<int>()));
+
+        var paged = HeldSteps.Step(Run, "engine", "aurora", Run, node, record)!;
+        Assert.DoesNotContain(HeldResolutions.DoneOutside, paged.Presses);
+        Assert.Null(paged.Held);
+    }
 }

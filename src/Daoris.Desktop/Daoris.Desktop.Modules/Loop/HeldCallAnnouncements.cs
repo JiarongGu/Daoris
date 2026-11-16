@@ -5,7 +5,8 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A tool call a session holds for the person's answer, announced as a park is: on
+/// A tool call a session holds for the person's answer, and a run's step waiting on a role the person holds (its notification opening
+/// the session its run placed in Needs you, whose head carries the step's presses), each announced as a park is: on
 /// <c>SESSION_ATTENTION</c>, in the shape the shell's notifier and the page's toast read, once, where the attention slice first sees
 /// its row, while the notify switch is on.
 /// </summary>
@@ -22,13 +23,20 @@ namespace Daoris.Desktop;
 /// <para><b>Nothing older than this run.</b> What a session holds is the driver's memory of this process (<c>HeldPermissions</c>), so a
 /// row seen at the first judgement is held in this run, and a restart holds none to say again.
 /// </remarks>
-public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying)
+/// <param name="steps">Whether a run's step waiting on a role the person holds is said, a park's switch; null says none.</param>
+public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying, Func<bool>? steps = null)
 {
     /// <summary>The kind of attention a held tool call is told as.</summary>
     public const string AttentionKind = "Holding";
 
+    /// <summary>The kind of attention a run's step waiting on a role the person holds is told as.</summary>
+    public const string StepKind = "Step";
+
     /// <summary>The kind of <i>What needs you</i>'s row a held tool call is (<see cref="NeedsAPerson"/>).</summary>
     private const string RowKind = "permission";
+
+    /// <summary>The kind of <i>What needs you</i>'s row a run's step waiting on the person is (<c>HumanTaskRows</c>).</summary>
+    private const string StepRowKind = "step";
 
     private readonly Lock _gate = new();
     private HashSet<string> _seen = new(StringComparer.Ordinal);
@@ -40,18 +48,23 @@ public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying)
         var held = rows
             .Select(each => each.Value as JsonObject)
             .OfType<JsonObject>()
-            .Where(row => Json.Text(row, "kind") == RowKind && Json.Text(row, "id") is not null)
+            .Where(row => Json.Text(row, "kind") is RowKind or StepRowKind && Json.Text(row, "id") is not null)
             .ToList();
 
+        static string Key(JsonObject row) => $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";
         List<JsonObject> arrived;
         lock (_gate)
         {
-            arrived = [.. held.Where(row => !_seen.Contains(Json.Text(row, "id")!))];
-            _seen = new HashSet<string>(held.Select(row => Json.Text(row, "id")!), StringComparer.Ordinal);
+            arrived = [.. held.Where(row => !_seen.Contains(Key(row)))];
+            _seen = new HashSet<string>(held.Select(Key), StringComparer.Ordinal);
         }
 
-        if (arrived.Count == 0 || !notifying()) return;
-        foreach (var row in arrived) bus.Emit(StatePublisher.Module, PipeConfirmations.AttentionType, Attention(row));
+        if (arrived.Count == 0) return;
+        var (calls, waits) = (notifying(), steps?.Invoke() == true);
+        foreach (var row in arrived)
+        {
+            if (Json.Text(row, "kind") == StepRowKind ? waits : calls) bus.Emit(StatePublisher.Module, PipeConfirmations.AttentionType, Attention(row));
+        }
     }
 
     /// <summary>
@@ -63,6 +76,21 @@ public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying)
     {
         var session = Json.Text(row, "session");
         var repository = Json.Text(row, "where") is { Length: > 0 } where ? where : session ?? "";
+        // A step's: the session its run placed, which a click opens, its head reading the wait with its presses; the run's work quest.
+        if (Json.Text(row, "kind") == StepRowKind)
+        {
+            return new
+            {
+                Kind = StepKind,
+                Id = Json.Text(row, "id"),
+                Session = session,
+                Quest = row["step"] is JsonObject step ? Json.Text(step, "work") : null,
+                Repository = repository,
+                Headline = SessionBalloon.Words(new BalloonFacts(StepKind) { Repository = repository }).Title,
+                Detail = (string?)null,
+            };
+        }
+
         return new
         {
             Kind = AttentionKind,

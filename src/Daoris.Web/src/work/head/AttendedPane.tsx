@@ -21,6 +21,7 @@ import { relationsOf } from './relations';
 import { SessionPlaceHold } from './SessionPlaceHold';
 import { SessionSupervisorCourse } from './SessionSupervisorCourse';
 import { SessionTerminalHold } from './SessionTerminalHold';
+import { SessionRunWaits } from './RunWaitsHead';
 
 type Page = ComponentProps<typeof AttendedSession>;
 
@@ -82,6 +83,8 @@ export function AttendedPane({
       } : null}
       // A terminal holding this conversation, said on its head with *Let go of the terminal*.
       terminalHold={<SessionTerminalHold session={attended.id} />}
+      // The steps of its run waiting on a role the person holds, each with its presses: where a notification about one opens.
+      runWaits={<SessionRunWaits session={attended.id} />}
       // The supervisor's decision on a point its rule referred, with *Overrule* while it is held.
       supervisorCourse={<SessionSupervisorCourse session={attended.id} supervision={supervision} here={here} />}
       // A parked line keeping its checkout with paths of its own, with *Let others work here*.

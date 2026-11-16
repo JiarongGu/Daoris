@@ -163,7 +163,7 @@
   "workflow.outcome.tidy.tidied": "已清理",
   "workflow.outcome.tidy.partly": "部分清理",
   "workflow.wait.recorded": "等待：{{code}}",
-  "workflow.wait.actor": "等待 `{{actor}}`：{{holder}}。{{words}}",
+  "workflow.wait.role": "等待 `{{role}}`：{{holder}}。{{words}}",
   "workflow.wait.progress": "进行中。{{words}}",
   "workflow.wait.holder.person": "你",
   "workflow.wait.holder.agent": "`{{name}}`",

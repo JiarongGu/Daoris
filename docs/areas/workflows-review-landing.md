@@ -48,24 +48,34 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    twin `daoris workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>`, both through
    `WorkflowValuesKey.Apply`, which refuses a value that is no JSON or a change with no reason and records the reason beside the values
    (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
-   or `target-changed` failure listed, never by editing the file. `SettingDoorsCensusTests` holds every key of the driver's file a step
+   or `target-changed` failure listed, never by editing the file: on the run's step failed so, the window's form (`ReleaseStepDoors`)
+   asks the plugin's `discover-releases`, the holder picks a definition (with its pipeline and trigger branches), a stage and an action
+   with a reason, and the door sets the choice on every release step of the workflow. `SettingDoorsCensusTests` holds every key of the driver's file a step
    reads to a setting of the window's and its verb. (D288, RELEASEVALUES1)
 3c. A release target keeps to its route (ACTPIN1, D307): the Azure DevOps plugin reads each release definition's continuous-deployment
    trigger at the act, and the branch the merged build ran on routes to the definitions whose trigger takes it (`routes.mjs`). A failure
    for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
-   approval's card names the release, its definition, the build and its source branch.
+   approval's card names the release, its definition, the build and its source branch (APPROVEHERE1): where the plugin declares
+   `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
+   holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
+   observed. No release step approves, whatever its action.
 3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
    `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
-   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris). Create
-   matches a release by the landed commit its artifact carries, across every build of that commit, or reads the release its holder names
-   (`release` option); it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
+   while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
+   the evidence's `by` beside its words. Create matches a release by the landed commit its artifact carries, across every build of that
+   commit, or reads the release its holder names (`release` option), taken where its commit is the landed one or descends from it (the
+   landed commit is their merge base) and else refused `target-changed`, naming the commit it carries; it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
    end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
    key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
    deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
    sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1). Saved
-   versions keep the bundled `release` step.
+   versions keep the bundled `release` step; the shipped `pull-request-release` preset names the five steps after its Azure DevOps pull
+   request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
+   work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
+   config changer, whose *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by
+   operations; "not needed" passes `config-change` on the record naming both holders.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -503,8 +513,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
-    that settle it (never its stop), a plugin's words and page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a
-    vacancy are answered.
+    that settle it (never its stop; a skip reads *Not needed this run*), a plugin's words and page, *Done outside Daoris* on the attempt
+    out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
+    answered. A `step` row names the session its run placed; it is announced once as a park is (`HeldCallAnnouncements`, kind `Step`,
+    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"
+    with the same presses beside it (`RunWaitsHead`).
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.
@@ -574,7 +587,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-PIPELINE1 g, h**: this repository's pipeline on the install, a stage after the check.
 - **WORKFLOWEDIT1c**, **LANDNODE1j**, **REVIEWFLOW1c**, **LANDPRESS1**: the installed window.
 - **PROCSTEPS1** (`docs/2026-11-09-process-steps-design.md`): `resolve`'s loop resolvers, `merge`, `tidy`'s removals, the cut-over.
-- **Roles** (D304 to D309): workflows written in roles that do not tell a person from an agent, evolved in place in one scope (D309), the reporting line kept apart from authority (D305), acts spending only what their grants cover (D306) and re-checked at their effect (D307), consultations recording their mode (D308). Today a step's authority is its kind's
+- **Roles** (D304 to D309): workflows written in roles that do not tell a person from an agent, evolved in place in one scope (D309), the reporting line kept apart from authority (D305), acts spending only what their grants cover (D306) and re-checked at their effect (D307), consultations recording their mode (D308). Every step names the role that takes it in its `role` field
+  (`NodeDeclaration.Role`, in the version's digest), its kind's default where it names none (`StepRoles.Of`); the save refuses a holder
+  named there (`role-holder`) and a role no catalogue has (`role-unknown`); the editor sets it (`StepRoleField`, applied to the newest draft by
+  its `onRole` act), the chart and the run view draw it, and an older version's agent-step `role` option is read as the role by the one
+  reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). A step's authority is still its kind's
   (`human` the person's, plugin steps the plugin's), a step done outside Daoris is recordable only by stop, which ends the run, and a
   wait shows its holder only where a kind reads one; the rows DONEBYHOLDER1 to ACTORTRIAL1 move each, tried first on the work
   workspace's release path.

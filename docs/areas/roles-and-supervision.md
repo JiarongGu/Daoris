@@ -227,11 +227,16 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     person's own holds (`owner-held`) read again first, never while a session runs, and said on its line; a go-on resets the count
     as the person's press does. A decide on a point the line passed is `answered`, on one never reached `not-referred`; a leave is
     the person's at once. No course act stops, ends or moves a session. With no started holder the point waits for the person
-    (`supervisor.unreferred`). A restart empties memory: the sweep closes held and released decisions stale and remembers each
-    subject final to the person as closed (`overruled`). Decisions read back as `SESSION_SUPERVISOR`'s `courses`, with *Overrule*
-    while held. (D229, D233)
+    (`supervisor.unreferred`). A restart reads back the held decisions rule 49 keeps in its table; the sweep closes every other held
+    and released decision stale (a course's go-on among them) and remembers each subject final to the person as closed
+    (`overruled`). Decisions read back as `SESSION_SUPERVISOR`'s `courses`, with *Overrule* while held. (D229, D233)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in one
-    conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an unattributable one is
+    conditional step that asks the admission again. An answer, a landing and a door answer held under an agent's hold are also a row
+    of the desktop store's `held_decisions` (`HeldDecisions`, its file's text and its moment), dropped at its first move off held; the
+    start's sweep reads each row back whose file still says it and still ends `held`, its window as it stood, so one whose window
+    closed during the restart goes on at the next look and one overruled stays overruled. A terminal's hold ends with its run, so its
+    held decisions go stale at the restart; an older build has no table and closes them as before, and a row whose file it closed is
+    dropped. (D309) Its word is `From: supervisor`, never the person's; an unattributable one is
     quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review`, or `approve` or `reject` of a
     `human` approval, kept against the step as it waits on that attempt and naming the review record's revision, is refused
     `answered` once it moved, `go-ahead-open` under a `go-ahead` and `owner-held` on a line the person stopped or paused. Its
