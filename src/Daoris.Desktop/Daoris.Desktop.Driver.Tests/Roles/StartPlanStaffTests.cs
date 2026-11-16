@@ -187,7 +187,6 @@ public sealed class StartPlanStaffTests : IDisposable
         var settled = await Plan().ResolveAsync(CancellationToken.None);
 
         Assert.Equal("2", settled.Chosen!.From);
-        // The policy's own cap pass (OPINIONCAP1) now names a holder whose every account cools, before the walk's cooling pass does.
         Assert.Equal([("1", StaffPasses.Capped)], settled.Passes.Select(pass => (pass.Entry.From, pass.Code)));
     }
 
