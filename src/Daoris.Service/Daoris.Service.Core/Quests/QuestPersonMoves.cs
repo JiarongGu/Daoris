@@ -27,8 +27,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     /// <summary>
     /// The person accepts a done's departure from what they required, or a done held for its evidence
     /// as it stands: what it held goes on — the chain's next step is published now, and a quest waiting
-    /// on it resumes at the driver's next look. Only a held done takes a yes, closed or submitted while its run keeps it Taken
-    /// (D293), by the one rule (<see cref="Quest.Hold"/>); any other is refused saying what waits, as a state, not a malformed ask.
+    /// on it resumes at the driver's next look. Only a held done takes a yes, closed or submitted while its run keeps it Taken,
+    /// by the one rule (<see cref="Quest.Hold"/>); any other is refused saying what waits, as a state, not a malformed ask.
     /// </summary>
     public async Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -48,8 +48,6 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
                 { Hold: QuestHold.SourceReopened } =>
                     $"Quest `#{standing.Id}` is held by your reopen of the work it grew from, which a yes does not lift: go on with it "
                     + $"(`daoris quest go-on {standing.Id}`), or abandon it.",
-                // A done is judged closed, or submitted while its run keeps it Taken (D293), and each takes the yes by the one rule:
-                // only a quest with no done in says its state.
                 { Judged: false, Status: QuestStatus.Taken } =>
                     $"Quest `#{standing.Id}` is Taken and its done is not in yet: a done that departs from what you required, "
                     + "closed or submitted in its run, waits for your yes.",

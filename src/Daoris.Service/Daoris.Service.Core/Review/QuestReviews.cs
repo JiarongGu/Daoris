@@ -506,14 +506,10 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
         return null;
     }
 
-    /// <summary>
-    /// What a held done holds, each said as waiting <paramref name="until"/>: the workflow run it was submitted in, its next step, a quest
-    /// waiting on it, or its ask.
-    /// </summary>
+    /// <summary>What a held done holds, each said as waiting <paramref name="until"/>: its run, its next step, a quest waiting on it, or its ask.</summary>
     internal async Task<IReadOnlyList<string>> HoldsAsync(Quest closed, string until, CancellationToken ct)
     {
         var holds = new List<string>();
-        // A done submitted in its run stays Taken (D293): the run's step waits on the hold, and the run's end writes the Done.
         if (closed.Status == QuestStatus.Taken && QuestBindOperation.NamesRun(closed.Closure))
         {
             holds.Add($"its workflow's run waits on it, and writes its Done at its end, only once {until}");

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A quest worked in a workflow's run stays Taken once its agent's done is in (D293): a done that departed from a requirement is
+/// A quest worked in a workflow's run stays Taken once its agent's done is in: a done that departed from a requirement is
 /// held for the person's yes at the run's <c>quest.holds</c>, and their one accept takes it there as it takes a closed done's.
 /// </summary>
 public sealed class RunDepartureAcceptTests : IAsyncLifetime
@@ -58,8 +58,8 @@ public sealed class RunDepartureAcceptTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A second yes on the submitted done says it was accepted already, as a closed done's does: never that only a closed done
-    /// takes a yes, which sent the person looking for a door that was already passed.
+    /// 🔴 A second yes on the submitted done says its departure is accepted already, as a closed done's does: never that only a
+    /// closed done takes a yes, which sends the person looking for a door already passed.
     /// </summary>
     [Fact]
     public async Task A_second_yes_on_a_submitted_done_says_it_was_already_accepted()

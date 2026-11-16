@@ -23,7 +23,6 @@ internal static class QuestHoldsReading
         null => "its quest was not read",
         { Status: "Declined" } => "its quest was declined",
         _ when !QuestResults.Judged(quest) => "its quest's done is not in, or was taken back",
-        // A departure is the person's yes to give, whatever else it holds; a service that names no hold held one alone.
         { Held: true, Hold: null or EvidenceCodes.Departed } when yes => HeldForYes,
         { Held: true, Hold: { } code } when evidence && code is not (EvidenceCodes.Unreviewed or EvidenceCodes.Departed) =>
             "its done is held for its evidence's verdict",

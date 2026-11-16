@@ -4,7 +4,7 @@ using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A done its workflow's run holds for the person's yes stays Taken, its done submitted (D293): it is a <c>departure</c> row of
+/// A done its workflow's run holds for the person's yes stays Taken, its done submitted: it is a <c>departure</c> row of
 /// <i>What needs you</i> with its departure's words, as a closed done's is, and the person's accept takes it off.
 /// </summary>
 public sealed class AttentionRunDepartureTests
