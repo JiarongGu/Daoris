@@ -171,8 +171,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     next one. `ROLES` answers it as `deciders`, worded on a place's Roles as *Who decides here*. Ask Daoris may explain the
     supervisor, never overrule it. The resolver is read as the reporting line (`ReportingLine`, D304 point 3): the lead is the
     supervisor it finds below the machine, the head the machine's, the owner actor the top, held by the person. Help waits on the
-    first level that holds it; a level held by the person's rules, by nobody, or with the act unticked is held by the person there; a
-    level nobody is appointed to passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
+    first level that holds it; a level held by the person's rules or by nobody is held by the person there; a level nobody is
+    appointed to, or whose holder is not granted the act, is vacant and passes it up naming why; an owner-class kind (doctrine rule 1's seven: `direction`, `money`,
     `sign-in`, `release`, `history`, `data`, `publish`) passes every level below the owner actor (`owner-class`); other help the head
     leaves ends as gave up with what was tried. The steward is the catalogue's one steward. The seed's *Second check* (`second-check`, 复核) is
     the machine's supervisor of `ask-daoris`, granted `ask-daoris.report` and held by the person's rules, so it reads nothing until

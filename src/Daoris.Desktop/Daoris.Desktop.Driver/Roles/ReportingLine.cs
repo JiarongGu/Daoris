@@ -87,10 +87,9 @@ public sealed record LineWait(LineLevel? At, IReadOnlyList<LinePass> Passed)
 /// holder or passes it up.
 /// </summary>
 /// <remarks>
-/// A level held by the person's rules, by nobody, or whose holder is not granted the act is held by the person there, as the resolver
-/// makes such a decision the person's: a grant left unticked is the person's word for that place. A level nobody is appointed to is vacant
-/// and passes help up, saying why. An unreadable record or workspace map holds both levels for the person, since what it would decide
-/// cannot be read.
+/// A level held by the person's rules or by nobody is held by the person there, as the resolver makes such a decision the person's. A
+/// level nobody is appointed to, or whose holder is not granted the act, is vacant and passes help up, saying why. An
+/// unreadable record or workspace map holds both levels for the person, since what it would decide cannot be read.
 /// </remarks>
 public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
 {
@@ -161,7 +160,7 @@ public sealed record ReportingLine(LineLevel Lead, LineLevel Head)
 
         if (act is not null && !hold.Acts.Contains(SupervisorKinds.Qualified(kind, act), StringComparer.Ordinal))
         {
-            return new(actor, role.Id, LineHolders.Person, $"`{role.Id}` is not granted `{SupervisorKinds.Qualified(kind, act)}`, your word for this place");
+            return new(actor, role.Id, null, $"`{role.Id}` is not granted `{SupervisorKinds.Qualified(kind, act)}`");
         }
 
         return new(actor, role.Id, hold.Holder == RoleHolders.Agent ? LineHolders.Agent : LineHolders.Terminal, $"`{role.Id}` holds it");

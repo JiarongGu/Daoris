@@ -64,15 +64,31 @@ public sealed class ReportingLineTests
     }
 
     [Fact]
-    public void A_level_held_by_the_persons_rules_or_with_the_act_unticked_is_held_by_the_person_there()
+    public void A_level_held_by_the_persons_rules_is_held_by_the_person_there()
     {
         var rules = Line(Machine());
         Assert.Equal((LineActors.Head, LineHolders.Person), (rules.Climb(ownerClass: false).At!.Actor, rules.Climb(ownerClass: false).At!.Holder));
         Assert.Equal("waiting on head: you · passed up: lead: " + rules.Lead.Why, rules.Climb(ownerClass: false).Said());
+    }
 
-        var unticked = Line(Supervisor("engine-lead", new RoleScope(RoleScope.Repository, Engine), RoleHolders.Agent, "question.answer"), Machine());
-        Assert.Equal(LineHolders.Person, unticked.Lead.Holder);
-        Assert.Contains(Recast, unticked.Lead.Why, StringComparison.Ordinal);
+    [Fact]
+    public void A_level_with_the_act_unticked_is_vacant_and_the_help_passes_up()
+    {
+        var unticked = Line(Supervisor("engine-lead", new RoleScope(RoleScope.Repository, Engine), RoleHolders.Agent, "question.answer"), Machine(RoleHolders.Agent, Recast));
+
+        Assert.True(unticked.Lead.Vacant);
+        var waits = unticked.Climb(ownerClass: false);
+        Assert.Equal((LineActors.Head, LineHolders.Agent), (waits.At!.Actor, waits.At.Holder));
+        var passed = Assert.Single(waits.Passed);
+        Assert.Equal((LineActors.Lead, LinePasses.Vacant), (passed.Actor, passed.Code));
+        Assert.Contains(Recast, passed.Said, StringComparison.Ordinal);
+
+        // Unticked at the head too: other help ends as gave up, and only an owner-class kind reaches the owner actor.
+        var none = Line(
+            Supervisor("engine-lead", new RoleScope(RoleScope.Repository, Engine), RoleHolders.Agent, "question.answer"), Machine(RoleHolders.Agent, "question.answer"));
+        Assert.True(none.Climb(ownerClass: false).GaveUp);
+        Assert.Equal([LinePasses.Vacant, LinePasses.Vacant], none.Climb(ownerClass: false).Passed.Select(each => each.Code));
+        Assert.Equal(LineActors.Owner, none.Climb(ownerClass: true).At!.Actor);
     }
 
     [Fact]
