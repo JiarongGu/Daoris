@@ -2133,34 +2133,27 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     const repo = queueScratch('gate-shell-direct');
     try {
       const record = join(repo.root, 'local', 'gate-shell-direct.json');
-      // `universal` runs at every merge and every full run; `check` is skipped by the lane table for a file like this.
+      // `universal` runs at every merge and every full run of a tree not passed; `check` is skipped by the lane table for a file like this.
       repo.branch('b1', { 'qgate.mjs': envGate(record, '', 'universal') });
       // A gate run again on the checkout answers 1 while the full set lacks a verdict (`check` has none here): the gate ran all the same.
-      const treeNoGatePassed = (name: string) => {
-        writeFileSync(join(repo.root, name), `${name}\n`);
-        repo.git('add', name);
-        repo.git('commit', '--quiet', '-m', `${name}${TRAILER}`);
-      };
-      const seenAfter = (what: string, status: number | null, out: string) => {
-        assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)), `${what}: ${status} ${out}`);
+      const seenAfter = (what: string, { status, out }: { status: number | null; out: string }) => {
+        assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)),
+          `${what}: ${status} ${out}`);
         assert.ok(existsSync(record), `${what}: the check gate ran: ${out}`);
         assertClean(JSON.parse(readFileSync(record, 'utf8')) as SeenEnvironment, what);
         rmSync(record);
       };
       const direct = shell(repo, true);
-      const merged = await repo.run(['b1'], direct);
-      seenAfter('merge in place', merged.status, merged.out);
-      const open = await repo.run(['--rerun', 'universal'], direct);
-      seenAfter('--rerun with the merge open', open.status, open.out);
+      seenAfter('merge in place', await repo.run(['b1'], direct));
+      seenAfter('--rerun with the merge open', await repo.run(['--rerun', 'universal'], direct));
       repo.git('commit', '--quiet', '-m', `Merge b1${TRAILER}`);
-      const again = await repo.run(['--rerun', 'universal'], direct);
-      seenAfter('--rerun with none open', again.status, again.out);
-      treeNoGatePassed('full.txt');
-      const full = await repo.run(['--full'], direct);
-      seenAfter('--full', full.status, full.out);
-      treeNoGatePassed('beside.txt');
-      const beside = await repo.run(['--full', '--beside'], direct);
-      seenAfter('--full --beside', beside.status, beside.out);
+      seenAfter('--rerun with none open', await repo.run(['--rerun', 'universal'], direct));
+      for (const args of [['--full'], ['--full', '--beside']]) {
+        writeFileSync(join(repo.root, '.gitignore'), `local/\n${args}\n`);
+        repo.git('commit', '--quiet', '-am', `${args}${TRAILER}`);
+        const ran = await repo.run(args, direct);
+        seenAfter(`${args}`, ran);
+      }
     } finally {
       await repo.cleanup();
     }

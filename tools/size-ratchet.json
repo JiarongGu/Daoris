@@ -3,7 +3,7 @@
   "src/Daoris.Cli/test/dogfood.test.ts": 40982,
   "src/Daoris.Cli/test/usage-report.test.ts": 89064,
   "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 69535,
-  "src/Daoris.Cli/tool-test/merge-queue.test.ts": 239201,
+  "src/Daoris.Cli/tool-test/merge-queue.test.ts": 239181,
   "src/Daoris.Cli/tool-test/setup-kit.test.ts": 55660,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationFormGitTests.cs": 51656,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationPromoteGitTests.cs": 55354,
