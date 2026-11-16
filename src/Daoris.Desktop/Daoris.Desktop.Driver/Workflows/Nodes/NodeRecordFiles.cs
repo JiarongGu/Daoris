@@ -419,6 +419,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.Resolution is { } resolution) writer.WriteString("resolution", resolution);
         if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
         if (attempt.Decision is { } decision) writer.WriteString("decision", decision);
+        if (attempt.Link is { } link) writer.WriteString("link", link);
+        if (attempt.Note is { } note) writer.WriteString("note", note);
         if (attempt.Progress is { } progress) StepProgress.Write(writer, progress);
 
         // A close's token and the quests it names, written only on a close's attempt.
@@ -739,6 +741,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Resolution = resolution,
             ResolvedAt = Moments.Read(element, "resolvedAt"),
             Decision = Text(element, "decision"),
+            Link = Text(element, "link"),
+            Note = Text(element, "note"),
             Progress = StepProgress.Read(element),
             Close = close,
         };

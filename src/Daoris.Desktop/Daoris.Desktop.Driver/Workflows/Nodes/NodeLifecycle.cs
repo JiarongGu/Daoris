@@ -104,6 +104,12 @@ public sealed record NodeMove(string To, string By)
     public DateTimeOffset? At { get; init; }
 
     /// <summary>
+    /// The link a holder's <i>Done outside Daoris</i> carries (<see cref="HeldResolutions.DoneOutside"/>): the proof of a step done outside,
+    /// which its evidence keeps. Required of a holder's reach of a step under way or failed; null on every other move.
+    /// </summary>
+    public string? Link { get; init; }
+
+    /// <summary>
     /// A skip's graph and run, or a start's: required of both, since a skip holds for its own alone and an attempt's outcome is a receipt in
     /// its own run alone. A start's graph is its binding's.
     /// </summary>
@@ -282,6 +288,9 @@ public static class NodeLifecycle
             // on their own word and never as its plugin's, on a plugin's performed node alone (NodeAuthority.PersonSettles).
             new(NodeStates.Unknown, NodeStates.Reached, person, "the person settles an attempt nothing else can establish: it happened, on their word"),
             new(NodeStates.Unknown, NodeStates.Failed, person, "the person settles an attempt nothing else can establish: it did not"),
+            // A step done outside Daoris is done by its holder, with its link, whether its attempt is under way or failed (DONEBYHOLDER1).
+            new(NodeStates.Active, NodeStates.Reached, person, "its holder says it was done outside Daoris, with its link: the attempt in flight stands down"),
+            new(NodeStates.Failed, NodeStates.Reached, person, "its holder says it was done outside Daoris, with its link, after its attempt failed"),
             new(NodeStates.Unknown, NodeStates.Ready, daoris, "a check Daoris could not run (unrun) with asks left: a new attempt (UnrunChecks)"),
             new(NodeStates.Failed, NodeStates.Ready, daoris, "a declared retry: a transient code with attempts left, as a new attempt"),
             new(NodeStates.Failed, NodeStates.Ready, person, "a new attempt the person asks for"),
@@ -388,13 +397,21 @@ public static class NodeLifecycle
                     return To(next with { By = NodeSource.Person, Code = move.Code, Needs = null, Transient = false, Unreconciled = null });
                 }
 
-                if (node.Outputs.Count > 0 || node.Evidence is not null) return Refuse(NodeRefusal.NotOnWord);
+                // A step under way or failed is reached on its holder's word only with the link that proves it was done outside. The link is
+                // that proof where its kind's evidence would be, so an evidence schema takes it; declared outputs, which no word fills, never.
+                var outside = !string.IsNullOrWhiteSpace(move.Link);
+                if (status.State is NodeStates.Active or NodeStates.Failed && !outside) return Refuse(NodeRefusal.NoEvidence);
+                if (node.Outputs.Count > 0 || (node.Evidence is not null && !outside)) return Refuse(NodeRefusal.NotOnWord);
                 if (move.Acceptance is not { } worded) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } bound) return Refuse(NodeRefusal.NoBinding);
                 if (worded.Id != bound.Id) return Refuse(NodeRefusal.NotBound);
                 if (!NodeOutcomes.Fits(node, worded.Outcome)) return Refuse(NodeRefusal.NotOutcome);
                 if (worded.Evidence?.Schema != NodeSource.Person || worded.Outputs.Count > 0) return Refuse(NodeRefusal.NoEvidence);
-                return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Needs = null, Transient = false, Unreconciled = null });
+                return To(next with
+                {
+                    Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Needs = null, Transient = false, Unreconciled = null,
+                    Words = outside ? move.Words : next.Words,
+                });
 
             case NodeStates.Reached:
                 // A reach is answered again only where its kind's authority lets it: a decision's, which its door offers alone.

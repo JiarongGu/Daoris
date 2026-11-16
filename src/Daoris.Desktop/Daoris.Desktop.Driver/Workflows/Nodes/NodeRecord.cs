@@ -82,6 +82,29 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>What its plugin last said of it while it runs, the actor it waits on among it; null where nothing is said.</summary>
     public StepProgress? Progress { get; init; }
+
+    /// <summary>
+    /// The link its holder's <i>Done outside Daoris</i> gave (<see cref="HeldResolutions.DoneOutside"/>), kept with <see cref="Resolution"/>
+    /// <c>happened</c>: an older build reads that word and passes over this field. Null on every attempt no holder said was done outside.
+    /// </summary>
+    public string? Link { get; init; }
+
+    /// <summary>The note its holder gave with <see cref="Link"/>, where they gave one.</summary>
+    public string? Note { get; init; }
+}
+
+/// <summary>
+/// What settled an attempt beside the plugin's own outcomes (<c>reached</c>, <c>failed</c>, <c>not-started</c>, <c>unknown</c>): kept in
+/// <see cref="NodeAttempt.Outcome"/> of a <c>settled</c> attempt, never as a state of its own, since an older build rejects a record holding a
+/// state it does not know and reads an outcome as text.
+/// </summary>
+public static class AttemptOutcomes
+{
+    /// <summary>
+    /// Stood down while in flight: its step was skipped, stopped or done outside Daoris, its code saying which (<see cref="NodeWordActs.Skip"/>,
+    /// <see cref="NodeWordActs.Stop"/>, <see cref="HeldResolutions.DoneOutside"/>). Its plugin is told, and a later outcome of it is a replay.
+    /// </summary>
+    public const string StoodDown = "stood-down";
 }
 
 /// <summary>
@@ -117,6 +140,13 @@ public static class HeldResolutions
     /// failure stays its plugin's: the word is cleared as it is applied, so it is never read as the person's outcome.
     /// </summary>
     public const string Again = "again";
+
+    /// <summary>
+    /// <i>Done outside Daoris</i>: its holder did the step outside, and says so with a link (required) and a note (optional), on an attempt
+    /// under way, held or failed. The door's word alone: kept on the attempt as <see cref="Happened"/> with its <see cref="NodeAttempt.Link"/>,
+    /// since an older build rejects an attempt holding a word it does not know, so it is never in <see cref="All"/>.
+    /// </summary>
+    public const string DoneOutside = "done-outside";
 
     /// <summary>The words on a plugin's attempt.</summary>
     public static readonly IReadOnlyList<string> Plugin = [Happened, DidNot, Stop];

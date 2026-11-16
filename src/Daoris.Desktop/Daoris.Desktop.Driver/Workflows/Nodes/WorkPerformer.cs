@@ -62,6 +62,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <summary>A word the person's door does not know: nothing is recorded.</summary>
     public const string NotResolution = "not-resolution";
 
+    /// <summary>A <i>Done outside Daoris</i> with no link: the link is its proof, so nothing is recorded.</summary>
+    public const string NoLink = "no-link";
+
     /// <summary>The held attempt already has the person's word, which the runtime applies at its next pass.</summary>
     public const string Worded = "worded";
 
@@ -266,10 +269,20 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return done;
     }
 
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null) =>
-        Person.Word(unit, node, attempt, resolution, outcome);
+    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null) =>
+        Person.Word(unit, node, attempt, resolution, outcome, link, note);
 
-    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared) => Person.Resolve(declared);
+    /// <summary>Every word on a held, failed or in-flight attempt applied; each attempt a done outside stood down has its plugin told.</summary>
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
+    {
+        var done = Person.Resolve(declared);
+        foreach (var unit in done.Where(each => each is { What: PerformedWhat.Resolved, Code: HeldResolutions.DoneOutside }).GroupBy(each => each.Unit))
+        {
+            StandDown(unit.Key, [.. unit.Select(each => each.Node)]);
+        }
+
+        return done;
+    }
 
     internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) => WorkPersonWord.KeptFailure(record, attempt);
 
@@ -546,16 +559,20 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     private const int PortGeneration = 1;
 
     /// <summary>
-    /// The person's stop of a check that is running: the pass that applied it tells the executor,
-    /// which ends its job as at its bound. Each named node that is stopped and still waits on an attempt sent here is told.
+    /// What the pass that closed the named nodes tells whoever runs their attempts: a check's executor or a step's agents end the job of one
+    /// still running on a stopped node, or of one stood down, as at its bound; a plugin's process is told each attempt stood down
+    /// (<see cref="StandDowns"/>), once, so it stops what it watches. A plugin's later outcome is a replay whether it heeds this or not.
     /// </summary>
-    public void StopChecks(string unit, IReadOnlyCollection<string> nodes)
+    public void StandDown(string unit, IReadOnlyCollection<string> nodes)
     {
-        if (records.Read(unit) is not { } record) return;
-        foreach (var attempt in record.Attempts.Where(each => (OnPort(each) || AgentsFor(each, null) is not null) && nodes.Contains(each.Node)
-                     && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
+        if (nodes.Count == 0 || records.Read(unit) is not { } record) return;
+        foreach (var attempt in record.Attempts.Where(each => nodes.Contains(each.Node)))
         {
-            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) (PortOf(attempt.Plugin) ?? AgentsFor(attempt, null))?.Stop(attempt.Call.Invocation);
+            var stoodDown = attempt is { State: AttemptStates.Settled, Outcome: AttemptOutcomes.StoodDown } && StatusOf(record, attempt.Node).Attempt == attempt.Attempt;
+            var running = attempt.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown && StatusOf(record, attempt.Node).State == NodeStates.Stopped;
+            if (!stoodDown && !running) continue;
+            if ((PortOf(attempt.Plugin) ?? AgentsFor(attempt, null)) is { } runner) runner.Stop(attempt.Call.Invocation);
+            else if (stoodDown) port.StandDown(attempt.Plugin, new WorkStandDownCall(attempt.Call.Unit, attempt.Call.Step, attempt.Call.Invocation, attempt.Call.IdempotencyKey, attempt.Code ?? ""));
         }
     }
 
