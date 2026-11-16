@@ -86,6 +86,44 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
 
+    private const string ReleaseGraph = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"release",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"},
+                  {"id":"release","kind":"acme.deploy/release","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>r","kind":"after","from":"handed","to":"release"}]}
+        """;
+
+    /// <summary>The release whose stage waits on an approval: the actor its plugin names, held by the person, waits on them, as What needs you lists it.</summary>
+    [Theory]
+    [InlineData("approver", PersonWaits.Actor)]
+    [InlineData(null, null)]
+    public void A_plugin_step_waiting_on_an_actor_the_person_holds_waits_on_them_and_one_going_on_on_no_one(string? actor, string? why)
+    {
+        BoundTo(ReleaseGraph);
+        var unit = RunUnits.IdOf(RunId);
+        var said = _now.AddMinutes(-3);
+        var call = new WorkPerformCall("unit-b1", "acme.deploy/release", 1, "i-1", "k-1", "tip-1", [], _now.AddHours(1));
+        Files.Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["release"] = new(unit, "release", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1, Since = _now.AddMinutes(-10) },
+            },
+            Attempts =
+            [
+                new NodeAttempt("release", 1, "acme.deploy", call, AttemptStates.Sent)
+                {
+                    RecordedAt = _now, Generation = 1, Deliveries = 1,
+                    Progress = new StepProgress(actor, "Approve Production in Azure DevOps.", "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90", "Production", said),
+                },
+            ],
+        });
+
+        var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, wait.Actor, wait.Since)).ToList();
+
+        Assert.Equal(why is null ? [] : [(RunId, "release", why, actor, (DateTimeOffset?)said)], waits);
+    }
+
     [Theory]
     [InlineData(RunOutcomes.Failed, "return", PersonWaits.Left)]
     [InlineData(RunOutcomes.Failed, null, null)]

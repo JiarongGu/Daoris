@@ -21,6 +21,10 @@ public static class StepWaiting
             ? progress
             : null;
 
+    /// <summary>The progress of a plugin node waiting on an actor the person holds, or null: the one reading What needs you and Sessions place by.</summary>
+    public static StepProgress? OnThePerson(NodeRecord? record, NodeDeclaration node, NodeStatus status) =>
+        Of(record, node, status) is { Actor: { } actor } progress && StepHolders.Of(actor).Kind == StepHolders.Person ? progress : null;
+
     /// <summary>The run step's wait for <paramref name="progress"/>: its code and the facts its words name, since its plugin said it.</summary>
     public static WorkflowRunWait WaitOf(StepProgress progress)
     {
@@ -81,8 +85,7 @@ public static class ActorWaits
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
             foreach (var node in each.Graph.Nodes)
             {
-                if (StepWaiting.Of(kept, node, WorkPerformer.StatusOf(kept, node.Id)) is not { Actor: { } actor } progress) continue;
-                if (StepHolders.Of(actor).Kind != StepHolders.Person) continue;
+                if (StepWaiting.OnThePerson(kept, node, WorkPerformer.StatusOf(kept, node.Id)) is not { Actor: { } actor } progress) continue;
                 waits.Add(new ActorWait(each.Run, node.Id, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, actor, progress.Words, progress.Url,
                     scope.Quests.LastOrDefault()?.Id, progress.At));
             }

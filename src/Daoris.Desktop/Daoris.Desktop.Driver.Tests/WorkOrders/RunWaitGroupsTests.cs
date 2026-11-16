@@ -75,6 +75,20 @@ public sealed class RunWaitGroupsTests
     }
 
     [Fact]
+    public void A_run_whose_release_waits_on_an_actor_you_hold_puts_its_session_in_needs_you_and_says_the_actor_its_line_and_its_row()
+    {
+        var look = Look([Record("s1", "completed", "q1", 0)], [Quest("q1")], [Waits("q1", "release", PersonWaits.Actor) with { Actor = "approver" }]);
+
+        var row = Row(look, "s1");
+        var you = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.NeedsYou }, TestHomes.Root, T0));
+        var written = JsonNode.Parse(SessionsJson.Json(SessionGroups.Read(look)))!["sessions"]!.AsArray().Single()!["waits"]!.AsArray().Single()!;
+
+        Assert.Equal((SessionGroup.NeedsYou, PersonWaits.Actor), (row.Group, row.Reason));
+        Assert.Contains("run q1 waits on `approver`, which you hold, at `release` · daoris workflow run --session s1", you, StringComparison.Ordinal);
+        Assert.Equal(("actor", "approver"), ((string?)written["why"], (string?)written["actor"]));
+    }
+
+    [Fact]
     public void A_live_session_of_a_waiting_run_stays_working()
     {
         var look = Look([Record("s1", "working", "q1", 0)], [Quest("q1", "Taken")], [Waits("q1", "review", PersonWaits.Accept)]);

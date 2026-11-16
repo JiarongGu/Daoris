@@ -329,7 +329,7 @@ public static class AttentionStateSlice
             })),
             // Each run waiting on a person's task, from the node runtime's last look and its node records.
             Tasks = Written(loop.HumanTasks),
-            Actors =Written(loop.ActorWaits),
+            Actors = Written(loop.ActorWaits),
             // The integration's waits on the owner, from the home's integration record and the node runtime's last look.
             Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits, loop.DeclarationsOwed)),
             // Each session the watcher brings to the person, from its memory.
