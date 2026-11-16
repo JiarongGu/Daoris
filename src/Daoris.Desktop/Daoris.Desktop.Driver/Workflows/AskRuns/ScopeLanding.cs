@@ -8,7 +8,7 @@ public sealed record ScopeReview(string Breadth, string Adapter, string Maker, b
 
 /// <summary>
 /// The end of an ask planned as one scope (the plan's <c>integration</c>, the canon's scope mode): its parts merge into the ask's
-/// branch with no gate each, the full set runs once on the branch, and two reviews, wide (the design and effects beyond the change)
+/// branch with no gate each where the two reviews are wired, the full set runs once on the branch, and two reviews, wide (the design and effects beyond the change)
 /// and close (details, edge cases, tests), come from the landing role's reviewers of two makers where two are ready. A plan
 /// with no integration, or <c>per-part</c>, gates each part as before. Decided with no I/O.
 /// </summary>
@@ -20,8 +20,12 @@ public static class ScopeLanding
     public const string Wide = "wide";
     public const string Close = "close";
 
-    /// <summary>Whether a part's landing on the ask's branch runs its own gates: every plan but a one-scope one's.</summary>
-    public static bool GatesEachPart(string? integration) => integration != OneScope;
+    /// <summary>
+    /// Whether a part's landing on the ask's branch runs its own gates: every plan but a one-scope one's, and a one-scope one's too until the
+    /// scope's two reviews are wired (<paramref name="reviewed"/>, <see cref="NodeDoorWiring.ScopeReviewed"/>), so no part lands with neither
+    /// its gates nor doctrine rule 3's reviews.
+    /// </summary>
+    public static bool GatesEachPart(string? integration, bool reviewed) => integration != OneScope || !reviewed;
 
     /// <summary>The tier the ask's branch is checked at before it lands: the full set for one scope; null keeps the run's own.</summary>
     public static string? EndTier(string? integration) => integration == OneScope ? Full : null;

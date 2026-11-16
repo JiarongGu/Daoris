@@ -37,7 +37,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         DeliveryQuestion[]? questions = null,
         [Description("The revision you read, 0 for the first plan. A write over a newer one is refused: read again.")] int? revision = null,
         [Description("The commit of the line the plan was read at.")] string? baseCommit = null,
-        [Description("The ask's own plan only: `one-scope` merges the parts into the ask's branch with no gate each and runs the full set and two reviews once at the end; `per-part` gates each part. None keeps the standing one.")]
+        [Description("The ask's own plan only: `one-scope` runs the full set and two reviews once at the end, and merges the parts into the ask's branch with no gate each only where the install asks those two reviews (else each part keeps its gates); `per-part` gates each part. None keeps the standing one.")]
         string? integration = null,
         [Description("To read: the blob each path holds now, as `{path: blob}`; a pack pointer or release order's evidence (`repository:file`) differing is named stale.")]
         Dictionary<string, string>? seen = null,
