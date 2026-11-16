@@ -224,7 +224,10 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.False(after.RefersDoor(new SupervisorSubject(SupervisorKinds.Departure, "s2", "q8")));
     }
 
-    /// <summary>🔴 The release posts a keep and an approve as a yes and a drop and a decline as a no, with the role, its agent and its turn.</summary>
+    /// <summary>
+    /// 🔴 The release posts a keep and an approve as a yes and a drop and a decline as a no, with the role, its agent and its turn; a keep
+    /// or a drop names the staged rows its pin holds, so the service moves those and no others.
+    /// </summary>
     [Theory]
     [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Keep, "/api/sessions/s1/memory", "\"keep\":true")]
     [InlineData(SupervisorDoorActs.Staged, SupervisorDoorActs.Drop, "/api/sessions/s1/memory", "\"keep\":false")]
@@ -232,50 +235,101 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
     [InlineData("op-9", SupervisorDoorActs.Decline, "/api/memory/op-9/decide", "\"approve\":false")]
     public async Task The_release_posts_a_keep_as_a_yes_and_a_drop_or_decline_as_a_no(string id, string choice, string path, string said)
     {
-        var bodies = new List<(string Path, string Body)>();
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Recording(bodies)));
-        var due = new SupervisorDoorDue("d1", new SupervisorSubject(SupervisorKinds.Memory, "s1", id), "reports", "keep", choice, "daoris-landing", "codex-acp") { Turn = "t-1" };
+        var doors = new Doors();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(doors));
+        var due = new SupervisorDoorDue("d1", new SupervisorSubject(SupervisorKinds.Memory, "s1", id), "reports", "keep", choice, "daoris-landing", "codex-acp")
+        {
+            Turn = "t-1", Pin = id == SupervisorDoorActs.Staged ? "op-1,op-2" : id,
+        };
 
         Assert.Null(await DoorReleaseLook.PostAsync(service, due, default));
 
-        var (posted, body) = Assert.Single(bodies);
+        var (posted, body) = Assert.Single(doors.Posted);
         Assert.Equal(path, posted);
         Assert.Contains(said, body);
         Assert.Contains("\"role\":{\"role\":\"daoris-landing\",\"agent\":\"codex-acp\",\"decision\":\"d1\",\"session\":\"t-1\"}", body);
+        Assert.Equal(id == SupervisorDoorActs.Staged, body.Contains("\"ops\":[\"op-1\",\"op-2\"]", StringComparison.Ordinal));
     }
 
-    /// <summary>A service holding session s1's page and three quests: q7 held by its departure, q8 by its unread evidence, q9 by a reopened source.</summary>
+    /// <summary>
+    /// 🔴 The release's own reads of the service: the staged rows read again against the pin the keep judged, then the keep posted naming
+    /// exactly those rows; a row staged since makes the pin another, and nothing is posted.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_release_reads_the_staged_rows_again_and_keeps_only_the_rows_it_judged(bool stagedSince)
+    {
+        var doors = new Doors();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(doors));
+        var decisions = new QuestionSupervisorDecisions(_home, new Holds("memory.keep"));
+        var pin = await SupervisorDoorSubjects.PinAsync(service, Staged().Subject, default);
+        Assert.True((await decisions.DoorAsync(Staged() with { Pin = pin }, null, At)).Kept);
+        if (stagedSince) doors.Staged += """,{"id":"op-0","state":"staged","change":{"kind":"write","text":"Staged since."}}""";
+
+        var moved = await decisions.ReleaseDoorsAsync(DoorReleaseLook.Release(service), At.AddMinutes(11));
+
+        if (stagedSince)
+        {
+            Assert.Equal([SupervisorState.Stale], moved);
+            Assert.Empty(doors.Posted);
+            Assert.Contains("\"why\":\"subject-changed\"", States("s1"));
+            return;
+        }
+
+        Assert.Equal([SupervisorState.WentOn], moved);
+        var (path, body) = Assert.Single(doors.Posted);
+        Assert.Equal(("/api/sessions/s1/memory", "op-1"), (path, pin));
+        Assert.Contains("\"ops\":[\"op-1\"]", body);
+    }
+
+    /// <summary>
+    /// A service holding session s1's page and four quests: q7 held by its departure, q6 by a departure beside a met requirement's evidence
+    /// awaited, q8 by its unread evidence, q9 by a reopened source. What is posted to it is kept in <see cref="Posted"/>.
+    /// </summary>
     internal sealed class Doors : HttpMessageHandler
     {
         public string Staged { get; set; } = """{"id":"op-1","state":"staged","change":{"kind":"write","text":"Keeper keeps a garden."}}""";
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        public List<(string Path, string Body)> Posted { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            static string Quest(string id, string hold) => $$"""
+            static string Quest(string id, string hold, bool awaits = false) => $$"""
                 {"id":"{{id}}","from":"ask #a1","to":"reports","title":"Build the weekly report","body":"Through the bridge.","status":"Done","held":true,"hold":"{{hold}}",
-                 "requirements":[{"quote":"using the common-report","check":"It is one."}],
+                 "awaitsEvidence":{{(awaits ? "true" : "false")}},"requirements":[{"quote":"using the common-report","check":"It is one."}],
                  "answers":[{"requirement":1,"departed":"A type of its own.","quote":"using the common-report"}],"updated":"2026-11-16T09:00:00Z"}
                 """;
+            if (request.Method == HttpMethod.Post)
+            {
+                Posted.Add((request.RequestUri!.AbsolutePath, request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct)));
+                return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"message":"kept","moved":1}""", System.Text.Encoding.UTF8, "application/json"),
+                };
+            }
+
             var body = request.RequestUri!.AbsolutePath switch
             {
                 "/api/sessions/s1/memory" => $$$"""
                     {"ops":[{{{Staged}}},
                      {"id":"op-9","state":"awaiting","change":{"kind":"end","target":"e-4","revision":3,"text":"The area moved to the driving page."},"by":{"session":"s0","role":"builder"}}]}
                     """,
-                "/api/quests" => $"[{Quest("q7", "departed")},{Quest("q8", "evidence-unread")},{Quest("q9", "source-reopened")}]",
+                "/api/quests" => $"[{Quest("q7", "departed")},{Quest("q6", "departed", awaits: true)},{Quest("q8", "evidence-unread")},{Quest("q9", "source-reopened")}]",
                 _ => null,
             };
-            return Task.FromResult(new HttpResponseMessage(body is null ? System.Net.HttpStatusCode.NotFound : System.Net.HttpStatusCode.OK)
+            return new HttpResponseMessage(body is null ? System.Net.HttpStatusCode.NotFound : System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(body ?? "{}", System.Text.Encoding.UTF8, "application/json"),
-            });
+            };
         }
     }
 
     /// <summary>
     /// 🔴 What a role judges is Daoris's own record of the subject: the staged rows and their texts, the end's target, reason
     /// and proposer, the departure beside what the quest required; pinned as it stands, so a row staged since is another pin. A quest held
-    /// for its evidence or a reopened source has no facts and no pin: it is never a role's.
+    /// for its evidence or a reopened source, or departed while another requirement's evidence is awaited, has no facts and no pin: it is
+    /// never a role's.
     /// </summary>
     [Fact]
     public async Task A_door_subjects_facts_and_pin_are_what_the_service_holds_and_a_departure_alone_is_a_roles()
@@ -294,7 +348,7 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         Assert.Equal("The area moved to the driving page.", end.Parts[1].Text);
         Assert.Contains("\"using the common-report\": checked by It is one.", departure!.Parts[0].Text);
         Assert.Contains("departed from \"using the common-report\": A type of its own.", departure.Parts[2].Text);
-        foreach (var held in new[] { "q8", "q9" })
+        foreach (var held in new[] { "q6", "q8", "q9" })
         {
             Assert.Null(await SupervisorDoorSubjects.FactsAsync(service, Of(SupervisorKinds.Departure, held), default));
             Assert.Null(await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Departure, held), default));
@@ -306,17 +360,5 @@ public sealed class SupervisorDoorAnswerTests : IDisposable
         doors.Staged += """,{"id":"op-0","state":"staged","change":{"kind":"write","text":"Staged since."}}""";
         Assert.Equal("op-0,op-1", await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, SupervisorDoorActs.Staged), default));
         Assert.Null(await SupervisorDoorSubjects.PinAsync(service, Of(SupervisorKinds.Memory, "op-8"), default));
-    }
-
-    private sealed class Recording(List<(string Path, string Body)> bodies) : HttpMessageHandler
-    {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            bodies.Add((request.RequestUri!.AbsolutePath, request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct)));
-            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"message":"kept","moved":1}""", System.Text.Encoding.UTF8, "application/json"),
-            };
-        }
     }
 }

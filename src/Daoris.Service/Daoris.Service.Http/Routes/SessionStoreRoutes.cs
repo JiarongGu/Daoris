@@ -42,8 +42,10 @@ public sealed class SessionStoreRoutes(HostWiring host) : IRouteModule
             : host.Gate.Refused(http, RoleAnswerDoors.Keep, form: request.Role is not null) is { } refused ? refused
             : request.Role?.Malformed is { } malformed ? Refusal.BadRequest(malformed)
             : request.Keep is not { } keep ? Refusal.BadRequest("keep is required: true keeps the staged changes, false drops them")
+            : request.Role is not null && request.Ops is not { Count: > 0 }
+                ? Refusal.BadRequest("ops is required with role: a role's keep or drop names the staged rows it judged, and moves those alone")
             : Decided(await new MemoryDesk(Service.Sessions.Memory).KeepAsync(
-                request.Id, keep, DateTimeOffset.UtcNow, ct, MemoryDesk.ApproverOf(request.Role?.Role, request.Role?.Agent))));
+                request.Id, keep, DateTimeOffset.UtcNow, ct, MemoryDesk.ApproverOf(request.Role?.Role, request.Role?.Agent), request.Ops)));
         routes.Map<DeleteSession, DeletedResponse>(DeleteAsync);
         routes.Map<JudgeSessionDelete, SessionDeletionResponse>(async (request, _, ct) =>
         {

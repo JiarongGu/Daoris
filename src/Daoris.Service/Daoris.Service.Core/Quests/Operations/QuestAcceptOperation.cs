@@ -50,13 +50,17 @@ internal sealed class QuestAcceptOperation : IQuestOperation
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
         if (QuestLog.Replay(history) is not { } quest) return new QuestMove(await tx.FindAsync(id).ConfigureAwait(false), Moved: false);
 
-        // A departure or its evidence takes a yes, and a review's hold does not; a role's yes takes a departure alone.
+        // A departure or its evidence takes a yes, and a review's hold does not. A role's yes takes a departure alone: the hold reads
+        // departed first while another requirement's evidence is awaited, and the one yes would lift that evidence with it.
         var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now, By: by);
-        if (!QuestLog.Applies(quest, judged) || (by is not null && quest.Hold != QuestHold.Departed)) return new QuestMove(quest, Moved: false);
+        if (!QuestLog.Applies(quest, judged) || (by is not null && !RolesToAccept(quest))) return new QuestMove(quest, Moved: false);
 
         var accepted = QuestLog.Step(quest, await tx.AppendAsync(judged).ConfigureAwait(false))!;
         await tx.WriteCacheAsync(accepted).ConfigureAwait(false);
         // A set-up step accepted for its departure still waits for its review, and what follows it waits with it.
         return new QuestMove(accepted, Moved: true, accepted.Held ? null : await tx.PublishNextAsync(accepted, now).ConfigureAwait(false));
     }
+
+    /// <summary>Whether an appointed role's yes may accept <paramref name="quest"/>: a done held by its departure alone, no evidence awaited beside it.</summary>
+    internal static bool RolesToAccept(Quest quest) => quest.Hold == QuestHold.Departed && !quest.AwaitsEvidence;
 }

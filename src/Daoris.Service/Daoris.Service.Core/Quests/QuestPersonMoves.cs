@@ -28,7 +28,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     /// The person accepts a done's departure from what they required, or a done held for its evidence
     /// as it stands: what it held goes on — the chain's next step is published now, and a quest waiting
     /// on it resumes at the driver's next look. Only a held quest takes a yes; any other is refused saying why, as a
-    /// state, not a malformed ask.    /// </summary>
+    /// state, not a malformed ask.
+    /// </summary>
     public async Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? by = null)
     {
         var quest = id.TrimStart('#');
@@ -43,8 +44,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             var standing = move.Quest;
             return new(QuestRespondRefusal.NotHeld, standing switch
             {
-                // A role's yes accepts a departure alone: evidence unread or missing is the person's to accept as it stands.
-                { Hold: { } hold } when by is not null && hold != QuestHold.Departed =>
+                // A role's yes accepts a departure alone: evidence awaited, beside a departure or not, is the person's to accept.
+                { Hold: not null } when by is not null && !QuestAcceptOperation.RolesToAccept(standing) =>
                     $"Quest `#{standing.Id}` is held for its evidence or review, which a role's yes does not accept: it waits for you.",
                 { Status: not QuestStatus.Done } =>
                     $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
@@ -60,8 +61,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
         }
 
         var resumes = QuestWords.Resumes(await quests.WaitingOnAsync(move.Quest.Id, ct).ConfigureAwait(false));
-        // A done held for its evidence alone is accepted as it stands, unread or missing; a departure's
-        // words are as they were, since its yes is the same yes.
+        // A done held for its evidence alone is accepted as it stands; a departure's words are as they were, its yes the same yes.
         var accepted = (move.Quest.Answers.Any(answer => answer.IsDeparture)
             ? $"Accepted the departure on quest `#{move.Quest.Id}`"
             : $"Accepted quest `#{move.Quest.Id}`'s done as it stands, its evidence {(move.Quest.Evidence is null ? "unread" : "not found")}")

@@ -81,15 +81,15 @@ public sealed class SessionStoreDoors
     }
 
     /// <summary>
-    /// The person's or a role's (<paramref name="role"/>) decision on a session's memory: an awaiting end approved or declined by its row where
-    /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
+    /// The person's or a role's (<paramref name="role"/>) decision on a session's memory: an awaiting end approved or declined where <paramref name="op"/>
+    /// names one, else the staged changes kept or dropped, those a role judged (<paramref name="staged"/>) alone. A refusal is an answer, in the service's words.
     /// </summary>
     public async Task<(bool Ok, string Message)> DecideMemoryAsync(
-        string session, string? op, bool yes, CancellationToken ct = default, RoleAnswerWire? role = null)
+        string session, string? op, bool yes, CancellationToken ct = default, RoleAnswerWire? role = null, IReadOnlyList<string>? staged = null)
     {
         var sent = op is { Length: > 0 }
             ? await _service.SendAsync(new DecideMemory(op, yes, role), ct).ConfigureAwait(false)
-            : await _service.SendAsync(new KeepSessionMemory(session, yes, role), ct).ConfigureAwait(false);
+            : await _service.SendAsync(new KeepSessionMemory(session, yes, role, staged), ct).ConfigureAwait(false);
         var said = sent.Reply.Ok ? sent.Answer?.Message : ErrorWords(sent.Reply.Payload);
         return (sent.Reply.Ok, said ?? sent.Reply.Payload);
     }

@@ -8,6 +8,7 @@ public enum MemoryDecisionRefusal
     Own,
     NotThePerson,
     Running,
+    Stale,
 }
 
 /// <summary>A decision's outcome: the row as decided, or why none is made; for a Keep or Drop, how many rows moved.</summary>
@@ -65,12 +66,18 @@ public sealed class MemoryDesk(MemoryOpStore ops)
             : new(MemoryDecisionRefusal.NotFound, $"No end awaits its approver as operation `{id}`. Nothing was decided.");
     }
 
-    /// <summary>An ended session's staged rows, and those of the sessions it continues, kept to apply or dropped, by the person or a role.</summary>
-    public async Task<MemoryDecisionOutcome> KeepAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default, string by = Person) =>
-        await ops.KeepStagedAsync(session, keep, now, ct).ConfigureAwait(false) is { } moved
-            ? new(MemoryDecisionRefusal.None, $"{moved} staged change(s) of session `{session}` {(keep ? "kept" : "dropped")}{(by == Person ? "" : $" by {by}")}.", Moved: moved)
-            : new(MemoryDecisionRefusal.Running,
-                $"Refused: session `{session}` is running or unknown here, and its changes are its own until it ends. Nothing was moved.");
+    /// <summary>An ended session's staged rows kept or dropped, the person's with its predecessors', a role's <paramref name="rows"/> alone.</summary>
+    public async Task<MemoryDecisionOutcome> KeepAsync(
+        string session, bool keep, DateTimeOffset now, CancellationToken ct = default, string by = Person, IReadOnlyCollection<string>? rows = null) =>
+        await ops.KeepStagedAsync(session, keep, now, ct, rows).ConfigureAwait(false) switch
+        {
+            (MemoryDecisionRefusal.None, var moved) =>
+                new(MemoryDecisionRefusal.None, $"{moved} staged change(s) of session `{session}` {(keep ? "kept" : "dropped")}{(by == Person ? "" : $" by {by}")}.", Moved: moved),
+            (MemoryDecisionRefusal.Stale, _) => new(MemoryDecisionRefusal.Stale,
+                $"Refused: a row named is no longer staged on session `{session}`'s page, so what was judged has moved. Nothing was moved."),
+            _ => new(MemoryDecisionRefusal.Running,
+                $"Refused: session `{session}` is running or unknown here, and its changes are its own until it ends. Nothing was moved."),
+        };
 
     /// <summary>A session's rows as its record's page shows them: an end's reason as its proposer wrote it.</summary>
     public async Task<IReadOnlyList<MemoryOp>> PageAsync(string session, CancellationToken ct = default) =>

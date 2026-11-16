@@ -153,7 +153,8 @@ one job each, checked by `verify`.
 25. Every change is a `memory_ops` row: `staged` by its session, released at the session's commit point (a landing's record, or
     a main-tree session's completion), then `ready` or `awaiting`, `applying`, and `applied`, `stale` or `held`; a proposal never applies and ends `answered`, `declined`, `stale` or `dropped`. Nothing staged
     applies by itself; a stopped session's rows wait for Keep or Drop, the person's or an appointed role's that holds
-    `memory.keep` for the session's repository, and deleting a session drops its staged rows, while its awaiting end or
+    `memory.keep` for the session's repository. The person's moves those of the sessions it continues with them; a role's names the
+    rows it judged and moves exactly those, each still staged on the session's own page, or none. Deleting a session drops its staged rows, while its awaiting end or
     replacement, with no session left, is a wait of its own. (from D220, D297)
 26. An end or a replacement waits for an approver other than its proposer: the person, or an appointed role that holds
     `memory.decide` for the session's repository, its answer held for the role's window with *Overrule* and posted by the driver

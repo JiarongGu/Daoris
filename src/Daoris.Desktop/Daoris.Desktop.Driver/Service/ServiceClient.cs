@@ -371,8 +371,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<IReadOnlyList<JsonElement>> MemoryWaitsAsync(CancellationToken ct = default) => Store.MemoryWaitsAsync(ct);
 
     public Task<(bool Ok, string Message)> DecideMemoryAsync(
-        string session, string? op, bool yes, CancellationToken ct = default, Daoris.Contracts.Quests.RoleAnswerWire? role = null) =>
-        Store.DecideMemoryAsync(session, op, yes, ct, role);
+        string session, string? op, bool yes, CancellationToken ct = default, Daoris.Contracts.Quests.RoleAnswerWire? role = null,
+        IReadOnlyList<string>? staged = null) =>
+        Store.DecideMemoryAsync(session, op, yes, ct, role, staged);
 
     public Task<SessionDeleteAnswer> JudgeSessionDeleteAsync(string id, CancellationToken ct = default) => Store.JudgeDeleteAsync(id, ct);
 

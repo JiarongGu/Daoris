@@ -157,31 +157,48 @@ public sealed class MemoryOpStore
     }, ct);
 
     /// <summary>
-    /// The person's Keep or Drop of an ended session's staged rows and those of the sessions it continues (§1): kept, they move as its
-    /// commit point would have moved them, with no turn lines, so their models read <c>unknown</c>; dropped, they never apply. Null where
-    /// the session is still running or no record names it.
+    /// A Keep or Drop of an ended session's staged rows (§1): kept, they move as its commit point would have moved them, with no turn
+    /// lines, so their models read <c>unknown</c>; dropped, they never apply. The person's takes those of the sessions it continues with
+    /// them; <paramref name="only"/>, a role's, exactly those rows, <see cref="MemoryDecisionRefusal.Stale"/> unless each is still staged
+    /// on this session. <see cref="MemoryDecisionRefusal.Running"/> where the session is still running or no record names it.
     /// </summary>
-    public Task<int?> KeepStagedAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default) =>
-        _db.InTransactionAsync<int?>(async (_, inside) =>
+    public Task<(MemoryDecisionRefusal Refusal, int Moved)> KeepStagedAsync(
+        string session, bool keep, DateTimeOffset now, CancellationToken ct = default, IReadOnlyCollection<string>? only = null) =>
+        _db.InTransactionAsync<(MemoryDecisionRefusal, int)>(async (_, inside) =>
         {
             await using (var state = _db.Command())
             {
                 state.CommandText = "SELECT state FROM sessions WHERE id = $session";
                 state.Parameters.AddWithValue("$session", session);
-                if (await state.ExecuteScalarAsync(inside).ConfigureAwait(false) is not string held || Running.Contains(held)) return null;
+                if (await state.ExecuteScalarAsync(inside).ConfigureAwait(false) is not string held || Running.Contains(held)) return (MemoryDecisionRefusal.Running, 0);
             }
 
-            if (keep) return await ReleaseAsync([session], predecessors: true, turns: null, inside).ConfigureAwait(false);
+            var named = only is null ? null : JsonSerializer.Serialize(only.Distinct(StringComparer.Ordinal));
+            if (named is not null)
+            {
+                await using var still = _db.Command();
+                still.CommandText = """
+                    SELECT COUNT(*) = (SELECT COUNT(*) FROM json_each($named)) FROM memory_ops
+                    WHERE session = $session AND state = 'staged' AND id IN (SELECT value FROM json_each($named))
+                    """;
+                still.Parameters.AddWithValue("$session", session);
+                still.Parameters.AddWithValue("$named", named);
+                if (Convert.ToInt64(await still.ExecuteScalarAsync(inside).ConfigureAwait(false), CultureInfo.InvariantCulture) != 1) return (MemoryDecisionRefusal.Stale, 0);
+            }
+
+            if (keep) return (MemoryDecisionRefusal.None, await ReleaseAsync([session], predecessors: named is null, turns: null, inside, only).ConfigureAwait(false));
             await using var drop = _db.Command();
-            drop.CommandText = """
-                WITH RECURSIVE chain(id) AS (
-                  SELECT $session
-                  UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
-                UPDATE memory_ops SET state = 'dropped', settled = $now WHERE state = 'staged' AND session IN (SELECT id FROM chain)
-                """;
-            drop.Parameters.AddWithValue("$session", session);
+            drop.CommandText = named is not null
+                ? "UPDATE memory_ops SET state = 'dropped', settled = $now WHERE state = 'staged' AND id IN (SELECT value FROM json_each($named))"
+                : """
+                  WITH RECURSIVE chain(id) AS (
+                    SELECT $session
+                    UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
+                  UPDATE memory_ops SET state = 'dropped', settled = $now WHERE state = 'staged' AND session IN (SELECT id FROM chain)
+                  """;
+            drop.Parameters.AddWithValue(named is null ? "$session" : "$named", named ?? session);
             drop.Parameters.AddWithValue("$now", Moments.Write(now));
-            return await drop.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            return (MemoryDecisionRefusal.None, await drop.ExecuteNonQueryAsync(inside).ConfigureAwait(false));
         }, ct);
 
     /// <summary>A deleted session's staged rows, dropped inside the transaction that deletes it.</summary>
@@ -245,24 +262,27 @@ public sealed class MemoryOpStore
     /// <summary>
     /// The commit point's move (§1), inside the transaction that records it: the staged rows of <paramref name="sessions"/>, and with
     /// <paramref name="predecessors"/> those of the sessions each continues, become <c>ready</c>, an end or a replacement <c>awaiting</c>, each naming the
-    /// models of the turn that holds its instant.
+    /// models of the turn that holds its instant. <paramref name="only"/> narrows them to those rows.
     /// </summary>
     /// <returns>How many rows moved.</returns>
     internal async Task<int> ReleaseAsync(
-        IReadOnlyCollection<string> sessions, bool predecessors, IReadOnlyDictionary<string, MemoryTurns>? turns, CancellationToken inside)
+        IReadOnlyCollection<string> sessions, bool predecessors, IReadOnlyDictionary<string, MemoryTurns>? turns, CancellationToken inside,
+        IReadOnlyCollection<string>? only = null)
     {
         var staged = new List<(string Id, string Session, string Kind, DateTimeOffset At)>();
         await using (var read = _db.Command())
         {
+            var narrowed = only is null ? "" : " AND id IN (SELECT value FROM json_each($only))";
             read.CommandText = predecessors
-                ? """
+                ? $"""
                   WITH RECURSIVE chain(id) AS (
                     SELECT value FROM json_each($sessions)
                     UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
-                  SELECT id, session, kind, at FROM memory_ops WHERE state = 'staged' AND session IN (SELECT id FROM chain) ORDER BY rowid
+                  SELECT id, session, kind, at FROM memory_ops WHERE state = 'staged' AND session IN (SELECT id FROM chain){narrowed} ORDER BY rowid
                   """
-                : "SELECT id, session, kind, at FROM memory_ops WHERE state = 'staged' AND session IN (SELECT value FROM json_each($sessions)) ORDER BY rowid";
+                : $"SELECT id, session, kind, at FROM memory_ops WHERE state = 'staged' AND session IN (SELECT value FROM json_each($sessions)){narrowed} ORDER BY rowid";
             read.Parameters.AddWithValue("$sessions", JsonSerializer.Serialize(sessions));
+            if (only is not null) read.Parameters.AddWithValue("$only", JsonSerializer.Serialize(only));
             await using var reader = await read.ExecuteReaderAsync(inside).ConfigureAwait(false);
             while (await reader.ReadAsync(inside).ConfigureAwait(false))
             {

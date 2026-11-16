@@ -43,16 +43,46 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
 
         AssertRefused(await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true }),
             PersonDoors.PersonOnly, "an ended session's memory changes kept or dropped", "a keyless keep");
-        AssertRefused(await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role }),
+        AssertRefused(await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role, ops = new[] { op.Id } }),
             PersonDoors.DriverOnly, "a role's keep or drop of an ended session's memory changes", "a keyless keep naming a role");
         Assert.Equal(MemoryOpState.Staged, (await host.Composed.Sessions.Memory.FindAsync(op.Id))!.State);
 
-        var kept = await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role }, person: Key);
+        var kept = await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role, ops = new[] { op.Id } }, person: Key);
 
         Assert.Equal(200, kept.Status);
         Assert.Equal(1, kept.Json.GetProperty("moved").GetInt32());
         Assert.EndsWith("kept by role:daoris-landing · codex-acp.", kept.Json.GetProperty("message").GetString());
         Assert.NotEqual(MemoryOpState.Staged, (await host.Composed.Sessions.Memory.FindAsync(op.Id))!.State);
+    }
+
+    /// <summary>
+    /// 🔴 A role keeps or drops only the rows it judged: its form names them, a row staged since stays staged for the next look, and a
+    /// form naming no rows, a row no longer staged or another session's row is refused, nothing moved.
+    /// </summary>
+    [Fact]
+    public async Task A_roles_keep_or_drop_moves_exactly_the_staged_rows_it_names()
+    {
+        var (session, judged) = await StagedAsync(new MemoryChange(MemoryOpKind.Write, Text: "Keeper keeps a garden."), "stopped");
+        var since = await host.Composed.Sessions.Memory.StageAsync(
+            "Keeper", new MemoryChange(MemoryOpKind.Write, Text: "Keeper keeps bees."), new MemoryAuthor(session, "default", null, "stub", null, null, null, At));
+        var (_, other) = await StagedAsync(new MemoryChange(MemoryOpKind.Write, Text: "Keeper keeps a pond."), "stopped");
+        string State(MemoryOp op) => host.Composed.Sessions.Memory.FindAsync(op.Id).GetAwaiter().GetResult()!.State;
+
+        Assert.Equal(400, (await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role }, person: Key)).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role, ops = new[] { judged.Id, other.Id } }, person: Key)).Status);
+        Assert.Equal((MemoryOpState.Staged, MemoryOpState.Staged, MemoryOpState.Staged), (State(judged), State(since), State(other)));
+
+        var kept = await host.PostAsync($"/api/sessions/{session}/memory", new { keep = true, role = Role, ops = new[] { judged.Id } }, person: Key);
+
+        Assert.Equal(200, kept.Status);
+        Assert.Equal(1, kept.Json.GetProperty("moved").GetInt32());
+        Assert.Equal((MemoryOpState.Ready, MemoryOpState.Staged), (State(judged), State(since)));
+        var again = await host.PostAsync($"/api/sessions/{session}/memory", new { keep = false, role = Role, ops = new[] { judged.Id, since.Id } }, person: Key);
+        Assert.Equal(409, again.Status);
+        Assert.Contains("no longer staged", again.Error);
+        Assert.Equal(MemoryOpState.Staged, State(since));
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/memory", new { keep = false, role = Role, ops = new[] { since.Id } }, person: Key)).Status);
+        Assert.Equal((MemoryOpState.Dropped, MemoryOpState.Staged), (State(since), State(other)));
     }
 
     /// <summary>🔴 An awaiting end approved by a role: its row's approver is the role and its agent, never the person.</summary>

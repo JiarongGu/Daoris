@@ -12,8 +12,11 @@ namespace Daoris.Driver;
 /// </summary>
 public static class SupervisorDoorSubjects
 {
-    /// <summary>The one hold a role's yes takes: a done departing from what the person required, nothing else holding it.</summary>
-    public static bool Departed(QuestView quest) => quest.Held && quest.Hold == "departed";
+    /// <summary>
+    /// The one hold a role's yes takes: a done departing from what the person required, nothing else holding it. The hold reads departed
+    /// first while another requirement's evidence is awaited, which a yes would lift with it, so that one stays the person's.
+    /// </summary>
+    public static bool Departed(QuestView quest) => quest.Held && quest.Hold == "departed" && !quest.AwaitsEvidence;
 
     /// <summary>A session's memory rows as its page reads them; none where the page does not read.</summary>
     public static async Task<IReadOnlyList<JsonElement>> OpsAsync(ServiceClient service, string session, CancellationToken ct)
@@ -70,7 +73,7 @@ public static class SupervisorDoorSubjects
             [
                 ("the session's staged memory changes, as Daoris's own record holds them", $"session: {subject.Session}\n{rows}\n"
                     + "keep moves them to apply at the commit point, ends among them to wait for their approver; drop means they never apply. "
-                    + "A keep also keeps what the sessions this one continues staged."),
+                    + "Either moves exactly these rows: one staged after this reading, or by a session this one continues, waits to be judged on its own."),
             ]);
         }
 

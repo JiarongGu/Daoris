@@ -74,9 +74,9 @@ public sealed record DecideMemory(string Id, bool? Approve, RoleAnswerWire? Role
     public static string Path => "/api/memory/{id}/decide";
 }
 
-/// <summary>The person's keep or drop of an ended session's staged memory changes, or with <c>Role</c> an appointed role's.</summary>
+/// <summary>The person's keep or drop of an ended session's staged memory changes, or with <c>Role</c> a role's of the <c>Ops</c> it judged alone.</summary>
 /// <param name="Keep">True keeps the staged changes, false drops them; required.</param>
-public sealed record KeepSessionMemory(string Id, bool? Keep, RoleAnswerWire? Role = null) : IRoute<MemoryDecisionResponse>
+public sealed record KeepSessionMemory(string Id, bool? Keep, RoleAnswerWire? Role = null, IReadOnlyList<string>? Ops = null) : IRoute<MemoryDecisionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/sessions/{id}/memory";

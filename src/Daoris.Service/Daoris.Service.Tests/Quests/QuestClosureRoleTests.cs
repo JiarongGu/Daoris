@@ -3,7 +3,10 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>A role's yes accepts a departure alone: a done held for its unread evidence refuses it, and the person's yes still accepts it.</summary>
+/// <summary>
+/// A role's yes accepts a departure alone: a done held for its unread evidence refuses it, and so does a departure beside a met
+/// requirement whose evidence is awaited, which the one yes would lift with it; the person's yes still accepts either.
+/// </summary>
 public sealed class QuestClosureRoleTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
@@ -23,12 +26,14 @@ public sealed class QuestClosureRoleTests : IAsyncLifetime
             Evidence = [new QuestEvidence("docs/report-bridge.md")],
         };
 
+    private static readonly QuestRequirement Bridge = new("through the v3 bridge", "The report opens through the bridge's route.");
+
     public async Task InitializeAsync()
     {
         var dir = Path.Combine(_root, "family", "reports");
         Directory.CreateDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "daoris.json"),
-            """{ "source": "s", "packs": [], "domain": { "summary": "The reports.", "owns": ["report pages"], "accepts": ["a report"] } }""");
+            """{ "source": "s", "packs": [], "domain": { "summary": "The reports.", "owns": ["report pages", "the v3 bridge"], "accepts": ["a report"] } }""");
 
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
@@ -75,6 +80,31 @@ public sealed class QuestClosureRoleTests : IAsyncLifetime
         Assert.Equal(QuestRespondRefusal.NotHeld, role.Refusal);
         Assert.Contains("a role's yes does not accept", role.Message, StringComparison.Ordinal);
         Assert.Equal(QuestHold.EvidenceUnread, (await _quests.FindAsync(id))!.Hold);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(id, Now)).Refusal);
+    }
+
+    /// <summary>🔴 A done departing from one requirement while another's evidence is awaited: its hold reads departed, yet a yes would lift the evidence with it.</summary>
+    [Fact]
+    public async Task A_roles_yes_never_accepts_a_departure_beside_evidence_still_awaited()
+    {
+        var ask = (await _desk.AskAsync(new AskRequest("work", "write the bridge report into docs/report-bridge.md through the v3 bridge"), Now)).Ask!;
+        var published = await _desk.PublishAsync(ask.Id, "reports", Now, draft: new AskDraft("Write the bridge report", "Through the bridge.")
+        {
+            Requirements = [Report, Bridge],
+        });
+        var id = published.Quest!.Id;
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(id, "take", null, Now)).Refusal);
+        var done = await _exchange.RespondAsync(id, "done", "Built.", Now, answers:
+            [new QuestAnswer(1, Met: "Done as the check says."), new QuestAnswer(2, null, Departed: "It opens on its own page.", Quote: Bridge.Quote)]);
+        Assert.Equal((QuestHold.Departed, true), (done.Quest!.Hold, done.Quest.AwaitsEvidence));
+
+        var role = await _exchange.AcceptAsync(id, Now, by: "role:daoris-landing · codex-acp");
+
+        Assert.Equal(QuestRespondRefusal.NotHeld, role.Refusal);
+        Assert.Contains("a role's yes does not accept", role.Message, StringComparison.Ordinal);
+        var standing = (await _quests.FindAsync(id))!;
+        Assert.Equal((QuestHold.Departed, true), (standing.Hold, standing.AwaitsEvidence));
+        Assert.Null(standing.Accepted);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(id, Now)).Refusal);
     }
 }

@@ -40,16 +40,20 @@ internal sealed class DoorReleaseLook(ILookWiring wiring) : ILookPass
         (due, ct) => PostAsync(service, due, ct),
         (due, ct) => SupervisorDoorSubjects.MadeAsync(service, due, ct));
 
-    /// <summary>The service's door for <paramref name="due"/>, as the role's: null where it kept the answer, else why not.</summary>
+    /// <summary>
+    /// The service's door for <paramref name="due"/>, as the role's: null where it kept the answer, else why not. A keep or a drop names the
+    /// staged rows its pin holds, so the service moves exactly what the role judged, and refuses the post where one has moved since.
+    /// </summary>
     internal static async Task<string?> PostAsync(ServiceClient service, SupervisorDoorDue due, CancellationToken ct)
     {
         var role = new RoleAnswerWire(due.Role, due.Agent, due.Id, due.Turn);
+        var staged = due.Subject.Id == SupervisorDoorActs.Staged;
         try
         {
             var (ok, _) = due.Subject.Kind == SupervisorKinds.Departure
                 ? await service.AcceptDepartureAsync(due.Subject.Id, ct, role).ConfigureAwait(false)
-                : await service.DecideMemoryAsync(
-                    due.Subject.Session, due.Subject.Id == SupervisorDoorActs.Staged ? null : due.Subject.Id, due.Yes, ct, role).ConfigureAwait(false);
+                : await service.DecideMemoryAsync(due.Subject.Session, staged ? null : due.Subject.Id, due.Yes, ct, role,
+                    staged ? (due.Pin ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries) : null).ConfigureAwait(false);
             return ok ? null : SupervisorWhy.Answered;
         }
         catch (Exception error) when (error is HttpRequestException or IOException or DriverException)
