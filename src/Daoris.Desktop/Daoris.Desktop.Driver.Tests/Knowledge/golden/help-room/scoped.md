@@ -154,6 +154,7 @@ under *Done at a terminal* (below), name its command for the person to run.
   Stopping a session is never pressed for the person: it is their own, on the session's page, where a link takes them.
   `daoris sessions helper <id> "…"` asks another agent, read-only, one question about one session's work, and
   `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.
+  `daoris sessions option <id> <option> <value>` sets one of a running conversation's options, as its page's picker does.
 - One ask's work, or one quest's, is paused on this machine or resumed by pressing:
   `daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`. A pause stops what of the work runs
   here as the person's own stop and starts nothing of it until it is resumed; a session waiting on the person stays parked,
@@ -294,6 +295,7 @@ named, in that repository's checkout; never add one that has not landed.
 | say so when a session parks | Settings → Driver | `daoris settings notify on|off` |
 | allow, ask or deny what an agent may do | Agents → the agent's page → What it may do; a repository's, Repositories → the repository's page → Setup → Reach; a workspace's, Repositories → the workspace's page → Setup → Remote and reach | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Repositories → the repository's page → Setup → Reach; a workspace's reading, Repositories → the workspace's page → Setup → Defaults → Read by agents outside | `daoris place across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris place across <repository> write-to <other> [--clear]` |
+| let Daoris change files in a repository's registered checkout, or not (off unless you say) | Repositories → the repository's page → Setup → Reach | `daoris place checkout <repository> on|off` |
 | keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Setup → Sessions | `daoris place standing <repository> "…"|--clear` |
 | set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Setup → Sessions; a workspace's, Repositories → the workspace's page → Setup → Defaults → Session language | `daoris place language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
 | sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent> --account <account>` (an account that is here, never a new one), `daoris agent login <agent> --new [--name <name>]` (it joins Daoris's accounts, which serve every workspace), either with `--device-code` for Codex's device code in place of its browser |
