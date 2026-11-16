@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, scanRecords, slowestClasses, tighten } from './time-ratchet.mjs';
+import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
+import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
 import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
@@ -222,6 +223,55 @@ test('a class entry keeps its reason while the class runs, though no test of it 
   assert.deepEqual(tighten({}, list, seen), { 'A.Class': { ...entry(120_000), class: true } });
   const ranked = slowestClasses([{ key: 'A.Class.one', ms: 5000 }, { key: 'A.Class.two', ms: 4000 }], 15, list);
   assert.equal(ranked[0].reason, entry(120_000).why);
+});
+
+test('TIMELOAD1: a timing taken under load is kept and never fails for time; one taken alone does', () => {
+  const dir = join('_fixtures', 'time-ratchet-load-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    writeFileSync(join(dir, 'driver.trx'), trx([['U.slow', '00:00:31']]));
+    writeFileSync(join(dir, 'modules.trx'), trx([['M.slow', '00:00:31']]));
+    const at = statSync(join(dir, 'driver.trx')).mtimeMs;
+    const marks = { 'driver.trx': { holds: 3, at }, 'modules.trx': { holds: 1, at } };
+    writeFileSync(join(dir, 'load-marks.json'), JSON.stringify(marks));
+    const { over, loaded, seen } = scanRecords(dir, '.');
+    assert.deepEqual(Object.keys(over), ['M.slow'], 'the alone timing is judged');
+    assert.deepEqual(Object.keys(loaded), ['U.slow'], 'the loaded timing is kept, marked, and judges nothing');
+    assert.ok(!seen.has('U.slow'));
+    assert.deepEqual(checkTimes({ ...over }, {}).length, 1);
+    // a record written again after its mark is unmarked and judged as alone
+    const later = new Date(at + 5000);
+    utimesSync(join(dir, 'driver.trx'), later, later);
+    assert.deepEqual(Object.keys(scanRecords(dir, '.').over).sort(), ['M.slow', 'U.slow']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('TIMELOAD1: stampLoad marks the records of a run with its peak load, and a loaded-only test is measured again alone or said unmeasured', async () => {
+  const dir = join('_fixtures', 'time-load-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    writeFileSync(join(dir, 'old.trx'), trx([['O.x', '00:00:01']]));
+    const old = new Date(Date.now() - 60_000);
+    utimesSync(join(dir, 'old.trx'), old, old);
+    writeFileSync(join(dir, 'new.trx'), trx([['N.slow', '00:00:31']]));
+    assert.deepEqual(stampLoad(dir, 4, Date.now() - 10_000), ['new.trx']);
+    assert.equal(readMarks(dir)['new.trx'].holds, 4);
+    assert.equal(isLoaded(readMarks(dir), 'new.trx', statSync(join(dir, 'new.trx')).mtimeMs), true);
+    const world = async () => worldOf({ N: ['x'] });
+    let runs = [];
+    const scan = () => scanRecords(dir, '.');
+    const busy = await settleLoaded({ scan, free: () => false, measure: (u) => runs.push(u), world });
+    assert.deepEqual([busy.unmeasured, runs], [['N.slow'], []], 'a busy machine measures nothing and says unmeasured');
+    const free = await settleLoaded({ scan, free: () => true, measure: (u) => { runs.push(u); writeFileSync(join(dir, 'reached-x-1.trx'), trx([['N.slow', '00:00:05']])); }, world });
+    assert.deepEqual(runs, [['N']]);
+    assert.deepEqual([free.unmeasured, Object.keys(free.scanned.over)], [[], []], 'measured alone, it is judged by that time');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('records on disk are scanned by their file and an absent folder holds nothing', () => {
