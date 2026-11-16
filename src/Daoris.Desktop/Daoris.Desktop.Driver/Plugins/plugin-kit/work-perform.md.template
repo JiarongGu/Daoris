@@ -9,6 +9,12 @@ promises of it:
 - **One act per effect**: every attempt on the same target (a retry, a second holder) carries the same `effectKey`, and
   `work.mjs` calls `act()` once per effect: an attempt on an effect already made is answered with what it made, and one whose
   earlier act failed, was lost or began in a process before this one is first asked of `check()`, whose `done` stands for it.
+  A plugin with no `check()` cannot tell what a gone process's act came to, so the next attempt on its effect makes it afresh:
+  write `check()` wherever an act made twice does harm.
+- **Stand-down**: a skip, a stop or its holder's *Done outside Daoris* stands an attempt down, told at `work/stand-down`, a
+  notification answered by nothing. `work.mjs` writes it in its journal, so no later delivery of its key acts, and aborts
+  `call.signal`: `act()` reads it before every write and in every wait, and once it is aborted answers
+  `{ state: 'failed', code: 'stood-down' }`, making nothing after it.
 - **`options`**: the options the workflow graph's node writes for the step reach `act()` as `call.options`, an object of each
   option's name and JSON value (text that is not JSON arrives as the word it is). A node with none sends none, so `call.options`
   is `{}`; a plugin reads an option where it is present and keeps its default where it is not.

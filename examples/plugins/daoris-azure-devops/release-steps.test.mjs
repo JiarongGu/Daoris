@@ -163,6 +163,86 @@ test('each step credits the identity Azure DevOps names on its evidence, beside 
   assert.deepEqual(marked.calls.filter((call) => /\/approvals\//.test(call.path)), []);
 });
 
+test('under start-stage or observe, create waits on the release manager for the release continuous deployment makes, and never makes one', async (t) => {
+  const api = await line();
+
+  const waited = await Promise.all(['start-stage', 'observe'].map((action) =>
+    step(t, api, 'release-create', { action }, { deadlineAt: new Date(Date.now() + 5600).toISOString() })));
+
+  for (const { step: done, progress } of waited) {
+    assert.deepEqual([done.params.state, done.params.code], ['failed', 'timeout']);
+    assert.ok(progress.some((frame) => frame.params.actor === 'release-manager' && /build 20261116\.41/.test(frame.params.evidence.message)));
+  }
+  assert.match(waited[0].progress.at(-1).params.evidence.message, /build 20261116\.41 \/ CD/);
+  assert.deepEqual(writes(api), []);
+});
+
+/** A plugin told the merged unit, awaiting `id`, and its handshake made. */
+async function told(t, api) {
+  const plugin = start(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) });
+  await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
+  await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [unitAt(checkout('https://dev.azure.com/acme/Proj/_git/app'), [STEP('release-create')], { line: 'dev', pullRequest: `${WEB}/pullrequest/1` })] });
+  return plugin;
+}
+
+test('a stand-down during the continuous deployment wait ends the wait, and no release is made after it', async (t) => {
+  const api = await line();
+  api.builds[0].finishTime = new Date().toISOString();
+  const plugin = await told(t, api);
+
+  await plugin.ask('hook/work/perform', { unit: 'app:daoris/work', step: STEP('release-create'), stepVersion: 1, invocation: 'i-1', idempotencyKey: 'k-1', subjectRevision: tip,
+    inputs: [], deadlineAt: new Date(Date.now() + 60000).toISOString(), options: { ...FAST, ...TARGET, findSeconds: 1.5 } });
+  await plugin.next((frame) => frame.method === 'work/step' && frame.params.state === 'progress' && /continuous deployment/.test(frame.params.evidence.message));
+  plugin.tell('hook/work/stand-down', { unit: 'app:daoris/work', step: STEP('release-create'), invocation: 'i-1', idempotencyKey: 'k-1', why: 'done-outside' });
+  const done = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1' && frame.params.state !== 'progress');
+  await new Promise((resolve) => setTimeout(resolve, 1800));
+
+  assert.deepEqual([done.params.state, done.params.code], ['failed', 'stood-down']);
+  assert.deepEqual(writes(api), []);
+  assert.ok(plugin.heard().every((frame) => 'method' in frame || frame.id !== undefined), 'the stand-down, a notification, was answered');
+});
+
+test('a stage started is never started twice: a start Azure DevOps shows late is waited for, not made again', async (t) => {
+  const api = await line({ made: [{ id: 90, build: 41 }] });
+  let after = 0;
+  api.onRead = (method, path) => {
+    if (method !== 'GET' || path !== '/acme/Proj/_apis/release/releases/90' || api.deployed.length === 0) return;
+    after += 1;
+    api.releases[0].environments[0].status = after >= 3 ? 'inProgress' : 'notStarted';
+  };
+
+  const { step: done } = await step(t, api, 'release-start');
+
+  assert.equal(done.params.state, 'reached');
+  assert.equal(api.deployed.length, 1);
+});
+
+test('a Done outside link naming no release does not settle, and a named release of another definition is refused', async (t) => {
+  const api = await line({ made: [{ id: 91, build: 41 }] });
+  api.releases.push({ ...structuredClone(api.releases[0]), id: 95, name: 'Release-95', releaseDefinition: { id: 42 } });
+  const plugin = await told(t, api);
+  const check = async (link, key) => (await plugin.ask('hook/work/reconcile', { unit: 'app:daoris/work', step: STEP('release-create'), invocation: `i-${key}`,
+    idempotencyKey: key, subjectRevision: tip, options: { ...FAST, ...TARGET }, link })).result;
+
+  const unnamed = await check(`${WEB}/_release?definitionId=43`, 'k-5');
+  const another = await check(`${WEB}/_releaseProgress?releaseId=95`, 'k-6');
+
+  assert.deepEqual([unnamed.state, unnamed.outcome.code], ['failed', 'no-release']);
+  assert.deepEqual([another.state, another.outcome.code], ['failed', 'target-changed']);
+  assert.match(another.outcome.evidence.message, /release 95 is of definition #42, not the step's #43/);
+});
+
+test('a Done outside link on a step whose unit no step awaits any more is read at the unit it was last told', async (t) => {
+  const api = await line({ made: [{ id: 91, build: 41 }] });
+  const plugin = await told(t, api);
+  await plugin.ask('hook/work/watch', { generation: 2, resync: false, units: [] });
+
+  const read = (await plugin.ask('hook/work/reconcile', { unit: 'app:daoris/work', step: STEP('release-create'), invocation: 'i-1', idempotencyKey: 'k-1',
+    subjectRevision: tip, options: { ...FAST, ...TARGET }, link: `${WEB}/_releaseProgress?releaseId=91` })).result;
+
+  assert.deepEqual([read.state, read.outcome.state], ['done', 'reached']);
+});
+
 test('ACCESSSTEP1: a refused key waits on the credentials keeper with the page that fixes it, and is never failed for access', async (t) => {
   const api = await line();
 

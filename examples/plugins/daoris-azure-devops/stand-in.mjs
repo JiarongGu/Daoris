@@ -211,12 +211,14 @@ export function start(t, env, journal = null) {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: mine, method, params })}\n`);
     return next((frame) => frame.id === mine);
   };
+  /** A notification, as the driver sends `work/stand-down`: no id, so nothing answers it. */
+  const tell = (method, params) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
   const stop = async () => {
     child.kill();
     await closed;
     return said;
   };
-  return { ask, next, stop, said: () => said, heard: () => [...heard] };
+  return { ask, tell, next, stop, said: () => said, heard: () => [...heard] };
 }
 
 export const unitAt = (root, awaiting = [STEP], more = {}) => ({ repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null,

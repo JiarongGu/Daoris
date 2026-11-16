@@ -66,11 +66,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
    the evidence's `by` beside its words; the wire reads it (`WorkEvidence.By`) and the attempt its outcome settles keeps it on the unit's
    record (`by`, which an older build passes over and drops where it writes the record again). Create matches a release by the landed commit its artifact carries, across every build of that
-   commit, or reads the release its holder names (`release` option), taken where its commit is the landed one or descends from it (the
-   landed commit is their merge base) and else refused `target-changed`, naming the commit it carries; it waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
-   end, with no give-up but the step's deadline, then makes the release once where the action allows, its description carrying the effect
-   key (definition and commit), so a lost answer or a restart finds it. Start starts only where the action says, else waits on the
-   deployer; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
+   commit, or reads the release its holder names (`release` option), held to the step's definition and taken where its commit is the
+   landed one or descends from it (the landed commit is their merge base), else refused `target-changed`, naming the definition or the
+   commit it carries; a link naming no release is refused `no-release`. It waits on the release manager while the build runs and continuous deployment has `findSeconds` from the build's
+   end, with no give-up but the step's deadline, then makes the release once under `create-and-start` alone, its description carrying the effect
+   key (definition and commit), so a lost answer or a restart finds it; under `start-stage` it waits for the release CD makes
+   (`build <n> / CD`) and under `observe` for its holder's, to the step's deadline, never making one. Start starts only where the action
+   says, once (a start Azure DevOps shows late is waited for, and a refused start that reads started is taken), else waits on the
+   deployer; every step reads the kit's stand-down signal before each write and in each wait, so nothing is made after its attempt
+   stands down; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
    sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1); at the
    deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
    owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
@@ -189,10 +193,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and the step's options, the kit's `check()` given `attempt.link`), which reads the thing named and never acts: a refusal takes the word
     back with the check's code and words (a release of another commit, `target-changed`, naming the commit it carries; a stage not started,
     `not-yet`), a settled link stays the holder's word credited to the identity the check read (`by`), and an answer naming no link (a kit
-    that reads none) or a plugin not up leaves the word its holder's. Skip
+    that reads none) leaves the word its holder's; either answer marks the attempt checked (`linkChecked`, a field an older build passes
+    over). A link is asked only while its word still waits (its attempt in flight or its failure kept, unchecked), so an applied one spends
+    no send. A link the check has not answered (its plugin down, the pass's sends spent, an error) is held, never applied on the word
+    alone; past the step's timeout from the word the wait climbs the reporting line (`LinkHolds`, `link-climbed`) and keeps holding. The
+    plugin reads a link at the checkout its unit was last told, so a failed step, told to no plugin, is still read. *Done outside Daoris*
+    is not offered on a step that declares outputs, which no word fills, and a word the table refuses keeps its refusal on the attempt. Skip
     (*Not needed this run*), stop (*End this work*) and done outside each stand the plugin's attempt in flight down (`StandDowns`): it
     settles `stood-down` with the act as its code, never a state of its own, its node's gate lifts so nothing holds the run, its plugin is
-    told (`work/stand-down`, a notification), and its later outcome is not taken. A skip a proof-carrying step refuses names the
+    told (`work/stand-down`, a notification), and its later outcome is not taken. The kit writes the stand-down in its journal, so no
+    later delivery of the key acts, and aborts the act's `signal`; a kit with no `check()` makes afresh an act a gone process held. A skip a proof-carrying step refuses names the
     done-outside press, and ending the work leaves its quest to close by the person's word. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one

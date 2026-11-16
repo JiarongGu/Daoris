@@ -143,6 +143,8 @@ export async function release(attempt, unit, say, progress = () => {}) {
         const seen = await foundInstead(repo, definition, build);
         return failed('no-release', `No release of ${of} was made from ${from} within ${asked.find / 1000} s; the step's action does not create one. ${seen}`, buildUrl);
       }
+      // Stood down by Daoris while it waited (the kit's `attempt.signal`): nothing is made after it.
+      if (attempt.signal?.aborted) return failed('stood-down', `Stood down (${attempt.signal.reason ?? 'by Daoris'}) before a release of ${of} was made, so none was.`, buildUrl);
       starting = selfStarting(definition.environments ?? []);
       say(`creating a release of ${of} from build ${numberOf(build)}; ${starting.length > 0 ? `its creation starts ${starting.join(', ')} by itself` : 'no stage starts by itself'}.`);
       const made = await releases(repo, 'POST', '/releases', {
