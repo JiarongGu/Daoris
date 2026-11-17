@@ -64,7 +64,6 @@ internal sealed class LandingKind : ISupervisorKind
         }
 
         if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, keeping.Subject, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
-        // The step as listed: one another holder holds is no supervisor's, and the epoch read goes with the decision to its release.
         var step = LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt);
         var landing = new SupervisorLanding(
             keeping.Subject.Session, parts.Run, parts.Node, parts.Attempt, keeping.Generation, keeping.Do, keeping.Reasons, keeping.Holder, keeping.Bound)
