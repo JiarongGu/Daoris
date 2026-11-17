@@ -20,12 +20,16 @@ public sealed class PermissionWritersCensusTests
         var found = new List<string>();
         var scanned = 0;
         foreach (var project in Projects)
-        foreach (var path in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
         {
-            var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-            if (relative.Contains("/obj/") || relative.Contains("/bin/")) continue;
-            scanned++;
-            if (saves.IsMatch(File.ReadAllText(path)) && !relative.EndsWith("Agents/PermissionChange.cs", StringComparison.Ordinal)) found.Add(relative);
+            var files = Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)
+                .Where(path => !Path.GetRelativePath(root, path).Replace('\\', '/').Contains("/obj/") && !Path.GetRelativePath(root, path).Replace('\\', '/').Contains("/bin/"))
+                .ToList();
+            scanned += files.Count;
+            foreach (var path in CensusScope.Judged(typeof(PermissionWritersCensusTests), files))
+            {
+                var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+                if (saves.IsMatch(SourceTexts.Of(path)) && !relative.EndsWith("Agents/PermissionChange.cs", StringComparison.Ordinal)) found.Add(relative);
+            }
         }
 
         Assert.True(scanned > 100, $"the census read {scanned} files: its folders have drifted");

@@ -32,7 +32,9 @@ public sealed class CourseCensusTests
 
     /// <summary>A source's code with its whole-line comments taken out, so a doc that spells a shape is no site.</summary>
     internal static string WithoutComments(string text) =>
-        string.Join('\n', text.Split('\n').Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal)));
+        Uncommented.GetValue(text, each => string.Join('\n', each.Split('\n').Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal))));
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<string, string> Uncommented = new();
 
     private static JsonElement Table()
     {
@@ -65,7 +67,7 @@ public sealed class CourseCensusTests
             foreach (var through in site.GetProperty("through").EnumerateArray())
             {
                 var reader = Path.Combine(Root, "Daoris.Desktop.Driver", through.GetString()!.Replace('/', Path.DirectorySeparatorChar));
-                Assert.True(reads.IsMatch(WithoutComments(File.ReadAllText(reader))), $"{through} is named as a reader of the course and does not read it");
+                Assert.True(reads.IsMatch(WithoutComments(SourceTexts.Of(reader))), $"{through} is named as a reader of the course and does not read it");
             }
         }
 
@@ -75,7 +77,7 @@ public sealed class CourseCensusTests
         foreach (var path in ProductionFiles())
         {
             var relative = Relative(path);
-            var text = WithoutComments(File.ReadAllText(path));
+            var text = WithoutComments(SourceTexts.Of(path));
             foreach (var (shape, pattern) in shapes)
             {
                 var count = pattern.Matches(text).Count;
@@ -170,18 +172,18 @@ public sealed class CourseCensusTests
 
             Assert.Contains(named, Moving);
             if (named == "no move") continue;
-            var text = WithoutComments(File.ReadAllText(Path.Combine(Root, file)));
+            var text = WithoutComments(SourceTexts.Of(Path.Combine(Root, file)));
             Assert.True(Regex.IsMatch(text, @"\bMovedWords\.Asked\("), $"{file} is named as moving its words but asks no open to move them");
             if (named != "moves") continue;
 
             // A site whose destination's moved words another unit reads names that unit's file.
-            var reads = site.TryGetProperty("reads", out var reader) ? WithoutComments(File.ReadAllText(Path.Combine(Root, reader.GetString()!))) : text;
+            var reads = site.TryGetProperty("reads", out var reader) ? WithoutComments(SourceTexts.Of(Path.Combine(Root, reader.GetString()!))) : text;
             Assert.True(Regex.IsMatch(reads, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
         }
 
         // The ended limit move is read from the store's record, so the table names no box member and the move's source has none.
         Assert.False(table.TryGetProperty("box", out _), "the ended limit move's box members are retired");
-        var source = WithoutComments(File.ReadAllText(Path.Combine(Root, "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs")));
+        var source = WithoutComments(SourceTexts.Of(Path.Combine(Root, "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs")));
         Assert.DoesNotMatch(@"\b(DeliveredAsync|DeliveredToAsync|TakeUpBoxesAsync|TakeUpMovedAsync|box\.Moved)\b", source);
     }
 
@@ -196,12 +198,12 @@ public sealed class CourseCensusTests
     {
         var named = Table().GetProperty("records").EnumerateArray().ToList();
         var deciding = ProductionFiles()
-            .Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"\b[Mm]oves\.BeginAsync\("))
+            .Where(path => Regex.IsMatch(WithoutComments(SourceTexts.Of(path)), @"\b[Mm]oves\.BeginAsync\("))
             .Select(Relative).Order(StringComparer.Ordinal).ToList();
         Assert.Equal(deciding, named.Select(record => record.GetProperty("file").GetString()!).Distinct().Order(StringComparer.Ordinal));
         foreach (var record in named)
         {
-            var source = WithoutComments(File.ReadAllText(Path.Combine(Root, record.GetProperty("file").GetString()!)));
+            var source = WithoutComments(SourceTexts.Of(Path.Combine(Root, record.GetProperty("file").GetString()!)));
             var member = record.GetProperty("member").GetString()!;
             var at = Regex.Match(source, @"\b(Value)?Task(<[^>]+>)?\??\s+" + member + @"\(");
             Assert.True(at.Success, $"{member} is not in {record.GetProperty("file").GetString()}");
@@ -224,7 +226,7 @@ public sealed class CourseCensusTests
     [Fact]
     public void The_carry_is_coded_in_one_place()
     {
-        var carried = ProductionFiles().Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"moved\.carried")).Select(Relative).ToList();
+        var carried = ProductionFiles().Where(path => Regex.IsMatch(WithoutComments(SourceTexts.Of(path)), @"moved\.carried")).Select(Relative).ToList();
         Assert.True(
             carried.SequenceEqual(["Daoris.Desktop.Driver/Events/StartNoteCodes.cs"]),
             "the carry is written in: " + string.Join(", ", carried) + "; place path M");

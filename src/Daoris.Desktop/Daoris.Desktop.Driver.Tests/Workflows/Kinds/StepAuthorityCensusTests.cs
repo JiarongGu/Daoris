@@ -28,9 +28,9 @@ public sealed partial class StepAuthorityCensusTests
     private static string Root => Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "Daoris.Desktop.Driver");
 
     private static IEnumerable<(string Path, string Text)> Sources() =>
-        Directory.EnumerateFiles(Root, "*.cs", SearchOption.AllDirectories)
+        CensusScope.Judged(typeof(StepAuthorityCensusTests), Directory.EnumerateFiles(Root, "*.cs", SearchOption.AllDirectories))
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Select(file => (Path.GetRelativePath(Root, file).Replace('\\', '/'), File.ReadAllText(file)));
+            .Select(file => (Path.GetRelativePath(Root, file).Replace('\\', '/'), SourceTexts.Of(file)));
 
     /// <summary>The files that set the authority beside the four, and those under the kinds that leave the pass beside the runner.</summary>
     internal static IReadOnlyList<string> Strays(IEnumerable<(string Path, string Text)> sources) =>

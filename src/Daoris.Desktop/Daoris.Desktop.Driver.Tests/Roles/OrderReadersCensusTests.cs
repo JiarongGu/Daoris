@@ -34,11 +34,11 @@ public sealed partial class OrderReadersCensusTests
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
         foreach (var project in new[] { "Daoris.Desktop.Driver", "Daoris.Desktop.Modules" })
         {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
+            foreach (var file in CensusScope.Judged(typeof(OrderReadersCensusTests), Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)))
             {
                 var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
                 if (relative.Contains("/bin/") || relative.Contains("/obj/")) continue;
-                if (File.ReadLines(file).Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reads().IsMatch(line))) yield return relative;
+                if (SourceTexts.Of(file).Split('\n').Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reads().IsMatch(line))) yield return relative;
             }
         }
     }
@@ -46,7 +46,8 @@ public sealed partial class OrderReadersCensusTests
     [Fact]
     public void Every_direct_reader_of_a_roles_stored_order_is_in_the_census_and_every_census_file_still_reads_it()
     {
-        Assert.Equal([.. Census.Select(each => each.File).Order(StringComparer.Ordinal)], [.. Reading().Order(StringComparer.Ordinal)]);
+        var listed = CensusScope.Judged(typeof(OrderReadersCensusTests), Census.Select(each => each.File), file => "src/Daoris.Desktop/" + file);
+        Assert.Equal([.. listed.Order(StringComparer.Ordinal)], [.. Reading().Order(StringComparer.Ordinal)]);
         Assert.All(Census, each => Assert.False(string.IsNullOrWhiteSpace(each.Why)));
     }
 }

@@ -284,7 +284,12 @@ desktop's censuses (`censuses`: every test class that reads the sources by text 
 `Category!=Process&Category!=Census`, so each census runs once a run). At a merge the censuses judge the diff (CENSUSDIFF1): the
 merge writes its changed paths to a file under `_fixtures/census-scope/` and names it in `CENSUS_SCOPE` (`tools/merge/census-scope.ts`),
 a census marked diff-able in its project's `CensusMarks.cs` judges only those files, and one marked whole (a rule across files, or
-one not yet reading through `CensusScope`) judges the tree; each project's census of censuses holds every census marked once. With
+one not yet reading through `CensusScope`) judges the tree; each project's census of censuses holds every census marked once. A text
+census whose rule judges a file on its own text is diff-able: it walks through `CensusScope.Judged` (or `SourceCensus.Driver(type)`),
+a list it holds both ways judges the listed members of the scope's files (`Listed`, `Judged` with the member's path), and a count of the
+walk's reach is held by a run with no scope. A class whose facts mix is marked by its per-file ones; a fact across files in it
+(a uniqueness, a count, a structure of holders) reads the whole tree. The text censuses read each source once, and each one's
+comment-stripped text once, through `SourceTexts`. With
 no scope (the CI after the landing, a developer's run) every census judges the whole tree. A census class holds what a source says, never
 behaviour: a class whose few source-reading facts sat beside bridge or graph cases has those facts in a census class of its own
 (`ModuleSourcesCensusTests`), and its behaviour is the fast half's. A semantic census (the structure classes, the declarations'

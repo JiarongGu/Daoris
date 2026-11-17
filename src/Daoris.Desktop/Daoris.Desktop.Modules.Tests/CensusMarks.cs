@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class CensusMarks
 {
-    /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: none here yet.</summary>
+    /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: none here: the modules' censuses take 8 to 11 s in all with a one-file scope, the longest a table held both ways.</summary>
     internal static readonly string[] Diff = [];
 
     /// <summary>

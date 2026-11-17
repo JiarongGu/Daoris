@@ -182,12 +182,12 @@ public sealed partial class CheckoutWritersCensusTests
     [Fact]
     public void Every_git_write_is_named_with_what_it_writes_and_where()
     {
-        var found = Found(Sources());
+        var found = Found(CensusScope.JudgedByName(typeof(CheckoutWritersCensusTests), Sources(), each => each.File));
         var unnamed = found.Where(each => !Census.TryGetValue(each.Key, out var named) || !named.Calls.ToHashSet(StringComparer.Ordinal).SetEquals(each.Value))
             .Select(each => $"[\"{each.Key}\"] = ({string.Join(", ", each.Value.Select(call => $"\"{call}\""))})")
             .ToList();
         Assert.True(unnamed.Count == 0, "git writes not named as found:\n" + string.Join("\n", unnamed));
-        Assert.Empty(Census.Keys.Except(found.Keys));
+        Assert.Empty(CensusScope.JudgedByName(typeof(CheckoutWritersCensusTests), Census.Keys, name => name).Except(found.Keys));
         Assert.All(Census, each => Assert.False(string.IsNullOrWhiteSpace(each.Value.How), each.Key));
     }
 
@@ -195,7 +195,12 @@ public sealed partial class CheckoutWritersCensusTests
     [Fact]
     public void Each_writer_of_a_checkout_holds_its_repository_alone_once_and_each_start_holds_it_shared()
     {
-        var sources = Sources().GroupBy(each => each.File).ToDictionary(group => group.Key, group => Code(string.Join("\n", group.Select(each => each.Source))));
+        string[] looks = ["TreeLock", "BesideAsync(", ".SyncAsync(", "new RefTransaction()", "GitAsync("];
+        var sources = Sources().GroupBy(each => each.File).ToDictionary(group => group.Key, group =>
+        {
+            var text = string.Join("\n", group.Select(each => each.Source));
+            return looks.Any(look => text.Contains(look, StringComparison.Ordinal)) ? Code(text) : "";
+        });
         var writers = Census.Where(each => each.Value.Kind == Checkout).Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
         Assert.Equal(writers.Order(StringComparer.Ordinal), HeldIn.Keys.Order(StringComparer.Ordinal));
         foreach (var (writer, holder) in HeldIn)

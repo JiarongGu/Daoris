@@ -301,11 +301,11 @@ public sealed partial class HeldFactsTests : IDisposable
         string[] keeper = ["EndKeeping.cs"];
         string[] records = ["LandedBranches.cs", "SessionBranches.cs", "HeldFact.cs"];
         var offenders = new List<string>();
-        foreach (var file in Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories))
+        foreach (var file in CensusScope.Judged(typeof(HeldFactsTests), Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)))
         {
             if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)) continue;
             var name = Path.GetFileName(file);
-            var code = File.ReadAllText(file);
+            var code = SourceTexts.Of(file);
             if (!keeper.Contains(name) && HoldCall().IsMatch(code)) offenders.Add($"{name}: calls a record's Hold");
             if (!keeper.Contains(name) && !records.Contains(name) && code.Contains("new HeldFact(", StringComparison.Ordinal)) offenders.Add($"{name}: makes a HeldFact");
             var entries = code.Contains("GrownBranch", StringComparison.Ordinal) || code.Contains("LandedBranch", StringComparison.Ordinal);
