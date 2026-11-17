@@ -4,13 +4,14 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { tool, type Verdict, type GateResult, publish, type CiStatus } from './support/merge-branch.ts';
 import { git, TRAILER, CI_GATE, unordered, scratch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency: CASES_AT_ONCE }, () => {
 
   // A release's verification runs every gate at publish time when nothing verified main between.
   test("--ci gates main's tip in the gate tree: every gate at first, then what the paths since reach; a failure stays owed; its status and logs are the main checkout's, and the stage reads its verdicts", async () => {

@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { type Member, q, AT, type Queue, tool, type Candidate, procs, type ProcessRow, type Drained } from './support/merge-queue-kit.ts';
 import { queueScratch, alive, treeGate, TRAILER, TREE, pidsIn } from './support/merge-queue-scratch.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 import { PATIENCE } from '../test/_fixture.ts';
 
 // What the merge tool and its tests leave running slows the machine: waiters whose requests
@@ -23,7 +24,7 @@ function orphanNaming(marker: string): number {
   return Number(maker.stdout.trim());
 }
 
-describe('Nothing the merge tool and its tests start outlives what started it', { concurrency: true }, () => {
+describe('Nothing the merge tool and its tests start outlives what started it', { concurrency: CASES_AT_ONCE }, () => {
   const request = (branch: string, id: string): Member => ({ branch, tip: `${branch}-tip`, request: id });
   const asked = (member: Member) => ({ branch: member.branch, tip: member.tip, request: member.request! });
 
@@ -285,7 +286,7 @@ describe('Nothing the merge tool and its tests start outlives what started it', 
 // A drop that says it ended the run "with everything it started" must leave no tool-tests gate process running with its parent
 // gone: a fixture's `tree.mjs`, or a `node qgate.mjs check` with two node children. The drop ends each step by its tree of
 // parent ids; a test killed with its step has already orphaned those, or never gets to end them.
-describe('A dropped run ends what its tests had left running under the scope tree', { concurrency: true }, () => {
+describe('A dropped run ends what its tests had left running under the scope tree', { concurrency: CASES_AT_ONCE }, () => {
   const row = (pid: number, ppid: number, created: number, command: string) => ({ pid, ppid, created, command });
   const FOLDER = 'D:/work/repo/local/scope-tree';
   const SINCE = 1_000_000;

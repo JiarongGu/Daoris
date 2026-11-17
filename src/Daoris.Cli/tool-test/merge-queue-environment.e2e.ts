@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { tool, q, machine } from './support/merge-queue-kit.ts';
 import { makeFixture } from '../test/_fixture.ts';
 import { caseEnvironment, TRAILER, START_ENV, queueScratch, envGate, type SeenEnvironment } from './support/merge-queue-scratch.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // A case's enqueue must not wait on the main checkout's queue or start a runner there from the tree's tool,
 // with the class-probe case's PATH. Its cases run one at a time here, so the variables it sets in the test process meet no other case.
@@ -114,7 +115,7 @@ describe('A case reaches only its own scratch repository and queue', () => {
   });
 });
 
-describe("A gate sees none of the shell's home, role or git locating variables, end to end in a scratch repository", { concurrency: true }, () => {
+describe("A gate sees none of the shell's home, role or git locating variables, end to end in a scratch repository", { concurrency: CASES_AT_ONCE }, () => {
   // The invoker's shell can hold the install's home, a role and git's locating variables; the runner it starts, and the gates
   // of every verb, must not inherit them, while the machine's admission is still found from the home the tool read at its start.
   const ownedGate = () => JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check', memoryGb: 0.1 }] });

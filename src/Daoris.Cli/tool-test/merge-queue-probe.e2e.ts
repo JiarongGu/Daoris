@@ -11,9 +11,10 @@ import {
   TRAILER,
 } from './support/merge-queue-scratch.ts';
 import { type Candidate, type Failure, q, type Drained, sig } from './support/merge-queue-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 import { PATIENCE } from '../test/_fixture.ts';
 
-describe('A probe repeats a failure as composed, and a drop ends it, end to end in a scratch repository', { concurrency: true }, () => {
+describe('A probe repeats a failure as composed, and a drop ends it, end to end in a scratch repository', { concurrency: CASES_AT_ONCE }, () => {
   test('a probe repeats a failure as composed, so a test its own class pollutes fails again with its signature where alone it passes; a composition that would differ, or is not the one kept, is refused', async () => {
     const repo = queueScratch('verify-probe');
     const shims = join(repo.root, 'local', 'shims');

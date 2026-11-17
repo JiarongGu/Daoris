@@ -4,6 +4,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync,
 import { delimiter, dirname, join } from 'node:path';
 import { makeFixture, PATIENCE } from '../../test/_fixture.ts';
 import { TOOL, tool, type Gate, type Worktree, type Step, type GateResult, type Beside, type Reading, type Judging, processRun } from './merge-branch.ts';
+import { importBranch, seeded } from './e2e-repository.ts';
 
 
 // ---------------------------------------------------------------------------------------------------
@@ -613,14 +614,24 @@ export interface Scratch {
 }
 
 
-export function scratch(name: string, gates: { name: string; run: string }[], files: Record<string, string> = {}): Scratch {
-  const fx = makeFixture(`merge-branch-${name}`);
+/** An empty repository, made once in this test process and guarded there; each scratch copies it rather than start git twice. */
+const copyEmpty = seeded(() => {
+  const fx = makeFixture(`merge-branch-seed-${process.pid}`);
   const root = join(fx.root, 'repo');
   mkdirSync(root, { recursive: true });
   // No template: the sample hooks are a dozen files each repository would write for nothing.
   git(root, 'init', '--quiet', '--template=', '-b', 'main');
   // The guard the whole file rests on: this is its own repository, never the one around it.
   assert.equal(realpathSync(git(root, 'rev-parse', '--show-toplevel')).toLowerCase(), realpathSync(root).toLowerCase());
+  return { root, cleanup: fx.cleanup };
+});
+
+export function scratch(name: string, gates: { name: string; run: string }[], files: Record<string, string> = {}): Scratch {
+  const fx = makeFixture(`merge-branch-${name}`);
+  const root = join(fx.root, 'repo');
+  copyEmpty(root);
+  // The copy's own git storage, which git finds before any folder around it: the environment that finds it was guarded on the seed.
+  assert.ok(existsSync(join(root, '.git', 'HEAD')), `${root} has a repository of its own`);
 
   const write = (path: string, text: string) => {
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -672,15 +683,9 @@ export function scratch(name: string, gates: { name: string; run: string }[], fi
 }
 
 
+/** A branch of one commit on `from` holding `files`, written in one git start; the checkout stays as it was, untouched. */
 export function branch(root: string, name: string, files: Record<string, string>, { trailer = true, from = 'main' } = {}): void {
-  git(root, 'checkout', '--quiet', '-b', name, from);
-  for (const [path, text] of Object.entries(files)) {
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), text);
-  }
-  git(root, 'add', '-A');
-  git(root, 'commit', '--quiet', '-m', `work on ${name}${trailer ? TRAILER : ''}`);
-  git(root, 'checkout', '--quiet', 'main');
+  importBranch(root, { ...fixtureEnv(), ...GIT_ENV }, { name, from, files, message: `work on ${name}${trailer ? TRAILER : ''}` });
 }
 
 

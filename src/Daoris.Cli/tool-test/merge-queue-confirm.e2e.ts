@@ -9,8 +9,9 @@ import {
   queueScratch, confirmGate, TRAILER, pause, pollutedDotnet, pathOf, treeGate, TREE, pidsIn, alive,
 } from './support/merge-queue-scratch.ts';
 import { machine, type ScopeRun, q, type Evidence, tool } from './support/merge-queue-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
-describe("The confirm run and the unconfirmed policies, end to end in a scratch repository", { concurrency: true }, () => {
+describe("The confirm run and the unconfirmed policies, end to end in a scratch repository", { concurrency: CASES_AT_ONCE }, () => {
   // The confirm run (design §4.5, §5.3 step 3) in the queue's runner, before any base or prefix run.
 
   /** Two branches queued into one candidate: the runner is held until both are queued, then forms them together. Answers both waits. */

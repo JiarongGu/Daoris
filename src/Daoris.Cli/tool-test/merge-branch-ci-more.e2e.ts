@@ -5,13 +5,14 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, w
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { tool, type Verdict, type ClassVerdict, type CiStatus, type CiGate } from './support/merge-branch.ts';
 import { git, TRAILER, CI_GATE, FAKE_DOTNET_REACH, DESK_FILES, waitFor, scratch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurrency: CASES_AT_ONCE }, () => {
 
   test('--ci runs a Process half by reach:the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {
     const repo = scratch('ci-reach', [
