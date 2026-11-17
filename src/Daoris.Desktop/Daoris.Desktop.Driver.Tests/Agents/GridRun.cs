@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class GridRun
 {
-    private const int Width = 8;
+    private const int Width = 16;
 
     public static async Task<IReadOnlyList<(TCase Case, TResult Result)>> InOrder<TCase, TResult>(
         IEnumerable<TCase> grid, Func<TCase, Task<TResult>> run)
