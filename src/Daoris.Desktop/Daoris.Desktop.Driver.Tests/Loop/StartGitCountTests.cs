@@ -90,9 +90,8 @@ public sealed class StartGitCountTests : IDisposable
         _output.WriteLine(report);
         Assert.True(before.Count > 0, report);
         Assert.True(before.Count(each => each.Contains("symbolic-ref --short refs/remotes/origin/HEAD", StringComparison.Ordinal)) <= 1, report);
-        // The tree is opened before the agent starts, and its `worktree add` may be the start's first git (the line is known to the
-        // opening, no guess ahead of it). One spelling per ref fact: the line's commit read after the tree is made is the same
-        // command, asked again past the `worktree add` that made a branch.
+        // The `worktree add` may be the start's first git: the opening knows the line. One spelling per ref fact: the line's commit
+        // read after the tree is made is the same command, asked again past the `worktree add` that made a branch.
         var made = before.FindIndex(each => each.Contains(" worktree add ", StringComparison.Ordinal));
         Assert.True(made >= 0, report);
         Assert.True(before.Take(made).Count(each => each == "git rev-parse --verify --quiet refs/heads/main^{commit}") <= 1, report);
