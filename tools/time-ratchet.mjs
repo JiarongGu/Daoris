@@ -11,8 +11,8 @@
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
- * Only a timing taken alone is judged: a record marked with more than one heavy run under way (`tools/time-load.mjs`) is kept as
- * "under load" and fails nothing. Run inside a merge or preflight, with `DAORIS_RATCHET_SINCE` or a `run-start.json` marker, it judges
+ * Only a timing taken alone is judged: a record marked with more than one heavy run under way, or with test runs of another tree
+ * beside it that took no admission place (`tools/time-load.mjs`), is kept as "under load" and fails nothing. Run inside a merge or preflight, with `DAORIS_RATCHET_SINCE` or a `run-start.json` marker, it judges
  * only the records that run wrote. A test timed only under load is measured again alone when the machine is free, else said unmeasured.
  */
 import { spawnSync } from 'node:child_process';
