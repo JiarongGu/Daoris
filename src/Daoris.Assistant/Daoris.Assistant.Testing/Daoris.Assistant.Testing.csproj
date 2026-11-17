@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Assistant.props" />
+
+  <!--
+    The fakes of the assistant's ports and the contract cases each fake and its real side in the desktop adapter both pass, so a fake
+    that drifts from the driver fails at the adapter's run and not in a room test months later. A test-only library: no shipping
+    project references it.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Assistant.Testing</RootNamespace>
+    <AssemblyName>Daoris.Assistant.Testing</AssemblyName>
+    <Description>the fakes of the assistant's ports and the contract cases that hold each fake to its real side</Description>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Assistant\Daoris.Assistant.csproj" />
+  </ItemGroup>
+
+</Project>

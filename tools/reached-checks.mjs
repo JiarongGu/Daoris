@@ -15,7 +15,7 @@
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
  * left to the nightly run, and said.
  *
- *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
+ *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]] [--halt-file <path>]
  * `--tier fast` is a merge's, `--tier heavy` the run after its landing's (`merge/heavy-tier.ts`); with none, both.
  *
  * The changed paths are the checkout's since `--base` (HEAD where none is named: an open merge's); a committed tree's need its base,
@@ -32,6 +32,11 @@
  * one the merge queue's gates take, and says what it waits for; a light group runs at once. The place is let go as the group ends,
  * and by this process's death where it is killed. The merge's own `reached` gate runs inside the queue's place, with no Daoris home,
  * so it takes none of its own.
+ *
+ * The heavy tier after a landing runs it with `--halt-file <path>` (`tools/heavy-run.mjs`): when a newer landing's tier writes that
+ * file, no group starts, the group in flight is ended where the newer commit changes what its classes read and finished otherwise,
+ * and the classes left are named in the last line's `handed` (`merge/heavy-halt.ts`). A heavy tier's wait for the machine's admission
+ * past `WAIT_BOUND_MS` is said on a `heavy tier:` line.
  *
  * Exit codes: 0 clean or nothing reached · 1 a reached unit failed · 2 a tool error.
  */
@@ -54,12 +59,24 @@ import { StepClock } from './merge/reached-steps.ts';
 import { inPlace } from './merge/reached-admit.ts';
 import { createAdmission } from './machine-admission.mjs';
 import { loadSampler, stampLoad } from './time-load.mjs';
-/** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. */
-const execAsync = (command, args, cwd) => new Promise((done) => {
+import { HEAVY_PREFIX } from './merge/heavy-after.ts';
+import { createHalt, wired } from './merge/heavy-halt.ts';
+import { WAIT_BOUND_MS } from './merge/heavy-stack.ts';
+import { endTree } from './merge/step-trees.ts';
+/** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. `started` hears its pid. */
+const execAsync = (command, args, cwd, started) => new Promise((done) => {
   const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true });
-  child.on('error', () => done(null));
-  child.on('close', (code) => done(code));
+  started?.(child.pid ?? null);
+  child.on('error', () => { started?.(null); done(null); });
+  child.on('close', (code) => { started?.(null); done(code); });
 });
+
+/** The paths `commit` changed against this tree's HEAD: what a newer heavy tier's commit changes, for its halt. */
+function newerPaths(root, commit) {
+  const ran = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD', commit], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (ran.status !== 0) throw new Error(`git could not read what ${commit} changed: ${String(ran.stderr).trim()}`);
+  return ran.stdout.split('\0').filter(Boolean);
+}
 
 /** The machine's admission as a builder takes it, its holds let go where an interrupt ends the process before a `finally` runs. */
 export function builderAdmission(admission = createAdmission({ kind: 'session' })) {
@@ -170,17 +187,30 @@ async function main(argv) {
   const checkout = verdictsHome(root);
   const findings = readJson(join(checkout, CI_FINDINGS)).findings ?? [];
   const verdicts = readJson(join(checkout, CLASS_VERDICTS_FILE)).gates ?? {};
-  const admission = builderAdmission();
+  // A heavy tier's wait for the machine past its bound is said on the line the steward's monitor reads.
+  const bound = tier === 'heavy'
+    ? { ms: WAIT_BOUND_MS, say: (waited, sentence) => say(`${HEAVY_PREFIX} its reached run has waited ${Math.round(waited / 60_000)} min for the machine's heavy-run admission, past its bound of ${WAIT_BOUND_MS / 60_000} min: ${sentence}`) }
+    : null;
+  const admission = builderAdmission(createAdmission({ kind: 'session', bound }));
   const processSuites = world ? processSuitesOf(world.gates) : new Set();
+  const haltFile = valueOf(argv, '--halt-file');
+  const halt = haltFile && world
+    ? createHalt({ file: haltFile, changedSince: (commit) => newerPaths(root, commit), reaches: (unit, path) => world.context.reaches(unit, path), end: (pid) => { endTree(pid); }, say })
+    : null;
+  const unwatch = halt?.watch(2_000);
+  const place = (group, fn) => inPlace(group, { admission, processSuites, ...(halt ? { halted: halt.asked } : {}) }, fn);
+  const run = halt ? wired(halt, execAsync, place) : { exec: execAsync, inPlace: place };
   const startedAt = Date.now();
   const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
     root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock,
-    exec: execAsync,
-    inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
+    exec: run.exec,
+    inPlace: run.inPlace,
+    ...(halt ? { halt } : {}),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
     build: (projects) => buildOnce(projects, { root, exec: execAsync, say, time: (step, fn) => clock.time(step, fn), inputsOf: (project) => inputsOf(root, world, project) }),
   });
+  unwatch?.();
   load.stop();
   stampLoad(join(root, '_fixtures', 'test-timing'), load.peak(), startedAt);
   if (!measure) store.save();

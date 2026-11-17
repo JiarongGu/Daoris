@@ -41,7 +41,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Session
 
     /// <summary>What a start of <paramref name="target"/> asks of <paramref name="adapter"/>'s spawn, under the machine's command for it.</summary>
     public SpawnRequest Request(AgentDoor adapter, SessionTarget target) =>
-        SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value), delegates);
+        SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value), delegates, agent: ProviderRegistry.AgentNameOf(adapter));
 
     /// <summary>
     /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked: the same

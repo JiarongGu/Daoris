@@ -136,6 +136,7 @@ export const SHARED_PROJECTS: ReadonlyMap<string, readonly string[]> = new Map([
   ['src/Daoris.Desktop', ['src/Daoris.Contracts', 'tools/contracts', 'src/Daoris.Adapters', 'src/Daoris.Ports', 'src/Daoris.Testing']],
   ['src/Daoris.Service', ['src/Daoris.Contracts', 'src/Daoris.Adapters', 'src/Daoris.Ports', 'src/Daoris.Testing']],
   ['src/Daoris.Adapters', ['src/Daoris.Ports', 'src/Daoris.Testing']],
+  ['src/Daoris.Assistant', ['src/Daoris.Ports']],
   ['src/Daoris.Testing', ['src/Daoris.Ports']],
   ['src/Daoris.Testing.Tests', ['src/Daoris.Testing', 'src/Daoris.Ports']],
 ]);

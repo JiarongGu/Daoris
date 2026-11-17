@@ -496,13 +496,22 @@ public sealed class LineAccountTests : IDisposable
     /// the answer is the pick's alone: it does not move with the others' states, the trigger or the line's kind, since a pick is the one
     /// account, never moved. Where the adapter has no accounts there is nothing to pick, and it spawns as it always did.
     /// </summary>
-    [Fact]
-    public async Task A_recorded_pick_holds_every_case_of_the_grid_to_its_account()
+    [Theory]
+    [InlineData(OwnState.Ready)]
+    [InlineData(OwnState.Cooling)]
+    [InlineData(OwnState.SignedOut)]
+    [InlineData(OwnState.Refused)]
+    [InlineData(OwnState.Missing)]
+    [InlineData(OwnState.MissingCooling)]
+    [InlineData(OwnState.Kept)]
+    [InlineData(OwnState.NotOffered)]
+    [InlineData(OwnState.NoToolchain)]
+    public async Task A_recorded_pick_holds_every_case_of_the_grid_to_its_account(OwnState own)
     {
         var failures = new List<string>();
         var byOwn = new Dictionary<(OwnState, StartKind), (string Key, Answered Answer)>();
         var cases = 0;
-        foreach (var (each, (today, rule)) in await GridRun.InOrder(Grid(), async each => (await Today(each, picked: true), await Rule(each, picked: true))))
+        foreach (var (each, (today, rule)) in await GridRun.InOrder(Grid().Where(each => each.Own == own), async each => (await Today(each, picked: true), await Rule(each, picked: true))))
         {
             cases++;
             if (today.Answer != rule.Answer || today.Walks != rule.Walks || today.Starts != rule.Starts)
@@ -520,11 +529,16 @@ public sealed class LineAccountTests : IDisposable
         }
 
         Assert.True(failures.Count == 0, $"{failures.Count} of {cases} cases disagree:\n" + string.Join("\n", failures.Take(25)));
-        // Every own state with an account, for a driven and for a conversation's start, is read.
+        // An own state with an account is read for a driven and for a conversation's start.
+        Assert.Equal(own == OwnState.NoToolchain ? 0 : 2, byOwn.Count);
+    }
+
+    [Fact]
+    public void The_picks_grid_reads_every_own_state_the_theory_names()
+    {
         Assert.Equal(
-            [OwnState.Ready, OwnState.Cooling, OwnState.SignedOut, OwnState.Refused, OwnState.Missing, OwnState.MissingCooling, OwnState.Kept, OwnState.NotOffered],
-            byOwn.Keys.Select(key => key.Item1).Distinct().OrderBy(own => own));
-        Assert.Equal(16, byOwn.Count);
+            [OwnState.Ready, OwnState.Cooling, OwnState.SignedOut, OwnState.Refused, OwnState.Missing, OwnState.MissingCooling, OwnState.Kept, OwnState.NotOffered, OwnState.NoToolchain],
+            Grid().Select(each => each.Own).Distinct().OrderBy(own => own));
     }
 
     /// <summary>

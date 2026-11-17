@@ -13,15 +13,16 @@ public sealed record ReviewStopped(string Run, string Review, bool Following, IR
 }
 
 /// <summary>
-/// The review's <i>Stop…</i>: before its Accept it stops the run, every live step stopped as the person's with their words, as an abandon
-/// stops a run's steps; after it, <i>Stop what follows…</i> stops each step after the review that has not come to its end, a step under way
-/// where its door can stop it. Each says what stays by the kind of work the review read, and never promises an undo.
+/// The review's <i>Stop…</i>: before its Accept it stops the run, every live step stopped as its speaker's word at the settle door; after it,
+/// <i>Stop what follows…</i> stops each step after the review that has not come to its end, a step under way where its door can stop it.
+/// Each says what stays by the kind of work the review read, and never promises an undo.
 /// </summary>
 public static class ReviewStops
 {
-    /// <summary>Keeps the stop of <paramref name="review"/> on <paramref name="run"/>: the run's, or what follows where the review is accepted.</summary>
+    /// <summary>Keeps the stop of <paramref name="review"/> on <paramref name="run"/> as <paramref name="settle"/> speaks it (none is the person's).</summary>
     public static async Task<ReviewStopped> StopAsync(
-        NodeRecordFiles records, IIntegrationDoor door, string run, string review, string? words, Func<DateTimeOffset> clock, CancellationToken ct = default)
+        NodeRecordFiles records, IIntegrationDoor door, string run, string review, string? words, Func<DateTimeOffset> clock, CancellationToken ct = default,
+        SettleBy? settle = null)
     {
         run = run.Trim().TrimStart('#');
         if (new GraphRuns(records).Find(run) is not { } bound) return Refused(run, review, RunNodeWords.NotRun);
@@ -35,12 +36,15 @@ public static class ReviewStops
         var after = following ? After(graph, review) : null;
         var steps = graph.Nodes.Where(node => after is null || after.Contains(node.Id)).ToList();
         var stopped = new List<string>();
+        string? refused = null;
         foreach (var node in steps.Where(node => NodeStates.Live.Contains(WorkPerformer.StatusOf(record, node.Id).State)))
         {
-            var done = await RunNodeWords.WordAsync(records, door, run, node.Id, NodeWordActs.Stop, words, clock, ct).ConfigureAwait(false);
+            var done = await RunNodeWords.WordAsync(records, door, run, node.Id, NodeWordActs.Stop, words, clock, ct, settle: settle).ConfigureAwait(false);
             if (done.Done) stopped.Add(node.Id);
+            else refused ??= done.Refused;
         }
 
+        if (stopped.Count == 0 && refused is not null) return Refused(run, review, refused);
         var happened = steps.Where(node => following && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Reached).Select(node => node.Id).ToList();
         var kind = ReviewRecords.Read(records.Home, run, review, (following ? status.Acceptance?.Attempt : null) ?? status.Attempt)?.Kind;
         return new ReviewStopped(run, review, following, stopped, happened, Stays(kind, following));

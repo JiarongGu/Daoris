@@ -1,0 +1,8 @@
+{
+  "suite": "assistant",
+  "tests": "src/Daoris.Assistant/Daoris.Assistant.Tests",
+  "sources": ["src/Daoris.Assistant/Daoris.Assistant", "src/Daoris.Assistant/Daoris.Assistant.Testing"],
+  "contract": [],
+  "ports": ["Clocks"],
+  "outside": []
+}

@@ -10,7 +10,7 @@ import type { ReachedGroup } from './reached.ts';
 export const WHOLE_SUITE_CLASSES = 8;
 
 /** The place in the machine's admission: `take` waits its turn and answers the hold (null where nothing is shared or the wait ended). */
-export type Admission = { take: (options: { what: string }) => Promise<{ release: () => void } | null> };
+export type Admission = { take: (options: { what: string; halted?: () => boolean }) => Promise<{ release: () => void } | null> };
 
 /** By the group's tier and suite, never by a class's name: real processes (the Process settings), a rehearsal, or a whole suite. */
 export function groupIsHeavy(group: ReachedGroup, processSuites: ReadonlySet<string>): boolean {
@@ -19,10 +19,10 @@ export function groupIsHeavy(group: ReachedGroup, processSuites: ReadonlySet<str
   return group.units.length >= WHOLE_SUITE_CLASSES;
 }
 
-/** `fn` run holding the group's place where the group is heavy, let go as `fn` ends however it ends; a light group runs at once. */
-export async function inPlace<T>(group: ReachedGroup, { admission, processSuites }: { admission: Admission | null; processSuites: ReadonlySet<string> }, fn: () => Promise<T>): Promise<T> {
+/** `fn` run holding the group's place where the group is heavy (a `halted` true ends the wait), let go as `fn` ends; a light group runs at once. */
+export async function inPlace<T>(group: ReachedGroup, { admission, processSuites, halted }: { admission: Admission | null; processSuites: ReadonlySet<string>; halted?: () => boolean }, fn: () => Promise<T>): Promise<T> {
   if (!admission || !groupIsHeavy(group, processSuites)) return fn();
-  const hold = await admission.take({ what: `reached checks, ${group.suite} (${group.units.length} ${group.units.length === 1 ? 'class' : 'classes'})` });
+  const hold = await admission.take({ what: `reached checks, ${group.suite} (${group.units.length} ${group.units.length === 1 ? 'class' : 'classes'})`, ...(halted ? { halted } : {}) });
   try {
     return await fn();
   } finally {
