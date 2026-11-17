@@ -2,9 +2,12 @@
  * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, run after
  * the npm installs a moved lockfile owes, built once per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
  * settling: which failures are main's, what the record and the summary say. `tools/merge-branch.mjs` hands this its own seams.
+ * Each gate's time breaches (the lines its log says, and its own kill at its budget, sampled for load) ride on its result, and the
+ * settling writes them to `breaches.json` beside the gates' logs (`reportBreaches`).
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { breachLines, gateBreach, parseBreaches, separations, writeBreaches, type Breach, type LoadSeam, type Separation } from '../time-why.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { ClassReplay } from './full-replay.ts';
 import type { LockInstalls } from './lock-install.ts';
@@ -13,7 +16,7 @@ import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.t
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
 import { parseOutcome, type ClassOutcome } from './reached-classify.ts';
 import { parseSteps, type Step } from './reached-steps.ts';
-import { overBudgetNote } from './timeout.ts';
+import { againNote, killNote, overBudgetNote, waitFree } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
 
@@ -22,7 +25,7 @@ export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
   failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; classReplay?: ClassReplay; abnormal?: boolean; slowest?: Slow[];
   left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; classes?: ClassOutcome; key?: VerdictKey; flakes?: string[];
-  steps?: Step[]; [other: string]: unknown;
+  steps?: Step[]; breaches?: Breach[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
 
@@ -45,6 +48,8 @@ export type FlowDeps = {
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
+  /** The machine's load around a gate with a budget: none read where absent. */
+  load?: LoadSeam;
   replayAll?: boolean;
   privateOf?: (where: string) => string;
 };
@@ -111,8 +116,13 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     release(pid) { return trees ? trees.release(pid) : false; },
     end(why) { trees?.end(why); },
   };
+  // The run again of a gate killed at its budget under load is a whole run, once the machine is free, never a memory death's.
+  const first = (beside.again as GateResult | undefined)?.cause === 'load' ? beside.again as GateResult : null;
+  const { again: _again, ...fresh } = beside;
+  const waited = first && deps.load ? await waitFree(deps.load, () => Boolean(trees?.ended)) : null;
   const started = Date.now();
   const budget = deps.timeoutMs(gate);
+  const sampler = budget === null ? null : deps.load?.sample() ?? null;
   const timer = budget === null ? null : setTimeout(() => {
     expired = 'over its budget';
     for (const pid of roots) deps.killTree(pid);
@@ -120,12 +130,14 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const startedAt = new Date(started).toISOString();
   let result: GateResult;
   try {
-    result = await deps.runGate(where, { ...gate, run: logged.run }, logs, { ...beside, noBuild: reused ? false : noBuild, trees: mine, step, ...(base ? { base } : {}) });
+    result = await deps.runGate(where, { ...gate, run: logged.run }, logs, { ...(first ? fresh : beside), noBuild: reused ? false : noBuild, trees: mine, step, ...(base ? { base } : {}) });
   } catch (error) {
     result = { gate, code: null, log: join(logs, `${gate.name}.log`), verdict: 'FAIL', note: '', ms: Date.now() - started, abnormal: true };
     result.note = `ended abnormally: ${error instanceof Error ? error.message : String(error)}; the run goes on with the next gate`;
   }
   if (timer) clearTimeout(timer);
+  const peak = sampler ? sampler.peak() : null;
+  sampler?.stop();
   result.gate = gate;
   if (key) result.key = key;
   if (narrowed) result.classReplay = narrowed.replay;
@@ -133,10 +145,25 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const outcome = said ? parseOutcome(said) : null;
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
+  const breaches = parseBreaches(said);
   if (expired !== null && budget !== null && !trees?.ended) {
-    Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note: overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name), steps) });
+    const kill = gateBreach({ gate: gate.name, ms: Date.now() - started, budget, steps, peak, fails: true });
+    const loaded = kill.cause === 'load';
+    const again = loaded && !first;
+    const note = overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name), steps) + killNote({ loaded, peak, again, waited: first ? waited ?? { free: true } : null });
+    Object.assign(result, { verdict: 'FAIL', overBudget: true, again, note, ...(loaded ? { cause: 'load' } : {}) });
     result.slowest = deps.lastSlowest(gate.name);
+    breaches.push({ ...kill, fails: !again });
+  } else if (first) {
+    result.note = againNote(result.verdict, waited ?? { free: true, ms: 0 }, result.note);
   }
+  if (first) {
+    const ran = result.overBudget ? 'killed again' : result.verdict === 'PASS' ? 'passed' : `ended ${result.verdict}`;
+    const carried = (first.breaches ?? []).map((each) => (each.kind === 'gate' && each.cause === 'load' ? { ...each, evidence: `${each.evidence}; run again alone: ${ran}` } : each));
+    breaches.unshift(...carried);
+    result.ms = (first.ms ?? 0) + (result.ms ?? 0);
+  }
+  if (breaches.length) result.breaches = breaches;
   if (!result.overBudget && result.verdict === 'FAIL' && typeof result.code === 'number' && abnormalEnd(result.code)) {
     result.abnormal = true;
     result.note = `ended abnormally (exit ${result.code}: a signal or a crash, not a check's verdict); ${result.note}`.replace(/; $/, '');
@@ -181,11 +208,25 @@ const gateRecord = (result: GateResult): GateRecord => ({
 });
 
 /**
- * A merge's gates settled: each failure main already has (its test, its signature) set down as main's, the failed gates left
- * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock.
+ * The time breaches of a run's gates, each with its cause, written to `breaches.json` in `dir` (where given) with the separation
+ * candidates they make: `{ breaches, separations, file }`, or nothing where there is no breach. The merge record and the queue's
+ * scope-run record carry the first two.
  */
-export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
-  branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[];
+export function reportBreaches(results: readonly GateResult[], dir: string | null = null): { breaches?: Breach[]; separations?: Separation[]; file?: string } {
+  const breaches = results.flatMap((result) => result.breaches ?? []);
+  if (!breaches.length) return {};
+  const found = separations(breaches);
+  const file = dir ? writeBreaches(dir, breaches, found) : null;
+  return { breaches, ...(found.length ? { separations: found } : {}), ...(file ? { file } : {}) };
+}
+
+/**
+ * A merge's gates settled: each failure main already has (its test, its signature) set down as main's, the failed gates left
+ * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock; the time
+ * breaches are written beside the gates' logs in `dir`.
+ */
+export function settleMerge({ branch, at, wallMs, results, mains, previous, dir = null }: {
+  branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[]; dir?: string | null;
 }): { failed: GateResult[]; held: Held[]; lines: string[]; record: MergeRecord } {
   const ms = results.reduce((sum, result) => sum + (result.ms ?? 0), 0);
   const held: Held[] = [];
@@ -198,14 +239,15 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
     }
   }
   const records = results.map(gateRecord);
+  const { breaches = [], separations: found = [], file = null } = reportBreaches(results, dir);
   const record = buildRecord({
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
-    deferred: results.flatMap((result) => result.classes?.deferred ?? []),
+    deferred: results.flatMap((result) => result.classes?.deferred ?? []), breaches, separations: found,
   });
   const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [], steps: result.steps ?? [] }));
   const failed = results.filter((result) => result.verdict === 'FAIL' && !result.mainRed);
   return {
     failed, held, record,
-    lines: [...mainRedLines(held), ...unspecificLines(mains, failed.map((result) => result.gate.name)), ...budgetLines(timed, ms)],
+    lines: [...mainRedLines(held), ...unspecificLines(mains, failed.map((result) => result.gate.name)), ...budgetLines(timed, ms), ...breachLines(breaches, found, { file })],
   };
 }

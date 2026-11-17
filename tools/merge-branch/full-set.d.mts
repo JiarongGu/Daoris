@@ -7,6 +7,9 @@ export const READERS: { tsSuites: unknown; tsReaches: unknown; unitReaches: unkn
 export function storeFile(checkout: string): string;
 export function replaySummary(results: unknown[], say?: (line: string) => void): void;
 export function sweptBy(results: unknown[], commit: string, at: string, isProcessGate: (gate: unknown) => boolean): { gate: string; at: string; commit: string; kind: 'full' }[];
+export function workingCensus(root: string, tree?: { files: string[]; read: (path: string) => string }): {
+  files: string[]; read: (path: string) => string; map: TestMap; hit: boolean; tree: string | null;
+};
 export function keyContextOf(root: string): World;
 export function fullReplayOf(options: { root: string; checkout: string; dir: string; commit: string; say?: (line: string) => void; world?: World | null }): {
   narrow(gate: { name: string; run: string; reach?: unknown }): Narrowed | null;

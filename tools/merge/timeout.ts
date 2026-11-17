@@ -1,13 +1,22 @@
 /**
  * The wall-clock budget of a gate: its declared `timeoutMinutes`, else five minutes in a merge and ten in the full set or the CI.
- * A gate past it is killed with what it started and fails as over-budget. `--no-timeout` turns it off for an investigation and
- * the summary says so.
+ * A gate past it is killed with what it started, and its kill is a breach that says why (`tools/time-why.mjs`). Where the load
+ * sampler saw more heavy runs under way than the gate's own place while it ran, the kill is the load's: the gate fails nothing yet
+ * and runs again once, whole and alone, after every other gate has ended and once the machine is free (`waitFree`: the admission's
+ * places and other trees' test runs no more than its own, read every 15 s for up to 10 min). Only a kill alone fails as the gate's
+ * time; a second kill under load fails as load, saying the machine was not free. The budget is never scaled by the load: a kill
+ * alone is the one measure of the gate's own time. `--no-timeout` turns the budget off for an investigation and the summary says so.
  */
+import type { LoadSeam } from '../time-why.mjs';
 import { stepsLine, type Step } from './reached-steps.ts';
 import type { Slow } from './timing.ts';
 
 export const MERGE_GATE_MINUTES = 5;
 export const FULL_GATE_MINUTES = 10;
+
+/** How long a gate killed under load waits for the machine to be free before it runs again anyway, and how often it reads it. */
+export const FREE_WAIT_MS = 10 * 60_000;
+export const FREE_EVERY_MS = 15_000;
 
 export const timeoutState = {
   off: false,
@@ -29,3 +38,29 @@ export function overBudgetNote(ranMs: number, budget: number, slowest: Slow[], s
   const said = steps.length ? `; its steps: ${stepsLine(steps)}` : '';
   return `over-budget: killed after ${minutes(ranMs)} min, its budget is ${minutes(budget)} min${said}${slow ? `; slowest in its last record: ${slow}` : ''}`;
 }
+
+/** Until the machine is free, read every `everyMs` for up to `deadlineMs` or until `halted()`: whether it was, and how long that took. */
+export async function waitFree(load: LoadSeam, halted: () => boolean = () => false, deadlineMs = FREE_WAIT_MS, everyMs = FREE_EVERY_MS): Promise<{ free: boolean; ms: number }> {
+  const from = load.now();
+  for (;;) {
+    if (load.free()) return { free: true, ms: load.now() - from };
+    if (halted() || load.now() - from >= deadlineMs) return { free: false, ms: load.now() - from };
+    await load.sleep(everyMs);
+  }
+}
+
+/** What a kill adds to the over-budget note: under load, that it runs again alone; on the run again, what that run showed. */
+export function killNote({ loaded, peak, again, waited }: { loaded: boolean; peak: number | null; again: boolean; waited: { free: boolean } | null }): string {
+  if (again) return `; under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`;
+  if (!waited) return '';
+  if (!loaded) return '; killed at its budget under load, then killed again run alone: the time is the gate\'s';
+  const why = waited.free ? 'the load came back while it ran' : `the machine was not free within ${minutes(FREE_WAIT_MS)} min`;
+  return `; killed at its budget under load, then again under load: ${why}; run it again when the machine is free`;
+}
+
+/** The note of a gate killed under load whose run again alone ended without a kill. */
+export const againNote = (verdict: string, waited: { free: boolean; ms: number }, note: string): string => [
+  `killed at its budget under load, then ${verdict === 'PASS' ? 'passed' : `ended ${verdict}`} run again alone`
+  + `${waited.ms ? ` after ${minutes(waited.ms)} min waiting for the machine${waited.free ? '' : ', which was not free'}` : ''}`,
+  note,
+].filter(Boolean).join('; ');

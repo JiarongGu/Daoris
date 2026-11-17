@@ -10,6 +10,16 @@ test('the time check named to --rerun is no gate to run again, and the other nam
   assert.deepEqual(gatesToRerun(['time-ratchet']), []);
 });
 
+test('the ratchet\'s breaches, each with its cause, ride on its result and stay out of its note', () => {
+  const breach = { kind: 'test', name: 'A.Tests.slow', ms: 40_000, limit: 30_000, cause: 'clock', evidence: '2 waits', fix: 'UNITPURE1', fails: true };
+  const output = `time-ratchet: over budget: A.Tests.slow took 40000 ms\ntime-breach: ${JSON.stringify(breach)}\ntime-ratchet: A.Tests.slow took 40000 ms, over its 30000 ms limit\n`;
+  const result = ratchetStep(() => ({ status: 1, output }), 0, () => 0);
+  assert.deepEqual(result.breaches, [breach]);
+  assert.doesNotMatch(result.note, /time-breach/);
+  assert.match(result.note, /^2 lines: /);
+  assert.equal(ratchetStep(() => ({ status: 0, output: 'clean\n' }), 0, () => 0).breaches, undefined);
+});
+
 test('a rerun judges the records since the merge began, not only since its own start', async () => {
   const asked: number[] = [];
   const ratchet = (since: number) => { asked.push(since); return { status: 0, output: 'clean\n' }; };
