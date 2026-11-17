@@ -158,14 +158,18 @@ internal sealed record SpelledNames(IReadOnlySet<string> Declares, IReadOnlySet<
 }
 
 /// <summary>
-/// The reference map: each tree's <see cref="SpelledNames"/>, read from its syntax and kept under <c>_fixtures/census-reach/</c> by the hash
-/// of its text and the map's format, so a run reads again only the trees whose text changed. The file holds the trees the last run
-/// read, written whole to a scratch name and moved over the old, so a run beside it reads one or the other.
+/// The reference map: each source's <see cref="SpelledNames"/>, read from its syntax and kept under <c>_fixtures/census-reach/</c> by the
+/// hash of its text and the map's format, so a run parses again only the sources whose text changed. The file keeps every text it was
+/// given until it holds more than <see cref="MostKept"/>, when it keeps only the run's; it is written whole to a scratch name and
+/// moved over the old, so a run beside it reads one or the other.
 /// </summary>
 internal static class ReferenceMap
 {
     /// <summary>The map's format, part of every key: a change to what a line holds makes every key new.</summary>
     internal const string Format = "census-reach/1";
+
+    /// <summary>The most texts the file keeps before it drops those this run did not read: about four times the desktop tree's sources.</summary>
+    internal const int MostKept = 16_000;
 
     /// <summary>The map's file in the workspace's scratch.</summary>
     internal static string Stored => Path.Combine(WorkspaceRoot.Folder, "_fixtures", "census-reach", "names.tsv");
@@ -201,7 +205,7 @@ internal static class ReferenceMap
                 return SpelledNames.Read(CSharpSyntaxTree.ParseText(text, Parse).GetRoot());
             });
         })];
-        if (s_read != before) Save(Stored, kept.Where(each => Used.ContainsKey(each.Key)));
+        if (s_read != before) Save(Stored, kept.Count > MostKept ? kept.Where(each => Used.ContainsKey(each.Key)) : kept);
         return names;
     }
 

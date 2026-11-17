@@ -261,9 +261,14 @@ a census marked diff-able in its project's `CensusMarks.cs` judges only those fi
 one not yet reading through `CensusScope`) judges the tree; each project's census of censuses holds every census marked once. With
 no scope (the CI after the landing, a developer's run) every census judges the whole tree. A census class holds what a source says, never
 behaviour: a class whose few source-reading facts sat beside bridge or graph cases has those facts in a census class of its own
-(`ModuleSourcesCensusTests`), and its behaviour is the fast half's. What holds the gate past a minute is the semantic censuses (the
-structure classes, the declarations' and the provider census over one compile of each shipping project): they judge the whole tree
-whatever the scope, so diff-able text censuses shorten nothing until their walks read the scope too. Every other
+(`ModuleSourcesCensusTests`), and its behaviour is the fast half's. A semantic census (the structure classes, the declarations'
+literals, boundary and keepers, over one compile of each shipping project) is diff-able too (D313): under a scope it binds only the
+trees of the scope's files and of the files that spell a type one of them declares, wherever they compile (`CensusReach`, from a
+reference map of each source's syntax kept under `_fixtures/census-reach/` by text hash), compiles no project the scope leaves
+untouched, and judges a list's row only where its file was read; the keepers' flow, which crosses a project's files, runs whole in
+each project reached. Binding is the cost: alone, the driver's whole walk takes about 29 s and its error check 22 s more, a scoped
+walk of a few files a second or two. A semantic census that must stay whole says why in `CensusMarks.SemanticWhole`, which the census
+of censuses holds. Every other
 gate its paths reach is listed and skipped, "in the CI beside": the CI (`--ci`, below) gates main's
 tip after a merge or batch; fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).

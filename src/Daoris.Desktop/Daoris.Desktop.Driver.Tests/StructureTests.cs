@@ -378,7 +378,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         Assert.All(map.Families, family => Assert.Contains(map.Subdomains, subdomain => subdomain.Name == family.After));
     }
 
-    /// <summary>The one analysis of the driver's own tree the cases over it share, at a merge of the trees its scope reaches: the binding is the gate's cost, measured here.</summary>
+    /// <summary>The one analysis of the driver's own tree the cases over it share: the binding is the gate's cost, measured here (D313).</summary>
     private static readonly Lazy<DriverTreeRead> Tree = new(() => DriverTree.Of(typeof(StructureTests)));
 
     [Fact]
@@ -721,10 +721,8 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         var analysis = Tree.Value.Analysis;
         var errors = analysis.Errors();
 
-        // The one compile error left: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile
-        // has none of. A scoped walk's trees may hold none.
-        Assert.True(analysis.Whole ? errors.Keys.SequenceEqual(["CS8795"]) : errors.Keys.All(id => id == "CS8795"),
-            string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
+        // The one compile error left: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile has none of.
+        Assert.True(analysis.Whole ? errors.Keys.SequenceEqual(["CS8795"]) : errors.Keys.All(id => id == "CS8795"), string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
     }
 
     [Fact]
@@ -733,10 +731,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         var (map, sources, _, analysis, took) = Tree.Value;
         var edges = analysis.Edges.Select(edge => (edge.File, edge.Type)).ToHashSet();
 
-        // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using`
-        // skipped: each held where the walk bound its file.
+        // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
         foreach (var edge in new[] { ("WorkOrders/Sessions/SessionsWorld.cs", "HolderKey"), ("Agents/AccountCooling.cs", "AccountFileNodes"), ("Install/Tools.cs", "Json") })
-            Assert.True(!analysis.Judges(edge.Item1) || edges.Contains(edge), $"{edge.Item1} names {edge.Item2} and the walk does not read it");
+            Assert.True(!analysis.Judges(edge.Item1) || edges.Contains(edge), edge.Item1);
 
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.
         string[] members = ["DriverConfig", "Notices", "HelpProposals", "OpinionGates", "AgentOffers", "GitIdentities", "ConfiguredAccess", "PluginState", "UsageHistory", "RuleProposals", "SessionBranches"];
@@ -751,15 +748,29 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
-        // The compile is the gate's cost in the fast half, about half a minute on an idle machine (the row's archive entry). What
-        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measures the machine as much as the
-        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds), so it only catches a hang.
+        // Binding is the cost (D313), and the reuse proof's counts hold it; a wall clock measures the machine as well, so it only catches a hang.
         output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
         Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }
 
     private static string MapFile() =>
         Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json");
+
+    [Fact]
+    public void Repeated_bound_generic_types_materialize_their_declaration_once_without_losing_the_first_edge()
+    {
+        var repeated = string.Join('\n', Enumerable.Range(0, 256).Select(index => $"Outer<int> field{index};"));
+        var analysis = StructureAnalysis.Of([
+            Src("Course/Outer.cs", "public class Outer<T> { }"),
+            Src("Platform/Reads.cs", "class Reads {\n" + repeated + "\n}"),
+        ]);
+
+        var edge = Assert.Single(analysis.Edges);
+        Assert.Equal(("Platform/Reads.cs", 3, "Outer"), (edge.File, edge.Line, edge.Type));
+        Assert.Equal(["Course/Outer.cs"], edge.DeclaredIn);
+        Assert.Equal(1, analysis.SymbolQueries);
+        Assert.Equal(1, analysis.TypeDescriptionsRead);
+    }
 
     [Fact]
     public void Type_description_reuse_preserves_the_complete_driver_analysis_and_census()
@@ -776,10 +787,70 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         Assert.Equal(repeated.DeclaredTypes.Order(), reused.DeclaredTypes.Order());
         Assert.Equal(StructureCheck.Check(map, sources, tests, repeated), StructureCheck.Check(map, sources, tests, reused));
         output.WriteLine($"Symbol queries: {reused.SymbolQueries} reused, {repeated.SymbolQueries} repeated. Type descriptions: {reused.TypeDescriptionsRead} reused, {repeated.TypeDescriptionsRead} repeated; original compile/walk {took.TotalSeconds:F2}s.");
-        // What reuse saves is the whole tree's: a scoped walk's few trees may repeat no name.
         if (!reused.Whole) return;
         Assert.True(reused.SymbolQueries < repeated.SymbolQueries);
         Assert.True(reused.TypeDescriptionsRead * 2 < repeated.TypeDescriptionsRead,
             $"reuse materialized {reused.TypeDescriptionsRead} descriptions versus {repeated.TypeDescriptionsRead} repeated descriptions");
+    }
+
+    [Fact]
+    public void Ambiguous_spellings_still_bind_each_occurrence_but_share_the_original_type_description()
+    {
+        var repeated = string.Join('\n', Enumerable.Range(0, 256).Select(index => $"Outer<int> field{index};"));
+        var analysis = StructureAnalysis.Of([
+            Src("Course/Outer.cs", "public class Outer<T> { }"),
+            ("Course/Other.cs", "namespace Other; public class Outer<T> { }"),
+            Src("Platform/Reads.cs", "class Reads {\n" + repeated + "\n}"),
+        ]);
+
+        Assert.Equal("Outer", Assert.Single(analysis.Edges).Type);
+        Assert.Equal(256, analysis.SymbolQueries);
+        Assert.Equal(1, analysis.TypeDescriptionsRead);
+    }
+
+    [Fact]
+    public void Reuse_keeps_alias_shadowing_attribute_shorthand_partial_types_and_same_named_members()
+    {
+        var analysis = StructureAnalysis.Of([
+            ("Course/First.cs", """
+                namespace First;
+                public class Same { }
+                public class Unique { }
+                public class MarkAttribute : System.Attribute { }
+                public partial class Part { }
+                public class Outer<T> { public class Inner { } }
+                """),
+            ("Course/Second.cs", "namespace Second { public class Same { } public class Mark { } public class Aliased { } } namespace First { public partial class Part { } }"),
+            ("Platform/Aliases.cs", "global using Unique = Second.Aliased;"),
+            ("Platform/OtherReads.cs", "class OtherReads { Second.Same field; }"),
+            ("Platform/Reads.cs", """
+                using Inner = First.Outer<int>.Inner;
+                class Reads {
+                    static int Same;
+                    static int Before() => Same;
+                    First.Same first;
+                    Second.Same second;
+                    First.Unique original;
+                    Unique alias;
+                    First.Part part;
+                    Inner nested;
+                    [First.Mark] void Marked() { }
+                    Second.Mark plain;
+                }
+                """),
+        ]);
+        var repeated = analysis.WithoutReuse();
+        static IEnumerable<string> Edges(StructureAnalysis found) => found.Edges.Select(edge =>
+            $"{edge.File}:{edge.Line}:{edge.Type}:{string.Join('|', edge.DeclaredIn)}");
+        Assert.Equal(Edges(repeated), Edges(analysis));
+        Assert.Equal(2, analysis.Edges.Single(edge => edge.Type == "Part").DeclaredIn.Count);
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Outer.Inner");
+        Assert.Contains(analysis.Edges, edge => edge.Type == "MarkAttribute");
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Mark");
+        // The existing edge key is the nested type spelling within each file: its first binding stays the one recorded.
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/Reads.cs" && edge.Type == "Same" && edge.DeclaredIn.SequenceEqual(["Course/First.cs"]));
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/OtherReads.cs" && edge.Type == "Same" && edge.DeclaredIn.SequenceEqual(["Course/Second.cs"]));
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Unique");
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/Reads.cs" && edge.Type == "Aliased");
     }
 }

@@ -112,7 +112,7 @@ finishes first and the whole set runs once.
     machine between three light gates and a Process lane, which turns a minute of work into ten; no figure taken beside other runs
     is a measure. The web's unit run uses `vmThreads` and keeps its transformed modules (`fsModuleCache`), and its setup loads no
     Storybook; the driver's grid tests run eight wide through `GridRun`, its two structure classes share one analysis
-    (`DriverTree.Shared`), and that analysis and the declarations' censuses read one compilation of each shipping desktop project a
+    (`DriverTree.Of`), and that analysis and the declarations' censuses read one compilation of each shipping desktop project a
     run (`DesktopCompilations.Of`, counted by `SharedCompileTests`), each tree bound in one semantic model every census shares
     (`SharedModels`). The figures, by gate and by class, and the cuts tried are OPTIMIZE1d's in the archive. (from OPTIMIZE1d)
 18. Every process Daoris's work runs is under the application in the system's tree, since Windows lists a process under its
@@ -128,7 +128,9 @@ finishes first and the whole set runs once.
     (the universal gates, the code map, the census of test units) and the path checks its paths reach (the page's `tsc`, design and
     structure tests); every other gate is left to the CI (`--ci`), `--gated` and `--full` (alternatives) run more, and `--ci
     --stage` stages the install from a green run. The desktop's fast halves leave the census classes to the `censuses` gate, which
-    judges the merge's changed paths at a merge and the whole tree in the CI (CENSUSDIFF1, `docs/development.md`); a CI run builds
+    judges the merge's changed paths at a merge and the whole tree in the CI (CENSUSDIFF1, `docs/development.md`); a semantic census
+    there binds only the trees of those paths and of the files that name a type of theirs, found from a reference map of the syntax
+    kept by text hash, and compiles no project they leave untouched (D313); a CI run builds
     the page's contracts once as a step before the web gates that need them. A lane's globs are read by one translator (`lanes-file.mjs`: `*` in a folder, `**` across folders, `{a,b}`
     alternatives that nest) and a change's paths in one place (`paths.mjs`); a file a narrow lane row places names the gates of
     every wider row too. The queue's and admission records read as empty only where missing or unparseable, so a failed read stops
