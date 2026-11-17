@@ -1,6 +1,5 @@
 {
   "src/Daoris.Cli/test/desktop-tool.test.ts": 48000,
-  "src/Daoris.Cli/test/dogfood.test.ts": 40977,
   "src/Daoris.Cli/test/usage-report.test.ts": 89064,
   "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 69535,
   "src/Daoris.Cli/tool-test/merge-queue.test.ts": 74785,
