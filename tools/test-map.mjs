@@ -269,7 +269,7 @@ export function tsReaches(reach, path) {
 }
 
 /** Whether a unit's `// reaches:` lines declare `path`, one read from it (`unitHops`), and its reach even where that is wide. */
-export const declaresRead = (reach, path) => (reach?.declared ?? [])
+export const declaresRead = (reach, path) => (!reach?.within || declaredHolds(reach.within, path)) && (reach?.declared ?? [])
   .some((target) => target === path || path.startsWith(`${target}/`) || (/[*?{[]/.test(target) && globRegExp(target).test(path)));
 
 /** Whether a gate's declared `paths` hold `path`: an entry ending in `/` is a folder, any other a file, as the declaration writes them. */

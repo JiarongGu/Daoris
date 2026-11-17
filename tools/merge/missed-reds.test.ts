@@ -71,6 +71,8 @@ test('6: a declaration beside a script (b4a8c80f7b) runs the declarations test, 
   assert.ok(reaches(unit, 'tools/time-load.d.mts') && reaches(unit, 'tools/time-load.mjs') && reaches(unit, 'tools/merge-branch/dependencies.d.mts'));
   assert.ok(!reaches(unit, 'docs/development.md'));
   assert.equal(unitHops(unit, ['tools/time-load.d.mts'], map), 1, 'a path a unit declares it reads is one read away, so no bound leaves it out');
+  const bounded = { declared: ['src/fixtures/a.json', 'tools/merge'], within: ['tools/merge/'] };
+  assert.ok(!declaresRead(bounded, 'src/fixtures/a.json') && declaresRead(bounded, 'tools/merge/x.ts'), "an end-to-end spec's declared reads stay within its gate's paths");
 });
 
 test('4: a build-output site added to the merge tool (4c89cc5988) runs the tree-base census, a node test the CLI\'s verify lists (e22e8884e8)', () => {
