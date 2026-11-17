@@ -390,6 +390,9 @@ export function render(r) {
   L.push('First pass');
   put('integrated / handed back', typeof r.firstPass === 'string' ? r.firstPass : `${r.firstPass.integrated} / ${r.firstPass.handedBack}${r.firstPass.mergeCommitsOnMain === undefined ? '' : ` (merge commits on main: ${r.firstPass.mergeCommitsOnMain})`}`);
   put('merge runs / first pass', typeof r.mergeFlow === 'string' ? r.mergeFlow : `${r.mergeFlow.runs} / ${r.mergeFlow.firstPass}; reds set down as main's ${r.mergeFlow.mainReds}; gates replayed ${r.mergeFlow.replayed}; over budget: ${r.mergeFlow.overBudget.join(', ') || 'none'}`);
+  if (typeof r.mergeFlow !== 'string' && r.mergeFlow.reachedOutside?.measured) {
+    put('reached outside its tests', `median ${(r.mergeFlow.reachedOutside.medianMs / 60_000).toFixed(1)} min over ${r.mergeFlow.reachedOutside.measured} merge(s) that kept their steps`);
+  }
   L.push('Friction');
   put('permission.refused', `${r.friction.permissionRefused} ${JSON.stringify(r.friction.permissionRefusedByTool)}`);
   put('refusals answered to agents', r.friction.refusalsToAgents);

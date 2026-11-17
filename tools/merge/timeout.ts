@@ -3,6 +3,7 @@
  * A gate past it is killed with what it started and fails as over-budget. `--no-timeout` turns it off for an investigation and
  * the summary says so.
  */
+import { stepsLine, type Step } from './reached-steps.ts';
 import type { Slow } from './timing.ts';
 
 export const MERGE_GATE_MINUTES = 5;
@@ -23,7 +24,8 @@ export function budgetMs(gate: { name: string; timeoutMinutes?: unknown }, kind:
 
 const minutes = (ms: number): string => `${Number((ms / 60_000).toFixed(1))}`;
 
-export function overBudgetNote(ranMs: number, budget: number, slowest: Slow[]): string {
+export function overBudgetNote(ranMs: number, budget: number, slowest: Slow[], steps: readonly Step[] = []): string {
   const slow = slowest.slice(0, 3).map((each) => `${each.name} ${minutes(each.ms)} min`).join(', ');
-  return `over-budget: killed after ${minutes(ranMs)} min, its budget is ${minutes(budget)} min${slow ? `; slowest in its last record: ${slow}` : ''}`;
+  const said = steps.length ? `; its steps: ${stepsLine(steps)}` : '';
+  return `over-budget: killed after ${minutes(ranMs)} min, its budget is ${minutes(budget)} min${said}${slow ? `; slowest in its last record: ${slow}` : ''}`;
 }

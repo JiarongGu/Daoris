@@ -4,6 +4,7 @@
  * (`parseOutcome`), so the record counts classes run and replayed, and a flake or main's red is named in the summary, never
  * silent.
  */
+import type { Step } from './reached-steps.ts';
 
 /** A class's identity in a reached run: its suite and the unit the census names (a class's full name, a test file's path). */
 export type FailedUnit = { suite: string; unit: string };
@@ -12,6 +13,10 @@ export type FailedUnit = { suite: string; unit: string };
 export type ClassOutcome = { ran: number; replayed: number; flaked: string[]; mainRed: string[]; red: string[]; deferred: string[];
   /** The classes the paths reach that this run did not run (left to the night or past a bound); absent for none. */
   unrun?: number;
+  /** The test projects that stand built on this tree after the run (`reached-build.ts`), so a later gate runs them with `--no-build`. */
+  built?: string[];
+  /** Each step's clock (`reached-steps.ts`). */
+  steps?: Step[];
 };
 
 const MARK = 'reached-classes: ';
@@ -26,9 +31,13 @@ export function parseOutcome(log: string): ClassOutcome | null {
     const parsed = JSON.parse(line.slice(MARK.length)) as Partial<ClassOutcome>;
     const names = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
     const unrun = Number(parsed.unrun) || 0;
+    const built = names(parsed.built);
+    const steps = Array.isArray(parsed.steps)
+      ? parsed.steps.filter((each): each is Step => typeof each?.step === 'string' && Number.isFinite(each?.ms)).map((each) => ({ step: each.step, ms: each.ms }))
+      : [];
     return {
       ran: Number(parsed.ran) || 0, replayed: Number(parsed.replayed) || 0, flaked: names(parsed.flaked), mainRed: names(parsed.mainRed), red: names(parsed.red), deferred: names(parsed.deferred),
-      ...(unrun > 0 ? { unrun } : {}),
+      ...(unrun > 0 ? { unrun } : {}), ...(built.length ? { built } : {}), ...(steps.length ? { steps } : {}),
     };
   } catch {
     return null;
