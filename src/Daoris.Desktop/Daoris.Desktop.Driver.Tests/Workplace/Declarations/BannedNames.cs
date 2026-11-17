@@ -31,14 +31,14 @@ internal static class BannedNames
         ids.Where(id => DocumentationCommentId.GetSymbolsForDeclarationId(id, compilation).IsEmpty);
 
     /// <summary>Every reference in <paramref name="compilation"/>'s sources to a symbol <paramref name="ids"/> lists, in order of file and line.</summary>
-    internal static List<BannedUse> Uses(Compilation compilation, IReadOnlyCollection<string> ids)
+    internal static List<BannedUse> Uses(Compilation compilation, IReadOnlyCollection<string> ids, IReadOnlySet<string>? scope = null)
     {
         if (ids.Count == 0) return [];
         var banned = new HashSet<ISymbol>(ids.SelectMany(id => DocumentationCommentId.GetSymbolsForDeclarationId(id, compilation)), SymbolEqualityComparer.Default);
         var spelled = banned.Select(Spelling).ToHashSet(StringComparer.Ordinal);
         var unspelled = banned.Any(symbol => symbol is IMethodSymbol { MethodKind: MethodKind.Conversion or MethodKind.UserDefinedOperator });
         var uses = new List<BannedUse>();
-        foreach (var tree in DesktopCompilations.Trees(compilation))
+        foreach (var tree in CensusReach.Trees(compilation, [.. DesktopCompilations.Trees(compilation)], scope))
         {
             var text = tree.GetText().ToString();
             if (!unspelled && !spelled.Any(name => text.Contains(name, StringComparison.Ordinal))) continue;

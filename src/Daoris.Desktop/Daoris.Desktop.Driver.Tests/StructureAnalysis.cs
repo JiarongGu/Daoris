@@ -63,8 +63,11 @@ internal sealed class StructureAnalysis
     });
 
     private readonly CSharpCompilation _compilation;
+    private readonly IReadOnlyList<SyntaxTree> _tree;
+    private readonly HashSet<string> _treePaths;
+    private readonly HashSet<string> _treeFiles;
     private readonly IReadOnlyList<SyntaxTree> _walked;
-    private readonly HashSet<string> _walkedPaths;
+    private readonly HashSet<string> _walkedFiles;
     private readonly string _folder;
     private sealed record TypeDescription(string Name, IReadOnlyList<string> Files);
     private readonly ConcurrentDictionary<INamedTypeSymbol, Lazy<TypeDescription>> _descriptions = new(SymbolEqualityComparer.Default);
@@ -77,13 +80,21 @@ internal sealed class StructureAnalysis
 
     internal int SymbolQueries => _symbolQueries;
 
-    private StructureAnalysis(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> walked, string folder)
+    private StructureAnalysis(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> tree, IReadOnlyList<SyntaxTree> walked, string folder)
     {
         _compilation = compilation;
+        _tree = tree;
+        _treePaths = tree.Select(each => each.FilePath).ToHashSet(StringComparer.Ordinal);
         _walked = walked;
-        _walkedPaths = walked.Select(tree => tree.FilePath).ToHashSet(StringComparer.Ordinal);
         _folder = folder;
+        _walkedFiles = walked.Select(each => Named(each.FilePath)).ToHashSet(StringComparer.Ordinal);
+        _treeFiles = tree.Select(each => Named(each.FilePath)).ToHashSet(StringComparer.Ordinal);
     }
+
+    public bool Whole => _walked.Count == _tree.Count;
+
+    /// <summary>Whether a list's entry for <paramref name="file"/> can be judged: its names are known, or the tree no longer holds it.</summary>
+    public bool Judges(string file) => _walkedFiles.Contains(file) || !_treeFiles.Contains(file);
 
     /// <summary>Every name bound to a type another file declares, once per file and type, in order of file and line.</summary>
     public IReadOnlyList<TypeEdge> Edges { get; private set; } = [];
@@ -104,8 +115,11 @@ internal sealed class StructureAnalysis
     public IReadOnlyDictionary<string, (int Count, string Example)> Errors()
     {
         var found = new SortedDictionary<string, (int Count, string Example)>(StringComparer.Ordinal);
-        var left = _compilation.SyntaxTrees.Where(tree => tree.FilePath != "<implicit usings>" && !_walkedPaths.Contains(tree.FilePath)).ToHashSet();
-        foreach (var diagnostic in _compilation.GetDiagnostics()
+        var left = _compilation.SyntaxTrees.Where(tree => tree.FilePath != "<implicit usings>" && !_treePaths.Contains(tree.FilePath)).ToHashSet();
+        var diagnostics = Whole
+            ? _compilation.GetDiagnostics()
+            : [.. _walked.AsParallel().SelectMany(tree => SharedModels.Of(_compilation, tree).GetDiagnostics())];
+        foreach (var diagnostic in diagnostics
                      .Where(each => each.Severity == DiagnosticSeverity.Error && !(each.Location.SourceTree is { } tree && left.Contains(tree))))
         {
             found.TryGetValue(diagnostic.Id, out var seen);
@@ -116,24 +130,25 @@ internal sealed class StructureAnalysis
     }
 
     /// <summary>The analysis of sources, as (path, text) pairs, each path relative to the driver's folder with <c>/</c> between its parts.</summary>
-    public static StructureAnalysis Of(IReadOnlyList<(string Path, string Text)> sources)
+    public static StructureAnalysis Of(IReadOnlyList<(string Path, string Text)> sources, IReadOnlySet<string>? scope = null)
     {
+        const string folder = "Daoris.Desktop.Driver/";
         var options = new CSharpParseOptions(LanguageVersion.Latest);
         var implicitUsings = CSharpSyntaxTree.ParseText(
             string.Join('\n', ImplicitUsings.Select(each => $"global using global::{each};")), options, "<implicit usings>");
-        var trees = sources.Select(source => CSharpSyntaxTree.ParseText(source.Text, options, source.Path)).ToList();
+        var trees = sources.Select(source => CSharpSyntaxTree.ParseText(source.Text, options, folder + source.Path)).ToList();
         var compilation = CSharpCompilation.Create(
             "Daoris.Desktop.Driver",
             [implicitUsings, .. trees],
             BaseLibrary.Value,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable, allowUnsafe: true));
-        return Over(compilation, trees, "");
+        return Over(compilation, trees, CensusReach.Trees(compilation, trees, scope), folder);
     }
 
     /// <summary>The analysis of <paramref name="walked"/> trees of a shared compilation, named under <paramref name="folder"/>; an unwalked tree's types are no edge's.</summary>
-    internal static StructureAnalysis Over(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> walked, string folder)
+    internal static StructureAnalysis Over(CSharpCompilation compilation, IReadOnlyList<SyntaxTree> tree, IReadOnlyList<SyntaxTree> walked, string folder)
     {
-        var analysis = new StructureAnalysis(compilation, walked, folder);
+        var analysis = new StructureAnalysis(compilation, tree, walked, folder);
         analysis.Read(reuse: true);
         return analysis;
     }
@@ -141,7 +156,7 @@ internal sealed class StructureAnalysis
     /// <summary>The original repeated work over the very same compilation, retained as an equivalence oracle.</summary>
     internal StructureAnalysis WithoutReuse()
     {
-        var analysis = new StructureAnalysis(_compilation, _walked, _folder);
+        var analysis = new StructureAnalysis(_compilation, _tree, _walked, _folder);
         analysis.Read(reuse: false);
         return analysis;
     }
@@ -150,7 +165,7 @@ internal sealed class StructureAnalysis
 
     private void Read(bool reuse)
     {
-        var trees = _walked;
+        var trees = _tree;
         // A name can only bind to a type that has its name, or an alias, or an attribute written without its suffix: so only those
         // names are asked of the compiler, which leaves what it binds untouched and the walk to a fraction of every name.
         var named = new HashSet<string>(StringComparer.Ordinal);
@@ -189,7 +204,7 @@ internal sealed class StructureAnalysis
         var rules = new ConcurrentBag<StaticRule>();
         var asyncFiles = new ConcurrentBag<string>();
         var globals = new ConcurrentBag<(string File, int Line, string Name)>();
-        Parallel.ForEach(trees, tree =>
+        Parallel.ForEach(_walked, tree =>
         {
             var model = SharedModels.Of(_compilation, tree);
             var root = tree.GetRoot();
@@ -266,7 +281,7 @@ internal sealed class StructureAnalysis
     {
         Interlocked.Increment(ref _typeDescriptionsRead);
         var files = original.DeclaringSyntaxReferences.Select(reference => reference.SyntaxTree.FilePath)
-            .Where(_walkedPaths.Contains).Select(Named).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            .Where(_treePaths.Contains).Select(Named).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         var parts = new Stack<string>();
         for (var at = original; at is not null; at = at.ContainingType) parts.Push(at.Name);
         return new(string.Join('.', parts), files);

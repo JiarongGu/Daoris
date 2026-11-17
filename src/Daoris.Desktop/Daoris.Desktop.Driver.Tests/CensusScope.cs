@@ -45,6 +45,8 @@ internal static class CensusScope
             _ => throw new InvalidOperationException($"{name} is a census marked {(diff.Contains(name) ? "both diff-able and whole" : "neither diff-able nor whole")}: list it once, in CensusMarks.cs"),
         };
 
+    internal static IReadOnlySet<string>? ScopeOf(Type census) => MarkOf(census) == Judging.Whole ? null : Paths;
+
     /// <summary>Of <paramref name="paths"/> (full or repository-relative), the ones <paramref name="census"/> judges in this run.</summary>
     internal static IEnumerable<string> Judged(Type census, IEnumerable<string> paths) => Judged(MarkOf(census), paths, path => path, Paths);
 
