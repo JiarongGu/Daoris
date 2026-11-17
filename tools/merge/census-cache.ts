@@ -1,5 +1,5 @@
 /**
- * The census of test units kept by the tree it was read from, so a second reading of the same tree (the reached run after the
+ * The census of test units kept by the tree it reads, so a second reading of the same tree (the reached run after the
  * test-map gate, a reached run again, the full set's replay) reads it in a second instead of the census's tens. The key is the
  * checkout's content tree (`stagedTree`: every file it holds, committed or not), so any change to a file, the census's own code
  * included, is a new key; `CENSUS_SCHEMA` changes with what a cached census holds. The newest few are kept under `_fixtures/`.

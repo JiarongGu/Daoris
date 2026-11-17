@@ -1,7 +1,7 @@
 /**
  * The reached run's step clocks: the census, the plan, each project's restore and build, and each suite's discovery and run. Each
  * step says one machine line as it starts and one as it ends (`reached-step: {…}`), so a merge that ends the gate over its budget
- * still reads which step was running and for how long (`parseSteps`); the merge record keeps them beside the gate's time
+ * still reads which step it is in and for how long (`parseSteps`); the merge record keeps them beside the gate's time
  * (`steps`), and a breach's note names the step.
  */
 

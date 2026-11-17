@@ -2,7 +2,7 @@
  * The merge's own record: one line per merge run in `local/merge-record.jsonl`, appended as the run ends. It carries the branch,
  * the run's wall time, each gate's time, steps and slowest classes (`ms` sums them, so gates run side by side count twice), the tests
  * that passed only when run again, whether the run is a branch's first pass, the reds set down as main's and what ran over
- * budget; `tools/dev-metrics.mjs` reads it for the first-pass, wall-time and flake figures.
+ * budget; `tools/dev-metrics.mjs` reads it for the first-pass, wall-time, flake and reached-outside-its-tests figures.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -16,7 +16,6 @@ export type GateRecord = {
   name: string; verdict: string; ms: number; replayed: boolean; mainRed: boolean; abnormal: boolean; slowest: Slow[]; over: boolean; left: LeftProcess[];
   flakes?: string[];
   classes?: { ran: number; replayed: number; flaked: number; mainRed: number; red: number; deferred: number };
-  /** The steps the gate said with their times (the reached gate's: census, plan, restore and build per project, discovery and run per suite), `open` the one a kill cut. */
   steps?: Step[];
 };
 export type MainRedRecord = { gate: string; unit: string; key: string };
@@ -68,7 +67,6 @@ export function readRecords(file: string): MergeRecord[] {
 export function summarize(records: MergeRecord[]): {
   runs: number; firstPass: number; mainReds: number; replayed: number; gates: Record<string, number>; overBudget: string[];
   wall: { measured: number; medianMs: number | null; totalMs: number }; flakes: number; classes: { ran: number; replayed: number };
-  /** The reached gates that kept their steps, and the median of their time outside the tests (REACHCOST1's proof reads it). */
   reachedOutside: { measured: number; medianMs: number | null };
 } {
   const outside = records.flatMap((record) => record.gates.filter((gate) => gate.name === 'reached' && gate.steps?.length).map((gate) => outsideTests(gate.steps!)));

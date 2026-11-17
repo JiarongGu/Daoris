@@ -117,7 +117,6 @@ test('every reached class of a test project runs in one dotnet test, its filter 
   const filter = command!.args[command!.args.indexOf('--filter') + 1]!;
   assert.equal(filter.match(/FullyQualifiedName~/g)?.length, 250);
   assert.ok(filter.length <= FILTER_CHARS + '(Category!=Process)&()'.length, 'the filter stays within the command line');
-  // Past the filter's length a project's classes split, never one dropped.
   const huge = Array.from({ length: 600 }, (_, at) => dotnet('driver', `Area${at}.${'Very'.repeat(10)}LongNamed${at}Tests`, 'x'));
   const split = plan(huge, [], { bounds: { dotnet: Infinity } });
   assert.ok(split.groups.length > 1);

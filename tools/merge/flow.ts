@@ -131,7 +131,6 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   if (narrowed) result.classReplay = narrowed.replay;
   const said = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
   const outcome = said ? parseOutcome(said) : null;
-  // The steps the gate said: its outcome's where it ended, else as far as its log goes, the step a kill cut timed to the kill.
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
   if (expired !== null && budget !== null && !trees?.ended) {
@@ -154,7 +153,6 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     }
   }
   if (result.verdict === 'PASS' && tree) deps.ledger.passed(gate.name, tree, gate.run);
-  // The test projects a reached run built on this tree, whatever its classes came to: a later gate's `dotnet test` of one runs on that build.
   if (outcome?.built?.length && tree) deps.ledger.passed(gate.name, tree, outcome.built.map((project) => `dotnet test ${project}`).join(' && '));
   if (result.verdict === 'FAIL' && !result.abnormal) result.failures = deps.failuresOf(where, result, trxFiles[0] ?? null);
 

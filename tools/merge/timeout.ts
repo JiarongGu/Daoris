@@ -24,7 +24,6 @@ export function budgetMs(gate: { name: string; timeoutMinutes?: unknown }, kind:
 
 const minutes = (ms: number): string => `${Number((ms / 60_000).toFixed(1))}`;
 
-/** Why a gate was killed: its time against its budget, the steps it said (`reached-steps.ts`) with the one it was in, and its slowest classes last time. */
 export function overBudgetNote(ranMs: number, budget: number, slowest: Slow[], steps: readonly Step[] = []): string {
   const slow = slowest.slice(0, 3).map((each) => `${each.name} ${minutes(each.ms)} min`).join(', ');
   const said = steps.length ? `; its steps: ${stepsLine(steps)}` : '';

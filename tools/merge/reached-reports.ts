@@ -37,12 +37,7 @@ const spanMs = (text: string | undefined): number => {
   return ((h ?? NaN) * 3600 + (m ?? NaN) * 60 + (s ?? NaN)) * 1000;
 };
 
-/**
- * When a trx's first test started, in epoch milliseconds, or null: what came before it of the command (the project's evaluation,
- * the runner's start, the discovery of every case of the assembly) is the suite's discovery, what came after its run. xUnit's
- * results carry their report's moment as their start, so a result's start is its end less its duration where that is earlier;
- * a report with no result falls back to the run's own start (`<Times start>`).
- */
+/** When a trx's first test started (epoch ms; xUnit's start is its report's moment, so its end less its duration), else its run's: before it is discovery. */
 export function runStartOf(trx: string): number | null {
   let first = Infinity;
   for (const [tag] of trx.matchAll(/<UnitTestResult\b[^>]*>/g)) {

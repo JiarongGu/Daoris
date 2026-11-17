@@ -1,7 +1,7 @@
 /**
  * One build per test project per tree for the reached run: each project its plan runs classes of is restored and built once, timed
  * as a step, and its classes then run with `--no-build --no-restore`. A project already built for its current inputs is not built
- * again: its stamp (`_fixtures/reached-build/`) holds the digest of the inputs it was built from and of the build output it left,
+ * again: its stamp (`_fixtures/reached-build/`) holds the digest of the inputs its build read and of the output that build left,
  * and both still match. The inputs are what MSBuild reads for it, read from its project files: every project it references, read
  * through (one built only to be started too), each file or folder a project file or a build file it imports names by a relative
  * path, the build files applied from the folders above, the private files a gate is handed, and the SDK.
@@ -171,7 +171,8 @@ export type BuildSeams = {
 
 /** Each of `projects` restored and built once, unless its stamp holds; the projects ready to run on, and those whose build failed. */
 export async function buildOnce(projects: readonly string[], seams: BuildSeams): Promise<{ ready: string[]; failed: Map<string, string> }> {
-  const { root, exec, say, time } = seams;
+  // The seam is the caller's runner, which starts its children hidden.
+  const { root, exec: run, say, time } = seams;
   const ready: string[] = [];
   const failed = new Map<string, string>();
   for (const project of projects) {
@@ -186,8 +187,8 @@ export async function buildOnce(projects: readonly string[], seams: BuildSeams):
       continue;
     }
     say(`reached: ${name}: ${decision.why}: restored and built once, its classes run on that build`);
-    const restored = await time(`restore ${name}`, () => exec('dotnet', ['restore', project], root));
-    const code = restored === 0 ? await time(`build ${name}`, () => exec('dotnet', ['build', project, '--no-restore'], root)) : restored;
+    const restored = await time(`restore ${name}`, () => run('dotnet', ['restore', project], root));
+    const code = restored === 0 ? await time(`build ${name}`, () => run('dotnet', ['build', project, '--no-restore'], root)) : restored;
     if (code !== 0) {
       failed.set(project, `its ${restored === 0 ? 'build' : 'restore'} failed (exit ${code})`);
       continue;

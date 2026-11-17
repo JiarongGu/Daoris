@@ -30,20 +30,10 @@ export type Readers = {
 
 type Placement = { none?: boolean; whole?: boolean };
 
-/**
- * What a key context derived of its tree and keeps for the next reading of the same tree (`census-cache.ts`'s `treeSide`): each
- * .NET suite's candidate files with where its census places each, the slowest of the plan's derivations (seconds a suite).
- */
-export type ReuseMemo = {
-  candidates?: Record<string, { files: string[]; placed: Placement[] }>;
-  /** Each class's key on the tree (`merge-branch/full-set.mjs`), good while `keysFor` (the private files' digest, the toolchain) holds. */
-  keys?: Record<string, string>; keysFor?: string;
-};
+/** What a reading of a tree derived, kept for the next (`census-cache.ts`'s `treeSide`): each .NET suite's placed candidates, each class's key. */
+export type ReuseMemo = { candidates?: Record<string, { files: string[]; placed: Placement[] }>; keys?: Record<string, string>; keysFor?: string };
 
-/**
- * The key context of `map` over the tree whose files are `files`, read by `read`, under `toolchain` and the gates' declarations.
- * `memo` holds what an earlier reading of the same tree derived, and is added to as this one derives more (`changed`).
- */
+/** The key context of `map` over the tree whose files are `files`, read by `read`, under `toolchain`, the gates' declarations and `memo`. */
 export function reuseContext({ map, files, read, toolchain, gates, readers, memo }: {
   map: TestMap; files: readonly string[]; read: (path: string) => string; toolchain: string;
   gates: readonly { name: string; run: string; memoryGb?: number; clock?: boolean }[]; readers: Readers;
@@ -161,7 +151,6 @@ export function reuseContext({ map, files, read, toolchain, gates, readers, memo
         candidates.set(group, found);
         if (memo && full.kind === 'dotnet') {
           const suite = suiteFor(full);
-          // Only what the key asks of a placement is kept: whether the census places the path nowhere, or reads it as the whole suite's.
           const kept = found.map((path): Placement => {
             const at = placed(suite, path);
             return { ...(at.none ? { none: true } : {}), ...(at.whole ? { whole: true } : {}) };

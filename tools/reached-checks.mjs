@@ -24,11 +24,9 @@
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
  * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
- * Its time goes to tests. The census is read once, from the cache of the tree's content (`merge/census-cache.ts`) where a reading of
- * the same tree kept it; each test project the plan runs classes of is restored and built once, or not at all where its stamp still
- * holds its inputs and output (`merge/reached-build.ts`), and its classes run in one `dotnet test --no-build --no-restore`. Each step
- * (census, plan, restore and build per project, discovery and run per suite) says a `reached-step: {…}` line as it starts and ends,
- * so the merge records them and names the step a kill cut (`merge/reached-steps.ts`).
+ * Its time goes to tests: the census is read once per content tree (`merge/census-cache.ts`), each test project built once and its
+ * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), and each step says a `reached-step: {…}` line
+ * as it starts and ends, so the merge records them and names the step a kill cut (`merge/reached-steps.ts`).
  *
  * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
  * one the merge queue's gates take, and says what it waits for; a light group runs at once. The place is let go as the group ends,
@@ -93,10 +91,7 @@ export function changedPaths(root, base = 'HEAD') {
 
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
-/**
- * The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's
- * key. `world` is the census's key context over the tree, read once by the caller (`keyContextOf`).
- */
+/** The plan for `paths` over the tree at `root` (its key context `world`), what it replays and leaves to the night, and each unit's key. */
 export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 'all', world = null } = {}) {
   if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0, deferred: [] };
   const read = world ?? keyContextOf(root);
@@ -120,7 +115,7 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
   return { plan: reachedPlan(counted, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
 }
 
-/** The digest of what the build of `project` reads on the tree `world` was read from, or null where git cannot list it. */
+/** The digest of what the build of `project` reads on the tree `world` reads, or null where git cannot list it. */
 function inputsOf(root, world, project) {
   if (!world?.tree) return null;
   try {
@@ -160,12 +155,11 @@ async function main(argv) {
   const bounds = everything ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
   const say = (line) => console.log(line);
   const clock = new StepClock(say);
-  // The census is read once, from its cache where this tree's was kept (`merge/census-cache.ts`), and only where something is reached.
   const world = paths.length || classes.length ? await clock.time('census', () => keyContextOf(root)) : null;
   if (world) say(`reached: the census of this tree was ${world.hit ? 'read from its cache' : 'read, and kept for this tree'}`);
   const { plan, night, keys, replayed, deferred } = await clock.time('plan', () => {
     const planned = planFor(root, paths, store, { bounds, classes, tier, world });
-    world?.keep(); // what the keys derived of this tree, for the next reading of it
+    world?.keep();
     return planned;
   });
   for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) say(line);

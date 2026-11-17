@@ -18,13 +18,11 @@ import { outsideTests, seconds, stepsLine, type Step } from './reached-steps.ts'
 /** Runs `command` with `args` in `cwd`, giving its exit code; asynchronous where a hold's beat must keep sounding while it runs. */
 export type Exec = (command: string, args: string[], cwd: string) => number | null | Promise<number | null>;
 
-/** The run's step clock (`StepClock`), as the run uses it. */
 export type Clock = {
   time: <T>(name: string, fn: () => T | Promise<T>, carve?: (result: T, ms: number) => { step: string; ms: number } | null) => Promise<T>;
   steps: () => Step[];
 };
 
-/** Builds each of `projects` once; the projects ready to run on, and why each other's build failed. */
 export type BuildStep = (projects: string[]) => Promise<{ ready: string[]; failed: ReadonlyMap<string, string> }>;
 
 const FOLDER = '_fixtures/test-timing';
@@ -36,7 +34,6 @@ export type RunOptions = {
   inPlace?: <T>(group: ReachedGroup, fn: () => Promise<T>) => Promise<T>;
   build?: BuildStep;
   clock?: Clock;
-  /** The wall clock in epoch milliseconds, which a trx's run start is read against. */
   epoch?: () => number;
 };
 
@@ -54,7 +51,6 @@ async function runGroup(group: ReachedGroup, name: string, ready: ReadonlySet<st
   say(`reached: ${each.label}: ${each.command} ${each.args.slice(0, 2).join(' ')}${built ? ' --no-build' : ''} …`);
   const epoch = options.epoch ?? Date.now;
   const started = epoch();
-  // A .NET suite's report says when its tests started: the time before is its discovery.
   const discovery = (): { step: string; ms: number } | null => {
     if (group.runner !== 'dotnet' || !existsSync(join(root, report))) return null;
     const start = runStartOf(readFileSync(join(root, report), 'utf8'));
