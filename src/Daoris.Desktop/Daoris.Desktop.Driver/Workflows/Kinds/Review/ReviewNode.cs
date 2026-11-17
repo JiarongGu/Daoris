@@ -7,7 +7,6 @@ namespace Daoris.Driver;
 [NodeKind(NodeKinds.Review, NodeGroup.You)]
 internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps, IWaitsOnRole
 {
-    /// <summary>An active review waits for its role's Accept.</summary>
     public string? Waits(NodeDeclaration node, NodeStatus status) => PersonWaits.Accept;
 
     /// <summary>

@@ -9,7 +9,6 @@ public sealed class GoAheadNode : BuiltInNode, IObserves, IWaitsOnRole
 {
     public NodeObservation Observe(NodeReading reading) => GoAheadReading.Observe(reading);
 
-    /// <summary>An active go-ahead waits for its role's word to go on.</summary>
     public string? Waits(NodeDeclaration node, NodeStatus status) => PersonWaits.GoAhead;
 
     /// <summary>On a run alone, though it is pressed, since its answer is the go-ahead's record; on a unit it waits ready for the person's press.</summary>
