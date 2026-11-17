@@ -145,7 +145,6 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
-            // The one settle door: the word is its holder's now, in its epoch, the owner role's or an observation.
             var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
             if (SettleDoor.Admit(holding, settle ?? SettleBy.Of(act, by, holder, epoch)) is { } refusal)
             {

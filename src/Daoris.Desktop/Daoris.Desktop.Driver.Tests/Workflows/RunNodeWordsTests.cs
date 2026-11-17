@@ -171,7 +171,6 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Equal(StepTenureFiles.EndedEpoch, refused.Refused);
         Assert.Contains("held now by person", refused.Detail, StringComparison.Ordinal);
         Assert.Empty(Files.Read(RunUnit)!.Pending);
-        // The pass casts the attempt's first epoch itself, so the holder of now's epoch is read, never counted.
         Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "mine", () => _now, epoch: tenures.Current(RunUnit, "go", attempt)!.Epoch).Done);
     }
 

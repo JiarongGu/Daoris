@@ -92,7 +92,6 @@ public sealed class StepTenureTests : IDisposable
         Assert.Contains("agent:beta", refused.Detail, StringComparison.Ordinal);
         Assert.Null(Assert.Single(Files.Read(Unit)!.Attempts).Resolution);
 
-        // In the holder's epoch, the word is taken from the holder alone: the person's channel is refused naming who holds it.
         Assert.Equal(SettleDoor.NotHolder, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, epoch: 2).Code);
         Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, epoch: 2, settle: new SettleBy("agent:beta", 2)).What);
     }

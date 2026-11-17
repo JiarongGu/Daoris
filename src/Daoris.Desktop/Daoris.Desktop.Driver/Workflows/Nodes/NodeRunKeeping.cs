@@ -109,7 +109,6 @@ internal sealed class NodeRunKeeping(
             }
 
             if (!await RunRepairs.ContinuesAsync(scope.Root, repair, tip, ct).ConfigureAwait(false)) continue;
-            // Daoris's own reading that the repair carried the accepted work on: an observation, whoever holds the review.
             if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, CarriedRepairs.Receipt(records.Home, governed.Run, repair, tip), clock, settle: SettleBy.Observation).Done)
             {
                 RunRepairs.Take(records, governed.Unit.Id, repair.Node);
