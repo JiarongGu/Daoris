@@ -267,7 +267,7 @@
   "workflow.hold.label": "这个步骤的担任者",
   "workflow.hold.heldBy": "由 {{holder}} 担任",
   "workflow.hold.act.take": "接下",
-  "workflow.hold.act.hand": "交给…",
+  "workflow.hold.act.hand": "转给…",
   "workflow.hold.act.give-back": "交还",
-  "workflow.hold.handTo": "把这个步骤交给"
+  "workflow.hold.handTo": "把这个步骤转给"
 }

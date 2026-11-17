@@ -89,7 +89,7 @@ describe("a person's task on What needs you", () => {
   it('offers the holder presses of its step, and every settling press passes the epoch of the tenure it read', async () => {
     start(['done'], null, { epoch: 2, holds: ['hand', 'give-back'] });
     const item = await screen.findByRole('listitem', { name: '#q7' });
-    expect(within(item).getByRole('button', { name: 'Hand to…' })).toBeTruthy();
+    expect(within(item).getByRole('button', { name: 'Pass to…' })).toBeTruthy();
     expect(within(item).queryByRole('button', { name: 'Take' })).toBeNull();
 
     await userEvent.click(within(item).getByRole('button', { name: 'Give back' }));
