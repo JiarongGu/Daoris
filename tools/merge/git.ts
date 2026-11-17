@@ -15,8 +15,8 @@ export type Ran = { status: number | null; out: string; err: string };
 export type Changed = { code: string; path: string };
 export type Worktree = { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean };
 
-export function git(cwd: string, args: string[], { allowFail = false, env }: { allowFail?: boolean; env?: NodeJS.ProcessEnv | undefined } = {}): Ran {
-  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
+export function git(cwd: string, args: string[], { allowFail = false, env, input }: { allowFail?: boolean; env?: NodeJS.ProcessEnv | undefined; input?: string } = {}): Ran {
+  const result = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}), ...(input === undefined ? {} : { input }) });
   if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
   if (result.status !== 0 && !allowFail) {
     throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
@@ -36,15 +36,30 @@ export function ignoredVerdict({ status, err }: { status: number | null; err: st
 
 export const isIgnored = (cwd: string, path: string): boolean => ignoredVerdict(git(cwd, ['check-ignore', '-q', path], { allowFail: true }), path);
 
+/** Which of `paths` git ignores in `cwd`, in one start: git names each as given; a status past 1 is a tool error, as for one path. */
+export function ignoredOf(cwd: string, paths: string[]): Set<string> {
+  const ran = git(cwd, ['check-ignore', '-z', '--stdin'], { allowFail: true, input: `${paths.join('\0')}\0` });
+  return ignoredVerdict(ran, paths.join(', ')) ? new Set(ran.out.split('\0').filter(Boolean)) : new Set();
+}
+
+/** What git must ignore in `cwd`, each `[path, why]` in the order its refusal is said, asked in one start. */
+export function requireIgnored(cwd: string, needs: Array<[string, string]>): void {
+  const ignored = ignoredOf(cwd, needs.map(([path]) => path));
+  const missing = needs.find(([path]) => !ignored.has(path));
+  if (missing) throw new Refusal(missing[1]);
+}
+
 export const lines = (text: string): string[] => text.split('\n').filter((line) => line.trim());
 
-// Each git start costs tens of milliseconds on Windows, so the checkout's git folder is asked for once,
-// with its top level, and an open merge is read from the MERGE_HEAD file git writes there.
+// A git start costs seconds on a loaded machine: the top, git and common folders are asked once; MERGE_HEAD is read as a file.
 export const gitDirs = new Map<string, string>();
+export const commonDirs = new Map<string, string>();
 export function locate(cwd: string): string {
-  const [top = '', gitDir = ''] = git(cwd, ['rev-parse', '--show-toplevel', '--absolute-git-dir']).out.split('\n').map((line) => line.trim());
+  const asked = git(cwd, ['rev-parse', '--show-toplevel', '--absolute-git-dir', '--path-format=absolute', '--git-common-dir']).out;
+  const [top = '', gitDir = '', common = ''] = asked.split('\n').map((line) => line.trim());
   const root = resolve(top);
   gitDirs.set(root, resolve(gitDir));
+  if (common) commonDirs.set(root, resolve(common));
   return root;
 }
 export const mergeInProgress = (root: string): boolean => existsSync(join(gitDirs.get(root) ?? join(root, '.git'), 'MERGE_HEAD'));
@@ -96,17 +111,14 @@ export function requireMain(root: string): void {
   if (refusal) throw new Refusal(refusal);
 }
 
-/** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it). */
-export function preconditions(root: string): void {
+/** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it), with `also` in that start. */
+export function preconditions(root: string, also: Array<[string, string]> = []): void {
   const merging = mergeInProgress(root);
   if (!merging) sweepAndSay(root);
   const facts = { ...treeState(root), merging, ignored: true };
   const refusal = startRefusal(facts);
   if (refusal) throw new Refusal(refusal);
-  // Asked last, and only of a checkout that passed the rest: it is one more git start.
-  if (!isIgnored(root, `${SCRATCH}/merge-probe.log`)) {
-    throw new Refusal(startRefusal({ ...facts, ignored: false }) as string);
-  }
+  requireIgnored(root, [[`${SCRATCH}/merge-probe.log`, startRefusal({ ...facts, ignored: false }) as string], ...also]);
 }
 
 /** The branch's tip, or a refusal naming it. */

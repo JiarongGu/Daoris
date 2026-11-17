@@ -1,11 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { git, scratch, branch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 
-describe('the full set as a replay of passes already proved, in a scratch repository (e2e-replay)', { concurrency: true }, () => {
+describe('the full set as a replay of passes already proved, in a scratch repository (e2e-replay)', { concurrency: CASES_AT_ONCE }, () => {
   test('a second --full replays every gate whose inputs are unchanged and says so; a change its gates reach runs them again', async () => {
     const repo = scratch('replay', [
       { name: 'first', run: 'node gate.mjs first' },

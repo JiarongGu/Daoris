@@ -5,13 +5,14 @@ import { delimiter, dirname, join } from 'node:path';
 import { PATIENCE } from '../test/_fixture.ts';
 import { tool, type Verdict } from './support/merge-branch.ts';
 import { within, alive, TREE, treePids, stillRunning, cleanupAfterKill, git, TRAILER, scratch, branch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-beside)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-beside)', { concurrency: CASES_AT_ONCE }, () => {
 
   // A full set run in the main checkout leaves no merge able to run for its hour and a half.
   test('--full --beside gates main\'s tip in a worktree of its own while a merge lands, its verdicts in the main checkout\'s store', async () => {

@@ -1,7 +1,7 @@
 /**
  * The merge queue's end-to-end kit: a scratch repository per case, its tool run with an environment the case builds, the stand-in gates it runs and the declared runner's inputs, for `merge-queue-*.e2e.ts`.
  */
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { spawnSync, type ChildProcess } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { realpathSync, mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { repoRoot, type Candidate, type Failure, type Queue, tool, type Outcome } from './merge-queue-kit.ts';
 import { PATIENCE, makeFixture } from '../../test/_fixture.ts';
 import { boundedNode } from './bounded-node.ts';
+import { importBranch, seeded } from './e2e-repository.ts';
 
 const TOOL = join(repoRoot, 'tools', 'merge-branch.mjs');
 const GIT_ENV = {
@@ -128,12 +129,32 @@ export const alive = (pid: number) => {
   }
 };
 
+/** Every case's first repository, built once, guarded as its own repository, git storage and queue home (the first worktree). */
+const copySeed = seeded(() => {
+  const fx = makeFixture(`merge-queue-seed-${process.pid}`);
+  const root = join(fx.root, 'repo');
+  mkdirSync(root, { recursive: true });
+  const git = (...args: string[]) => sh(caseEnvironment(fx.root), root, ...args);
+  git('init', '--quiet', '--template=', '-b', 'main');
+  assert.equal(realPath(git('rev-parse', '--show-toplevel')), realPath(root));
+  assert.equal(realPath(git('rev-parse', '--path-format=absolute', '--git-common-dir')), realPath(join(root, '.git')));
+  assert.equal(realPath(git('worktree', 'list', '--porcelain').split('\n')[0]!.replace(/^worktree /, '')), realPath(root));
+  writeFileSync(join(root, '.gitignore'), 'local/\n');
+  writeFileSync(join(root, 'qgate.mjs'), QUEUE_GATE);
+  const gates = [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check' }];
+  writeFileSync(join(root, 'daoris.gates.json'), `${JSON.stringify({ gates }, null, 2)}\n`);
+  git('add', '-A');
+  git('commit', '--quiet', '-m', `first${TRAILER}`);
+  mkdirSync(join(root, 'local'), { recursive: true });
+  return { root, cleanup: fx.cleanup };
+});
+
 export function queueScratch(name: string) {
   // Named for this process too, so a second run of the file beside this one, or one after it killed, never
   // clears a scratch whose processes still stand in it: a scratch that loses its `.git` is git's way out to the checkout around it.
   const fx = makeFixture(`merge-queue-${name}-${process.pid}`);
   const root = join(fx.root, 'repo');
-  mkdirSync(root, { recursive: true });
+  copySeed(root);
   // The runner's own `git status` (its clean-checkout look, every tick while a candidate is held) refreshes the
   // index and takes `index.lock` to write it back, so a test's git write on this repository can meet the lock. The
   // runner is told to take no optional lock: it reads the checkout and never holds the index, so the test's writes
@@ -152,18 +173,9 @@ export function queueScratch(name: string) {
     MERGE_BRANCH_QUEUE_OWNER: String(process.pid),
   });
   const git = (...args: string[]) => sh(env, root, ...args);
-  git('init', '--quiet', '--template=', '-b', 'main');
-  // The guard: its own repository, its own git storage and its own queue home (the first worktree), never the one around it.
-  assert.equal(realPath(git('rev-parse', '--show-toplevel')), realPath(root));
-  assert.equal(realPath(git('rev-parse', '--path-format=absolute', '--git-common-dir')), realPath(join(root, '.git')));
-  assert.equal(realPath(git('worktree', 'list', '--porcelain').split('\n')[0]!.replace(/^worktree /, '')), realPath(root));
-  writeFileSync(join(root, '.gitignore'), 'local/\n');
-  writeFileSync(join(root, 'qgate.mjs'), QUEUE_GATE);
-  const gates = [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check' }];
-  writeFileSync(join(root, 'daoris.gates.json'), `${JSON.stringify({ gates }, null, 2)}\n`);
-  git('add', '-A');
-  git('commit', '--quiet', '-m', `first${TRAILER}`);
-  mkdirSync(join(root, 'local'), { recursive: true });
+  const [top, common] = git('rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir').split('\n');
+  assert.equal(realPath(top!), realPath(root));
+  assert.equal(realPath(common!), realPath(join(root, '.git')));
   // Every invocation the test started and has not seen end: a failed assertion leaves them for `cleanup` to end.
   const started = new Set<ChildProcess>();
   const queueFile = join(root, 'local', 'merge-queue.json');
@@ -193,14 +205,7 @@ export function queueScratch(name: string) {
       }
     },
     branch(branchName: string, files: Record<string, string>) {
-      git('checkout', '--quiet', '-b', branchName, 'main');
-      for (const [path, text] of Object.entries(files)) {
-        mkdirSync(dirname(join(root, path)), { recursive: true });
-        writeFileSync(join(root, path), text);
-      }
-      git('add', '-A');
-      git('commit', '--quiet', '-m', `work on ${branchName}${TRAILER}`);
-      git('checkout', '--quiet', 'main');
+      importBranch(root, env, { name: branchName, from: 'main', files, message: `work on ${branchName}${TRAILER}` });
       writeFileSync(join(root, 'local', `${branchName}.msg`), `Merge ${branchName}: its words${TRAILER}\n`);
     },
     /**

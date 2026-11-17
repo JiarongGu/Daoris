@@ -5,13 +5,14 @@ import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync
 import { dirname, join } from 'node:path';
 import { tool } from './support/merge-branch.ts';
 import { git, TRAILER, age, scratch, branch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-prune)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-prune)', { concurrency: CASES_AT_ONCE }, () => {
 
   test('--prune removes each merged branch with its worktree, and keeps one in use, changed or holding private output, saying why', async () => {
     const repo = scratch('prune', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\nbuild/\n', 'tracked.txt': 'base\n' });
