@@ -115,6 +115,8 @@
  * worktree git lists), whichever worktree it is in, under a lock beside the file, so a merge's verdict and the full
  * set's never write over each other. Verdicts are keyed by tree, so `--passed` in the main checkout judges its own tree
  * and `--passed` in the gate tree, which the stage asks, the gate tree's.
+ * - **Few starts.** A run's start asks git once for each kind of fact (`tools/merge/home.ts`): one `rev-parse` for the
+ * top, git and common folders, one worktree listing passed along, one `check-ignore --stdin` for every path a verb needs ignored.
  * - **One at a time.** The run holds `GATE_TREE_LOCK` (its pid, commit and start) in the main checkout; a second is refused,
  * naming it. A lock whose process no longer runs is taken over, and said.
  * - **The stage builds the gated tree.** `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`
