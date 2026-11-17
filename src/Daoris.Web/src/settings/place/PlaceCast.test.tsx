@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as draw, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
@@ -22,7 +23,7 @@ const view: PlaceCastView = {
 afterEach(() => i18n.changeLanguage('en'));
 
 describe('a place’s cast in its Settings', () => {
-  it('says each role’s holder and why, the risk and marks, the roster and the line, and a choice casts with the reason', () => {
+  it('says each role’s holder and why, the risk and marks, the roster and the line, and a choice casts with the reason', async () => {
     const onCast = vi.fn();
     render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={onCast} />);
     expect(screen.getByText(/Chosen\. Set for this place\. low-risk docs/)).toBeInTheDocument();
@@ -32,7 +33,8 @@ describe('a place’s cast in its Settings', () => {
     expect(screen.queryByRole('combobox', { name: 'Who fills owner' })).toBeNull();
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'I sign these' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Who fills approver' }), { target: { value: 'person' } });
+    await userEvent.click(screen.getByRole('combobox', { name: 'Who fills approver' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'you' }));
     expect(onCast).toHaveBeenCalledWith({ role: 'approver', holder: 'person', why: 'I sign these' });
   });
 

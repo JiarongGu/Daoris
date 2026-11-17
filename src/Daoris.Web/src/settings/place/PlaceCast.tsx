@@ -1,7 +1,9 @@
 import type { TFunction } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inline, SettingRow } from '../../design/ui';
+import { Inline, SelectField, SettingRow } from '../../design/ui';
+
+const DEFAULT_HOLDER = 'default';
 
 /** One role's holder at a place now, and why (`CastNow`): `owner`, `marked`, `risk`, `cast`, `staffed` or `default`. */
 export type CastRole = { role: string; holder: string; why: string; source: string; words?: string | null };
@@ -69,20 +71,17 @@ export function PlaceCastSetting({ name, twin, view, busy = false, onCast }: {
             <span className="text-ink">{holderSaid(t, role.holder)}</span>
             <span className="text-ink-faint"><Inline text={whySaid(t, role)} /></span>
             {role.why !== 'owner' && (
-              <select
-                aria-label={t('settings.cast.choice', { role: role.role })}
-                className="rounded border border-line px-1 text-small"
+              <SelectField
+                ariaLabel={t('settings.cast.choice', { role: role.role })}
                 disabled={busy || !!view.unreadable}
-                value={role.why === 'cast' ? role.holder : ''}
-                onChange={(event) => {
-                  const holder = event.target.value === '' ? null : event.target.value;
+                value={role.why === 'cast' ? role.holder : DEFAULT_HOLDER}
+                options={[{ value: DEFAULT_HOLDER, label: t('settings.cast.default') }, ...view.roster.map((holder) => ({ value: holder, label: holderSaid(t, holder) }))]}
+                onChange={(chosen) => {
+                  const holder = chosen === DEFAULT_HOLDER ? null : chosen;
                   if (holder === (role.why === 'cast' ? role.holder : null)) return;
                   onCast({ role: role.role, holder, why: why.trim() || null });
                 }}
-              >
-                <option value="">{t('settings.cast.default')}</option>
-                {view.roster.map((holder) => <option key={holder} value={holder}>{holderSaid(t, holder)}</option>)}
-              </select>
+              />
             )}
           </li>
         ))}
