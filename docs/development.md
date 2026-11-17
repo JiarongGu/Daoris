@@ -91,7 +91,18 @@ names them, and a workflow's `check` step verifies them at your tip while you ar
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
 source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
-handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
+handed back.
+
+The `cli` gate, `npm run verify:checks`, is `tools/verify-checks.mjs`: the steps of `tools/verify-checks/steps.mjs`, the index's
+writer first and alone, the rest side by side (quick runs the same list through the same runner). Each step declares what it
+reads, and `node tools/test-map.mjs --check` holds each declaration to what the step's code reads (its imports, the paths its
+strings name, a tsconfig's files and theirs); a step whose tool lists the tree by a filter names that listing in its `reads`. A
+merge in place, a preflight and the queue's scoped run hand every gate their changed paths (`MERGE_BRANCH_CHANGED`,
+`tools/merge/gate-hands.ts`), and the gate then runs only the steps a changed path reaches, the devkit's universal step standing
+aside since the `universal` gate runs it in every merge with the private patterns; a docs-only merge runs twelve of its
+twenty-five steps. Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
+step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
+that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
 committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: the gates its merge
 would run (the queue's own choice, on the paths from the merge base), every one to its end, main and the queue untouched, each
 verdict kept where the merge of the same tree keeps it. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test

@@ -302,7 +302,10 @@ the merges, and the census classes' 8% of every driver unit run. Depends on CENS
 `verify:checks` is 2.2 min median, 6.6 p90, 8 to 10 min in today's queue runs and red 16 times: each of its steps (the CLI's and the
 tools' typechecks, the doctrine check, contracts, the document checks) declares what it reads, and a merge runs a step only where a
 path reaches it, the whole set staying in `npm run quick` and the CI. Proof: every step's reach declared and checked by `test-map`, a
-planted break in each step's input red at a merge. Depends on nothing.
+planted break in each step's input red at a merge. Depends on nothing. Built: the steps and their reads are
+`tools/verify-checks/steps.mjs`, run side by side by `tools/verify-checks.mjs` on the paths a merge hands (`MERGE_BRANCH_CHANGED`),
+held by test-map's check 8; on 2026-11-17 the steps alone ran 4.9 min in series, the gate 56 s on a docs-only change and 93 s on a
+tools change (12 and 16 of 25 steps), the devkit's universal step left to the `universal` gate.
 
 **6. LAYERS1 e and f, the git port with an in-memory fake (a).**
 What changes: e makes `GitRuns` the `IGit` port with `ScriptedGit`; f moves the families' git asks to `IGitRepository` on
