@@ -12,8 +12,10 @@ export const TIERS: readonly Tier[] = Object.freeze(['fast', 'heavy', 'all']);
 /** The tier named by a flag's value, or null where it names none. */
 export const tierNamed = (value: string | null): Tier | null => TIERS.find((tier) => tier === value) ?? null;
 
-/** A class of the heavy tier: its suite's gate runs with the Process settings, or the suite is a rehearsals project's. */
-export const isHeavyUnit = (unit: { suite: string }, processSuites: ReadonlySet<string>): boolean => processSuites.has(unit.suite) || unit.suite.endsWith('-rehearsals');
+/** A suite of the heavy tier: its gate runs with the Process settings, it is a rehearsals project's, or an end-to-end tier. */
+export const isHeavySuite = (suite: string, processSuites: ReadonlySet<string>): boolean => processSuites.has(suite) || suite.endsWith('-rehearsals') || suite.endsWith('-e2e');
+
+export const isHeavyUnit = (unit: { suite: string }, processSuites: ReadonlySet<string>): boolean => isHeavySuite(unit.suite, processSuites);
 
 /** The units a tier runs, and (of the fast tier) the heavy ones it hands to the run after the landing. */
 export function splitTier<U extends { suite: string }>(units: readonly U[], tier: Tier, processSuites: ReadonlySet<string>): { kept: U[]; deferred: U[] } {

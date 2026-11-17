@@ -23,7 +23,7 @@ public sealed class ToolsAtTheStartCensusTests
         var readers = new List<string>();
         foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
-            var reads = Regex.Matches(Code(File.ReadAllText(file)), @"\.ToolsUpFront\b").Count;
+            var reads = Regex.Matches(Code(SourceTexts.Of(file)), @"\.ToolsUpFront\b").Count;
             readers.AddRange(Enumerable.Repeat(Path.GetFileName(file), reads));
         }
 
@@ -37,7 +37,7 @@ public sealed class ToolsAtTheStartCensusTests
         var missing = new List<string>();
         foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
-            var source = Code(File.ReadAllText(file));
+            var source = Code(SourceTexts.Of(file));
             foreach (Match call in Regex.Matches(source, @"\.(Start|Chat|Resume)\((adapter|resolved)\b"))
             {
                 made++;

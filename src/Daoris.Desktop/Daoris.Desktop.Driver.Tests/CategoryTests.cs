@@ -151,7 +151,7 @@ public sealed partial class CategoryTests
     {
         var project = SourceFiles.Project(SourceFiles.DriverTestsProject);
         var sources = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs")
-            .Select(path => (Path.GetRelativePath(project, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
+            .Select(path => (Path.GetRelativePath(project, path).Replace(Path.DirectorySeparatorChar, '/'), SourceTexts.Of(path)))
             .ToList();
 
         var marked = sources.Sum(source => ParallelCheck.Marked(source.Item2).Count);

@@ -88,6 +88,28 @@ test('every edge kind reaches its unit, and a member added to a glob or a scanne
   assert.ok(!reaches('src/Daoris.Cli/test/text.test.ts', 'src/Daoris.Service/Daoris.Service.Core/Thing.cs'), 'and nothing else');
 });
 
+test("an end-to-end spec is reached only by a path its gate declares, so a tools change outside the merge tool reaches no e2e spec", () => {
+  const gates = { gates: [{ name: 'tool-e2e', run: 'npm run tooltests:e2e', paths: ['daoris.gates.json', 'tools/merge-branch.mjs', 'tools/merge/', 'src/Daoris.Cli/tool-test/'] }] };
+  const { files, read } = treeOf({
+    'daoris.gates.json': JSON.stringify(gates),
+    'tools/merge-branch.mjs': "import { isMain } from './fsx.mjs';\nimport { plan } from './merge/plan.ts';\nexport const merge = plan;\n",
+    'tools/merge/plan.ts': 'export const plan = 1;\n',
+    'src/Daoris.Cli/tool-test/merge-branch-flow.e2e.ts': "const tool = await import(\n  // a seam\n  '../../../tools/merge-branch.mjs');\n",
+    'src/Daoris.Cli/tool-test/merge-branch-flow.test.ts': "const tool = await import(\n  // a seam\n  '../../../tools/merge-branch.mjs');\n",
+  });
+  const map = tool.census(files, read);
+  const e2e = unitOf(map, 'src/Daoris.Cli/tool-test/merge-branch-flow.e2e.ts');
+  const unit = unitOf(map, 'src/Daoris.Cli/tool-test/merge-branch-flow.test.ts');
+  assert.equal(e2e.suite, 'tool-e2e', 'an e2e spec is a unit of the end-to-end tier');
+  assert.equal(unit.suite, 'tool-tests', 'a test file beside it stays in the unit tier');
+  assert.equal(map.units.filter((each) => each.file === e2e.file).length, 1, 'and in no other');
+  assert.equal(tool.tsSubject(e2e.file), 'tools/merge-branch.mjs');
+  assert.ok(tool.tsReaches(e2e.reach, 'tools/merge-branch.mjs'), "the merge tool's own file reaches it");
+  assert.ok(tool.tsReaches(e2e.reach, 'tools/merge/plan.ts'), 'and a module of the merge tool it imports');
+  assert.ok(!tool.tsReaches(e2e.reach, 'tools/fsx.mjs'), 'a tools change outside the merge tool reaches no e2e spec, though the tool imports it');
+  assert.ok(tool.tsReaches(unit.reach, 'tools/fsx.mjs'), 'the unit tier is reached by its whole closure, as before');
+});
+
 test("a unit says how many reads lie between it and a changed file, so a bound can keep the change's own tests", () => {
   const work = 'src/Daoris.Web/src/work';
   const { files, read } = treeOf({

@@ -398,3 +398,75 @@ test('the stage history says what a stage brings since the last, and an unknown 
   assert.match(lines[0]!, /since the last stage \(c1, .*\): 2 commits/);
   assert.deepEqual(lines.slice(1), ['  c3 three', '  c2 two']);
 });
+
+// ---------------------------------------------------------------------------------------------------
+// A known red whose test a whole run no longer lists ends as gone
+
+const GONE_LINE = ['c1', 'c2', 'c3'];
+const goneDescends = (from: string, to: string): boolean => GONE_LINE.indexOf(to) >= GONE_LINE.indexOf(from);
+const goneRecord = (tests: string[], gate = 'driver-process'): Findings => {
+  let record: Findings = { schema: 1, findings: [] };
+  for (const test of tests) {
+    record = bg.fileSighting(record, {
+      gate, unit: 'N.Tests.WidgetTests', test, commit: 'c1', at: at(NOON), kind: 'ordinary',
+      fingerprint: { test, exception: '', at: null, message: 'x' }, signature: { test } as unknown as Signature,
+    }).record;
+  }
+  return record;
+};
+type GoneInput = { commit: string; at: string; kind: string; stopped?: boolean; listed: (finding: Finding) => Set<string> | null; descends: (from: string, to: string) => boolean };
+const gone = (record: Findings, input: Partial<GoneInput> & Pick<GoneInput, 'listed'>): { record: Findings; gone: Finding[] } =>
+  (bg as unknown as { clearGone: (r: Findings, i: GoneInput) => { record: Findings; gone: Finding[] } })
+    .clearGone(record, { commit: 'c3', at: at(NOON + HOUR), kind: 'ordinary', descends: goneDescends, ...input });
+const listedOf = (...rows: { name: string; outcome: string }[]) => {
+  const names = (bg as unknown as { listedTests: (trx: string) => Set<string> }).listedTests(trxOf(rows.map((each) => ({ ...each, message: 'm', line: 1 }))));
+  return () => names;
+};
+
+test('a test every whole run no longer lists is closed as gone, with its commit, time and kind; a test it lists, failed or passing, stays', () => {
+  const record = goneRecord(['N.Tests.WidgetTests.Deleted', 'N.Tests.WidgetTests.Failing']);
+  const done = gone(record, { listed: listedOf({ name: 'N.Tests.WidgetTests.Failing', outcome: 'Failed' }, { name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' }) });
+  assert.deepEqual(done.gone.map((each) => each.test), ['N.Tests.WidgetTests.Deleted']);
+  const [deleted, failing] = done.record.findings;
+  assert.equal(deleted!.state, 'gone');
+  assert.deepEqual((deleted as unknown as { gone: object }).gone, { commit: 'c3', at: at(NOON + HOUR), kind: 'ordinary' });
+  assert.equal(failing!.state, 'red');
+});
+
+test('a run narrowed by class, one not read, one stopped, one that does not clear, and one on a commit that does not descend close nothing', () => {
+  const record = goneRecord(['N.Tests.WidgetTests.Deleted']);
+  const other = listedOf({ name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' });
+  assert.equal(gone(record, { listed: () => null }).gone.length, 0, 'a narrowed run lists no whole');
+  assert.equal(gone(record, { listed: () => new Set<string>() }).gone.length, 0, 'a trx that lists nothing is no evidence');
+  assert.equal(gone(record, { listed: other, stopped: true }).gone.length, 0);
+  assert.equal(gone(record, { listed: other, kind: 'bisect' }).gone.length, 0);
+  assert.equal(gone(record, { listed: other, commit: 'c0' }).gone.length, 0);
+});
+
+test('a gate finding is never gone', () => {
+  const record = goneRecord(['driver-process']);
+  assert.equal(gone(record, { listed: listedOf({ name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' }) }).gone.length, 0);
+});
+
+test('a parameterised case whose name changed is gone, its sibling case that is still listed stays', () => {
+  const record = goneRecord(['N.Tests.WidgetTests.Adds(n: 1)', 'N.Tests.WidgetTests.Adds(n: 2)']);
+  const done = gone(record, { listed: listedOf({ name: 'N.Tests.WidgetTests.Adds(n: 2)', outcome: 'Passed' }, { name: 'N.Tests.WidgetTests.Adds(n: 5)', outcome: 'Passed' }) });
+  assert.deepEqual(done.gone.map((each) => each.test), ['N.Tests.WidgetTests.Adds(n: 1)']);
+});
+
+test('a run of a gate reads as whole only where no reach narrowed it and no class was deferred, and only with a trx', () => {
+  const wholeListing = (bg as unknown as { wholeListing: (gate: object, trx: string | null) => (finding: Finding) => Set<string> | null }).wholeListing;
+  const trx = trxOf([{ name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' }]);
+  const finding = goneRecord(['N.Tests.WidgetTests.Deleted']).findings[0]!;
+  assert.ok(wholeListing({ name: 'driver-process', reach: { whole: 'due' } }, trx)(finding)?.has('N.Tests.WidgetTests.Other'));
+  assert.ok(wholeListing({ name: 'driver-process' }, trx)(finding));
+  assert.equal(wholeListing({ name: 'driver-process', reach: { whole: null } }, trx)(finding), null, 'a half run by reach is narrowed');
+  assert.equal(wholeListing({ name: 'driver-process', reach: { whole: 'due' }, deferredClasses: ['A'] }, trx)(finding), null);
+  assert.equal(wholeListing({ name: 'driver-process' }, null)(finding), null, 'no trx, no evidence');
+  assert.equal(wholeListing({ name: 'modules-process' }, trx)(finding), null, 'another gate lists nothing of it');
+});
+
+test('a gone finding no longer holds the known red open: the watch says nothing of it', () => {
+  const done = gone(goneRecord(['N.Tests.WidgetTests.Deleted']), { listed: listedOf({ name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' }) });
+  assert.deepEqual(bg.knownRedLines(done.record, NOON + 100 * HOUR), []);
+});

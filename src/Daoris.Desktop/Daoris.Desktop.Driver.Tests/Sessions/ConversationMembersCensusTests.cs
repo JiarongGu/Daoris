@@ -41,7 +41,7 @@ public sealed partial class ConversationMembersCensusTests
     {
         foreach (var project in new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
         {
-            foreach (var path in SourceFiles.All(project, "*.cs")) yield return (Path.GetFileName(path), File.ReadAllText(path));
+            foreach (var path in SourceFiles.All(project, "*.cs")) yield return (Path.GetFileName(path), SourceTexts.Of(path));
         }
     }
 }

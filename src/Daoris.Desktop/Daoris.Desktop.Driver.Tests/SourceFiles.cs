@@ -32,13 +32,17 @@ internal static class SourceFiles
         Single(project, name, All(project, name).Where(path => Path.GetFileName(path) == name));
 
     /// <summary>Every file under a desktop project's folder whose name matches the pattern, at any depth, its build output aside, in order.</summary>
-    public static IEnumerable<string> All(string project, string pattern)
-    {
-        var folder = Project(project);
-        return Directory.EnumerateFiles(folder, pattern, SearchOption.AllDirectories)
-            .Where(path => Path.GetRelativePath(folder, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj"))
-            .Order(StringComparer.Ordinal);
-    }
+    public static IEnumerable<string> All(string project, string pattern) =>
+        Walked.GetOrAdd((project, pattern), key => new Lazy<string[]>(() =>
+        {
+            var folder = Project(key.Project);
+            return [.. Directory.EnumerateFiles(folder, key.Pattern, SearchOption.AllDirectories)
+                .Where(path => Path.GetRelativePath(folder, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj"))
+                .Order(StringComparer.Ordinal)];
+        })).Value;
+
+    // One walk of each project's folder a run, shared by every census that lists it (the file texts are SourceTexts').
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Project, string Pattern), Lazy<string[]>> Walked = new();
 
     /// <summary>
     /// The one CLI source of this name, at any depth of <c>src/Daoris.Cli/src/</c> but its command rows' <c>cli/</c>, whose

@@ -30,7 +30,7 @@ public sealed class ConversationRunCensusTests
     private static IEnumerable<(string File, string Source)> Runner() =>
         SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Where(file => Path.GetFileName(file).StartsWith("ChatRunner", StringComparison.Ordinal) || Transports.Contains(Path.GetFileName(file)))
-            .Select(file => (Path.GetFileName(file), Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "")));
+            .Select(file => (Path.GetFileName(file), Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", "")));
 
     [Fact]
     public void The_conversations_runner_starts_nothing_itself_and_holds_the_run_for_it()
@@ -53,7 +53,7 @@ public sealed class ConversationRunCensusTests
     public void Nothing_above_the_run_writes_a_line_to_a_tracked_process()
     {
         var writing = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Where(file => Regex.IsMatch(Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bProcesses\.Send\s*\("))
+            .Where(file => Regex.IsMatch(Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bProcesses\.Send\s*\("))
             .Select(Path.GetFileName)
             .ToArray();
 
@@ -87,7 +87,7 @@ public sealed class ConversationRunCensusTests
             .Where(file => file.Replace('\\', '/').Contains("/Loop/Chat/", StringComparison.Ordinal))
             .ToList();
         var naming = chat
-            .Where(file => Regex.IsMatch(Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bISessionAdapter\b"))
+            .Where(file => Regex.IsMatch(Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bISessionAdapter\b"))
             .Select(Path.GetFileName)
             .ToArray();
 
@@ -99,7 +99,7 @@ public sealed class ConversationRunCensusTests
     public void The_one_protocol_session_in_the_driver_is_the_runs()
     {
         var making = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Where(file => Regex.IsMatch(Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bnew\s+AcpSession\s*\("))
+            .Where(file => Regex.IsMatch(Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bnew\s+AcpSession\s*\("))
             .Select(file => Path.GetFileName(file)!)
             .ToArray();
 

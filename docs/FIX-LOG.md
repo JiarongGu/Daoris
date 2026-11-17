@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-17 - The time ratchet's load mark ignored test runs outside the admission (LOADREAL1)
+
+- **Symptom:** a merge's `reached` gate ran beside four builders' own `dotnet test` and `node --test` runs; its records were marked
+  as taken alone (holds 1) and the ratchet failed ten end-to-end specs for time (121-193 s over a 120 s limit), the cause being load.
+- **Root cause:** the mark (TIMELOAD1, `tools/time-load.mjs`) read only the heavy-run admission's places, which a builder's own test
+  run never takes.
+- **Fix:** the sampler adds one place for each other checkout, worktree, gate or heavy tree with a test process running
+  (`foreignTrees`: one `Get-CimInstance Win32_Process` read at most every 15 s, 5 s timeout, a failed read counts nothing); `holds`
+  stays the record's one number, so `isLoaded` and the ratchet are unchanged.
+- **Verification:** `node --test tools/time-load.test.mjs` (five cases, written before the exports existed) and
+  `node --test tools/time-ratchet.test.mjs` pass.
+
 ## 2026-11-17 - The session reads bench grew its service host and testhost past 12 GB (BENCHMEM1)
 
 - **Symptom:** `SessionReadsBenchProcessTests` failed in every heavy run since merge 4f78e29; alone on 2026-11-17 its service host
@@ -52,6 +64,16 @@ repository.
   run's end ends the session at the stand-in, and the look's tidy stage (`LetGoUnheldLocksAsync` over `BranchTidying.InUseAsync`)
   lets go of the lock no session running or waiting holds, the tree standing. The other two ticks' carried sessions wait on their step.
 - **Verification:** the three classes pass with `process.runsettings`, filtered, with the Loop tick classes that bind the same workflow.
+## 2026-11-17 - A known red whose test was deleted or renamed stayed open forever (KNOWNREDGONE1)
+
+- **Symptom:** 20 of the 594 findings in the CI's known-red record named tests that no longer exist; a gated stage refuses every
+  known red past 72 hours, so a stage of the install could never go green.
+- **Root cause:** findings were only ever cleared by a pass (`clearPasses`, `clearKept`: a trx listing the test Passed, or the gate's
+  own pass). A deleted or renamed test is never listed, so no run could pass it and its finding stayed open until it expired.
+- **Fix:** a finished, unstopped CI run of a clearing kind that ran a gate whole closes a test finding of that gate as `gone`
+  (`clearGone`, `{ commit, at, kind }` recorded) when the gate's trx lists the test under no outcome (`listedTests`); a gate
+  finding, a run narrowed by class or by a budget, a run with no readable trx and one that lists no test close nothing.
+- **Verification:** `src/Daoris.Cli/tool-test/ci-background.test.ts`, the gone cases, red first.
 
 ## 2026-11-17 - A git place read its exited git as running under load
 

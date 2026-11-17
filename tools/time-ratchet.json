@@ -54,9 +54,9 @@
     "why": "each case is two real driver ticks (the first run, then the resume after a squash onto the line), thirty to seventy git starts and a node stand-in agent apiece; the start on the line a squash moved is what it proves, and only a real tick over real git reads it",
     "class": true
   },
-  "src/Daoris.Cli/tool-test/merge-queue.test.ts::": {
+  "src/Daoris.Cli/tool-test/merge-queue-": {
     "ms": 1106000,
-    "why": "its cases run the merge queue end to end against real git repositories and real child processes, one after another, so the file's total is the sum of whole flows",
+    "why": "the end-to-end tier's queue specs (merge-queue-*.e2e.ts, TOOLTIER1) run the merge queue against real git repositories and real child processes, so a file's total is the sum of whole flows",
     "row": "MERGETS1"
   },
   "src/Daoris.Web/src/work/WorkFrame.test.tsx::a park's question sends the free answer through the box as before, naming no question": {

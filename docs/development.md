@@ -91,7 +91,12 @@ names them, and a workflow's `check` step verifies them at your tip while you ar
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
 source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
-handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone.
+handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
+committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: the gates its merge
+would run (the queue's own choice, on the paths from the merge base), every one to its end, main and the queue untouched, each
+verdict kept where the merge of the same tree keeps it. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test
+or first error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in
+the worktree's `local/scratch/main-tree`. The branch-worker hands back on its pass or its brief.
 
 | Change | Additional verification |
 |---|---|
@@ -177,8 +182,11 @@ Main is the development branch, and the cycle's aim is main green and the instal
 2. **Land.** A finished branch lands through `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. Its default runs
    the blocking checks, the CLI's verify and the reached checks: the test units the merge's paths reach in the driver's, modules',
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
-   over named for the CI. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
-   a CI run of hours.
+   over named for the CI. The gate reads the paths from the base the run hands it in its `{base}`: HEAD for a merge in place, the
+   candidate's base in the queue's committed scope tree, the merge base in a preflight's committed branch, so a committed tree's
+   reached units run as an open merge's do. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
+   `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
    rule, set by `npm ci` and by the setup), so a builder's `git merge main` and the merge tool agree; the archive, the changelog
    and the fix log are append-only and merge by union.
@@ -196,8 +204,9 @@ resume/retry commands when a merge is already open:
 
 ```sh
 node tools/merge-branch.mjs <branch> --preview
-node tools/merge-branch.mjs <branch> --message <file under local/>
-node tools/merge-branch.mjs --queue [--recheck]
+node tools/merge-branch.mjs <branch> --message <file under local/> [--keep-going]
+node tools/merge-branch.mjs --queue [--recheck | --known]
+node tools/merge-branch.mjs --preflight [--base <ref>]   (in the branch's worktree)
 node tools/merge-branch.mjs --drop-batch [<branch>]
 node tools/merge-branch.mjs --plan <branch>
 node tools/merge-branch.mjs --continue
@@ -246,11 +255,17 @@ tip after a merge or batch; fix what it reports. `--gated` runs what the paths r
 is still required before any stage (GATESLIM1, D115).
 
 The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
-kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. One case
-fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
+kit: `src/Daoris.Cli/tool-test/`) are two gates (TOOLTIER1). The unit tier, `tool-tests` (`npm run tooltests`, the folder's
+`*.test.ts`), runs beside the other light gates. The end-to-end tier, `tool-e2e` (`npm run tooltests:e2e`: the folder's
+`*.e2e.ts`, `tools/as-merged.test.mjs` and the merge tool's Vitest `e2e` project), holds every spec that seeds a scratch
+repository and starts real git and the merge tool. It runs in the Process lane, alone, and a spec of the unit tier that takes
+over ten seconds alone moves there or is made pure. An end-to-end spec is reached only by a path its gate's `paths` declare,
+the merge tool's own files (`tools/test-map.mjs`, `bounded`): a change to a tool the merge tool only imports reaches the unit
+tier and no end-to-end spec. A merge's reached checks defer the end-to-end specs to the run after the landing, as they defer a
+Process class. One case fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
 one unbounded; a case's invocation past its bound is ended with its tree, and one whose tree outlives the end is answered
-after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
-and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1). A merge-queue
+after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs either gate only when its paths reach it (`tools/merge-branch.mjs`
+and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run both (GATESLIM1). A merge-queue
 case runs on a scratch repository named for its test process, its children with an environment the case builds (no inherited git
 variable that locates a repository, git's ceiling at the fixture), and no case changes the test process's environment: run a
 probe of the runner in a process of its own, and write a stand-in gate's paths into the gate (QUEUETESTLEAK1, D115's note).
@@ -368,6 +383,17 @@ as a flake, and the queue goes on. The members kept are formed again and judged 
 twice holds the candidate until memory is free; it never runs on the base and never stops the queue. `--queue` prints the
 stop, the candidate and its members, what is queued (and whether a branch has moved past its frozen tip), and what was handed
 back. `--drop-batch <branch>` takes a queued branch off, or ends the candidate that holds it.
+
+**Every red once, and main's seen.** A candidate's run keeps going past every failure but a blocking light gate's, or past
+those too where a request was queued with `--keep-going`. Its reds go in one brief, `local/scratch/merge-<branch>/brief.md` for
+each member, each failure marked main's or the branch's by its judgement's run on the base, and the waiter names it. The merge
+in place writes the same brief, marking each failure by its selection run on main's tip in `local/scratch/main-tree`. After each
+landing the cheap suites (`cli`, `cli-tests`, `tool-tests`, `censuses`) run on the new tip in the background, every one to its
+end, in `local/main-watch-tree` (`--main-watch`, recorded in `local/main-watch.jsonl`; one started while another runs ends at
+once, and the running one then watches main's newest tip). A red writes its brief in `local/scratch/main-watch-<sha7>/` and holds the queue's next merge, said
+by `--queue` and to each waiter, until a watch of a later tip is green, the CI holds each failure as a known red, or
+`--queue --known` files them as known reds. Every run writes its start to `_fixtures/test-timing/run-start.json` (no `DAORIS_`
+variable reaches a gate), so a time ratchet inside a gate judges only that run's records.
 
 **A drop ends the run it dropped** (QUEUEDRAIN1). The runner holds every step of a candidate's run, its gates and its failure
 probes (prefix and class), in one set of step trees, the cancellation a superseded CI run uses, and every two seconds, and before each

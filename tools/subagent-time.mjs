@@ -15,6 +15,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
+import { readMeta } from './subagent-usage.mjs';
 
 /** The class of a path a read or an edit touches. */
 export function pathClass(path = '') {
@@ -93,7 +94,7 @@ export function clockOf(lines) {
   return { total: first === null ? 0 : last - first, model, buckets, calls, start: first };
 }
 
-function transcripts(root) {
+export function transcripts(root) {
   const found = [];
   for (const session of readdirSync(root, { withFileTypes: true })) {
     if (!session.isDirectory()) continue;
@@ -101,8 +102,7 @@ function transcripts(root) {
     if (!existsSync(dir)) continue;
     for (const file of readdirSync(dir)) {
       if (!file.endsWith('.jsonl')) continue;
-      const metaFile = join(dir, file.replace(/\.jsonl$/, '.meta.json'));
-      const meta = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')) : {};
+      const meta = readMeta(join(dir, file.replace(/\.jsonl$/, '.meta.json')));
       found.push({ file: join(dir, file), meta });
     }
   }

@@ -45,6 +45,8 @@ import { globToRegExp } from './merge/lanes-file.ts';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
+import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
+export { literalsOf, tsFacts } from './test-map/ts-facts.mjs';
 
 // ---------------------------------------------------------------------------------------------------
 // The tree
@@ -104,10 +106,13 @@ const GLOBS = new Map();
  */
 export const TS_SUITES = Object.freeze([
   { suite: 'cli', runner: 'node', glob: 'src/Daoris.Cli/test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
-  { suite: 'tool-tests', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
-  // The merge tool's Vitest projects: the unit one runs in the CLI's verify, the end-to-end one in the tool-tests.
+  { suite: 'tool-tests', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.test.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
+  // The end-to-end tier's units are `bounded`: a path reaches one only where its gate's declared `paths` hold it, so a tool the merge
+  // tool merely imports reaches the unit tier and no end-to-end spec.
+  { suite: 'tool-e2e', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.e2e.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'], bounded: true },
+  // The merge tool's Vitest projects: the unit one runs in the CLI's verify, the end-to-end one in the end-to-end tier.
   { suite: 'cli', runner: 'vitest', glob: TOOL_PROJECTS.unit.include[0], whole: ['tools/vitest.config.ts'] },
-  { suite: 'tool-tests', runner: 'vitest', glob: TOOL_PROJECTS.e2e.include[0], whole: ['tools/vitest.config.ts', 'src/Daoris.Cli/package.json'] },
+  { suite: 'tool-e2e', runner: 'vitest', glob: TOOL_PROJECTS.e2e.include[0], whole: ['tools/vitest.config.ts', 'src/Daoris.Cli/package.json'], bounded: true },
   {
     suite: 'web-unit', runner: 'vitest', glob: 'src/Daoris.Web/src/**/*.test.{ts,tsx}',
     whole: ['src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/src/test/setup.tsx', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/package.json'],
@@ -146,81 +151,6 @@ export function dotnetSuites(gates, files) {
 
 // ---------------------------------------------------------------------------------------------------
 // Reading TypeScript
-
-/**
- * The string literals of a TypeScript or JavaScript source, in order: quoted strings, and each literal stretch of a template
- * (its holes scanned as code). Comments are skipped. A quote never runs past its line, so a quote inside a regular expression
- * costs at most that line.
- */
-export function literalsOf(text) {
-  const out = [];
-  const holes = [];
-  const n = text.length;
-  let i = 0;
-  const quoted = (j, close, template) => {
-    let value = '';
-    for (; j < n && text[j] !== close && (template || text[j] !== '\n'); j += 1) {
-      if (text[j] === '\\') {
-        j += 1;
-        value += text[j] ?? '';
-      } else if (template && text[j] === '$' && text[j + 1] === '{') break;
-      else value += text[j];
-    }
-    return { value, end: j };
-  };
-  while (i < n) {
-    const c = text[i];
-    if (c === '/' && text[i + 1] === '/') {
-      const end = text.indexOf('\n', i);
-      i = end < 0 ? n : end;
-    } else if (c === '/' && text[i + 1] === '*') {
-      const end = text.indexOf('*/', i + 2);
-      i = end < 0 ? n : end + 2;
-    } else if (c === "'" || c === '"') {
-      const { value, end } = quoted(i + 1, c, false);
-      if (text[end] === c) out.push(value);
-      i = end + 1;
-    } else if (c === '`' || (c === '}' && holes.length && holes.at(-1) === 0)) {
-      if (c === '}') holes.pop();
-      const { value, end } = quoted(i + 1, '`', true);
-      out.push(value);
-      if (text[end] === '$') {
-        holes.push(0);
-        i = end + 2;
-      } else i = end + 1;
-    } else {
-      if (holes.length && c === '{') holes[holes.length - 1] += 1;
-      else if (holes.length && c === '}') holes[holes.length - 1] -= 1;
-      i += 1;
-    }
-  }
-  return out;
-}
-
-/** A TypeScript or JavaScript file's imports, its literal dynamic imports, its computed ones, its strings, its globs and its declared reaches. */
-export function tsFacts(text) {
-  const imports = new Set();
-  for (const [, spec] of text.matchAll(/\b(?:import|export)\s+(?:type\s+)?(?:[^'";]*?\sfrom\s*)?['"]([^'"]+)['"]/g)) imports.add(spec);
-  for (const [, spec] of text.matchAll(/\bimport\(\s*(?:\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*['"`]([^'"`$]+)['"`]\s*\)/g)) imports.add(spec);
-  for (const [, spec] of text.matchAll(/\b(?:vi\.mock|vi\.importActual|require)\(\s*['"]([^'"]+)['"]/g)) imports.add(spec);
-  const computed = /\bimport\(\s*(?!['"`]|\/\/|\/\*)[^)]/.test(text.replace(/import\(\s*(?:\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*['"`][^'"`$]+['"`]\s*\)/g, ''));
-  const strings = new Set(literalsOf(text).filter((value) => value && value.length < 300).map((value) => value.replace(/\\/g, '/')));
-  const globs = [];
-  for (const [, body] of text.matchAll(/import\.meta\.glob(?:<[^>]*>)?\(\s*(\[[^\]]*\]|['"][^'"]+['"])/g)) {
-    for (const [, pattern] of body.matchAll(/['"]([^'"]+)['"]/g)) globs.push(pattern);
-  }
-  const reaches = [];
-  for (const [, target, why] of text.matchAll(/^\s*\/\/\s*reaches:\s*(\S+)\s*(?:—|--|-)\s*(.+)$/gm)) reaches.push({ target, why: why.trim() });
-  return { imports: [...imports], computed, strings: [...strings], globs, reaches };
-}
-
-/** A relative import resolved to a tracked file: as written, with an extension, `.js` as its `.ts`, or a folder's index. */
-function resolveImport(from, spec, tracked) {
-  if (!spec.startsWith('.')) return null;
-  const base = posix.normalize(posix.join(posix.dirname(from), spec));
-  const tries = [base, `${base}.ts`, `${base}.tsx`, `${base}.mts`, `${base}.mjs`, `${base}.js`, base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx'), base.replace(/\.mjs$/, '.mts'), `${base}/index.ts`, `${base}/index.tsx`, `${base}/index.js`];
-  return tries.find((path) => tracked.has(path)) ?? null;
-}
 
 const CODE = /\.(ts|tsx|mts|mjs|js)$/;
 
@@ -325,11 +255,15 @@ export function tsReader(files, read) {
 
 /** Whether a TypeScript unit's reach holds `path`. */
 export function tsReaches(reach, path) {
+  if (reach.within && !declaredHolds(reach.within, path)) return false;
   if (reach.wide.length) return true;
   if (reach.files.includes(path)) return true;
   if (reach.folders.some((folder) => path.startsWith(`${folder}/`))) return true;
   return reach.globs.some((glob) => globRegExp(glob).test(path));
 }
+
+/** Whether a gate's declared `paths` hold `path`: an entry ending in `/` is a folder, any other a file, as the declaration writes them. */
+const declaredHolds = (paths, path) => paths.some((entry) => (entry.endsWith('/') ? path.startsWith(entry) : path === entry));
 
 // ---------------------------------------------------------------------------------------------------
 // Subjects
@@ -339,11 +273,12 @@ export function tsSubject(file) {
   const cli = /^src\/Daoris\.Cli\/test\/([^/]+)\//.exec(file);
   if (cli) return `src/Daoris.Cli/src/${cli[1]}`;
   if (file.startsWith('src/Daoris.Cli/test/')) return 'src/Daoris.Cli';
-  if (/^src\/Daoris\.Cli\/tool-test\/merge-branch-[^/]+\.test\.ts$/.test(file)) return 'tools/merge-branch.mjs';
+  if (/^src\/Daoris\.Cli\/tool-test\/merge-branch-[^/]+\.(test|e2e)\.ts$/.test(file)) return 'tools/merge-branch.mjs';
+  if (/^src\/Daoris\.Cli\/tool-test\/merge-queue-[^/]+\.e2e\.ts$/.test(file)) return 'tools/merge-queue.mjs';
   const merge = /^(tools\/merge\/.+)\.test\.ts$/.exec(file);
   if (merge) return `${merge[1]}.ts`;
   if (/^tools\/merge\/.+\.e2e\.ts$/.test(file)) return 'tools/merge-branch.mjs';
-  const tool = /^src\/Daoris\.Cli\/tool-test\/(.+)\.test\.ts$/.exec(file);
+  const tool = /^src\/Daoris\.Cli\/tool-test\/(.+)\.(?:test|e2e)\.ts$/.exec(file);
   if (tool) return `tools/${tool[1]}.mjs`;
   const web = /^src\/Daoris\.Web\/src\/([^/]+)\//.exec(file);
   if (web) return `src/Daoris.Web/src/${web[1]}`;
@@ -403,8 +338,12 @@ export function census(files, read, { suites = null } = {}) {
   const ts = tsReader(files, read);
   for (const suite of TS_SUITES.filter((each) => wanted(each.suite))) {
     const pattern = globRegExp(suite.glob);
+    // A bounded suite's units are reached only within its gate's declared paths; a gate that declares none bounds nothing.
+    const declared = suite.bounded ? gates.find((gate) => gate.name === suite.suite)?.paths : null;
+    const within = Array.isArray(declared) ? declared : null;
     for (const file of files.filter((each) => pattern.test(each))) {
-      units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: ts.reachOf(file) });
+      const reach = ts.reachOf(file);
+      units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
     }
   }
   for (const rehearsal of REHEARSALS.filter((each) => wanted(each.suite))) {
@@ -539,7 +478,9 @@ export function checks(files, read, map, { lanes = [], laneless = [], union = []
       for (const unit of map.units) {
         const reads = unit.kind === 'dotnet'
           ? new RegExp(`(?:^|[^A-Za-z0-9_.-])(?:${name.replace(/[.]/g, '\\.')}|${stem.replace(/[.]/g, '\\.')})(?:$|[^A-Za-z0-9_-])`).test(unit.strings)
-          : unit.reach.files.includes(path) || unit.reach.folders.includes(posix.dirname(path)) || unit.reach.globs.some((glob) => globRegExp(glob).test(path));
+          // A bounded unit (the end-to-end tier's) reads a fixture for the lane table only where its gate's declared paths hold it.
+          : (!unit.reach.within || declaredHolds(unit.reach.within, path))
+            && (unit.reach.files.includes(path) || unit.reach.folders.includes(posix.dirname(path)) || unit.reach.globs.some((glob) => globRegExp(glob).test(path)));
         if (reads) derived.add(gateOfUnit(unit));
       }
     }

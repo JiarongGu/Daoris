@@ -17,10 +17,10 @@ import {
 // The gates the cases name, each checked against `daoris.gates.json` where it is named here; the groups below are the roles they play.
 const [
   service, serviceProcess, devkit, driver, modules, censuses, driverProcess, driverRehearsals, gitHalf, gitPinned, modulesProcess,
-  web, webUnit, webTypes, webRules, webMeasured, toolTests, rehearse, family, deployment, layers, reachedGate, cli,
+  web, webUnit, webTypes, webRules, webMeasured, toolTests, toolE2e, rehearse, family, deployment, layers, reachedGate, cli,
 ] = declared(
   'service', 'service-process', 'devkit', 'driver', 'modules', 'censuses', 'driver-process', 'driver-rehearsals', 'driver-process-git',
-  'driver-process-git-pinned', 'modules-process', 'web', 'web-unit', 'web-types', 'web-rules', 'web-measured', 'tool-tests', 'rehearse',
+  'driver-process-git-pinned', 'modules-process', 'web', 'web-unit', 'web-types', 'web-rules', 'web-measured', 'tool-tests', 'tool-e2e', 'rehearse',
   'rehearse-family', 'deployment', 'layers', 'reached', 'cli',
 );
 const BASE = [...BASELINE];
@@ -72,7 +72,8 @@ const cases: [string, string[], string[]][] = [
     ['the service publisher the publish calls', ['tools/service-publish.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
     ["the family rehearsal's set-up kit", ['tools/setup-kit.mjs'], [...BASE, toolTests, family]],
     ["the rehearsals' kit", ['tools/rehearsal-kit.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
-    ['a tool-test file', ['src/Daoris.Cli/tool-test/setup-kit.test.ts'], [...BASE, toolTests]],
+    ['a tool-test file', ['src/Daoris.Cli/tool-test/setup-kit.test.ts'], [...BASE, toolTests, toolE2e]],
+    ['a tool outside the merge tool', ['tools/test-map.mjs'], [...BASE, toolTests]],
     ['the fixture the tool-tests share', ['src/Daoris.Cli/test/_fixture.ts'], [...BASE, toolTests]],
     ['the tarball reader the publish imports', ['src/Daoris.Cli/src/platform/tarball.ts'], [...BASE, toolTests, driver, rehearse, family, web, deployment]],
     ["the CLI's keeping lock the driver's Process half runs", ['src/Daoris.Cli/src/platform/keeplock.ts'], [...BASE, driver, driverProcess, rehearse, family, web, deployment]],
@@ -155,12 +156,12 @@ const cases: [string, string[], string[]][] = [
     // name in whichever module folder it sits.
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, service, driver, rehearse, family, web, deployment]],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, service, driver, rehearse, family, web, deployment]],
-    ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, toolTests]],
+    ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, toolTests, toolE2e]],
     ['the ports and the fakes', ['src/Daoris.Ports/Git/IGitRunner.cs', 'src/Layers.props'],
       [...BASE, layers, ...ADAPTERS, driverRehearsals, driver, modules, ...DRIVER_PROCESS, modulesProcess, family, deployment, service, serviceProcess]],
-    ["the merge tool's typed module", ['tools/merge/flow.ts'], [...BASE, toolTests]],
-    ["the merge tool's reach module", ['tools/merge/reach.ts'], [...BASE, toolTests]],
-    ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, toolTests]],
+    ["the merge tool's typed module", ['tools/merge/flow.ts'], [...BASE, toolTests, toolE2e]],
+    ["the merge tool's reach module", ['tools/merge/reach.ts'], [...BASE, toolTests, toolE2e]],
+    ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, toolTests, toolE2e]],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'], [...BASE, service, serviceProcess, devkit, driver, family, web, webUnit, deployment]],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, devkit, layers]],
     // The driver's fast CategoryTests read the file too, so a change there runs the driver's fast half.
