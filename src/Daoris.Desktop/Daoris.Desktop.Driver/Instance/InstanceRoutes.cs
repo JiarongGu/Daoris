@@ -297,6 +297,7 @@ public static class PersonPresses
     /// the person's word on a node of a run bound to a graph version, kept on the run's record for Daoris's next look.
     /// </summary>
     public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
+    public static InstanceRoute WorkflowHold { get; } = Person("WORKFLOW_HOLD");
 
     /// <summary>
     /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c>: the window's <i>Ask for a fix…</i> on a failed verification, the person's
@@ -405,6 +406,9 @@ public static class PersonPresses
         ("workflow done <run> <node> [\"…\"]", WorkflowNode),
         ("workflow approve <run> <node> [\"…\"]", WorkflowNode),
         ("workflow reject <run> <node> [\"…\"]", WorkflowNode),
+        ("workflow take <run> <node> [\"…\"]", WorkflowHold),
+        ("workflow hand <run> <node> <holder> [\"…\"]", WorkflowHold),
+        ("workflow give-back <run> <node> [\"…\"]", WorkflowHold),
         ("workflow fix <run> [<node>]", WorkHeld),
         ("quest done <id> [--note \"…\"]", QuestDone),
         ("quest delete <id>", QuestDelete),

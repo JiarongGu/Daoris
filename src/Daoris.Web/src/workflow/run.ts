@@ -85,6 +85,10 @@ export interface RunStep {
   wait?: RunWait | null;
   /** Where the step waits, the holder of the role it waits on, whoever it is: *waiting on `<role>`: `<holder>`*. None where it does not wait. */
   holder?: RunHolder | null;
+  /** Who holds a standing step now (`person`, `agent`, `agent:<name>`), the epoch a press is refused outside, and its `take`, `hand`, `give-back`. */
+  heldBy?: string | null;
+  epoch?: number | null;
+  holds?: string[] | null;
 }
 
 /** A graph run's node's wait (`WorkflowRunWait`): one of its kind's `waits`, worded as `workflow.wait.<kind>.<code>` with its facts. */
@@ -179,6 +183,7 @@ export interface NodeWordAsk {
   unchecked?: boolean;
   part?: string | null;
   whole?: boolean;
+  epoch?: number | null;
 }
 
 /** What a landing after an Accept came to, within the press's bound: landed, or why not by its code. */

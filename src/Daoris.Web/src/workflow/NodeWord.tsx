@@ -65,7 +65,7 @@ export function NodeWord({ run, step, onWord }: {
   const close = () => { setAsking(null); setAnswer(''); setWords(''); };
   const send = (act: NodeAct, answered: Answered) => {
     const said = words.trim();
-    onWord({ run, node, act, ...(act === 'decide' ? { outcome: answer } : {}), words: said.length > 0 ? said : null })
+    onWord({ run, node, act, ...(act === 'decide' ? { outcome: answer } : {}), ...(step.epoch != null ? { epoch: step.epoch } : {}), words: said.length > 0 ? said : null })
       .then((answer) => (answer.done ? answered.done() : answered.refused(nodeWordRefused(t, answer))))
       .catch((error: unknown) => answered.refused(sentence(error)));
   };

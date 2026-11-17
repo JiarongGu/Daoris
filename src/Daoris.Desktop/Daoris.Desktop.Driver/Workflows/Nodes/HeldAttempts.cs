@@ -210,8 +210,8 @@ public static class HeldAttempts
     /// </summary>
     public static WorkPerformed Word(
         NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null, string? outcome = null,
-        string? link = null, string? note = null) =>
-        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome, link, note);
+        string? link = null, string? note = null, int? epoch = null) =>
+        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome, link, note, epoch);
 
     /// <summary>A terminal sends nothing to a plugin: the word is recorded, and the loop holding the lease applies it.</summary>
     private sealed class Unperformed : IWorkPerformPort

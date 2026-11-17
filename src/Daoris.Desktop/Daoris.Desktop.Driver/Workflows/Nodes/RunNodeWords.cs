@@ -198,7 +198,7 @@ public static class RunNodeWords
     /// </summary>
     public static async Task<NodeWorded> WordAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
-        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null)
+        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, int? epoch = null)
     {
         IReadOnlySet<string>? promoted = null;
         if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
@@ -206,7 +206,7 @@ public static class RunNodeWords
             promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
         }
 
-        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome);
+        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome, epoch: epoch);
     }
 
     /// <summary>

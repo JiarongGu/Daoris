@@ -153,8 +153,9 @@ export const useAcceptUnderWay = (run: string | null) => useIsMutating({
 }) > 0;
 
 /** What `WORKFLOW_NODE` is sent for a word: only the fields given, so a skip or a stop sends what it always sent. */
-export const nodeWordPayload = ({ run, node, act, words, attempt, revision, answers, unchecked, part, whole }: NodeWordAsk) => ({
+export const nodeWordPayload = ({ run, node, act, words, attempt, revision, answers, unchecked, part, whole, epoch }: NodeWordAsk) => ({
   run, node, act,
+  ...(epoch != null ? { epoch } : {}),
   ...(words ? { words } : {}),
   ...(attempt != null ? { attempt } : {}),
   ...(revision ? { revision } : {}),

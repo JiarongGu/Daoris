@@ -151,7 +151,7 @@ public sealed class NodeRuntime(
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
     /// <summary>The steps waiting on a role the person holds, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
-    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read) : [];
+    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read, new StepTenureFiles(records.Home, records.HoldsLease)) : [];
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -588,6 +588,7 @@ public sealed class NodeRuntime(
                 .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
+            AttemptTenures.Keep(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config?.PlaceRisk, clock());
         }
     }
 
