@@ -229,7 +229,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
-      {step.holds && run.graph && <StepHold run={run.graph.run} workspace={run.workspace} repository={run.repository} step={step} />}
+      {step.holds && run.graph && <StepHold run={run.graph.run} workspace={run.workspace} repository={run.repository} node={step.step.id} holds={step.holds} heldBy={step.heldBy} />}
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
       {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}

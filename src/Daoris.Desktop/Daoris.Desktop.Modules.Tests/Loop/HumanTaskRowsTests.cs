@@ -47,6 +47,23 @@ public sealed class HumanTaskRowsTests
     }
 
     [Fact]
+    public void A_step_row_carries_the_epoch_of_its_tenure_and_the_holds_it_offers()
+    {
+        var written = Written(new HeldStep("q7", "sign", "engine", "aurora", PersonWaits.Approval, "approver", [NodeWordActs.Approve], "q7", null)
+        {
+            Epoch = 3, Holds = ["hand", "give-back"],
+        });
+
+        var row = Assert.Single(Rows(new() { Steps = [written] }));
+
+        Is("""
+            {"kind":"step","id":"q7/sign","since":null,"workspace":"aurora","where":"engine",
+             "step":{"run":"q7","node":"sign","why":"approval","role":"approver","holder":"person","presses":["approve"],"work":"q7","epoch":3,"holds":["hand","give-back"]}}
+            """, row);
+        Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
+    }
+
+    [Fact]
     public void A_release_waiting_on_an_approver_the_person_holds_carries_the_act_in_its_plugins_words_and_the_releases_page()
     {
         const string Page = "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90";

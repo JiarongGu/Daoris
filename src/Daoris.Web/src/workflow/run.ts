@@ -143,6 +143,8 @@ export interface CheckHeldAsk {
   resolution: 'again' | 'stop' | 'done-outside';
   link?: string;
   note?: string;
+  /** The epoch of the step's tenure the press reads: a press in an ended epoch is refused. */
+  epoch?: number | null;
 }
 
 /** What `WORK_HELD` answers: kept, or refused by its code with the driver's sentence. */

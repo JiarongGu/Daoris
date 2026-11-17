@@ -24,11 +24,5 @@
   "settings.cast.levels.repository-supervisor": "the repository’s supervisor",
   "settings.cast.levels.workspace-supervisor": "the workspace’s supervisor",
   "settings.cast.levels.machine-supervisor": "the machine’s supervisor",
-  "settings.cast.levels.owner": "the owner",
-  "workflow.hold.label": "Who holds this step",
-  "workflow.hold.heldBy": "Held by {{holder}}",
-  "workflow.hold.act.take": "Take",
-  "workflow.hold.act.hand": "Hand to…",
-  "workflow.hold.act.give-back": "Give back",
-  "workflow.hold.handTo": "Hand this step to"
+  "settings.cast.levels.owner": "the owner"
 }

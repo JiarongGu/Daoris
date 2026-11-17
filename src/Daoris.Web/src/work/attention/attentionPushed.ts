@@ -178,6 +178,8 @@ export type DeclinedRequest = { node: string; quest: string; to: string; work?: 
 export type StepWaitRow = {
   run: string; node: string; why: string; role: string; holder?: string | null; holderName?: string | null; presses: string[];
   words?: string | null; url?: string | null; opens?: string | null; work?: string | null;
+  /** The epoch of the step's tenure the row reads, which every press passes, and the acts on its holder it offers (`take`, `hand`, `give-back`). */
+  epoch?: number | null; holds?: string[] | null;
   held?: { unit: string; attempt: number; words: string[]; resolution?: string | null } | null;
 };
 
