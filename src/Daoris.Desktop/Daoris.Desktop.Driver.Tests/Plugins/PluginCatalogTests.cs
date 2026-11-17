@@ -188,7 +188,7 @@ public sealed class PluginCatalogTests : IDisposable
 
         var spelled = Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
             .Where(path => !path.Contains(Built("obj"), StringComparison.Ordinal) && !path.Contains(Built("bin"), StringComparison.Ordinal))
-            .Where(path => File.ReadAllText(path).Contains("[a-z0-9][a-z0-9.-]", StringComparison.Ordinal))
+            .Where(path => SourceTexts.Of(path).Contains("[a-z0-9][a-z0-9.-]", StringComparison.Ordinal))
             .Select(path => Path.GetFileName(path))
             .Order(StringComparer.Ordinal);
 

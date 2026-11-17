@@ -121,7 +121,7 @@ public sealed class MoveStoreCensusTests
     {
         var names = Own
             .SelectMany(file => Regex.Matches(
-                    CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, file))),
+                    CourseCensusTests.WithoutComments(SourceTexts.Of(Path.Combine(Driver, file))),
                     @"^public\s+(?:abstract\s+|sealed\s+|static\s+|readonly\s+)*(?:record(?:\s+struct)?|enum|class|struct|interface)\s+(\w+)",
                     RegexOptions.Multiline)
                 .Select(match => match.Groups[1].Value))
@@ -129,7 +129,7 @@ public sealed class MoveStoreCensusTests
         Assert.True(names.Count >= 10, $"found {names.Count} types: the pattern has drifted");
         Assert.Contains("MoveStore", names);
 
-        var readers = Readers(CourseCensusTests.ProductionFiles().Select(path => (Relative(path), File.ReadAllText(path))), names);
+        var readers = Readers(CourseCensusTests.ProductionFiles().Select(path => (Relative(path), SourceTexts.Of(path))), names);
 
         // The files, not how often each names a type: a new file fails, and so does a listed file that names none now.
         var differences = Differences(readers, Allowed);
@@ -176,14 +176,14 @@ public sealed class MoveStoreCensusTests
     [Fact]
     public void The_conversations_take_up_runs_at_the_shell_s_come_up_and_at_each_of_its_looks_before_what_acts_on_their_records()
     {
-        var goOn = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Course", "Chat", "ChatGoOn.cs")));
+        var goOn = CourseCensusTests.WithoutComments(SourceTexts.Of(Path.Combine(Driver, "Course", "Chat", "ChatGoOn.cs")));
         var comeUp = goOn[goOn.IndexOf("Task<IReadOnlyList<ChatStart>> TakeUpAsync(", StringComparison.Ordinal)..];
         Assert.Matches(@"^[^;]*\{\s*await _limit\.Moves\.ComeUpAsync\(", comeUp);
         Assert.True(comeUp.IndexOf("Moves.ComeUpAsync(", StringComparison.Ordinal) < comeUp.IndexOf("Boxed(", StringComparison.Ordinal));
         Assert.True(comeUp.IndexOf("Boxed(", StringComparison.Ordinal) < comeUp.IndexOf("GoOnAsync(", StringComparison.Ordinal));
         Assert.DoesNotContain("TakeUpBoxesAsync", goOn);
 
-        var loop = CourseCensusTests.WithoutComments(File.ReadAllText(
+        var loop = CourseCensusTests.WithoutComments(SourceTexts.Of(
             Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "Loop", "LoopRun.cs")));
         Assert.Matches(@"new ConversationMoves\(homeDirectory, service, loop\.Events, loop\.Output\)", loop);
         Assert.Matches(@"Limits = async \(looked, token\) =>\s*\{\s*await moves\.LookAsync\(token\)[^;]*;\s*await chat\.WakeLimitsAsync\(", loop);
@@ -198,14 +198,14 @@ public sealed class MoveStoreCensusTests
     [Fact]
     public void The_driven_take_up_runs_at_the_watch_s_first_look_through_the_drivers_holder_before_uncertain_words_are_settled()
     {
-        var watch = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "Watch", "WatchRun.cs")));
+        var watch = CourseCensusTests.WithoutComments(SourceTexts.Of(Path.Combine(Driver, "Loop", "Watch", "WatchRun.cs")));
         var sweep = watch.IndexOf("Supervisor.SweepAtStart(", StringComparison.Ordinal);
         var take = watch.IndexOf(".TakeUpMovesAsync(ct)", StringComparison.Ordinal);
         var uncertain = watch.IndexOf("UncertainWords.SettleAsync(", StringComparison.Ordinal);
         Assert.True(sweep > 0 && take > sweep && uncertain > take, $"sweep {sweep}, take-up {take}, uncertain {uncertain}");
         Assert.Matches(@"Stages\.TimeAsync\(\s*""moves"",\s*\(\)\s*=>\s*new Driver\([^;]*\)\s*\{\s*Log = Log,\s*Share = Share\s*\}\.TakeUpMovesAsync\(ct\)\)", watch);
 
-        var driver = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "Driver.cs")));
+        var driver = CourseCensusTests.WithoutComments(SourceTexts.Of(Path.Combine(Driver, "Loop", "Driver.cs")));
         Assert.Matches(@"internal async Task TakeUpMovesAsync\(CancellationToken ct\) => await Moves\.LookAsync\(ct\)", driver);
         Assert.Matches(@"scope: Share \? MoveTakeUpScope\.Shared\([^;]*\) : MoveTakeUpScope\.LeaseHolder", driver);
         Assert.Matches(@"new Driver\([^;]*\)\s*\{\s*Share = Share,", watch);
@@ -228,7 +228,7 @@ public sealed class MoveStoreCensusTests
         foreach (var path in CourseCensusTests.ProductionFiles())
         {
             if (Relative(path) == "Course/MoveBoxImports.cs") continue;
-            var text = CourseCensusTests.WithoutComments(File.ReadAllText(path));
+            var text = CourseCensusTests.WithoutComments(SourceTexts.Of(path));
             callers.AddRange(Importers.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{Relative(path)} names {name}"));
             if (Relative(path) != "Course/Chat/LimitBox.cs" && Regex.IsMatch(text, @"\bLimitBoxes\b[^;]*\.Write\(|\bboxes\.Write\(")) writers.Add(Relative(path));
         }
@@ -237,7 +237,7 @@ public sealed class MoveStoreCensusTests
         Assert.Empty(writers);
         foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs" })
         {
-            Assert.DoesNotMatch(@"\bMove(Store|Record|TakeUp|BoxImport|FromBox|Imported)\b", CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, reader))));
+            Assert.DoesNotMatch(@"\bMove(Store|Record|TakeUp|BoxImport|FromBox|Imported)\b", CourseCensusTests.WithoutComments(SourceTexts.Of(Path.Combine(Driver, reader))));
         }
     }
 

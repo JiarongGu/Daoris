@@ -33,4 +33,6 @@ internal static partial class SayDoorSources
 
     /// <summary>Every source, project by project, each project's files in path order.</summary>
     internal static IReadOnlyList<Source> All => Read.Value;
+
+    internal static bool Made => Read.IsValueCreated;
 }

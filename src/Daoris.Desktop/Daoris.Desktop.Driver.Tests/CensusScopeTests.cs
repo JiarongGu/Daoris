@@ -27,6 +27,49 @@ public sealed class CensusScopeTests
         Assert.Equal(["src/Daoris.Desktop/Daoris.Desktop.Driver/Broken.cs"], Violations(CensusScope.Judging.Diff, null));
     }
 
+    // Two converted censuses' own rules over sources made here: the one under the scope is judged, the one outside it is not.
+    private const string Driver = "src/Daoris.Desktop/Daoris.Desktop.Driver/";
+
+    // Spelled in two pieces: the loopback census reads this file too, and refuses the whole name.
+    private const string Wide = "IPAddress" + ".Any";
+
+    [Fact]
+    public void The_loopback_census_catches_a_planted_listen_in_a_scoped_file_and_ignores_one_in_an_unscoped_file()
+    {
+        (string Path, string Text)[] planted =
+        [
+            ($"{Driver}InScope.cs", $"var a = new TcpListener({Wide}, 0);"),
+            ($"{Driver}OutOfScope.cs", $"var b = new TcpListener({Wide}, 0);"),
+        ];
+        var scope = Scope($"{Driver}InScope.cs");
+
+        var judged = CensusScope.Judged(CensusScope.Judging.Diff, planted, each => each.Path, scope).Select(each => (each.Path, each.Text));
+        Assert.Equal([$"{Driver}InScope.cs:1: {Wide} listens on every interface: listen on IPAddress.Loopback"], LoopbackListens.Check(judged));
+        Assert.Equal(2, LoopbackListens.Check(CensusScope.Judged(CensusScope.Judging.Diff, planted, each => each.Path, null).Select(each => (each.Path, each.Text))).Count);
+    }
+
+    [Fact]
+    public void The_step_authority_census_catches_a_planted_setter_in_a_scoped_file_and_ignores_one_in_an_unscoped_file()
+    {
+        (string Path, string Text)[] planted =
+        [
+            ("Workplace/InScope.cs", "await StepAuthority.RunAsync(authority, work);"),
+            ("Workplace/OutOfScope.cs", "await StepAuthority.RunAsync(authority, work);"),
+        ];
+        var scope = Scope($"{Driver}Workplace/InScope.cs");
+
+        var judged = CensusScope.Judged(CensusScope.Judging.Diff, planted, each => $"{Driver}{each.Path}", scope).Select(each => (each.Path, each.Text));
+        Assert.Equal(["Workplace/InScope.cs sets the run's own step"], StepAuthorityCensusTests.Strays(judged));
+        Assert.Equal(2, StepAuthorityCensusTests.Strays(planted).Count);
+    }
+
+    [Fact]
+    public void A_listed_member_is_judged_by_the_scope_through_the_file_it_names()
+    {
+        var judged = CensusScope.Judged(CensusScope.Judging.Diff, new[] { "Loop/A.cs", "Loop/B.cs" }, file => $"{Driver}{file}", Scope($"{Driver}Loop/B.cs"));
+        Assert.Equal(["Loop/B.cs"], judged);
+    }
+
     [Fact]
     public void A_whole_census_ignores_the_scope()
     {

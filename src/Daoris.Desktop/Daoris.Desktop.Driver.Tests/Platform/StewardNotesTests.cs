@@ -76,7 +76,7 @@ public sealed class StewardNotesTests
         foreach (var project in new[] { "Daoris.Desktop.Driver", "Daoris.Desktop.Modules" })
         {
             var folder = Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), project);
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in CensusScope.Judged(typeof(StewardNotesTests), Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
@@ -85,7 +85,7 @@ public sealed class StewardNotesTests
                     continue;
                 }
 
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 foreach (var (person, steward) in Siblings)
                 {
                     var personName = Name(person);

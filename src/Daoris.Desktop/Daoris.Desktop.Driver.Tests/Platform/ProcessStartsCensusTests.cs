@@ -511,7 +511,7 @@ public sealed class ProcessStartsCensusTests
                 }
 
                 // Line comments out, as the tools' scan reads them: a sentence naming a start is not one.
-                var source = Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
+                var source = SourceTexts.Code(SourceTexts.Of(file));
                 yield return (Path.GetRelativePath(root, file).Replace('\\', '/'), source);
             }
         }
