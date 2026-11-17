@@ -48,17 +48,26 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   // Before the merge tool's own rule, which would place it there alone: the driver's twin reads the attribution contract too.
   {
     paths: ['tools/merge/attribution-contract.json'],
-    gates: ['tool-tests', 'driver'],
+    gates: ['tool-tests', 'tool-e2e', 'driver'],
     why: "the merge tool's commit attribution and the driver's CommitAttributionContractTests read the one contract",
   },
   { paths: ['tools/workflows/**'], gates: ['driver'], why: "the driver's tests read this repository's own workflow files and apply them as the install does" },
   // The tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
+  // The merge tool's own files reach its end-to-end tier as well (`tool-e2e`, TOOLTIER1): the gate declares the same files.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
-      'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/reached-checks.mjs', 'tools/worktree-setup.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
-      'tools/merge/**', 'tools/vitest.config.ts',
+      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reached-checks.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs',
+      'src/Daoris.Cli/tool-test/**', 'tools/merge/**', 'tools/vitest.config.ts',
+    ],
+    gates: ['tool-tests', 'tool-e2e'],
+    why: "the merge tool, its modules, the merge queue, its reached checks and backlog driver, and the tools' tests: the unit tier `tool-tests` runs and the end-to-end tier `tool-e2e`, whose specs start the merge tool in scratch repositories (GATESLIM1, TOOLTIER1)",
+  },
+  { paths: ['tools/as-merged.mjs', 'tools/as-merged.test.mjs'], gates: ['tool-e2e'], why: "the merge's commit as a check reads it, and its tests merge in scratch repositories in the end-to-end tier (TOOLTIER1)" },
+  {
+    paths: [
+      'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-map/**', 'tools/test-recall.mjs',
+      'tools/worktree-setup.mjs', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
     why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",

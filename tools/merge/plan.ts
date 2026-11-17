@@ -42,11 +42,18 @@ export const isProcessGate = (gate: Named): boolean => /process\.runsettings/.te
 export const isLongGate = (gate: Named): boolean => isProcessGate(gate) || /\brehearse:deploy\b/.test(gate.run);
 
 /**
- * The Process lane: the gates that start real processes, run one at a time beside the light lane. The
- * real-process halves, and every `npm run rehearse*` script. Read from what each runs, as `isProcessGate` is: the
- * workflow's own rehearsals are in no declaration, and the devkit reads `daoris.gates.json` too.
+ * The tools' end-to-end tier (TOOLTIER1), by the root script it runs: its specs seed scratch repositories and start real git and
+ * the merge tool, the load-bound cases that ended the tool tests at their budget beside the suites, so it is a gate of its own.
  */
-export const isProcessLane = (gate: Named): boolean => isProcessGate(gate) || /^npm run rehearse/.test(gate.run.trim());
+export const END_TO_END_SCRIPTS: readonly string[] = Object.freeze(['tooltests:e2e']);
+
+/**
+ * The Process lane: the gates that start real processes, run one at a time beside the light lane. The
+ * real-process halves, every `npm run rehearse*` script and the tools' end-to-end tier. Read from what each runs, as
+ * `isProcessGate` is: the workflow's own rehearsals are in no declaration, and the devkit reads `daoris.gates.json` too.
+ */
+export const isProcessLane = (gate: Named): boolean => isProcessGate(gate) || /^npm run rehearse/.test(gate.run.trim())
+  || END_TO_END_SCRIPTS.includes(scriptNamed(gate.run) ?? '');
 
 /** The driver's git half: a Process half run with `git.process.runsettings`, its git-only classes four at once. */
 export const isGitHalf = (gate: Named): boolean => /git\.process\.runsettings/.test(gate.run);

@@ -93,9 +93,15 @@ test('the long gates are the real-process halves and the deployment rehearsal, r
   assert.equal(isLongGate({ name: 'rehearse-family', run: 'npm run rehearse:family' }), false);
 });
 
-test("this repository's Process lane is the real-process halves and the rehearsals; every other gate is light, the web gates too", () => {
-  assert.deepEqual(names(repoPlan.filter(isProcessLane)), names(byRun(/process\.runsettings|^npm run rehearse/)));
-  assert.deepEqual([...names(light)].sort(), names(declared.filter((gate) => !/process\.runsettings|^npm run rehearse/.test(gate.run))).sort());
+test("this repository's Process lane is the real-process halves, the rehearsals and the tools' end-to-end tier; every other gate is light, the web gates too", () => {
+  const laned = /process\.runsettings|^npm run rehearse|^npm run tooltests:e2e$/;
+  assert.deepEqual(names(repoPlan.filter(isProcessLane)), names(byRun(laned)));
+  assert.deepEqual([...names(light)].sort(), names(declared.filter((gate) => !laned.test(gate.run))).sort());
+  // TOOLTIER1: the end-to-end specs start real git and the merge tool, so they run in the lane, alone; the unit tier stays light.
+  assert.ok(byRun(/^npm run tooltests:e2e$/).length === 1 && byRun(/^npm run tooltests$/).every((gate) => light.includes(gate)));
+  assert.equal(isProcessLane({ name: 'renamed', run: 'npm run tooltests:e2e' }), true);
+  assert.equal(isProcessLane({ name: 'renamed', run: 'npm run tooltests' }), false);
+  assert.equal(isLongGate({ name: 'renamed', run: 'npm run tooltests:e2e' }), false);
   assert.ok(byRun(/^npm run test:web/).length > 0 && byRun(/^npm run test:web/).every((gate) => light.includes(gate)));
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);

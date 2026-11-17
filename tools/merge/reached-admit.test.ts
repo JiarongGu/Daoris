@@ -26,6 +26,8 @@ test('a group is heavy by its tier or suite or size, never by a class name', () 
   assert.equal(groupIsHeavy(group('driver', 1, 'process.runsettings'), NONE), true, 'the Process settings');
   assert.equal(groupIsHeavy(group('modules-process', 1), new Set(['modules-process'])), true, 'a Process suite');
   assert.equal(groupIsHeavy(group('driver-rehearsals', 1), NONE), true, 'a rehearsal');
+  assert.equal(groupIsHeavy(group('tool-e2e', 1), NONE), true, "the tools' end-to-end tier (TOOLTIER1)");
+  assert.equal(groupIsHeavy(group('tool-tests', 1), NONE), false, "the tools' unit tier");
   assert.equal(groupIsHeavy(group('driver', WHOLE_SUITE_CLASSES), NONE), true, 'a whole suite');
   assert.equal(groupIsHeavy(group('driver', 1), NONE), false, 'one fast unit-tier class');
   const named = group('driver', 1);

@@ -49,6 +49,16 @@ test('the tree passes', () => {
   assert.deepEqual(checkToolTests(root).problems, []);
 });
 
+test("an end-to-end spec in the tool-test folder is held: owned by the gate whose glob names it, and an orphan where none does (TOOLTIER1)", () => {
+  const unitOnly = 'node --test "tool-test/**/*.test.ts"';
+  const owned = tree({ tools: ['a.mjs'], toolTests: ['a.test.ts', 'b.e2e.ts'], extraGate: 'node --test "src/Daoris.Cli/tool-test/**/*.e2e.ts"' });
+  writeFileSync(join(owned, 'src/Daoris.Cli/package.json'), JSON.stringify({ scripts: { tooltests: unitOnly } }));
+  assert.deepEqual(checkToolTests(owned), { problems: [], count: 2 });
+  const orphan = tree({ tools: ['a.mjs'], toolTests: ['a.test.ts', 'b.e2e.ts'] });
+  writeFileSync(join(orphan, 'src/Daoris.Cli/package.json'), JSON.stringify({ scripts: { tooltests: unitOnly } }));
+  assert.deepEqual(checkToolTests(orphan).problems.map((each) => each.split(':')[0]), ['src/Daoris.Cli/tool-test/b.e2e.ts']);
+});
+
 test('a file listed by verify and a file the tool-tests glob reaches are each owned once', () => {
   const dir = tree({ tools: ['a.test.mjs'], toolTests: ['b.test.ts', 'deep/c.test.ts'], listed: ['tools/a.test.mjs'] });
   assert.deepEqual(checkToolTests(dir), { problems: [], count: 3 });

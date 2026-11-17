@@ -3,7 +3,8 @@
  *
  *   node tools/tool-test-census.mjs     check every tool test file (exit 0 clean, 1 an orphan or a double, 2 tool error)
  *
- * The files held are `tools/*.test.mjs`, every `*.test.ts` under `src/Daoris.Cli/tool-test/`, and the merge tool's Vitest files
+ * The files held are `tools/*.test.mjs`, every `*.test.ts` and end-to-end `*.e2e.ts` under `src/Daoris.Cli/tool-test/` (the
+ * unit tier's and the end-to-end tier's, TOOLTIER1), and the merge tool's Vitest files
  * under `tools/merge/` (`*.test.ts`, `*.e2e.ts`), owned by a gate whose Vitest run names their project. A gate in
  * `daoris.gates.json` owns a file when its command, with each `npm run` and `npm test` followed into the package script it
  * names, lists the file's path or globs it (`node --test "tool-test/**\/*.ts"`). The verify script names its files one by
@@ -84,7 +85,7 @@ export function toolTestFiles(root) {
       else if (isTest(entry.name)) files.push(`${dir}/${entry.name}`);
     }
   };
-  if (existsSync(join(root, TOOL_TESTS))) walk(TOOL_TESTS, (name) => name.endsWith('.test.ts'));
+  if (existsSync(join(root, TOOL_TESTS))) walk(TOOL_TESTS, (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts'));
   if (existsSync(join(root, MERGE_TESTS))) walk(MERGE_TESTS, (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts'));
   return files.sort();
 }

@@ -246,11 +246,18 @@ tip after a merge or batch; fix what it reports. `--gated` runs what the paths r
 is still required before any stage (GATESLIM1, D115).
 
 The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
-kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. One case
+kit: `src/Daoris.Cli/tool-test/`) are two gates (TOOLTIER1). The unit tier, `tool-tests` (`npm run tooltests`, the folder's
+`*.test.ts`), runs beside the other light gates. The end-to-end tier, `tool-e2e` (`npm run tooltests:e2e`: the folder's
+`*.e2e.ts`, `tools/as-merged.test.mjs` and the merge tool's Vitest `e2e` project), holds every spec that seeds a scratch
+repository and starts real git and the merge tool. It runs in the Process lane, alone, and a spec of the unit tier that takes
+over ten seconds alone moves there or is made pure. An end-to-end spec is reached only by a path its gate's `paths` declare,
+the merge tool's own files (`tools/test-map.mjs`, `bounded`): a change to a tool the merge tool only imports reaches the unit
+tier and no end-to-end spec. A merge's reached checks defer the end-to-end specs to the run after the landing, as they defer a
+Process class. One case
 fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
 one unbounded; a case's invocation past its bound is ended with its tree, and one whose tree outlives the end is answered
-after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
-and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1). A merge-queue
+after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs either gate only when its paths reach it (`tools/merge-branch.mjs`
+and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run both (GATESLIM1). A merge-queue
 case runs on a scratch repository named for its test process, its children with an environment the case builds (no inherited git
 variable that locates a repository, git's ceiling at the fixture), and no case changes the test process's environment: run a
 probe of the runner in a process of its own, and write a stand-in gate's paths into the gate (QUEUETESTLEAK1, D115's note).
