@@ -155,6 +155,24 @@ public sealed class GoAheadTests : GoAheadFixture
         Assert.Contains("run the put", joined.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>The answer's sentence says who answered: a role and its agent, or the person.</summary>
+    [Fact]
+    public async Task The_answers_sentence_says_who_answered()
+    {
+        var (ask, quest) = await Asked();
+        var session = await Working(quest, "first");
+        await _ledger.AskGoAheadAsync(session.Id, "write", "production", "dashboard configuration", "The target.", Now.AddMinutes(4));
+
+        var role = await _desk.AnswerGoAheadAsync(ask.Id, 1, approved: true, "run the put", Now.AddMinutes(5), by: "role:approver · codex");
+        var person = await _desk.AnswerGoAheadAsync(ask.Id, 1, approved: true, "run the put", Now.AddMinutes(6));
+
+        Assert.Equal("role:approver · codex", Assert.Single(role.Ask!.GoAheads).Answer!.By);
+        Assert.Contains("by role:approver · codex", role.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("your", role.Message, StringComparison.Ordinal);
+        Assert.Contains("by the person", person.Message, StringComparison.Ordinal);
+        Assert.Contains("your answer", person.Message, StringComparison.Ordinal);
+    }
+
     /// <summary>A refusal is kept as a refusal, said to a request that joins it; a later answer replaces the earlier.</summary>
     [Fact]
     public async Task A_refusal_is_kept_and_a_later_answer_replaces_it()

@@ -236,7 +236,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     `refused` for the role's window with *Overrule* as a door answer (rule 49's table), pinned to its number, kind, target and act
     (`GoAheadPin`), judges the place's risk and marks again at the release, a place marked or raised meanwhile going stale, and
     releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
-    older build as the person's) and refuses a keyless caller; its leave climbs the line. (GOAHEADACT1)
+    older build as the person's), says it in its response sentence (`by the person`, or `by role:<role> · <agent>`) and refuses a keyless
+    caller; its leave climbs the line. `daoris ask go-ahead` in a role's terminal is admitted by the role it holds, never by its being a
+    terminal: it finds the go-ahead among what the door lists for the holder (`GoAheadRoleDoor`), answers it as that role's held decision
+    through the supervise door and says by whom (the roles held, held by this terminal); one no held role may answer is refused with why,
+    keeping nothing. (GOAHEADACT1)
 48. It is also refused on a question the agent marked owner-class (`owner-class`), past the answers-alone bound, and where a person's rule holds
     the line (`rule-holds`), at the keeping and again at the release. A `refer` on answers alone holds the line as `hold` does until
     the holder decides `go-on` once; on failures the quest's point is released as the quest's own *Try again*; on failures on one
