@@ -49,7 +49,7 @@ public sealed class PluginCycleStaleTests : IDisposable
         PluginKit.Write(plan);
         var work = Path.Combine(plan.Folder, "work.mjs");
         var text = File.ReadAllText(work);
-        var anchor = "    let outcome;\n    try {\n      outcome = outcomeOf(await calls.act(attempt));";
+        var anchor = "    let outcome;\n    try {\n      outcome = outcomeOf(await calls.act(";
         Assert.Contains(anchor, text.Replace("\r\n", "\n"));
         var progress = "    send({ jsonrpc: '2.0', method: 'work/step', params: { step: attempt.step, invocation: attempt.invocation, state: 'progress', at: new Date().toISOString(), id: attempt.invocation + '-progress' } });\n";
         File.WriteAllText(work, text.Replace("\r\n", "\n").Replace(anchor, progress + anchor, StringComparison.Ordinal));

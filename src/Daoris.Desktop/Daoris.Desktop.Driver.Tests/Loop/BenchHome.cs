@@ -9,8 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A home of a working machine's size, generated under the repository's scratch: the service's own host over a store holding
 /// thousands of ended session records, a registered repository with a few dozen session trees on unlanded branches, and one tree holding
 /// a large ignored build. Every name is invented. The records past the few opened through the client are copies of one ended record
-/// written into the store's table, each with its own id and revision, so the generator spends seconds where thousands of opens would
-/// spend minutes; the service reads them as it reads its own.
+/// written into the store's table (<see cref="BenchCopies"/>), each with its own id, line, entry and revision, so the generator spends
+/// seconds where thousands of opens would spend minutes; the service reads them as it reads its own.
 /// </summary>
 internal sealed class BenchHome : IAsyncDisposable
 {
@@ -151,39 +151,7 @@ internal sealed class BenchHome : IAsyncDisposable
     {
         using var connection = new SqliteConnection($"Data Source={Path.Combine(Scratch, "service", "index", "knowledge.db")};Mode=ReadWrite;Pooling=False");
         connection.Open();
-        var columns = new List<string>();
-        using (var info = connection.CreateCommand())
-        {
-            info.CommandText = "PRAGMA table_info(sessions)";
-            using var read = info.ExecuteReader();
-            while (read.Read()) columns.Add(read.GetString(1));
-        }
-
-        string Value(string column) => column switch
-        {
-            "id" => "$id",
-            "revision" => "(SELECT MAX(revision) FROM sessions) + 1",
-            "tree" or "base_commit" => "NULL",
-            "created" or "updated" => "$at",
-            _ => column,
-        };
-
-        using var transaction = connection.BeginTransaction();
-        using var insert = connection.CreateCommand();
-        insert.Transaction = transaction;
-        insert.CommandText = $"INSERT INTO sessions ({string.Join(", ", columns)}) SELECT {string.Join(", ", columns.Select(Value))} FROM sessions WHERE id = $template";
-        var id = insert.Parameters.Add("$id", SqliteType.Text);
-        var at = insert.Parameters.Add("$at", SqliteType.Text);
-        insert.Parameters.AddWithValue("$template", template);
-        var now = DateTimeOffset.UtcNow;
-        for (var each = 0; each < count; each++)
-        {
-            id.Value = $"{each:x8}";
-            at.Value = now.AddDays(-3).AddMinutes(-each).ToString("O");
-            insert.ExecuteNonQuery();
-        }
-
-        transaction.Commit();
+        BenchCopies.Insert(connection, template, count, DateTimeOffset.UtcNow);
     }
 
     private RealServiceHost? _again;
