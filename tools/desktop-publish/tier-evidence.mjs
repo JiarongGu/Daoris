@@ -59,6 +59,10 @@ export function askTiers(repoRoot, { home = repoRoot, commit = null } = {}) {
       remedy: { what: 'the heavy tier', command: byHand },
     };
   }
+  if (mine.handedTo) {
+    const to = `${mine.handedTo.id} on ${String(mine.handedTo.commit).slice(0, 7)}`;
+    return { code: 1, out: `heavy run ${mine.id} on ${short} handed its unrun classes to ${to}, which runs them on its own commit: stage that commit or a later one`, remedy: { what: 'the heavy tier on this commit', command: byHand } };
+  }
   if (mine.state === 'running') return { code: 1, out: `heavy run ${mine.id} is still running on ${short} since ${mine.at}`, remedy: { what: 'the heavy run to end', command: `its log local/scratch/heavy-${short}.log says when` } };
   if (mine.state === 'error') return { code: 1, out: `heavy run ${mine.id} ended in error: ${mine.note ?? 'no counts'}`, remedy: { what: 'the heavy tier again', command: byHand } };
   if (mine.state === 'red') {
@@ -70,5 +74,6 @@ export function askTiers(repoRoot, { home = repoRoot, commit = null } = {}) {
     }
     return { code: 0, out: `the fast tier passed at the merge of ${short}, and heavy run ${mine.id} is red on ${reds.join(', ')}, each filed as main's red` };
   }
+  if (mine.state !== 'green') return { code: 1, out: `heavy run ${mine.id} on ${short} is ${mine.state}, which is no pass`, remedy: { what: 'the heavy tier again', command: byHand } };
   return { code: 0, out: `the fast tier passed at the merge of ${short}, and heavy run ${mine.id} is green on ${short}` };
 }
