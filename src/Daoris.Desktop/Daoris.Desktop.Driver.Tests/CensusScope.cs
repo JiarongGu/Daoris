@@ -50,12 +50,24 @@ internal static class CensusScope
     /// <summary>Of <paramref name="paths"/> (full or repository-relative), the ones <paramref name="census"/> judges in this run.</summary>
     internal static IEnumerable<string> Judged(Type census, IEnumerable<string> paths) => Judged(MarkOf(census), paths, path => path, Paths);
 
+    /// <summary>Of <paramref name="items"/> (a table's rows, a list's members), the ones <paramref name="census"/> judges in this run, each by the path <paramref name="pathOf"/> gives (full or repository-relative).</summary>
+    internal static IEnumerable<T> Judged<T>(Type census, IEnumerable<T> items, Func<T, string> pathOf) => Judged(MarkOf(census), items, pathOf, Paths);
+
     /// <summary>
     /// Of <paramref name="items"/>, the ones a census marked <paramref name="judging"/> judges under <paramref name="scope"/>: every one
     /// for a whole census or a run with no scope, else those whose path the scope holds.
     /// </summary>
     internal static IEnumerable<T> Judged<T>(Judging judging, IEnumerable<T> items, Func<T, string> pathOf, IReadOnlySet<string>? scope) =>
         scope is null || judging == Judging.Whole ? items : items.Where(item => scope.Contains(Relative(pathOf(item))));
+
+    /// <summary>Of <paramref name="items"/> known by a file's name alone (the say-door scan's, a table's keys), the ones whose name a file of the scope bears.</summary>
+    internal static IEnumerable<T> JudgedByName<T>(Type census, IEnumerable<T> items, Func<T, string> nameOf)
+    {
+        var scope = ScopeOf(census);
+        if (scope is null) return items;
+        var names = scope.Select(path => path[(path.LastIndexOf('/') + 1)..]).ToHashSet(StringComparer.Ordinal);
+        return items.Where(item => names.Contains(nameOf(item)));
+    }
 
     /// <summary>A path as the scope holds it: relative to the workspace, with <c>/</c>.</summary>
     internal static string Relative(string path) =>

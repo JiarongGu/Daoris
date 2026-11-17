@@ -42,15 +42,17 @@ public sealed class LoopbackListensTests
         var projects = new[] { Path.Combine(root, "src", "Daoris.Desktop"), Path.Combine(root, "src", "Daoris.Service") }
             .SelectMany(folder => Directory.EnumerateDirectories(folder, "*Tests"))
             .ToList();
-        var sources = projects
+        var all = projects
             .SelectMany(project => Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)
-                .Where(path => Path.GetRelativePath(project, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj"))
-                .Select(path => (Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path))))
+                .Where(path => Path.GetRelativePath(project, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj")))
             // This file names the patterns it refuses, in its cases and its sentences.
-            .Where(source => !source.Item1.EndsWith("/LoopbackListensTests.cs", StringComparison.Ordinal))
+            .Where(path => !path.EndsWith("LoopbackListensTests.cs", StringComparison.Ordinal))
+            .ToList();
+        var sources = CensusScope.Judged(typeof(LoopbackListensTests), all)
+            .Select(path => (Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/'), SourceTexts.Of(path)))
             .ToList();
 
-        Assert.True(projects.Count >= 4 && sources.Count > 500, $"the walk found {projects.Count} test projects and {sources.Count} sources: it no longer reaches them");
+        Assert.True(projects.Count >= 4 && all.Count > 500, $"the walk found {projects.Count} test projects and {all.Count} sources: it no longer reaches them");
         var breaches = LoopbackListens.Check(sources);
         Assert.True(breaches.Count == 0, "each a listen on every interface, which makes Windows ask its firewall about the test host:\n" + string.Join('\n', breaches));
     }

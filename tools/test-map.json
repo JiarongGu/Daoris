@@ -1,6 +1,7 @@
 {
   "_why": "CISCOPE1c (D207, design docs/2026-10-24-ci-scope-design.md §3.4 check 5): the files that act on every unit of a suite without being named, which tools/test-map.mjs reads from the tree and holds to this list. Such a file runs its suite whole; the list makes that visible, and a new one fails the census's check until it is listed here with why.",
   "wholeSuite": {
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/CensusWarm.cs": "the driver's tests' assembly runner: a census run makes the censuses' shared reading before its first class",
     "src/Daoris.Service/Daoris.Service.Http.Tests/DaorisHost.cs": "the HTTP tests' assembly fixture: every class shares the host it starts",
     "src/Daoris.Service/Daoris.Service.Http.Tests/GlobalUsings.cs": "a global using of the service's HTTP tests",
     "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj": "the service's HTTP tests' project file",

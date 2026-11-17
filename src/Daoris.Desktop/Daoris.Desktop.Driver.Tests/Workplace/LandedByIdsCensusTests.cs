@@ -31,19 +31,19 @@ public sealed class LandedByIdsCensusTests
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
         var pattern = new Regex(@"\b(UnlandedInTreeAsync|UnlandedHereAsync|UnlandedAsync)\s*\(");
         var found = new List<string>();
-        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        foreach (var path in CensusScope.Judged(typeof(LandedByIdsCensusTests), Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
             if (relative.StartsWith("obj/", StringComparison.Ordinal) || relative.StartsWith("bin/", StringComparison.Ordinal)) continue;
             // Code, never a comment's mention.
-            var code = string.Join('\n', File.ReadLines(path).Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal)));
-            if (pattern.IsMatch(code)) found.Add(relative);
+            if (pattern.IsMatch(SourceTexts.Code(SourceTexts.Of(path)))) found.Add(relative);
         }
 
-        Assert.True(found.Count >= 3, $"the census found {found.Count} files that count ids: its pattern has drifted");
+        Assert.True(CensusScope.Paths is not null || found.Count >= 3, $"the census found {found.Count} files that count ids: its pattern has drifted");
         var unnamed = found.Where(file => !Counts.ContainsKey(file)).ToList();
         Assert.True(unnamed.Count == 0, "count commit ids to judge landed, and read neither the tree's work by patch nor are named here: " + string.Join(", ", unnamed));
-        Assert.All(Counts.Keys, name => Assert.True(File.Exists(Path.Combine(root, name)), $"{name} is named but is not there"));
-        Assert.All(Counts.Keys, name => Assert.Contains(name, found));
+        var listed = CensusScope.Judged(typeof(LandedByIdsCensusTests), Counts.Keys, name => $"src/Daoris.Desktop/Daoris.Desktop.Driver/{name}").ToList();
+        Assert.All(listed, name => Assert.True(File.Exists(Path.Combine(root, name)), $"{name} is named but is not there"));
+        Assert.All(listed, name => Assert.Contains(name, found));
     }
 }

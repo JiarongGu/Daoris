@@ -9,8 +9,10 @@ internal static class CensusMarks
     /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files.</summary>
     internal static readonly string[] Diff =
     [
-        "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitEndingsCensusTests", "GitKeepersCensusTests",
-        "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "ShellStructureTests", "StructureTests",
+        "CheckoutWritersCensusTests", "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",
+        "GitKeepersCensusTests", "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "HeldFactsTests", "LandedByIdsCensusTests",
+        "LineAccountCallersCensusTests", "LoopbackListensTests", "NoConsoleWindowTests", "OrderReadersCensusTests", "PermissionWritersCensusTests",
+        "ProcessHomeCensusTests", "ShellStructureTests", "StepAuthorityCensusTests", "StewardNotesTests", "StructureTests",
     ];
 
     internal static readonly Dictionary<string, string> SemanticWhole = new(StringComparer.Ordinal);
@@ -23,20 +25,20 @@ internal static class CensusMarks
     internal static readonly string[] Whole =
     [
         "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
-        "CensusReachTests", "CheckoutWritersCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
+        "CensusReachTests", "CensusWarmTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
         "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
-        "DriverWorkflowsTextTests", "EveryChildIsHandedTheToolsTests", "GitBranchesReadTests", "GitCeilingCensusTests", "GitCommandsCensusTests",
-        "GitLaunchTests", "GitRemotesTests", "GitSeedTests", "HeldFactsTests", "HelpRoomSettingsPlacesTests", "HelpRoomTests",
-        "LandedBranchWithdrawalTests", "LandedByIdsCensusTests", "LandingKindCensusTests", "LayerCensusTests", "LineAccountCallersCensusTests",
-        "LineCourseTests", "LookSaidTests", "LoopbackListensTests", "MoveStoreCensusTests", "NativeWorkFramesCensusTests", "NeedsTraitTests",
-        "NoConsoleWindowTests", "NodeDispatchCensusTests", "OrderReadersCensusTests", "ParticipantWorkReadersTests", "PermissionWritersCensusTests",
-        "PickerCensusTests", "PluginCatalogTests", "PoolReadersCensusTests", "ProcessEnvironmentCensusTests", "ProcessHomeCensusTests",
+        "DriverWorkflowsTextTests", "EveryChildIsHandedTheToolsTests", "GitBranchesReadTests", "GitCeilingCensusTests",
+        "GitLaunchTests", "GitRemotesTests", "GitSeedTests", "HelpRoomSettingsPlacesTests", "HelpRoomTests",
+        "LandedBranchWithdrawalTests", "LandingKindCensusTests", "LayerCensusTests",
+        "LineCourseTests", "LookSaidTests", "MoveStoreCensusTests", "NativeWorkFramesCensusTests", "NeedsTraitTests",
+        "NodeDispatchCensusTests", "ParticipantWorkReadersTests",
+        "PickerCensusTests", "PluginCatalogTests", "PoolReadersCensusTests", "ProcessEnvironmentCensusTests",
         "ProcessStartsCensusTests", "ProviderCensusTests", "PullRequestOccasionTests", "RoleCatalogCensusTests", "RoleCensusTests",
         "RoleStaffingTests", "RoleVerbUsageTests", "RoomSaysNoActorTests", "RoomsDeclaredCensusTests", "RulePathsCensusTests", "SayKeysCensusTests",
         "ServiceProviderCensusTests", "SessionMarkerTests", "SettledReadersCensusTests", "SharedCompileTests",
-        "ShortWaitsCensusTests", "SlotSettledCensusTests", "SourceFilesTests", "SourceTextsTests", "StepAuthorityCensusTests", "StewardNotesTests",
+        "ShortWaitsCensusTests", "SlotSettledCensusTests", "SourceFilesTests", "SourceTextsTests",
         "StoredOldNamesCensusTests", "SystemWiringTests", "TerminalConversationCensusTests", "TerminalStartsCensusTests",
         "TestHomesCensusTests", "ToolsAtTheStartCensusTests", "WiringLeftOverTests", "WorkFrameCensusTests",
     ];

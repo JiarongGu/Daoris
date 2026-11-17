@@ -49,16 +49,20 @@ public sealed class GitCommandsCensusTests : IDisposable
     [Fact]
     public void Every_git_the_sources_start_names_a_rowed_command_by_a_literal()
     {
-        var sites = GitStartSites.In(SourceCensus.Driver());
-        Assert.True(sites.Count > 300, $"the census read {sites.Count} starts, too few to be the sources'");
-        var problems = Problems(SourceCensus.Driver());
+        if (CensusScope.Paths is null)
+        {
+            var sites = GitStartSites.In(SourceCensus.Driver());
+            Assert.True(sites.Count > 300, $"the census read {sites.Count} starts, too few to be the sources'");
+        }
+
+        var problems = Problems(SourceCensus.Driver(typeof(GitCommandsCensusTests)));
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     [Fact]
     public void A_planted_command_with_no_row_turns_the_census_red()
     {
-        var planted = SourceCensus.Driver().Append(("PlantedFrob.cs",
+        var planted = SourceCensus.Driver(typeof(GitCommandsCensusTests)).Append(("PlantedFrob.cs",
             "internal static class PlantedFrob\n{\n    public static Task<(int, string, string)> RunAsync(string root, CancellationToken ct) =>\n"
             + "        WorkingTree.GitAsync(root, [\"frobnicate\", \"--all\"], ct);\n}\n"));
         Assert.Contains("PlantedFrob.cs starts `git frobnicate`, which has no row", Problems(planted));
@@ -67,7 +71,7 @@ public sealed class GitCommandsCensusTests : IDisposable
     [Fact]
     public void A_planted_command_held_in_a_variable_turns_the_census_red()
     {
-        var planted = SourceCensus.Driver().Append(("PlantedHeld.cs",
+        var planted = SourceCensus.Driver(typeof(GitCommandsCensusTests)).Append(("PlantedHeld.cs",
             "internal static class PlantedHeld\n{\n    public static Task<(int, string, string)> RunAsync(string root, string verb, CancellationToken ct) =>\n"
             + "        WorkingTree.GitAsync(root, [\"-c\", \"core.quotepath=false\", verb, \"--all\"], ct);\n}\n"));
         Assert.Contains("PlantedHeld.cs starts git with its command or verb held in `verb`", Problems(planted));

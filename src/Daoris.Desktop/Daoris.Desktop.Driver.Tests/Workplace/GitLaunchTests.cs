@@ -196,7 +196,7 @@ public sealed class GitLaunchTests
     /// <summary>The files, by name, that start a process: a git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.</summary>
     internal static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Regex.IsMatch(
-                Regex.Replace(each.Source.Replace("\r\n", "\n"), @"//[^\n]*", ""),
+                SourceTexts.Code(each.Source),
                 @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git"))
             .Select(each => each.File), StringComparer.Ordinal);
 
