@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { CHANGED_VARIABLE, changedEnvironment, changedPaths, withChanged } from './merge/changed-paths.ts';
+import { CHANGED_VARIABLE, changedEnvironment, changedPaths, withChanged } from './merge/gate-hands.ts';
 import { treeOf, tsReader } from './test-map.mjs';
 import { verifyChecks } from './verify-checks.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';

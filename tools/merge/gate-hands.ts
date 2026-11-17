@@ -1,14 +1,26 @@
 /**
- * The changed paths a gate's steps are handed: `MERGE_BRANCH_CHANGED`, the paths as JSON, set on every step of a run the merge scopes by
- * reach (a merge in place but `--full`, a preflight, the queue's scoped run) and on none of a whole run, so a gate that reads it
- * (`npm run verify:checks`) runs what the paths reach, and runs whole where it is unset. A list too long for one environment variable
+ * What a run hands its gates beyond their commands. No `DAORIS_` variable reaches a gate, so its start, for a time ratchet inside a gate,
+ * is a file the tree ignores. Its changed paths are `MERGE_BRANCH_CHANGED`, the paths as JSON, set on every step of a run the merge
+ * scopes by reach (a merge in place but `--full`, a preflight, the queue's scoped run) and on none of a whole run, so a gate that reads
+ * it (`npm run verify:checks`) runs what the paths reach, and runs whole where it is unset. A list too long for one environment variable
  * is not handed: the gate runs whole. The start environment's own is never passed on (`GATE_REMOVED` takes every `MERGE_BRANCH_` name).
  */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { mergeChanges } from './changes.ts';
+import { isIgnored } from './git.ts';
 
 export const CHANGED_VARIABLE = 'MERGE_BRANCH_CHANGED';
 /** Under Windows' bound of 32,767 characters a variable, with room for the rest of the environment's names. */
 const MOST_CHARACTERS = 30_000;
+const RUN_START = '_fixtures/test-timing/run-start.json';
+
+/** The run's start where the tree ignores the file, which `tools/time-ratchet.mjs` reads inside a gate. */
+export function writeRunStart(root: string, since: number): void {
+  if (!isIgnored(root, RUN_START)) return;
+  mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
+  writeFileSync(join(root, RUN_START), `${JSON.stringify({ startedAt: since })}\n`);
+}
 
 /** The variable that hands `changed` to a step, or none where there is no list or it is too long to hand. */
 export function changedEnvironment(changed: readonly string[] | null | undefined): Record<string, string> {

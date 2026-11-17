@@ -3,7 +3,7 @@
  * The merge's `cli` gate, `npm run verify:checks`: the steps of `tools/verify-checks/steps.mjs`, the writers first and alone, then the
  * rest side by side (`tools/verify-checks/run.mjs`), each said with its output as it ends, every red said again at the end.
  *
- * Handed the merge's changed paths (`MERGE_BRANCH_CHANGED`, `tools/merge/changed-paths.ts`), it runs only the steps a changed path is
+ * Handed the merge's changed paths (`MERGE_BRANCH_CHANGED`, `tools/merge/gate-hands.ts`), it runs only the steps a changed path is
  * one of the reads of, and a step whose `aside` gate this repository declares stands aside; handed none (a developer's run, the full
  * set, the release workflow) it runs every step.
  *
@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
-import { changedPaths } from './merge/changed-paths.ts';
+import { changedPaths } from './merge/gate-hands.ts';
 import { runSteps, shellRun } from './verify-checks/run.mjs';
 import { CHECK_STEPS, selectSteps } from './verify-checks/steps.mjs';
 
