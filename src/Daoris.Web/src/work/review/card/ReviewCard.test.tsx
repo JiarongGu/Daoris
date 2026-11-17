@@ -27,6 +27,16 @@ describe('the Accept card', () => {
     })));
   });
 
+  it('sends the epoch of the tenure it drew, so a card drawn before a hand-over is refused ended-epoch', async () => {
+    const onWord = vi.fn((ask: NodeWordAsk) => Promise.resolve({
+      run: ask.run, node: ask.node, act: ask.act, done: false, refused: 'ended-epoch', message: 'review is held by `beta` now',
+    }));
+    render(<ReviewCard answer={{ ...BRANCH_OUTPUTS, epoch: 1 }} viewed={viewed} onWord={onWord} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    await waitFor(() => expect(onWord).toHaveBeenCalledWith(expect.objectContaining({ act: 'accept', attempt: 2, epoch: 1 })));
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
+  });
+
   it('says a stale press moved and offers the newer revision, never pressing it', async () => {
     const onWord = vi.fn((ask: NodeWordAsk) => Promise.resolve({ run: ask.run, node: ask.node, act: ask.act, done: false, refused: 'moved' }));
     const onOpenOutputs = vi.fn();

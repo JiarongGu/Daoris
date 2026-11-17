@@ -145,7 +145,9 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
-            var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
+            // A step not reached (an early Accept on the way to its review) has no attempt standing: the tenure at its last attempt is an ended one's.
+            var holding = status.State is NodeStates.Blocked or NodeStates.Ready ? null
+                : new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
             var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
             // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
             var takes = StepHolding.TakesOnPress(holding, speaker);

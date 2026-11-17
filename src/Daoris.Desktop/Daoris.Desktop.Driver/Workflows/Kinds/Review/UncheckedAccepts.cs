@@ -38,9 +38,16 @@ public static class UncheckedAccepts
             if (standing.State is not (NodeStates.Blocked or NodeStates.Ready)) return (null, Refuse(NodeRefusal.NotInTable) with { State = standing.State });
 
             var passes = new List<NodeWord>();
+            var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
             foreach (var hold in holds)
             {
                 var status = WorkPerformer.StatusOf(record, hold.Id);
+                // Each pass is the person's word on its hold, through the one door: a hold another holder holds is not passed for them.
+                if (SettleDoor.Admit(tenures.Current(bound.Unit, hold.Id, status.Attempt), SettleBy.Person()) is { } refusal)
+                {
+                    return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
+                }
+
                 var move = new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = Words, Scope = new NodeScope(digest, bound.Run) };
                 if (NodeLifecycle.Apply(hold, status, move) is { Moved: false } judged) return (null, Refuse(judged.Refused!) with { State = status.State });
                 passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision });

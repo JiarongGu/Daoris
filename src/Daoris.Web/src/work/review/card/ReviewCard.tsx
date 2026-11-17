@@ -83,7 +83,10 @@ export function ReviewCard({ answer, viewed, onWord, onOpenOutputs, onOverrule, 
   const follows = answer.follows ?? [];
   const settled = answer.standing === record.attempt && answer.state !== 'active';
   const stateWord = (state: string) => t(`work.outputs.state.${state}`, { defaultValue: state });
-  const ask = (rest: Omit<NodeWordAsk, 'run' | 'node'>) => onWord!({ run: answer.run ?? record.run, node: answer.node ?? record.node, ...rest });
+  // Every press passes the epoch the card was drawn in: one drawn before a hand-over is refused `ended-epoch`, never taken in a later epoch.
+  const ask = (rest: Omit<NodeWordAsk, 'run' | 'node'>) => onWord!({
+    run: answer.run ?? record.run, node: answer.node ?? record.node, ...(answer.epoch != null ? { epoch: answer.epoch } : {}), ...rest,
+  });
   const close = () => { setAsking(null); setWords(''); setPart(null); };
   const press = (rest: Omit<NodeWordAsk, 'run' | 'node'>, answered: Answered) => {
     ask(rest).then((said) => (said.done ? answered.done() : answered.refused(nodeWordRefused(t, said)))).catch((error: unknown) => answered.refused(sentence(error)));
