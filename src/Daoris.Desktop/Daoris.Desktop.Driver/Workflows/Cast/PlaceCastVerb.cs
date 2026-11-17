@@ -56,9 +56,9 @@ public sealed class PlaceCastVerb : ChoiceVerb
         });
     }
 
-    private sealed record Asked(string? Workspace, string? Repository, string? Role, string? Holder, string? Why);
+    private sealed record CastAsk(string? Workspace, string? Repository, string? Role, string? Holder, string? Why);
 
-    private static Asked Read(IReadOnlyList<string> args)
+    private static CastAsk Read(IReadOnlyList<string> args)
     {
         try
         {
@@ -72,7 +72,7 @@ public sealed class PlaceCastVerb : ChoiceVerb
             var repository = FlagValue(args, "--repository");
             if (repository is not null && workspace is null) throw new ChoiceWords("`settings cast --repository` needs the repository's workspace.");
             if (cast.Count == 2 && cast[1] != "default" && !CastHolders.Is(cast[1])) throw new ChoiceWords($"`{cast[1]}` is no holder: `person`, `agent`, `agent:<name>` or `default`.");
-            return new Asked(workspace, repository, cast.Count == 2 ? cast[0] : null, cast.Count == 2 && cast[1] != "default" ? cast[1] : null, FlagValue(args, "--why"));
+            return new CastAsk(workspace, repository, cast.Count == 2 ? cast[0] : null, cast.Count == 2 && cast[1] != "default" ? cast[1] : null, FlagValue(args, "--why"));
         }
         catch (ChoiceWords refused) when (!refused.Message.EndsWith(Usage, StringComparison.Ordinal))
         {
