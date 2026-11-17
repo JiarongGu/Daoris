@@ -160,8 +160,9 @@ finishes first and the whole set runs once.
     declaration (`tools/tree-prep.mjs` reads it here), which it runs as a builder does, so its open waits on none of it (OPENSLOW1); a branch lands through the merge tool, never a plain `git merge`. A merge whose `package-lock.json` moved runs `npm
     ci` in that folder once before its first gate, and every gate waits for it (`tools/merge/lock-install.ts`). A merge runs the fast
     tier alone, in under five minutes for a typical branch: the light gates, the CLI's checks (`cli`, `npm run verify:checks`,
-    `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast` runs the
-    unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
+    `MERGE_SUITES`: the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs --tier fast --base {base}`,
+    the run's base handed in: HEAD for a merge in place, the candidate's base in the queue's committed scope tree and the merge base in
+    a preflight's committed branch (REACHEDCOMMITTED1), runs the unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
     change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands. A census that reads sources by text names its reads as `// reaches: <glob> — <why>` lines (the home and provider censuses name `tools/**`), so a diff under those paths reaches it in a builder's `--base main` run and the merge's gate; the table of censuses a change owed is gone.
     The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
@@ -175,7 +176,10 @@ finishes first and the whole set runs once.
     appends its verdict to `local/heavy-runs.jsonl` and says one line beginning `heavy tier:` (the log `local/scratch/heavy-<sha>.log`,
     which the steward's monitor reads). A red is filed in `local/ci-findings.json` naming the merge commit and the class, so the next
     merge reads it as main's red and `--plan` says it; a start or a run that fails is an `ERROR` line and a record, its classes owed
-    to the CI beside. It never holds a merge. `reached` reuses a pass
+    to the CI beside. It never holds a merge; the watch of main the same landings start does (`merge/main-watch.ts`): the cheap
+    suites on the new tip, whose red holds the queue's next merge until fixed or named known. A merge's run keeps going past every
+    failure but a blocking light gate's, and its reds go in one brief, each marked main's or the branch's (`merge/red-brief.ts`);
+    a builder runs the same gates first with `--preflight` (`merge/preflight.ts`). `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source files that declare what
     its files name, the areas its program or a `[Reaches]` names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global

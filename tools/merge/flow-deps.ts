@@ -61,8 +61,8 @@ const sdksOf = (): string => {
 let toolchain: Toolchain | null = null;
 export const toolchainOf = (): Toolchain => (toolchain ??= { node: process.version, dotnet: sdksOf() });
 
-/** The paths the tree at `where` holds changed against its HEAD: in a merge not yet committed, what the merge changed. */
-const diffOf = (where: string): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).out.split('\0').filter(Boolean);
+/** The paths `where` holds changed against `base`: HEAD's, an open merge's; the run's base, a committed tree's commits. */
+const diffOf = (where: string, base = 'HEAD'): string[] => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', base]).out.split('\0').filter(Boolean);
 
 const npmCi = (where: string, folder: string): Promise<{ ok: boolean; note: string }> => new Promise((done) => {
   const child = spawn(NPM_CI, { cwd: join(where, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });

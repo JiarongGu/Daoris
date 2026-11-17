@@ -18,8 +18,8 @@
  *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
  * `--tier fast` is a merge's, `--tier heavy` the run after its landing's (`merge/heavy-tier.ts`); with none, both.
  *
- * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
- * would run and runs nothing. With nothing changed there is nothing reached, and it says so.
+ * The changed paths are the checkout's since `--base` (HEAD where none is named: an open merge's); a committed tree's need its base,
+ * which the merge tool hands its gate in `{base}`. `--paths` names them, `--plan` runs nothing. With nothing changed nothing is reached.
  *
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
  * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
@@ -70,16 +70,16 @@ export function builderAdmission(admission = createAdmission({ kind: 'session' }
   };
 }
 
-/** The paths changed against HEAD (an open merge's), or against where the branch left `base` (a builder's, new files too). */
-export function changedPaths(root, base = null) {
+/** The paths changed since where the checkout left `base`, new files too: since HEAD, an open merge's; since a commit, its branch's. */
+export function changedPaths(root, base = 'HEAD') {
   const read = (args) => {
     const ran = spawnSync('git', args, { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     if (ran.status !== 0) throw new Error(`git could not read the checkout's changes: ${String(ran.stderr).trim()}`);
     return ran.stdout;
   };
-  const from = base ? read(['--no-optional-locks', 'merge-base', base, 'HEAD']).trim() : 'HEAD';
+  const from = read(['--no-optional-locks', 'merge-base', base, 'HEAD']).trim();
   const changed = read(['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', from]).split('\0').filter(Boolean);
-  const added = base ? read(['--no-optional-locks', 'ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean) : [];
+  const added = read(['--no-optional-locks', 'ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean);
   return [...new Set([...changed, ...added])];
 }
 
@@ -123,7 +123,7 @@ const valueOf = (argv, name) => {
 
 async function main(argv) {
   const root = process.cwd();
-  const base = valueOf(argv, '--base');
+  const base = valueOf(argv, '--base') ?? 'HEAD';
   const classes = (valueOf(argv, '--classes') ?? '').split(',').filter(Boolean);
   const named = valueOf(argv, '--paths');
   const paths = named !== null ? named.split(',').filter(Boolean) : changedPaths(root, base);

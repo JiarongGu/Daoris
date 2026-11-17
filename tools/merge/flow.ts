@@ -30,7 +30,7 @@ export type FlowDeps = {
   reachSource: string;
   readVerdicts: () => StoredVerdict[];
   entriesOf: (where: string, tree: string) => TreeEntry[];
-  diffOf: (where: string) => string[];
+  diffOf: (where: string, base?: string) => string[];
   toolchain: Toolchain;
   slowestOf: (trx: string) => Slow[];
   failuresOf: (where: string, result: GateResult, trx: string | null) => Array<{ unit: string; key: string; test: string | null }>;
@@ -55,22 +55,24 @@ const BY_DESIGN = /VBCSCompiler|MSBuild|build-server|nodeReuse/i;
 /** A gate shorter than this has no time to leave anything behind unless it failed. */
 const SWEEP_AFTER_MS = 30_000;
 
-const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string): VerdictKey | null => {
+const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string, base?: string): VerdictKey | null => {
   try {
     return keyOf({
       gate, entries: deps.entriesOf(where, tree), reaching: (paths) => deps.reaching(gate.name, paths), toolchain: deps.toolchain,
-      extra: `${gate.reuse === 'inputs+diff' ? deps.diffOf(where).join('\n') : ''}\0${deps.privateOf?.(where) ?? ''}`, reachTable: deps.reachSource,
+      extra: `${gate.reuse === 'inputs+diff' ? deps.diffOf(where, base).join('\n') : ''}\0${deps.privateOf?.(where) ?? ''}`, reachTable: deps.reachSource,
     });
   } catch {
     return null;
   }
 };
 
-export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, trees, step, noBuild, narrow }: {
+export const withBase = (run: string, base = 'HEAD'): string => run.replaceAll('{base}', base);
+
+export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, trees, step, noBuild, narrow, base }: {
   where: string; gate: PlanGate; logs: string; beside: Record<string, unknown>; tree: string | null; trees: StepTrees | null; step: unknown; noBuild: boolean;
-  narrow?: (gate: PlanGate) => Narrowed | null;
+  narrow?: (gate: PlanGate) => Narrowed | null; base?: string;
 }): Promise<GateResult> {
-  const key = tree ? keyFor(deps, where, gate, tree) : null;
+  const key = tree ? keyFor(deps, where, gate, tree, base) : null;
   const standing = key && (gate.reuse || deps.replayAll) ? replayFor(deps.readVerdicts().filter((each) => each.gate === gate.name), key) : null;
   if (standing && key) {
     const log = join(logs, `${gate.name}.log`);
@@ -116,7 +118,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const startedAt = new Date(started).toISOString();
   let result: GateResult;
   try {
-    result = await deps.runGate(where, { ...gate, run: logged.run }, logs, { ...beside, noBuild: reused ? false : noBuild, trees: mine, step });
+    result = await deps.runGate(where, { ...gate, run: logged.run }, logs, { ...beside, noBuild: reused ? false : noBuild, trees: mine, step, ...(base ? { base } : {}) });
   } catch (error) {
     result = { gate, code: null, log: join(logs, `${gate.name}.log`), verdict: 'FAIL', note: '', ms: Date.now() - started, abnormal: true };
     result.note = `ended abnormally: ${error instanceof Error ? error.message : String(error)}; the run goes on with the next gate`;
