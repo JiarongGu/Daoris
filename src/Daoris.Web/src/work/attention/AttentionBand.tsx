@@ -16,6 +16,7 @@ import { useSeeReading } from '../../bridge/helpReadings';
 import { SignIn } from '../../agents/SignIn';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, SkeletonRows } from '../../design/ui';
+import { stepHoldBridge } from '../../bridge/repositories/cast';
 import { sentence } from '../../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';
 import type { Answered } from '../InlineConfirm';
@@ -512,6 +513,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         held={(item) => ACCOUNT_KINDS.has(item.kind) && harnessRun.busy}
         below={below}
         onSessions={onSessions}
+        stepHold={stepHoldBridge}
         bare={inView}
         onRefuseStale={refuseStale}
         refusingStale={acting === STALE_KEY}

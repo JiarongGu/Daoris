@@ -1,13 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { usePlaceCast, useSetPlaceCast } from '../../bridge/repositories/cast';
-import { PlaceCastSetting } from '../../settings/place/PlaceCast';
+import { PlaceCastSetting, type PlaceCastBridge } from '../../settings/place/PlaceCast';
 import { shellWord } from '../../lib/shellWord';
 
-/** A place's cast in its Settings, wired: read by `PLACE_CAST`, each choice `SET_PLACE_CAST` with the reason beside it. */
-export function PlaceCastSection({ workspace, repository }: { workspace: string; repository?: string }) {
+/** A place's cast in its Settings, wired: read by `PLACE_CAST`, each choice `SET_PLACE_CAST` with the reason beside it, both through the `bridge` it is handed. */
+export function PlaceCastSection({ bridge, workspace, repository }: { bridge: PlaceCastBridge; workspace: string; repository?: string }) {
   const { t } = useTranslation();
-  const cast = usePlaceCast(workspace, repository ?? null);
-  const set = useSetPlaceCast();
+  const cast = bridge.useCast(workspace, repository ?? null);
+  const set = bridge.useSet();
   if (!cast.data) return null;
   const twin = repository
     ? t('settings.cast.twin.repository', { workspace: shellWord(workspace, '<workspace>'), repository: shellWord(repository, '<repository>') })

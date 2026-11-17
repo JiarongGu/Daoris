@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAttention } from '../../bridge/attention';
+import { stepHoldBridge } from '../../bridge/repositories/cast';
 import { useResolveHeld } from '../../bridge/repositories/lines';
 import { useRunNodeWord } from '../../bridge/repositories/workflow';
 import { useSessionGroups } from '../../bridge/sessions/sessionGroups';
@@ -72,7 +73,7 @@ export function SessionRunWaits({ session }: { session: string }) {
   const steps = rows.flatMap((row) => (row.step ? [row.step] : []));
   const hold = (step: StepWaitRow) => {
     const row = rows.find((each) => each.step === step);
-    return <StepHold run={step.run} workspace={row?.workspace ?? ''} repository={row?.where ?? ''} node={step.node} holds={step.holds} />;
+    return <StepHold bridge={stepHoldBridge} run={step.run} workspace={row?.workspace ?? ''} repository={row?.where ?? ''} node={step.node} holds={step.holds} />;
   };
   return <RunWaitsHead waits={waits} steps={steps} onWord={word.mutateAsync} onHeld={held.mutateAsync} hold={hold} />;
 }
