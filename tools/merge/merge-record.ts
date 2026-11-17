@@ -1,11 +1,12 @@
 /**
  * The merge's own record: one line per merge run in `local/merge-record.jsonl`, appended as the run ends. It carries the branch,
  * the run's wall time, each gate's time, steps and slowest classes (`ms` sums them, so gates run side by side count twice), the tests
- * that passed only when run again, whether the run is a branch's first pass, the reds set down as main's and what ran over
- * budget; `tools/dev-metrics.mjs` reads it for the first-pass, wall-time, flake and reached-outside-its-tests figures.
+ * that passed only when run again, whether the run is a branch's first pass, the reds set down as main's, what ran over budget and
+ * the time breaches (`breaches`, `separations`); `tools/dev-metrics.mjs` reads it for the first-pass, wall-time, flake and reached-outside-its-tests figures.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import type { Breach, Separation } from '../time-why.mjs';
 import { GATE_BUDGET_MS, overBudget, type Slow } from './timing.ts';
 import { outsideTests, type Step } from './reached-steps.ts';
 
@@ -22,13 +23,14 @@ export type MainRedRecord = { gate: string; unit: string; key: string };
 export type MergeRecord = {
   schema: 1; branch: string; at: string; ms: number; wallMs?: number; flakes?: number; attempt: number; firstPass: boolean; passed: boolean;
   gates: GateRecord[]; mainReds: MainRedRecord[]; overBudget: { gates: string[]; merge: boolean };
-  heavy?: { deferred: string[] };
+  heavy?: { deferred: string[] }; breaches?: Breach[]; separations?: Separation[];
 };
 
 const passes = (gate: GateRecord): boolean => gate.verdict === 'PASS' || gate.verdict === 'FLAKE' || (gate.verdict === 'FAIL' && gate.mainRed);
 
-export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous, deferred = [] }: {
+export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous, deferred = [], breaches = [], separations = [] }: {
   branch: string; at: string; ms: number; wallMs: number; gates: GateRecord[]; mainReds: MainRedRecord[]; previous: MergeRecord[]; deferred?: string[];
+  breaches?: Breach[]; separations?: Separation[];
 }): MergeRecord {
   const attempt = previous.filter((each) => each.branch === branch).length + 1;
   const passed = gates.every(passes);
@@ -37,6 +39,7 @@ export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous,
     firstPass: attempt === 1 && passed,
     gates: gates.map((gate) => ({ ...gate, over: gate.ms > GATE_BUDGET_MS })),
     mainReds, overBudget: overBudget(gates, ms), ...(deferred.length ? { heavy: { deferred } } : {}),
+    ...(breaches.length ? { breaches } : {}), ...(separations.length ? { separations } : {}),
   };
 }
 

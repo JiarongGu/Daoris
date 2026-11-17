@@ -11,7 +11,7 @@
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
- * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), and inside a run only the records that run wrote.
+ * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), in a run only its own records; each breach says its cause (`tools/time-why.mjs`).
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { judgeByReach, loadWorld, unitsOf } from './time-reach.mjs';
 import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
+import { ratchetBreaches, sayBreach, sourceReader } from './time-why.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -265,7 +266,7 @@ async function main() {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
     const scan = () => scanRecords(dir, root, { since });
-    const { unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
+    const { scanned: settled, unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
     for (const key of unmeasured) console.log(`time-ratchet: unmeasured, under load: ${key} was timed only while other heavy runs were under way, so it is not judged for time; it is measured again alone when the machine is free`);
     const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
     const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
@@ -289,6 +290,10 @@ async function main() {
     }
     const problems = [...reasonProblems(list).map((line) => `${line}`), ...checkTimes(found, list)];
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
+    const loaded = Object.fromEntries(unmeasured.map((key) => [key, settled.loaded[key]]));
+    const records = () => new Map(readRecords(dir, root, { since }).flatMap(({ file, tests }) => tests.map(({ key }) => [key, file])));
+    const breaches = ratchetBreaches({ found, others, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root) });
+    for (const breach of breaches) console.log(sayBreach(breach));
     for (const p of problems) console.error(`time-ratchet: ${p}`);
     if (problems.length) return 1;
     console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower${Object.keys(others).length ? `; ${Object.keys(others).length} slow but not this merge's` : ''})`);

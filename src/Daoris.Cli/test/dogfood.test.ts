@@ -11,6 +11,7 @@ import { readManifest, readLock } from '../src/doctrine/config.ts';
 import { inspect, commandCheck } from '../src/doctrine/drift.ts';
 import { ROLES } from '../src/layout/documents.ts';
 import { cliSource } from './_sources.ts';
+import { checkSteps } from '../../../tools/quick/steps.mjs';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
 // the workspace root, because they are the project's data rather than the CLI's.
@@ -335,17 +336,14 @@ test('every declared gate is actually run by the release workflow', () => {
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
     .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
   // A gate `verify:checks` runs is run wherever it is: a step of its own would run it twice.
-  const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
-    scripts: { 'verify:checks': string };
-  }).scripts['verify:checks'];
+  const verify = checkSteps().join(' && ');
   const runsVerify = /run:\s*npm run verify:checks\s*$/m.test(workflow);
-  // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
-  // Process. Each of its commands is judged so, never the gate's text as a whole.
-  // A run's timing reporter and `{base}` are its own, never the release's.
+  // A one-category gate, or a fast half leaving one out, runs where the workflow runs the project's fast half; each
+  // command is judged so. A run's timing reporter and `{base}` are its own, never the release's.
   const bare = (command: string) => command.replace(/ --results-directory \S+ --logger "trx;LogFileName=[^"]+"/g, '').replace(/ --base \{base\}/g, '');
   const runs = (raw: string) => {
     const command = bare(raw);
-    const category = /^dotnet test (\S+) --filter Category=(\w+)$/.exec(command);
+    const category = /^dotnet test (\S+) --filter (?:Category=(\w+)|"Category!=Process(?:&Category!=\w+)+")$/.exec(command);
     return workflow.includes(command) || (runsVerify && verify.includes(command))
       || (category !== null && category[2] !== 'Process' && workflow.includes(`dotnet test ${category[1]} --filter Category!=Process`));
   };
@@ -368,7 +366,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
     gates: { name: string; run: string }[];
   };
   const fast = gates.gates
-    .map((gate) => /^dotnet test (\S+) --filter Category!=Process(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
+    .map((gate) => /^dotnet test (\S+) --filter "?Category!=Process(?:&Category!=\w+)*"?(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
     .filter((target): target is string => target !== undefined);
   const halves = gates.gates
     .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))
@@ -440,9 +438,7 @@ test('the universal gates run in verify, not only at release', () => {
     gates: { name: string; run: string }[];
   };
   const universal = gates.gates.find((gate) => gate.name === 'universal');
-  const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
-    scripts: { 'verify:checks': string };
-  }).scripts['verify:checks'];
+  const verify = checkSteps().join(' && ');
 
   assert.ok(universal, 'the universal gate is no longer declared — that is not a pass');
   // verify runs it with the built-in patterns alone (a checkout holds no private list); the merge gate runs the full set.

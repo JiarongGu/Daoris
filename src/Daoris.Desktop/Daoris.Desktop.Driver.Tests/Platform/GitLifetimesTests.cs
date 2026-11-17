@@ -34,21 +34,21 @@ public sealed class GitLifetimesTests
     [Fact]
     public void Every_kept_process_and_handle_is_listed_with_what_ends_it()
     {
-        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(GitsCode)), Keepers.Keys, What);
+        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(typeof(GitLifetimesTests), GitsCode)), SourceCensus.Listed(typeof(GitLifetimesTests), Keepers.Keys), What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_keeper_left_out_of_the_list_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(GitsCode)), Keepers.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(typeof(GitLifetimesTests), GitsCode)), SourceCensus.Listed(typeof(GitLifetimesTests), Keepers.Keys), What));
     }
 
     [Fact]
     public void A_planted_field_holding_a_process_turns_the_census_red_naming_it()
     {
-        var planted = SourceCensus.Driver(GitsCode).Append(("Planted.cs", "internal sealed class Planted\n{\n    private Process? _held;\n}\n"));
+        var planted = SourceCensus.Driver(typeof(GitLifetimesTests), GitsCode).Append(("Planted.cs", "internal sealed class Planted\n{\n    private Process? _held;\n}\n"));
 
-        Assert.Equal(["Planted.cs _held keeps a process or a handle and is not listed"], SourceCensus.Problems(Found(planted), Keepers.Keys, What));
+        Assert.Equal(["Planted.cs _held keeps a process or a handle and is not listed"], SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitLifetimesTests), Keepers.Keys), What));
     }
 }
