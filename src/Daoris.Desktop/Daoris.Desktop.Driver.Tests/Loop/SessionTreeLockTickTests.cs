@@ -66,8 +66,7 @@ public sealed class SessionTreeLockTickTests : IDisposable
         Assert.NotEqual(0, removed.ExitCode);
         Assert.Contains("locked", removed.Stderr);
 
-        // 2. Its agent's done ends its turn and not its session: in a workflow's run it waits on the run's next step, and goes on in
-        // the same tree, so the tree stays locked in its name and an unforced remove is still refused.
+        // 2. Its agent's done ends its turn, not its session: it waits on its run's next step, its tree still locked in its name.
         await File.WriteAllTextAsync(release, "");
         await run.WaitAsync(Poll.Patience);
 
@@ -77,8 +76,7 @@ public sealed class SessionTreeLockTickTests : IDisposable
         Assert.NotEqual(0, waiting.ExitCode);
         Assert.Contains("locked", waiting.Stderr);
 
-        // 3. The run's end ends it, as the service's run-end write does, and the look's tidy lets go of a lock no session running or
-        // waiting holds: its tree stands, as nothing deletes itself, and is no longer locked.
+        // 3. Its run's end ends it, and the tidy lets go of a lock no live session holds: its tree stands, no longer locked.
         await EndRunAsync(service.Url);
         using var client = new ServiceClient(service.Url, null);
         var let = await new SessionTrees(_home).LetGoUnheldLocksAsync(

@@ -5,18 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-11-17 - Two Loop ticks still expected an agent's done to end its session
+## 2026-11-17 - Three Loop ticks still expected an agent's done to end its session
 
-- **Symptom:** `SessionTreeLockTickTests` and `AskAndWaitTickTests`' resumed case failed alone on main, every time: expected
-  `completed`, actual `awaiting-step`. They held the full set red.
+- **Symptom:** `SessionTreeLockTickTests`, `AskAndWaitTickTests`' resumed case and `AcpTurnFailureTickTests`' carry-on case failed
+  alone on main, every time: expected `completed`, actual `awaiting-step`. They held the full set red.
 - **Root cause:** 1c98d747e5 made an agent's done in a workflow's run end its turn and not its session, which waits on the run's next
-  step in the same tree, its lock kept, until the run's end ends it. Both tests bind their run to a named isolating workflow (since
+  step in the same tree, its lock kept, until the run's end ends it. The three bind their run to a named isolating workflow (since
   9ee09e8a63), so their sessions now wait; they still read the done as the session's end. The code is right; the premise was old.
   38ddb4b297 moved the words ticks for the same cause and left these two.
 - **Fix:** the tree lock tick asserts the wait, the tree still locked in its name and an unforced remove still refused; then the
   run's end ends the session at the stand-in, and the look's tidy stage (`LetGoUnheldLocksAsync` over `BranchTidying.InUseAsync`)
-  lets go of the lock no session running or waiting holds, the tree standing. The ask-and-wait tick's resumed session waits on its step.
-- **Verification:** both classes pass with `process.runsettings`, filtered, with the Loop tick classes that bind the same workflow.
+  lets go of the lock no session running or waiting holds, the tree standing. The other two ticks' carried sessions wait on their step.
+- **Verification:** the three classes pass with `process.runsettings`, filtered, with the Loop tick classes that bind the same workflow.
 
 ## 2026-11-17 - A git place read its exited git as running under load
 

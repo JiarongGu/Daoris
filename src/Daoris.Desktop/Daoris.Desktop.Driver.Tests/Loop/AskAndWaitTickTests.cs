@@ -63,8 +63,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         Assert.Contains("#q2", sitting.Reason);
         Assert.Equal(1, service.SessionCount);
 
-        // 3. `backend` answers. The quest resumes in the tree it asked from, handed what came back; its agent's done ends its turn,
-        // and in a workflow's run the session waits on the run's next step.
+        // 3. `backend` answers. The quest resumes in the tree it asked from, handed what came back, and its done waits on the run's next step.
         service.Close("q2", "Done", "POST /notes takes { text }.");
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
