@@ -128,7 +128,6 @@ public sealed class StepTenureTests : IDisposable
 
         Assert.Equal(SettleDoor.NotHolder, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, settle: new SettleBy("agent:alpha")).Code);
 
-        // The person's word takes the step from the agent holding it and settles it, one press, the take journaled with the word.
         Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link).What);
         Assert.Equal((CastHolders.Person, TenureWhy.TakeBack), (Tenures.Current(Unit, "release", 1)!.Holder, Tenures.Current(Unit, "release", 1)!.Why));
         Assert.Contains(new PlaceCastFiles(_home, () => true).Journal(), entry => entry is { Act: CastActs.Take, Why: "pressed done-outside" });

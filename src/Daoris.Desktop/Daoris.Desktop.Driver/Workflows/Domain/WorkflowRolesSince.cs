@@ -3,23 +3,17 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The saved workflows' floors: for each thing a saved version may name that a build before it misreads (<see cref="Floors"/>), the first
-/// build that saved a version naming it, kept beside the saved workflows (<see cref="WorkflowRolesSinceStore"/>), and a going back below any
-/// is refused (<see cref="InstallRollback"/>, code <see cref="Code"/>). <see cref="Roles"/>: a build before the step's role field reads such a
-/// version without its roles, takes another digest for it and holds every run bound to it as a version edited. <see cref="Tasks"/>: a build
-/// before the <c>task</c> kind knows the step only as the former <c>human</c> kind (<see cref="HumanFormerKind"/>), reads the version as
-/// unreadable and holds every run bound to it. Each floor is kept apart, since a roles' floor kept first lies below the builds that know no
-/// <c>task</c>. The rule alone, on a kept build as a value.
+/// The saved workflows' floors (<see cref="Floors"/>): for what a saved version may name that an earlier build misreads, the first build that
+/// saved it, kept beside the saved workflows (<see cref="WorkflowRolesSinceStore"/>), and a going back below any is refused
+/// (<see cref="InstallRollback"/>, code <see cref="Code"/>). Each is kept apart, since a roles' floor kept first lies below the builds that know
+/// no <c>task</c> (<see cref="HumanFormerKind"/>). The rule alone, on a kept build as a value.
 /// </summary>
 public static class WorkflowRolesSince
 {
     /// <summary>The going back's refusal code, the saved workflows'.</summary>
     public const string Code = "workflows";
 
-    /// <summary>One floor: the file its first build is kept in, what in a saved file closes it, and why going back below it is refused.</summary>
-    /// <param name="File">The file beside the workflows' files that keeps the floor's build.</param>
-    /// <param name="Names">Whether a saved file names what closes the floor.</param>
-    /// <param name="Why">What a build below the floor misreads, ending "builds before {0}", the kept build.</param>
+    /// <summary>One floor: the file its first build is kept in, what in a saved file closes it, and why going back below it is refused (<c>{0}</c> the kept build).</summary>
     public sealed record Floor(string File, Func<JsonNode?, bool> Names, string Why);
 
     /// <summary>A step naming its role: an object in a <c>nodes</c> list holding <c>role</c> (a default one is never written, <see cref="StepRoles.Unwritten"/>).</summary>

@@ -150,10 +150,7 @@ public sealed class StepRolesTests : IDisposable
         Assert.Null(WorkflowRolesSince.Closes("1.40.0", file, "1.41.0"));
     }
 
-    /// <summary>
-    /// A save writing a <c>task</c> step closes going back below the build that saved it, kept apart from the roles' floor: a build between
-    /// the two reads the roles and knows the step only as the former <c>human</c> kind, so it would hold every run bound to the version.
-    /// </summary>
+    /// <summary>A save writing a <c>task</c> step closes going back below its build, apart from the roles' floor, which a build between the two lies under.</summary>
     [Fact]
     public void A_going_back_past_the_first_build_that_saved_a_task_is_refused_whatever_the_roles_floor()
     {
@@ -192,7 +189,6 @@ public sealed class StepRolesTests : IDisposable
         {
             var file = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, graph), []).Result!;
             Assert.DoesNotContain(file["versions"]![0]!["graph"]!["nodes"]!.AsArray(), node => node!.AsObject().ContainsKey("role"));
-            // The roles' floor alone: a `task` step closes its own (A_going_back_past_the_first_build_that_saved_a_task_is_refused…).
             Assert.Null(WorkflowRolesSince.Closes(null, file, "1.40.0"));
             WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
             Assert.Null(WorkflowRolesSinceStore.Read(_home));

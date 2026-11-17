@@ -29,7 +29,6 @@ public static class StepWaiting
     /// (<see cref="StepHolders"/>), or null where the step waits on no role (not reached, under way with an agent or a check, settled).
     /// </summary>
     /// <param name="record">The run's node record; null where only the declaration and status are in hand, which reads no plugin's progress and no failure kept.</param>
-    /// <param name="held">Who holds the step's attempt now (<see cref="StepTenureFiles"/>), filling whatever it waits on; none, the role's own.</param>
     public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status, StepTenure? held = null)
     {
         StepHolder HolderOf(string role) => held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt
@@ -43,13 +42,11 @@ public static class StepWaiting
         var why = status.State switch
         {
             NodeStates.Unknown => PersonWaits.Held,
-            // Each kind says what its active step waits for (IWaitsOnRole); the reading names no kind, and who holds the role is the role's.
             NodeStates.Active => (NodeKit.Of(node.Kind) as IWaitsOnRole)?.Waits(node, status),
             NodeStates.Failed when record is not null && Left(node, status, record) => PersonWaits.Left,
             _ => null,
         };
         if (why is null) return null;
-        // A step's own word waits on the role the step names (its kind's default where it names none); the other waits on their own.
         var role = why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead ? StepRoles.Of(node) : RoleOf(why);
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
@@ -160,10 +157,8 @@ public sealed record HeldStep(
     /// <summary>Where in the window its act is taken where no press of its own settles it (<see cref="StepWaiting.OpensRun"/>).</summary>
     public string? Opens { get; init; }
 
-    /// <summary>The epoch of the tenure the row reads: a press in an ended epoch is refused.</summary>
     public int? Epoch { get; init; }
 
-    /// <summary>The acts the step offers on its holder (<see cref="StepHoldActs.Of"/>): <i>Take</i>, <i>Hand to…</i>, <i>Give back</i>, by its tenure now.</summary>
     public IReadOnlyList<string>? Holds { get; init; }
 
     /// <summary>
