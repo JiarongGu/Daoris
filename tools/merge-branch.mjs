@@ -59,7 +59,8 @@
  * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
  * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
  * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet. A gate
- * reading the changed paths names `{base}` (`withBase`): HEAD in place, the base in a committed tree.
+ * reading the changed paths names `{base}` (`withBase`): HEAD in place, the base in a committed tree; or reads
+ * `MERGE_BRANCH_CHANGED`, which a run by reach hands every step (`merge/gate-hands.ts`).
  *
  * ## A fixed gate re-runs alone
  *
@@ -409,6 +410,7 @@ import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
 import { saidDrained } from './merge/said-drained.ts';
 import { sweepAndSay } from './merge/merge-temps.ts';
 import { gatesToRerun, ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
+import { mergeChanged, withChanged, writeRunStart } from './merge/gate-hands.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 import {
@@ -2536,16 +2538,12 @@ const flowSeams = () => ({
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(), base,
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(), base, changed,
 } = {}) {
-  // A time ratchet inside a gate judges only the records since this run began; no DAORIS_ variable may reach a gate to say so.
-  if (isIgnored(root, '_fixtures/test-timing/run-start.json')) {
-    mkdirSync(join(root, '_fixtures/test-timing'), { recursive: true });
-    writeFileSync(join(root, '_fixtures/test-timing/run-start.json'), `${JSON.stringify({ startedAt: since })}\n`);
-  }
+  writeRunStart(root, since);
   const commit = headCommit(root);
   const replaying = replay ? fullReplayOf({ root, checkout: verdictsHome(root), dir, commit }) : null;
-  const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
+  const stepFor = withChanged(kind === 'merge' && step === gateStep ? mergeStep : step, changed);
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
@@ -2618,6 +2616,7 @@ async function gateMerge(root, state, plan) {
     branch,
     since: started,
     kind: 'merge',
+    changed: mergeChanged(root, state.full),
     onResult: (result) => {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
@@ -2781,6 +2780,7 @@ async function rerunGates(root, options) {
     // A gate run again judges the whole merge's timing records, as its last ratchet does.
     ...(state.ratchetSince ? { since: state.ratchetSince } : {}),
     kind: 'merge',
+    changed: mergeChanged(root, state.full),
     onResult: (result) => {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
@@ -5199,10 +5199,10 @@ export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
  */
 let acceptedPass = [];
 
-/** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
+/** The step gates and probes run by: `gateEnvironment`, the accepted `env.pass` names, and what the run hands (`options.env`). */
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), ...options.env } });
 /** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
-const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
+const mergeStep = (command, cwd, fd, options = {}) => gateStep(command, cwd, fd, { ...options, env: { ...options.env, MERGE_GATES_RUN: '1' } });
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
@@ -5562,7 +5562,7 @@ async function preflightVerb(root, options) {
   const { gates } = scopedGates(home, root, plan, choice, dir);
   console.log(`the merge's gates: ${choice.set.run.map((entry) => entry.name).join(', ')}${choice.set.kept.length ? `; kept, their pass standing on this tree: ${choice.set.kept.map((entry) => entry.name).join(', ')}` : ''}`);
   for (const entry of choice.set.deferred) console.log(`  deferred, as its merge defers it: ${entry.name}, ${entry.why}`);
-  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from });
+  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from, changed: choice.changed });
   const failed = results.filter((result) => result.verdict === 'FAIL');
   if (!failed.length) {
     console.log(`merge-branch: the preflight of ${facts.branch} passed: ${count(results.length, 'gate')} of its merge's ran green here.`);
@@ -5600,7 +5600,7 @@ export function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false 
     gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })),
     reached, standing: new Set(judged.kept.map((entry) => entry.name)), knownRed: new Set(open.map((each) => each.gate).filter(Boolean)), recordsOnly,
   });
-  return { treeId, standing, verdicts, judged, open, set };
+  return { treeId, standing, verdicts, judged, open, set, changed };
 }
 
 /**
@@ -5769,7 +5769,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
       keepGoing: candidate.members.some((each) => each.keepGoing) || 'blocking', byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
-      base: candidate.base,
+      base: candidate.base, changed: choice.changed,
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
