@@ -5,9 +5,11 @@ namespace Daoris.Driver;
 /// <see cref="GoAheadReading"/>.
 /// </summary>
 [NodeKind(NodeKinds.GoAhead, NodeGroup.You, NodeKinds.Look)]
-public sealed class GoAheadNode : BuiltInNode, IObserves
+public sealed class GoAheadNode : BuiltInNode, IObserves, IWaitsOnRole
 {
     public NodeObservation Observe(NodeReading reading) => GoAheadReading.Observe(reading);
+
+    public string? Waits(NodeDeclaration node, NodeStatus status) => PersonWaits.GoAhead;
 
     /// <summary>On a run alone, though it is pressed, since its answer is the go-ahead's record; on a unit it waits ready for the person's press.</summary>
     public bool Begins(GovernedUnit governed) => governed.Scope is not null;

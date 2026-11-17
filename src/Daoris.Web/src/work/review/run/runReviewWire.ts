@@ -54,6 +54,7 @@ export type ReviewDiff = { files: DiffFile[]; truncated?: string | null; base: s
 /** What `RUN_REVIEW` answers: the run's review, or `refused` (`not-run`) where none is bound here with a review. */
 export type RunReviewAnswer = {
   run: string | null; refused?: string; node?: string; record?: ReviewRecord | null; state?: string; standing?: number; since?: string | null;
+  epoch?: number | null;
   by?: string | null; words?: string | null; says?: RunReviewSays; before?: RunReviewStep[]; presses?: string[];
   newer?: { attempt: number; revision: string; changed: string[]; outputs?: string[] } | null; supervisor?: RunReviewSupervisor | null; follows?: RunReviewStep[];
   ended?: string | null; operations?: ReviewOperation[] | null;

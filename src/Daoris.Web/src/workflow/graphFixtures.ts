@@ -116,7 +116,7 @@ export const INTEGRATED_GIT_GRAPH = {
   schemaVersion: 2, entries: ['work'], end: 'tidy',
   nodes: [
     { id: 'work', kind: 'claimed' }, { id: 'holds', kind: 'quest.holds' }, { id: 'rebase', kind: 'rebase', options: { onto: 'target' } },
-    { id: 'resolve', kind: 'resolve', options: { resolver: 'session' } }, { id: 'settle', kind: 'human' },
+    { id: 'resolve', kind: 'resolve', options: { resolver: 'session' } }, { id: 'settle', kind: 'task' },
     { id: 'landing', kind: 'merge', options: { method: 'fast-forward', target: 'feature/{quest}-{slug}' } },
     { id: 'integrate', kind: 'integrate' }, { id: 'line', kind: 'line' }, { id: 'tidy', kind: 'tidy' },
   ],

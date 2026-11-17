@@ -216,7 +216,7 @@ public sealed class LandNodeKindTests
             [new("a", WireKinds.After, new("work"), new("review")), new("b", WireKinds.After, new("work"), new("land")), new("c", WireKinds.After, new("land"), new("line"))],
             ["work"], "line");
         Assert.Contains(GraphRefusal.ProtectedOrder, Codes(beside));
-        Assert.Contains(GraphRefusal.ProtectedWire, Codes(Chain(Claimed(), review, Node("qa", NodeKinds.Human), Land(), Line())));
+        Assert.Contains(GraphRefusal.ProtectedWire, Codes(Chain(Claimed(), review, Node("qa", NodeKinds.Task), Land(), Line())));
 
         var older = NodeKit.Built.Without(NodeKinds.Review);
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(review, older));
@@ -263,7 +263,7 @@ public sealed class LandNodeKindTests
             [Claimed(), look, Land(), Line()],
             [new("a", WireKinds.After, new("work"), new("look")), new("b", WireKinds.After, new("work"), new("land")), new("c", WireKinds.After, new("land"), new("line"))],
             ["work"], "line");
-        var distant = Chain(Claimed(), look, Node("qa", NodeKinds.Human), Land(), Line());
+        var distant = Chain(Claimed(), look, Node("qa", NodeKinds.Task), Land(), Line());
 
         Assert.Contains(GraphRefusal.ProtectedOrder, Codes(beside));
         Assert.Contains(GraphRefusal.ProtectedWire, Codes(distant));

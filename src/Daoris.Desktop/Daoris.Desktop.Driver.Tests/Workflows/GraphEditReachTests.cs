@@ -19,7 +19,7 @@ public sealed class GraphEditReachTests
     private static readonly NodeDeclaration[] Nodes =
     [
         Node("s"), Node("f"), Node("r") with { Rejectable = true }, Node("t"), Node("u"), Node(Opinion, NodeKinds.Opinion),
-        Node("a1", NodeKinds.Human), Node("a2", NodeKinds.Human), Node("a3", NodeKinds.Human), Node("a4", NodeKinds.Human),
+        Node("a1", NodeKinds.Task), Node("a2", NodeKinds.Task), Node("a3", NodeKinds.Task), Node("a4", NodeKinds.Task),
     ];
 
     private static readonly Wire[] Wires =

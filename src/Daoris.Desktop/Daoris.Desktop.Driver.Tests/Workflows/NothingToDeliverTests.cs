@@ -20,7 +20,7 @@ public sealed class NothingToDeliverTests
         new("pull-request", "acme-host/pull-request", 1, NodeReach.Performed),
         new("monitor", NodeKinds.Monitor, 1, NodeReach.Observed) { Outcomes = [PullRequestReading.Merged, PullRequestReading.Closed] },
         new("tidy", NodeKinds.Tidy, 1, NodeReach.Performed),
-        new("closed", NodeKinds.Human, 1, NodeReach.Pressed),
+        new("closed", NodeKinds.Task, 1, NodeReach.Pressed),
     ];
 
     private static readonly Wire[] Wires =

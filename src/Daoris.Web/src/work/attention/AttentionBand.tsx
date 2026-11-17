@@ -16,6 +16,7 @@ import { useSeeReading } from '../../bridge/helpReadings';
 import { SignIn } from '../../agents/SignIn';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, SkeletonRows } from '../../design/ui';
+import { stepHoldBridge } from '../../bridge/repositories/cast';
 import { sentence } from '../../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';
 import type { Answered } from '../InlineConfirm';
@@ -387,7 +388,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       const node = item.step?.node ?? item.declined?.node;
       if (!node) { answered.done(); return; }
       run(item, async () => {
-        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
+        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null, epoch: item.step?.epoch ?? null });
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },
@@ -512,6 +513,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         held={(item) => ACCOUNT_KINDS.has(item.kind) && harnessRun.busy}
         below={below}
         onSessions={onSessions}
+        stepHold={stepHoldBridge}
         bare={inView}
         onRefuseStale={refuseStale}
         refusingStale={acting === STALE_KEY}

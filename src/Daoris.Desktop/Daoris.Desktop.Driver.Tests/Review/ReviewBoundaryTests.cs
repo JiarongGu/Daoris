@@ -76,7 +76,7 @@ public sealed class ReviewBoundaryTests
         Assert.Equal("workflow.held", line.Event);
         Assert.Contains(("code", (object?)WorkflowGateStates.CannotStart), line.Data);
 
-        var graph = new GraphGateState(GraphGateStates.Waits, "q2") { Handed = "land", Node = "qa", Kind = NodeKinds.Human };
+        var graph = new GraphGateState(GraphGateStates.Waits, "q2") { Handed = "land", Node = "qa", Kind = NodeKinds.Task };
         var waiting = open with { Workflow = new WorkflowGateState(WorkflowGateStates.Follows, named), Graph = graph };
         Assert.Contains($"trees: {graph.Says}", LandingGateWords.Plan(waiting));
         Assert.True(waiting.GraphHolds);

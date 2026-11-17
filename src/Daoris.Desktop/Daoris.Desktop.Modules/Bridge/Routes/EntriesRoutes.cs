@@ -60,7 +60,7 @@ public sealed class EntriesRoutes(DriverContext context)
 
         // What `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
         var plugins = new List<string>();
-        var drawn = press.Revisions?.GroupBy(part => part.Session, StringComparer.Ordinal).ToDictionary(part => part.Key, part => part.Last().Revision, StringComparer.Ordinal);
+        var drawn = press.Revisions?.GroupBy(part => part.Session, StringComparer.Ordinal).ToDictionary(part => part.Key, part => part.Last(), StringComparer.Ordinal);
         var landed = await LandingAsync(Accepts(service, plugins, drawn), entry, rows, LeaveOut(press.LeaveOut), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         // The lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
@@ -161,31 +161,34 @@ public sealed class EntriesRoutes(DriverContext context)
     /// whose tree it shares, and the later part that superseded it.
     /// </summary>
     /// <param name="held">What holds each part, its gate's sentence, by session; absent where nothing does.</param>
-    /// <param name="revisionOf">The revision of the review record a part's run stands on, which the entry's Accept names for it (<c>revisions</c>).</param>
+    /// <param name="drawnOf">The review (revision and epoch) a part's run stands on, which the entry's Accept names for it (<c>revisions</c>).</param>
     public static object Plan(
-        string entry, string repository, EntryPlan plan, IReadOnlyDictionary<string, string>? held = null, Func<string?, string?>? revisionOf = null) => new
+        string entry, string repository, EntryPlan plan, IReadOnlyDictionary<string, string>? held = null, Func<string?, ReviewDrawn?>? drawnOf = null) => new
     {
         Entry = entry,
         Repository = repository,
         plan.Form,
         plan.Target,
-        Parts = plan.Parts.Select(part => new
-        {
-            part.Session,
-            part.Plan?.Form,
-            part.Plan?.Target,
-            part.Plan?.Own,
-            part.Plan?.Plugin,
-            part.Plan?.Problem,
-            LeftOut = TreesRoutes.LeftOut(part.Plan?.LeftOut),
-            Lands = part.Plan?.Lands?.Select(commit => new { Commit = TextBounds.ShortCommit(commit.Sha, 8), commit.Subject }).ToArray(),
-            Conflict = TreesRoutes.Conflict(part.Plan?.Conflict),
-            Held = held?.GetValueOrDefault(part.Session),
-            Revision = revisionOf?.Invoke(part.Run),
-            part.SameTreeAs,
-            Superseded = part.Superseded is { } by ? new { by.By, by.Says, by.Conflicts } : null,
-            Clash = part.Clash is { } clash ? new { clash.By, clash.Says } : null,
-        }).ToArray(),
+        Parts = plan.Parts.Select(part => Part(part, held, drawnOf?.Invoke(part.Run))).ToArray(),
+    };
+
+    private static object Part(EntryPartPlan part, IReadOnlyDictionary<string, string>? held, ReviewDrawn? drawn) => new
+    {
+        part.Session,
+        part.Plan?.Form,
+        part.Plan?.Target,
+        part.Plan?.Own,
+        part.Plan?.Plugin,
+        part.Plan?.Problem,
+        LeftOut = TreesRoutes.LeftOut(part.Plan?.LeftOut),
+        Lands = part.Plan?.Lands?.Select(commit => new { Commit = TextBounds.ShortCommit(commit.Sha, 8), commit.Subject }).ToArray(),
+        Conflict = TreesRoutes.Conflict(part.Plan?.Conflict),
+        Held = held?.GetValueOrDefault(part.Session),
+        drawn?.Revision,
+        drawn?.Epoch,
+        part.SameTreeAs,
+        Superseded = part.Superseded is { } by ? new { by.By, by.Says, by.Conflicts } : null,
+        Clash = part.Clash is { } clash ? new { clash.By, clash.Says } : null,
     };
 
     /// <summary>
@@ -240,12 +243,14 @@ public sealed class EntriesRoutes(DriverContext context)
     /// own: a plugin says its lines on the console under its name, as a landing's do.
     /// </summary>
     /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words; null keeps none.</param>
-    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, IReadOnlyDictionary<string, string>? revisions = null) => new(
+    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, IReadOnlyDictionary<string, EntryPartRevision>? drawn = null) => new(
         service, _loop.Home,
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
         _loop.Events)
     {
-        Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token), Revisions = revisions,
+        Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token),
+        Revisions = drawn?.Where(part => part.Value.Revision is not null).ToDictionary(part => part.Key, part => part.Value.Revision!, StringComparer.Ordinal),
+        Epochs = drawn?.Where(part => part.Value.Epoch is not null).ToDictionary(part => part.Key, part => CastRoutes.EpochOf(part.Value.Epoch)!.Value, StringComparer.Ordinal),
     };
 
     /// <summary>A plugin's lines, said on the loop's output under its name and kept in <paramref name="lines"/> as the terminal says them.</summary>
@@ -258,7 +263,7 @@ public sealed class EntriesRoutes(DriverContext context)
     private async Task<object> PlanAsync(ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
     {
         var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
-        return Plan(entry.Key, entry.Repository, plan, held, run => ReviewDrawn.RevisionOf(_loop.Home, run));
+        return Plan(entry.Key, entry.Repository, plan, held, run => ReviewDrawn.Of(_loop.Home, run));
     }
 
     /// <summary>

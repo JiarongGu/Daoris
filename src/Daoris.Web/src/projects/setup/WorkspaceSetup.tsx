@@ -9,6 +9,8 @@ import {
 } from '../../settings/repository/HandOver';
 import { GROWTH_DEFAULT, GrowthSetting, type GrowthValue, growthSummary } from '../../settings/repository/Growth';
 import { type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import type { PlaceCastBridge } from '../../settings/place/PlaceCast';
+import { PlaceCastSection } from './PlaceCastSection';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
@@ -49,7 +51,10 @@ export type WorkspaceDefaults = {
   /** Whether an agent's press that opens a repository or a room here runs as the access mode says, is asked or is refused: `daoris settings growth`. */
   growth?: { set?: GrowthValue; onChange: (value: GrowthValue) => void } | null;
   /** The workspace's risk and the owner's marks: `daoris settings risk`. */
-  risk?: { row?: PlaceRiskRow; onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void } | null;
+  risk?: {
+    row?: PlaceRiskRow; onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void;
+    cast?: PlaceCastBridge;
+  } | null;
 };
 
 /** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none. Details draws it. */
@@ -324,6 +329,7 @@ export function WorkspaceSetup({
               onChange={risk.onChange}
             />
           )}
+          {risk?.cast && <PlaceCastSection bridge={risk.cast} workspace={workspace} />}
           {read && (
             <Inheritable
               setHere={t('projects.workspace.setHere')}

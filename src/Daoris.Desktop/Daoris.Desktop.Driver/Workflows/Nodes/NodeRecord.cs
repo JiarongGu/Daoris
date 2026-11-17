@@ -274,18 +274,18 @@ public static class NodeWordActs
     public const string Send = "send";
 
     /// <summary>
-    /// The person's <i>Done</i> of a waiting task: a <c>human</c> node reached on their word, with its outcome <c>done</c> where it
+    /// The holder's <i>Done</i> of a waiting task: a <c>task</c> node reached on their word, with its outcome <c>done</c> where it
     /// declares one and their note where they gave one.
     /// </summary>
     public const string Done = "done";
 
-    /// <summary>The person's <i>Approve</i> of a waiting approval: a <c>human</c> node declaring <c>approved</c> and <c>rejected</c>, reached with <c>approved</c>.</summary>
+    /// <summary>The holder's <i>Approve</i> of a waiting approval: a <c>task</c> node declaring <c>approved</c> and <c>rejected</c>, reached with <c>approved</c>.</summary>
     public const string Approve = "approve";
 
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
-    /// <summary>A decision's answer with the outcome the word names, proposed by a holder or the owner's (<see cref="HumanDecisions"/>).</summary>
+    /// <summary>A decision's answer with the outcome the word names, proposed by a holder or the owner's (<see cref="TaskDecisions"/>).</summary>
     public const string Decide = "decide";
 
     /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>
@@ -335,8 +335,33 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>Who holds the actor a decision's proposal is from, as its channel names it; null for the owner's own word.</summary>
     public string? Holder { get; init; }
 
+    /// <summary>
+    /// The tenure the settle door admitted the word in, which the pass reads again before it applies it: a step passed on since is refused
+    /// <c>ended-epoch</c>. Null where the door judged no holder (no tenure kept, an observation, the owner role's stop or answer).
+    /// </summary>
+    public NodeWordEpoch? Epoch { get; init; }
+
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
+}
+
+/// <summary>A step's attempt and the epoch of its tenure the settle door admits a kept word in (<see cref="NodeWord.Epoch"/>).</summary>
+public sealed record NodeWordEpoch(int Attempt, int Number)
+{
+    /// <summary>The tenure a word judged by <paramref name="by"/> is kept in: none where the door judged no holder.</summary>
+    public static NodeWordEpoch? Of(StepTenure? held, SettleBy by) =>
+        held is null || by.Who is SettleBy.Observed or SettleBy.Owner ? null : new(held.Attempt, held.Epoch);
+
+    /// <summary>
+    /// Why the pass does not apply a word kept in <paramref name="kept"/> on a step standing at <paramref name="attempt"/>, read in the hold
+    /// of the tenures' lock the pass takes: the epoch ended (the step passed on, or a new attempt begun), or the tenures do not read. Null
+    /// where the word names no epoch or the epoch still holds the step.
+    /// </summary>
+    public static string? Refused(NodeWordEpoch? kept, string node, int attempt, StepTenureFiles.TenureHold? tenures) =>
+        kept is null || tenures is null ? null
+        : tenures.Unread ? StepTenureFiles.Unread
+        : kept.Attempt != attempt || tenures.Current(node, attempt) is { } now && now.Epoch != kept.Number ? StepTenureFiles.EndedEpoch
+        : null;
 }
 
 /// <summary>

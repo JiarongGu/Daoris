@@ -3,18 +3,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A per-run decision: a <c>human</c> step declaring its own outcomes is answered by <i>decide</i>, proposed by a named holder with a reason
+/// A per-run decision: a <c>task</c> step declaring its own outcomes is answered by <i>decide</i>, proposed by a named holder with a reason
 /// and confirmed by the owner; the route its answer closes is passed on the record with both holders, what follows goes on, and a changed
 /// answer before the run ends reopens a passed step. Each seen failing first.
 /// </summary>
-public sealed class HumanDecisionTests : NodeRunFixture
+public sealed class TaskDecisionTests : NodeRunFixture
 {
     private const string DecisionGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"decide","kind":"human","version":1,"reach":"pressed","outcomes":["needed","not-needed"]},
-                  {"id":"config","kind":"human","version":1,"reach":"pressed","outcomes":["done"]},
-                  {"id":"check","kind":"human","version":1,"reach":"pressed","outcomes":["done"]},
+                  {"id":"decide","kind":"task","version":1,"reach":"pressed","outcomes":["needed","not-needed"]},
+                  {"id":"config","kind":"task","version":1,"reach":"pressed","outcomes":["done"]},
+                  {"id":"check","kind":"task","version":1,"reach":"pressed","outcomes":["done"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"decide"},
                   {"id":"d>g","kind":"when","from":"decide","to":"config","outcome":"needed"},
@@ -23,7 +23,7 @@ public sealed class HumanDecisionTests : NodeRunFixture
                   {"id":"k>h","kind":"when","from":"check","to":"handed","outcome":"done"}]}
         """;
 
-    private static readonly NodeDeclaration Decision = new("decide", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = ["needed", "not-needed"] };
+    private static readonly NodeDeclaration Decision = new("decide", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["needed", "not-needed"] };
 
     private void Read()
     {
@@ -111,8 +111,8 @@ public sealed class HumanDecisionTests : NodeRunFixture
     [Fact]
     public void A_save_refuses_a_decision_none_of_whose_outcomes_routes_a_wire()
     {
-        var kind = NodeKit.Of(NodeKinds.Human)!;
-        var after = new NodeDeclaration("after", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = ["done"] };
+        var kind = NodeKit.Of(NodeKinds.Task)!;
+        var after = new NodeDeclaration("after", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] };
         NodeGraph Graph(params Wire[] wires) => new([Decision, after], wires, ["decide"], "after");
 
         var routed = Graph(new Wire("w", WireKinds.When, new WireEnd("decide"), new WireEnd("after")) { Outcome = "needed" });
@@ -126,11 +126,11 @@ public sealed class HumanDecisionTests : NodeRunFixture
     [Fact]
     public void A_decision_declares_two_or_more_outcomes_of_its_own()
     {
-        var human = (BuiltInNode)NodeKit.Of(NodeKinds.Human)!;
+        var human = (BuiltInNode)NodeKit.Of(NodeKinds.Task)!;
         Assert.True(human.TakesOutcomes(["needed", "not-needed"]));
         Assert.False(human.TakesOutcomes(["needed"]));
         Assert.False(human.TakesOutcomes(["approved", "rejected"]));
         Assert.False(human.TakesOutcomes(["done", "approved"]));
-        Assert.Equal([NodeWordActs.Decide], HumanNode.Presses(Decision));
+        Assert.Equal([NodeWordActs.Decide], TaskNode.Presses(Decision));
     }
 }

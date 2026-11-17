@@ -19,7 +19,8 @@ public static class EarlyAccepts
     /// read none). Refused where the run is not bound, its graph holds no review, its record ended, its review has settled, or another word of
     /// the person's already waits on it; a kept Accept pressed again is kept anew.
     /// </summary>
-    public static NodeWorded Keep(NodeRecordFiles records, string run, string? tip, Func<DateTimeOffset>? clock = null)
+    /// <param name="epoch">The review's tenure epoch the press read: an Accept on a review under way passes the settle door (<see cref="SettleDoor.Admit"/>) in it.</param>
+    public static NodeWorded Keep(NodeRecordFiles records, string run, string? tip, Func<DateTimeOffset>? clock = null, int? epoch = null)
     {
         run = run.Trim().TrimStart('#');
         if (new GraphRuns(records).Find(run) is not { } bound) return new(run, "", NodeWordActs.Accept, RunNodeWords.NotRun);
@@ -28,16 +29,25 @@ public static class EarlyAccepts
 
         NodeWorded Refuse(string code) => new(run, review.Id, NodeWordActs.Accept, code);
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
-        var (refused, result) = records.Edit(bound.Unit, record =>
+        // Judged and kept in one hold of the tenures' lock, as every word is: no hand-over lands between the holder read and the write.
+        var (refused, result) = new StepTenureFiles(records.Home, records.HoldsLease).Settling(bound.Unit, hold => records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(RunNodeWords.Ended) with { Detail = ended.Quest });
             if (record.Pending.FirstOrDefault(each => each.Node == review.Id) is { Kept: false }) return (null, Refuse(RunNodeWords.Worded));
             var status = WorkPerformer.StatusOf(record, review.Id);
             if (status.State is not (NodeStates.Blocked or NodeStates.Ready or NodeStates.Active)) return (null, Refuse(NodeRefusal.NotInTable) with { State = status.State });
 
-            var word = new NodeWord(review.Id, NodeWordActs.Accept, null, now) { Kept = true, Tip = tip };
+            // A review under way is settled through the one door: a review not begun has no attempt standing to hold.
+            var holding = status.State == NodeStates.Active ? hold.Current(review.Id, status.Attempt) : null;
+            var speaker = SettleBy.Person(epoch);
+            var takes = StepHolding.TakesOnPress(holding, speaker);
+            if (!takes && SettleDoor.Admit(holding, speaker) is { } refusal) return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
+            var held = holding;
+            if (takes && (held = StepHolding.TakeOnPress(hold, records, run, holding!, NodeWordActs.Accept, now)) is null) return (null, Refuse(StepHolding.Unwritable));
+
+            var word = new NodeWord(review.Id, NodeWordActs.Accept, null, now) { Kept = true, Tip = tip, Epoch = NodeWordEpoch.Of(held, speaker) };
             return (record with { Pending = [.. record.Pending.Where(each => each.Node != review.Id), word] }, new NodeWorded(run, review.Id, NodeWordActs.Accept, null));
-        });
+        }));
         return refused is null ? result! : Refuse(refused);
     }
 

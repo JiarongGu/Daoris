@@ -57,7 +57,7 @@ internal static class WireDecisions
         wires.Where(wire => wire.Kind == WireKinds.When && wire.To is { Unit: null } to && to.Node == node.Id && wire.From is { Unit: null })
             .OrderBy(wire => wire.Id, StringComparer.Ordinal)
             .Select(wire => nodes.FirstOrDefault(each => each.Id == wire.From!.Node))
-            .Where(from => from is not null && HumanDecisions.Is(from))
+            .Where(from => from is not null && TaskDecisions.Is(from))
             .Select(from => (Decision: from!, Receipt: receipts.GetValueOrDefault(from!.Id)))
             .Where(each => each.Receipt is { Kind: WireReceiptKinds.Reached, Outcome: not null })
             .Select(each => (each.Decision, each.Receipt!));

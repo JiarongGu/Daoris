@@ -44,6 +44,8 @@ public sealed class ChoiceVerbTests : IDisposable
         Assert.False(DriverChoicesCommand.Changes(["brainstorms"]));
         Assert.True(DriverChoicesCommand.Changes(["workflow", "use", "docs", "--repository", "engine"]));
         Assert.False(DriverChoicesCommand.Changes(["workflow", "use", "docs", "--repository", "engine", "--plan"]));
+        Assert.True(DriverChoicesCommand.Changes(["cast", "aurora", "acceptor", "agent:codex"]));
+        Assert.False(DriverChoicesCommand.Changes(["cast", "aurora"]));
     }
 
     [Fact]

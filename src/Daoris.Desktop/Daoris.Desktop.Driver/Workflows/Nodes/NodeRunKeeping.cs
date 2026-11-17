@@ -109,7 +109,7 @@ internal sealed class NodeRunKeeping(
             }
 
             if (!await RunRepairs.ContinuesAsync(scope.Root, repair, tip, ct).ConfigureAwait(false)) continue;
-            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, CarriedRepairs.Receipt(records.Home, governed.Run, repair, tip), clock).Done)
+            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, CarriedRepairs.Receipt(records.Home, governed.Run, repair, tip), clock, settle: SettleBy.Observation).Done)
             {
                 RunRepairs.Take(records, governed.Unit.Id, repair.Node);
             }
@@ -269,7 +269,8 @@ internal sealed class NodeRunKeeping(
             var landed = landings();
             var present = await ReviewAccepts.PresentAsync(records.Home, each, pending,
                 run => tipOf is null ? Task.FromResult<string?>(null) : tipOf(each, run)).ConfigureAwait(false);
-            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed, present));
+            var (refused, applied) = new StepTenureFiles(records.Home, records.HoldsLease).Settling(unit, tenures =>
+                records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed, present, tenures)));
             if (refused is not null) continue;
             SupervisedWords.Settle(landed, applied!);
             foreach (var (word, code) in applied!)

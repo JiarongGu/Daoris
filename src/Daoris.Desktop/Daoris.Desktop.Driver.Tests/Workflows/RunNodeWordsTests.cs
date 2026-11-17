@@ -164,14 +164,15 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         await GoAheadWaitingAsync();
         var attempt = RunStatus("go").Attempt;
         var tenures = new StepTenureFiles(Files.Home, () => true);
-        tenures.Hold(RunUnit, "go", attempt, "approver", "agent:alpha", TenureWhy.Cast, _now);
-        tenures.HandOver(RunUnit, "go", attempt, "person", TenureWhy.TakeBack, _now);
+        var first = tenures.Hold(RunUnit, "go", attempt, "approver", "agent:alpha", TenureWhy.Cast, _now)!;
+        var alpha = first.Holder == "agent:alpha" ? first : tenures.HandOver(RunUnit, "go", attempt, first.Epoch, "agent:alpha", TenureWhy.HandOver, _now).Tenure!;
+        tenures.HandOver(RunUnit, "go", attempt, alpha.Epoch, "person", TenureWhy.TakeBack, _now);
 
-        var refused = RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not mine now", () => _now, epoch: 1);
+        var refused = RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not mine now", () => _now, epoch: alpha.Epoch, settle: new SettleBy("agent:alpha", alpha.Epoch));
         Assert.Equal(StepTenureFiles.EndedEpoch, refused.Refused);
         Assert.Contains("held now by person", refused.Detail, StringComparison.Ordinal);
         Assert.Empty(Files.Read(RunUnit)!.Pending);
-        Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "mine", () => _now, epoch: 2).Done);
+        Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "mine", () => _now, epoch: tenures.Current(RunUnit, "go", attempt)!.Epoch).Done);
     }
 
     /// <summary>

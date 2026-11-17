@@ -26,7 +26,7 @@ import { composeAttention } from '../../bridge/shell';
 import { AttentionBand } from './AttentionBand';
 import { obligationOf } from './attention';
 
-/** A run waiting on its `human` node, as .NET pushes the row (`HumanTaskRows`): its wait on a role the person holds, and its presses. */
+/** A run waiting on its `task` step, as .NET pushes the row (`HeldSteps`): its wait on a role the person holds, and its presses. */
 const waiting = (acts: string[], since: string | null = null, over: Record<string, unknown> = {}) => ({
   kind: 'step', id: 'q7/sign', since, workspace: 'aurora', where: 'engine',
   step: { run: 'q7', node: 'sign', why: acts.includes('approve') ? 'approval' : 'task', role: acts.includes('approve') ? 'approver' : 'worker', holder: 'person', presses: acts, work: 'q7', ...over },
@@ -84,6 +84,20 @@ describe("a person's task on What needs you", () => {
     await userEvent.type(within(asking).getByRole('textbox'), 'tagged by hand');
     await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'done', words: 'tagged by hand' } }));
+  });
+
+  it('offers the holder presses of its step, and every settling press passes the epoch of the tenure it read', async () => {
+    start(['done'], null, { epoch: 2, holds: ['hand', 'give-back'] });
+    const item = await screen.findByRole('listitem', { name: '#q7' });
+    expect(within(item).getByRole('button', { name: 'Pass to…' })).toBeTruthy();
+    expect(within(item).queryByRole('button', { name: 'Take' })).toBeNull();
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Give back' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_HOLD', { payload: { run: 'q7', node: 'sign', act: 'give-back', holder: null, epoch: 2 } }));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Done…' }));
+    await userEvent.click(within(within(item).getByRole('group', { name: 'Done…' })).getByRole('button', { name: 'Done' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'done', epoch: 2 } }));
   });
 
   it.each([

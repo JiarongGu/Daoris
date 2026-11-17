@@ -26,7 +26,7 @@ export function CheckHeld({ step, onHeld }: {
   const send = (resolution: 'again' | 'stop') => {
     setSending(true);
     setRefused(null);
-    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution })
+    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution, ...(step.epoch != null ? { epoch: step.epoch } : {}) })
       .then((answer) => { if (!answer.done) setRefused(answer.message ?? answer.refused ?? ''); })
       .catch((error: unknown) => setRefused(sentence(error)))
       .finally(() => setSending(false));

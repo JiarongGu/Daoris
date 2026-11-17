@@ -16,7 +16,7 @@ public sealed class NodeObservingTests
         Assert.Equal(NodeRefusal.NotThisUnit, NodeObserving.Observe(quest, Node(NodeKinds.Line), Graph, 1).Refused);
         Assert.Equal(NodeRefusal.NotThisUnit, NodeObserving.Observe(branch, Node(NodeKinds.Claimed), Graph, 1).Refused);
         // A person's task observes itself pending: only their press reaches it.
-        var task = NodeObserving.Observe(branch, new NodeDeclaration("n", NodeKinds.Human, 1, NodeReach.Pressed), Graph, 1);
+        var task = NodeObserving.Observe(branch, new NodeDeclaration("n", NodeKinds.Task, 1, NodeReach.Pressed), Graph, 1);
         Assert.Equal(((string?)null, (string?)null), (task.Refused, task.Outcome));
         foreach (var kind in new[] { NodeKinds.QuestClose, NodeKinds.WaitUnit, NodeKinds.All, "acme.deploy/deploy" })
         {

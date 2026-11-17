@@ -200,7 +200,7 @@
   "workflow.run.graph.said.ready": "Ready: nothing before it holds it.",
   "workflow.run.graph.said.goAhead": "Waits for your go-ahead: {{act}}",
   "workflow.run.graph.said.goAheadNone": "Waits for your go-ahead.",
-  "workflow.run.graph.said.task": "Waits for your task.",
+  "workflow.run.graph.said.task": "Waits for its holder to do the task.",
   "workflow.run.graph.said.active": "Observed on {{on}}.",
   "workflow.run.graph.said.activeRun": "Under way.",
   "workflow.run.graph.said.reached": "Reached on {{on}}.",

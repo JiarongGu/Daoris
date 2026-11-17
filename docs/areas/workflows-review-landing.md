@@ -21,6 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
+| `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
 | `Review/` | The look and the opinion (`Review/Domain/`), entry Accepts, the session-tree gates, the heavy executor |
@@ -206,11 +207,42 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     done-outside press, and ending the work leaves its quest to close by the person's word. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
-    rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
-    until a role takes one, and an approver at a destination marked as the person's stays theirs. Each holder's tenure of an attempt,
-    `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`), which no older
-    build reads: a hand-over is a new epoch and restarts nothing, and a word naming an ended epoch (an attempt's word or a run's) is refused
-    `ended-epoch`, naming who holds the step now and since when; a word naming no epoch, as every door's does today, is taken as before. A run ends when its graph's end settles or
+    rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is its place's cast (`PlaceCastBook.At`, kept in `workflows/casts.json` by
+    `PlaceCastFiles`: one holder per role, the workspace's and a repository's own over it, each choice journaled with its reason, the
+    newest 500 acts of each kind kept apart (the owner's casts, the presses on steps). The file is read entry by entry: an act that does not
+    read is skipped, counted and kept as written, never the casts dropped for it; casts that do not read keep the last good read, refuse
+    every write (`unreadable-casts`) and are said in the machine log and in the cast's Settings; a rewrite keeps a holder word and a field
+    it did not read. The
+    owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
+    role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person, and neither casts
+    an agent to a role whose steps only their holder's press settles, nor does *Pass to…* pass such a step to one (`AgentSettles`, D312: no
+    agent's channel speaks an Accept, a task's Done, an approval or a decision yet; an agent settles a step by an observation or a plugin's
+    act, and the work and the second opinion by its session); through words take no step another holder holds. Each holder's tenure
+    of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
+    which no older build reads: a pass writes each standing attempt's first epoch before its rounds and after them (`AttemptTenures`, the
+    person where the step's own words say `you`, else the cast's holder, `AttemptTenures.FirstHolder`), and a unit's file drops only ended
+    attempts' tenures past its cap, never a standing one's. *Take*, *Pass to…* and *Give back* (`StepHolding`, `daoris workflow
+    take|hand|give-back`, `WORKFLOW_HOLD` with the `epoch` its row read, shown on the run view's step and on its *What needs you* row) each
+    begin a new epoch and journal it, written only where the epoch read still holds the step (else `ended-epoch`), and a hand-over restarts
+    nothing; an agent hands on only a step it holds and never takes one, the owner role is handed to nobody but the person (`owner-role`),
+    and *Give back* returns a step to its first holder. One door settles a step
+    (`SettleDoor.Admit`, D312), asked by a run's word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its
+    channel's and never the payload's: the window, a card the person confirmed and the person's terminal speak `person`; a working session's
+    own press, an appointed role's act and Ask Daoris's speak as agents, `SettleBy.OfChannel`) and the epoch it read (every settling door
+    takes `--epoch`, `daoris work held` among them, the run view's and *What needs you*'s presses pass the epoch their row read,
+    `HeldStep.Epoch`, and an entry's Accept each part's, drawn on its plan beside the revision), never the step's kind, judged and kept in
+    one hold of the tenures' lock, so no hand-over lands between the read and the word's write; a kept word names the epoch it was admitted
+    in (`NodeWord.Epoch`, none for an observation or the owner role's), which the pass reads again in one hold of that lock before it
+    applies the word, refusing it `ended-epoch` where the step was passed on or tried anew since: a word naming an
+    ended epoch is refused `ended-epoch`, one from a holder that does not hold the step now `not-holder`, each naming who holds it and since
+    when; a word naming no epoch is judged against the holder now; the person's press on a step another holder holds, in the epoch it read,
+    takes the step as the press is kept, once every check of its state admits it (a new epoch, journaled *Take* with the reason
+    `pressed <word>`, `StepHolding.TakeOnPress`), and settles it in one act, while an agent's word never takes; an observation settles
+    whoever made it; a stop and a decision's answer are the owner role's whoever holds the step and whichever epoch its row read; a
+    supervisor's held word stands in for a step the person holds alone, so only such steps are listed to a landing supervisor
+    (`LandingSteps`), whose decision keeps the epoch it read and names it at its release; an attempt no tenure holds yet refuses nothing;
+    and where the tenures do not read only the person's word is taken and every hold act is refused (`tenure-unread`, said in the driver's
+    log). A marked approver is held by the owner role from its start (`marked`): no Take, Pass or Give back, no other word. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands
@@ -507,10 +539,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     are `kind` (`auto`, `worktree`, `copy`; one its place lacks holds the start), `at-once` (`2` to `24`, or `any`) and `overlap`
     (`go`, `wait`); a graph without one runs one session at a time in the place's checkout (driving rules 12 to 14). The trees it
     makes are ended by a `release` after the landing, else by the sweep (rule 31b).
-51. A `human` node is a manual operation, reached by the person's *Done* or, for an approval, *Approve* with an optional note, or
-    rejected by *Reject* with a reason, as a review's changes are. Its outcome (`done`, `approved`, or none) routes a `when` wire, a
-    rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
-    One declaring two or more outcomes of its own is a per-run decision (`HumanDecisions`, D304 point 5), answered by `decide` with
+51. A `task` step is an operation done by hand, reached by its role's holder's *Done* or, for an approval, *Approve* with an optional
+    note, or rejected by *Reject* with a reason, as a review's changes are; a person and an agent hold it alike, the kind saying what
+    settles it and never who, and a step naming no role is the `owner` role's (D304 point 2). Its outcome (`done`, `approved`, or none)
+    routes a `when` wire, a rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
+    A saved version's former `human` step reads as a `task` under its role at the digest the version was saved with (`HumanFormerKind`,
+    `NodeGraphs.ReadSaved`) until its census finds none; a save names the kinds now, so one naming `human` is refused, and a save writing
+    a `task` step closes going back below its build (`tasks-since.txt`, kept apart from the roles' floor, `WorkflowRolesSince.Floors`); each floor is written whole or not at all
+    (`AtomicFile`). A saved copy of a shipped default, or a quest's kept closure, that an earlier build saved spelling `human` is known by its
+    graph read as a `task` (`WorkflowDefaults.IsCopy`, `ClosureGraphs`, through `NodeGraphs.ReadSaved`), its own digest staying as saved.
+    One declaring two or more outcomes of its own is a per-run decision (`TaskDecisions`, D304 point 5), answered by `decide` with
     one of them (`daoris workflow decide <run> <node> <outcome> "why"`; the run's view offers each outcome); another is refused
     `not-outcome`, and a save refuses a decision no `when` wire leaves on any outcome (`decision-unwired`). A word naming a holder
     is a proposal and stands as the answer at once, held for the owner's word: the owner's same answer confirms it, another
@@ -539,19 +577,26 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
 55. Every step's wait is read by one reading, `StepWaiting.Read`, from the bound runs, never stored: the wait it stands at
-    (`PersonWaits.All`: an active `review`, `human` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
+    (`PersonWaits.All`: an active `review`, `task` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
     waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
     `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
-    done alone)), the role it waits on and that role's holder; until a step names its role, each wait has its own (`StepWaiting.RoleOf`),
-    a vacancy and a failure kept the line's `lead`. The waits whose role the person holds are theirs: Sessions places the run's newest
+    done alone)), the role it waits on and that role's holder. Each kind says what its active step waits for (`IWaitsOnRole`), so the
+    reading names no kind and never asks who holds the role: a step's own word (an Accept, an approval, a task's Done or answer, a
+    go-ahead) waits on the step's role (`StepRoles.Of`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
+    the line's `lead`. A wait is answered by its own role (`StepWaiting.HolderOf`, D312): the step's own role by its attempt's tenure, any
+    other role (a vacancy's line, a plugin's actor such as `credentials-keeper`) by the place's cast of that role (`CastReading`), never
+    by the step's holder. A wait an agent holds that only a press settles (any but a plugin's actor and a go-ahead, `AgentSettles.Wait`)
+    has no settler yet, so it stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with *Take*, an Accept among them.
+    The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
-    that settle it (never its stop; a skip reads *Not needed this run*), a plugin's words and page, *Done outside Daoris* on the attempt
+    that settle it (never its stop; a skip reads *Not needed this run*), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
-    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"
-    with the same presses beside it (`RunWaitsHead`). A run's view and `daoris workflow show` say it the same way: a run step has one
+    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
+    with the same presses beside it, each passing the epoch its row read, and the row's *Take*, *Pass to…* and *Give back*
+    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. That an
@@ -632,10 +677,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   review says first (`closesBelow`), and a preset's second opinion names none. The save refuses a holder
   named there (`role-holder`) and a role no catalogue has (`role-unknown`); the editor sets it (`StepRoleField`, applied to the newest draft by
   its `onRole` act), the chart and the run view draw it, and an older version's agent-step `role` option is read as the role by the one
-  reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). A step's authority is still its kind's
-  (`human` the person's, plugin steps the plugin's), a step done outside Daoris is recordable only by stop, which ends the run, and a
-  wait shows its holder only where a kind reads one; the rows DONEBYHOLDER1 to ACTORTRIAL1 move each, tried first on the work
-  workspace's release path.
+  reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). Who settles a step is its
+  holder's, by one door (D312, rule 18), and what it waits for is its kind's (rules 51 and 55). `you` is a holder word
+  (`HolderWords`): a step whose `start` or `accept` says it is first held by the person through its tenure (`AttemptTenures`), whatever
+  the place casts its role to, and no runtime code branches on it. Left: the named steps' reading and gate (`NamedStepReading`,
+  `WorkflowGate`, `WorkflowDiff`) still compare a stage's `start` and a landing's `accept` as the person's.
 - **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
   its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
   production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes

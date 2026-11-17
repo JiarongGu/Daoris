@@ -46,7 +46,7 @@
   "workflow.step.handed": "已交接",
   "workflow.step.unknown": "此页面无法描述的步骤：`{{kind}}`",
   "workflow.step.go-ahead": "你的放行",
-  "workflow.step.human": "你的任务",
+  "workflow.step.task": "任务",
   "workflow.step.push": "推送",
   "workflow.step.isolate": "打开工作树",
   "workflow.wait.isolate.at-once": "等待：此处允许同时分开工作的会话已满。",
@@ -150,8 +150,8 @@
   "workflow.flow.wire.wait": "在它等待的工作完成后",
   "workflow.flow.wire.trigger": "每次它触发时",
   "workflow.flow.wire.recorded": "按它的 `{{kind}}` 连线，按原文显示",
-  "workflow.outcome.human.done": "已完成",
-  "workflow.outcome.human.approved": "已批准",
+  "workflow.outcome.task.done": "已完成",
+  "workflow.outcome.task.approved": "已批准",
   "workflow.outcome.monitor.merged": "已合并",
   "workflow.outcome.monitor.closed": "未合并即关闭",
   "workflow.outcome.rebase.ready": "就绪",
@@ -263,5 +263,11 @@
   "workflow.role.operations": "运维",
   "workflow.role.config-changer": "配置变更人",
   "workflow.role.credentials-keeper": "凭据管理人",
-  "workflow.role.owner": "所有者"
+  "workflow.role.owner": "所有者",
+  "workflow.hold.label": "这个步骤的担任者",
+  "workflow.hold.heldBy": "由 {{holder}} 担任",
+  "workflow.hold.act.take": "接下",
+  "workflow.hold.act.hand": "转给…",
+  "workflow.hold.act.give-back": "交还",
+  "workflow.hold.handTo": "把这个步骤转给"
 }

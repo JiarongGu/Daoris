@@ -145,6 +145,12 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     /// <summary>What each refused step's <c>needs</c> came to (<see cref="RunNeeds"/>), by node; none where unread.</summary>
     public IReadOnlyDictionary<string, RunNeed> Needs { get; init; } = new Dictionary<string, RunNeed>(StringComparer.Ordinal);
+
+    /// <summary>Who holds each node's attempt now (<see cref="StepTenureFiles.Holding"/>), by node; none where none is kept or unread.</summary>
+    public IReadOnlyDictionary<string, StepTenure> Holding { get; init; } = new Dictionary<string, StepTenure>(StringComparer.Ordinal);
+
+    /// <summary>The run's place's cast, role to holder (<see cref="CastReading"/>): the holder of a role a wait is on other than its step's own.</summary>
+    public Func<string, string>? Cast { get; init; }
 }
 
 /// <summary>
@@ -211,13 +217,18 @@ public static class WorkflowGraphRuns
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
-            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status) : null;
+            var tenure = facts.Holding.GetValueOrDefault(node.Id) is { } kept && kept.Attempt == status.Attempt ? kept : null;
+            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
+            var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
                 Role = waits?.Role ?? StepRoles.Of(node),
                 Holder = waits?.Holder,
-                Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
+                HeldBy = tenure?.Holder,
+                Epoch = tenure?.Epoch,
+                Holds = standing && waits?.Why != PersonWaits.GoAhead ? StepHoldActs.Of(tenure) : null,
+                Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,
@@ -227,7 +238,7 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = progress is not null ? StepWaiting.WaitOf(progress) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -347,7 +358,7 @@ public static class WorkflowGraphRuns
     {
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
-        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
+        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Task or NodeKinds.Look or NodeKinds.Review =>
             (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         // A decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>

@@ -41,14 +41,15 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
     public string? SkippedLook(string home, string run, string? node) =>
         LookReading.SkippedWords(new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), node);
 
-    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null)
+    public ReviewWord KeepReviewWord(
+        string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null, int? epoch = null)
     {
         if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)
         {
             return new ReviewWord(false, false, null, null, null);
         }
 
-        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, words, () => now, revision: revision);
+        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, words, () => now, revision: revision, epoch: epoch);
         var kept = word.Done || word.Refused == RunNodeWords.Worded;
         // A review that does not wait for the word yet (not active) is no refusal: the word is given again when it does.
         var said = kept || word.Refused == NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);

@@ -63,7 +63,7 @@ public sealed class ReviewPortsTests : IDisposable
     public void The_graph_s_part_keeps_its_line_for_the_process_it_is_handed_and_a_reader_above_casts_the_parts_back()
     {
         var named = Named();
-        var graph = new GraphGateState(GraphGateStates.Waits, "q2") { Handed = "land", Node = "qa", Kind = NodeKinds.Human };
+        var graph = new GraphGateState(GraphGateStates.Waits, "q2") { Handed = "land", Node = "qa", Kind = NodeKinds.Task };
         IGraphGatePart part = graph;
         Assert.Equal((false, true, graph.Says), (part.LetsGo, part.AsksPass, part.Says));
         Assert.Equal(WorkflowLines.GraphHeld("s1", "web-app", "work", named, graph, "terminal").Data, part.Held("s1", "web-app", "work", named, "terminal").Data);

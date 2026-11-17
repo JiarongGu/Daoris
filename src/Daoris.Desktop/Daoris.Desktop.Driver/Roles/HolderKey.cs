@@ -102,13 +102,14 @@ public static class RoleTerminal
 
     /// <summary>
     /// The verbs a role's terminal runs at all (each by its exact prefix): the roles' verbs and the open reads the
-    /// holder needs. Any other verb is refused at the entry; these refuse their own alone paths (<see cref="InstanceDoor"/>).
+    /// holder needs, and the go-ahead's answer, which admits by the role the terminal holds (<see cref="GoAheadRoleDoor"/>). Any other verb is refused at the entry; these refuse their own alone paths (<see cref="InstanceDoor"/>).
     /// </summary>
     public static bool Runs(IReadOnlyList<string> args) => args switch
     {
         ["roles", "brief"] => true,
         ["sessions", "supervise", ..] => true,
         ["steward", ..] => true,
+        ["ask", "go-ahead", ..] => true,
         ["sessions", "--json", ..] => true,
         ["notices", ..] => true,
         ["history", ..] => true,

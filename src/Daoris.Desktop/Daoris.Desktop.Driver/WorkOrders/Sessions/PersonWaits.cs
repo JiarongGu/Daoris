@@ -22,10 +22,10 @@ public static class PersonWaits
     /// <summary>A <c>review</c> waiting for the person's Accept.</summary>
     public const string Accept = "accept";
 
-    /// <summary>A <c>human</c> approval waiting for their Approve or Reject.</summary>
+    /// <summary>A <c>task</c> approval waiting for its holder's Approve or Reject.</summary>
     public const string Approval = "approval";
 
-    /// <summary>A <c>human</c> task waiting for their Done.</summary>
+    /// <summary>A <c>task</c> waiting for its holder's Done or a decision's answer.</summary>
     public const string Task = "task";
 
     /// <summary>A <c>go-ahead</c> waiting for their yes.</summary>

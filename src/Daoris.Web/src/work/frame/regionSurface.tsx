@@ -10,6 +10,7 @@ import { cn } from '../../lib/cn';
 import { sentence } from '../../locales/format';
 import { ReleaseStepDoors } from '../../workflow/release/ReleaseStepDoors';
 import { WorkflowRunView } from '../../workflow/WorkflowRunView';
+import { stepHoldBridge } from '../../bridge/repositories/cast';
 import { noteIsInTheHead } from '../AttendedSession';
 import { AtWorkView } from '../atWork/AtWorkView';
 import type { ExchangeSeek } from '../atWork/exchangeSeek';
@@ -247,6 +248,7 @@ export function useRegionSurfaces({
             }}
             controls={lookControl || opinionControl ? controls : undefined}
             releaseDoors={(run, step) => <ReleaseStepDoors run={run} step={step} />}
+            stepHold={stepHoldBridge}
             onNodeWord={runNodeWord.mutateAsync}
             onHeld={resolveHeld.mutateAsync}
           />

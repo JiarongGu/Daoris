@@ -8,13 +8,15 @@ public sealed record LandingStep(string Run, string Node, int Attempt, string Re
     /// <summary>The run's nodes that hold it for the person alone, a go-ahead among them: no supervisor decides a step of a run one holds.</summary>
     public bool GoAheadOpen { get; init; }
 
+    public int? Epoch { get; init; }
+
     public IReadOnlyList<string> Offered(IReadOnlyList<string> covered) => [.. covered.Where(Acts.Contains)];
 }
 
 /// <summary>The steps of the home's runs a landing supervisor may decide, read from the runs' node records as the pass reads them.</summary>
 public static class LandingSteps
 {
-    /// <summary>Every step of every run bound to a graph version that waits for the person's press a landing supervisor makes.</summary>
+    /// <summary>Every step of every run bound to a graph version that waits for a landing supervisor's press and whose holder it stands in for, with its tenure's epoch.</summary>
     public static IReadOnlyList<LandingStep> Waiting(string home)
     {
         var records = new NodeRecordFiles(home, () => false);
@@ -24,11 +26,14 @@ public static class LandingSteps
             if (run.Ended is not null || run.Binding.Problem is not null || run.Version.Graph is not { } graph) continue;
             if (records.Read(run.Unit) is not { } record) continue;
             var open = graph.Nodes.Any(node => NodeKit.Of(node.Kind)?.HoldsRun == true && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Active);
+            var holding = StepTenureFiles.HoldingOf(home, run.Run, record);
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(record, node.Id);
                 if (status.State != NodeStates.Active || NodeKit.Of(node.Kind)?.LandingActs(node) is not { Count: > 0 } acts) continue;
-                steps.Add(new LandingStep(run.Run, node.Id, status.Attempt, run.Binding.Repository, acts) { GoAheadOpen = open });
+                var tenure = holding.GetValueOrDefault(node.Id);
+                if (SettleDoor.Admit(tenure, new SettleBy(SettleBy.Line, tenure?.Epoch)) is not null) continue;
+                steps.Add(new LandingStep(run.Run, node.Id, status.Attempt, run.Binding.Repository, acts) { GoAheadOpen = open, Epoch = tenure?.Epoch });
             }
         }
 

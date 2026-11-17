@@ -48,7 +48,7 @@ public sealed class LandingKindCensusTests
     public void Only_a_go_ahead_holds_a_run_for_the_person_alone_and_a_task_by_hand_offers_no_landing_act()
     {
         Assert.Equal([NodeKinds.GoAhead], NodeKit.Kinds.Where(kind => NodeKit.Of(kind)!.HoldsRun).ToList());
-        var task = new NodeDeclaration("t", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = ["done"] };
-        Assert.Empty(NodeKit.Of(NodeKinds.Human)!.LandingActs(task));
+        var task = new NodeDeclaration("t", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] };
+        Assert.Empty(NodeKit.Of(NodeKinds.Task)!.LandingActs(task));
     }
 }

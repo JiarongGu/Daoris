@@ -404,7 +404,9 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     }
     // The run's work as its quest names it, and the presses its task waits for.
     case 'step':
-      return row.step ? { ...base, ...stepRead(row.step, questOf(row.step.work)?.title) } : { ...base, title: `#${row.id}` };
+      return row.step
+        ? { ...base, ...(row.workspace ? { workspace: row.workspace } : {}), ...stepRead(row.step, questOf(row.step.work)?.title) }
+        : { ...base, title: `#${row.id}` };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
     case 'plan-question':

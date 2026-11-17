@@ -11,7 +11,7 @@ public sealed class WorkflowMigrationTests : IDisposable
 {
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "migrate-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private const string QaCycle = """{ "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "handed", "to": "qa" } ], "end": "qa" }""";
+    private const string QaCycle = """{ "nodes": [ { "id": "qa", "kind": "task", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "handed", "to": "qa" } ], "end": "qa" }""";
 
     private static readonly RepoView[] Registry =
     [

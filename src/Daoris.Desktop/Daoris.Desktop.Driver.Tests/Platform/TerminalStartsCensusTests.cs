@@ -24,6 +24,7 @@ public sealed class TerminalStartsCensusTests
     {
         ["AgentsConsole"] = null,
         ["AskAtWorkConsole"] = null,
+        ["AskConsole"] = null,
         ["BrainstormMeasureConsole"] = "a measurement the person starts on purpose, run in this process because it holds the loop's records for the run's length",
         ["DoctrineConsole"] = "the doctrine CLI, the program's other half: doctrine works with no Daoris running, and the verb waits on it at its console",
         ["DriveConsole"] = "the headless loop is a running Daoris of its own, started only where no window holds the home",

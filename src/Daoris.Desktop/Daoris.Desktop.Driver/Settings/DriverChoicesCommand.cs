@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.ChoiceArgs;
@@ -17,7 +18,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -25,7 +26,7 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
-        "brainstorms", "workflow", "keep", "role", "terminal", "risk", MachineSettingsSaid.Every,
+        "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", MachineSettingsSaid.Every,
     ];
 
     public const string Usage =
@@ -35,6 +36,7 @@ public static class DriverChoicesCommand
                daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
+               daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why "…"]
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> [<branch>|--clear] [--commit merge|rebase|squash] [--batch <1 to 8>]
                       [--order arrival|apart] [--gates declared|none] [--unreached|--reached split|hold|land] [--integrate-line <branch>];
@@ -89,6 +91,10 @@ public static class DriverChoicesCommand
 
     internal const string Prefix = "daoris";
 
+    private static readonly ConcurrentDictionary<string, Func<IReadOnlyList<string>, bool>> Readings = new(StringComparer.Ordinal);
+
+    internal static void Answer(string verb, Func<IReadOnlyList<string>, bool> changes) => Readings[verb] = changes;
+
     /// <summary>
     /// Whether the words change the home: a verb this program has that is not <c>list</c>, and no plan or usage asked; <c>brainstorms</c>
     /// only where it sets or clears, and a workflow's only where it writes.
@@ -109,6 +115,7 @@ public static class DriverChoicesCommand
             "keep" => args.Count > 1,
             // `role` naming one role, or none, says it, a read.
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
+            _ when Readings.TryGetValue(verb, out var reading) => reading(args),
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }

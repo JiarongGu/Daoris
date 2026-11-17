@@ -37,4 +37,4 @@ public sealed record WithdrawLandingBranchPress(string Repository, string Branch
 /// <summary>The units' milestones, or with <c>Unit</c> the ones that name picks (its id, session or branch).</summary>
 public sealed record WorkStateRead(string? Unit);
 
-public sealed record WorkHeldPress(string Unit, string Node, int Attempt, string Resolution, bool Said = false, string? Link = null, string? Note = null);
+public sealed record WorkHeldPress(string Unit, string Node, int Attempt, string Resolution, bool Said = false, string? Link = null, string? Note = null, long? Epoch = null);

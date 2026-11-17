@@ -93,7 +93,7 @@ internal static class GraphProblemsTable
         return new NodeGraph(parts.Nodes, parts.Wires, parts.Entries, parts.End ?? "") { SchemaVersion = parts.SchemaVersion, Cleanup = parts.Cleanup ?? GraphCleanup.Held };
     }
 
-    private static NodeDeclaration Pressed(string id) => new(id, NodeKinds.Human, 1, NodeReach.Pressed);
+    private static NodeDeclaration Pressed(string id) => new(id, NodeKinds.Task, 1, NodeReach.Pressed);
 
     private static Wire After(string id, string from, string to) => new(id, WireKinds.After, new(from), new(to));
 

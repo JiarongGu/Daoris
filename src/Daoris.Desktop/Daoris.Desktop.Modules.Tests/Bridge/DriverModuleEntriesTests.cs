@@ -67,19 +67,20 @@ public sealed class DriverModuleEntriesTests
         Assert.Equal("feature/x", parts[1].GetProperty("target").GetString());
     }
 
-    /// <summary>Each part names the revision of the review record its run stands on, which the entry's Accept sends back as <c>revisions</c>.</summary>
+    /// <summary>Each part names the review its run stands on (revision and epoch), which the entry's Accept sends back as <c>revisions</c>.</summary>
     [Fact]
-    public void Each_part_names_the_review_revision_its_run_stands_on()
+    public void Each_part_names_the_review_revision_its_run_stands_on_and_its_tenures_epoch()
     {
         var plan = new EntryPlan(LandingForm.Branch, "feature/x", [
             new EntryPartPlan("s1", new LandingPlan(LandingForm.Branch, "feature/x", "repository")) { Run = "q1" },
             new EntryPartPlan("s2", null) { SameTreeAs = "s1" },
         ]);
 
-        var parts = Read(EntriesRoutes.Plan("ask:a3/engine", "engine", plan, revisionOf: run => run == "q1" ? "feedc0de" : null))
+        var parts = Read(EntriesRoutes.Plan("ask:a3/engine", "engine", plan, drawnOf: run => run == "q1" ? new ReviewDrawn("q1", "review", 1, "feedc0de") { Epoch = 2 } : null))
             .GetProperty("parts").EnumerateArray().ToList();
 
-        Assert.Equal(("feedc0de", JsonValueKind.Null), (parts[0].GetProperty("revision").GetString(), parts[1].GetProperty("revision").ValueKind));
+        Assert.Equal(("feedc0de", 2), (parts[0].GetProperty("revision").GetString(), parts[0].GetProperty("epoch").GetInt32()));
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (parts[1].GetProperty("revision").ValueKind, parts[1].GetProperty("epoch").ValueKind));
     }
 
     [Fact]

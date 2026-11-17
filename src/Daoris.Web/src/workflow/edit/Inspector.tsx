@@ -8,11 +8,11 @@ import {
   addWire, askedInputs, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, landOptionApplies, moreWaysOf, movePlan,
   optionOf, removeWire, setCarry, setEnd, setJoinMode, setLandMethod, sourcesOf, tailOf, triggerTargetsOf,
 } from './graphDraft';
-import { HumanWaits } from './HumanWaits';
-import { HUMAN, setApproval } from './humanDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
 import { StepRoleField } from './StepRoleField';
+import { setApproval, TASK_KIND } from './taskDraft';
+import { TaskWaits } from './TaskWaits';
 import type { RolePlace } from './StepRole';
 import { type WaysActs, WaysOnTable } from './WaysOnTable';
 
@@ -121,9 +121,9 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
       <WaysOnTable palette={palette} draft={draft} step={id} titleOf={titleOf} problemsAt={problems.atWire} acts={acts} />
       <Carries draft={draft} node={node} titleOf={titleOf} onChange={acts.onChange} />
 
-      {node.kind === HUMAN && (
-        <HumanWaits node={node} onChoose={(approval) => acts.onChange(
-          setApproval(draft, id, approval), t('workflow.edit.said.human', { step: title, waits: t(`workflow.edit.human.${approval ? 'approval' : 'task'}`) }),
+      {node.kind === TASK_KIND && (
+        <TaskWaits node={node} onChoose={(approval) => acts.onChange(
+          setApproval(draft, id, approval), t('workflow.edit.said.task', { step: title, waits: t(`workflow.edit.task.${approval ? 'approval' : 'done'}`) }),
         )} />
       )}
 

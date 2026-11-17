@@ -138,7 +138,7 @@ public sealed class NodeAcceptancesTests
     [Fact]
     public void A_reached_node_whose_acceptance_is_invalidated_is_invalidated_by_the_table()
     {
-        var node = new NodeDeclaration("qa", NodeKinds.Human, 1, NodeReach.Pressed);
+        var node = new NodeDeclaration("qa", NodeKinds.Task, 1, NodeReach.Pressed);
         var line = new NodeAcceptance("unit-a", "tip-1", "graph-1", "line", 1, 1);
         var qa = new NodeAcceptance("unit-a", "tip-1", "graph-1", "qa", 1, 1) { PrerequisiteReceipts = [line.Id] };
         var status = new NodeStatus("unit-a", "qa", NodeStates.Reached) { Attempt = 1, Tries = 1, Acceptance = qa };

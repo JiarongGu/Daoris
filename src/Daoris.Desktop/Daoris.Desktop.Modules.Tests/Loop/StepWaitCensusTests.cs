@@ -33,8 +33,8 @@ public sealed class StepWaitCensusTests
     /// <summary>A step standing at <paramref name="why"/>, as a run's record keeps it: its declaration and the record.</summary>
     private static (NodeDeclaration Node, NodeRecord Record)? StepAt(string why) => why switch
     {
-        PersonWaits.Task => (new("sign", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = ["done"] }, Standing("sign", Active("sign"))),
-        PersonWaits.Approval => (new("sign", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = HumanNode.Approval }, Standing("sign", Active("sign"))),
+        PersonWaits.Task => (new("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] }, Standing("sign", Active("sign"))),
+        PersonWaits.Approval => (new("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["approved"] }, Standing("sign", Active("sign"))),
         PersonWaits.GoAhead => (new("go", NodeKinds.GoAhead, 1, NodeReach.Pressed), Standing("go", Active("go"))),
         PersonWaits.Choose => (new("return", NodeKinds.Return, 1, NodeReach.Performed), Standing("return", Active("return") with { Code = ReturnNode.BothChanged })),
         PersonWaits.Vacant => (new("opinion", NodeKinds.Opinion, 1, NodeReach.Observed), Standing("opinion", Active("opinion") with { Holds = OpinionGateReading.Vacant })),

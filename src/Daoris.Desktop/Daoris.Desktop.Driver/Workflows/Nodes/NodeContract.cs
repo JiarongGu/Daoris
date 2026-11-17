@@ -21,8 +21,8 @@ public static class NodeKinds
     /// <summary>Git's proof that the line holds the work: the kept end fact, <i>held</i>.</summary>
     public const string Line = "line";
 
-    /// <summary>A person's task.</summary>
-    public const string Human = "human";
+    /// <summary>A role's task done by hand, an approval or a per-run decision, settled by whoever holds its role.</summary>
+    public const string Task = "task";
 
     /// <summary>The person's look at the work: <i>reviewed</i> or <i>not yet</i>.</summary>
     public const string Look = "look";

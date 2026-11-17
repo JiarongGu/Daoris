@@ -11,7 +11,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
     private const string TaskGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"look","kind":"human","version":1,"reach":"pressed","outcomes":["done"]},
+                  {"id":"look","kind":"task","version":1,"reach":"pressed","outcomes":["done"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"look"},
                   {"id":"l>h","kind":"when","from":"look","to":"handed","outcome":"done"}]}
@@ -31,6 +31,22 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Equal(RunStatus("look").Since, waits[0].Since);
 
         Assert.True(RunNodeWords.Word(Files, RunId, "look", NodeWordActs.Stop, "not wanted", () => _now).Done);
+        Assert.Empty(PersonWaitReader.Read(_home));
+    }
+
+    [Fact]
+    public async Task A_task_another_holder_holds_waits_on_that_holder_not_the_person()
+    {
+        BoundTo(TaskGraph);
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        await RunPassAsync(Runtime());
+        var unit = RunUnits.IdOf(RunId);
+        new StepTenureFiles(_home, () => true).Begin(unit, [("look", RunStatus("look").Attempt, StepRoles.Owner, CastHolders.Person, _now, TenureWhy.Cast)]);
+        Assert.Single(PersonWaitReader.Read(_home));
+
+        new StepTenureFiles(_home, () => true).HandOver(unit, "look", RunStatus("look").Attempt, 1, "agent:beta", TenureWhy.HandOver, _now);
+
         Assert.Empty(PersonWaitReader.Read(_home));
     }
 

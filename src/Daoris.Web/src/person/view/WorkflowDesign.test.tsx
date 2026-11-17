@@ -9,7 +9,7 @@ import { type PressView, PressViewLine } from '../PressViewLine';
 const GRAPH = {
   schemaVersion: 2, entries: ['qa'], end: 'close',
   nodes: [
-    { id: 'qa', kind: 'human', version: 1, reach: 'pressed', options: { brief: 'Verify the release' } },
+    { id: 'qa', kind: 'task', version: 1, reach: 'pressed', options: { brief: 'Verify the release' } },
     { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
     { id: 'close', kind: 'quest.close', version: 1, reach: 'performed' },
   ],
@@ -23,7 +23,7 @@ const EDIT: PressView = {
   workflow: {
     graph: GRAPH,
     changes: [
-      { id: 'step:+qa', what: 'step', change: 'added', step: 'qa', kind: 'human', fields: [], needs: [], said: 'Add the step `qa`.' },
+      { id: 'step:+qa', what: 'step', change: 'added', step: 'qa', kind: 'task', fields: [], needs: [], said: 'Add the step `qa`.' },
       { id: 'way:+a', what: 'way', change: 'added', way: 'a', kind: 'after', fields: [], needs: [], said: 'Add the way `a`.' },
       { id: 'graph:~entries', what: 'graph', change: 'changed', fields: ['entries'], needs: [], said: 'Change the entries.' },
     ],

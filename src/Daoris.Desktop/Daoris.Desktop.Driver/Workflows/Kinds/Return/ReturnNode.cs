@@ -7,8 +7,10 @@ namespace Daoris.Driver;
 /// <c>both-changed</c> while a file changed on both sides waits for the person's choice, offered per path as its own acts.
 /// </summary>
 [NodeKind(NodeKinds.Return, NodeGroup.Others, NodeKinds.Apply)]
-internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork
+internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork, IWaitsOnRole
 {
+    string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => status.Code == BothChanged ? PersonWaits.Choose : null;
+
     /// <summary>The wait while a session's turn runs in the folder.</summary>
     public const string PlaceBusy = "place-busy";
 

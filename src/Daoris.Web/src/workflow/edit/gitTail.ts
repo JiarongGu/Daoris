@@ -33,7 +33,7 @@ function rebaseTail(palette: WorkflowPaletteAnswer, draft: GraphDraft, id: strin
   const work = entryWork(next, id, 'work');
   if (work && !next.wires.some((wire) => wire.kind === 'data' && wire.to === id && wire.toPort === 'work')) next = setCarry(next, id, 'work', work);
   const resolveChoice = choiceOf(palette, 'resolve');
-  const taskChoice = choiceOf(palette, 'human');
+  const taskChoice = choiceOf(palette, 'task');
   if (!resolveChoice || !taskChoice) return { draft: next, tail: 'rebase', steps: [] };
 
   const resolve = addStep(next, resolveChoice);

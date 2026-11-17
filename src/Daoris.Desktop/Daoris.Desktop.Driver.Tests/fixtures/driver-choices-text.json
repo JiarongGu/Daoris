@@ -2827,6 +2827,22 @@
       ],
       "err": [],
       "after": null
+    },
+    {
+      "name": "cast, a holder it does not know",
+      "argv": [
+        "cast",
+        "machine",
+        "tester",
+        "nobody"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `nobody` is no holder: `person`, `agent`, `agent:<name>` or `default`. — usage: daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why \"…\"] — e.g. `daoris settings cast aurora acceptor agent:codex --why \"low-risk docs\"`; with no role it says each role's holder now and why."
+      ],
+      "after": null
     }
   ]
 }

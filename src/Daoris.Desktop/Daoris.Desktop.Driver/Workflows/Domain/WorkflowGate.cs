@@ -332,7 +332,7 @@ public static class Involvement
     }
 
     /// <summary>A <c>request</c> step's <c>start</c>, the person's <c>you</c> where it names none.</summary>
-    private static string StartOf(NamedStep step) => step.Field("start") as string ?? RequestOptions.You;
+    private static string StartOf(NamedStep step) => step.Field("start") as string ?? HolderWords.You;
 
     /// <summary>An <c>integrate</c> step's <c>request</c>, the owner's where it names none or a value that is no choice (the install's table).</summary>
     private static string RequestOf(NamedStep step) =>

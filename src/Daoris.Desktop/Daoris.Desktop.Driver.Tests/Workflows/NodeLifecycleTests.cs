@@ -246,8 +246,8 @@ public sealed class NodeLifecycleTests
     {
         var reject = new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = 1 };
 
-        Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(Declared(NodeKinds.Human), At(NodeStates.Active), reject).Refused);
-        var rejected = NodeLifecycle.Apply(Declared(NodeKinds.Human), At(NodeStates.Active), reject with { Words = "the copy is wrong" });
+        Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(Declared(NodeKinds.Task), At(NodeStates.Active), reject).Refused);
+        var rejected = NodeLifecycle.Apply(Declared(NodeKinds.Task), At(NodeStates.Active), reject with { Words = "the copy is wrong" });
         Assert.Equal((NodeStates.Rejected, "the copy is wrong"), (rejected.Status.State, rejected.Status.Words));
 
         Assert.Equal(NodeRefusal.NotJudged, NodeLifecycle.Apply(Declared("acme.deploy/deploy"), At(NodeStates.Active), reject with { Words = "no" }).Refused);
@@ -296,7 +296,7 @@ public sealed class NodeLifecycleTests
 
         // The person's skip of the same node still needs their words.
         Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(opinion, active, new NodeMove(NodeStates.Skipped, NodeCause.Person) { Scope = Run }).Refused);
-        foreach (var kind in new[] { NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human, NodeKinds.Stop, "acme.deploy/deploy" })
+        foreach (var kind in new[] { NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Task, NodeKinds.Stop, "acme.deploy/deploy" })
         {
             var source = NodeAuthorities.Of(Declared(kind))!.ReachBy;
             Assert.Equal((kind, NodeRefusal.NotAuthority), (kind, NodeLifecycle.Apply(Declared(kind), active, skip with { Source = source }).Refused));
@@ -746,7 +746,7 @@ public sealed class NodeLifecycleTests
 
         Assert.Equal(dispatched, NodeLifecycle.Reconciled(dispatched, 1));
 
-        var human = Declared(NodeKinds.Human);
+        var human = Declared(NodeKinds.Task);
         var offered = Moved(human, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1));
         Assert.Null(offered.Unreconciled);
         var asked = Moved(human, Moved(human, offered, new NodeMove(NodeStates.Stopped, NodeCause.Person)), new NodeMove(NodeStates.Ready, NodeCause.Person));

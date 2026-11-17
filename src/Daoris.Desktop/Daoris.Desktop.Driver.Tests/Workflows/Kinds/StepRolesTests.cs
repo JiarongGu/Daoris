@@ -26,7 +26,7 @@ public sealed class StepRolesTests : IDisposable
         [NodeKinds.Look] = StepRoles.Tester,
         [NodeKinds.Review] = StepRoles.Acceptor,
         [NodeKinds.GoAhead] = StepRoles.Approver,
-        [NodeKinds.Human] = StepRoles.Owner,
+        [NodeKinds.Task] = StepRoles.Owner,
         [NodeKinds.Isolate] = StepRoles.Operations,
         [NodeKinds.Push] = StepRoles.Operations,
         [NodeKinds.Line] = StepRoles.Operations,
@@ -150,6 +150,37 @@ public sealed class StepRolesTests : IDisposable
         Assert.Null(WorkflowRolesSince.Closes("1.40.0", file, "1.41.0"));
     }
 
+    [Fact]
+    public void A_floor_is_written_atomically_and_read_beside_its_writer()
+    {
+        var file = JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json("tester")}} } ] }""");
+        WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
+
+        Assert.Equal(["roles-since.txt"], Directory.GetFiles(WorkflowStore.FolderOf(_home)).Select(Path.GetFileName));
+        using var held = AtomicFile.OpenRead(WorkflowRolesSinceStore.PathOf(_home));
+        Assert.Equal("1.40.0", WorkflowRolesSinceStore.Read(_home));
+    }
+
+    /// <summary>A save writing a <c>task</c> step closes going back below its build, apart from the roles' floor, which a build between the two lies under.</summary>
+    [Fact]
+    public void A_going_back_past_the_first_build_that_saved_a_task_is_refused_whatever_the_roles_floor()
+    {
+        WorkflowRolesSinceStore.Keep(_home, JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json("tester")}} } ] }"""), "1.40.0");
+        var task = JsonNode.Parse(Json(null))!;
+        task["nodes"]![1]!["kind"] = NodeKinds.Task;
+        var file = new JsonObject { ["versions"] = new JsonArray(new JsonObject { ["version"] = 2, ["graph"] = task }) };
+
+        Assert.Equal("1.45.0", WorkflowRolesSinceStore.Closes(_home, file, "1.45.0"));
+        WorkflowRolesSinceStore.Keep(_home, file, "1.45.0");
+        WorkflowRolesSinceStore.Keep(_home, file, "1.46.0");
+
+        Assert.Equal("1.40.0", WorkflowRolesSinceStore.Read(_home));
+        Assert.Equal("1.45.0", WorkflowRolesSinceStore.Read(_home, WorkflowRolesSince.Tasks));
+        Assert.Contains("`task`", WorkflowRolesSinceStore.Refused(_home, "1.42.0")?.Sentence, StringComparison.Ordinal);
+        Assert.Null(WorkflowRolesSinceStore.Refused(_home, "1.45.0"));
+        Assert.Null(WorkflowRolesSinceStore.Closes(_home, file, "1.46.0"));
+    }
+
     /// <summary>
     /// A version whose steps name only their kinds' own roles is written naming none, so a build before the field reads it unchanged and no
     /// going back is closed: a preset's second opinion among them. Another role is kept as named, and its save says first that it closes
@@ -162,14 +193,14 @@ public sealed class StepRolesTests : IDisposable
         var preset = WorkflowPresets.WithGraphGates(shipped.Graph(), opinion: true, look: true);
         var kinds = JsonNode.Parse(Json(StepRoles.Tester))!;
         kinds["end"] = "ask";
-        kinds["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "ask", ["kind"] = NodeKinds.Human, ["version"] = 1, ["reach"] = "pressed", ["role"] = StepRoles.Owner });
+        kinds["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "ask", ["kind"] = NodeKinds.Task, ["version"] = 1, ["reach"] = "pressed", ["role"] = StepRoles.Owner });
         kinds["wires"]!.AsArray().Add(new JsonObject { ["id"] = "w2", ["kind"] = "after", ["from"] = "look", ["to"] = "ask" });
 
         foreach (var graph in new[] { preset, kinds })
         {
             var file = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Workflow", "terminal", "2026-11-17T09:00:00Z", null, graph), []).Result!;
             Assert.DoesNotContain(file["versions"]![0]!["graph"]!["nodes"]!.AsArray(), node => node!.AsObject().ContainsKey("role"));
-            Assert.Null(WorkflowRolesSinceStore.Closes(_home, file, "1.40.0"));
+            Assert.Null(WorkflowRolesSince.Closes(null, file, "1.40.0"));
             WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
             Assert.Null(WorkflowRolesSinceStore.Read(_home));
         }

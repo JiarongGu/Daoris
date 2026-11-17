@@ -97,7 +97,7 @@ public sealed record NodeMove(string To, string By)
     /// <summary>The person's words: required for a rejection and a skip; a reach on their press keeps the note they gave with it.</summary>
     public string? Words { get; init; }
 
-    /// <summary>What a reach holds for its next answer: a decision's standing proposal, which the owner's word confirms (<see cref="HumanDecisions"/>).</summary>
+    /// <summary>What a reach holds for its next answer: a decision's standing proposal, which the owner's word confirms (<see cref="TaskDecisions"/>).</summary>
     public string? Holds { get; init; }
 
     /// <summary>A start's moment, as the evaluation's clock read it: what <see cref="NodeStatus.Since"/> keeps.</summary>
@@ -277,7 +277,7 @@ public static class NodeLifecycle
             new(NodeStates.Ready, NodeStates.Active, daoris, "it starts: observing, dispatching, offering the task, or waiting"),
             new(NodeStates.Active, NodeStates.Reached, authority, "accepted, bound evidence"),
             new(NodeStates.Reached, NodeStates.Reached, authority,
-                "a decision answered again before its run ends, on the same binding: the old outcome's route lapses (HumanDecisions)"),
+                "a decision answered again before its run ends, on the same binding: the old outcome's route lapses (TaskDecisions)"),
             new(NodeStates.Active, NodeStates.Failed, authority, "an authoritative negative outcome; silence and a deadline never count"),
             new(NodeStates.Active, NodeStates.Rejected, person, "a person's rejection, with a reason, on a node a person may judge"),
             new(NodeStates.Active, NodeStates.Unknown, daoris, "the outcome cannot be established now"),

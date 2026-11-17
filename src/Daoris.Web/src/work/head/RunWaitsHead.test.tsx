@@ -41,6 +41,21 @@ describe('RunWaitsHead', () => {
     expect(onHeld).toHaveBeenCalledWith({ unit: 'run:q7', node: 'release', attempt: 2, resolution: 'done-outside', link: 'https://dev.example/release/90' });
   });
 
+  it('names the holder its row reads, passes the epoch the row read, and draws the row’s holder presses', async () => {
+    const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'sign', act: 'approve', done: true });
+    const row: StepWaitRow = { ...SIGN, holder: 'agent', holderName: 'beta', epoch: 3, holds: ['take', 'hand', 'give-back'] };
+    render(
+      <RunWaitsHead waits={[{ run: 'q7', node: 'sign', why: 'approval', role: 'approver' }]} steps={[row]} onWord={onWord}
+        hold={(held) => <button type="button">{`hold ${held.holds?.join(' ')}`}</button>} />,
+    );
+
+    const line = screen.getByRole('group', { name: 'sign: waiting on approver: beta' });
+    expect(within(line).getByRole('button', { name: 'hold take hand give-back' })).toBeInTheDocument();
+    await userEvent.click(within(line).getByRole('button', { name: 'Approve…' }));
+    await userEvent.click(within(line).getByRole('button', { name: 'Approve' }));
+    expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'sign', act: 'approve', epoch: 3, words: null });
+  });
+
   it('says nothing where no step of its run waits on the person', () => {
     const { container } = render(<RunWaitsHead waits={[]} steps={[SIGN]} />);
     expect(container).toBeEmptyDOMElement();

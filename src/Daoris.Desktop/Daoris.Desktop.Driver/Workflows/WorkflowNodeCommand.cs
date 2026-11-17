@@ -10,6 +10,12 @@ public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string
 {
     /// <summary>A <c>decide</c>'s answer, one of its decision's outcomes; null on every other act.</summary>
     public string? Outcome { get; init; }
+
+    /// <summary>The holder's epoch the word is given in (<c>--epoch</c>, <see cref="StepTenureFiles"/>): an ended one is refused; null names none.</summary>
+    public int? Epoch { get; init; }
+
+    /// <summary>Who presses where its channel names an agent (<see cref="SettleBy.OfChannel"/>): never sent, set by the route that runs the verb's path.</summary>
+    public SettleBy? By { get; init; }
 }
 
 /// <summary>
@@ -30,6 +36,9 @@ public static class WorkflowNodeCommand
 
     /// <summary>The flag naming the review record an Accept is given on.</summary>
     public const string At = "--at";
+
+    /// <summary>The flag naming the holder's epoch a word is given in.</summary>
+    public const string EpochFlag = "--epoch";
 
     /// <summary>Whether the words after <c>workflow</c> ask for a word on a run's node, rightly or not: every act the node door takes.</summary>
     public static bool Asks(IReadOnlyList<string> args) => args is [var act, ..] && NodeWordActs.All.Contains(act, StringComparer.Ordinal);
@@ -54,6 +63,20 @@ public static class WorkflowNodeCommand
                 rest.RemoveRange(at, 2);
             }
 
+            // The holder's epoch the word is given in: a word in an ended epoch is refused.
+            int? epoch = null;
+            if (rest.IndexOf(EpochFlag) is var named and >= 0)
+            {
+                if (named + 1 >= rest.Count || !int.TryParse(rest[named + 1], out var given) || given < 1)
+                {
+                    problem = $"`{EpochFlag}` names the holder's epoch the word is given in, a whole number from 1: `workflow {act} <run> <node> {EpochFlag} <n>`.";
+                    return null;
+                }
+
+                epoch = given;
+                rest.RemoveRange(named, 2);
+            }
+
             // A decision's answer names its outcome before its reason.
             string? outcome = null;
             if (act == NodeWordActs.Decide)
@@ -69,7 +92,7 @@ public static class WorkflowNodeCommand
             }
 
             var words = string.Join(' ', rest).Trim();
-            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null, revision) { Outcome = outcome };
+            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null, revision) { Outcome = outcome, Epoch = epoch };
         }
 
         problem = "`workflow skip` and `workflow stop` name a run and one of its nodes: `workflow skip <run> <node> \"…\"`.";
@@ -86,7 +109,7 @@ public static class WorkflowNodeCommand
         Func<DateTimeOffset>? clock = null, CancellationToken ct = default, IIntegrationDoor? door = null)
     {
         var variables = environment ?? instance?.Environment ?? Environment.GetEnvironmentVariable;
-        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words), ("revision", ask.Revision), ("outcome", ask.Outcome));
+        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words), ("revision", ask.Revision), ("outcome", ask.Outcome), ("epoch", ask.Epoch));
         return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowNode, payload, () => AloneAsync(ask, records, output, variables, clock, door, ct), output, ct);
     }
 
@@ -105,7 +128,8 @@ public static class WorkflowNodeCommand
         }
 
         var done = await RunNodeWords.WordAsync(
-                records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision, outcome: ask.Outcome)
+                records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision, outcome: ask.Outcome, epoch: ask.Epoch,
+                settle: ask.By)
             .ConfigureAwait(false);
         output.WriteLine(RunNodeWords.Said(done));
         return done.Done ? 0 : 1;

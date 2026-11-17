@@ -26,6 +26,7 @@ public static class RunReviews
         {
             State = status.State, Standing = status.Attempt, Since = status.Since, By = status.By, Words = status.Words,
             Presses = standing ? [NodeWordActs.Accept, NodeWordActs.Changes, NodeWordActs.Stop] : [],
+            Epoch = standing ? new StepTenureFiles(home, () => false).Current(bound.Unit, review.Id, status.Attempt)?.Epoch : null,
             Says = RunReviewSays.Of(read),
             Before = [.. Preceding(graph, review.Id).Select(node => Step(record, node, null))],
             Newer = read is not null && newest is not null && newest.Attempt > read.Attempt

@@ -107,7 +107,7 @@ public sealed class WorkBeliefTests
     public void Only_a_plugins_own_node_is_reached_on_the_plugins_word()
     {
         Assert.True(NodeAuthorities.Of(Deploy)!.OnPluginWord);
-        foreach (var kind in new[] { NodeKinds.Push, NodeKinds.Land, NodeKinds.Line, NodeKinds.Claimed, NodeKinds.Human, NodeKinds.WaitUnit, NodeKinds.QuestClose })
+        foreach (var kind in new[] { NodeKinds.Push, NodeKinds.Land, NodeKinds.Line, NodeKinds.Claimed, NodeKinds.Task, NodeKinds.WaitUnit, NodeKinds.QuestClose })
         {
             Assert.False(NodeKit.Row(kind)!.OnPluginWord, kind);
         }

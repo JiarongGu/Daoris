@@ -6,7 +6,7 @@ using JsonRead = Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's landing decisions: a <c>review</c> step's Accept or a <c>human</c> approval's Approve or Reject, decided by the holder
+/// The supervisor's landing decisions: a <c>review</c> step's Accept or a <c>task</c> approval's Approve or Reject, decided by the holder
 /// the admission admits for the run's repository and held for the role's window. At its moment the release asks the admission and the
 /// step again, then keeps the decision as the node's word on the run's record, <c>released</c>, which the pass applies through the node's own
 /// door. The decision is live while released; a restart reads a held one an agent's hold kept back with its window (<see cref="HeldDecisions"/>)
@@ -48,7 +48,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
             {
                 Id = id, Session = landing.Session, Run = landing.Run, Node = landing.Node, Attempt = landing.Attempt, Repository = repository, Do = landing.Do,
                 Generation = landing.Generation, Words = string.Join(" ", landing.Reasons.Select(reason => reason.Says)), GoesOnAt = goesOnAt,
-                State = left ? SupervisorState.Left : SupervisorState.Held, Revision = landing.Revision,
+                State = left ? SupervisorState.Left : SupervisorState.Held, Revision = landing.Revision, Epoch = landing.Epoch,
             };
             Directory.CreateDirectory(book.Files.FolderOf(landing.Session));
             var text = Json(id, landing, repository, now, goesOnAt);
@@ -76,7 +76,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 if (due.State != SupervisorState.Held) return (SupervisorState?)null;
                 var handed = new SupervisorLandingDue(due.Id, due.Session, due.Run, due.Node, due.Attempt, due.Repository, due.Do, due.Generation, due.Words)
                 {
-                    Revision = due.Revision,
+                    Revision = due.Revision, Epoch = due.Epoch,
                 };
                 var admitted = admission.Admit(SupervisorSubject.Landing(due.Session, due.Run, due.Node, due.Attempt), new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
@@ -174,6 +174,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 Id = row.Id, Session = row.Session, Run = run, Node = node, Attempt = attempt, Repository = row.Repository, Do = act,
                 Generation = row.Generation, Words = string.Join(" ", JsonRead.Items(root, "reasons").Select(reason => JsonRead.Text(reason, "says") ?? "")),
                 GoesOnAt = row.GoesOnAt, Revision = JsonRead.Text(landing, "revision"),
+                Epoch = landing.TryGetProperty("epoch", out var read) && read.ValueKind == JsonValueKind.Number && read.TryGetInt32(out var epoch) ? epoch : null,
             };
         }
         catch (JsonException)
@@ -209,7 +210,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
         ["landing"] = new JsonObject
         {
             ["run"] = landing.Run, ["node"] = landing.Node, ["attempt"] = landing.Attempt, ["repository"] = repository, ["do"] = landing.Do,
-            ["revision"] = landing.Revision,
+            ["revision"] = landing.Revision, ["epoch"] = landing.Epoch,
         },
         ["bound"] = landing.Do == SupervisorLandingActs.Hold ? landing.Bound : null,
         ["reasons"] = new JsonArray([.. landing.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),

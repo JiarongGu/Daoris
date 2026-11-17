@@ -3,17 +3,17 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's task: a <c>human</c> node a run reaches waits on the person, who presses <i>Done</i>, or
+/// A role's task: a <c>task</c> node a run reaches waits on its role's holder, who says <i>Done</i>, or
 /// <i>Approve</i> or <i>Reject</i> where it is an approval, with a note if they like, on the run's node door; the run goes on along the <c>when</c>
-/// wire of the outcome pressed. What waits is read for <i>What needs you</i> and the press clears it; a press on a node that is not waiting is
-/// refused. Each seen failing first.
+/// wire of the outcome pressed. What waits is read for <i>What needs you</i> where the person holds it and the press clears it; a press on a
+/// node that is not waiting is refused. A saved version's former <c>human</c> step reads as one at its kept digest. Each seen failing first.
 /// </summary>
-public sealed class HumanNodeTests : NodeRunFixture
+public sealed class TaskNodeTests : NodeRunFixture
 {
     private const string TaskGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"release","kind":"human","version":1,"reach":"pressed","outcomes":["done"]},
+                  {"id":"release","kind":"task","version":1,"reach":"pressed","outcomes":["done"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"release"},
                   {"id":"r>h","kind":"when","from":"release","to":"handed","outcome":"done"}]}
@@ -22,9 +22,9 @@ public sealed class HumanNodeTests : NodeRunFixture
     private const string ApprovalGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"sign","kind":"human","version":1,"reach":"pressed","outcomes":["approved"]},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"},
-                  {"id":"redo","kind":"human","version":1,"reach":"pressed","outcomes":["done"]}],
+                  {"id":"redo","kind":"task","version":1,"reach":"pressed","outcomes":["done"]}],
          "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
                   {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"approved"},
                   {"id":"s>r","kind":"rejected","from":"sign","to":"redo"}]}
@@ -39,7 +39,7 @@ public sealed class HumanNodeTests : NodeRunFixture
 
     private NodeWorded Press(string node, string act, string? note = null) => RunNodeWords.Word(Files, RunId, node, act, note, () => _now);
 
-    private static NodeDeclaration Declared(params string[] outcomes) => new("t", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = outcomes };
+    private static NodeDeclaration Declared(params string[] outcomes) => new("t", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = outcomes };
 
     [Fact]
     public async Task A_run_reaching_a_task_waits_on_the_person_and_their_done_goes_on_along_its_when_wire()
@@ -92,13 +92,13 @@ public sealed class HumanNodeTests : NodeRunFixture
     [InlineData(false, "rejected")]
     public void A_task_declares_done_and_an_approval_approved_and_the_refusal_is_no_outcome(bool taken, params string[] outcomes)
     {
-        Assert.Equal(taken, ((BuiltInNode)NodeKit.Of(NodeKinds.Human)!).TakesOutcomes(outcomes) || outcomes.Length == 0);
+        Assert.Equal(taken, ((BuiltInNode)NodeKit.Of(NodeKinds.Task)!).TakesOutcomes(outcomes) || outcomes.Length == 0);
     }
 
     [Fact]
     public void The_palette_offers_a_task_with_its_done_route_and_a_rejected_wire_from_it()
     {
-        var human = WorkflowPalette.Build([]).Kinds.Single(kind => kind.Kind == NodeKinds.Human);
+        var human = WorkflowPalette.Build([]).Kinds.Single(kind => kind.Kind == NodeKinds.Task);
         Assert.Equal(["done"], human.Outcomes);
         Assert.Contains(WireKinds.When, human.Leaves);
         Assert.Contains(WireKinds.Rejected, human.Leaves);
@@ -136,7 +136,7 @@ public sealed class HumanNodeTests : NodeRunFixture
         await RunPassAsync(runtime);
 
         var task = Assert.Single(runtime.HeldSteps());
-        Assert.Equal((RunId, "sign", RunHome.Repository, RunId, PersonWaits.Approval, "approver"), (task.Run, task.Node, task.Repository, task.Work, task.Why, task.Role));
+        Assert.Equal((RunId, "sign", RunHome.Repository, RunId, PersonWaits.Approval, StepRoles.Owner), (task.Run, task.Node, task.Repository, task.Work, task.Why, task.Role));
         Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], task.Presses.Where(press => press != NodeWordActs.Skip));
 
         // A refusal is a rejection, so it takes the person's words as a review's changes do.
@@ -186,8 +186,8 @@ public sealed class HumanNodeTests : NodeRunFixture
             Assert.Equal("outcomes", NodeDeclarations.Problem(Declared(other)));
         }
 
-        Assert.Equal([NodeWordActs.Done], HumanNode.Presses(Declared()));
-        Assert.Equal([NodeWordActs.Done], HumanNode.Presses(Declared("done")));
-        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], HumanNode.Presses(Declared("approved")));
+        Assert.Equal([NodeWordActs.Done], TaskNode.Presses(Declared()));
+        Assert.Equal([NodeWordActs.Done], TaskNode.Presses(Declared("done")));
+        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], TaskNode.Presses(Declared("approved")));
     }
 }

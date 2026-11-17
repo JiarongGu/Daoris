@@ -251,7 +251,7 @@ public static class WorkflowRunWords
             WorkflowGraphDetails.Active => node switch
             {
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
-                NodeKinds.Human => "Waits for your task.",
+                NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode

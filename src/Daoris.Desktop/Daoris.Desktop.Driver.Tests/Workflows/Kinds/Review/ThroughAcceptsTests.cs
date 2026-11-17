@@ -49,6 +49,18 @@ public sealed class ThroughAcceptsTests
     }
 
     [Fact]
+    public void A_review_another_holder_holds_is_not_accepted_on_through_words()
+    {
+        var review = Record(("claimed", NodeStates.Reached, null), ("holds", NodeStates.Skipped, null), ("look", NodeStates.Skipped, null),
+            ("review", NodeStates.Active, null));
+        var agent = new Dictionary<string, StepTenure> { ["review"] = new("review", 1, StepRoles.Acceptor, "agent:beta", 2, DateTimeOffset.UnixEpoch, TenureWhy.HandOver) };
+        var person = new Dictionary<string, StepTenure> { ["review"] = new("review", 1, StepRoles.Acceptor, CastHolders.Person, 1, DateTimeOffset.UnixEpoch, TenureWhy.Cast) };
+
+        Assert.Null(ThroughAccepts.Due(Graph, review, [Quest()], agent));
+        Assert.Equal(("review", NodeWordActs.Accept), ThroughAccepts.Due(Graph, review, [Quest()], person));
+    }
+
+    [Fact]
     public void A_departure_an_unmet_requirement_a_look_a_stop_or_a_word_already_kept_leaves_the_step_to_the_person()
     {
         var review = Record(("claimed", NodeStates.Reached, null), ("holds", NodeStates.Reached, null), ("look", NodeStates.Reached, null),

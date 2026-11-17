@@ -1,0 +1,121 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests.Workflows;
+
+/// <summary>
+/// A wait is answered by its own role: the step's tenure holds the step's own role, and any other role a wait is on (a
+/// vacancy's line, a plugin's actor) is held by the place's cast of that role, never by the step's holder. Seen failing first: a vacancy on
+/// an agent's opinion step, and a sign-in wait on a release an agent holds, both read the agent and left <i>What needs you</i>.
+/// </summary>
+public sealed class StepWaitHoldersTests
+{
+    private const string Run = "q7";
+    private const string Unit = "run:q7";
+    private static readonly DateTimeOffset Now = new(2026, 11, 17, 9, 0, 0, TimeSpan.Zero);
+
+    private static NodeRecord Standing(string node, NodeStatus status, params NodeAttempt[] attempts) => new(Unit)
+    {
+        Statuses = new Dictionary<string, NodeStatus> { [node] = status },
+        Attempts = [.. attempts],
+    };
+
+    private static NodeStatus Active(string node) => new(Unit, node, NodeStates.Active) { Attempt = 1, Tries = 1, Since = Now };
+
+    private static StepTenure HeldBy(string node, string role, string holder, int epoch = 1, string why = TenureWhy.Cast) =>
+        new(node, 1, role, holder, epoch, Now, why);
+
+    private static readonly NodeDeclaration Opinion = new("opinion", NodeKinds.Opinion, 1, NodeReach.Observed);
+
+    private static readonly NodeDeclaration Release = new("release", "acme.deploy/release", 1, NodeReach.Performed);
+
+    private static NodeRecord SignIn() => Standing("release", Active("release") with { Unreconciled = 1 }, new NodeAttempt("release", 1, "acme.deploy",
+        new WorkPerformCall(Unit, "acme.deploy/release", 1, "i-1", "k-1", "tip", [], Now.AddHours(1)), AttemptStates.Sent)
+    {
+        RecordedAt = Now, Generation = 1, Deliveries = 1,
+        Progress = new StepProgress(StepRoles.CredentialsKeeper, "Sign in to Azure DevOps again.", "https://dev.azure.com/acme", null, Now),
+    });
+
+    [Fact]
+    public void A_vacancy_on_an_agents_opinion_step_is_the_lines_and_keeps_its_row()
+    {
+        var record = Standing("opinion", Active("opinion") with { Holds = OpinionGateReading.Vacant });
+        var held = HeldBy("opinion", StepRoles.Opinion, CastHolders.Agent);
+
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Opinion, record, held);
+
+        Assert.NotNull(row);
+        Assert.Equal((PersonWaits.Vacant, AppointedRoles.Supervisor, StepHolders.Person), (row.Why, row.Role, row.Holder));
+    }
+
+    [Fact]
+    public void A_sign_in_wait_on_a_release_an_agent_holds_is_the_credentials_keepers_and_keeps_its_row()
+    {
+        var held = HeldBy("release", StepRoles.Operations, CastHolders.AgentNamed("beta"));
+
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Release, SignIn(), held);
+
+        Assert.NotNull(row);
+        Assert.Equal((StepRoles.CredentialsKeeper, StepHolders.Person), (row.Role, row.Holder));
+    }
+
+    private static readonly NodeDeclaration Review = new("review", NodeKinds.Review, 1, NodeReach.Pressed);
+
+    /// <summary>A review handed to an agent waits with no settler, since no agent's channel speaks an Accept: it stays the person's row, to take.</summary>
+    [Fact]
+    public void A_step_an_agent_holds_that_no_agents_channel_settles_is_a_row_with_take()
+    {
+        var held = HeldBy("review", StepRoles.Acceptor, CastHolders.AgentNamed("beta"), epoch: 2, why: TenureWhy.HandOver);
+
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Review, Standing("review", Active("review")), held);
+
+        Assert.NotNull(row);
+        Assert.Equal((PersonWaits.Accept, StepRoles.Acceptor, StepHolders.Agent, "beta", 2), (row.Why, row.Role, row.Holder, row.HolderName, row.Epoch));
+        Assert.Contains(CastActs.Take, row.Holds!);
+    }
+
+    /// <summary>A plugin's act an agent holds is observed by its plugin, so it waits on the agent and is no row of the person's.</summary>
+    [Fact]
+    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons()
+    {
+        var release = Release with { Role = StepRoles.ReleaseManager };
+        var record = Standing("release", Active("release") with { Unreconciled = 1 }, SignIn().Attempts[0] with
+        {
+            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now),
+        });
+
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent)));
+    }
+
+    /// <summary>
+    /// A go-ahead is answered by the grants, never the tenure, so its row offers no hold acts; a step the pass has not cast yet offers none
+    /// either, since its Take would find the person holding it already. Seen failing first.
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_row_and_a_step_not_cast_yet_offer_no_hold_acts()
+    {
+        var go = new NodeDeclaration("go", NodeKinds.GoAhead, 1, NodeReach.Pressed);
+        var asked = HeldSteps.Step(Run, "engine", "aurora", Run, go, Standing("go", Active("go")), HeldBy("go", StepRoles.Approver, CastHolders.Person));
+        var sign = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] };
+        var uncast = HeldSteps.Step(Run, "engine", "aurora", Run, sign, Standing("sign", Active("sign")));
+
+        Assert.Equal((PersonWaits.GoAhead, (IReadOnlyList<string>?)null), (asked?.Why, asked?.Holds));
+        Assert.Equal((PersonWaits.Task, (IReadOnlyList<string>?)null), (uncast?.Why, uncast?.Holds));
+    }
+
+    /// <summary>Settings and Hand refuse an agent for a step only a press settles, with the reason; a step settled by an observation or a plugin's act takes one.</summary>
+    [Fact]
+    public void A_cast_or_hand_over_of_an_agent_to_a_step_only_a_press_settles_is_refused()
+    {
+        Assert.Contains(StepRoles.Acceptor, AgentSettles.Roles);
+        Assert.Contains(StepRoles.Owner, AgentSettles.Roles);
+        Assert.DoesNotContain(StepRoles.Operations, AgentSettles.Roles);
+        Assert.DoesNotContain(StepRoles.Approver, AgentSettles.Roles);
+
+        Assert.NotNull(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, CastHolders.Person));
+        Assert.Null(AgentSettles.Cast(StepRoles.Operations, CastHolders.Agent));
+        Assert.Contains("`acceptor`", AgentSettles.Hand(Review, CastHolders.Agent));
+        Assert.Null(AgentSettles.Hand(Release, "agent:beta"));
+        Assert.Null(AgentSettles.Hand(Opinion, CastHolders.Agent));
+    }
+}

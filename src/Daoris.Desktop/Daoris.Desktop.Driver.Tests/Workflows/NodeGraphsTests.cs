@@ -25,7 +25,7 @@ public sealed class NodeGraphsTests
     private static readonly NodeDeclaration[] Nodes =
     [
         Node("line", NodeKinds.Line),
-        Node("qa", NodeKinds.Human) with
+        Node("qa", NodeKinds.Task) with
         {
             Evidence = "qa-proof@1",
             Options = new Dictionary<string, string> { ["brief"] = "\"Verify the release\"", ["attachmentSchema"] = "\"qa-proof@1\"" },
@@ -51,7 +51,7 @@ public sealed class NodeGraphsTests
         { "schemaVersion": 2, "entries": ["line", "dependency"], "end": "close", "cleanup": { "until": "end" },
           "nodes": [
             { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-            { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1",
+            { "id": "qa", "kind": "task", "version": 1, "reach": "pressed", "evidence": "qa-proof@1",
               "options": { "brief": "Verify the release", "attachmentSchema": "qa-proof@1" } },
             { "id": "dependency", "kind": "wait.unit", "version": 1, "reach": "waited" },
             { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1",
@@ -115,7 +115,7 @@ public sealed class NodeGraphsTests
         Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), wired] }).Where(GraphProblemsTable.IsRule));
         var retry = graph with
         {
-            Nodes = [.. graph.Nodes, Node("fix", NodeKinds.Human)],
+            Nodes = [.. graph.Nodes, Node("fix", NodeKinds.Task)],
             Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), new Wire("d", WireKinds.Failed, new("checks"), new("fix")), wired],
         };
         Assert.Empty(NodeGraphs.Problems(retry).Where(GraphProblemsTable.IsRule));
@@ -133,7 +133,7 @@ public sealed class NodeGraphsTests
         var graph = EarlyFailure();
         var pressed = graph with
         {
-            Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Human) : node)],
+            Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Task) : node)],
         };
         // The order holds by reach here; it asks only the look's wire into the landing besides.
         IEnumerable<string> Codes(NodeGraph each) => NodeGraphs.Problems(each).Where(GraphProblemsTable.IsRule).Select(problem => problem.Code);
@@ -189,7 +189,7 @@ public sealed class NodeGraphsTests
     public void The_protected_order_holds_on_every_way_to_the_landing()
     {
         IEnumerable<string> Order(NodeGraph graph) => NodeGraphs.Problems(graph).Where(problem => problem.Code == GraphRefusal.ProtectedOrder).Select(problem => problem.Node!);
-        NodeDeclaration[] nodes = [Node("look", NodeKinds.Look), Node("press", NodeKinds.Human), Node("landing", NodeKinds.Land)];
+        NodeDeclaration[] nodes = [Node("look", NodeKinds.Look), Node("press", NodeKinds.Task), Node("landing", NodeKinds.Land)];
         Wire Any(string id, string from) => After(id, from, "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) };
 
         Assert.Empty(Order(new NodeGraph(nodes, [After("a", "look", "landing"), After("b", "press", "landing")], ["look", "press"], "landing")));
@@ -313,7 +313,7 @@ public sealed class NodeGraphsTests
             { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
             { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
             { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-            { "id": "note", "kind": "human", "version": 1, "reach": "pressed" } ],
+            { "id": "note", "kind": "task", "version": 1, "reach": "pressed" } ],
           "wires": [
             { "id": "a", "kind": "after", "from": "work", "to": "find" },
             { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "review" },
@@ -364,7 +364,7 @@ public sealed class NodeGraphsTests
         Assert.Null(wired);
         Assert.Equal([(WireRefusal.UnknownKind, "f")], wires.Select(problem => (problem.Code, problem.Wire!)));
 
-        var (named, nodes) = NodeGraphs.Read(RoutesJson.Replace("\"kind\": \"human\"", "\"kind\": \"note\"", StringComparison.Ordinal));
+        var (named, nodes) = NodeGraphs.Read(RoutesJson.Replace("\"kind\": \"task\"", "\"kind\": \"note\"", StringComparison.Ordinal));
         Assert.Null(named);
         Assert.Equal([(GraphRefusal.Declaration, "note")], nodes.Select(problem => (problem.Code, problem.Node!)));
     }

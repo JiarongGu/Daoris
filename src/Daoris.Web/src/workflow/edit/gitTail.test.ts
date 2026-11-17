@@ -22,16 +22,16 @@ const ways = (draft: GraphDraft) => draft.wires.map((wire) =>
   `${wire.kind} ${wire.from}${wire.fromPort ? `.${wire.fromPort}` : ''}${wire.outcome ? `:${wire.outcome}` : ''}${wire.on ? `@${wire.on}` : ''} → ${wire.to}${wire.toPort ? `.${wire.toPort}` : ''}${'group' in wire.wire ? ' (any)' : ''}`);
 
 describe('a Git step\'s tail', () => {
-  it('brings a rebase its work, its ready way on, and its resolution with the person\'s task, each way back to it', () => {
+  it('brings a rebase its work, its ready way on, and its resolution with the owner\'s task, each way back to it', () => {
     const { draft, tail, steps } = add(draftOf(WORK), 'rebase', 'b');
     expect(tail).toBe('rebase');
-    expect(steps).toEqual(['resolve', 'human']);
+    expect(steps).toEqual(['resolve', 'task']);
     expect(ways(draft)).toEqual([
       'after work → holds', 'after holds → rebase', 'when rebase:ready → line',
       'data work.work → rebase.work',
       'when rebase:conflicted → resolve (any)', 'when rebase:uncommitted → resolve (any)',
       'data rebase.problem → resolve.problem', 'data work.work → resolve.work',
-      'back resolve@resolved → rebase', 'failed resolve → human', 'back human@done → rebase',
+      'back resolve@resolved → rebase', 'failed resolve → task', 'back task@done → rebase',
     ]);
     const rebase = draft.nodes.find((node) => node.id === 'rebase')!;
     expect(rebase.node.outcomes).toEqual(['ready', 'conflicted', 'uncommitted']);

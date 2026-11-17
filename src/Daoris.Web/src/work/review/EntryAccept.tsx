@@ -27,6 +27,7 @@ export type EntryAcceptPart = {
   clash?: { by: string; says: string } | null;
   /** The revision of the review record its run stands on, which the Accept names for it, so a moved run is refused alone. */
   revision?: string | null;
+  epoch?: number | null;
 };
 
 /** Where an entry's parts would land: its one branch, or the line a merge goes into, and each part. */

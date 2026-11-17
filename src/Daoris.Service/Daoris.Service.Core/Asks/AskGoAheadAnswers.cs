@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>The person's answer to a go-ahead their sessions asked for on an ask.</summary>
+/// <summary>The answer to a go-ahead their sessions asked for on an ask: the person's, or an appointed role's (<c>by</c>), which the sentence names.</summary>
 internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
 {
     /// <summary>
@@ -47,9 +47,11 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
                 ask);
         }
 
+        var own = by is not { Length: > 0 };
         return new(GoAheadAnswerRefusal.None,
-            $"Go-ahead {kept.Number} on ask `#{ask.Id}` {(approved ? "approved" : "refused")}: {kept.Named}. Every session on the "
-            + "ask is handed your answer at its next start" + (said is null ? "." : ", with your words."),
+            $"Go-ahead {kept.Number} on ask `#{ask.Id}` {(approved ? "approved" : "refused")} by {(own ? "the person" : by)}: {kept.Named}. "
+            + $"Every session on the ask is handed {(own ? "your" : "the")} answer at its next start"
+            + (said is null ? "." : own ? ", with your words." : ", with its words."),
             ask)
         {
             GoAhead = kept,

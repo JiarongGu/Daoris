@@ -153,7 +153,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
           {"id":"pull-request","kind":"acme-host/pull-request","version":1,"reach":"performed"},
           {"id":"monitor","kind":"monitor","version":1,"reach":"observed","outcomes":["merged","closed"]},
           {"id":"tidy","kind":"tidy","version":1,"reach":"performed"},
-          {"id":"closed","kind":"human","version":1,"reach":"pressed"}],
+          {"id":"closed","kind":"task","version":1,"reach":"pressed"}],
          "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"push"},
                   {"id":"c","kind":"after","from":"push","to":"pull-request"},{"id":"d","kind":"after","from":"pull-request","to":"monitor"},
                   {"id":"e","kind":"when","from":"monitor","to":"tidy","outcome":"merged"},{"id":"f","kind":"when","from":"monitor","to":"closed","outcome":"closed"}]}
@@ -253,7 +253,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
         // The monitor reads it closed, which the graph routes to the person's task and never to the tidy.
         Assert.Equal(PullRequestReading.Closed, PullRequestReading.Of(landings.Of("engine", Landed)).State);
         var closed = Assert.Single(graph.Wires, wire => wire.Outcome == PullRequestReading.Closed);
-        Assert.Equal(NodeKinds.Human, graph.Nodes.Single(node => node.Id == closed.To.Node).Kind);
+        Assert.Equal(NodeKinds.Task, graph.Nodes.Single(node => node.Id == closed.To.Node).Kind);
 
         // A tidy started all the same ends nothing and fails nothing.
         var tidying = new TidyDoor(Home);

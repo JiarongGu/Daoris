@@ -70,16 +70,23 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 
     /// <summary>
     /// The holder of the role a <c>waiting</c> step waits on, whoever it is (<see cref="StepHolders"/>): <i>waiting on &lt;role&gt;: &lt;holder&gt;</i>.
-    /// Null where the step does not wait. Where a wait names none, the role's own holder; that an agent is still at the step is read off its detail
-    /// (<see cref="AgentAt"/>), never off this.
+    /// Null where the step does not wait. Where a wait names none (a steps run's step, which no tenure or cast reaches), the person; that an
+    /// agent is still at the step is read off its detail (<see cref="AgentAt"/>), never off this.
     /// </summary>
     public StepHolder? Holder
     {
-        get => holder ?? (State == WorkflowRunStates.Waiting && Role is { } role ? StepHolders.Of(role) : null);
+        get => holder ?? (State == WorkflowRunStates.Waiting && Role is not null ? CastHolders.StepOf(CastHolders.Person) : null);
         init => holder = value;
     }
 
-    public bool AgentAt => State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
+    /// <summary>A standing step's tenure: its holder, the epoch its presses carry, and its acts (<see cref="StepHoldActs"/>); null where none.</summary>
+    public string? HeldBy { get; init; }
+
+    public int? Epoch { get; init; }
+
+    public IReadOnlyList<string>? Holds { get; init; }
+
+    public bool AgentAt =>State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
 
     /// <summary>
     /// What a graph run's node observes, one of <see cref="WorkflowGraphSubjects"/>: its

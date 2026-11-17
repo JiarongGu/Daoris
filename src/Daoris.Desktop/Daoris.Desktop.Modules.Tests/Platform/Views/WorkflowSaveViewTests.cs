@@ -25,7 +25,7 @@ public sealed class WorkflowSaveViewTests
         schemaVersion = 2, entries = new[] { "qa" }, end = "close",
         nodes = new object[]
         {
-            new { id = "qa", kind = "human", version = 1, reach = "pressed", options = new { brief = "Verify the release" } },
+            new { id = "qa", kind = "task", version = 1, reach = "pressed", options = new { brief = "Verify the release" } },
             new { id = "landing", kind = "land", version = 1, reach = "performed", options = new { method = "merge" } },
             new { id = "close", kind = "quest.close", version = 1, reach = "performed" },
         },
@@ -64,7 +64,7 @@ public sealed class WorkflowSaveViewTests
         Assert.Equal("2", viewed.View.Facts["version"]);
         Assert.Equal("daoris workflow apply docs <file> --base 1", viewed.View.Command);
         Assert.Equal(3, viewed.View.Workflow!.Graph.GetProperty("nodes").GetArrayLength());
-        Assert.Contains(viewed.View.Workflow.Changes!, change => change.Id == "step:+qa" && change.Kind == "human");
+        Assert.Contains(viewed.View.Workflow.Changes!, change => change.Id == "step:+qa" && change.Kind == "task");
         Assert.Contains(viewed.View.Workflow.Changes!, change => change.What == "way" && change.Change == "added");
     }
 

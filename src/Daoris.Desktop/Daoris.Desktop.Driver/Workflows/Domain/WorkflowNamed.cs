@@ -132,12 +132,12 @@ public static class WorkflowNamed
                     return Unread($"v{number}: its schema is {GraphSchema}, so its `graph` is the graph's JSON object.");
                 }
 
-                var (graph, problems) = NodeGraphs.Read(graphJson.GetRawText(), onSave);
+                var (graph, problems, digest) = NodeGraphs.ReadSaved(graphJson.GetRawText(), onSave);
                 if (graph is null) return Unread($"v{number}: its graph does not hold: {problems[0].Words}");
                 var shape = pipeline == WorkflowPipelines.Verification ? VerificationProblem(graph, number) : OneLandingProblem(graph, number);
                 return shape is { } landing
                     ? Unread(landing)
-                    : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph) { From = FromOf(version) };
+                    : new NamedVersion(number, at, door, null, null, digest, graph) { From = FromOf(version) };
             }
         }
 

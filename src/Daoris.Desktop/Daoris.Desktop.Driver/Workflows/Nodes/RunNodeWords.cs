@@ -52,7 +52,7 @@ public static class RunNodeWords
     /// <summary>A <c>send</c> of a request that is not ready to be sent, or that sends itself (<c>start: automatic</c>).</summary>
     public const string NotSendable = "not-sendable";
 
-    /// <summary>The word is <c>done</c>, <c>approve</c> or <c>reject</c>, which only a person's task (<c>human</c>) takes.</summary>
+    /// <summary>The word is <c>done</c>, <c>approve</c> or <c>reject</c>, which only a role's task (<c>task</c>) takes.</summary>
     public const string NotTask = "not-task";
 
     /// <summary>A <c>done</c>, <c>approve</c> or <c>reject</c> of a task that does not wait for that press where it stands now.</summary>
@@ -72,7 +72,7 @@ public static class RunNodeWords
 
     /// <summary>Why a <paramref name="word"/> cannot apply at <paramref name="status"/> beyond its press being offered: a decide's outcome and holder.</summary>
     private static string? Answer(NodeDeclaration node, NodeStatus status, NodeWord word) =>
-        word.Act == NodeWordActs.Decide ? HumanDecisions.Refused(node, status, word.Outcome, word.Holder) : null;
+        word.Act == NodeWordActs.Decide ? TaskDecisions.Refused(node, status, word.Outcome, word.Holder) : null;
 
     /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so.</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
@@ -114,9 +114,11 @@ public static class RunNodeWords
     /// <param name="outcome">A <c>decide</c>'s answer, one of its decision's outcomes.</param>
     /// <param name="holder">Who holds the actor a decide's proposal is from, as its channel names it; null for the owner's own word.</param>
     /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>): an ended one is refused; null names none.</param>
+    /// <param name="settle">Who the word is from, where its caller names it (an observation, an agent's channel); null reads it from the act (<see cref="SettleBy.Of"/>).</param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
-        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null)
+        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null,
+        SettleBy? settle = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -131,7 +133,9 @@ public static class RunNodeWords
         if (TakenBy(act) is { } owner && !(NodeKit.Of(declared.Kind) is IPressed own && own.Takes.Contains(act, StringComparer.Ordinal))) return Refuse(owner.Refusal);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
-        var (refused, result) = records.Edit(bound.Unit, record =>
+        // Judged and kept in one hold of the tenures' lock: no hand-over lands between the holder the door read and the word's write.
+        var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
+        var (refused, result) = tenures.Settling(bound.Unit, hold => records.Edit(bound.Unit, record =>
         {
             // The one step a run ended failed at has the person's stop too, which governs the run again to end it stopped.
             var failedAt = record.Ended is { Outcome: RunOutcomes.Failed } failedRun && failedRun.Node == node && act == NodeWordActs.Stop && by is null
@@ -143,9 +147,23 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
-            if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(bound.Unit, node, status.Attempt, given) is { } holding)
+            // A step not reached (an early Accept on the way to its review) has no attempt standing: the tenure at its last attempt is an ended one's.
+            var holding = status.State is NodeStates.Blocked or NodeStates.Ready ? null : hold.Current(node, status.Attempt);
+            var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
+            // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
+            var takes = StepHolding.TakesOnPress(holding, speaker);
+            if (!takes && SettleDoor.Admit(holding, speaker, hold.Unread) is { } refusal)
             {
-                return (null, Refuse(StepTenureFiles.EndedEpoch) with { Detail = StepTenureFiles.Said(holding), State = status.State });
+                if (refusal.Code == StepTenureFiles.Unread) tenures.SayUnread(bound.Unit, $"{act} on {node} of #{run}");
+                return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
+            }
+
+            // Kept in the epoch it settles in (the press's take's, where it takes), which the pass reads again before it applies the word.
+            (NodeRecord?, NodeWorded) Kept(NodeWord kept, Func<NodeWord, NodeRecord> edit, NodeWorded worded)
+            {
+                var held = holding;
+                if (takes && (held = StepHolding.TakeOnPress(hold, records, run, holding!, act, now)) is null) return (null, Refuse(StepHolding.Unwritable));
+                return (edit(kept with { Epoch = NodeWordEpoch.Of(held, speaker) }), worded);
             }
 
             var word = new NodeWord(node, act, words, now)
@@ -161,7 +179,7 @@ public static class RunNodeWords
                 if (status.State is NodeStates.Blocked or NodeStates.Ready)
                 {
                     var early = word with { Kept = true, Revision = revision?.Trim() };
-                    return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), early] }, new NodeWorded(run, node, act, null) { Early = true });
+                    return Kept(early, kept => record with { Pending = [.. record.Pending.Where(each => each.Node != node), kept] }, new NodeWorded(run, node, act, null) { Early = true });
                 }
 
                 if (status.State == NodeStates.Active)
@@ -186,8 +204,8 @@ public static class RunNodeWords
             }
 
             var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
-            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
-        });
+            return Kept(word, kept => record with { Pending = [.. record.Pending.Where(each => !replaced(each)), kept] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
+        }));
         return refused is null ? result! : Refuse(refused);
     }
 
@@ -198,7 +216,8 @@ public static class RunNodeWords
     /// </summary>
     public static async Task<NodeWorded> WordAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
-        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null)
+        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, int? epoch = null,
+        SettleBy? settle = null)
     {
         IReadOnlySet<string>? promoted = null;
         if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
@@ -206,7 +225,7 @@ public static class RunNodeWords
             promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
         }
 
-        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome);
+        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome, epoch: epoch, settle: settle);
     }
 
     /// <summary>
@@ -214,10 +233,11 @@ public static class RunNodeWords
     /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not, but an Accept kept for a
     /// review not begun yet (<see cref="EarlyAccepts"/>). Pure: the runtime writes it.
     /// </summary>
+    /// <param name="tenures">The run's tenures, read in the lock the pass applies the words in; null reads none.</param>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
         NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null,
-        ILandingWords? landings = null, IReadOnlyDictionary<string, string>? present = null)
+        ILandingWords? landings = null, IReadOnlyDictionary<string, string>? present = null, StepTenureFiles.TenureHold? tenures = null)
     {
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
@@ -239,6 +259,12 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (NodeWordEpoch.Refused(word.Epoch, node.Id, standing.Attempt, tenures) is { } ended)
+            {
+                applied.Add((word, ended));
+                continue;
+            }
+
             if (ReviewAccepts.MovedFrom(word, standing, present))
             {
                 applied.Add((word, ReviewMoved.Word));
@@ -327,7 +353,7 @@ public static class RunNodeWords
     {
         // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on; a decision's decide once per outcome.
         var acts = NodeKit.Of(node.Kind) is IPressed pressed
-            ? pressed.Acts(node, status).SelectMany(act => act == NodeWordActs.Decide ? HumanDecisions.Offered(node) : [act]).ToList()
+            ? pressed.Acts(node, status).SelectMany(act => act == NodeWordActs.Decide ? TaskDecisions.Offered(node) : [act]).ToList()
             : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated or NodeStates.Failed && !promoted) acts.Add(NodeWordActs.Stop);
@@ -384,6 +410,10 @@ public static class RunNodeWords
         (NodeRefusal.NotInTable, NodeWordActs.Accept) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept of yours.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
+        (SettleDoor.NotHolder, _) or (StepTenureFiles.EndedEpoch, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}, so only its holder settles it: take it first (`daoris workflow take {done.Run} {done.Node}`) to act on it.",
+        (SettleDoor.Marked, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}: only the owner role settles it.",
+        (StepTenureFiles.Unread, _) => $"workflow: `{done.Node}` on run {done.Run} was not settled: {done.Detail}, so only your own word is taken until they are mended.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
         (NodeRefusal.NotSkippable, _) =>

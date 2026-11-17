@@ -71,6 +71,11 @@ public static class WorkflowDefaults
         return differs.Count > 0 ? differs : ["steps"];
     }
 
+    /// <summary>Whether a saved version is a copy of the default with a variant's gates, by its graph read as now (<see cref="HumanFormerKind"/>), never its saved digest.</summary>
+    public static bool IsCopy(NamedVersion newest, string defaultId, WorkflowDefault shipped, bool opinion, bool look, string? plugin = null, string? pattern = null) =>
+        newest is { From: { } from, Graph: { } graph } && from.Default == defaultId
+        && NodeGraphs.Digest(graph) == NodeGraphs.Digest(NodeGraphs.Read(Variant(shipped, opinion, look, plugin, pattern).ToJsonString()).Graph!);
+
     /// <summary>
     /// The shipped default a copy is behind: the one its newest version's <c>from</c> names, where this build
     /// ships a digest other than the one stamped, with the graph the copy's next version would be, which keeps the gates the copy has. Null for a

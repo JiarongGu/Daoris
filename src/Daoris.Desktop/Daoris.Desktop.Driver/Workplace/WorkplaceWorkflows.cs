@@ -52,7 +52,9 @@ internal interface IWorkplaceWorkflows
     /// </summary>
     /// <param name="words">What the word carries: for a head's combined Accept, the operation bringing sessions together it delivers.</param>
     /// <param name="revision">The review record the press drew, which a review standing on another refuses <c>moved</c>; null for the one standing.</param>
-    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null);
+    /// <param name="epoch">The epoch of the review's tenure the press read, which a review passed on since refuses <c>ended-epoch</c>; null names none.</param>
+    ReviewWord KeepReviewWord(
+        string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null, int? epoch = null);
 
     /// <summary>Keeps the repair a carried review Accept waits on, on the run's record (see <c>RunRepairs.Keep</c>).</summary>
     void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at);

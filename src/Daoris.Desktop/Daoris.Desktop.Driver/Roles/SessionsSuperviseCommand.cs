@@ -177,7 +177,10 @@ public static class SessionsSuperviseCommand
     /// whose <c>at</c> is not before its first ask, within the instance's wait; an answer with no <c>at</c>, from an instance before the
     /// field, is taken as it comes. Null where the instance did not answer.
     /// </summary>
-    internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
+    internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct) =>
+        (await WaitingReadAsync(instance, ct).ConfigureAwait(false)).Waiting;
+
+    internal static async Task<(IReadOnlyList<JsonElement>? Waiting, bool Pending)> WaitingReadAsync(InstanceWorld instance, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow.AddSeconds(-1);
         var until = DateTimeOffset.UtcNow + instance.Within;
@@ -194,9 +197,9 @@ public static class SessionsSuperviseCommand
                     : [];
                 return 0;
             }, instance, ct).ConfigureAwait(false);
-            if (answered is null) return null;
-            if (fresh) return waiting;
-            if (DateTimeOffset.UtcNow >= until) return null;
+            if (answered is null) return (null, false);
+            if (fresh) return (waiting, false);
+            if (DateTimeOffset.UtcNow >= until) return (null, true);
             await Task.Delay(AskAgain, ct).ConfigureAwait(false);
         }
     }
@@ -302,7 +305,7 @@ public static class SessionsSuperviseCommand
     /// The answer: the key read from the terminal's environment alone, the instance found only behind the install's own
     /// application, and the form sent with a proof over that connection's hello nonce, never the key.
     /// </summary>
-    private static async Task<int> AnswerAsync(
+    internal static async Task<int> AnswerAsync(
         ISupervisorWorld world, InstanceWorld instance, string id, SupervisorDraft draft, TextWriter output, CancellationToken ct)
     {
         if (HolderKey.Read(world.HolderKey()) is null)
@@ -400,7 +403,7 @@ public static class SessionsSuperviseCommand
         if (data.TryGetProperty("kept", out kept) && kept.ValueKind == JsonValueKind.True)
         {
             await output.WriteLineAsync(
-                $"sessions supervise: kept as decision {Text(data, "decision")}, held for the owner's overrule; it goes on at "
+                $"sessions supervise: kept as decision {Text(data, "decision")} by {GoAheadRoleDoor.By(RolesOf(data))}, held for the owner's overrule; it goes on at "
                 + $"{Text(data, "goesOnAt")} unless they overrule it.").ConfigureAwait(false);
             await HeldAsync(data, output).ConfigureAwait(false);
             return 0;
@@ -421,6 +424,11 @@ public static class SessionsSuperviseCommand
         var held = roles.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList();
         await output.WriteLineAsync($"sessions supervise: {RolesBrief.Said(held)}").ConfigureAwait(false);
     }
+
+    private static IReadOnlyList<string> RolesOf(JsonElement data) =>
+        data.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array
+            ? [.. roles.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
+            : [];
 
     private static string? Text(JsonElement element, string name) => SupervisePointPrint.Text(element, name);
 
