@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// the person's yes. The route's body is the real one (<see cref="RepositoryCreateCommand.ApplyAsync"/>: the plan, the receipt and a real
 /// <c>git init</c> in the repository's gitignored <c>_fixtures</c>); the registry, the identities and the quest door are stand-ins.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PipeDelegateGrowthTests : PipeDelegateHarness
 {
     private static readonly CreateAuthor Fixture = new("Fixture", "fixture@example.test");
