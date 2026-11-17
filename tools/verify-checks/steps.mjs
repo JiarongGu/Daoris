@@ -47,7 +47,7 @@ export const CHECK_STEPS = Object.freeze([
   step('node tools/partials.mjs', [...NODE, ...PARTIALS, 'src/**/*.cs']),
   step('node tools/read-shares.mjs', [...NODE, ...PARTIALS, DRIVER, 'tools/read-shares.mjs']),
   step('node tools/optional-locks.mjs', [...NODE, ...PARTIALS, DRIVER, 'tools/']),
-  // The layers' counts list every C# source and project file wherever it sits, and hold them to the list and the lanes (MAINRED1).
+  // The layers' counts list every C# source and project file wherever it sits, and hold them to the list and the lanes.
   step('node tools/layers-census/counts.mjs', [
     ...NODE, ...PARTIALS, '**/*.{cs,csproj}', 'src/Daoris.Adapters/', '**/daoris.lanes.json', 'tools/layers-census.json', 'tools/layers-census/',
     'tools/merge/lanes-file.ts',

@@ -1,8 +1,7 @@
 /**
  * The two tiers of a reached run. A merge runs the fast tier: the unit classes its paths reach, and the end-to-end specs nearest the
- * change (`nearEndToEnd`). The heavy tier is every class that starts real processes or a real git (a suite whose gate runs with the
- * Process settings), the rehearsals' classes and the other end-to-end specs; a merge defers them, and the run after the landing
- * (`heavy-after.ts`) runs them on main's new tip. A builder's own checks run both.
+ * change. The heavy tier is every class that starts real processes or a real git (a suite whose gate runs with the Process settings),
+ * the rehearsals' classes and the other end-to-end specs: the run after the landing (`heavy-after.ts`) runs them on main's new tip.
  */
 import { NEAR_HOPS, nearness } from './reached.ts';
 
@@ -19,24 +18,16 @@ export const isHeavySuite = (suite: string, processSuites: ReadonlySet<string>):
 
 export const isHeavyUnit = (unit: { suite: string }, processSuites: ReadonlySet<string>): boolean => isHeavySuite(unit.suite, processSuites);
 
-/**
- * How many end-to-end specs the fast tier runs, the nearest the change. A spec seeds a scratch repository and runs the tool in it, a
- * minute or two, and the specs of one run start side by side, so three cost a merge about the longest of them. Three hold the two
- * specs that would have stopped MAINRED1's end-to-end reds: the nearest of fifteen within two reads of a tier's move, and of thirteen
- * of a census scope's.
- */
+/** The end-to-end specs the fast tier runs: they start side by side, so three cost a merge about the longest of them, a minute or two. */
 export const E2E_FAST = 3;
 
-/** What the fast tier reads of a change to choose its end-to-end specs: the changed paths and each spec's fewest reads from them. */
 export type Nearness<U> = { changed: readonly string[]; hopsOf: (unit: U) => number | undefined; bound?: number };
 
-/** A file's name without its folder and its kinds: `reached.e2e.ts` and `reached.ts` are both `reached`. */
 const stemOf = (path: string): string => (path.split('/').at(-1) ?? '').replace(/(\.(e2e|test|spec))?\.[^.]+$/, '');
 
 /**
- * The end-to-end specs of `units` the fast tier runs: those within `NEAR_HOPS` reads of a changed path (its own file 0, what it imports
- * or names 1), the change's own first (a spec named as a changed file is), then the fewest reads, then named for a changed file's
- * prefix or in its folder, then the census's order; at most `bound`.
+ * The end-to-end specs within `NEAR_HOPS` reads of a changed path the fast tier runs, at most `bound`: a spec named as a changed file
+ * first, then the fewest reads, then named for a changed file's prefix or in its folder, then the census's order.
  */
 export function nearEndToEnd<U extends { suite: string; file?: string }>(units: readonly U[], { changed, hopsOf, bound = E2E_FAST }: Nearness<U>): U[] {
   const stems = new Set(changed.map(stemOf));
@@ -58,10 +49,7 @@ export function splitTier<U extends { suite: string; file?: string }>(
   return { kept: units.filter((unit) => !heavy.includes(unit) || early.has(unit)), deferred: heavy.filter((unit) => !early.has(unit)) };
 }
 
-/**
- * The lines a merge and `--plan` say of the heavy classes the fast tier hands to the landing's run, by suite, and the end-to-end specs
- * among them by name; none for none.
- */
+/** What a merge and `--plan` say of the heavy classes the fast tier defers, by suite, and of its end-to-end specs, by name. */
 export function deferredLines(deferred: readonly { suite: string; file?: string }[]): string[] {
   if (deferred.length === 0) return [];
   const by = new Map<string, number>();

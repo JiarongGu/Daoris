@@ -1,8 +1,6 @@
 /**
  * The guard of a kept build base and the census of its readers (the tree-pool design §38.2, 6-7).
  *
- *   node --test tools/tree-base.test.mjs
- *
  * `sites` lists every call site of the tracked code under `tools/` and `src/` and every root script that reads a build output: a
  * path joined with a `bin` part followed by a Debug or Release literal or a name, a `bin/Debug` string, a call of a resolver that
  * makes one, and, outside tests, a `--no-build`. Each is keyed by its file and its statement's text, never its line, so two calls in

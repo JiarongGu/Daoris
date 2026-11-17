@@ -1,23 +1,17 @@
 /**
  * The layers' census: what holds the application apart from its infrastructure by construction (the ports-and-adapters design,
  * `docs/2026-11-13-layers-design.md` §6), the checks that cost no test time.
- *
  *   node tools/layers-census.mjs            check the tree (exit 0 clean, 1 a breach, 2 tool error)
  *   node tools/layers-census.mjs --write    write tools/layers-census.json from the tree, the first list or after a shrink
  *   node tools/layers-census.mjs --boundary <lane>   a lane's references across its boundary today, held to the list where it names the
  *                                                     lane; with --write, the lane joins the list
- *
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
  * 2. The ambient ports' reads per subdomain, a ratchet that only tightens; beside it the process and git sites' allowances, which only fall.
  * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
  *    (`--records <dir>` reads another folder; none, nothing read), each test over it said with its cause; beside it the clock's per-file allowance, which only falls.
  * 4. A package's boundary: for each lane the list's `boundaries` names, the references across it both ways per type, a ratchet that
  *    only falls while the package's code moves behind its ports.
- *
- * The counts alone (1, 2, 4 and the clock's allowance, no duration record read) are `tools/layers-census/counts.mjs`, a step of the
- * merge's `cli` gate where a changed path is a source, a project, the lanes or the list.
- *
- * The compiler's check, the banned effects, is the build's: `src/BannedEffects.txt` through `src/Layers.props`.
+ * 1, 2 and 4 alone are `tools/layers-census/counts.mjs`; the banned effects are the build's (`src/BannedEffects.txt`, `src/Layers.props`).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

@@ -1,5 +1,5 @@
 /**
- * The six reds that landed on main on 2026-11-17 and 18 through merges whose gates all passed (MAINRED1), each replayed as the
+ * The six reds that landed on main on 2026-11-17 and 18 through merges whose gates all passed, each replayed as the
  * change that caused it: the merge's plan now picks the check that would have stopped it. Each case names its cause and its fix
  * on main; the e2e specs' reads are the census's of the tree at 7e1a18e882.
  */

@@ -16,9 +16,7 @@ export type Runner = 'dotnet' | 'vitest' | 'node';
 /** A test unit as the census of test units answers it for a merge: where it lives, what runs it, and the path that reached it. */
 export type ReachedUnit = {
   suite: string; kind: string; unit: string; name: string; file: string; by?: string;
-  project?: string; settings?: string | null; needs?: string[];
-  /** The folder a `node --test` unit's gate runs it from: the CLI's where none is named, the root for a `tools/` test a root script lists. */
-  cwd?: string;
+  project?: string; settings?: string | null; needs?: string[]; cwd?: string;
   /** The fewest reads between this unit and a changed file (its own file 0, an import 1), where the census can count them. */
   hops?: number;
 };

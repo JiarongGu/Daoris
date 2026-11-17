@@ -6,18 +6,15 @@
  * ## The units
  *
  * A **unit** is what a runner selects: a .NET class of a declared `dotnet test` gate (each half, each test project of a
- * solution gate), a `node --test` file of the CLI's suite, the tool-tests or a `tools/` test a gate lists (the CLI's verify's,
- * `test-map/listed.mjs`), a vitest file, a Playwright spec, a rehearsal.
- * Each has:
+ * solution gate), a `node --test` file of the CLI's suite, the tool-tests or a `tools/` test a gate lists (`test-map/listed.mjs`),
+ * a vitest file, a Playwright spec, a rehearsal. Each has:
  *
  * - **its reach**. .NET: the Process census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
  *   a fast half's filter is read from its command, and a solution gate's test projects each count. TypeScript: a closure over
  *   the repository: every relative import and literal `import(…)` followed wherever it leads, every string that names a
  *   tracked file or folder (from the root or the file), every basename string with an extension that names tracked files,
- *   `import.meta.glob`'s patterns, and `// reaches: <path or folder or glob or *> — <why>` lines for an edge no string names; an
- *   import the census cannot follow (a computed `import(…)`) reaches its whole suite. A test that reads the tree by listing it (a
- *   census) declares its listing so: a path a `reaches:` line declares is one read from the unit, and reaches it at a merge even
- *   where its reach is wide (`declaresRead`, MAINRED1). A rehearsal: its tool's import closure.
+ *   `import.meta.glob`'s patterns, and `// reaches: <path, folder, glob or *> — <why>` lines for an edge no string names (a census's
+ *   listing, `declaresRead`); a computed `import(…)` reaches its whole suite. A rehearsal: its tool's import closure.
  * - **its subject**: the module its own file sits in (§3.1): a test project's first folder, or the project at its root; the
  *   CLI's `test/<module>` is `src/<module>`'s; the page's tests sit beside their sources; a tool-test names its tool. A git-half
  *   class at its project's root carries `// subject: <module> — <why>`.
@@ -271,10 +268,7 @@ export function tsReaches(reach, path) {
   return reach.globs.some((glob) => globRegExp(glob).test(path));
 }
 
-/**
- * Whether a unit's `// reaches:` lines (its closure's) declare `path`: a file, a folder above it or a glob. A census that lists the tree
- * names its listing so, and a path it declares is one read from it (`unitHops`), and reaches it even where its reach is wide (MAINRED1).
- */
+/** Whether a unit's `// reaches:` lines declare `path`, one read from it (`unitHops`), and its reach even where that is wide. */
 export const declaresRead = (reach, path) => (reach?.declared ?? [])
   .some((target) => target === path || path.startsWith(`${target}/`) || (/[*?{[]/.test(target) && globRegExp(target).test(path)));
 

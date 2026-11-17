@@ -24,7 +24,6 @@ export type TestMap = { dotnet: DotnetSuite[]; units: CensusUnit[] };
 export type Readers = {
   tsSuites: readonly { suite: string; whole?: readonly string[] }[];
   tsReaches: (reach: unknown, path: string) => boolean;
-  /** Whether a unit's `// reaches:` lines declare `path`, which holds even where its reach is wide. */
   declaresRead: (reach: unknown, path: string) => boolean;
   unitReaches: (unit: ReachedUnit, path: string, map: TestMap) => boolean;
   pathReach: (path: string, census: DotnetSuite['census']) => { none?: boolean; whole?: boolean };

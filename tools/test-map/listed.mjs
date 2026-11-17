@@ -3,7 +3,7 @@
  * declared gate runs with `node --test`, its `npm run` scripts followed as the tool-test census follows them
  * (`tools/tool-test-census.mjs`), a unit of that gate's suite run from where its gate runs it. The CLI's suites and the merge tool's
  * are globbed (`TS_SUITES`); these are listed, the `cli-tests` gate's (suite `cli`) and the `layers` gate's among them, so a merge
- * reaches them as it reaches the rest (MAINRED1).
+ * reaches them as it reaches the rest.
  */
 import { posix } from 'node:path';
 import { coverage, expand } from '../tool-test-census.mjs';

@@ -13,9 +13,7 @@
  * A class whose key (every file that reaches it, its suite's declaration, the toolchain) passed before is not run again: a
  * change to a widely referenced project runs exactly the classes that name it, and a docs-only change none. A class that needs a
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
- * left to the nightly run, and said. Of the end-to-end specs, the fast tier runs the three nearest the change and names each it
- * defers (`merge/heavy-tier.ts`); a census that lists the tree declares what it lists, which reaches it one read away
- * (`declaresRead` in `test-map.mjs`), so the six reds MAINRED1 traced to a green merge are each picked (`merge/missed-reds.test.ts`).
+ * left to the nightly run, and said. The fast tier runs the end-to-end specs nearest the change too (`merge/heavy-tier.ts`).
  *
  *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]]
  * `--tier fast` is a merge's, `--tier heavy` the run after its landing's (`merge/heavy-tier.ts`); with none, both.
