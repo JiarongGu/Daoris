@@ -119,7 +119,6 @@ export const TS_SUITES = Object.freeze([
   {
     suite: 'web-unit', runner: 'vitest', glob: 'src/Daoris.Web/src/**/*.test.{ts,tsx}',
     whole: ['src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/src/test/setup.tsx', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/package.json'],
-    // The setup file runs before every file, so what it loads is in every unit's reach.
     setup: 'src/Daoris.Web/src/test/setup.tsx',
   },
   { suite: 'web', runner: 'playwright', glob: 'src/Daoris.Web/e2e/**/*.spec.ts', whole: ['src/Daoris.Web/playwright.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/tsconfig.json'] },
@@ -186,8 +185,6 @@ export function tsReader(files, read) {
     if (own.has(file)) return own.get(file);
     const fact = factsOf(file);
     const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [] };
-    // An import the runtime erases, or one taking types alone, uses nothing; a re-export is its importers' to follow by the names
-    // they take, and an import of a module that re-exports, or of the catalogues' index, reaches what its names take (`web-reach.mjs`).
     for (const edge of fact.edges) {
       const resolved = edge.typeOnly || edge.reexport || edge.names?.length === 0 ? null : resolveImport(file, edge.spec, tracked);
       if (!resolved) continue;
@@ -227,7 +224,6 @@ export function tsReader(files, read) {
   };
   /** A unit's reach: the closure of its imports, each file's own reach joined. */
   const reachOf = (unit) => {
-    // The unit is loaded whole: what it re-exports too.
     const queue = page.through(unit, unit, null).imports;
     const closure = new Set(queue);
     const reach = { files: new Set(queue), folders: new Set(), globs: [], wide: [] };

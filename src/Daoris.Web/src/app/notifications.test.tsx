@@ -237,7 +237,6 @@ describe('Notifications, in the window', () => {
     await waitFor(() => expect(cards()).toHaveLength(1));
   });
 
-  // The two windows of the bell's round trip are a case each: each draws the whole window, and two in one case passed 10 s loaded.
   it('gives its region back from the bell: closed where it was closed', async () => {
     start();
     await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());

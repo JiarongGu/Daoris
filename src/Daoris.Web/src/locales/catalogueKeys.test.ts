@@ -11,8 +11,7 @@ function writtenKeys(text: string): string[] {
 }
 
 /**
- * A key written twice in one language, in one file or in two, is read as the last one written: the earlier sentence is dead, and a card
- * that names facts the later one lacks says the wrong thing in silence.
+ * A key written twice in one language, in one file or in two, is read as the last one written: the earlier sentence is dead, and a card that names facts the later one lacks says the wrong thing in silence.
  */
 describe('the catalogues\' keys', () => {
   for (const language of readdirSync(here, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name)) {

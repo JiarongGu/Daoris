@@ -32,7 +32,7 @@ export { composeStories };
  * every one of them while still reporting a passing suite.
  *
  * The roster is shared out among the shards `design/stories.<n>.test.tsx`, each its own file so the run renders them side by
- * side (one file held every story, 250 s on one worker, WEBREACH1): the story files sorted by path, the shard that renders one
+ * side (one file held every story, 250 s on one worker): the story files sorted by path, the shard that renders one
  * is its place modulo the shards present, so adding or removing a shard shares the roster again and no story falls between.
  *
  * And each render remembers no language: a story's language is the story's, so a story that wrote the page's

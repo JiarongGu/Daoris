@@ -1,5 +1,5 @@
 /**
- * What the census of test units (`tools/test-map.mjs`) reads of the page's sources beyond their imports (WEBREACH1), so a change
+ * What the census of test units (`tools/test-map.mjs`) reads of the page's sources beyond their imports, so a change
  * in one domain reaches that domain's tests and a word's change the tests of the pages that say it, not the whole run.
  *
  * - **A re-export by the names taken.** A module's `export … from` is followed by its importers, each for the names it takes,

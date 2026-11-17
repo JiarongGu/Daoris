@@ -56,12 +56,7 @@ export function literalsOf(text) {
 /** The names an import or a re-export's braces take, each as its module exports it (`a as b` takes `a`), a type's left out. */
 const namesIn = (braces) => braces.split(',').map((each) => each.trim()).filter((each) => each && !/^type\s/.test(each)).map((each) => each.split(/\s+as\s+/)[0]);
 
-/**
- * Each import of a source: its specifier, the names it takes (null where it takes the module whole: a namespace, a side effect,
- * `export *`, a literal dynamic import, a mock, a require), whether the runtime erases it (`import type`, `export type … from`:
- * the page and the tools compile with `verbatimModuleSyntax` or strip types, so an erased import loads nothing), and whether it
- * re-exports (`export … from`).
- */
+/** Each import of a source: its specifier, the names it takes (null: the module whole), whether the runtime erases it, and whether it re-exports. */
 export function edgesOf(text) {
   const edges = [];
   for (const [, kind, type, clause, spec] of text.matchAll(/\b(import|export)\s+(type\s+)?(?:([^'";]*?)\sfrom\s*)?['"]([^'"]+)['"]/g)) {
@@ -92,10 +87,7 @@ export function tsFacts(text) {
   return { edges, computed, strings: [...strings], globs, reaches };
 }
 
-/**
- * What a module exports: the names it declares and lists, and the modules it re-exports from with the names each hands it
- * (`names` null: `export *`, every name of that module).
- */
+/** What a module exports: the names it declares, and each module it re-exports from with the names it hands (null: `export *`). */
 export function exportsOf(text) {
   const own = new Set();
   for (const [, name] of text.matchAll(/\bexport\s+(?:declare\s+)?(?:default\s+)?(?:async\s+)?(?:abstract\s+)?(?:function\*?|class|const|let|var|enum|interface|type|namespace)\s+([\w$]+)/g)) own.add(name);
@@ -108,7 +100,6 @@ export function exportsOf(text) {
     if (type) continue;
     const star = /^\*\s*as\s+([\w$]+)/.exec(what);
     if (star) own.add(star[1]);
-    // Each name the module re-exports under, with the name its source exports it by.
     const renames = what.startsWith('{') ? what.slice(1, -1).split(',').map((part) => part.trim()).filter((part) => part && !/^type\s/.test(part)).map((part) => part.split(/\s+as\s+/)) : null;
     from.push({ spec, names: star || !renames ? null : renames.map(([source, name = source]) => ({ source, name })) });
   }
