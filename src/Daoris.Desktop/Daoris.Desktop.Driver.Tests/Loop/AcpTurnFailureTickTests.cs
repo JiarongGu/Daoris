@@ -81,8 +81,9 @@ public sealed class AcpTurnFailureTickTests : IDisposable
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
+        // Its agent's done ends its turn: in a workflow's run the session waits on the run's next step.
         var carried = service.Session("s2");
-        Assert.Equal("completed", carried["state"]!.GetValue<string>());
+        Assert.Equal("awaiting-step", carried["state"]!.GetValue<string>());
         Assert.Equal("Done", service.Status("q1"));
         Assert.Equal(
             Path.GetFullPath(cutOff["tree"]!.GetValue<string>()),
