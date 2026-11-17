@@ -3,11 +3,10 @@ namespace Daoris.Driver;
 /// <summary>
 /// A role's task: an operation done by hand, outside Daoris, that the run waits on until its holder says <i>Done</i>, or an
 /// approval its holder gives by <i>Approve</i> or <i>Reject</i>, as a release pipeline's manual action. Whoever holds its role settles it, a
-/// person or an agent alike (D304 point 2): the kind says what settles it, never who. Its outcome is written in the file, so a flowchart
+/// person or an agent alike: the kind says what settles it, never who. Its outcome is written in the file, so a flowchart
 /// routes on it with a <c>when</c> wire: <c>done</c> for a task, <c>approved</c> for an approval, whose refusal is the graph's <c>rejected</c>
 /// wire as a review's changes are; one declaring none is a task reached with no outcome. One declaring two or more of its own is a per-run
-/// decision, answered by <i>decide</i> (<see cref="TaskDecisions"/>). A saved version's former <c>human</c> step is read as one
-/// (<see cref="HumanFormerKind"/>).
+/// decision, answered by <i>decide</i> (<see cref="TaskDecisions"/>), and a saved <c>human</c> step reads as one (<see cref="HumanFormerKind"/>).
 /// </summary>
 [NodeKind(NodeKinds.Task, NodeGroup.You, NodeKinds.GoAhead)]
 internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole

@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A saved version's <c>human</c> step, the kind that was the person's before a step's kind stopped telling a person from an agent
-/// (D304 point 2, D312), read as a <c>task</c> under its role: the role it names, else the kind's default <c>owner</c>, which the person
+/// A saved version's <c>human</c> step, a kind that told a person from an agent though a step's kind says only what settles it, is
+/// read as a <c>task</c> under its role: the role it names, else the kind's default <c>owner</c>, which the person
 /// holds by the owner's cast. The file stays as written, since a version is never edited, and the version keeps the digest of its saved
 /// graph (<see cref="NodeGraphs.ReadSaved"/>), so a run pinned to it reads it at the identity its binding holds, as a renamed plugin's step is
 /// read (<see cref="PluginFormerKinds"/>). A version the person saves next names the step as the editor shows it, a <c>task</c>.

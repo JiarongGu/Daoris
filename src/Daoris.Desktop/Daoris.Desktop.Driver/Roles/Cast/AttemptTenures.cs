@@ -31,7 +31,7 @@ public static class AttemptTenures
         {
             var role = StepRoles.Of(each.Node);
             var cast = book.At(role, workspace, repository, place);
-            return (each.Node.Id, each.Status.Attempt, role, cast.Holder, each.Status.Since ?? now, WhyOf(cast));
+            return (each.Node.Id, each.Status.Attempt, role, HolderWords.First(each.Node) ?? cast.Holder, each.Status.Since ?? now, WhyOf(cast));
         })]);
     }
 

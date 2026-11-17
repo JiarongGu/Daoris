@@ -18,7 +18,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     {
         var by = settle ?? (resolution == HeldResolutions.Stop ? new SettleBy(SettleBy.Owner, epoch) : SettleBy.Person(epoch));
         var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(unit, node, attempt);
-        // The person's word on a step another holder holds takes it first, journaled with the word, and settles it: one press (D312).
+        // The person's word on a step another holder holds takes it first, journaled with the word, and settles it: one press.
         var takes = StepHolding.TakesOnPress(holding, by);
         if (!takes && SettleDoor.Admit(holding, by) is { } refused)
         {

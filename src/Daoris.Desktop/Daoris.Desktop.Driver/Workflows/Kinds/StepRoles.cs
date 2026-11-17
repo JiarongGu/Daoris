@@ -51,7 +51,7 @@ public static class StepRoles
 
     /// <summary>
     /// Words that name a holder, never a role: whoever fills a role, a person or an agent alike, so the refusal says the same
-    /// of either. The agents' ids are their providers' (<c>Agents/Providers/*/provider.json</c>) and the model families'.
+    /// of either; <c>human</c> stays though no kind has it, so a role named for the old kind is refused. The agents' ids are their providers' and the model families'.
     /// </summary>
     public static IReadOnlyList<string> Holders { get; } =
     [

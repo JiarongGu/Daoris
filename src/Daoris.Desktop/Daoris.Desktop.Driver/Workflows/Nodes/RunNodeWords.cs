@@ -147,7 +147,7 @@ public static class RunNodeWords
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
             var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
             var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
-            // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press (D312).
+            // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
             var takes = StepHolding.TakesOnPress(holding, speaker);
             if (!takes && SettleDoor.Admit(holding, speaker) is { } refusal)
             {

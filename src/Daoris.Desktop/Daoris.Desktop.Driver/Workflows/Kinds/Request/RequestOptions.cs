@@ -2,12 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A <c>request</c> node's options: <c>to</c>, a repository with lanes as a quest's address takes
-/// them; <c>title</c> and <c>body</c>, the person's words kept as written; <c>start</c>, the person's <c>you</c> or the standing
+/// them; <c>title</c> and <c>body</c>, the person's words kept as written; <c>start</c>, the holder word <c>you</c> or the standing
 /// <c>automatic</c>; <c>until</c>, the quest's <c>done</c> or its <c>taken</c>; <c>declined</c>, <c>wait</c> for the person or <c>stop</c>.
 /// </summary>
 public static class RequestOptions
 {
-    public const string You = "you";
     public const string Automatic = "automatic";
     public const string Done = "done";
     public const string Taken = "taken";
@@ -17,7 +16,7 @@ public static class RequestOptions
     /// <summary>The code a request fails with when its quest is declined.</summary>
     public const string DeclinedCode = "declined";
 
-    public static readonly IReadOnlyList<string> Starts = [You, Automatic];
+    public static readonly IReadOnlyList<string> Starts = [HolderWords.You, Automatic];
     public static readonly IReadOnlyList<string> Untils = [Done, Taken];
     public static readonly IReadOnlyList<string> Declines = [Wait, Stop];
 
