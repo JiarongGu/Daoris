@@ -200,7 +200,7 @@
   "workflow.run.graph.said.ready": "就绪：它之前已没有什么拦着它。",
   "workflow.run.graph.said.goAhead": "等你放行：{{act}}",
   "workflow.run.graph.said.goAheadNone": "等你放行。",
-  "workflow.run.graph.said.task": "等你完成你的任务。",
+  "workflow.run.graph.said.task": "等担任者完成这项任务。",
   "workflow.run.graph.said.active": "在 {{on}} 上观察中。",
   "workflow.run.graph.said.activeRun": "进展中。",
   "workflow.run.graph.said.reached": "已在 {{on}} 上达成。",

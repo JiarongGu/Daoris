@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { GraphDraft } from './graphDraftTypes';
-import { isApproval, setApproval } from './humanDraft';
+import { isApproval, setApproval } from './taskDraft';
 
 const draft = (outcome: string): GraphDraft => ({
-  nodes: [{ id: 'sign', kind: 'human', node: { id: 'sign', kind: 'human', outcomes: [outcome] } }, { id: 'ship', kind: 'land', node: { id: 'ship', kind: 'land' } }],
+  nodes: [{ id: 'sign', kind: 'task', node: { id: 'sign', kind: 'task', outcomes: [outcome] } }, { id: 'ship', kind: 'land', node: { id: 'ship', kind: 'land' } }],
   wires: [{ id: 'a', kind: 'when', from: 'sign', to: 'ship', fromPort: null, toPort: null, outcome, on: null, wire: { id: 'a', kind: 'when', from: 'sign', to: 'ship', outcome } }],
   end: 'ship', rest: {}, order: [],
 });
 
-describe('a person\'s task as a task or an approval', () => {
+describe('a role\'s task as a task or an approval', () => {
   it('declares approved for an approval and done for a task, and moves the route that left by the other', () => {
     const approval = setApproval(draft('done'), 'sign', true);
     expect(isApproval(approval.nodes[0]!)).toBe(true);

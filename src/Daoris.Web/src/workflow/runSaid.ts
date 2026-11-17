@@ -235,7 +235,7 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       if (node === 'go-ahead') {
         return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
       }
-      if (node === 'human') return t('workflow.run.graph.said.task');
+      if (node === 'task') return t('workflow.run.graph.said.task');
       if ((node === 'quest.holds' || node === 'content.holds') && step.words) {
         return t('workflow.run.graph.said.holds', { why: step.words.replace(/\.+$/, '') });
       }

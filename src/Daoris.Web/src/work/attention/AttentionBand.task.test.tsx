@@ -26,7 +26,7 @@ import { composeAttention } from '../../bridge/shell';
 import { AttentionBand } from './AttentionBand';
 import { obligationOf } from './attention';
 
-/** A run waiting on its `human` node, as .NET pushes the row (`HumanTaskRows`): its wait on a role the person holds, and its presses. */
+/** A run waiting on its `task` step, as .NET pushes the row (`HeldSteps`): its wait on a role the person holds, and its presses. */
 const waiting = (acts: string[], since: string | null = null, over: Record<string, unknown> = {}) => ({
   kind: 'step', id: 'q7/sign', since, workspace: 'aurora', where: 'engine',
   step: { run: 'q7', node: 'sign', why: acts.includes('approve') ? 'approval' : 'task', role: acts.includes('approve') ? 'approver' : 'worker', holder: 'person', presses: acts, work: 'q7', ...over },

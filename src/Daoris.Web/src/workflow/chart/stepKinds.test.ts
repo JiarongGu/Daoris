@@ -8,7 +8,7 @@ import { variantOf, VARIANT_GLYPH } from './stepKinds';
 describe('the variant of a kind', () => {
   it.each([
     ['claimed', 'work'], ['work', 'work'],
-    ['review', 'you'], ['look', 'you'], ['go-ahead', 'you'], ['human', 'you'],
+    ['review', 'you'], ['look', 'you'], ['go-ahead', 'you'], ['task', 'you'],
     ['check', 'check'], ['opinion', 'check'],
     ['work.requests', 'holds'], ['quest.holds', 'holds'], ['content.holds', 'holds'],
     ['land', 'landing'], ['landing', 'landing'], ['handed', 'unknown'],

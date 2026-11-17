@@ -64,7 +64,7 @@ export const GIT_PALETTE: WorkflowPaletteAnswer = {
   ...PALETTE,
   kinds: [
     ...PALETTE.kinds,
-    kind('human', 'pressed', { reachBy: 'person', personJudges: true, outcomes: ['done'], leaves: leaving(false, true, true) }),
+    kind('task', 'pressed', { reachBy: 'person', personJudges: true, outcomes: ['done'], leaves: leaving(false, true, true) }),
     kind('rebase', 'performed', { reachBy: 'git', failureBy: 'git', mayEnd: false, evidenced: true, outcomes: ['ready', 'conflicted', 'uncommitted'],
       outputsOn: { commit: ['ready'], problem: ['conflicted', 'uncommitted'] }, leaves: leaving(true, false, true),
       options: [{ name: 'onto', type: 'text', choices: [], required: false }, { name: 'fetch', type: 'switch', choices: [], required: false }] }),

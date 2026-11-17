@@ -78,7 +78,7 @@ describe('the Git group in the editor', () => {
     await user.keyboard('{Enter}');
     await waitFor(() => expect(focused()).toBe(step('Rebase the work onto its target')));
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Added Rebase the work onto its target. With it: Hand a conflict to its resolver when it is stuck, Your task when that fails, and their ways back to it.');
+      'Added Rebase the work onto its target. With it: Hand a conflict to its resolver when it is stuck, A task when that fails, and their ways back to it.');
     expect(step('Hand a conflict to its resolver')).toBeInTheDocument();
 
     await user.keyboard('{Enter}');
@@ -96,8 +96,8 @@ describe('the Git group in the editor', () => {
     await waitFor(() => expect(saving()).toBeDefined());
     expect(saving()!.graph.wires.map(said)).toEqual(expect.arrayContaining([
       'when:rebase>landing?ready', 'data:work.work>rebase.work', 'when:rebase>resolve?conflicted', 'when:rebase>resolve?uncommitted',
-      'data:rebase.problem>resolve.problem', 'data:work.work>resolve.work', 'back:resolve>rebase@resolved', 'failed:resolve>human',
-      'back:human>rebase@done',
+      'data:rebase.problem>resolve.problem', 'data:work.work>resolve.work', 'back:resolve>rebase@resolved', 'failed:resolve>task',
+      'back:task>rebase@done',
     ]));
   });
 });

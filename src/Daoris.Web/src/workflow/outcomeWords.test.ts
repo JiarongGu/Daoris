@@ -4,7 +4,7 @@ import { drawnFromJson, graphFlow } from './graphFlow';
 import { howSaid, rowSaid, waySaid } from './edit/editWords';
 import type { DraftWire } from './edit/graphDraft';
 
-// The outcomes the monitor and the person's task declare are said in the page's words at the editor's and the chart's callers
+// The outcomes the monitor and a role's task declare are said in the page's words at the editor's and the chart's callers
 // (`workflow.outcome.<kind>.<outcome>`), in both languages; a kind the page has no words for says the raw name, which stays the identity.
 
 const t = i18n.t.bind(i18n);
@@ -14,7 +14,7 @@ const GRAPH = {
   nodes: [
     { id: 'watch', kind: 'monitor', outcomes: ['merged', 'closed'] },
     { id: 'tidy', kind: 'tidy' },
-    { id: 'sign', kind: 'human', outcomes: ['approved'] },
+    { id: 'sign', kind: 'task', outcomes: ['approved'] },
     { id: 'choice', kind: 'opinion', outcomes: ['merged'] },
   ],
   wires: [
@@ -37,7 +37,7 @@ describe.each(['en', 'zh'] as const)('the outcome words of a monitor and a task,
   it('are said in a row, a way and its cause, by the kind of the step they leave', async () => {
     await i18n.changeLanguage(language);
     expect(rowSaid(t, 'outcome:closed', 'monitor')).toBe(words.closed);
-    expect(rowSaid(t, 'outcome:approved', 'human')).toBe(words.approved);
+    expect(rowSaid(t, 'outcome:approved', 'task')).toBe(words.approved);
     expect(howSaid(t, when('merged'), 'monitor')).toContain(words.merged);
     expect(waySaid(t, when('closed'), 'Tidy', 'monitor')).toContain(words.closed);
     expect(howSaid(t, { kind: 'back', outcome: null, on: 'closed' }, 'monitor')).toContain(words.closed);
