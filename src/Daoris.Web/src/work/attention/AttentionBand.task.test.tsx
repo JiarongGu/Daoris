@@ -93,7 +93,7 @@ describe("a person's task on What needs you", () => {
     expect(within(item).queryByRole('button', { name: 'Take' })).toBeNull();
 
     await userEvent.click(within(item).getByRole('button', { name: 'Give back' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_HOLD', { payload: { run: 'q7', node: 'sign', act: 'give-back', holder: null } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_HOLD', { payload: { run: 'q7', node: 'sign', act: 'give-back', holder: null, epoch: 2 } }));
 
     await userEvent.click(within(item).getByRole('button', { name: 'Done…' }));
     await userEvent.click(within(within(item).getByRole('group', { name: 'Done…' })).getByRole('button', { name: 'Done' }));
