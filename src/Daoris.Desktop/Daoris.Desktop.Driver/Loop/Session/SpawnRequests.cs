@@ -8,7 +8,6 @@ namespace Daoris.Driver;
 internal static class SpawnRequests
 {
     /// <summary>A driven start's request: the target's posture and asked choice, its home, and whose work it serves.</summary>
-    /// <param name="agent">The agent the start runs, by the roster's name (<see cref="ProviderRegistry.AgentNameOf"/>), kept beside its key.</param>
     public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null, string? agent = null) =>
         new(target.Repository, target.Root, target.ServiceUrl)
         {

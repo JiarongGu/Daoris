@@ -35,7 +35,6 @@ public abstract class PipeDelegateHarness : Bridge
 
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
 
-        /// <summary>Who each press spoke as, as a settling route reads it (<see cref="CastRoutes.SpeakerOf"/>): null for the person's own.</summary>
         public ConcurrentQueue<string?> Speakers { get; } = new();
 
         /// <summary>What a test makes the route do in place of the canned answer: the route's own code over a world of its own.</summary>

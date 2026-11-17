@@ -356,10 +356,7 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
     }
 
-    /// <summary>
-    /// A working session whose repository's access setup is unrestricted presses with no card as itself, naming nothing the owner's, and speaks
-    /// as the agent its start ran.
-    /// </summary>
+    /// <summary>A working session whose repository's access setup is unrestricted presses with no card as itself and its agent, naming nothing the owner's.</summary>
     [Fact]
     public async Task An_unrestricted_working_session_s_press_runs_at_once_as_its_own_and_marks_nothing_the_owner_s()
     {

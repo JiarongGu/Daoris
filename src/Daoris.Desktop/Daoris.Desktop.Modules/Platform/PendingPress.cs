@@ -29,7 +29,6 @@ public sealed class PendingPress
 
     public string Session { get; }
 
-    /// <summary>The agent the session's start ran, by the roster's name: who the press speaks as once allowed.</summary>
     internal string? Agent { get; init; }
 
     /// <summary>The route pressed, <c>module.type</c>.</summary>

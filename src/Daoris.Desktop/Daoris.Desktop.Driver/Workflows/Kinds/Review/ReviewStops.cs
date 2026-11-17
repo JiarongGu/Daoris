@@ -13,19 +13,13 @@ public sealed record ReviewStopped(string Run, string Review, bool Following, IR
 }
 
 /// <summary>
-/// The review's <i>Stop…</i>: before its Accept it stops the run, every live step stopped with the speaker's words, as an abandon
-/// stops a run's steps; after it, <i>Stop what follows…</i> stops each step after the review that has not come to its end, a step under way
-/// where its door can stop it. Each step's stop is the speaker's word at the settle door (<see cref="SettleDoor"/>): the person's is the owner
-/// role's end of the work, an agent's stops only what the door admits it on. Each says what stays by the kind of work the review read, and
-/// never promises an undo.
+/// The review's <i>Stop…</i>: before its Accept it stops the run, every live step stopped as its speaker's word at the settle door; after it,
+/// <i>Stop what follows…</i> stops each step after the review that has not come to its end, a step under way where its door can stop it.
+/// Each says what stays by the kind of work the review read, and never promises an undo.
 /// </summary>
 public static class ReviewStops
 {
-    /// <summary>
-    /// Keeps the stop of <paramref name="review"/> on <paramref name="run"/>: the run's, or what follows where the review is accepted, as
-    /// <paramref name="settle"/> speaks it (its channel's, naming no epoch, since each step is judged against its own holder now); none is the
-    /// person's.
-    /// </summary>
+    /// <summary>Keeps the stop of <paramref name="review"/> on <paramref name="run"/> as <paramref name="settle"/> speaks it (none is the person's).</summary>
     public static async Task<ReviewStopped> StopAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string review, string? words, Func<DateTimeOffset> clock, CancellationToken ct = default,
         SettleBy? settle = null)
@@ -50,7 +44,6 @@ public static class ReviewStops
             else refused ??= done.Refused;
         }
 
-        // Nothing the speaker may stop: the stop is refused with the door's first word, as one step's stop is.
         if (stopped.Count == 0 && refused is not null) return Refused(run, review, refused);
         var happened = steps.Where(node => following && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Reached).Select(node => node.Id).ToList();
         var kind = ReviewRecords.Read(records.Home, run, review, (following ? status.Acceptance?.Attempt : null) ?? status.Attempt)?.Kind;

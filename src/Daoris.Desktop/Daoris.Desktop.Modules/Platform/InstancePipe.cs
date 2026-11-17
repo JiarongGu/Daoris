@@ -626,10 +626,7 @@ public sealed class InstancePipe : IDisposable
     /// <param name="role">The role act the judge's role method covered: run inside <see cref="PipeDoor.EnterRole"/>.</param>
     /// <param name="begun">Told once the journal's first line is written or failed, before anything runs.</param>
     /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>).</param>
-    /// <param name="covered">
-    /// The judgement of a press run with no card on the delegate's path, a working session's own allowed by its supervisor among them: run
-    /// inside <see cref="PipeDoor.EnterCovered"/>.
-    /// </param>
+    /// <param name="covered">The judgement of a press run with no card on the delegate's path, or allowed: run inside <see cref="PipeDoor.EnterCovered"/>.</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
         RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, PipeDelegateJudgement? covered = null)

@@ -115,10 +115,7 @@ public static class PipeDoor
     /// <summary>The working session whose own press this request is (<see cref="PipeDelegate"/>), never made the owner's; null for every other.</summary>
     public static string? Worker => Current.Value == Terminal ? Working.Value : null;
 
-    /// <summary>
-    /// The agent that working session's start ran, by the roster's name, which its press speaks as (<see cref="SettleBy.OfChannel"/>); null for
-    /// every other request, and for a start that named none.
-    /// </summary>
+    /// <summary>The agent that working session's start ran, its press's speaker (<see cref="SettleBy.OfChannel"/>); null for every other request.</summary>
     public static string? WorkerAgent => Worker is null ? null : WorkingAgent.Value;
 
     private static readonly AsyncLocal<(string By, string? Session)?> Uncarded = new();
@@ -138,10 +135,7 @@ public static class PipeDoor
     /// <summary>The same, for a role's act the judge's role method covered (<see cref="Role"/>).</summary>
     internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client, worker: null, uncarded: null);
 
-    /// <summary>
-    /// The same, for a press run with no card on the delegate's path (<see cref="By"/>): a working session's own (<see cref="Worker"/>, speaking
-    /// as <see cref="WorkerAgent"/>), a terminal's, or Ask Daoris's.
-    /// </summary>
+    /// <summary>The same, for a press run with no card on the delegate's path (<see cref="By"/>), a working session's own as <see cref="Worker"/>.</summary>
     internal static IDisposable EnterCovered(PipeDelegateJudgement covered, PipeClientProcess? client = null) =>
         covered.Own ? Enter(role: null, client, (covered.Session!, covered.Agent), uncarded: null)
         : Enter(role: null, client, worker: null, covered.Terminal ? (TerminalTierBy.Terminal, null) : (TerminalTierBy.AskDaoris, covered.Session));

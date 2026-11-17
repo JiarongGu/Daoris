@@ -206,10 +206,7 @@ public sealed class SettleDoorTests : IDisposable
         Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Approve, null, () => _now, epoch: 1).Done);
     }
 
-    /// <summary>
-    /// A working session's own press speaks as the agent its start ran (<c>agent:&lt;name&gt;</c>, the roster's name), so a step cast to that
-    /// agent takes its word and one cast to another refuses it; a channel naming no agent, or no name a holder takes, speaks the unnamed agent.
-    /// </summary>
+    /// <summary>A session's own press speaks as its start's agent; a name no holder takes, or an appointed role's act, the unnamed agent.</summary>
     [Theory]
     [InlineData("agent:codex", null)]
     [InlineData("agent:claude-code", SettleDoor.NotHolder)]

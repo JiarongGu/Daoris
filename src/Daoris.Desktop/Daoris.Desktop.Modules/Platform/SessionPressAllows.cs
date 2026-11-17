@@ -18,10 +18,7 @@ public sealed class SessionPressAllows(InstancePipe pipe)
 
     private PipeState State => pipe.State;
 
-    /// <summary>
-    /// The press offered to the allow supervisor of its session's place, or asked of the person at once where none answers there; allowed,
-    /// it runs as the session's own, speaking as <paramref name="agent"/>, its start's agent.
-    /// </summary>
+    /// <summary>The press offered to the allow supervisor of its session's place, or asked of the person at once where none answers there.</summary>
     internal async Task RaiseAsync(PipeReserved reserved, Func<Task> card, string session, string repository, string? agent = null)
     {
         var judge = pipe.StandingConfirmation;

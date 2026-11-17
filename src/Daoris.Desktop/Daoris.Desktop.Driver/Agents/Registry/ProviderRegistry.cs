@@ -183,10 +183,7 @@ public sealed class ProviderRegistry
     /// </summary>
     public AccountKey OwnerOf(DoorId door) => KeyOf(Entry(door).Door);
 
-    /// <summary>
-    /// The agent a session started on <paramref name="door"/> runs as, by the name the roster and a cast give it (<c>agent:&lt;name&gt;</c>):
-    /// the door's account key (<see cref="OwnerOf(DoorId)"/>), so <c>codex-acp</c> runs as <c>codex</c>. Read off the door alone, at the start.
-    /// </summary>
+    /// <summary>The agent a session on <paramref name="door"/> runs as, by the roster's and a cast's name: its account key (<c>codex-acp</c> runs as <c>codex</c>).</summary>
     public static string AgentNameOf(AgentDoor door) => KeyOf(door).Value;
 
     private static AccountKey KeyOf(AgentDoor door) => door.AccountOf ?? new AccountKey(door.Id.Value);

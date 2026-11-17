@@ -214,10 +214,7 @@ public static class WorkflowDiff
         _ => Equals(a, b),
     };
 
-    /// <summary>
-    /// The person's part in a step, as the diff says it after <i>you</i>, or null where they take none: a landing's and a stage's where its
-    /// words cast the person as its holder (<see cref="HolderWords.First(NamedStep)"/>).
-    /// </summary>
+    /// <summary>The person's part in a step, as the diff says it after <i>you</i>, or null where they take none (<see cref="HolderWords.First(NamedStep)"/>).</summary>
     private static string? PartOf(NamedStep? step) => step?.Kind switch
     {
         WorkflowKinds.Look => "look at it running before it lands",

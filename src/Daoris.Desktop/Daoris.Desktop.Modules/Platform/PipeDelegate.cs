@@ -39,10 +39,9 @@ public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? H
     /// <summary>The families of acts the person granted Ask Daoris in restricted mode, read now (<see cref="ConfiguredAccess.Acts"/>).</summary>
     public IReadOnlyList<string> Families { get; init; } = [];
 
-    /// <summary>The repository a working session's start serves, whose allow supervisor may answer its asked press.</summary>
+    /// <summary>The repository a working session's start serves, whose allow supervisor may answer its asked press; <see cref="Agent"/>, the agent it ran.</summary>
     public string? Repository { get; init; }
 
-    /// <summary>The agent a working session's start ran, by the roster's name (<see cref="SessionDelegates.AgentOf"/>): who its own press speaks as.</summary>
     public string? Agent { get; init; }
 
     /// <summary>The place an Ask Daoris press named, against its conversation's focus now; null for every other kind.</summary>
@@ -57,10 +56,7 @@ internal enum PipeDelegateTier
     Refused,
 }
 
-/// <summary>
-/// A press's tier, who its card names as asking, and, run with no card, its session and where it is said; <paramref name="Own"/> is a working
-/// session's, speaking as <paramref name="Agent"/>, its start's agent, and <paramref name="Terminal"/> a terminal's (<see cref="PipeTerminalTier"/>).
-/// </summary>
+/// <summary>A press's tier, who its card names as asking, and, run with no card, its session and where it is said; <paramref name="Own"/> is a working session's, speaking as <paramref name="Agent"/>, <paramref name="Terminal"/> a terminal's (<see cref="PipeTerminalTier"/>).</summary>
 internal sealed record PipeDelegateJudgement(
     PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false,
     string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null, bool Terminal = false, string? Agent = null);

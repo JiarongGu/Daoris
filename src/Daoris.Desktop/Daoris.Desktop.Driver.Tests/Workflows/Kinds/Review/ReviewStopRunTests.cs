@@ -63,10 +63,6 @@ public sealed class ReviewStopRunTests : NodeRunFixture
         Assert.Contains("nothing is undone", ReviewStops.Said(stopped), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// The whole review's Stop is its speaker's word on each step, as every settling door reads it: an agent's stops no step another holder
-    /// holds, so the review the person holds stands; the person's is the owner role's end of the work.
-    /// </summary>
     [Fact]
     public async Task An_agents_whole_stop_names_its_speaker_and_leaves_a_review_the_person_holds()
     {

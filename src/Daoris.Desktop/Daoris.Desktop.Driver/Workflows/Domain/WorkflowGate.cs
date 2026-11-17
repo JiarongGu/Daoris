@@ -257,7 +257,6 @@ public static class Involvement
             lowered.Add("it no longer requires the second opinion");
         }
 
-        // The person's part is the holder a step's words cast (HolderWords), as the runtime casts its attempt's first epoch.
         if (HolderWords.First(Of(otherwise, WorkflowKinds.Landing)) == CastHolders.Person && (string?)Of(chosen, WorkflowKinds.Landing)?.Field("accept") == "automatic")
         {
             lowered.Add("it lands with no press of yours");
