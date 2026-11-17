@@ -253,8 +253,7 @@ repository and starts real git and the merge tool. It runs in the Process lane, 
 over ten seconds alone moves there or is made pure. An end-to-end spec is reached only by a path its gate's `paths` declare,
 the merge tool's own files (`tools/test-map.mjs`, `bounded`): a change to a tool the merge tool only imports reaches the unit
 tier and no end-to-end spec. A merge's reached checks defer the end-to-end specs to the run after the landing, as they defer a
-Process class. One case
-fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
+Process class. One case fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
 one unbounded; a case's invocation past its bound is ended with its tree, and one whose tree outlives the end is answered
 after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs either gate only when its paths reach it (`tools/merge-branch.mjs`
 and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run both (GATESLIM1). A merge-queue
