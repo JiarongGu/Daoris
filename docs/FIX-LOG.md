@@ -17,6 +17,16 @@ repository.
   run's end ends the session at the stand-in, and the look's tidy stage (`LetGoUnheldLocksAsync` over `BranchTidying.InUseAsync`)
   lets go of the lock no session running or waiting holds, the tree standing. The other two ticks' carried sessions wait on their step.
 - **Verification:** the three classes pass with `process.runsettings`, filtered, with the Loop tick classes that bind the same workflow.
+## 2026-11-17 - A known red whose test was deleted or renamed stayed open forever (KNOWNREDGONE1)
+
+- **Symptom:** 20 of the 594 findings in the CI's known-red record named tests that no longer exist; a gated stage refuses every
+  known red past 72 hours, so a stage of the install could never go green.
+- **Root cause:** findings were only ever cleared by a pass (`clearPasses`, `clearKept`: a trx listing the test Passed, or the gate's
+  own pass). A deleted or renamed test is never listed, so no run could pass it and its finding stayed open until it expired.
+- **Fix:** a finished, unstopped CI run of a clearing kind that ran a gate whole closes a test finding of that gate as `gone`
+  (`clearGone`, `{ commit, at, kind }` recorded) when the gate's trx lists the test under no outcome (`listedTests`); a gate
+  finding, a run narrowed by class or by a budget, a run with no readable trx and one that lists no test close nothing.
+- **Verification:** `src/Daoris.Cli/tool-test/ci-background.test.ts`, the gone cases, red first.
 
 ## 2026-11-17 - A git place read its exited git as running under load
 

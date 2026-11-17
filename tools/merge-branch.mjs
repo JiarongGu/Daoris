@@ -331,8 +331,8 @@ import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPrio
 import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
-  noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, writeFindings,
+  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearGone, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
+  noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, wholeListing, writeFindings,
   writeSweep,
 } from './ci-background.mjs';
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
@@ -4804,12 +4804,12 @@ export function nightHour(env = process.env) {
 const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...record, night: { last: nowIso() } } : record, halves, Date.now(), { hour: hour ?? NIGHT_HOUR });
 
 /**
- * What a CI run's end writes beside its verdicts. The due record: each Process half it ran whole
- * and gave every class a verdict (`sweepSatisfied`) is swept, and a nightly run that finished satisfies the night. The findings:
- * each failure it found is filed as known red (a Process half's by test from its trx, with row 3's fingerprint and signature, the
- * source read from the run's own tree; any other gate's by its step, `gateSignature`), a death of memory never; each pass clears
- * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it is last
- * seen. Answers what the run says of them, the overdue report and the known red the watch says.
+ * What a CI run's end writes beside its verdicts. The due record: each Process half it ran whole and gave every class a verdict
+ * (`sweepSatisfied`) is swept; a finished nightly run satisfies the night. The findings: each failure is filed as known red (a
+ * Process half's by test from its trx, row 3's fingerprint and signature, source read from the run's tree; any other gate's by
+ * its step, `gateSignature`), a death of memory never; each pass clears the known red of its test or gate, and a test a whole run
+ * no longer lists ends as gone (`clearGone`), on a commit on main's first-parent line from where it last failed. Answers the
+ * overdue report and the known red the watch says.
  */
 function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept = [], treeId = null }) {
   const halves = plan.filter(isProcessGate).map((gate) => gate.name);
@@ -4832,6 +4832,7 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
   const descends = (from) => line.has(from);
   let filed = 0;
   let cleared = 0;
+  let gone = 0;
   for (const result of results) {
     if (result.verdict === 'ENDED') continue;
     const name = result.gate.name;
@@ -4860,10 +4861,13 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
     const done = clearPasses(findings, { commit, at: ended, kind, passed, descends });
     findings = done.record;
     cleared += done.cleared.length;
+    const closed = clearGone(findings, { commit, at: ended, kind, stopped: state === 'stopped', listed: wholeListing(result.gate, trx), descends });
+    findings = closed.record;
+    cleared += closed.gone.length;
+    gone += closed.gone.length;
   }
-  // The passes the run kept clear a finding under the same rules as one it ran; a trx of the kept run is read
-  // from the scratch folder of the run that gave it (a CI run's, or a scoped candidate's), and where none can be read a test
-  // finding stays open and is said.
+  // The passes the run kept clear a finding as one it ran does; the kept run's trx is read from its scratch folder (a CI run's
+  // or a scoped candidate's), and where none can be read a test finding stays open and is said.
   let fromKept = 0;
   let unread = [];
   if (kept?.length) {
@@ -4888,7 +4892,7 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
   const said = [];
   if (swept.length) said.push(`swept (${CI_SWEEP}): ${swept.map((each) => each.gate).join(', ')}, each class given a verdict`);
   if (kind === 'nightly') said.push(nightSatisfied(state) ? 'the night is satisfied: this nightly run finished' : `the night stays due: this nightly run ${state === 'stopped' ? 'was stopped' : 'did not finish'}`);
-  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run${fromKept ? ` (of them, ${fromKept} from kept proof)` : ''}; ${open} open`);
+  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run${fromKept ? ` (of them, ${fromKept} from kept proof)` : ''}${gone ? ` (of them, ${gone} gone)` : ''}; ${open} open`);
   if (unread.length) said.push(`known red left open: ${unread.map((each) => each.test).join(', ')}: the run kept a pass of ${[...new Set(unread.map((each) => each.gate))].join(', ')}, but no readable trx of it lists the test, so it clears nothing (CIFINDINGSKEEP1)`);
   return { lines: [...said, ...overdue, ...knownRed], overdue, knownRed };
 }
@@ -5039,7 +5043,6 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const gateOf = (name) => status.gates.find((gate) => gate.name === name);
     for (const gate of composed) {
       const at = nowIso();
-      // Its verdict ran no class (`ran` 0), so it adds no class verdicts, and it carries the oldest it kept for `sweptOut`.
       addVerdicts(home, [{ gate: gate.name, verdict: 'PASS', tree: treeId, at, commit, branch: null, kind, classes: { ran: 0, kept: gate.reach.kept.length, sweep: gate.reach.sweep } }]);
       Object.assign(gateOf(gate.name) ?? {}, { state: 'done', verdict: 'PASS', at, ms: 0, note: `passed without running (CISCOPE1b): ${gate.reach.composed}` });
     }
@@ -5058,8 +5061,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       const ready = served.length ? startContractsStep(tree, dir, guarded(gateStep, trees)) : null;
       results = await runRecorded(tree, gates.filter((gate) => !covers.has(gate.name)), dir, {
         waitFor: ready && { gates: served, ready },
-        // A plain run keeps going past a failure: its point is the whole picture. A stage's run needs every gate
-        // green, so its first failure ends it (below, in `onResult`): nothing more starts and the gates running are ended.
+        // A plain run keeps going past a failure; a stage's first failure ends it (`onResult`): nothing more starts.
         keepGoing: true,
         oneAtATime: options.oneAtATime,
         halt: () => Boolean(trees.ended),
@@ -5101,7 +5103,6 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const noted = { commit, state, at: ended, status: fromHome(home, statusFile), kind, ...(kind === 'stage' ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
     noteCiRun(home, noted, state === 'green' && kind !== 'sweep' ? { commit, tree: treeId, at: ended } : null);
     writeGateRecord(home, { commit, started, ended, passed: state === 'green', staged: null, by: 'ci' });
-    // The run's receipt, its due record and its findings, each at its end.
     const keptKind = new Map(chosen.kept.map((entry) => [entry.name, entry.verdict?.kind ?? null]));
     appendReceipt(home, {
       commit, tree: treeId, kind, started: begun, ended, finished: state === 'green' || state === 'failed', state,
