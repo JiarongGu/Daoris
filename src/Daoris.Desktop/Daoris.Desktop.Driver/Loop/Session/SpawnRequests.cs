@@ -8,11 +8,12 @@ namespace Daoris.Driver;
 internal static class SpawnRequests
 {
     /// <summary>A driven start's request: the target's posture and asked choice, its home, and whose work it serves.</summary>
-    public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null) =>
+    /// <param name="agent">The agent the start runs, by the roster's name (<see cref="ProviderRegistry.AgentNameOf"/>), kept beside its key.</param>
+    public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null, string? agent = null) =>
         new(target.Repository, target.Root, target.ServiceUrl)
         {
             Command = command, Asked = target.Asked, Mode = target.Access?.PermissionMode, Home = target.Home,
-            Identity = Delegated(Identity(target), delegates, target.Brainstorm is null ? new SessionPlace(target.Repository, target.Access?.Workspace) : null),
+            Identity = Delegated(Identity(target), delegates, target.Brainstorm is null ? new SessionPlace(target.Repository, target.Access?.Workspace) : null, agent),
         };
 
     /// <summary>
@@ -21,20 +22,20 @@ internal static class SpawnRequests
     /// starts from the repository's server list marks this conversation.
     /// </summary>
     public static SpawnRequest Chat(
-        string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null, string? workspace = null) =>
+        string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null, string? workspace = null, string? agent = null) =>
         new(repository, root, serviceUrl)
         {
             Identity = Delegated(
                 session is { } own
                     ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = own }
                     : new Dictionary<string, string?>(),
-                delegates, new SessionPlace(repository, workspace)),
+                delegates, new SessionPlace(repository, workspace), agent),
         };
 
-    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id and its place.</summary>
-    private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates, SessionPlace? place)
+    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id, its place and its agent.</summary>
+    private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates, SessionPlace? place, string? agent)
     {
-        delegates?.Hand(identity, place);
+        delegates?.Hand(identity, place, agent);
         return identity;
     }
 

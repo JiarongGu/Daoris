@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The delegate keys of the sessions this process started, as hashes in memory by session: one drawn at each start that names the
-/// session's record (<see cref="Hand"/>, where its id is set), never written anywhere, and forgotten as the session's process ends
+/// session's record (<see cref="Hand"/>, where its id is set, beside its place and the agent it runs: its channel), never written anywhere,
+/// and forgotten as the session's process ends
 /// (<see cref="SessionProcesses"/>) or its access changes. A session may hold several at once, each start's own: a run composes its start
 /// once to spawn and once to read what it asked, and a start beside a live one keeps both.
 /// </summary>
@@ -13,6 +14,7 @@ public sealed class SessionDelegates
 {
     private readonly ConcurrentDictionary<string, ImmutableList<(byte[] Hash, long Drawn)>> _held = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, SessionPlace> _places = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _agents = new(StringComparer.OrdinalIgnoreCase);
     private long _drawn;
 
     /// <summary>How many keys this process has drawn: a process tracked at this count ends the keys drawn up to it (<see cref="Forget(string, long)"/>).</summary>
@@ -32,14 +34,19 @@ public sealed class SessionDelegates
     /// none is handed none.
     /// </summary>
     /// <param name="place">The repository whose work the start serves, and its workspace: where its tier is read at each press.</param>
-    public void Hand(IDictionary<string, string?> identity, SessionPlace? place = null)
+    /// <param name="agent">The agent the start runs, by the roster's name (<see cref="ProviderRegistry.AgentNameOf"/>): who its own press speaks as.</param>
+    public void Hand(IDictionary<string, string?> identity, SessionPlace? place = null, string? agent = null)
     {
         if (identity.TryGetValue(ChildMarks.SessionVariable, out var session) && session is { Length: > 0 })
         {
             identity[DelegateKey.Variable] = Draw(session);
             if (place is { Repository.Length: > 0 }) _places[session] = place;
+            if (agent is { Length: > 0 }) _agents[session] = agent;
         }
     }
+
+    /// <summary>The agent <paramref name="session"/>'s last start ran, by the roster's name; null where it named none.</summary>
+    public string? AgentOf(string session) => _agents.GetValueOrDefault(session);
 
     /// <summary>The hashes held for <paramref name="session"/>: none where it runs nothing here, or its keys were forgotten.</summary>
     public IReadOnlyList<byte[]> Of(string session) =>

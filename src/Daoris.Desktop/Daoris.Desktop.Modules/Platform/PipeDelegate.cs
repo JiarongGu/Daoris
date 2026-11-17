@@ -42,6 +42,9 @@ public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? H
     /// <summary>The repository a working session's start serves, whose allow supervisor may answer its asked press.</summary>
     public string? Repository { get; init; }
 
+    /// <summary>The agent a working session's start ran, by the roster's name (<see cref="SessionDelegates.AgentOf"/>): who its own press speaks as.</summary>
+    public string? Agent { get; init; }
+
     /// <summary>The place an Ask Daoris press named, against its conversation's focus now; null for every other kind.</summary>
     public Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf { get; init; }
 }
@@ -54,10 +57,13 @@ internal enum PipeDelegateTier
     Refused,
 }
 
-/// <summary>A press's tier, who its card names as asking, and, run with no card, its session and where it is said; <paramref name="Own"/> is a working session's, <paramref name="Terminal"/> a terminal's (<see cref="PipeTerminalTier"/>).</summary>
+/// <summary>
+/// A press's tier, who its card names as asking, and, run with no card, its session and where it is said; <paramref name="Own"/> is a working
+/// session's, speaking as <paramref name="Agent"/>, its start's agent, and <paramref name="Terminal"/> a terminal's (<see cref="PipeTerminalTier"/>).
+/// </summary>
 internal sealed record PipeDelegateJudgement(
     PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false,
-    string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null, bool Terminal = false);
+    string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null, bool Terminal = false, string? Agent = null);
 
 /// <summary>
 /// A person's press a session's verb sends with the proof of the delegate key handed to its start (<see cref="DelegateKey"/>), judged
@@ -109,8 +115,9 @@ public sealed class PipeDelegate(InstancePipe pipe)
             HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: session.PlaceOf),
-            null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository),
-            null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository),
+            null when session.Permissions == AccessRules.Unrestricted =>
+                new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository, Agent: session.Agent),
+            null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository, Agent: session.Agent),
             _ => new(PipeDelegateTier.Asked, asker),
         };
     }
@@ -121,7 +128,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         if (covered.Terminal || claim is null) return null;
         var asker = connection.Asker with { Session = claim.Session };
         return covered.Own
-            ? new(PipeDelegateTier.Asked, asker, claim.Session, Repository: covered.Repository)
+            ? new(PipeDelegateTier.Asked, asker, claim.Session, Repository: covered.Repository, Agent: covered.Agent)
             : new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: covered.PlaceOf);
     }
 

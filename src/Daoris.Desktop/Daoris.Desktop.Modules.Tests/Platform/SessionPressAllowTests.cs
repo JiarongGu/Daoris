@@ -36,10 +36,13 @@ public sealed class SessionPressAllowTests : Bridge
 
         public ConcurrentQueue<string?> Workers { get; } = new();
 
+        public ConcurrentQueue<string?> Speakers { get; } = new();
+
         protected override Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref _ran);
             Workers.Enqueue(PipeDoor.Worker);
+            Speakers.Enqueue(CastRoutes.SpeakerOf(null)?.Who);
             return Task.FromResult<object?>(new { Done = true });
         }
     }
@@ -89,7 +92,7 @@ public sealed class SessionPressAllowTests : Bridge
         {
             Grounds = new StubGrounds().Session(Archived, "completed"),
         };
-        pipe.Delegates = session => new PipeDelegateSession(_delegates.Of(session), _modes.GetValueOrDefault(session)) { Repository = "engine" };
+        pipe.Delegates = session => new PipeDelegateSession(_delegates.Of(session), _modes.GetValueOrDefault(session)) { Repository = "engine", Agent = "codex" };
         var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         var hello = await client.HelloAsync(HomeIdentity.Read(Home)!);
         return new Stand(pipe, client, hello.GetProperty("data").GetProperty("nonce").GetString()!, driver, provider, log);
@@ -136,6 +139,7 @@ public sealed class SessionPressAllowTests : Bridge
         Assert.True((await stand.Client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(1, stand.Driver.Ran);
         Assert.Equal(Session, Assert.Single(stand.Driver.Workers));
+        Assert.Equal("agent:codex", Assert.Single(stand.Driver.Speakers));
         Assert.Empty(stand.Pipe.Confirmations.Now().Waiting);
         Assert.Empty(stand.Pipe.SessionPresses.Waiting());
         Assert.NotNull(stand.Pipe.SessionPresses.Allow(press.Id));

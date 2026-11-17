@@ -18,8 +18,11 @@ public sealed class SessionPressAllows(InstancePipe pipe)
 
     private PipeState State => pipe.State;
 
-    /// <summary>The press offered to the allow supervisor of its session's place, or asked of the person at once where none answers there.</summary>
-    internal async Task RaiseAsync(PipeReserved reserved, Func<Task> card, string session, string repository)
+    /// <summary>
+    /// The press offered to the allow supervisor of its session's place, or asked of the person at once where none answers there; allowed,
+    /// it runs as the session's own, speaking as <paramref name="agent"/>, its start's agent.
+    /// </summary>
+    internal async Task RaiseAsync(PipeReserved reserved, Func<Task> card, string session, string repository, string? agent = null)
     {
         var judge = pipe.StandingConfirmation;
         var place = judge.Placed(repository);
@@ -30,7 +33,10 @@ public sealed class SessionPressAllows(InstancePipe pipe)
         }
 
         var route = $"{reserved.Request.Module}.{reserved.Request.Type}";
-        var entry = new PendingPress(Guid.NewGuid().ToString("N")[..12], reserved, session, route, place, pipe.Clock.GetUtcNow(), card, reserved.Connection.Client);
+        var entry = new PendingPress(Guid.NewGuid().ToString("N")[..12], reserved, session, route, place, pipe.Clock.GetUtcNow(), card, reserved.Connection.Client)
+        {
+            Agent = agent,
+        };
         lock (State.Gate)
         {
             // Ended meanwhile by a withdrawal or a close: nothing more is asked.
@@ -78,8 +84,9 @@ public sealed class SessionPressAllows(InstancePipe pipe)
         entry.Clock.Cancel();
         kept?.Invoke(entry);
         var request = entry.Reserved.Request;
-        pipe.Delegate.Pressed(new PipeDelegateJudgement(PipeDelegateTier.Covered, Session: entry.Session, Own: true), request, entry.Reserved.Line.Task);
-        _ = pipe.RunAsync(request, request.Id!, entry.Reserved.Binding, entry.Reserved.Line, client: entry.Client, worker: entry.Session);
+        var own = new PipeDelegateJudgement(PipeDelegateTier.Covered, Session: entry.Session, Own: true, Agent: entry.Agent);
+        pipe.Delegate.Pressed(own, request, entry.Reserved.Line.Task);
+        _ = pipe.RunAsync(request, request.Id!, entry.Reserved.Binding, entry.Reserved.Line, client: entry.Client, covered: own);
         return null;
     }
 

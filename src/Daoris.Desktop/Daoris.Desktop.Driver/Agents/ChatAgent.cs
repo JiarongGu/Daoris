@@ -13,6 +13,9 @@ internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
     /// <summary>The door's name, which a record, a reading and a log line name the agent by.</summary>
     public string Name => adapter.Id.Value;
 
+    /// <summary>The agent the door runs, by the roster's name (<see cref="ProviderRegistry.AgentNameOf"/>): who its own press speaks as.</summary>
+    public string Agent => ProviderRegistry.AgentNameOf(adapter);
+
     /// <summary>The variables its program reads for the model and the effort, which the open's asked choice reads from its spawn.</summary>
     public SpawnChoiceVariables ChoiceVariables => adapter.Spawned().ChoiceVariables;
 

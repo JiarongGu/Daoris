@@ -603,7 +603,9 @@ public sealed class WorkflowRoutes(DriverContext context)
 
         if (press is { Act: NodeWordActs.Stop, Whole: true })
         {
-            var stopped = await ReviewStops.StopAsync(records, NodeRuntime.HomeDoor(_loop.Home), run, node, words, () => DateTimeOffset.UtcNow, cancellationToken)
+            // Its speaker is the channel's, naming no epoch: each step it stops is judged against its own holder now.
+            var stopped = await ReviewStops.StopAsync(
+                records, NodeRuntime.HomeDoor(_loop.Home), run, node, words, () => DateTimeOffset.UtcNow, cancellationToken, settle: CastRoutes.SpeakerOf(null))
                 .ConfigureAwait(false);
             if (stopped.Done) _loop.Nudge();
             return new { stopped.Run, Node = stopped.Review, Act = act, stopped.Done, stopped.Refused, stopped.Following, stopped.Stopped, stopped.Happened,
