@@ -58,6 +58,8 @@ src/Daoris.Testing.Tests/bin/
 src/Daoris.Testing.Tests/obj/
 src/Daoris.Adapters/**/bin/
 src/Daoris.Adapters/**/obj/
+src/Daoris.Assistant/**/bin/
+src/Daoris.Assistant/**/obj/
 tools/chromium-probe/bin/
 tools/chromium-probe/obj/
 tools/contracts/bin/

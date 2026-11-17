@@ -123,8 +123,9 @@
       "title": "Assistant",
       "summary": "Ask Daoris: the room and its facts, the conversation's setup, focus and access, the second check, their window routes and their page, carved out of the driver's, the modules' and the web shell's lanes until its package stands.",
       "_why": "The boundary of the assistant as a package (ASSISTPKG1a, docs/2026-11-17-assistant-package-plan.md §1.1 and §2): the files are where they were, and the layers census counts the references across this lane's boundary both ways per type, a ratchet that only falls as the package's steps move them behind its ports. No room of its own: its files compile in the driver's, the modules' and the page's units, so it names their rooms and each file is in the room of the unit holding it (D310), and a change here reaches what the lane it was carved from reaches (the lane table's tree rules). Its own room comes with its package's unit.",
-      "room": ["driver", "modules", "web"],
+      "room": ["driver", "modules", "web", "layers"],
       "paths": [
+        "src/Daoris.Assistant/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Help*.cs",
@@ -196,7 +197,11 @@
           "src/Daoris.Adapters/Daoris.Adapters.Machine/Daoris.Adapters.Machine.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.Machine.Tests/Daoris.Adapters.Machine.Tests.csproj",
           "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj",
-          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/Daoris.Adapters.Memory.Lyntai.Tests.csproj"
+          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/Daoris.Adapters.Memory.Lyntai.Tests.csproj",
+          "src/Daoris.Assistant/daoris.package.json",
+          "src/Daoris.Assistant/Daoris.Assistant/Daoris.Assistant.csproj",
+          "src/Daoris.Assistant/Daoris.Assistant.Testing/Daoris.Assistant.Testing.csproj",
+          "src/Daoris.Assistant/Daoris.Assistant.Tests/Daoris.Assistant.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

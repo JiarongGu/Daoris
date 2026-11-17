@@ -1,15 +1,16 @@
 import { laneMatcher } from '../merge/lanes-file.ts';
+import { PACKAGE_ROOTS } from '../merge/packages.ts';
 import { blank } from '../partials.mjs';
 import { readProjects } from './projects.mjs';
 
 /**
- * A lane's boundary, the package it is to become: the references across it both ways, per type, as a ratchet that only falls, for whichever lane of
- * `daoris.lanes.json` the list or the argument names. Inside is the lane's C# sources; outside is every other source of a production
- * project (a test project's names follow the code they test, so they are not counted). A type is a class, record, struct, interface or
- * enum declared on one side, by its PascalCase name; a name declared on both sides is set aside, since its text cannot say which one is
- * meant. A reference is the name as an identifier that no dot qualifies (so a namespace's segment, a member and a nested type's own
- * name are not read, its outer type is), comments, strings and character literals blanked: the count is the text's, not the compiler's.
- * `inbound` is how often the outside names each inside type, `outbound` how often the inside names each outside type.
+ * A lane's boundary, the package it is to become: the references across it both ways, per type, as a ratchet that only falls, for
+ * whichever lane of `daoris.lanes.json` the list or the argument names. Inside is the lane's C# sources but those under a package
+ * root, which its build holds to its ports; outside is every other source of a production project (a test project's names follow the
+ * code they test). A type is a class, record, struct, interface or enum declared on one side, by its PascalCase name; one declared on
+ * both is set aside. A reference is the name as an identifier no dot qualifies (a namespace's segment, a member and a nested type's
+ * own name are not read, its outer type is), comments, strings and character literals blanked: the count is the text's, not the
+ * compiler's. `inbound` is how often the outside names each inside type, `outbound` how often the inside names each outside type.
  */
 const DECLARED = /\b(?:record\s+(?:class|struct)|class|record|struct|interface|enum)\s+([A-Z]\w*)/g;
 const NAMED = /(?<![.\w])[A-Z]\w*/g;
@@ -38,8 +39,9 @@ export function scanBoundary(tree, id) {
   const outside = [];
   for (const path of tree.files) {
     if (!path.endsWith('.cs') || /(^|\/)(bin|obj)\//.test(path)) continue;
-    if (inLane(path)) inside.push(path);
-    else if (production.some((folder) => path.startsWith(folder))) outside.push(path);
+    if (inLane(path)) {
+      if (!PACKAGE_ROOTS.some((root) => path.startsWith(`${root}/`))) inside.push(path);
+    } else if (production.some((folder) => path.startsWith(folder))) outside.push(path);
   }
   const code = new Map([...inside, ...outside].map((path) => [path, blank(tree.read(path))]));
   const declaredIn = (paths) => new Set(paths.flatMap((path) => [...code.get(path).matchAll(DECLARED)].map((match) => match[1])));
