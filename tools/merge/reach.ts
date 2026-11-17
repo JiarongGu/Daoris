@@ -72,13 +72,6 @@ type Placing = readonly Pick<Lane, 'id' | 'paths'>[];
 
 const pathCheckOf = (gate: string, pathChecks: readonly PathCheck[] = PATH_CHECKS): PathCheck | null => pathChecks.find((check) => check.gate === gate) ?? null;
 
-/** Of `paths`, the ones that reach a path check: its own, and those the lane table sends to every gate. */
-const pathCheckPaths = (check: PathCheck, paths: readonly string[], reach: readonly Rule[], lanes: Placing): string[] => {
-  const own = laneMatcher([...check.paths]);
-  const readRule = ruleReader(reach, lanes);
-  return paths.filter((path) => own(path) || readRule(path)?.gates === '*');
-};
-
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
 export function ruleFor(path: string, rules: readonly Rule[], lanes: Placing): Rule | null {
   return ruleReader(rules, lanes)(path);
@@ -152,7 +145,7 @@ export function selectGates(
     const check = pathCheckOf(gate.name, pathChecks);
     if (check) {
       // A path check blocks the merges whose paths reach what it reads, and only those.
-      const by = pathCheckPaths(check, changed, reach, lanes);
+      const by = reachingOf({ lanes, reach, pathChecks })(gate.name, changed);
       if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
       if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
       return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${check.why})` };
@@ -174,15 +167,35 @@ export function selectGates(
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it is given. The test of the table checks that it and `selectGates` agree on every case.
  */
-export function pathsReaching(gate: string, paths: readonly string[], { lanes = [], reach = REACH, pathChecks = PATH_CHECKS }: Reading = {}): string[] {
-  const check = pathCheckOf(gate, pathChecks);
-  if (check) return pathCheckPaths(check, paths, reach, lanes);
-  if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
+export function pathsReaching(gate: string, paths: readonly string[], reading: Reading = {}): string[] {
+  return reachingOf(reading)(gate, paths);
+}
+
+/** `pathsReaching` asked many times, as a judgement of every stored verdict asks it: the rules compiled and each path placed once. */
+export function reachingOf({ lanes = [], reach = REACH, pathChecks = PATH_CHECKS }: Reading = {}): (gate: string, paths: readonly string[]) => string[] {
   const readRule = ruleReader(reach, lanes);
-  return paths.filter((path) => {
-    const rule = readRule(path);
-    return !rule || rule.gates === '*' || rule.gates.includes(gate);
-  });
+  const placed = new Map<string, Rule | null>();
+  const ruleOf = (path: string): Rule | null => {
+    let rule = placed.get(path);
+    if (rule === undefined) placed.set(path, (rule = readRule(path)));
+    return rule;
+  };
+  const named = namedGates(reach);
+  const owns = new Map<PathCheck, (path: string) => boolean>();
+  return (gate, paths) => {
+    const check = pathCheckOf(gate, pathChecks);
+    if (check) {
+      // A path check's own paths, and those the lane table sends to every gate.
+      if (!owns.has(check)) owns.set(check, laneMatcher([...check.paths]));
+      const own = owns.get(check)!;
+      return paths.filter((path) => own(path) || ruleOf(path)?.gates === '*');
+    }
+    if (BASELINE.includes(gate) || !named.has(gate)) return [...paths];
+    return paths.filter((path) => {
+      const rule = ruleOf(path);
+      return !rule || rule.gates === '*' || rule.gates.includes(gate);
+    });
+  };
 }
 
 /** The selection as lines: each gate run, numbered, with why; then each skipped, with why. */

@@ -114,7 +114,8 @@
  * - **One store.** Every run records into the main checkout's `local/gate-verdicts.json` (`verdictsHome`: the first
  * worktree git lists), whichever worktree it is in, under a lock beside the file, so a merge's verdict and the full
  * set's never write over each other. Verdicts are keyed by tree, so `--passed` in the main checkout judges its own tree
- * and `--passed` in the gate tree, which the stage asks, the gate tree's.
+ * and `--passed` in the gate tree, which the stage asks, the gate tree's. A judgement asks git every tree it compares at once
+ * and keeps each pair's paths (`merge/tree-drift.ts`); what is past its use is neither read nor written again (`merge/verdict-keep.ts`).
  * - **Few starts.** A run's start asks git once for each kind of fact (`tools/merge/home.ts`): one `rev-parse` for the
  * top, git and common folders, one worktree listing passed along, one `check-ignore --stdin` for every path a verb needs ignored.
  * - **One at a time.** The run holds `GATE_TREE_LOCK` (its pid, commit and start) in the main checkout; a second is refused,
@@ -372,7 +373,9 @@ import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
 import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
 import { chooseGates } from './merge/choose-gates.ts';
-import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
+import { pathsReaching, reachingOf, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
+import { driftsAt } from './merge/tree-drift.ts';
+import { VERDICTS_KEPT_PER_GATE, inUse, keptVerdicts } from './merge/verdict-keep.ts';
 import {
   isProcessGate, isProcessLane, isHeavyGate, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
@@ -433,6 +436,7 @@ export {
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan, rerunPlan,
 } from './merge/plan.ts';
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge/reach.ts';
+export { VERDICTS_KEPT_PER_GATE, keptVerdicts } from './merge/verdict-keep.ts';
 export { REACHED_BOUNDS, processSuitesOf, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge/reached.ts';
 export { REACH } from './merge/reach-table.ts';
 export { globToRegExp, laneMatcher } from './merge/lanes-file.ts';
@@ -804,40 +808,19 @@ function refreshKnowledgeServer(root) {
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record: which gate passed which tree
 
-/** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
+/** `local/gate-verdicts.json` without what is past its use (`inUse`), or an empty record where there is none or it does not read. */
 export function readVerdicts(root) {
   const file = join(root, VERDICTS_FILE);
   if (!existsSync(file)) return { schema: 1, verdicts: [] };
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    return { schema: 1, verdicts: Array.isArray(parsed?.verdicts) ? parsed.verdicts.filter((entry) => typeof entry?.gate === 'string') : [] };
+    return { schema: 1, verdicts: Array.isArray(parsed?.verdicts) ? inUse(parsed.verdicts.filter((entry) => typeof entry?.gate === 'string')) : [] };
   } catch {
     return { schema: 1, verdicts: [] };
   }
 }
 
-/**
- * How many verdicts the store keeps of each gate, apart for the scoped run's (`kind` `scoped`) and every other kind's, so a
- * working day of scoped verdicts never evicts a night's or a stage's.
- */
-export const VERDICTS_KEPT_PER_GATE = 40;
-
-/** The verdicts kept: of each gate, the newest `keep` of the scoped run's and the newest `keep` of the rest, in their order. */
-export function keptVerdicts(verdicts, keep = VERDICTS_KEPT_PER_GATE) {
-  const counts = new Map();
-  const kept = [];
-  for (let i = verdicts.length - 1; i >= 0; i -= 1) {
-    const entry = verdicts[i];
-    const key = `${entry.gate}\u0000${entry.kind === 'scoped' ? 'scoped' : 'background'}`;
-    const seen = counts.get(key) ?? 0;
-    if (seen >= keep) continue;
-    counts.set(key, seen + 1);
-    kept.push(entry);
-  }
-  return kept.reverse();
-}
-
-/** Verdicts appended, newest last, the oldest of a gate dropped past `keep` (`keptVerdicts`): written beside, then renamed. */
+/** Verdicts appended to those in use, newest last, the oldest of a gate dropped past `keep` (`keptVerdicts`): written beside, then renamed. */
 export function addVerdicts(root, entries, { keep = VERDICTS_KEPT_PER_GATE } = {}) {
   const file = join(root, VERDICTS_FILE);
   holdingLock(file, () => {
@@ -907,12 +890,8 @@ export function contentTree(root) {
   }
 }
 
-/** The paths that differ between two trees, or null when git cannot say (a tree long gone). */
-export function treeDrift(root, from, to) {
-  if (!from || !to) return null;
-  if (from === to) return [];
-  return diffPaths(git, root, [from, to], { allowFail: true });
-}
+/** The paths that differ between two trees, or null when git cannot say (a tree long gone): `merge/tree-drift.ts`. */
+export const treeDrift = (root, from, to) => driftsAt(root, verdictsHome(root), to).drift(from);
 
 /**
  * The known records the parent writes after gates, when declared in the steward's lane or as union. Neither declaration may
@@ -929,21 +908,14 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
 }
 
 /**
- * What a verdict is judged by against the checkout's `tree`: the paths another tree differs by (asked of git once per
- * tree), which of them are the records, and which reach a gate by the lane table and the lanes. `--passed` and `--rerun` judge by the same.
+ * What a verdict is judged by against the checkout's `tree`: the paths another tree differs by (`ask` takes every tree at
+ * once), which of them are the records, and which reach a gate by the lane table and the lanes, each path placed once.
+ * `--passed` and `--rerun` judge by the same.
  */
 function standingFor(root, tree) {
   const lanes = readLanes(root)?.lanes ?? [];
-  const drifts = new Map();
-  return {
-    tree,
-    drift: (from) => {
-      if (!drifts.has(from)) drifts.set(from, treeDrift(root, from, tree));
-      return drifts.get(from);
-    },
-    isRecord: recordMatcher({ lanes, union: unionRecords(root) }),
-    reaching: (gate, paths) => pathsReaching(gate, paths, { lanes }),
-  };
+  const { ask, drift } = driftsAt(root, verdictsHome(root), tree);
+  return { tree, ask, drift, isRecord: recordMatcher({ lanes, union: unionRecords(root) }), reaching: reachingOf({ lanes }) };
 }
 
 /** A verdict that passed: PASS, or FLAKE, a pass that is said. */
@@ -1014,7 +986,9 @@ export function agedWhole(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
  * age stands as every verdict does. With `ageWhole` (the stage's, never the CI's), a whole half's pass on another tree
  * counts only within `bound` (`agedWhole`), said as `swept` with `aged`; one on this tree counts at any age.
  */
-export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
+export function stageJudgement({ plan, verdicts, tree, drift, ask, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
+  // Every tree the plan's verdicts were given on, asked at once: a git start a tree, of hundreds, cost minutes.
+  ask?.(verdicts.filter((entry) => plan.includes(entry.gate)).map((entry) => entry.tree));
   const drifts = new Map();
   const driftOf = (from) => {
     if (!drifts.has(from)) drifts.set(from, drift(from));
@@ -4226,9 +4200,9 @@ export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleM
  * checked too. Every other gate is kept, with the verdict that stands and how it stands. A gate `owe` names that
  * lacks a pass is `owed` for a stage rather than run (a plain run hands it `STAGE_REHEARSALS`' gates, the stage's path none).
  */
-export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
+export function ciPlan({ plan, verdicts, tree, drift, ask, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
   // The stage's path judges a whole pass's age as the stage will (`agedWhole`), so the run it names runs that half.
-  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false, now, bound, ageWhole });
+  const judged = stageJudgement({ plan, verdicts, tree, drift, ask, reaching, isRecord: () => false, now, bound, ageWhole });
   const kept = judged.gates.filter((gate) => !judged.missing.includes(gate.name)).map((gate) => ({ name: gate.name, verdict: gate.verdict, standing: gate.standing }));
   // Of the gates `owe` names (a plain run's stage rehearsals), one without a pass that stands is owed, not run.
   const owed = judged.missing.filter((name) => owe.includes(name));
