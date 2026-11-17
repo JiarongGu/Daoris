@@ -345,7 +345,7 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
 }
 
-/// <summary>A step's attempt and the epoch of its tenure a kept word was admitted in (<see cref="NodeWord.Epoch"/>).</summary>
+/// <summary>A step's attempt and the epoch of its tenure the settle door admits a kept word in (<see cref="NodeWord.Epoch"/>).</summary>
 public sealed record NodeWordEpoch(int Attempt, int Number)
 {
     /// <summary>The tenure a word judged by <paramref name="by"/> is kept in: none where the door judged no holder.</summary>

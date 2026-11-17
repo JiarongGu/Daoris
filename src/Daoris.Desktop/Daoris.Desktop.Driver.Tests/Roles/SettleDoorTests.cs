@@ -96,7 +96,7 @@ public sealed class SettleDoorTests : IDisposable
         Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released", () => _now, settle: new SettleBy("agent:alpha", 1)).Done);
         Assert.Equal(new NodeWordEpoch(1, 1), Assert.Single(Records.Read(RunUnits.IdOf(Run))!.Pending).Epoch);
 
-        // Passed on after the word was kept and before the pass: the word's epoch ended, so the pass refuses it and the step stands.
+        // Passed on between the keep and the pass: the word's epoch ends, so the pass refuses it and the step stands.
         Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1), epoch: 1).Done);
         var (next, applied) = Pass();
         Assert.Equal(StepTenureFiles.EndedEpoch, Assert.Single(applied).Refused);

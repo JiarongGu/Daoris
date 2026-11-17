@@ -191,7 +191,7 @@ public static class HeldAttempts
             return 0;
         }
 
-        // The epoch of the step's tenure its row read, wherever it is named: a word read before the step was passed on is refused.
+        // The epoch of the step's tenure its row read, wherever it is named: a word read in an epoch that has ended is refused.
         int? epoch = null;
         if (args.ToList().IndexOf("--epoch") is var flag and >= 0)
         {
