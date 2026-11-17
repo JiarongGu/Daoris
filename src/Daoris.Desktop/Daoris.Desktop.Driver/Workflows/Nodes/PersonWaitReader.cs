@@ -2,12 +2,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The run steps that wait on the person (<see cref="PersonWaits"/>). **Read, never stored**, as <see cref="HeldSteps"/> are: from the runs
-/// bound here and each run's node record read now, so a step the person's word is kept on, or that moved on, waits on no one. Its holder is
-/// read as theirs is: the step's own role by its attempt's tenure, any other role by the place's cast (<see cref="StepWaiting.HolderOf"/>).
+/// bound here and each run's node record read now, so a step the person's word is kept on, or that moved on, waits on no one.
 /// </summary>
 public static class PersonWaitReader
 {
-    /// <param name="home">The home whose tenures and cast name each wait's holder; null reads none, each step's role then the person's.</param>
     public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record, string? home = null, PlaceRiskBook? risk = null)
     {
         var waits = new List<PersonWait>();

@@ -48,7 +48,6 @@ internal sealed class ChatAccepts(DriverLoop loop)
     }
 
     /// <summary>The press on the conversation's work in <paramref name="tree"/>, its record <paramref name="id"/> the line's newest.</summary>
-    /// <param name="epoch">The review's tenure epoch the press read, passed to the settle door with its Accept; null names none.</param>
     public async Task<Pressed> PressAsync(string id, string tree, string chatRun, string recordsJson, string? answers, CancellationToken ct, int? epoch = null)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
