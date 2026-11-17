@@ -29,11 +29,11 @@ public static class StepWaiting
     /// (<see cref="StepHolders"/>), or null where the step waits on no role (not reached, under way with an agent or a check, settled).
     /// </summary>
     /// <param name="record">The run's node record; null where only the declaration and status are in hand, which reads no plugin's progress and no failure kept.</param>
-    public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status, StepTenure? held = null)
+    /// <param name="held">The step's attempt's tenure now: the holder of the step's own role.</param>
+    /// <param name="cast">The place's cast now, role to holder (<see cref="CastReading"/>): the holder of any other role a wait is on.</param>
+    public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status, StepTenure? held = null, Func<string, string>? cast = null)
     {
-        StepHolder HolderOf(string role) => held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt
-            ? CastHolders.StepOf(tenure.Holder)
-            : StepHolders.Of(role);
+        StepHolder HolderOf(string role) => CastHolders.StepOf(StepWaiting.HolderOf(node, status, role, held, cast));
         if (Of(record, node, status) is { Actor: { } actor } progress)
         {
             return new RoleWait(PersonWaits.Actor, actor, HolderOf(actor), progress.At) { Words = progress.Words, Url = progress.Url };
@@ -49,6 +49,18 @@ public static class StepWaiting
         if (why is null) return null;
         var role = why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead ? StepRoles.Of(node) : RoleOf(why);
         return new RoleWait(why, role, HolderOf(role), status.Since);
+    }
+
+    /// <summary>
+    /// Who holds the role <paramref name="role"/> a step's wait is on, by that role (D312, amended): the step's own role its attempt's tenure,
+    /// or before the pass casts it the holder its words or the place's cast name; any other role (a vacancy's line, a plugin's actor, an attempt
+    /// held for operations on a step of another role) the place's cast of that role now, never the step's holder. No cast in hand reads the person.
+    /// </summary>
+    public static string HolderOf(NodeDeclaration node, NodeStatus status, string role, StepTenure? held, Func<string, string>? cast)
+    {
+        var own = role == StepRoles.Of(node);
+        if (own && held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt) return tenure.Holder;
+        return (own ? HolderWords.First(node) : null) ?? cast?.Invoke(role) ?? CastHolders.Person;
     }
 
     /// <summary>
@@ -75,7 +87,8 @@ public static class StepWaiting
         && WorkPerformer.KeptFailure(record, attempt);
 
     /// <summary>The run step's wait for <paramref name="progress"/>: its code and the facts its words name, since its plugin said it.</summary>
-    public static WorkflowRunWait WaitOf(StepProgress progress)
+    /// <param name="holder">The actor's holder as the step's wait read it (<see cref="Read"/>); null reads the person.</param>
+    public static WorkflowRunWait WaitOf(StepProgress progress, StepHolder? holder = null)
     {
         var values = new SortedDictionary<string, string>(StringComparer.Ordinal);
         void Put(string name, string? value)
@@ -88,10 +101,10 @@ public static class StepWaiting
         Put("environment", progress.Environment);
         if (progress.Actor is { } actor)
         {
-            var holder = StepHolders.Of(actor);
+            var filled = holder ?? CastHolders.StepOf(CastHolders.Person);
             Put("actor", actor);
-            Put("holder", holder.Kind);
-            Put("holderName", holder.Name);
+            Put("holder", filled.Kind);
+            Put("holderName", filled.Name);
         }
 
         return new WorkflowRunWait(progress.Actor is null ? Going : Actor, values, progress.At);
@@ -174,17 +187,20 @@ public sealed record HeldStep(
 /// </summary>
 public static class HeldSteps
 {
-    public static IReadOnlyList<HeldStep> Of(IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null)
+    /// <param name="casts">The places' cast, which a wait on a role other than its step's reads its holder from; null reads the person.</param>
+    public static IReadOnlyList<HeldStep> Of(
+        IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null)
     {
         var steps = new List<HeldStep>();
         foreach (var each in governed)
         {
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
             var holding = tenures?.Holding(each.Unit.Id, kept.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
+            var cast = casts is null ? null : CastReading.At(casts, risk, each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
             foreach (var node in each.Graph.Nodes)
             {
                 var held = holding?.GetValueOrDefault(node.Id);
-                if (Step(each.Run, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held) is { } step) steps.Add(step);
+                if (Step(each.Run, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held, cast) is { } step) steps.Add(step);
             }
         }
 
@@ -192,10 +208,11 @@ public static class HeldSteps
     }
 
     /// <summary>The row of one step, or null where it waits on no role the person holds, a word of theirs is pending on it, or another row carries it.</summary>
-    public static HeldStep? Step(string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null)
+    public static HeldStep? Step(
+        string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
-        if (StepWaiting.Read(record, node, status, held) is not { } wait || wait.Holder.Kind != StepHolders.Person
+        if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || wait.Holder.Kind != StepHolders.Person
             || wait.Why is PersonWaits.Accept or PersonWaits.Left or PersonWaits.Held
             || record.Pending.Any(word => word.Node == node.Id))
         {

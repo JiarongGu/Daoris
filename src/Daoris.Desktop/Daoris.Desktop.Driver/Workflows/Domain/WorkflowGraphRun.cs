@@ -148,6 +148,9 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     /// <summary>Who holds each node's attempt now (<see cref="StepTenureFiles.Holding"/>), by node; none where none is kept or unread.</summary>
     public IReadOnlyDictionary<string, StepTenure> Holding { get; init; } = new Dictionary<string, StepTenure>(StringComparer.Ordinal);
+
+    /// <summary>The run's place's cast, role to holder (<see cref="CastReading"/>): the holder of a role a wait is on other than its step's own.</summary>
+    public Func<string, string>? Cast { get; init; }
 }
 
 /// <summary>
@@ -215,7 +218,7 @@ public static class WorkflowGraphRuns
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
             var tenure = facts.Holding.GetValueOrDefault(node.Id) is { } kept && kept.Attempt == status.Attempt ? kept : null;
-            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure) : null;
+            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
             var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             var step = new WorkflowRunStep(cell, state, detail)
             {
@@ -235,7 +238,7 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = progress is not null ? StepWaiting.WaitOf(progress) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
