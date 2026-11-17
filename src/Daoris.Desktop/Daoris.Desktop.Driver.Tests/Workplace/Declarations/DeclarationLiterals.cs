@@ -32,8 +32,11 @@ internal static class DeclarationLiterals
     private static readonly ImmutableHashSet<string> Members =
         [.. typeof(string).GetMethods().Concat(typeof(Path).GetMethods()).Select(method => method.Name)];
 
-    /// <summary>Every string of <paramref name="compilation"/>'s sources outside the store's folder that names a declaration.</summary>
-    internal static List<LiteralHit> Hits(Compilation compilation)
+    /// <summary>
+    /// Every string of <paramref name="compilation"/>'s sources outside the store's folder that names a declaration: of every source with
+    /// no scope, else of the sources <paramref name="scope"/> reaches (<see cref="CensusReach"/>), a constant they read folded wherever it is declared.
+    /// </summary>
+    internal static List<LiteralHit> Hits(Compilation compilation, IReadOnlySet<string>? scope = null)
     {
         var trees = DesktopCompilations.Trees(compilation).Where(tree => !tree.FilePath.StartsWith("Daoris.Desktop.Driver/Workplace/Declarations/", StringComparison.Ordinal)).ToList();
         // Only a node with a constant leaf can be known, so the model binds no other: a literal, or a name some source declares const.
@@ -43,7 +46,7 @@ internal static class DeclarationLiterals
             LocalDeclarationStatementSyntax local when local.IsConst => local.Declaration.Variables.Select(each => each.Identifier.ValueText),
             _ => [],
         }).ToHashSet(StringComparer.Ordinal);
-        return [.. trees.AsParallel().AsOrdered().Select(tree => In(compilation, tree, consts)).ToList().SelectMany(each => each).Distinct()];
+        return [.. CensusReach.Trees(compilation, trees, scope).AsParallel().AsOrdered().Select(tree => In(compilation, tree, consts)).ToList().SelectMany(each => each).Distinct()];
     }
 
     private static List<LiteralHit> In(Compilation compilation, SyntaxTree tree, HashSet<string> consts)

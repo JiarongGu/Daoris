@@ -32,21 +32,30 @@ public sealed class DeclarationLiteralsCensusTests : IClassFixture<DesktopCompil
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Lanes"] = "the one holder of the names",
     };
 
-    private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Each.AsParallel().SelectMany(DeclarationLiterals.Hits)));
+    // At a merge, the sources the merge's files reach, and the rows of those files.
+    private static readonly IReadOnlySet<string>? Scope = CensusScope.ScopeOf(typeof(DeclarationLiteralsCensusTests));
+
+    private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Judged(Scope).AsParallel().SelectMany(compilation => DeclarationLiterals.Hits(compilation, Scope))));
+
+    private static readonly Lazy<List<string>> Judged = new(() =>
+    {
+        var judges = CensusReach.Judges(DesktopCompilations.Judged(Scope), Scope);
+        return [.. Rows.Keys.Where(row => judges(row.Split(' ')[0]))];
+    });
 
     private static SortedSet<string> Keys(IEnumerable<LiteralHit> hits) => new(hits.Select(hit => $"{hit.File} {hit.Member}"), StringComparer.Ordinal);
 
     [Fact]
     public void No_shipping_source_outside_the_store_writes_a_declarations_name_but_the_rows()
     {
-        var problems = SourceCensus.Problems(Found.Value, Rows.Keys, What);
+        var problems = SourceCensus.Problems(Found.Value, Judged.Value, What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_row_left_out_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found.Value, Rows.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found.Value, Judged.Value, What));
     }
 
     [Theory]

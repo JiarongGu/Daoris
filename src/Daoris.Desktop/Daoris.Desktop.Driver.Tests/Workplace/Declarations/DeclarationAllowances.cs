@@ -18,9 +18,11 @@ internal static class DeclarationAllowances
     /// <summary>
     /// The walk's judgement: red on a banned use outside the two places no row names (a second banned symbol in an allowed file among
     /// them, since a section quiets its file whole), on a name the walk could not follow, on a row's symbol its file no longer names, on
-    /// a row whose file is gone, on a row with no section, and on a section that is no row's.
+    /// a row whose file is gone, on a row with no section, and on a section that is no row's. A row's symbols are judged only where
+    /// <paramref name="judged"/> holds its file: at a merge, where the walk read it.
     /// </summary>
-    internal static List<string> Problems(IEnumerable<BannedUse> uses, IReadOnlyCollection<Allowance> rows, IReadOnlyCollection<string> sections, Func<string, bool> exists)
+    internal static List<string> Problems(
+        IEnumerable<BannedUse> uses, IReadOnlyCollection<Allowance> rows, IReadOnlyCollection<string> sections, Func<string, bool> exists, Func<string, bool>? judged = null)
     {
         var problems = new List<string>();
         var found = uses.Where(use => !BoundaryConfig.InPlace(use.File)).ToList();
@@ -39,7 +41,7 @@ internal static class DeclarationAllowances
                 continue;
             }
 
-            foreach (var symbol in row.Symbols.Where(symbol => !found.Any(use => use.File == row.File && use.Symbol == symbol)))
+            foreach (var symbol in row.Symbols.Where(symbol => (judged?.Invoke(row.File) ?? true) && !found.Any(use => use.File == row.File && use.Symbol == symbol)))
                 problems.Add($"{row.File} is an allowance row for {symbol} and names it no longer");
             if (!sections.Contains(row.File)) problems.Add($"{row.File} is an allowance row with no section");
         }

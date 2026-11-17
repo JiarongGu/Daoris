@@ -72,11 +72,13 @@ public sealed class DeclarationBoundaryTests : IClassFixture<DesktopCompilations
     [Fact]
     public void Every_banned_reference_in_every_shipping_project_is_in_the_store_or_an_allowance_row_and_every_row_is_used()
     {
+        // At a merge, the uses in the sources the merge's files reach, and the rows of those files.
+        var scope = CensusScope.ScopeOf(typeof(DeclarationBoundaryTests));
         var ids = BannedNames.Listed();
-        var uses = DesktopCompilations.Each.SelectMany(compilation => BannedNames.Uses(compilation, ids)).Distinct();
+        var uses = DesktopCompilations.Judged(scope).SelectMany(compilation => BannedNames.Uses(compilation, ids, scope)).Distinct();
         var sections = BoundaryConfig.Sections(File.ReadAllText(Path.Combine(DesktopCompilations.Desktop, ".editorconfig"))).Quiet;
         var problems = DeclarationAllowances.Problems(uses, DeclarationAllowances.Rows, sections,
-            file => File.Exists(Path.Combine(DesktopCompilations.Desktop, file)));
+            file => File.Exists(Path.Combine(DesktopCompilations.Desktop, file)), CensusReach.Judges(DesktopCompilations.Judged(scope), scope));
         problems.AddRange(ids.Where(id => DesktopCompilations.Each.All(compilation => BannedNames.Unresolved(compilation, [id]).Any()))
             .Select(id => $"{id} is banned and names no symbol"));
 

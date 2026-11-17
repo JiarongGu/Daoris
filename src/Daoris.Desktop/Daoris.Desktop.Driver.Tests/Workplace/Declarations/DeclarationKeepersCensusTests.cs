@@ -67,20 +67,30 @@ public sealed class DeclarationKeepersCensusTests : IClassFixture<DesktopCompila
             """),
     ];
 
+    // An answer flows across the files of one project, never into another's sources, so at a merge the flow runs whole in each project
+    // the merge's files reach, and the holders of those projects are judged.
+    private static readonly IReadOnlySet<string>? Scope = CensusScope.ScopeOf(typeof(DeclarationKeepersCensusTests));
+
     private static readonly Lazy<SortedSet<string>> Found = new(() =>
-        new(DesktopCompilations.Each.SelectMany(DeclarationKeepers.Kept), StringComparer.Ordinal));
+        new(DesktopCompilations.Judged(Scope).SelectMany(DeclarationKeepers.Kept), StringComparer.Ordinal));
+
+    private static readonly Lazy<List<string>> Judged = new(() =>
+    {
+        var files = DesktopCompilations.Judged(Scope).SelectMany(DesktopCompilations.Trees).Select(tree => tree.FilePath).ToHashSet(StringComparer.Ordinal);
+        return [.. Holders.Keys.Where(row => Scope is null || files.Contains(row.Split(' ')[0]) || Scope.Contains("src/Daoris.Desktop/" + row.Split(' ')[0]))];
+    });
 
     [Fact]
     public void No_field_of_a_shipping_project_keeps_an_answer_of_the_store_but_a_listed_holder()
     {
-        var problems = SourceCensus.Problems(Found.Value, Holders.Keys, What);
+        var problems = SourceCensus.Problems(Found.Value, Judged.Value, What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_holder_left_out_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found.Value, Holders.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found.Value, Judged.Value, What));
     }
 
     [Fact]
