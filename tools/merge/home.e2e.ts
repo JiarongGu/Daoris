@@ -5,10 +5,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { Refusal } from './args.ts';
+import { fixtureFolder } from './fixture-home.ts';
 import { ignoredOf, locate, preconditions, requireIgnored } from './git.ts';
 import { startListing, toolCheckout, verdictsHome, verdictsNeed } from './home.ts';
 
-const scratch = join(dirname(dirname(dirname(fileURLToPath(import.meta.url)))), '_fixtures', 'merge-home');
+// A scratch repository with a linked worktree, its git started for real: a run's start, asked as the tool asks it.
+const { dir: scratch, remove } = fixtureFolder('merge-home');
 const repo = join(scratch, 'repo');
 const linked = join(scratch, 'linked');
 const run = (cwd: string, ...args: string[]) => {
@@ -18,15 +20,14 @@ const run = (cwd: string, ...args: string[]) => {
 };
 
 beforeAll(() => {
-  rmSync(scratch, { recursive: true, force: true });
   mkdirSync(join(repo, 'tools'), { recursive: true });
   run(repo, 'init', '--quiet', '--template=', '-b', 'main');
   writeFileSync(join(repo, '.gitignore'), 'local/\n');
   run(repo, 'add', '-A');
   run(repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '--quiet', '-m', 'first');
   run(repo, 'worktree', 'add', '--quiet', '-b', 'side', linked);
-});
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+}, 60_000);
+afterAll(remove);
 
 test('the paths git ignores are asked in one start, each named as given, and a failed start is a refusal', () => {
   assert.deepEqual([...ignoredOf(repo, ['local/gate-verdicts.json', 'src/a.ts', 'local/scope-tree'])].sort(), ['local/gate-verdicts.json', 'local/scope-tree']);
