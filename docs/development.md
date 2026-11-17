@@ -126,7 +126,13 @@ by the layers census's counters; a gate's is its longest step clock. Three or mo
 it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
 places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
 other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
-time; the budget itself never stretches with the load.
+time; the budget itself never stretches with the load. The hang bound is read the same way: a .NET gate whose blame
+collector killed a test while the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs
+again alone as above; a hang in that run again fails as the test's own. The bound is not raised under load: it is one fixed
+setting in `Directory.Build.props`, a longer one would make every real hang cost more, and a rerun costs only when a kill
+happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
+and modules halves) is sampled from its start and its records are marked with the peak (`stampLoad`, as `reached` marks its
+own), so the time ratchet judges only timings taken alone.
 
 | Change | Additional verification |
 |---|---|

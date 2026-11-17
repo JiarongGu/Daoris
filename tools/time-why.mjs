@@ -170,16 +170,21 @@ const HUNG = /The tests? running when the crash occurred:[^\S\n]*\r?\n((?:[^\S\n
 
 /**
  * The blame collector's hang kills a .NET gate's `log` says (`VSTestBlameHangTimeout`): each test it names as running when it killed
- * the host, as a breach of the hang timeout with its cause. `peak`, the load sampler's, is said beside it where others ran.
+ * the host, as a breach of the hang timeout with its cause: `load`, failing nothing, where `peak` held more than the gate's own
+ * place; a kill in the run again (`alone`) fails.
  */
-export function hangBreaches(log, source, peak = null) {
+export function hangBreaches(log, source, peak = null, { alone = false } = {}) {
   const at = HANG.exec(String(log ?? ''));
   if (!at) return [];
   const ms = Number(at[1]) * (at[2].startsWith('minute') ? 60_000 : 1000);
-  const load = typeof peak === 'number' && peak > ALONE_HOLDS ? `; ${peak} heavy runs under way at the gate's peak` : '';
+  const loaded = typeof peak === 'number' && peak > ALONE_HOLDS;
+  const load = loaded ? `; ${peak} heavy runs under way at the gate's peak${alone ? '' : ': run again alone once the machine is free'}` : '';
   const keys = [...String(log).matchAll(HUNG)].flatMap((found) => found[1].split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
-  return [...new Set(keys)].map((key) => testBreach({ kind: 'hang', key, ms, limit: ms, fails: true, source: source(key), note: `killed by the hang timeout${load}` }));
+  const under = loaded && !alone;
+  return [...new Set(keys)].map((key) => testBreach({ kind: 'hang', key, ms, limit: ms, fails: !under, loaded: under, source: source(key), note: `killed by the hang timeout${load}` }));
 }
+
+export const hungUnderLoad = (breaches) => breaches.some((each) => each.kind === 'hang' && each.cause === 'load' && !each.fails);
 
 /** The cause a gate's step reads as, by its name. */
 function stepCause(step) {

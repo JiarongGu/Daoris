@@ -11,7 +11,7 @@
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
- * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), in a run only its own records; each breach says its cause (`tools/time-why.mjs`).
+ * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest: `reached`, and each merge gate that logs into the folder, stamp their records), in a run only its own records; each breach says its cause (`tools/time-why.mjs`).
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';

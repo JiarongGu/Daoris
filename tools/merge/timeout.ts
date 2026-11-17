@@ -57,8 +57,8 @@ export function killNote({ loaded, peak, again, waited }: { loaded: boolean; pea
 }
 
 /** The note of a gate killed under load whose run again alone ended without a kill. */
-export const againNote = (verdict: string, waited: { free: boolean; ms: number }, note: string): string => [
-  `killed at its budget under load, then ${verdict === 'PASS' ? 'passed' : `ended ${verdict}`} run again alone`
+export const againNote = (verdict: string, waited: { free: boolean; ms: number }, note: string, by = 'at its budget'): string => [
+  `killed ${by} under load, then ${verdict === 'PASS' ? 'passed' : `ended ${verdict}`} run again alone`
   + `${waited.ms ? ` after ${minutes(waited.ms)} min waiting for the machine${waited.free ? '' : ', which was not free'}` : ''}`,
   note,
 ].filter(Boolean).join('; ');

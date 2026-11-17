@@ -10,7 +10,7 @@
  * record file is marked in `_fixtures/test-timing/load-marks.json` as `{ "<file>": { holds, at } }`, `holds` the most places held
  * while its run lasted and `at` the record's write time at the mark (a record written again after is unmarked). A record is
  * under load when more than `ALONE_HOLDS` places were held; one with no mark is judged as alone, as every record written before
- * this mark is. With no Daoris home nothing is shared and nothing counts.
+ * this mark is. With no Daoris home nothing is shared and nothing counts. `reached` and the merge's gate step write the marks.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
