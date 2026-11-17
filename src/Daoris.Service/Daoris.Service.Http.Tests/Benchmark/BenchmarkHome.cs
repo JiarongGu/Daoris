@@ -73,9 +73,7 @@ public static class BenchmarkHome
         var (options, error) = ServiceOptions.FromEnvironment(repositories, Path.Combine(scratch, "index", "knowledge.db"));
         if (error is not null) throw new InvalidOperationException(error);
         await using var service = await ServiceFactory.CreateAsync(options, ct: ct);
-        // A fixture is written once and read after: nothing is lost if the machine stops while it is written, so no write waits on the disk.
-        // The journal mode stays the file's own (the log): the store holds the file on two connections, and SQLite leaves the log only
-        // for the one connection left on the file, answering busy at once, with no wait, to any other.
+        // Written once, read after: no write waits on the disk. The log mode stays: a second connection cannot leave it (busy, at once).
         await using (var unsynced = service.Store!.Connection.CreateCommand())
         {
             unsynced.CommandText = "PRAGMA synchronous = OFF;";
