@@ -30,6 +30,8 @@
  *    listed file exists.
  * 6. **Expected edges** are the tool-tests' fixtures, one per edge kind.
  * 7. **Skips**: a statically skipped test's reason begins with a row open in `TASKS.md`.
+ * 8. **Check steps**: each step of the `cli` gate declares every path its command's code reads (`tools/verify-checks/reads.mjs`), since
+ *    a merge runs a step only where a changed path is one it declares.
  *
  *   node tools/test-map.mjs census [<suite>…]            every unit with its subject and the size of its reach
  *   node tools/test-map.mjs reach <from> <to> [<suite>…]  the units the paths changed between two commits reach
@@ -46,6 +48,8 @@ import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
+import { stepReadFailures } from './verify-checks/reads.mjs';
+import { CHECK_STEPS } from './verify-checks/steps.mjs';
 export { literalsOf, tsFacts } from './test-map/ts-facts.mjs';
 
 // ---------------------------------------------------------------------------------------------------
@@ -649,6 +653,7 @@ async function main(argv) {
       reach: REACH, baseline: BASELINE, tasks: read('TASKS.md'), listed, reports,
     });
     for (const problem of map.problems) failures.push(`census: ${problem}`);
+    failures.push(...stepReadFailures(CHECK_STEPS, { files, read, reader: tsReader(files, read) }));
     const suites = new Set(map.units.map((unit) => unit.suite));
     if (!failures.length) {
       console.log(`test-map: ${map.units.length} units in ${suites.size} suites; every check holds${reports ? `, the inventory against ${Object.keys(reports).length} report(s) among them` : ''}`);

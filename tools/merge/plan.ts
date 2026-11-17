@@ -141,11 +141,12 @@ export const SHARED_PROJECTS: ReadonlyMap<string, readonly string[]> = new Map([
 ]);
 
 /**
- * The tools that start `dotnet test` themselves, with the components they build: the reached checks run the filtered
- * classes of the desktop's and the service's test projects, so no other gate builds either beside them.
+ * The tools that start `dotnet` themselves, with the components they build: the reached checks run the filtered
+ * classes of the desktop's and the service's test projects, and the CLI's checks end in the devkit's universal gates.
  */
 const TOOL_COMPONENTS: ReadonlyMap<string, readonly string[]> = new Map([
   ['tools/reached-checks.mjs', ['src/Daoris.Desktop', 'src/Daoris.Service']],
+  ['tools/verify-checks.mjs', ['src/Daoris.Devkit']],
 ]);
 
 /**

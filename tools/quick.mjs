@@ -1,29 +1,23 @@
 #!/usr/bin/env node
 /**
- * The quick checks a builder runs before it hands back: every step of `tools/quick/steps.mjs` runs whatever an earlier one did, each
- * red is said with its output, and the end says which reds are new and which the base already stood in. No step judges test time.
+ * The quick checks a builder runs before it hands back: every step of `tools/quick/steps.mjs` runs whatever an earlier one did, the
+ * writers first and the rest side by side as the `cli` gate runs them (`tools/verify-checks/run.mjs`), each red is said with its output,
+ * and the end says which reds are new and which the base already stood in. No step judges test time.
  *
  *   node tools/quick.mjs                run every step; exit 0 all green, 1 a red, 2 a tool error
  *   node tools/quick.mjs --record-base  run every step at the base instead and record it (`local/quick-base.json`)
  *
  * The base is main at the merge base of HEAD with main (`tools/quick/base.mjs`), never the tree as it stands.
  */
-import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain } from './fsx.mjs';
-import { quickSteps, TIME_LINE } from './quick/steps.mjs';
+import { quickSteps, TIME_LINE, WRITERS } from './quick/steps.mjs';
 import { baseVerdicts } from './quick/base.mjs';
 import { judge, LAST_FILE, say as sayRed, writeVerdicts } from './quick/verdicts.mjs';
+import { runSteps, shellRun } from './verify-checks/run.mjs';
 
 const TAIL_LINES = 40;
-
-function shellStep(root) {
-  return (command) => {
-    const ran = spawnSync(command, { cwd: root, shell: true, encoding: 'utf8', windowsHide: true, maxBuffer: 256 * 1024 * 1024 });
-    return { status: ran.error ? 2 : ran.status ?? 1, output: `${ran.stdout ?? ''}${ran.stderr ?? ''}${ran.error ? String(ran.error) : ''}` };
-  };
-}
 
 const headOf = (root) => {
   try {
@@ -34,16 +28,15 @@ const headOf = (root) => {
 };
 
 /** Runs every step, says the reds and whose they are, writes the verdicts; the exit code. */
-export function runQuick({ root, steps = quickSteps(root), run = shellStep(root), say = console.log, now = Date.now, recordBase = false }) {
+export async function runQuick({ root, steps = quickSteps(), run = shellRun(root), say = console.log, now = Date.now, recordBase = false, width }) {
   if (recordBase) return recordTheBase(root, steps, say);
   const verdicts = {};
-  for (const step of steps) {
-    const started = now();
-    const ran = run(step);
-    verdicts[step] = ran.status === 0 ? 'pass' : 'fail';
-    say(`${ran.status === 0 ? 'ok  ' : 'RED '} ${step} (${((now() - started) / 1000).toFixed(1)}s)`);
+  const ended = (step, ran, ms) => {
+    say(`${ran.status === 0 ? 'ok  ' : 'RED '} ${step.run} (${(ms / 1000).toFixed(1)}s)`);
     if (ran.status !== 0) say(ran.output.trimEnd().split('\n').slice(-TAIL_LINES).map((line) => `    | ${line}`).join('\n'));
-  }
+  };
+  const ran = await runSteps(steps.map((step) => ({ run: step, writes: WRITERS.includes(step) })), { run, width, now, ended });
+  for (const { step, status } of ran) verdicts[step.run] = status === 0 ? 'pass' : 'fail';
   const record = { head: headOf(root), at: new Date().toISOString(), steps: verdicts };
   writeVerdicts(join(root, LAST_FILE), record);
   const red = Object.keys(verdicts).filter((step) => verdicts[step] === 'fail');
@@ -63,10 +56,11 @@ function recordTheBase(root, steps, say) {
 }
 
 if (isMain(import.meta.url)) {
-  try {
-    process.exitCode = runQuick({ root: dirname(dirname(fileURLToPath(import.meta.url))), recordBase: process.argv.includes('--record-base') });
-  } catch (error) {
-    console.error(`quick: ${error.message}`);
-    process.exitCode = 2;
-  }
+  runQuick({ root: dirname(dirname(fileURLToPath(import.meta.url))), recordBase: process.argv.includes('--record-base') }).then(
+    (code) => { process.exitCode = code; },
+    (error) => {
+      console.error(`quick: ${error.message}`);
+      process.exitCode = 2;
+    },
+  );
 }
