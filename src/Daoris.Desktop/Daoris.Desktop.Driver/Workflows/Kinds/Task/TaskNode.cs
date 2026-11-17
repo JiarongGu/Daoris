@@ -10,8 +10,17 @@ namespace Daoris.Driver;
 /// (<see cref="HumanFormerKind"/>).
 /// </summary>
 [NodeKind(NodeKinds.Task, NodeGroup.You, NodeKinds.GoAhead)]
-internal sealed class TaskNode : BuiltInNode, IObserves, IPressed
+internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole
 {
+    /// <summary>
+    /// A task offering its holder's settling word waits on its role, whoever holds it: an approval's Approve or Reject, else its Done or a
+    /// decision's answer.
+    /// </summary>
+    public string? Waits(NodeDeclaration node, NodeStatus status) =>
+        Acts(node, status) is var acts && acts.Any(act => act is NodeWordActs.Done or NodeWordActs.Approve or NodeWordActs.Reject or NodeWordActs.Decide)
+            ? acts.Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task
+            : null;
+
     /// <summary>A task's outcome.</summary>
     public static readonly IReadOnlyList<string> Task = [Done];
 

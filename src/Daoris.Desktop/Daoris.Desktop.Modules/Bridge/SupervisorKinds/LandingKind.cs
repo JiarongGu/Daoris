@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The landing kind: a <c>review</c> step waiting for the person's Accept, or a <c>human</c> approval waiting for Approve or Reject, its
+/// The landing kind: a <c>review</c> step waiting for the person's Accept, or a <c>task</c> approval waiting for Approve or Reject, its
 /// subject <c>{ session, landing }</c> naming the run, the node and the attempt. Its decide is held for the role's window with <i>Overrule</i>
 /// and then released as the node's own word on the run's record; its leave is a hold, the person's at once. The step and the person's stop or
 /// pause of its line are read again at the keeping: a moved step is refused <c>answered</c>, a held line <c>owner-held</c>, a go-ahead's run <c>go-ahead-open</c>.

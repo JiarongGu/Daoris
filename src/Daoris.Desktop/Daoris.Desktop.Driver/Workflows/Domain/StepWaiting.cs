@@ -43,17 +43,8 @@ public static class StepWaiting
         var why = status.State switch
         {
             NodeStates.Unknown => PersonWaits.Held,
-            NodeStates.Active => NodeKit.Of(node.Kind) switch
-            {
-                ReviewNode => PersonWaits.Accept,
-                GoAheadNode => PersonWaits.GoAhead,
-                ReturnNode when status.Code == ReturnNode.BothChanged => PersonWaits.Choose,
-                OpinionNode when status.Holds == OpinionGateReading.Vacant => PersonWaits.Vacant,
-                // A step offering its holder's settling word waits on its role, whoever holds it: an approval's Approve, else a Done or a decide.
-                IPressed pressed when pressed.Acts(node, status) is var acts && acts.Intersect(HoldersWords, StringComparer.Ordinal).Any() =>
-                    acts.Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task,
-                _ => null,
-            },
+            // Each kind says what its active step waits for (IWaitsOnRole); the reading names no kind, and who holds the role is the role's.
+            NodeStates.Active => (NodeKit.Of(node.Kind) as IWaitsOnRole)?.Waits(node, status),
             NodeStates.Failed when record is not null && Left(node, status, record) => PersonWaits.Left,
             _ => null,
         };
@@ -62,9 +53,6 @@ public static class StepWaiting
         var role = why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead ? StepRoles.Of(node) : RoleOf(why);
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
-
-    /// <summary>The words a step's holder settles it by, as a step offers them while it waits: Done, Approve, Reject and a decision's answer.</summary>
-    private static readonly string[] HoldersWords = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Decide];
 
     /// <summary>
     /// The role a wait is on where its step names none: until a step's declaration carries its role, each wait's own. A

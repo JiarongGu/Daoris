@@ -519,10 +519,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     are `kind` (`auto`, `worktree`, `copy`; one its place lacks holds the start), `at-once` (`2` to `24`, or `any`) and `overlap`
     (`go`, `wait`); a graph without one runs one session at a time in the place's checkout (driving rules 12 to 14). The trees it
     makes are ended by a `release` after the landing, else by the sweep (rule 31b).
-51. A `human` node is a manual operation, reached by the person's *Done* or, for an approval, *Approve* with an optional note, or
-    rejected by *Reject* with a reason, as a review's changes are. Its outcome (`done`, `approved`, or none) routes a `when` wire, a
-    rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
-    One declaring two or more outcomes of its own is a per-run decision (`HumanDecisions`, D304 point 5), answered by `decide` with
+51. A `task` step is an operation done by hand, reached by its role's holder's *Done* or, for an approval, *Approve* with an optional
+    note, or rejected by *Reject* with a reason, as a review's changes are; a person and an agent hold it alike, the kind saying what
+    settles it and never who, and a step naming no role is the `owner` role's (D304 point 2). Its outcome (`done`, `approved`, or none)
+    routes a `when` wire, a rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
+    A saved version's former `human` step reads as a `task` under its role at the digest the version was saved with (`HumanFormerKind`,
+    `NodeGraphs.ReadSaved`) until its census finds none; a save names the kinds now, so one naming `human` is refused, and a save writing
+    a `task` step closes going back below its build (`tasks-since.txt`, kept apart from the roles' floor, `WorkflowRolesSince.Floors`).
+    One declaring two or more outcomes of its own is a per-run decision (`TaskDecisions`, D304 point 5), answered by `decide` with
     one of them (`daoris workflow decide <run> <node> <outcome> "why"`; the run's view offers each outcome); another is refused
     `not-outcome`, and a save refuses a decision no `when` wire leaves on any outcome (`decision-unwired`). A word naming a holder
     is a proposal and stands as the answer at once, held for the owner's word: the owner's same answer confirms it, another
@@ -551,11 +555,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
 55. Every step's wait is read by one reading, `StepWaiting.Read`, from the bound runs, never stored: the wait it stands at
-    (`PersonWaits.All`: an active `review`, `human` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
+    (`PersonWaits.All`: an active `review`, `task` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
     waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
     `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
-    done alone)), the role it waits on and that role's holder; until a step names its role, each wait has its own (`StepWaiting.RoleOf`),
-    a vacancy and a failure kept the line's `lead`. The waits whose role the person holds are theirs: Sessions places the run's newest
+    done alone)), the role it waits on and that role's holder. Each kind says what its active step waits for (`IWaitsOnRole`), so the
+    reading names no kind and never asks who holds the role: a step's own word (an Accept, an approval, a task's Done or answer, a
+    go-ahead) waits on the step's role (`StepRoles.Of`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
+    the line's `lead`. The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
@@ -645,8 +651,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   named there (`role-holder`) and a role no catalogue has (`role-unknown`); the editor sets it (`StepRoleField`, applied to the newest draft by
   its `onRole` act), the chart and the run view draw it, and an older version's agent-step `role` option is read as the role by the one
   reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). Who settles a step is its
-  holder's, by one door (D312, rule 18); what settles it is still its kind's, and the `human` kind and the wait read by kind
-  (`StepWaiting.Read`) are left to HOLDDOOR1's rest, its saved versions read by their kept digest (D312 *Left*).
+  holder's, by one door (D312, rule 18), and what it waits for is its kind's (rules 51 and 55). Left: a request's `start: you` and a
+  steps version's `you` (a landing's `accept`, a stage's `start`) still name the person where the role's holder belongs.
 - **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
   its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
   production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes

@@ -5,9 +5,12 @@ namespace Daoris.Driver;
 /// gate's judgement (<see cref="OpinionGateReading"/>).
 /// </summary>
 [NodeKind(NodeKinds.Opinion, NodeGroup.Checks, NodeKinds.Check)]
-public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads
+public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRole
 {
     public PassRead Asks => PassRead.Gates;
+
+    /// <summary>An opinion its gate holds for want of a reviewer waits on the line (<see cref="PersonWaits.Vacant"/>); one under way, on none.</summary>
+    public string? Waits(NodeDeclaration node, NodeStatus status) => status.Holds == OpinionGateReading.Vacant ? PersonWaits.Vacant : null;
 
     public NodeObservation Observe(NodeReading reading) => OpinionGateReading.Observe(reading);
 

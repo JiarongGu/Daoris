@@ -261,7 +261,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     held decisions go stale at the restart; an older build has no table and closes them as before, and a row whose file it closed is
     dropped. (D309) Its word is `From: supervisor`, never the person's; an unattributable one is
     quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review`, or `reject` of a
-    `human` approval (its `approve` spends a destination no grant covers, so it is the owner role's, rule 43), kept against the step as it waits on that attempt and naming the review record's revision, is refused
+    `task` approval (its `approve` spends a destination no grant covers, so it is the owner role's, rule 43), kept against the step as it waits on that attempt and naming the review record's revision, is refused
     `answered` once it moved, `go-ahead-open` under a `go-ahead` and `owner-held` on a line the person stopped or paused. Its
     release reads all again, a moved record going stale, and keeps the node's word on the run's record with its author, which the
     pass applies or drops; a person's word supersedes it, and a `return`'s per-file choice offers a supervisor no act. The head's

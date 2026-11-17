@@ -6,7 +6,7 @@ using JsonRead = Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's landing decisions: a <c>review</c> step's Accept or a <c>human</c> approval's Approve or Reject, decided by the holder
+/// The supervisor's landing decisions: a <c>review</c> step's Accept or a <c>task</c> approval's Approve or Reject, decided by the holder
 /// the admission admits for the run's repository and held for the role's window. At its moment the release asks the admission and the
 /// step again, then keeps the decision as the node's word on the run's record, <c>released</c>, which the pass applies through the node's own
 /// door. The decision is live while released; a restart reads a held one an agent's hold kept back with its window (<see cref="HeldDecisions"/>)

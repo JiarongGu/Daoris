@@ -5,8 +5,11 @@ namespace Daoris.Driver;
 /// nothing (<i>Work in place</i>). Never skipped, since a skip would read as accepted.
 /// </summary>
 [NodeKind(NodeKinds.Review, NodeGroup.You)]
-internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps
+internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps, IWaitsOnRole
 {
+    /// <summary>An active review waits for its role's Accept.</summary>
+    public string? Waits(NodeDeclaration node, NodeStatus status) => PersonWaits.Accept;
+
     /// <summary>
     /// The person's Accept reaches it and nothing fails it. Their changes, with words, are its rejection, so an <c>after</c> from it still
     /// means on Accept and a <c>rejected</c> or <c>back on: rejected</c> wire is the changes route.

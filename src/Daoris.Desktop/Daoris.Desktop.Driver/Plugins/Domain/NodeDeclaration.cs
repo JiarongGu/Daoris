@@ -148,7 +148,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
     /// <summary>
-    /// Its adapter's options by name (as a human node's <c>brief</c>), each its JSON value's text as written: what
+    /// Its adapter's options by name (as a task's <c>brief</c>), each its JSON value's text as written: what
     /// the adapter reads, never a condition. A copy of what is set, in name order, so a graph's digest holds it.
     /// </summary>
     public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
