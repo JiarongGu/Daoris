@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-17 - The plugin cycle's progress test matched a line the roles scope reworded
+
+- **Symptom:** `PluginCycleStaleTests.A_performer_that_sends_progress_before_its_outcome_passes_the_cycle` failed alone since
+  bd5e2dbd14: `Assert.Contains` did not find `let outcome; try { outcome = outcomeOf(await calls.act(attempt));` in `work.mjs`.
+- **Root cause:** bd5e2dbd14 (plugin 4.6.0, a stand-down honoured before every act) made the kit's `run` pass `{ ...attempt, signal }`
+  to `calls.act`. The kit still runs the same cycle and the progress line still goes in before the act; only the test's text anchor,
+  which spelled the old call whole, was stale.
+- **Fix:** the anchor ends at `calls.act(`, so it names where the act starts and not how its argument is spelled. The kit is unchanged.
+- **Verification:** `dotnet test` of the driver tests with `process.runsettings`, filtered to `PluginCycle`: 2 passed, twice.
+
 ## 2026-11-17 - Three Loop ticks still expected an agent's done to end its session
 
 - **Symptom:** `SessionTreeLockTickTests`, `AskAndWaitTickTests`' resumed case and `AcpTurnFailureTickTests`' carry-on case failed
