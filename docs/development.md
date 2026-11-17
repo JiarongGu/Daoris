@@ -91,7 +91,12 @@ names them, and a workflow's `check` step verifies them at your tip while you ar
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
 source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
-handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone.
+handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
+committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: the gates its merge
+would run (the queue's own choice, on the paths from the merge base), every one to its end, main and the queue untouched, each
+verdict kept where the merge of the same tree keeps it. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test
+or first error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in
+the worktree's `local/scratch/main-tree`. The branch-worker hands back on its pass or its brief.
 
 | Change | Additional verification |
 |---|---|
@@ -178,7 +183,8 @@ Main is the development branch, and the cycle's aim is main green and the instal
    the blocking checks, the CLI's verify and the reached checks: the test units the merge's paths reach in the driver's, modules',
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
    over named for the CI. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
-   a CI run of hours.
+   a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
+   `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
    rule, set by `npm ci` and by the setup), so a builder's `git merge main` and the merge tool agree; the archive, the changelog
    and the fix log are append-only and merge by union.
@@ -196,8 +202,9 @@ resume/retry commands when a merge is already open:
 
 ```sh
 node tools/merge-branch.mjs <branch> --preview
-node tools/merge-branch.mjs <branch> --message <file under local/>
-node tools/merge-branch.mjs --queue [--recheck]
+node tools/merge-branch.mjs <branch> --message <file under local/> [--keep-going]
+node tools/merge-branch.mjs --queue [--recheck | --known]
+node tools/merge-branch.mjs --preflight [--base <ref>]   (in the branch's worktree)
 node tools/merge-branch.mjs --drop-batch [<branch>]
 node tools/merge-branch.mjs --plan <branch>
 node tools/merge-branch.mjs --continue
@@ -368,6 +375,17 @@ as a flake, and the queue goes on. The members kept are formed again and judged 
 twice holds the candidate until memory is free; it never runs on the base and never stops the queue. `--queue` prints the
 stop, the candidate and its members, what is queued (and whether a branch has moved past its frozen tip), and what was handed
 back. `--drop-batch <branch>` takes a queued branch off, or ends the candidate that holds it.
+
+**Every red once, and main's seen.** A candidate's run keeps going past every failure but a blocking light gate's, or past
+those too where a request was queued with `--keep-going`. Its reds go in one brief, `local/scratch/merge-<branch>/brief.md` for
+each member, each failure marked main's or the branch's by its judgement's run on the base, and the waiter names it. The merge
+in place writes the same brief, marking each failure by its selection run on main's tip in `local/scratch/main-tree`. After each
+landing the cheap suites (`cli`, `cli-tests`, `tool-tests`, `censuses`) run on the new tip in the background, every one to its
+end, in `local/main-watch-tree` (`--main-watch`, recorded in `local/main-watch.jsonl`; one started while another runs ends at
+once, and the running one then watches main's newest tip). A red writes its brief in `local/scratch/main-watch-<sha7>/` and holds the queue's next merge, said
+by `--queue` and to each waiter, until a watch of a later tip is green, the CI holds each failure as a known red, or
+`--queue --known` files them as known reds. Every run writes its start to `_fixtures/test-timing/run-start.json` (no `DAORIS_`
+variable reaches a gate), so a time ratchet inside a gate judges only that run's records.
 
 **A drop ends the run it dropped** (QUEUEDRAIN1). The runner holds every step of a candidate's run, its gates and its failure
 probes (prefix and class), in one set of step trees, the cancellation a superseded CI run uses, and every two seconds, and before each
