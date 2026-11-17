@@ -177,7 +177,11 @@ public static class SessionsSuperviseCommand
     /// whose <c>at</c> is not before its first ask, within the instance's wait; an answer with no <c>at</c>, from an instance before the
     /// field, is taken as it comes. Null where the instance did not answer.
     /// </summary>
-    internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
+    internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct) =>
+        (await WaitingReadAsync(instance, ct).ConfigureAwait(false)).Waiting;
+
+    /// <summary><see cref="WaitingAsync"/> with why it came to nothing: <c>Pending</c> where the instance answered but not within its wait, else none answered.</summary>
+    internal static async Task<(IReadOnlyList<JsonElement>? Waiting, bool Pending)> WaitingReadAsync(InstanceWorld instance, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow.AddSeconds(-1);
         var until = DateTimeOffset.UtcNow + instance.Within;
@@ -194,9 +198,9 @@ public static class SessionsSuperviseCommand
                     : [];
                 return 0;
             }, instance, ct).ConfigureAwait(false);
-            if (answered is null) return null;
-            if (fresh) return waiting;
-            if (DateTimeOffset.UtcNow >= until) return null;
+            if (answered is null) return (null, false);
+            if (fresh) return (waiting, false);
+            if (DateTimeOffset.UtcNow >= until) return (null, true);
             await Task.Delay(AskAgain, ct).ConfigureAwait(false);
         }
     }

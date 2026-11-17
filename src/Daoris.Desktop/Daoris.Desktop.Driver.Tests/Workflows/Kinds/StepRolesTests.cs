@@ -150,6 +150,19 @@ public sealed class StepRolesTests : IDisposable
         Assert.Null(WorkflowRolesSince.Closes("1.40.0", file, "1.41.0"));
     }
 
+    /// <summary>A floor is written whole beside its file and read sharing its writer's, so a torn floor never reads as a lower build.</summary>
+    [Fact]
+    public void A_floor_is_written_atomically_and_read_beside_its_writer()
+    {
+        var file = JsonNode.Parse($$"""{ "versions": [ { "version": 1, "graph": {{Json("tester")}} } ] }""");
+        WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
+
+        Assert.Equal(["roles-since.txt"], Directory.GetFiles(WorkflowStore.FolderOf(_home)).Select(Path.GetFileName));
+        // Held open as a reader beside a writer holds it (sharing deletion), the floor still reads.
+        using var held = AtomicFile.OpenRead(WorkflowRolesSinceStore.PathOf(_home));
+        Assert.Equal("1.40.0", WorkflowRolesSinceStore.Read(_home));
+    }
+
     /// <summary>A save writing a <c>task</c> step closes going back below its build, apart from the roles' floor, which a build between the two lies under.</summary>
     [Fact]
     public void A_going_back_past_the_first_build_that_saved_a_task_is_refused_whatever_the_roles_floor()
