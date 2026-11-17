@@ -293,7 +293,8 @@ comment-stripped text once, through `SourceTexts`. What the driver's censuses sh
 driver's compile, the reference map, and under a scope the compiles it reaches) is made once before the first class runs, by the
 assembly's runner (`CensusWarm`; xUnit 2 has no assembly fixture), waiting at most 30 s so the run's 60 s hang bound still sees a case
 start; so a case's recorded time is its own work, never another's wait for the warm-up. The binding stays the semantic classes'
-fixtures', made once a run whichever asks first, and a reach read from a warm reference map runs on the case's own thread. With
+fixtures', made once a run and begun with the first class beside the cases, so the hang bound never sees a minute of fixtures with no
+case; a reach read from a warm reference map runs on the case's own thread. With
 no scope (the CI after the landing, a developer's run) every census judges the whole tree. A census class holds what a source says, never
 behaviour: a class whose few source-reading facts sat beside bridge or graph cases has those facts in a census class of its own
 (`ModuleSourcesCensusTests`), and its behaviour is the fast half's. A semantic census (the structure classes, the declarations'

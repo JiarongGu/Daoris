@@ -15,7 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the ratchet read that wait as the case's own. xUnit 2 has no assembly fixture, so the assembly's runner
 /// (<see cref="CensusWarmFramework"/>) makes them once the run has started and before its first class, in a run that holds a census
 /// case. The binding stays the semantic classes' fixtures' (<see cref="DesktopCompilationsWarm"/>, <see cref="DriverTreeWarm"/>), whose
-/// time is no case's either: made before the first class, its minute would pass with no case started, past the run's hang bound.
+/// time is no case's either: made before the first class, its minute would pass with no case started, which risks the run's hang bound,
+/// so it begins as the first class does and goes on beside the cases (<see cref="BeginBinding"/>).
 /// </summary>
 internal static class CensusWarm
 {
@@ -38,7 +39,7 @@ internal static class CensusWarm
 
     /// <summary>
     /// How long the run waits for the warm-up before its first class: half the run's hang bound (60 s, <c>VSTestBlameHangTimeout</c> in
-    /// <c>Directory.Build.props</c>), which counts from the run's start until a case starts, the rest left for the host's start and its
+    /// <c>Directory.Build.props</c>), whose clock runs from the run's start until a case starts, the rest left for the host's start and its
     /// discovery. Past it the warm-up goes on beside the cases, each waiting for what it reads, as before the warm-up.
     /// </summary>
     internal static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
@@ -52,6 +53,22 @@ internal static class CensusWarm
     /// <summary>Whether a run of cases with these <paramref name="traits"/> holds a census case.</summary>
     internal static bool Wanted(IEnumerable<IReadOnlyDictionary<string, List<string>>> traits) =>
         traits.Any(each => each.TryGetValue(Category.Name, out var values) && values.Contains(Category.Census));
+
+    /// <summary>Whether a run of these <paramref name="classes"/> (full names) holds a semantic census, whose fixture binds.</summary>
+    internal static bool Binds(IEnumerable<string> classes) =>
+        classes.Select(name => name[(name.LastIndexOf('.') + 1)..]).Intersect(CensusReach.Semantic(typeof(CensusWarm).Assembly), StringComparer.Ordinal).Any();
+
+    /// <summary>
+    /// Begins the semantic fixtures' binding (<see cref="DesktopCompilationsWarm"/>, <see cref="DriverTreeWarm"/>) beside the cases, each
+    /// fixture waiting for it as before: begun with the run rather than at a semantic class's turn, it ends while the other classes' cases
+    /// still run, so the hang bound, which a minute of fixtures with no case starting or ending trips, never sees one. A failure is kept
+    /// by the fixture's own reader.
+    /// </summary>
+    internal static void BeginBinding()
+    {
+        _ = Task.Run(DesktopCompilationsWarm.Bind);
+        _ = Task.Run(() => DriverTree.Of(typeof(StructureTests)));
+    }
 }
 
 /// <summary>xUnit's own framework, its assembly runner making the censuses' shared reading (<see cref="CensusWarm"/>) before the first class runs.</summary>
@@ -87,6 +104,8 @@ public sealed class CensusWarmFramework(IMessageSink diagnostics) : XunitTestFra
             {
                 DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"the censuses' shared reading failed, and each case that reads it says why: {failed.GetBaseException().Message}"));
             }
+
+            if (CensusWarm.Binds(TestCases.Select(each => each.TestMethod.TestClass.Class.Name).Distinct())) CensusWarm.BeginBinding();
         }
     }
 }

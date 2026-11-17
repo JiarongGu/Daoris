@@ -17,5 +17,8 @@ public sealed class DesktopCompilationsWarm
         return true;
     });
 
-    public DesktopCompilationsWarm() => _ = Bound.Value;
+    public DesktopCompilationsWarm() => Bind();
+
+    /// <summary>Binds once a run; the run's start begins it (<see cref="CensusWarm"/>) and each fixture waits for it.</summary>
+    internal static void Bind() => _ = Bound.Value;
 }

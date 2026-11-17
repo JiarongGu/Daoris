@@ -29,4 +29,12 @@ public sealed class CensusWarmTests
         Assert.False(CensusWarm.Wanted([process, new Dictionary<string, List<string>>()]));
         Assert.False(CensusWarm.Wanted([]));
     }
+
+    [Fact]
+    public void The_binding_begins_with_the_run_only_where_a_semantic_census_runs()
+    {
+        Assert.True(CensusWarm.Binds(["Daoris.Desktop.Driver.Tests.SayKeysCensusTests", "Daoris.Desktop.Driver.Tests.StructureTests"]));
+        Assert.True(CensusWarm.Binds(["Daoris.Desktop.Driver.Tests.DeclarationLiteralsCensusTests"]));
+        Assert.False(CensusWarm.Binds(["Daoris.Desktop.Driver.Tests.SayKeysCensusTests", "Daoris.Desktop.Driver.Tests.CensusWarmTests"]));
+    }
 }
