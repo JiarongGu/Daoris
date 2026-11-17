@@ -44,9 +44,10 @@ export function commitAttributionProblems(commits: Commit[]): string[] {
   })).map((commit) => `${commit.sha} ${commit.subject}: ${commit.trailer ? 'no allowed maker in its Co-Authored-By line' : 'no Co-Authored-By line'}; ${expected}`);
 }
 
-export function commitProblems(root: string, branch: string, commits: Commit[]): string[] {
+/** `listing` is the worktree listing the run read at its start, where it read one; else it is read here. */
+export function commitProblems(root: string, branch: string, commits: Commit[], listing: string | null = null): string[] {
   const problems = commitAttributionProblems(commits);
-  const tree = worktreeFor(git(root, ['worktree', 'list', '--porcelain']).out, branch);
+  const tree = worktreeFor(listing ?? git(root, ['worktree', 'list', '--porcelain']).out, branch);
   if (tree && existsSync(tree)) {
     const left = lines(git(tree, ['--no-optional-locks', 'status', '--porcelain']).out);
     if (left.length) {

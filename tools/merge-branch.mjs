@@ -415,9 +415,10 @@ import { flakeNote, memoryLine } from './merge/summary.ts';
 import { contractsGates, pageScripts, startContractsStep } from './merge-branch/ci-steps.mjs';
 import { mergeGateEnvironment } from './merge/census-scope.ts';
 import {
-  git, unmergedPaths, parseWorktrees, isIgnored, MAIN, lines, gitDirs, requireMain, mergeInProgress, treeState, notClean, requireBranch,
+  git, unmergedPaths, parseWorktrees, requireIgnored, MAIN, lines, gitDirs, requireMain, mergeInProgress, treeState, notClean, requireBranch,
   preconditions, locate,
 } from './merge/git.ts';
+import { VERDICTS_FILE, requireVerdictsIgnored, samePath, startListing, toolCheckout, verdictsHome, verdictsNeed } from './merge/home.ts';
 import { nowIso, when } from './merge/clock.ts';
 import { branchCommits, commitProblems, parseCommits, COMMIT_FORMAT, commitAttributionProblems } from './merge/attribution.ts';
 export { parseWorktrees } from './merge/git.ts';
@@ -438,12 +439,9 @@ export { laneReport } from './merge/lane-report.ts';
 // test-map: strings name paths as data — what this file names it writes and runs; what it reads is its imports
 const STATE = `${SCRATCH}/merge-batch.json`;
 
-/**
- * Which gates passed which tree: gitignored, under `local/`, and outside `local/scratch/`, which
- * holds what a merge can throw away. `--rerun` reads the merge's own verdicts from the batch record; this
- * one outlives the batch, for the stage.
- */
-export const VERDICTS_FILE = 'local/gate-verdicts.json';
+// Which gates passed which tree (`VERDICTS_FILE`): gitignored, under `local/`, and outside `local/scratch/`, which holds what
+// a merge can throw away. `--rerun` reads the merge's own verdicts from the batch record; this one outlives the batch, for the stage.
+export { VERDICTS_FILE, verdictsHome } from './merge/home.ts';
 
 /** The command that runs the full set on the checkout as it stands: what a refused stage names when nothing smaller would do. */
 export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
@@ -802,29 +800,6 @@ function refreshKnowledgeServer(root) {
 
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record: which gate passed which tree
-
-/**
- * The checkout whose verdict store a run in `root` reads and writes: the first worktree git lists (the main checkout),
- * whichever worktree the run is in, or `root` itself where git cannot say or the repository is bare. Verdicts are keyed by
- * tree, so one store serves every worktree, each judging its own tree.
- */
-const homes = new Map();
-export function verdictsHome(root) {
-  if (!homes.has(root)) {
-    const listed = git(root, ['worktree', 'list', '--porcelain'], { allowFail: true });
-    const first = listed.status === 0 ? parseWorktrees(listed.out)[0] : null;
-    homes.set(root, first && first.path && !first.bare ? resolve(first.path) : root);
-  }
-  return homes.get(root);
-}
-
-/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. In the main checkout. */
-function requireVerdictsIgnored(root) {
-  const home = verdictsHome(root);
-  if (!isIgnored(home, VERDICTS_FILE)) {
-    throw new Refusal(`${VERDICTS_FILE} is not ignored ${samePath(home, root) ? 'here' : 'in the main checkout, where every worktree records'}, so each verdict written would change the tree it is a verdict on`);
-  }
-}
 
 /** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
 export function readVerdicts(root) {
@@ -1418,10 +1393,6 @@ const gitSays = (text) => {
   return all.find((line) => /^(?:error|fatal):/.test(line)) ?? all[0] ?? 'no reason given';
 };
 
-const samePath = (a, b) => {
-  const norm = (path) => resolve(path).split('\\').join('/').replace(/\/+$/, '');
-  return process.platform === 'win32' ? norm(a).toLowerCase() === norm(b).toLowerCase() : norm(a) === norm(b);
-};
 
 /**
  * The first file under `dir`, as a `/` path from the folder that holds it, or null when it holds none.
@@ -2820,10 +2791,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   }
   const head = headCommit(root);
   if (!head) throw new Refusal('this checkout has no commit to gate');
-  if (!isIgnored(root, `${SCRATCH}/full-probe.log`)) {
-    throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
-  }
-  requireVerdictsIgnored(root);
+  requireLogsIgnored(root);
   // The declared runner hands the plan it read from the declaration it is given; the tree's own file is never read for it.
   const plan = options.givenPlan ?? readPlan(root);
   const dir = join(root, SCRATCH, `full-${head.slice(0, 7)}`);
@@ -3016,10 +2984,7 @@ async function rerunCheckout(root, options) {
   if (changed.length) {
     throw new Refusal(`${notClean(changed)}\n  ${verb} on the checkout gates a commit: commit the change first, or ${FULL_COMMAND} gates the tree as it stands`);
   }
-  if (!isIgnored(root, `${SCRATCH}/full-probe.log`)) {
-    throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
-  }
-  requireVerdictsIgnored(root);
+  requireLogsIgnored(root);
   const plan = readPlan(root);
   const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
   if (unknown.length) {
@@ -3133,8 +3098,7 @@ async function mergeNext(root, state) {
 }
 
 async function start(root, options) {
-  preconditions(root);
-  requireVerdictsIgnored(root);
+  withVerdictsIgnored(root, (also) => preconditions(root, also));
   const pending = readState(root);
   if (pending && pending.at < pending.branches.length - 1) {
     throw new Refusal(`a batch is recorded with ${pending.branches.slice(pending.at + 1).join(', ')} still to merge: run --continue, or --drop-batch to forget it`);
@@ -3181,8 +3145,7 @@ async function resume(root, options) {
     if (state.autoPrune) pruneAround(root, []);
     return 0;
   }
-  preconditions(root);
-  requireVerdictsIgnored(root);
+  withVerdictsIgnored(root, (also) => preconditions(root, also));
   if (!landed) {
     throw new Refusal(`the merge of ${branch} is not committed (it is not in ${MAIN}'s history): commit it after reading the diff and writing the records, or --drop-batch`);
   }
@@ -3569,10 +3532,7 @@ export function besideOutcome(code, superseded) {
  */
 async function gateBeside(root, options) {
   const home = verdictsHome(root);
-  if (!isIgnored(home, GATE_TREE)) {
-    throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
-  }
-  requireVerdictsIgnored(home);
+  requireGateTreeIgnored(home);
   const asked = options.besideCommit ?? MAIN;
   const resolved = git(home, ['rev-parse', '--verify', '--quiet', `${options.besideCommit ?? `refs/heads/${MAIN}`}^{commit}`], { allowFail: true });
   if (resolved.status !== 0) throw new Refusal(`no commit '${asked}' to gate`);
@@ -4089,10 +4049,7 @@ async function gateVerify(root, options) {
     const at = git(tree, ['rev-parse', 'HEAD']).out.trim();
     if (at !== commit) throw new Refusal(`DAORIS_VERIFY_TREE stands at ${at.slice(0, 7)}, not at DAORIS_VERIFY_COMMIT ${sha}: the tree is the caller's, and the runner moves none`);
   } else {
-    if (!isIgnored(home, GATE_TREE)) {
-      throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
-    }
-    requireVerdictsIgnored(home);
+    requireGateTreeIgnored(home);
     try {
       const taken = takeGateLock(home, { commit, holder: 'full' });
       lock = true;
@@ -4695,13 +4652,7 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
  */
 async function gateCi(root, options, { stopAsked = () => false } = {}) {
   const home = verdictsHome(root);
-  if (!isIgnored(home, GATE_TREE)) {
-    throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
-  }
-  requireVerdictsIgnored(home);
-  if (!isIgnored(home, `${SCRATCH}/ci-probe/status.json`)) {
-    throw new Refusal(`${SCRATCH}/ is not ignored in the main checkout, so the CI's status and logs would change the trees its merges gate`);
-  }
+  requireGateTreeIgnored(home, [[`${SCRATCH}/ci-probe/status.json`, `${SCRATCH}/ is not ignored in the main checkout, so the CI's status and logs would change the trees its merges gate`]]);
   const named = options.ciCommit;
   const resolved = git(home, ['rev-parse', '--verify', '--quiet', `${named ?? `refs/heads/${MAIN}`}^{commit}`], { allowFail: true });
   if (resolved.status !== 0) throw new Refusal(`no commit '${named ?? MAIN}' to gate`);
@@ -5284,12 +5235,19 @@ class Drained extends Error {
 const mainTipOf = (home) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim();
 const isAncestorIn = (home) => (a, b) => git(home, ['merge-base', '--is-ancestor', a, b], { allowFail: true }).status === 0;
 
-function requireQueueIgnored(home) {
-  requireVerdictsIgnored(home);
-  for (const path of [MERGE_QUEUE, SCOPE_TREE]) {
-    if (!isIgnored(home, path)) throw new Refusal(`${path} is not ignored in the main checkout, so the queue would change the trees its candidates gate`);
-  }
+/** The checkout's own `check`, whose last git start asks what it must ignore, then the verdicts record: in that start where its main checkout is this one. */
+function withVerdictsIgnored(root, check) {
+  const own = samePath(verdictsHome(root), root);
+  check(own ? [verdictsNeed(root)] : []);
+  if (!own) requireVerdictsIgnored(root);
 }
+
+const requireLogsIgnored = (root) => withVerdictsIgnored(root, (also) => requireIgnored(root, [[`${SCRATCH}/full-probe.log`, `${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`], ...also]));
+
+/** The gate tree, the verdicts record and `more`, each `[path, why]` git must ignore in the main checkout `home`, asked in one start. */
+const requireGateTreeIgnored = (home, more = []) => requireIgnored(home, [[GATE_TREE, `${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`], verdictsNeed(home), ...more]);
+const requireQueueIgnored = (home) => requireIgnored(home, [verdictsNeed(home),
+  ...[MERGE_QUEUE, SCOPE_TREE].map((path) => [path, `${path} is not ignored in the main checkout, so the queue would change the trees its candidates gate`])]);
 
 /**
  * Why a queue verb is refused where it is started, or null. The queue is its home's (`verdictsHome`, the
@@ -5340,18 +5298,9 @@ function requireOwnTree(path) {
   if (why) throw new Refusal(why);
 }
 
-/** The checkout holding this tool, and whether it is one of `home`'s repository; none where git finds none. */
-function toolCheckout(home) {
-  const asked = git(dirname(fileURLToPath(import.meta.url)), ['rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
-  const [top, common] = asked.status === 0 ? lines(asked.out) : [];
-  if (!top || !common) return { tool: null, sameRepository: false };
-  const theirs = git(home, ['rev-parse', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
-  return { tool: resolve(top), sameRepository: theirs.status === 0 && samePath(common, theirs.out.trim()) };
-}
-
-/** The verb refused, with `queueHomeRefusal`'s sentence, where it is started outside the queue's own checkout. */
+/** The verb refused, with `queueHomeRefusal`'s sentence, where it is started outside the queue's own checkout; the tool's checkout is asked only where it decides. */
 function requireQueueHome(root, home, { run = false } = {}) {
-  const why = queueHomeRefusal({ root, home, ...(run ? toolCheckout(home) : {}), run });
+  const why = queueHomeRefusal({ root, home, ...(run && samePath(root, home) ? toolCheckout(root) : {}), run });
   if (why) throw new Refusal(why);
 }
 
@@ -6240,7 +6189,7 @@ async function enqueueVerb(root, options) {
   const message = readFileSync(file, 'utf8');
   const tip = requireBranch(home, branch);
   if (options.commitCheck) {
-    const problems = commitProblems(home, branch, branchCommits(home, branch));
+    const problems = commitProblems(home, branch, branchCommits(home, branch), startListing(root));
     if (problems.length) throw new Refusal(`the commit check refuses ${branch}:\n${problems.map((problem) => `  ${problem}`).join('\n')}\n  (--no-commit-check queues it anyway)`, 1);
   }
   const out = withQueue(home, (queue) => {
