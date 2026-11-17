@@ -49,6 +49,7 @@ public sealed class NoConsoleWindowTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
+            // This fact counts and names across files (each named inheriting spawn found once, the spawns found at all): the whole tree.
             foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
@@ -57,7 +58,7 @@ public sealed class NoConsoleWindowTests
                     continue;
                 }
 
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 foreach (Match spawn in Regex.Matches(source, @"new ProcessStartInfo\b"))
                 {
                     spawns++;
@@ -143,7 +144,7 @@ public sealed class NoConsoleWindowTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in CensusScope.Judged(typeof(NoConsoleWindowTests), Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
@@ -151,7 +152,7 @@ public sealed class NoConsoleWindowTests
                     continue;
                 }
 
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 foreach (Match spawn in Regex.Matches(source, @"new ProcessStartInfo\b"))
                 {
                     var end = Regex.Match(source[spawn.Index..], @"\}\s*[;)]");

@@ -33,7 +33,7 @@ public sealed class ProcessHomeCensusTests
     {
         var folder = SourceFiles.Project(SourceFiles.DriverProject);
         var found = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (var path in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
+        foreach (var path in CensusScope.Judged(typeof(ProcessHomeCensusTests), SourceFiles.All(SourceFiles.DriverProject, "*.cs")))
         {
             if (Reading(SourceTexts.Of(path)) > 0) found.Add(Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'));
         }
@@ -55,7 +55,8 @@ public sealed class ProcessHomeCensusTests
     public void Each_source_named_here_still_reads_it()
     {
         var found = Scan();
-        var stale = Kept.Keys.Where(file => !found.Contains(file)).ToList();
+        var listed = CensusScope.Judged(typeof(ProcessHomeCensusTests), Kept.Keys, file => $"src/Daoris.Desktop/{SourceFiles.DriverProject}/{file}");
+        var stale = listed.Where(file => !found.Contains(file)).ToList();
 
         Assert.True(stale.Count == 0, $"named here but no longer reading the process's home, so delete its row: {string.Join(", ", stale)}");
     }

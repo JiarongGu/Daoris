@@ -42,7 +42,7 @@ public sealed class LineAccountCallersCensusTests
         var unread = new List<string>();
         var found = 0;
         foreach (var project in Projects)
-        foreach (var path in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
+        foreach (var path in CensusScope.Judged(typeof(LineAccountCallersCensusTests), Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
             if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.EndsWith("Harnesses/HarnessRoster.cs", StringComparison.Ordinal))
@@ -50,14 +50,15 @@ public sealed class LineAccountCallersCensusTests
                 continue;
             }
 
-            var text = File.ReadAllText(path);
+            var text = SourceTexts.Of(path);
             if (!sites.Any(site => Regex.IsMatch(text, site))) continue;
 
             found++;
             if (!Regex.IsMatch(text, @"\b(LineAccount|LineKind|LineAnswer)\b") && !NotYetMoved.Contains(relative)) unread.Add(relative);
         }
 
-        Assert.True(found >= 5, $"the census found {found} files that read an account's cool-off or resume: its patterns have drifted");
+        // The patterns' reach is a fact of the whole tree: a scope holds a few of its files.
+        Assert.True(CensusScope.Paths is not null || found >= 5, $"the census found {found} files that read an account's cool-off or resume: its patterns have drifted");
         Assert.True(unread.Count == 0, "read neither the account rule nor named not yet moved: " + string.Join(", ", unread));
         Assert.All(NotYetMoved, name => Assert.True(File.Exists(Path.Combine(root, name)), $"{name} is named not yet moved but is not there"));
         Assert.Equal(["NoToolchain", "Switch", "Elsewhere", "Handed"], Enum.GetNames<LineWalkPlace>());

@@ -217,7 +217,7 @@ public sealed class CourseVocabularyTests
             if (mine.Contains(relative)) continue;
 
             var key = relative.Replace('\\', '/');
-            var text = CourseCensusTests.WithoutComments(File.ReadAllText(path));
+            var text = CourseCensusTests.WithoutComments(SourceTexts.Of(path));
             var named = names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).ToList();
             if (named.Count > 0) reading.Add(key);
             if (named.Count > 0 && !Readers.ContainsKey(key)) readers.Add($"{key} names {string.Join(", ", named)}");

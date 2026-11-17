@@ -50,6 +50,9 @@ internal static class CensusScope
     /// <summary>Of <paramref name="paths"/> (full or repository-relative), the ones <paramref name="census"/> judges in this run.</summary>
     internal static IEnumerable<string> Judged(Type census, IEnumerable<string> paths) => Judged(MarkOf(census), paths, path => path, Paths);
 
+    /// <summary>Of <paramref name="items"/> (a table's rows, a list's members), the ones <paramref name="census"/> judges in this run, each by the path <paramref name="pathOf"/> gives (full or repository-relative).</summary>
+    internal static IEnumerable<T> Judged<T>(Type census, IEnumerable<T> items, Func<T, string> pathOf) => Judged(MarkOf(census), items, pathOf, Paths);
+
     /// <summary>
     /// Of <paramref name="items"/>, the ones a census marked <paramref name="judging"/> judges under <paramref name="scope"/>: every one
     /// for a whole census or a run with no scope, else those whose path the scope holds.

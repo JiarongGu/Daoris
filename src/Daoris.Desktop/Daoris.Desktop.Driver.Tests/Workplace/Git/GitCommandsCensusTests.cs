@@ -49,9 +49,14 @@ public sealed class GitCommandsCensusTests : IDisposable
     [Fact]
     public void Every_git_the_sources_start_names_a_rowed_command_by_a_literal()
     {
-        var sites = GitStartSites.In(SourceCensus.Driver());
-        Assert.True(sites.Count > 300, $"the census read {sites.Count} starts, too few to be the sources'");
-        var problems = Problems(SourceCensus.Driver());
+        // The census's reach is a fact of the whole tree: it is held when no scope narrows the run.
+        if (CensusScope.Paths is null)
+        {
+            var sites = GitStartSites.In(SourceCensus.Driver());
+            Assert.True(sites.Count > 300, $"the census read {sites.Count} starts, too few to be the sources'");
+        }
+
+        var problems = Problems(SourceCensus.Driver(typeof(GitCommandsCensusTests)));
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
