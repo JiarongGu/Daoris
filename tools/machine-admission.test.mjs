@@ -136,6 +136,29 @@ describe('two holders', () => {
     hold.release();
   });
 
+  test('a wait past its bound is told to the bound, once at the bound and once at each bound more, and the wait goes on', async () => {
+    const home = newHome();
+    const first = admission(home);
+    const held = await first.take({ what: 'driver gate' });
+    let clock = Date.now();
+    let looks = 0;
+    const bounded = [];
+    const second = admission(home, {
+      now: () => clock, pollMs: 10_000, bound: { ms: 25_000, say: (waitedMs, sentence) => bounded.push({ waitedMs, sentence }) },
+      sleep: async () => {
+        clock += 10_000;
+        looks += 1;
+        if (looks === 6) held.release();
+        await new Promise((done) => { setImmediate(done); });
+      },
+    });
+    const hold = await second.take({ what: 'heavy tier' });
+    assert.ok(hold, 'a bound ends no wait');
+    assert.deepEqual(bounded.map((each) => each.waitedMs), [30_000, 50_000], 'at the first look past 25 s, then past 50 s');
+    assert.match(bounded[0].sentence, /the machine runs 1 of 1 heavy runs: the merge queue's driver gate/);
+    hold.release();
+  });
+
   test("who holds the places is said from the home's record, and nothing without a home", async () => {
     const home = newHome();
     const made = admission(home);

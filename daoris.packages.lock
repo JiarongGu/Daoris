@@ -77,6 +77,17 @@
       "suite": "adapters-ssh-keys",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
       "passed": "2026-11-15T17:24:29.307Z"
+    },
+    "Daoris.Assistant": {
+      "fingerprint": "d59bd5cf94d5ee7f4207526bcf11a1add8ecb93882cdb6774d3b8daf5deee5dc",
+      "tree": "0716a91f351baaf0e18a7d591fcd24cbc76173be8e762d0f2100a610b38fe681",
+      "ports": {
+        "Clocks": "c4cfb07d2c72265f2be3f83e4cd8a719c0c62d82"
+      },
+      "outside": {},
+      "suite": "assistant",
+      "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
+      "passed": "2026-11-17T20:32:27.464Z"
     }
   }
 }

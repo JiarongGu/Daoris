@@ -42,11 +42,13 @@ public sealed record SettleBy(string Who, int? Epoch = null)
     /// <summary>
     /// Who a press speaks as by the channel it came by (<see cref="TerminalTierBy"/>), or null for the person's own (the window, a card the
     /// person confirmed, their terminal), which the act makes the person's or the owner role's (<see cref="Of"/>): a working session's own press
-    /// is its agent's, Ask Daoris's its own agent's, and an appointed role's act an agent's. A stop or a decision from an agent is its holder's
-    /// word, never the owner role's.
+    /// is the agent its start ran, by the name its channel keeps (<paramref name="agent"/>, <c>agent:&lt;name&gt;</c>), Ask Daoris's its own
+    /// agent's, and an appointed role's act an agent's. A channel that keeps no name a holder takes speaks the unnamed <c>agent</c>. A stop or a
+    /// decision from an agent is its holder's word, never the owner role's.
     /// </summary>
-    public static SettleBy? OfChannel(string by, bool appointed, int? epoch) =>
-        appointed || by == TerminalTierBy.Session ? new(CastHolders.Agent, epoch)
+    public static SettleBy? OfChannel(string by, bool appointed, int? epoch, string? agent = null) =>
+        appointed ? new(CastHolders.Agent, epoch)
+        : by == TerminalTierBy.Session ? new(agent is { } name && CastHolders.Is(CastHolders.AgentNamed(name)) ? CastHolders.AgentNamed(name) : CastHolders.Agent, epoch)
         : by == TerminalTierBy.AskDaoris ? new(AskDaoris, epoch)
         : null;
 }

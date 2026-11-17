@@ -24,6 +24,7 @@ public abstract class PipeDelegateHarness : Bridge
     internal readonly ConcurrentDictionary<string, string> _access = new(StringComparer.Ordinal);
     internal readonly ConcurrentDictionary<string, IReadOnlyList<string>> _families = new(StringComparer.Ordinal);
     internal readonly ConcurrentDictionary<string, HelpPressPlace> _places = new(StringComparer.Ordinal);
+    internal readonly ConcurrentDictionary<string, string> _agents = new(StringComparer.Ordinal);
 
     /// <summary>The driver's stand-in: each press counted by route and answered done, with the session it ran as and whether it named the owner's.</summary>
     internal sealed class StandIn : ModuleBase
@@ -34,6 +35,8 @@ public abstract class PipeDelegateHarness : Bridge
 
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
 
+        public ConcurrentQueue<string?> Speakers { get; } = new();
+
         /// <summary>What a test makes the route do in place of the canned answer: the route's own code over a world of its own.</summary>
         public Func<IpcRequest, Task<object?>>? Press { get; init; }
 
@@ -43,6 +46,7 @@ public abstract class PipeDelegateHarness : Bridge
         {
             _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
             Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
+            Speakers.Enqueue(CastRoutes.SpeakerOf(null)?.Who);
             if (Press is { } press) return press(request);
             return Task.FromResult<object?>(request.Type == "REGISTRY_CREATE"
                 ? new { Done = true, Receipt = new { Kind = "opened", Repository = "ledger", Workspace = "aurora", Folder = "/work/aurora/ledger", Line = "main", Quests = new[] { "q7" }, Done = true } }
@@ -72,6 +76,7 @@ public abstract class PipeDelegateHarness : Bridge
                 _delegates.Of(session), _modes.GetValueOrDefault(session), route => _said.Enqueue((session, route)))
             {
                 Permissions = _access.GetValueOrDefault(session),
+                Agent = _agents.GetValueOrDefault(session),
                 Families = _families.GetValueOrDefault(session) ?? [],
                 PlaceOf = _places.TryGetValue(session, out var place) ? (_, _) => Task.FromResult<HelpPressPlace?>(place) : null,
             };

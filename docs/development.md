@@ -232,16 +232,24 @@ Main is the development branch, and the cycle's aim is main green and the instal
    rule, set by `npm ci` and by the setup), so a builder's `git merge main` and the merge tool agree; the archive, the changelog
    and the fix log are append-only and merge by union.
 4. **Stage, then the CI.** The install is staged from a commit its merge landed: the fast tier passed at the merge, and the heavy run
-   after the landing (`local/heavy-runs.jsonl`) is green or red only on classes already filed as main's red
-   (`npm run publish:desktop -- --to <install> --service --stage`, which names what the commit lacks); the CI then runs the
+   after the landing (`local/heavy-runs.jsonl`) is green or red only on classes already filed as main's red (a run a newer
+   landing superseded is no pass: the newer commit's run carries its classes) (`npm run publish:desktop -- --to <install> --service --stage`, which names what the commit lacks); the CI then runs the
    rehearsals on the staged commit (`--ci --stage <commit>`), and its reds are fixed as small commits on main.
 
 ## Integrate and record
 
 `tools/merge-branch.mjs` is this repository's integration tool. It reads declared gates and lane
 ownership, regenerates indexes, and records verdicts in the main checkout's `local/gate-verdicts.json`,
-keyed by tree, whichever worktree runs it. Inspect a branch's plan before integration; use its
-resume/retry commands when a merge is already open:
+keyed by tree, whichever worktree runs it. The store keeps 40 verdicts of each gate for the scoped run and 40 for the rest,
+and a verdict a week old is past its use unless it is its gate's newest or its newest pass (`tools/merge/verdict-keep.ts`):
+no reader reads it and the next write drops it, since a tree a week behind main differs from it by thousands of paths and
+stands for no gate. So `node tools/test-recall.mjs` finds a week of gate failures there; the CI's records hold more. A
+judgement of the store (a preflight's or the queue's plan, the CI's, `--passed`) compares the checkout's tree with every
+verdict's tree: it asks git each pair it lacks at once, 64 pairs a `git diff-tree --stdin`, keeps each answer by its pair of
+tree ids under the main checkout's `local/scratch/tree-drift/` (a tree never changes; the newest eight judged trees' files
+stay, `tools/merge/tree-drift.ts`), and places each changed path by the lane table once whichever gate asks (`reachingOf`).
+The plan reads the store in seconds, not a git start and a placing of thousands of paths per verdict (VERDICTSCAN1). Inspect
+a branch's plan before integration; use its resume/retry commands when a merge is already open:
 
 ```sh
 node tools/merge-branch.mjs <branch> --preview
@@ -512,6 +520,20 @@ run takes every place at once, as that many ordinary entries in one write, and w
 HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
 a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
 The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.
+
+**One heavy tier at a time** (HEAVYSTACK1). The heavy tier after a landing (`tools/heavy-run.mjs`) holds the heavy tree alone,
+through `local/heavy-stack.json` (`tools/merge/heavy-stack.ts`), so landings in a row hold one admission place and run one git half,
+not one each. A tier that lands while an older one runs waits, and asks it to stop through the older one's halt file
+(`local/heavy-halts/`, read by its `reached-checks --halt-file`): the older one builds nothing and starts no class group more, ends
+the group in flight by its own pid where the newer commit changes what its classes read and finishes it otherwise (its passes then
+stand on the newer commit), and hands over its range and the classes it left unrun. The newer tier runs from the oldest base it was
+handed, on its own commit: the union runs once, and each class the older one passed on inputs the newer commit keeps is replayed
+from the store. A tier still waiting when a third lands is superseded at once, its range carried by the third. The older run settles
+`superseded` (a `HANDED` line; `red` where it found a red first, filed on its own commit), with `handedTo` and `handed`; the newer
+names the runs it carried (`took`, `from`) on its `heavy tier:` line and in each finding it files, which names the commit the class
+ran on. A stage reads a superseded commit as no pass. A tier waiting for the tree, or in its reached run for the machine's admission,
+past ten minutes says so on a `heavy tier:` line, and again at each ten minutes more; one waiting three hours for the tree gives up,
+its range carried by the next tier. A holder or waiter counts while its process runs and has beaten within two minutes.
 
 `--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, with every gate but the
 two rehearsals it owes a stage (below), in the same

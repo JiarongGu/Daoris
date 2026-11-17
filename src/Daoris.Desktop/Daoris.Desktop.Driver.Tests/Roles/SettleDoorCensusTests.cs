@@ -31,6 +31,17 @@ public sealed class SettleDoorCensusTests
             Assert.Contains("EpochOf(press.Epoch)", source, StringComparison.Ordinal);
         }
 
+        // The whole review's stop speaks as its channel on every step it stops, and a working session's channel names its agent.
+        Assert.Contains("settle: settle", Code(File.ReadAllText(SourceFiles.Driver("ReviewStops.cs"))), StringComparison.Ordinal);
+        Assert.Contains(
+            "settle: CastRoutes.SpeakerOf(null)",
+            Code(File.ReadAllText(SourceFiles.Find(SourceFiles.Project("Daoris.Desktop.Modules"), "WorkflowRoutes.cs"))),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "PipeDoor.WorkerAgent",
+            Code(File.ReadAllText(SourceFiles.Find(SourceFiles.Project("Daoris.Desktop.Modules"), "CastRoutes.cs"))),
+            StringComparison.Ordinal);
+
         // Each standing attempt is cast its holder before the pass's rounds, not only after them.
         var runtime = Code(File.ReadAllText(SourceFiles.Driver("NodeRuntime.cs")));
         Assert.True(runtime.IndexOf("AttemptTenures.Keep(", StringComparison.Ordinal) < runtime.IndexOf("for (var round = 0;", StringComparison.Ordinal));

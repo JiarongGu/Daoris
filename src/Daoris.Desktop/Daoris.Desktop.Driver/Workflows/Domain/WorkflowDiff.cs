@@ -214,14 +214,14 @@ public static class WorkflowDiff
         _ => Equals(a, b),
     };
 
-    /// <summary>The person's part in a step, as the diff says it after <i>you</i>, or null where they take none.</summary>
+    /// <summary>The person's part in a step, as the diff says it after <i>you</i>, or null where they take none (<see cref="HolderWords.First(NamedStep)"/>).</summary>
     private static string? PartOf(NamedStep? step) => step?.Kind switch
     {
         WorkflowKinds.Look => "look at it running before it lands",
-        WorkflowKinds.Landing => (string?)step.Field("accept") == "you" ? "accept each piece of work before it lands" : null,
+        WorkflowKinds.Landing => HolderWords.First(step) == CastHolders.Person ? "accept each piece of work before it lands" : null,
         WorkflowKinds.PullRequest => "merge its pull request on the platform",
         WorkflowKinds.GoAhead => $"answer a go-ahead: \"{step.Field("act")}\"",
-        WorkflowKinds.Stage => (string?)step.Field("start") == "you" ? $"start `{step.Field("stage")}`" : null,
+        WorkflowKinds.Stage => HolderWords.First(step) == CastHolders.Person ? $"start `{step.Field("stage")}`" : null,
         _ => null,
     };
 

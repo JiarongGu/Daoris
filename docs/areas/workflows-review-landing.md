@@ -228,7 +228,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and *Give back* returns a step to its first holder. One door settles a step
     (`SettleDoor.Admit`, D312), asked by a run's word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its
     channel's and never the payload's: the window, a card the person confirmed and the person's terminal speak `person`; a working session's
-    own press, an appointed role's act and Ask Daoris's speak as agents, `SettleBy.OfChannel`) and the epoch it read (every settling door
+    own press, run at once or allowed by its supervisor, speaks as the agent its start ran (`agent:<name>`, the roster's name for its door,
+    `ProviderRegistry.AgentNameOf`, kept beside its delegate key by `SessionDelegates`), so a step cast to that agent takes its word and one
+    cast to another refuses it; an appointed role's act speaks the unnamed `agent` and Ask Daoris's `agent:ask-daoris`, `SettleBy.OfChannel`)
+    and the epoch it read (every settling door
     takes `--epoch`, `daoris work held` among them, the run view's and *What needs you*'s presses pass the epoch their row read,
     `HeldStep.Epoch`, and an entry's Accept each part's, drawn on its plan beside the revision), never the step's kind, judged and kept in
     one hold of the tenures' lock, so no hand-over lands between the read and the word's write; a kept word names the epoch it was admitted
@@ -257,7 +260,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
     checked as kept and again as applied against the work read afresh, either miss `moved`. `changes` may name the part they go
-    to, else the newest. *Stop…* stops the run before the Accept and *Stop what follows…* after it, promising no undo. A failed step
+    to, else the newest. *Stop…* stops the run before the Accept and *Stop what follows…* after it, promising no undo, each step's stop its
+    channel's word at the settle door (`ReviewStops`): the person's the owner role's, an agent's only on the steps the door admits it on, and
+    refused with the door's word where it stops none. A failed step
     has the same stop, one door for the window, Ask Daoris and the terminal: it ends the step and, nothing else standing, its run as
     `stopped` with the person's words, also where the run had ended failed at that step (the stop governs it again to end it). A
     step the record holds ready, active or invalidated in a run that ended reads not reached, never working
@@ -680,8 +685,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). Who settles a step is its
   holder's, by one door (D312, rule 18), and what it waits for is its kind's (rules 51 and 55). `you` is a holder word
   (`HolderWords`): a step whose `start` or `accept` says it is first held by the person through its tenure (`AttemptTenures`), whatever
-  the place casts its role to, and no runtime code branches on it. Left: the named steps' reading and gate (`NamedStepReading`,
-  `WorkflowGate`, `WorkflowDiff`) still compare a stage's `start` and a landing's `accept` as the person's.
+  the place casts its role to, and no runtime code branches on it. The named steps' reading, gate and diff (`NamedStepReading`,
+  `Involvement` in `WorkflowGate`, `WorkflowDiff`) read a stage's `start` and a landing's `accept` the same way, as the holder a version's
+  step casts (`HolderWords.First(NamedStep)`), and a census holds them to it beside the runtime.
 - **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
   its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
   production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes

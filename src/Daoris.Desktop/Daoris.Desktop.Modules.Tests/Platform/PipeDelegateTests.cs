@@ -356,7 +356,7 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
     }
 
-    /// <summary>A working session whose repository's access setup is unrestricted presses with no card as itself, naming nothing the owner's.</summary>
+    /// <summary>A working session whose repository's access setup is unrestricted presses with no card as itself and its agent, naming nothing the owner's.</summary>
     [Fact]
     public async Task An_unrestricted_working_session_s_press_runs_at_once_as_its_own_and_marks_nothing_the_owner_s()
     {
@@ -368,6 +368,7 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         await using var ____ = client;
         var key = _delegates.Draw("s-quest");
         _access["s-quest"] = AccessRules.Unrestricted;
+        _agents["s-quest"] = "codex";
 
         var answer = await client.AnswerAsync(await SendProvedAsync(client, "WORK_PAUSE", new { quest = "q1" }, "s-quest", key, nonce));
 
@@ -376,6 +377,7 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         Assert.Empty(pipe.Confirmations.Now().Waiting);
         Assert.Empty(_said);
         Assert.Equal(("s-quest", false), Assert.Single(driver.Doors));
+        Assert.Equal("agent:codex", Assert.Single(driver.Speakers));
         Assert.Contains(
             $$"""{"session":"s-quest","route":"{{DriverModule.Name}}.WORK_PAUSE","by":"session s-quest","door":"terminal"}""",
             Logged(PipeDelegate.SessionPressedEvent));

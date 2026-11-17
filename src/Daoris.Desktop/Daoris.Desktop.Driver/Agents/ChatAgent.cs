@@ -10,8 +10,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
 {
-    /// <summary>The door's name, which a record, a reading and a log line name the agent by.</summary>
+    /// <summary>The door's name, which a record, a reading and a log line name the agent by; <see cref="Agent"/> is the roster's, its press's speaker.</summary>
     public string Name => adapter.Id.Value;
+
+    public string Agent => ProviderRegistry.AgentNameOf(adapter);
 
     /// <summary>The variables its program reads for the model and the effort, which the open's asked choice reads from its spawn.</summary>
     public SpawnChoiceVariables ChoiceVariables => adapter.Spawned().ChoiceVariables;

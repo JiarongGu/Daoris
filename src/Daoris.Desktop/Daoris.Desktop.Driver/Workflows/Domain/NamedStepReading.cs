@@ -181,7 +181,7 @@ internal static class NamedStepReading
                         "form" => JsonSerializer.Serialize(landing.Form),
                         // The rule's switch is its branch's: a merge it leaves to the rule is pressed.
                         "accept" => JsonSerializer.Serialize(
-                            landing.AutoAccept && (string?)fields.FirstOrDefault(each => each.Name == "form")?.Value == LandingForm.Branch ? "automatic" : "you"),
+                            landing.AutoAccept && (string?)fields.FirstOrDefault(each => each.Name == "form")?.Value == LandingForm.Branch ? "automatic" : HolderWords.You),
                         _ => null,
                     };
                 JsonElement? raw = null;
@@ -342,7 +342,7 @@ internal static class NamedStepReading
                     }
 
                     if (landing is not null && index + 1 < steps.Count && steps[index + 1] is { Kind: WorkflowKinds.Stage } next
-                        && (string?)next.Field("start") == "you")
+                        && HolderWords.First(next) == CastHolders.Person)
                     {
                         return $"{p}a go-ahead straight before a stage you start is not needed: starting it is your go-ahead.";
                     }

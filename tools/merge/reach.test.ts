@@ -2,7 +2,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { laneMatcher } from './lanes-file.ts';
 import { gatePlan, isHeavyGate, isProcessLane, laneSchedule, rootScripts } from './plan.ts';
-import { BASELINE, BLOCKING, PATH_CHECKS, selectGates, selectionLines } from './reach.ts';
+import { BASELINE, BLOCKING, PATH_CHECKS, pathsReaching, reachingOf, selectGates, selectionLines } from './reach.ts';
 import { REACH } from './reach-table.ts';
 import type { Rule } from './reach-table.ts';
 import {
@@ -365,4 +365,13 @@ test('a gate the lane table never names runs at every merge, and a rule naming a
   // Once a rule names a gate, a merge whose paths do not reach it skips it.
   const named = selectGates(plan, ['docs/x.md'], { reach: [...reach, { paths: ['src/**'], gates: ['web', 'mystery'], why: 'the page' }], gated: true });
   assert.deepEqual(named.gates.map((entry) => [entry.gate.name, entry.run]), [['cli', true], ['mystery', false], ['web', false]]);
+});
+
+test('one reader asked by every gate in turn answers each as a reader asked once does: a path placed for one gate is placed the same for the next', () => {
+  const files = trackedFiles().filter((_, i) => i % 5 === 0);
+  const reader = reachingOf({ lanes: repoLanes });
+  for (const gate of [...ALL, 'mystery']) {
+    assert.deepEqual(reader(gate, files), pathsReaching(gate, files, { lanes: repoLanes }), gate);
+  }
+  assert.deepEqual(reader(webTypes, []), []);
 });

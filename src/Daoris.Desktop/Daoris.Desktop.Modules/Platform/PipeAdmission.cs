@@ -243,7 +243,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
 
         _ = stewardsAsk is not null ? pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client)
-            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session } ? pipe.SessionPresses.RaiseAsync(reserved, Card, session, repository)
+            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session }
+                ? pipe.SessionPresses.RaiseAsync(reserved, Card, session, repository, delegated.Agent)
             : Card();
         return (null, Held(answer));
     }

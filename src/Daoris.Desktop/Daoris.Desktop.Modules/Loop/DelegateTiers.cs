@@ -4,8 +4,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// A session's tier as a proved press reads it at its admission (<see cref="PipeDelegateSession"/>): the keys held for it, Ask Daoris's
-/// mode and the families of acts the person granted it, or a working session's repository's permission prompts, each read from its
-/// file now so a change between two presses takes the next.
+/// mode and the families of acts the person granted it, or a working session's repository's permission prompts and the agent its start
+/// ran, each read from its file or its start now so a change between two presses takes the next.
 /// </summary>
 internal static class DelegateTiers
 {
@@ -17,6 +17,7 @@ internal static class DelegateTiers
             Families = mode == HelpModes.Restricted ? ConfiguredAccess.Read(loop.Home).Acts : [],
             Permissions = mode is null ? Permissions(loop, loop.Processes.Delegates.PlaceOf(session)) : null,
             Repository = mode is null ? loop.Processes.Delegates.PlaceOf(session)?.Repository : null,
+            Agent = mode is null ? loop.Processes.Delegates.AgentOf(session) : null,
             PlaceOf = mode is null ? null : (request, ct) => HelpPlaceAsync(loop, session, request, ct),
         };
     }

@@ -62,6 +62,21 @@
       "summary": ""
     },
     {
+      "id": "Daoris.Assistant",
+      "path": "src/Daoris.Assistant/Daoris.Assistant",
+      "summary": "Ask Daoris's core and its ports"
+    },
+    {
+      "id": "Daoris.Assistant.Testing",
+      "path": "src/Daoris.Assistant/Daoris.Assistant.Testing",
+      "summary": "the fakes of the assistant's ports and the contract cases that hold each fake to its real side"
+    },
+    {
+      "id": "Daoris.Assistant.Tests",
+      "path": "src/Daoris.Assistant/Daoris.Assistant.Tests",
+      "summary": ""
+    },
+    {
       "id": "daoris",
       "path": "src/Daoris.Cli",
       "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
@@ -316,6 +331,21 @@
     {
       "from": "Daoris.Adapters.SshKeys.Tests",
       "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Assistant",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Assistant.Testing",
+      "to": "Daoris.Assistant",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Assistant.Tests",
+      "to": "Daoris.Assistant.Testing",
       "kind": "project"
     },
     {
