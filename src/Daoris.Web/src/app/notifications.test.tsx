@@ -237,7 +237,8 @@ describe('Notifications, in the window', () => {
     await waitFor(() => expect(cards()).toHaveLength(1));
   });
 
-  it('gives its region back from the bell: closed where it was closed, else the view it held', async () => {
+  // The two windows of the bell's round trip are a case each: each draws the whole window, and two in one case passed 10 s loaded.
+  it('gives its region back from the bell: closed where it was closed', async () => {
     start();
     await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());
 
@@ -246,8 +247,9 @@ describe('Notifications, in the window', () => {
     await screen.findByRole('tab', { name: 'Notifications', selected: true });
     await userEvent.click(bell());
     await waitFor(() => expect(screen.queryByRole('tab', { name: 'Notifications' })).toBeNull());
-    cleanup();
+  });
 
+  it('gives its region back from the bell: else the view it held', async () => {
     // The side bar open on Ask Daoris: the bell shows Notifications there, and its next press gives Ask Daoris back.
     window.localStorage.setItem('daoris.dockClosed', '0');
     start();

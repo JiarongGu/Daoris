@@ -73,10 +73,11 @@ export default defineConfig({
     // different one each run); tools/time-ratchet.mjs holds the same limit. A test needing longer says why where declared.
     testTimeout: 10_000,
     hookTimeout: 10_000,
-    // A quarter of the machine, not all of it. By default every logical processor but one ran a worker (21 on the
-    // owner's machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs
-    // failed on 20 s timeouts in files that passed alone. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.
-    maxWorkers: process.env.DAORIS_WEB_WORKERS ?? '25%',
+    // Half the machine, not all of it. By default every logical processor but one ran a worker (21 on the owner's
+    // machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs failed on
+    // 20 s timeouts in files that passed alone. A quarter (5 workers) left the run at 14 min on 2026-11-18, its cores idle
+    // (WEBREACH1); half is what it measured under 5 min with. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.
+    maxWorkers: process.env.DAORIS_WEB_WORKERS ?? '50%',
     // Transforming the modules takes 40-71% of a run's tracked time and is redone by every gate that runs vitest (the rules, the unit
     // run): the transformed modules persist and are reused by the next process while the same source files stand.
     fsModuleCache: true,

@@ -11,7 +11,7 @@ import { rooted } from '../test/sources';
  * with `i18n.cloneInstance` shares the page's language detector, and a clone's own start caches its language under
  * `daoris.language` as the page's switch does: one module of 中文 stories, merely imported, brought every later story up
  * in 中文 in that browser profile, English ones too. Storybook imports a story's module to show any story in it, so the
- * import is checked here as well as the render; `stories.test.tsx` checks every story's render.
+ * import is checked here as well as the render; the story roster (`everyStoryOf`, `test/composeStories.ts`) checks every story's render.
  */
 const KEY = 'daoris.language';
 type StoriesModule = Parameters<typeof composeStories>[0];
