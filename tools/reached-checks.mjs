@@ -99,7 +99,8 @@ export const storeFile = (root) => storeIn(verdictsHome(root));
  */
 export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 'all', world = null } = {}) {
   if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0, deferred: [] };
-  const { map, gates, gatesText, context } = world ?? keyContextOf(root);
+  const read = world ?? keyContextOf(root);
+  const { map, gates, gatesText, context } = read;
   const processSuites = processSuitesOf(gates);
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
   // Classes a builder names are run whatever they reach, and the dependency classes among them too.
@@ -110,8 +111,9 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
     ? { units: reached, night: {} }
     : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites, everything: tier === 'heavy' });
   const { kept: units, deferred: heavy } = splitTier(considered, tier, processSuites);
-  const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
-  const deferred = splitByReuse(heavy, (unit) => classKey(unit, context), store).run;
+  const keyOf = read.classKeyOf ?? ((unit) => classKey(unit, context));
+  const { run, replayed, keys } = splitByReuse(units, keyOf, store);
+  const deferred = splitByReuse(heavy, keyOf, store).run;
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
   const counted = run.map((unit) => ({ ...unit, hops: unitHops(unit, paths, map) }));

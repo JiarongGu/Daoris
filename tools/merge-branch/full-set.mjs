@@ -11,7 +11,7 @@ import { stagedTree } from '../fsx.mjs';
 import { CENSUS_CACHE, cachedCensus, treeSide } from '../merge/census-cache.ts';
 import { privateDigest } from '../private-gate-files.mjs';
 import { halfOf, pathReach, reachSettings, withSettings } from '../process-reach.mjs';
-import { PassedClasses } from '../merge/class-reuse.ts';
+import { PassedClasses, classKey, unitId } from '../merge/class-reuse.ts';
 import { toolchainOf } from '../merge/flow-deps.ts';
 import { planClasses, recordPasses, replayLine } from '../merge/full-replay.ts';
 import { reuseContext } from '../merge/reached-reuse.ts';
@@ -53,7 +53,20 @@ export function keyContextOf(root) {
   const keep = () => { if (changed) side.save(memo.value); changed = false; };
   const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS, memo });
   const privates = privateDigest(root);
-  return { map, gates, gatesText, hit, tree, files, read, privates, toolchain, keep, context: { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` } };
+  const keyed = { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` };
+  // Each class's key, kept for the tree under what the tree does not hold (the private files, the toolchain), so a rerun plans in seconds.
+  const keysFor = `${privates}\0${toolchain.node}+${toolchain.dotnet}`;
+  if (memo.value.keysFor !== keysFor) memo.value = { ...memo.value, keys: {}, keysFor };
+  const classKeyOf = (unit) => {
+    const keys = memo.value.keys ?? (memo.value.keys = {});
+    const id = unitId(unit);
+    if (keys[id] === undefined) {
+      keys[id] = classKey(unit, keyed);
+      changed = true;
+    }
+    return keys[id];
+  };
+  return { map, gates, gatesText, hit, tree, files, read, privates, toolchain, keep, classKeyOf, context: keyed };
 }
 
 /**
