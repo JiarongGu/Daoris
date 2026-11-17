@@ -1,5 +1,5 @@
 /**
- * The censuses' scope at a merge (CENSUSDIFF1). A census checks a rule over the sources, and at a merge only the changed files can
+ * The censuses' scope at a merge. A census checks a rule over the sources, and at a merge only the changed files can
  * newly break a rule that holds of each file alone, so the merge names its changed paths (the ones its plan reads, `mergeChanges`) in
  * a file and passes the file's path as `CENSUS_SCOPE`; the desktop's census scan reads it (`CensusScope.cs` in the driver's tests):
  * a census marked diff-able judges only those files, a whole one the tree. A run that names no scope (the CI after the landing, a

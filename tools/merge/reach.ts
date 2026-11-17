@@ -54,7 +54,7 @@ export const PATH_CHECKS: readonly PathCheck[] = Object.freeze([
   },
   {
     gate: 'censuses',
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json', 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/checkout-scope.json'],
     why: 'the desktop\'s censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge',
   },
   {

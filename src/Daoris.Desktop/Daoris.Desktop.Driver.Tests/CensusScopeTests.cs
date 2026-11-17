@@ -82,10 +82,10 @@ public sealed class CensusScopeTests
     {
         var censuses = CensusScope.Censuses(typeof(CensusScopeTests).Assembly).ToList();
         Assert.Equal(censuses.Count, censuses.Distinct(StringComparer.Ordinal).Count());
-        var problems = CensusScope.Unmarked(censuses, CensusScope.Diff, CensusScope.Whole).ToList();
+        var problems = CensusScope.Unmarked(censuses, CensusMarks.Diff, CensusMarks.Whole).ToList();
 
         var sources = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Select(SourceTexts.Of).ToList();
-        problems.AddRange(CensusScope.Diff
+        problems.AddRange(CensusMarks.Diff
             .Where(name => !sources.Any(text => text.Contains($"class {name}", StringComparison.Ordinal) && text.Contains($"typeof({name})", StringComparison.Ordinal)))
             .Select(name => $"{name} is marked diff-able and never hands itself to the scope (typeof({name}))"));
         Assert.True(problems.Count == 0, string.Join('\n', problems));

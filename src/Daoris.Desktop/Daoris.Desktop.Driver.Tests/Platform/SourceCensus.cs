@@ -18,14 +18,9 @@ internal static partial class SourceCensus
         [.. CensusScope.Judged(census, SourceFiles.All(SourceFiles.DriverProject, "*.cs")).Where(path => within?.Invoke(path) ?? true)
             .Select(path => (Path.GetFileName(path), SourceTexts.Of(path)))];
 
-    /// <summary>
-    /// Of a census's listed members (each <c>File</c> or <c>File Member</c>), the ones <paramref name="census"/> judges in this run: every
-    /// one with no scope or for a whole census, else those of a driver file the scope holds, still there or gone, so a member of a file
-    /// the merge did not touch is neither found nor missed.
-    /// </summary>
+    /// <summary>Of a census's listed members (<c>File</c> or <c>File Member</c>), those it judges: with a scope, a file's the scope holds, there or gone.</summary>
     public static List<string> Listed(Type census, IEnumerable<string> listed) => Listed(CensusScope.MarkOf(census), listed, CensusScope.Paths);
 
-    /// <summary>The members a census marked <paramref name="judging"/> judges under <paramref name="scope"/>.</summary>
     internal static List<string> Listed(CensusScope.Judging judging, IEnumerable<string> listed, IReadOnlySet<string>? scope)
     {
         if (scope is null || judging == CensusScope.Judging.Whole) return [.. listed];

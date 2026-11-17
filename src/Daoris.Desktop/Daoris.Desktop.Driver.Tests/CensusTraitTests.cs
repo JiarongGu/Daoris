@@ -13,11 +13,7 @@ public sealed class CensusTraitTests
     private static readonly Regex Reads = new(
         @"SourceFiles\.All\(|SourceFiles\.Project\(|(Enumerate|Get)Files\([^;]*""\*\.(cs|ts|tsx|mjs)""", RegexOptions.CultureInvariant);
 
-    /// <summary>
-    /// The classes named or reading like a census that judge behaviour, not the sources, so no scope of files narrows them: the fast half
-    /// runs them, and a merge runs them where its paths reach them. The review graph's combinations (a census of the graph's runs) and
-    /// the providers' conformance (a pending table of its own cases beside it).
-    /// </summary>
+    /// <summary>The classes named or reading like a census that judge behaviour, not the sources: the fast half's.</summary>
     internal static readonly string[] Behaviour = ["ReviewGraphCensusTests", "ProviderConformanceTests"];
 
     private static readonly Regex Declaration = new(

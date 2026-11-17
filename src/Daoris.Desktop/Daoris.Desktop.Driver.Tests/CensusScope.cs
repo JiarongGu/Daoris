@@ -6,11 +6,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// each file alone, so a census marked diff-able (<see cref="Judging.Diff"/>) judges only the files of that scope. A census marked
 /// whole (<see cref="Judging.Whole"/>) counts or compares across files (a table held both ways, a graph of the modules, a ratchet), or
 /// judges no file at all, and judges the whole tree whatever the scope. With no scope (the CI after the landing, a developer's run)
-/// every census judges the whole tree. Each test project marks its censuses in its own part of this class (<c>CensusMarks.cs</c>), and
-/// its census of censuses holds that each census is marked once and each diff-able one reads through here. Linked into the modules'
-/// tests.
+/// every census judges the whole tree. Each test project marks its censuses in its own <c>CensusMarks</c>, and its census of censuses
+/// holds that each census is marked once and each diff-able one reads through here. Linked into the modules' tests.
 /// </summary>
-internal static partial class CensusScope
+internal static class CensusScope
 {
     /// <summary>The variable that names the scope's file.</summary>
     internal const string Variable = "CENSUS_SCOPE";
@@ -35,7 +34,7 @@ internal static partial class CensusScope
 
     /// <summary>How <paramref name="census"/> is marked.</summary>
     /// <exception cref="InvalidOperationException">It is marked neither way, or both.</exception>
-    internal static Judging MarkOf(Type census) => MarkOf(census.Name, Diff, Whole);
+    internal static Judging MarkOf(Type census) => MarkOf(census.Name, CensusMarks.Diff, CensusMarks.Whole);
 
     /// <summary>How the census named <paramref name="name"/> is marked by the two lists.</summary>
     internal static Judging MarkOf(string name, IReadOnlyCollection<string> diff, IReadOnlyCollection<string> whole) =>

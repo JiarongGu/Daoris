@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The modules' tests' censuses, each marked by how it judges (<see cref="CensusScope"/>, linked from the driver's tests);
 /// <c>CensusMarksTests</c> holds that every class carrying the Census trait is here once. A new census is listed where its rule puts it.
 /// </summary>
-internal static partial class CensusScope
+internal static class CensusMarks
 {
     /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: none here yet.</summary>
     internal static readonly string[] Diff = [];

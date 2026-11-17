@@ -1,6 +1,5 @@
 /**
- * What a CI run saves itself: the one build the web gates would each wait on. (The desktop's fast halves run no census class since
- * CENSUSDIFF1, so the censuses gate is run like any gate, never covered by them.)
+ * What a CI run saves itself: the one build the web gates would each wait on.
  */
 import { closeSync, openSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

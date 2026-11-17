@@ -154,8 +154,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   // Before the driver's tests, which would place it first: the modules' test reads it too.
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/checkout-scope.json'],
-    gates: ['driver', 'modules'],
-    why: "the driver's TreesCommandTests and the modules' DriverModuleLinesTests read the checkout-scope table (BRSCOPE1b)",
+    gates: ['driver'],
+    why: "the driver's TreesCommandTests read the checkout-scope table (BRSCOPE1b); the modules' DriverModuleLinesTests, a census, are the censuses' path check's",
   },
   // The backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
   {
@@ -208,8 +208,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   },
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
-    gates: ['service', 'driver', 'modules', 'censuses'],
-    why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
+    gates: ['service', 'censuses'],
+    why: "the service's, the driver's and the modules' ParticipantWorkReadersTests (the desktop's two are censuses) read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
   },
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/helper-askers.json'],
