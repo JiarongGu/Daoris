@@ -163,8 +163,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   // Before the driver's tests, which would place it first: the modules' test reads it too.
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/checkout-scope.json'],
-    gates: ['driver'],
-    why: "the driver's TreesCommandTests read the checkout-scope table (BRSCOPE1b); the modules' DriverModuleLinesTests, a census, are the censuses' path check's",
+    gates: ['driver', 'modules'],
+    why: "the driver's TreesCommandTests and the modules' DriverModuleLinesTests read the checkout-scope table (BRSCOPE1b)",
   },
   // The backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
   {

@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`).
+/// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`); what the routes' sources hold is
+/// <see cref="ModuleSourcesCensusTests"/>'.
 /// </summary>
-[Trait(Category.Name, Category.Census)]
 public sealed class DriverModuleLinesTests : DriverModuleBridge
 {
     /// <summary>
@@ -222,21 +222,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The screen's withdrawal composes none of the driver's pieces itself, so it cannot part from the terminal's door: read from the
-    /// modules' sources, the judgement, the keep, the delete and the record are <see cref="LandedBranchWithdrawal"/>'s.
-    /// </summary>
-    [Fact]
-    public void The_screens_withdrawal_is_the_drivers_one_withdrawal()
-    {
-        var lines = File.ReadAllText(SourceFiles.Find(SourceFiles.ModulesProject, "LinesRoutes.cs"));
-
-        Assert.Contains(".WithdrawAsync(service, repository, branch, why, plan, cancellationToken)", lines, StringComparison.Ordinal);
-        Assert.Contains("TreesWords.Withdraw(withdrawal)", lines, StringComparison.Ordinal);
-        Assert.DoesNotContain("KeepDiscardedAsync", lines, StringComparison.Ordinal);
-        Assert.DoesNotContain("DeleteJudgedAsync", lines, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     /// The person's delete of recovery refs: before the driver is up it is the cold-start sentence; a call naming no
     /// repository or no refs is malformed; and a process that does not hold the home deletes nothing and says so, as an answer.
     /// </summary>
@@ -440,25 +425,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The screen's discard composes none of the driver's pieces itself, so it cannot part from the terminal's door
-    /// again. Read from the modules' sources, as a reviewer would: the keep, the checkout and the removal are
-    /// <see cref="SessionBranchDiscard"/>'s.
-    /// </summary>
-    [Fact]
-    public void The_screens_discard_is_the_drivers_one_discard()
-    {
-        var sources = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
-            .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
-
-        Assert.Contains(sources, source => source.File == "LinesRoutes.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
-        Assert.All(sources, source =>
-        {
-            Assert.DoesNotContain("RemoveBranchAsync(", source.Text);
-            Assert.DoesNotContain("BranchOfTree(", source.Text);
-        });
-    }
-
-    /// <summary>
     /// The service standing in for a discard: the registry with <c>engine</c>'s checkout at <paramref name="root"/> (none where
     /// null), and the sessions running or waiting, one per tree in <paramref name="live"/>. Each path asked is kept.
     /// </summary>
@@ -542,28 +508,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             Assert.True(takes.SequenceEqual(took),
                 $"repository `{repository}`, workspace `{workspace}`: the table takes [{string.Join(", ", takes)}], the modules [{string.Join(", ", took)}]");
         }
-    }
-
-    /// <summary>
-    /// Every door's press asks the sessions in use again inside each repository's hold, so a session a driver
-    /// opened since the look is seen: Settings' *Bring up to date* and Ask Daoris's sync card alike. Read from
-    /// the modules' sources, as a reviewer would, since only a live driver can open a session between the two.
-    /// </summary>
-    [Fact]
-    public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
-    {
-        var presses = SourceFiles.All(SourceFiles.ModulesProject, "*.cs")
-            .SelectMany(path =>
-            {
-                var source = File.ReadAllText(path);
-                return System.Text.RegularExpressions.Regex.Matches(source, @"\.SyncAsync\(repositories\b")
-                    .Select(press => (File: Path.GetFileName(path), Call: source[press.Index..source.IndexOf(';', press.Index)]));
-            })
-            .ToList();
-
-        Assert.Contains(presses, press => press.File == "TreesTidyDesk.cs");
-        Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
-            $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
     }
 
     private static string WorkspaceRoot()

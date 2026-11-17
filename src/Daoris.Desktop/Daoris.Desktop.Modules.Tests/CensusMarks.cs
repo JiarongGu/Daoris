@@ -15,8 +15,8 @@ internal static class CensusMarks
     /// </summary>
     internal static readonly string[] Whole =
     [
-        "AccountsStateSliceTests", "CensusMarksTests", "DriverLoopChatTakenUpTests", "DriverModuleLinesTests", "DriverModuleRoutesTests",
-        "EveryModuleChildIsHandedTheToolsTests", "MachineSettingsCensusTests", "OwnerSetCensusTests", "ParticipantWorkReadersTests",
+        "AccountsStateSliceTests", "CensusMarksTests", "DriverModuleRoutesTests",
+        "EveryModuleChildIsHandedTheToolsTests", "MachineSettingsCensusTests", "ModuleSourcesCensusTests", "OwnerSetCensusTests", "ParticipantWorkReadersTests",
         "PipeCensusTests", "PipeGroundsCensusTests", "PluginRecordWiringTests", "ProcessStartsCensusTests", "RefusalCatalogueTests",
         "SettingDoorsCensusTests", "StartStagesTests", "StepWaitCensusTests", "StructureTests", "UsageStateSliceTests", "WindowCensusTests",
     ];

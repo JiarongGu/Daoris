@@ -367,7 +367,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
     gates: { name: string; run: string }[];
   };
   const fast = gates.gates
-    .map((gate) => /^dotnet test (\S+) --filter Category!=Process(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
+    .map((gate) => /^dotnet test (\S+) --filter "?Category!=Process(?:&Category!=\w+)*"?(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
     .filter((target): target is string => target !== undefined);
   const halves = gates.gates
     .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))
