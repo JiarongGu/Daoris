@@ -12,6 +12,8 @@
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
  * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), and inside a run only the records that run wrote.
+ * Each test over its limit, listed or not, the merge's or not, and each timed only under load, is also said as a breach with its
+ * cause and fix path (`tools/time-why.mjs`), one `time-breach:` line each, which the merge's breach report reads.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -20,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { judgeByReach, loadWorld, unitsOf } from './time-reach.mjs';
 import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
+import { sayBreach, sourceReader, testBreach } from './time-why.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -227,6 +230,32 @@ export function measureAlone(root, units) {
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }
 
+/**
+ * The breaches of one judging, each with its cause: `found` (the merge's, failing unless listed at no less), `others` (no path the
+ * merge changes reaches them) and `loaded` (timed only under load). `records` gives the record each test was timed in, `source` its
+ * class's source.
+ */
+export function ratchetBreaches({ found, others = {}, loaded = {}, list, records = () => new Map(), source = () => null }) {
+  if (!Object.keys(found).length && !Object.keys(others).length && !Object.keys(loaded).length) return [];
+  const timedIn = records();
+  const listedAt = (key) => list[entryFor(list, key)]?.ms;
+  const one = (key, { ms, limit }, given) => testBreach({ key, ms, limit, record: timedIn.get(key) ?? '', source: source(key), ...given });
+  return [
+    ...Object.entries(found).map(([key, over]) => one(key, over, {
+      fails: !(listedAt(key) >= over.ms), ...(listedAt(key) === undefined ? {} : { note: `listed at ${listedAt(key)} ms` }),
+    })),
+    ...Object.entries(others).map(([key, over]) => one(key, over, { fails: false, note: "not this merge's: no path it changes reaches it" })),
+    ...Object.entries(loaded).map(([key, over]) => one(key, over, { fails: false, loaded: true })),
+  ];
+}
+
+/** The record file each test of `dir`'s records written since `since` was last timed in, by its key. */
+export function recordFiles(dir, root, since) {
+  const files = new Map();
+  for (const { file, tests } of readRecords(dir, root, { since })) for (const { key } of tests) files.set(key, file);
+  return files;
+}
+
 /** When this ratchet's run began (`run-start.json`'s `startedAt`, which the run writes), or null: older records are never a red. */
 export function runStart(dir) {
   try {
@@ -265,7 +294,7 @@ async function main() {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
     const scan = () => scanRecords(dir, root, { since });
-    const { unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
+    const { scanned: settled, unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
     for (const key of unmeasured) console.log(`time-ratchet: unmeasured, under load: ${key} was timed only while other heavy runs were under way, so it is not judged for time; it is measured again alone when the machine is free`);
     const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
     const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
@@ -289,6 +318,9 @@ async function main() {
     }
     const problems = [...reasonProblems(list).map((line) => `${line}`), ...checkTimes(found, list)];
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
+    const loaded = Object.fromEntries(unmeasured.map((key) => [key, settled.loaded[key]]));
+    const breaches = ratchetBreaches({ found, others, loaded, list, records: () => recordFiles(dir, root, since), source: sourceReader(root) });
+    for (const breach of breaches) console.log(sayBreach(breach));
     for (const p of problems) console.error(`time-ratchet: ${p}`);
     if (problems.length) return 1;
     console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower${Object.keys(others).length ? `; ${Object.keys(others).length} slow but not this merge's` : ''})`);

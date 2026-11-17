@@ -191,6 +191,10 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   return result;
 }
 
+/** Why a gate's first result runs it again alone once every other gate has ended, said in the run's line. */
+export const againWhy = (first: GateResult): string => (first.nodes ? 'whose node tests failed' : first.timed ? 'whose timed specs failed'
+  : first.cause === 'load' ? 'killed at its budget under load' : 'which died of memory');
+
 /** The fields a gate's verdict adds to the store beside its tree: the key it carries, and the signatures of a failure. */
 export function verdictExtras(result: GateResult): { key?: VerdictKey; signatures?: string[]; replayedFrom?: string } {
   return {
@@ -207,17 +211,17 @@ const gateRecord = (result: GateResult): GateRecord => ({
   ...(result.steps?.length ? { steps: result.steps } : {}),
 });
 
-/**
- * The time breaches of a run's gates, each with its cause, written to `breaches.json` in `dir` (where given) with the separation
- * candidates they make: `{ breaches, separations, file }`, or nothing where there is no breach. The merge record and the queue's
- * scope-run record carry the first two.
- */
-export function reportBreaches(results: readonly GateResult[], dir: string | null = null): { breaches?: Breach[]; separations?: Separation[]; file?: string } {
+/** The time breaches of a run's gates with the separation candidates they make, written to `breaches.json` in `dir` where given. */
+function breachReport(results: readonly GateResult[], dir: string | null): { breaches: Breach[]; found: Separation[]; file: string | null } {
   const breaches = results.flatMap((result) => result.breaches ?? []);
-  if (!breaches.length) return {};
   const found = separations(breaches);
-  const file = dir ? writeBreaches(dir, breaches, found) : null;
-  return { breaches, ...(found.length ? { separations: found } : {}), ...(file ? { file } : {}) };
+  return { breaches, found, file: dir ? writeBreaches(dir, breaches, found) : null };
+}
+
+/** What the queue's scope-run record carries of its gates' time breaches, written beside their logs in `dir`: nothing where there is none. */
+export function reportBreaches(results: readonly GateResult[], dir: string | null = null): { breaches?: Breach[]; separations?: Separation[] } {
+  const { breaches, found } = breachReport(results, dir);
+  return { ...(breaches.length ? { breaches } : {}), ...(found.length ? { separations: found } : {}) };
 }
 
 /**
@@ -239,7 +243,7 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous, dir 
     }
   }
   const records = results.map(gateRecord);
-  const { breaches = [], separations: found = [], file = null } = reportBreaches(results, dir);
+  const { breaches, found, file } = breachReport(results, dir);
   const record = buildRecord({
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
     deferred: results.flatMap((result) => result.classes?.deferred ?? []), breaches, separations: found,

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
+import { budgetBreaches, checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
 import {
   census, checkAmbient, checkBudget, checkClock, checkGit, checkMemory, checkProcesses, checkReferences, parseTrx, scanAmbient, scanClock,
   scanGit, scanProcesses,
@@ -223,6 +223,16 @@ test('an over-budget test is a finding only if its class, measured again alone, 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('each unit test over the second is a breach with its cause, failing unless the slow list holds it at no less', () => {
+  const records = [{ gate: 'driver', tier: 'unit', at: 1, tests: [{ class: 'Ns.WaitsTests', test: 'a', ms: 3000 }, { class: 'Ns.Listed', test: 'b', ms: 2000 }, { class: 'Ns.Fast', test: 'c', ms: 20 }] }];
+  const sources = { 'Ns.WaitsTests.a': { file: 'src/X/X.Tests/Loop/WaitsTests.cs', text: 'await Task.Delay(900);' } };
+  const breaches = budgetBreaches(records, { slowTests: { 'Ns.Listed.b': 2500 } }, (key) => sources[key] ?? null);
+  assert.deepEqual(breaches.map((each) => [each.kind, each.name, each.cause, each.fails, each.limit]), [
+    ['census', 'Ns.WaitsTests.a', 'clock', true, 1000], ['census', 'Ns.Listed.b', 'unclassed', false, 1000],
+  ]);
+  assert.equal(breaches[0].fix, 'UNITPURE1');
 });
 
 test('D294: a Process class\'s real waits, starts and git are not counted, and its reads of now still are', () => {

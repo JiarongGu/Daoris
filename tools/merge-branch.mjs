@@ -386,7 +386,7 @@ import { abnormalEnd } from './merge/processes.ts';
 import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mjs';
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
-import { runOne, settleMerge, verdictExtras, withBase } from './merge/flow.ts';
+import { againWhy, reportBreaches, runOne, settleMerge, verdictExtras, withBase } from './merge/flow.ts';
 import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
 import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
 import {
@@ -2251,7 +2251,7 @@ const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside)
 
 /**
  * A clock gate whose timed specs failed is run again by the same path, for those specs.
- * Each gate of this run that died of memory, run again once, alone: once every other gate has ended, one at a time in
+ * Each gate of this run that died of memory (or was killed under load), run again once, alone: once every other gate has ended, one at a time in
  * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
  * none again: each keeps its first verdict, a failure named as memory, its note saying why it is not run again.
  */
@@ -2260,7 +2260,7 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
   if (!died.length) return;
   const failure = gates.map((gate) => results.get(gate.name)).find((result) => result && stops(result));
   const why = () => (failure ? `${failure.gate.name} failed, and the run stopped there` : 'the run was stopped');
-  const what = (gate) => (results.get(gate.name).nodes ? 'whose node tests failed' : results.get(gate.name).timed ? 'whose timed specs failed' : 'which died of memory');
+  const what = (gate) => againWhy(results.get(gate.name));
   if (!halted()) print(`  run again alone, every other gate having ended: ${died.map((gate) => `${gate.name}, ${what(gate)}`).join('; ')}`);
   for (const gate of died) {
     const first = results.get(gate.name);
@@ -2526,7 +2526,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 /** What `merge/flow-deps.ts` runs on: this tool's gate runner, reach table, failure reader and stores. */
 const flowSeams = () => ({
   runGate, pathsReaching, table: REACH, lanesOf: (root) => readLanes(root)?.lanes ?? [], slowestClasses, failuresOf, signatureKey, isProcessGate,
-  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired, privateOf: privateDigest,
+  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired, privateOf: privateDigest, home: START_HOME,
 });
 
 /**
@@ -2625,7 +2625,7 @@ async function gateMerge(root, state, plan) {
   }), ratchetIn(root, gateEnvironment()), Date.now, started);
   const home = verdictsHome(root);
   const settled = settleMerge({
-    branch, at: nowIso(), wallMs: Date.now() - started, results,
+    branch, at: nowIso(), wallMs: Date.now() - started, results, dir,
     mains: mainRedsOf(flowSeams(), root, home), previous: readRecords(join(home, MERGE_RECORD)),
   });
   appendRecord(join(home, MERGE_RECORD), settled.record);
@@ -5780,7 +5780,7 @@ async function runCandidateWatched(home, candidate, watch) {
     at: nowIso(), base: candidate.base, tip: candidate.tip, tree: treeId, members: candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, commit: each.commit })),
     reforms: candidate.reforms ?? 0, recordsOnly: candidate.recordsOnly === true,
     ran: results.map((result) => ({ gate: result.gate.name, verdict: verdictShown(result), ms: result.ms ?? null })),
-    kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
+    kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))], ...reportBreaches(results, dir),
   };
   // Asked once more now every step has ended, so a drop that came as the last gate ended is drained too.
   // And what a test of an ended step had already orphaned (its killed run's child, a detached runner and its gate) is in
