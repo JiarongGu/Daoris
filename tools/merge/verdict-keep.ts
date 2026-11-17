@@ -1,6 +1,6 @@
 /**
  * Which verdicts of the gate store (`local/gate-verdicts.json`) are kept: none past its use, which the store's reader leaves out
- * and so its next write drops (VERDICTSCAN1); and of each gate a count of the newest, the scoped run's apart from every other
+ * and so its next write drops; and of each gate a count of the newest, the scoped run's apart from every other
  * kind's. A judgement compares each verdict it reads with the checkout's tree, and a verdict on a tree a month behind main
  * differs from main by nearly every path: it stands for no gate and costs the judgement a diff of thousands of paths.
  */

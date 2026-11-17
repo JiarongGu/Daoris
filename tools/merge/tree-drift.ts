@@ -1,7 +1,7 @@
 /**
- * The paths two trees differ by, asked of git once per pair and kept (VERDICTSCAN1). A judgement of the stored verdicts compares
- * the checkout's tree with the tree of every verdict, hundreds of trees; one `git diff` each cost a preflight eight minutes. Every
- * pair a judgement lacks is asked in one `git diff-tree --stdin` a batch, and since a tree never changes, the answer of a pair of
+ * The paths two trees differ by, asked of git once per pair and kept. A judgement of the stored verdicts compares the checkout's
+ * tree with the tree of every verdict, hundreds of trees, and a git start for each costs minutes. Every pair a judgement lacks is
+ * asked in one `git diff-tree --stdin` a batch, and since a tree never changes, the answer of a pair of
  * tree ids holds for ever: it is kept under the verdict store's checkout (`DRIFT_CACHE`), a file per judged tree (`to`), each
  * pair by its other tree (`from`), the paths in one table. The newest few judged trees stay, as the census cache keeps its own.
  */
@@ -49,7 +49,7 @@ const isId = (tree: string): boolean => /^[0-9a-f]{40,64}$/.test(tree);
 /**
  * The paths each tree differs from `to` by. `ask` takes every tree a judgement will compare at once: the pairs kept in `dir` are
  * read, the rest asked of git a batch a start, and what git answered kept, where `writable` says the folder may be written (it
- * is ignored, so a kept file changes no tree). `drift` answers one pair, asking it alone when it was not asked: `[]` for the
+ * is ignored, so a kept file changes no tree). `drift` answers one pair, asking it alone where `ask` did not: `[]` for the
  * tree itself, null where there is no tree or git lacks it, as `git diff` of the pair fails.
  */
 export function treeDrifts({ to, git, dir, writable }: { to: string | null; git: DriftGit; dir: string; writable: () => boolean }): {

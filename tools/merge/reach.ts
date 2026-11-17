@@ -171,11 +171,7 @@ export function pathsReaching(gate: string, paths: readonly string[], reading: R
   return reachingOf(reading)(gate, paths);
 }
 
-/**
- * `pathsReaching` for a reader that asks it many times, the stage of every stored verdict (VERDICTSCAN1): the table's rules
- * compiled once and each path placed once, whichever gate asks, so a judgement of thousands of verdicts on trees that differ by
- * thousands of paths places each path once, not once a verdict.
- */
+/** `pathsReaching` asked many times, as a judgement of every stored verdict asks it: the rules compiled and each path placed once. */
 export function reachingOf({ lanes = [], reach = REACH, pathChecks = PATH_CHECKS }: Reading = {}): (gate: string, paths: readonly string[]) => string[] {
   const readRule = ruleReader(reach, lanes);
   const placed = new Map<string, Rule | null>();
@@ -189,7 +185,7 @@ export function reachingOf({ lanes = [], reach = REACH, pathChecks = PATH_CHECKS
   return (gate, paths) => {
     const check = pathCheckOf(gate, pathChecks);
     if (check) {
-      // Of `paths`, the ones that reach a path check: its own, and those the lane table sends to every gate.
+      // A path check's own paths, and those the lane table sends to every gate.
       if (!owns.has(check)) owns.set(check, laneMatcher([...check.paths]));
       const own = owns.get(check)!;
       return paths.filter((path) => own(path) || ruleOf(path)?.gates === '*');
