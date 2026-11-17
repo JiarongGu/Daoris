@@ -35,7 +35,7 @@ public sealed class ProcessHomeCensusTests
         var found = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var path in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
-            if (Reading(File.ReadAllText(path)) > 0) found.Add(Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'));
+            if (Reading(SourceTexts.Of(path)) > 0) found.Add(Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'));
         }
 
         return found;

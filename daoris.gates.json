@@ -22,7 +22,7 @@
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify:checks", "clock": true, "handback": true, "regenerate": "node tools/contracts.mjs --if-stale" },
     { "name": "cli-tests", "run": "npm run verify:tests", "clock": true },
-    { "name": "tool-tests", "timeoutMinutes": 15, "timeoutWhy": "latest green run 11.3 min x 1.3; killed at 10.1 min on a quiet machine under the old default", "run": "npm run tooltests", "clock": true,
+    { "name": "tool-tests", "timeoutMinutes": 8, "timeoutWhy": "the unit tier alone ran 1.8 min (TOOLTIER1, 2026-11-17; its end-to-end specs moved to tool-e2e), its slowest file the set-up kit's; a full set's load has tripled the tools' cases: 1.8 x 4; re-set from the next green full-set wall time", "run": "npm run tooltests", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/", "src/Daoris.Cli/test/_fixture.ts", "src/Daoris.Cli/tool-test/",
@@ -30,7 +30,7 @@
         "tools/ci-background.mjs", "tools/desktop-publish.mjs", "tools/doc-duplicates.mjs", "tools/fsx.mjs",
         "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
         "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/tree-prep.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
-        "tools/stand-ins.mjs", "tools/team-briefs.mjs", "tools/team-briefs.test.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
+        "tools/stand-ins.mjs", "tools/team-briefs.mjs", "tools/team-briefs.test.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-map/", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",
       "paths": [
@@ -95,7 +95,7 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
+    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
@@ -203,6 +203,15 @@
         "src/Daoris.Desktop/Daoris.Desktop.Launcher/", "src/Daoris.Desktop/Daoris.Desktop.Modules/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
         "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
+      ] },
+    { "name": "tool-e2e", "timeoutMinutes": 20, "timeoutWhy": "no green wall time of its own yet: its slowest spec ran 11.3 min beside the other gates (QUEUEDROP1, 2026-11-17) and runs alone here: 11.3 x 1.75; re-set from the next green wall time", "run": "npm run tooltests:e2e", "clock": true, "memoryGb": 6,
+      "paths": [
+        ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
+        "src/Daoris.Cli/package.json", "src/Daoris.Cli/tool-test/", "tools/as-merged.mjs", "tools/as-merged.test.mjs",
+        "tools/merge-backlog.mjs", "tools/merge-branch.mjs", "tools/merge-branch/", "tools/merge-queue.mjs", "tools/merge/", "tools/reached-checks.mjs",
+        "tools/vitest.config.ts", "README.md", "CHANGELOG.md", "LICENSE", "canon/", "src/Daoris.Cli/bin/", "src/Daoris.Cli/src/",
+        "src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/tsconfig.build.json", "tools/stage-package.mjs", "tools/doc-links.mjs", "tools/fsx.mjs",
+        "tools/process-reach.mjs"
       ] },
     { "name": "web", "run": "npm run test:web:e2e", "clock": true,
       "paths": [

@@ -22,7 +22,7 @@ public sealed class NativeWorkFramesCensusTests
     {
         var root = SourceFiles.Project(SourceFiles.DriverProject);
         var reading = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Where(path => Words.IsMatch(File.ReadAllText(path)))
+            .Where(path => Words.IsMatch(SourceTexts.Of(path)))
             .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
             .ToList();
 

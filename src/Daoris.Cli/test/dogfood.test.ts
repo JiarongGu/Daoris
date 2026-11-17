@@ -341,8 +341,8 @@ test('every declared gate is actually run by the release workflow', () => {
   const runsVerify = /run:\s*npm run verify:checks\s*$/m.test(workflow);
   // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
   // Process. Each of its commands is judged so, never the gate's text as a whole.
-  // A gate's per-test timing reporter is the gate's own record, not a different command the release must repeat.
-  const bare = (command: string) => command.replace(/ --results-directory \S+ --logger "trx;LogFileName=[^"]+"/g, '');
+  // A run's timing reporter and `{base}` are its own, never the release's.
+  const bare = (command: string) => command.replace(/ --results-directory \S+ --logger "trx;LogFileName=[^"]+"/g, '').replace(/ --base \{base\}/g, '');
   const runs = (raw: string) => {
     const command = bare(raw);
     const category = /^dotnet test (\S+) --filter Category=(\w+)$/.exec(command);

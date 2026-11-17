@@ -211,7 +211,7 @@ public sealed class ServiceProviderCensusTests
                     continue;
                 }
 
-                yield return (Path.GetRelativePath(workspace, file).Replace('\\', '/'), File.ReadAllText(file).Replace("\r\n", "\n"));
+                yield return (Path.GetRelativePath(workspace, file).Replace('\\', '/'), SourceTexts.Of(file).Replace("\r\n", "\n"));
             }
         }
     }

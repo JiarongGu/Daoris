@@ -276,6 +276,11 @@ jobs:
       - name: Tool tests gate
         run: npm run tooltests
 
+      # The merge tool's end-to-end specs, a tier of their own (TOOLTIER1): each seeds a scratch repository and starts real git
+      # and the tool itself, so they run apart from the unit tier above.
+      - name: Tool end-to-end gate
+        run: npm run tooltests:e2e
+
       # The two .NET suites this job used to skip entirely. The rehearsals below drive the service and
       # the driver end to end, which is why the gap survived a release rehearsal and eight landings —
       # an end-to-end pass is not a substitute for the unit judgement underneath it, and a store rule

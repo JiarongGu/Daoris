@@ -58,7 +58,7 @@ public sealed class ShortWaitsCensusTests
     {
         var folder = SourceFiles.Project(project);
         return SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != nameof(ShortWaitsCensusTests) + ".cs")
-            .Select(path => (project + "/" + Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)));
+            .Select(path => (project + "/" + Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), SourceTexts.Of(path)));
     }));
 
     private const string Driver = SourceFiles.DriverTestsProject;

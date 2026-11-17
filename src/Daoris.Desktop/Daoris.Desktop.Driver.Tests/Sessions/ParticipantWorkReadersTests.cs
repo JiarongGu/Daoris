@@ -41,7 +41,7 @@ public sealed class ParticipantWorkReadersTests
     {
         var folder = SourceFiles.Project(project);
         return Reading(SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != "ParticipantWork.cs")
-            .Select(path => (Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path))));
+            .Select(path => (Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), SourceTexts.Of(path))));
     }
 
     /// <summary>What differs between the files a scan found and the files the table lists, each as a sentence.</summary>

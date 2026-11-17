@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { collect, readTranscript, summarize } from './subagent-usage.mjs';
+import { transcripts } from './subagent-time.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const scratch = join(here, '..', 'local', 'scratch', 'subagent-usage-test');
@@ -119,6 +120,20 @@ test('collect reads each subagent with its meta, and leaves out those before --s
   assert.equal(agents.length, 1);
   assert.equal(agents[0].type, 'branch-worker');
   assert.equal(agents[0].description, 'ROW1 a row');
+});
+
+test('a meta that is blank or half-written reads as {} and never stops the report', () => {
+  const dir = join(scratch, 'projects-half');
+  const sub = join(dir, 'session-1', 'subagents');
+  mkdirSync(sub, { recursive: true });
+  writeFileSync(join(sub, 'agent-a.jsonl'), transcript);
+  writeFileSync(join(sub, 'agent-a.meta.json'), '   ');
+  writeFileSync(join(sub, 'agent-b.jsonl'), transcript);
+  writeFileSync(join(sub, 'agent-b.meta.json'), '{"agentType": "branch-wo');
+  const agents = collect(dir);
+  assert.equal(agents.length, 2);
+  assert.ok(agents.every((a) => a.type === 'unknown'));
+  assert.deepEqual(transcripts(dir).map((found) => found.meta), [{}, {}]);
 });
 
 test('summarize groups by type and model, with medians and each group\'s share', () => {

@@ -37,7 +37,10 @@
  * is the record; the signature is the match: a sighting whose signature an open finding holds moves its *last seen*, else it is
  * a new finding. A known red is cleared only by a pass of the test on a commit that descends, on main's first-parent line, from
  * the commit it last failed on, given by a CI run (`CLEARING_KINDS`); a sighting within a day of a clearing restores
- * the finding with its first sighting. A test known red past `KNOWN_RED_MS` from the first sighting of the test under any
+ * the finding with its first sighting. A test finding ends too as `gone` when a finished, unstopped CI run of a clearing kind ran
+ * its gate whole (never narrowed by class) and that gate's trx lists the test as neither passed nor failed, on a commit that
+ * descends from where it last failed (`clearGone`): no passing run can ever clear a deleted or renamed test. A gate finding is
+ * never gone, and a gone finding is not restored by a sighting. A test known red past `KNOWN_RED_MS` from the first sighting of the test under any
  * fingerprint has expired: no candidate inherits it, the watch says it, and twelve hours before, warns.
  *
  * ## The receipts, `local/ci-runs.jsonl`, and the stage history, `local/stage-history.jsonl`
@@ -368,6 +371,33 @@ export function clearPasses(record, { commit, at, kind, passed, descends, proven
   return { record: { ...record, findings }, cleared };
 }
 
+/**
+ * Known reds closed as `gone`: each open test finding whose test a whole run no longer lists. `listed(finding)` is every test its
+ * gate's trx names, whatever the outcome, or null where the run narrowed by class or left no trx; an empty set is no evidence either.
+ * A gate finding is never gone; a stopped run and a kind that does not clear give none; `commit` descends as for `clearPasses`.
+ */
+export function clearGone(record, { commit, at, kind, stopped = false, listed, descends }) {
+  if (stopped || !CLEARING_KINDS.includes(kind)) return { record, gone: [] };
+  const gone = [];
+  const findings = record.findings.map((each) => {
+    if (!open(each) || each.test === each.gate) return each;
+    const names = listed(each);
+    if (!names || names.size === 0 || names.has(each.test)) return each;
+    if (!descends(each.lastSeen.commit, commit)) return each;
+    const done = { ...each, state: 'gone', gone: { commit, at, kind } };
+    gone.push(done);
+    return done;
+  });
+  return { record: { ...record, findings }, gone };
+}
+
+/** The `listed` of `clearGone` for a CI run's result: names only where the gate ran whole (a half by `reach.whole`) and left a trx. */
+export function wholeListing(gate, trx) {
+  const whole = trx && (!gate.reach || gate.reach.whole) && !gate.deferredClasses?.length;
+  const names = whole ? listedTests(trx) : null;
+  return (finding) => (finding.gate === gate.name ? names : null);
+}
+
 const passedVerdict = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
 
 /**
@@ -425,7 +455,7 @@ export function knownRedLines(record, now = Date.now()) {
   for (const finding of record.findings.filter(open)) {
     const standing = knownRedStanding(finding, now);
     const what = `${finding.test}${finding.gate && finding.gate !== finding.test ? ` (${finding.gate})` : ''}, known red since ${minute(finding.since)}, last seen on ${String(finding.lastSeen.commit).slice(0, 7)}`;
-    if (standing.expired) lines.push(`known red past ${hours(KNOWN_RED_MS)}: ${what}: no longer inherited; the stage refuses it, and only a direct commit that fixes it or skips it under its row ends it`);
+    if (standing.expired) lines.push(`known red past ${hours(KNOWN_RED_MS)}: ${what}: no longer inherited; the stage refuses it, and only a direct commit that fixes it or skips it under its row ends it (a test deleted or renamed ends as gone at the next whole run of its gate that no longer lists it)`);
     else if (standing.warn) lines.push(`known red expiring ${minute(standing.expires)}: ${what}`);
   }
   return lines;
@@ -435,14 +465,19 @@ export function knownRedLines(record, now = Date.now()) {
  * The tests a trx shows passing, by name with their case: what clears a known red. A test that failed and passed alone
  * is not among them, its trx holding the failure.
  */
-export function passingTests(trx) {
-  const passed = new Set();
+export const passingTests = (trx) => testsOf(trx, (outcome) => outcome === 'Passed');
+
+/** Every test a trx names, with its case, whatever its outcome. */
+export const listedTests = (trx) => testsOf(trx, () => true);
+
+function testsOf(trx, wanted) {
+  const names = new Set();
   for (const [tag] of String(trx).matchAll(/<UnitTestResult\b[^>]*>/g)) {
     const outcome = /\boutcome="([^"]*)"/.exec(tag)?.[1];
     const name = /\btestName="([^"]*)"/.exec(tag)?.[1];
-    if (outcome === 'Passed' && name) passed.add(name.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&apos;/g, "'"));
+    if (name && wanted(outcome)) names.add(name.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&apos;/g, "'"));
   }
-  return passed;
+  return names;
 }
 
 // ---------------------------------------------------------------------------------------------------

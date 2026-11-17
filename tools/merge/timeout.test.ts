@@ -21,7 +21,7 @@ test('the declared gates: each timeoutMinutes carries its reason, and the full s
     assert.ok((gate.timeoutWhy ?? '').length > 20, `${gate.name} says why its budget is what it is`);
   }
   assert.deepEqual(gates.map((each) => each.name).filter((name) => name.startsWith('adapters-')), ['adapters-lock']);
-  const over = gates.find((each) => each.name === 'tool-tests')!;
+  const over = gates.find((each) => each.name === 'tool-e2e')!;
   const budget = budgetMs(over, 'ci')!;
   assert.ok(budget > 10 * 60_000, 'a gate killed at the old budget has its measured one');
   assert.match(overBudgetNote(budget + 1000, budget, []), /^over-budget: killed after/, 'a gate over its new budget still fails');

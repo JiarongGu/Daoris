@@ -7,22 +7,27 @@
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
- * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
+ * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml` and `tool-e2e.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
+ * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), and inside a run only the records that run wrote.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
-import { judgeByReach, loadWorld } from './time-reach.mjs';
+import { judgeByReach, loadWorld, unitsOf } from './time-reach.mjs';
+import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
 
 const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
+
+/** The node reporter's records: the tools' unit tier's and their end-to-end tier's. */
+const JUNIT_REPORTS = ['tool-tests.xml', 'tool-e2e.xml'];
 
 /** The suite a reached command's record (`reached-<suite>-<n>[-again].<ext>`, written when a class is measured again alone) is of, or null. */
 const reachedSuite = (file) => /^reached-(.+?)-\d+(-again)?\.(trx|json|xml)$/.exec(file)?.[1] ?? null;
@@ -32,11 +37,11 @@ export function limitFor(file) {
   const suite = reachedSuite(file);
   if (suite !== null) {
     if (file.endsWith('.trx')) return /process/i.test(suite) ? LIMITS.process : LIMITS.unit;
-    return suite === 'web-unit' ? LIMITS.web : suite === 'tool-tests' ? LIMITS.tool : LIMITS.toolUnit;
+    return suite === 'web-unit' ? LIMITS.web : suite === 'tool-tests' || suite === 'tool-e2e' ? LIMITS.tool : LIMITS.toolUnit;
   }
   if (file === 'web-unit.json') return LIMITS.web;
   if (file === 'tool-unit.json') return LIMITS.toolUnit;
-  if (file === 'tool-tests.xml' || file === 'tool-e2e.json') return LIMITS.tool;
+  if (JUNIT_REPORTS.includes(file) || file === 'tool-e2e.json') return LIMITS.tool;
   return /process/i.test(file) ? LIMITS.process : LIMITS.unit;
 }
 
@@ -99,22 +104,28 @@ export function readJunit(text, root) {
 /** Each record file of `dir` (written at or after `since`, when given) with its tests as { key, ms }. */
 export function readRecords(dir, root, { since = null } = {}) {
   if (!existsSync(dir)) return [];
+  const marks = readMarks(dir);
   return readdirSync(dir).sort().map((file) => ({ file, at: statSync(join(dir, file)).mtimeMs })).filter(({ at }) => since === null || at >= since).map(({ file, at }) => {
     const text = () => readFileSync(join(dir, file), 'utf8');
     const reached = reachedSuite(file);
     const vitest = VITEST_REPORTS.includes(file) || (reached !== null && file.endsWith('.json'));
-    const junit = file === 'tool-tests.xml' || (reached === 'tool-tests' && file.endsWith('.xml'));
+    const junit = JUNIT_REPORTS.includes(file) || ((reached === 'tool-tests' || reached === 'tool-e2e') && file.endsWith('.xml'));
     const tests = file.endsWith('.trx') ? readTrx(text()) : vitest ? readVitest(text(), root) : junit ? readJunit(text(), root) : [];
-    return { file, at, tests };
+    return { file, at, tests, loaded: isLoaded(marks, file, at) };
   });
 }
 
-/** Every test over its limit in the records of `dir`, as key -> { ms, limit } (a key's newest record decides), and every key the records hold. */
+/** Each test over its limit in `dir`'s records taken alone (key -> { ms, limit }), every key, and `loaded`: over only under load. */
 export function scanRecords(dir, root, { since = null } = {}) {
   const latest = new Map();
   const seen = new Set();
-  for (const { file, at, tests } of readRecords(dir, root, { since })) {
+  const underLoad = new Map();
+  for (const { file, at, tests, loaded } of readRecords(dir, root, { since })) {
     const limit = limitFor(file);
+    if (loaded) {
+      for (const { key, ms } of tests) if (ms > limit && (underLoad.get(key)?.ms ?? -1) < ms) underLoad.set(key, { ms, limit });
+      continue;
+    }
     const slowest = new Map();
     for (const { key, ms } of tests) {
       seen.add(key);
@@ -127,7 +138,8 @@ export function scanRecords(dir, root, { since = null } = {}) {
   }
   const over = {};
   for (const [key, { ms, limit }] of latest) if (ms > limit) over[key] = { ms, limit };
-  return { over, seen };
+  const loaded = Object.fromEntries([...underLoad].filter(([key]) => !seen.has(key)));
+  return { over, seen, loaded };
 }
 
 /** The entry of `list` that covers `key`: its own, else the longest entry that starts it. */
@@ -215,20 +227,46 @@ export function measureAlone(root, units) {
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }
 
+/** When this ratchet's run began (`run-start.json`'s `startedAt`, which the run writes), or null: older records are never a red. */
+export function runStart(dir) {
+  try {
+    const marked = Number(JSON.parse(readFileSync(join(dir, 'run-start.json'), 'utf8')).startedAt);
+    return Number.isFinite(marked) ? marked : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A scan's tests timed only under load, measured again alone when `free()`, else left unmeasured; they fail nothing for time. */
+export async function settleLoaded({ scan, free, measure, world }) {
+  let scanned = scan();
+  if (Object.keys(scanned.loaded).length && free()) {
+    const units = unitsOf(scanned.loaded, await world());
+    if (units.length) {
+      measure(units);
+      scanned = scan();
+    }
+  }
+  return { scanned, unmeasured: Object.keys(scanned.loaded) };
+}
+
 async function main() {
   const at = process.argv.indexOf('--since');
-  const since = at >= 0 ? Number(process.argv[at + 1]) : null;
-  if (since === null && process.env.MERGE_GATES_RUN === '1') {
+  const explicit = at >= 0 ? Number(process.argv[at + 1]) : null;
+  if (explicit === null && process.env.MERGE_GATES_RUN === '1') {
     console.log("time-ratchet: stands aside inside a merge: the merge tool runs it once after every gate, on the records its own gates wrote");
     return 0;
   }
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'time-ratchet.json');
   const dir = join(root, '_fixtures', 'test-timing');
+  const since = explicit ?? runStart(dir);
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
     const scan = () => scanRecords(dir, root, { since });
+    const { unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
+    for (const key of unmeasured) console.log(`time-ratchet: unmeasured, under load: ${key} was timed only while other heavy runs were under way, so it is not judged for time; it is measured again alone when the machine is free`);
     const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
     const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
     const found = judged ? judged.mine : all;

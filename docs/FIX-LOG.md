@@ -5,6 +5,53 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-17 - The time ratchet's load mark ignored test runs outside the admission (LOADREAL1)
+
+- **Symptom:** a merge's `reached` gate ran beside four builders' own `dotnet test` and `node --test` runs; its records were marked
+  as taken alone (holds 1) and the ratchet failed ten end-to-end specs for time (121-193 s over a 120 s limit), the cause being load.
+- **Root cause:** the mark (TIMELOAD1, `tools/time-load.mjs`) read only the heavy-run admission's places, which a builder's own test
+  run never takes.
+- **Fix:** the sampler adds one place for each other checkout, worktree, gate or heavy tree with a test process running
+  (`foreignTrees`: one `Get-CimInstance Win32_Process` read at most every 15 s, 5 s timeout, a failed read counts nothing); `holds`
+  stays the record's one number, so `isLoaded` and the ratchet are unchanged.
+- **Verification:** `node --test tools/time-load.test.mjs` (five cases, written before the exports existed) and
+  `node --test tools/time-ratchet.test.mjs` pass.
+
+## 2026-11-17 - The session reads bench grew its service host and testhost past 12 GB (BENCHMEM1)
+
+- **Symptom:** `SessionReadsBenchProcessTests` failed in every heavy run since merge 4f78e29; alone on 2026-11-17 its service host
+  reached 12.6 GB private memory and its testhost 12.4 GB in about a minute, and the machine ran out of memory. The last frames were
+  the groups' look reading the session list through the kept list's change door.
+- **Root cause:** e5152ef534 (merged in 4f78e29) made the session list answer each record its whole line's turns
+  (`SessionTurnLines`), so a line of n parts answers n² turns. The bench's generator (`BenchHome.Copy`, since 07e5689e55) copies one
+  ended chat's row column for column, its `line` and `entry` included, so its 2,998 copies and the template were one line of 2,999
+  parts: about nine million turns in every list answer, each record written apart and held four answers deep by the change door
+  (`ListChanges`), then parsed by the driver's kept list. The service answers as the driving area's rule 46a says; the bench's
+  records were no longer three thousand chats. The square stays the list's cost of a long line.
+- **Fix:** the copies are written by `BenchCopies`, each copy a line and a landing entry of its own (`line` its id, `entry` naming
+  it), as a chat opened alone is. `SessionChangeBenchProcessTests` and `HomeSizeBenchProcessTests` read the same home.
+- **Verification:** `BenchCopiesTests` failed before the fix (each copy's line was the template's) and passes; the bench class
+  alone passed twice with `process.runsettings`, its peak private memory 277 and 273 MB in the testhost and 96 and 95 MB in the
+  service host.
+## 2026-11-17 - The start's git count expected a git ahead of the tree's making
+
+- **Symptom:** `StartGitCountTests` failed alone on main, every time, at `made > 0`; it held the full set red.
+- **Root cause:** 7dcd25bea5 moved the default-branch read to the repository port (`GitDefaultBranch`), so the tree opening knows its
+  line and a start's first git is `worktree add`; the test counted git starts before it and required at least one. The code is right
+  (fewer git calls, none repeated); the premise was old.
+- **Fix:** the test allows the `worktree add` at index 0 (`made >= 0`); the other assertions (line guessed at most once, no repeat
+  without a write between, the ceiling of 20) stand.
+- **Verification:** the class passes alone three times with `process.runsettings`, and its GitCountTests and StartTests siblings.
+## 2026-11-17 - The plugin cycle's progress test matched a line the roles scope reworded
+
+- **Symptom:** `PluginCycleStaleTests.A_performer_that_sends_progress_before_its_outcome_passes_the_cycle` failed alone since
+  bd5e2dbd14: `Assert.Contains` did not find `let outcome; try { outcome = outcomeOf(await calls.act(attempt));` in `work.mjs`.
+- **Root cause:** bd5e2dbd14 (plugin 4.6.0, a stand-down honoured before every act) made the kit's `run` pass `{ ...attempt, signal }`
+  to `calls.act`. The kit still runs the same cycle and the progress line still goes in before the act; only the test's text anchor,
+  which spelled the old call whole, was stale.
+- **Fix:** the anchor ends at `calls.act(`, so it names where the act starts and not how its argument is spelled. The kit is unchanged.
+- **Verification:** `dotnet test` of the driver tests with `process.runsettings`, filtered to `PluginCycle`: 2 passed, twice.
+
 ## 2026-11-17 - Three Loop ticks still expected an agent's done to end its session
 
 - **Symptom:** `SessionTreeLockTickTests`, `AskAndWaitTickTests`' resumed case and `AcpTurnFailureTickTests`' carry-on case failed
@@ -17,6 +64,16 @@ repository.
   run's end ends the session at the stand-in, and the look's tidy stage (`LetGoUnheldLocksAsync` over `BranchTidying.InUseAsync`)
   lets go of the lock no session running or waiting holds, the tree standing. The other two ticks' carried sessions wait on their step.
 - **Verification:** the three classes pass with `process.runsettings`, filtered, with the Loop tick classes that bind the same workflow.
+## 2026-11-17 - A known red whose test was deleted or renamed stayed open forever (KNOWNREDGONE1)
+
+- **Symptom:** 20 of the 594 findings in the CI's known-red record named tests that no longer exist; a gated stage refuses every
+  known red past 72 hours, so a stage of the install could never go green.
+- **Root cause:** findings were only ever cleared by a pass (`clearPasses`, `clearKept`: a trx listing the test Passed, or the gate's
+  own pass). A deleted or renamed test is never listed, so no run could pass it and its finding stayed open until it expired.
+- **Fix:** a finished, unstopped CI run of a clearing kind that ran a gate whole closes a test finding of that gate as `gone`
+  (`clearGone`, `{ commit, at, kind }` recorded) when the gate's trx lists the test under no outcome (`listedTests`); a gate
+  finding, a run narrowed by class or by a budget, a run with no readable trx and one that lists no test close nothing.
+- **Verification:** `src/Daoris.Cli/tool-test/ci-background.test.ts`, the gone cases, red first.
 
 ## 2026-11-17 - A git place read its exited git as running under load
 
