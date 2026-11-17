@@ -3,7 +3,9 @@
  * (`heavy-tier.ts`); when the merge commits, `startHeavy` starts `tools/heavy-run.mjs` in the background on main's new tip, which runs
  * them through `tools/reached-checks.mjs --tier heavy` (the machine's admission, each pass recorded) and settles here. A red is filed
  * as a finding naming the merge commit and the classes, the same record the merge reads as main's red, and said on one line the
- * steward's monitor reads (`HEAVY_PREFIX`). The run never holds a merge: the next merge reads its red as main's.
+ * steward's monitor reads (`HEAVY_PREFIX`). The run never holds a merge: the next merge reads its red as main's. A newer landing's
+ * run supersedes an older one still going (`heavy-stack.ts`): the older settles `superseded` (`HANDED` on its line), the newer
+ * runs the union on its own commit and names, in its line and each finding it files, the runs it carried.
  */
 import { spawn } from 'node:child_process';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
@@ -18,12 +20,18 @@ export const HEAVY_RUNNER = 'tools/heavy-run.mjs';
 /** What every line the run says begins with, so a monitor that reads the log or the output finds it. */
 export const HEAVY_PREFIX = 'heavy tier:';
 
-export type HeavyState = 'running' | 'green' | 'red' | 'error';
+export type HeavyState = 'running' | 'green' | 'red' | 'error' | 'superseded';
 
-/** One run's record: written as `running` when the merge lands and again, settled, when the run ends. */
+/**
+ * One run's record: written as `running` when the merge lands and again, settled, when the run ends. A run a newer landing's
+ * superseded (`heavy-stack.ts`) names it in `handedTo` and the classes it left unrun in `handed` (absent: it ran none), and settles
+ * `superseded`, or `red` where it found a red first; the run that carried it names each tier it carried in `took`, and `from`, the
+ * oldest base it ran from.
+ */
 export type HeavyRun = {
   id: string; state: HeavyState; commit: string; base: string; branches: string[]; at: string; ended?: string;
   classes?: { ran: number; replayed: number; flaked: string[]; red: string[]; mainRed: string[] }; note?: string;
+  from?: string; took?: { id: string; commit: string; branches: string[] }[]; handedTo?: { id: string; commit: string }; handed?: string[];
 };
 
 /** A failure the run files into the CI findings, in the shape `fileSighting` takes. */
@@ -97,7 +105,25 @@ export function startAfterLanding(home: string, candidate: { tip: string; base: 
  * main already stood red is counted but not filed again.
  */
 export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: number | null, now: string): { run: HeavyRun; sightings: HeavySighting[]; lines: string[] } {
-  const where = `${sha(run.commit)} (${run.branches.join(', ')})`;
+  const carried = run.took?.length ? `, which carried ${run.took.map((each) => `${each.id} (${sha(each.commit)}, ${each.branches.join(', ')})`).join('; ')}` : '';
+  const where = `${sha(run.commit)} (${run.branches.join(', ')})${carried}`;
+  const to = run.handedTo ? `${run.handedTo.id} on ${sha(run.handedTo.commit)}` : null;
+  if (to && !outcome) {
+    const note = `superseded by ${to} before it ran a class: its range is carried there`;
+    return { run: { ...run, state: 'superseded', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} HANDED ${where} to ${to} before it ran a class: its range is carried there`] };
+  }
+  if (to && outcome) {
+    const handed = outcome.handed ?? [];
+    const settled = settleHeavy({ ...run, handedTo: undefined }, { ...outcome, unrun: 0 }, code, now);
+    const classes = { ran: outcome.ran, replayed: outcome.replayed, flaked: outcome.flaked, red: outcome.red, mainRed: outcome.mainRed };
+    if (settled.run.state === 'red') {
+      return { ...settled, run: { ...settled.run, handedTo: run.handedTo, handed }, lines: settled.lines.map((line) => `${line}; ${handed.length} class(es) handed to ${to}`) };
+    }
+    return {
+      run: { ...run, state: 'superseded', ended: now, classes, handed }, sightings: [],
+      lines: [`${HEAVY_PREFIX} HANDED ${where} to ${to}: ${outcome.ran} classes ran, ${outcome.replayed} replayed, ${handed.length} handed`],
+    };
+  }
   if (!outcome) {
     const note = `the run ended with no class counts (exit ${code ?? 'none'})`;
     return { run: { ...run, state: 'error', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} ERROR ${where}: ${note}; the heavy classes are owed to the CI beside`] };
@@ -113,7 +139,7 @@ export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: n
   }
   const sightings = outcome.red.map((id): HeavySighting => {
     const [gate = '', unit = ''] = id.split('|');
-    const message = `failed in the heavy tier run after merge ${sha(run.commit)} (${run.branches.join(', ')}), then again alone`;
+    const message = `failed in the heavy tier run after merge ${where}, then again alone`;
     return {
       gate, unit, test: unit, fingerprint: { test: unit, exception: '', at: null, message }, signature: { test: unit, exception: '', message },
       message, lines: [`${unit}: ${message}`], commit: run.commit, at: now, kind: 'heavy',

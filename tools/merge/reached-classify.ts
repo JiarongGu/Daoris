@@ -17,6 +17,8 @@ export type ClassOutcome = { ran: number; replayed: number; flaked: string[]; ma
   built?: string[];
   /** Each step's clock (`reached-steps.ts`). */
   steps?: Step[];
+  /** The classes a newer heavy tier's halt left to it (`heavy-halt.ts`), neither passed nor failed here; absent for none. */
+  handed?: string[];
 };
 
 const MARK = 'reached-classes: ';
@@ -32,12 +34,13 @@ export function parseOutcome(log: string): ClassOutcome | null {
     const names = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
     const unrun = Number(parsed.unrun) || 0;
     const built = names(parsed.built);
+    const handed = names(parsed.handed);
     const steps = Array.isArray(parsed.steps)
       ? parsed.steps.filter((each): each is Step => typeof each?.step === 'string' && Number.isFinite(each?.ms)).map((each) => ({ step: each.step, ms: each.ms }))
       : [];
     return {
       ran: Number(parsed.ran) || 0, replayed: Number(parsed.replayed) || 0, flaked: names(parsed.flaked), mainRed: names(parsed.mainRed), red: names(parsed.red), deferred: names(parsed.deferred),
-      ...(unrun > 0 ? { unrun } : {}), ...(built.length ? { built } : {}), ...(steps.length ? { steps } : {}),
+      ...(unrun > 0 ? { unrun } : {}), ...(built.length ? { built } : {}), ...(steps.length ? { steps } : {}), ...(handed.length ? { handed } : {}),
     };
   } catch {
     return null;

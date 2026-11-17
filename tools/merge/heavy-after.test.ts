@@ -68,6 +68,43 @@ describe('the heavy run settled', () => {
   });
 });
 
+describe('a heavy run superseded by a newer landing, and the run that carried it', () => {
+  const running: HeavyRun = { id: 'heavy-0123456-1', state: 'running', commit, base: input.base, branches: ['feature-a'], at: '2026-11-14T10:00:00.000Z' };
+  const newer = { id: 'heavy-89abcde-2', commit: '89abcdef0123456789abcdef0123456789abcdef' };
+  const now = '2026-11-14T10:20:00.000Z';
+
+  it('settles as handed, never green: its finished counts kept and the classes it left unrun named', () => {
+    const settled = settleHeavy({ ...running, handedTo: newer }, outcome({ ran: 1, replayed: 0, handed: ['driver-git|G1'] }), 0, now);
+    expect(settled.run).toMatchObject({ state: 'superseded', handedTo: newer, handed: ['driver-git|G1'], classes: { ran: 1, replayed: 0 } });
+    expect(settled.sightings).toEqual([]);
+    expect(settled.lines[0]).toBe(`${HEAVY_PREFIX} HANDED 0123456 (feature-a) to heavy-89abcde-2 on 89abcde: 1 classes ran, 0 replayed, 1 handed`);
+    expect(heavyStanding([settled.run], Date.parse(now))).toEqual([]);
+  });
+
+  it('settles as handed where it was superseded before it ran a class, its whole range carried', () => {
+    const settled = settleHeavy({ ...running, handedTo: newer }, null, null, now);
+    expect(settled.run.state).toBe('superseded');
+    expect(settled.run.handed).toBeUndefined();
+    expect(settled.lines[0]).toBe(`${HEAVY_PREFIX} HANDED 0123456 (feature-a) to heavy-89abcde-2 on 89abcde before it ran a class: its range is carried there`);
+  });
+
+  it('keeps a red it found before the handover as main\'s red, filed on the commit it ran on', () => {
+    const settled = settleHeavy({ ...running, handedTo: newer }, outcome({ red: ['driver-process|A.BrokenTests'], handed: ['driver-git|G1'] }), 1, now);
+    expect(settled.run).toMatchObject({ state: 'red', handedTo: newer, handed: ['driver-git|G1'] });
+    expect(settled.sightings[0]).toMatchObject({ commit, unit: 'A.BrokenTests' });
+    expect(settled.lines[0]).toContain('1 class(es) handed to heavy-89abcde-2 on 89abcde');
+  });
+
+  it('names each tier a run carried in its line and in each finding it files, which names the commit the class ran on', () => {
+    const carrying: HeavyRun = { ...running, id: newer.id, commit: newer.commit, from: input.base, took: [{ id: running.id, commit, branches: ['feature-a'] }] };
+    const settled = settleHeavy(carrying, outcome({ red: ['driver-git|G1'] }), 1, now);
+    expect(settled.sightings[0]).toMatchObject({ commit: newer.commit, unit: 'G1' });
+    expect(settled.sightings[0]!.message).toContain('which carried heavy-0123456-1 (0123456, feature-a)');
+    expect(settled.lines[0]).toContain('which carried heavy-0123456-1 (0123456, feature-a)');
+    expect(settleHeavy(carrying, outcome(), 0, now).lines[0]).toContain('GREEN 89abcde (feature-a), which carried heavy-0123456-1');
+  });
+});
+
 describe('the heavy runs record', () => {
   const dir = join('_fixtures', 'heavy-after-test');
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
