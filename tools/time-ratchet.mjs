@@ -26,7 +26,7 @@ export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_0
 
 const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
 
-/** The node reporter's records: the tools' unit tier's and their end-to-end tier's (TOOLTIER1). */
+/** The node reporter's records: the tools' unit tier's and their end-to-end tier's. */
 const JUNIT_REPORTS = ['tool-tests.xml', 'tool-e2e.xml'];
 
 /** The suite a reached command's record (`reached-<suite>-<n>[-again].<ext>`, written when a class is measured again alone) is of, or null. */

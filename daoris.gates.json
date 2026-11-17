@@ -209,7 +209,9 @@
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/package.json", "src/Daoris.Cli/tool-test/", "tools/as-merged.mjs", "tools/as-merged.test.mjs",
         "tools/merge-backlog.mjs", "tools/merge-branch.mjs", "tools/merge-branch/", "tools/merge-queue.mjs", "tools/merge/", "tools/reached-checks.mjs",
-        "tools/vitest.config.ts"
+        "tools/vitest.config.ts", "README.md", "CHANGELOG.md", "LICENSE", "canon/", "src/Daoris.Cli/bin/", "src/Daoris.Cli/src/",
+        "src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/tsconfig.build.json", "tools/stage-package.mjs", "tools/doc-links.mjs", "tools/fsx.mjs",
+        "tools/process-reach.mjs"
       ] },
     { "name": "web", "run": "npm run test:web:e2e", "clock": true,
       "paths": [
