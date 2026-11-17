@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breachLines, domainOf, gateBreach, hangBreaches, parseBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { breachLines, domainOf, gateBreach, hangBreaches, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -34,6 +34,13 @@ test('six planted breaches, one per cause, each classed right with its fix path'
   assert.equal(found.scan.fix, 'CENSUSDIFF1', 'a source scan is judged on the diff at a merge');
   assert.match(found.load.fix, /^none/, 'load has no fix: it is measured again alone');
   assert.equal(found.process.domain, 'Daoris.Desktop.Driver.Tests/Workplace');
+});
+
+test('of two files one class names, the source is the one under the project its namespace names; neither, none', () => {
+  const files = ['src/D/Daoris.Desktop.Modules.Tests/X/SameTests.cs', 'src/D/Daoris.Desktop.Driver.Tests/Y/SameTests.cs'];
+  const read = sourceReader('.', { files, read: (path) => path });
+  assert.equal(read('Daoris.Desktop.Driver.Tests.SameTests.a')?.file, files[1]);
+  assert.equal(read('Other.Tests.SameTests.a'), null);
 });
 
 test('a class that shows no cause, or whose source is not found, is unclassed, never a guess', () => {
@@ -100,6 +107,23 @@ test('a test the blame collector killed at its hang timeout is a breach of that 
   assert.match(breachLines([hang])[1], /WaitsTests\.Runs hung 60 s, its hang timeout 60 s: clock/);
   assert.equal(hangBreaches('5 minutes have passed', reader).length, 0, 'no hang said, none read');
   assert.equal(hangBreaches("The specified inactivity time of 5 minutes has elapsed.\nThe tests running when the crash occurred:\nA.B.c\nA.B.d(x: 1, y: 2)\n\n", () => null)[1].ms, 300_000);
+});
+
+test('each ratchet test over its limit is a breach: an unlisted one fails, a listed one within its time and one no path reaches do not, load is load', () => {
+  const breaches = ratchetBreaches({
+    found: { 'Daoris.Desktop.Driver.Tests.WaitsTests.Runs': { ms: 40_000, limit: 30_000 }, 'Daoris.Desktop.Driver.Tests.ScansTests.Runs': { ms: 35_000, limit: 30_000 } },
+    others: { 'B.Tests.Far.c': { ms: 31_000, limit: 30_000 } },
+    loaded: { 'C.Tests.Busy.d': { ms: 50_000, limit: 30_000 } },
+    listedAt: (key) => (key.includes('ScansTests') ? 36_000 : undefined),
+    records: () => new Map([['Daoris.Desktop.Driver.Tests.WaitsTests.Runs', 'reached-driver-1.trx']]),
+    source: reader,
+  });
+  assert.deepEqual(breaches.map((each) => [each.name.split('.').at(-2), each.cause, each.fails]), [
+    ['WaitsTests', 'clock', true], ['ScansTests', 'scan', false], ['Far', 'unclassed', false], ['Busy', 'load', false],
+  ]);
+  assert.match(breaches[1].evidence, /listed at 36000 ms/);
+  assert.match(breaches[2].evidence, /not this merge's/);
+  assert.deepEqual(ratchetBreaches({ found: {} }), [], 'nothing over, nothing read');
 });
 
 test('a breach said as a machine line reads back, and the summary names its cause, failing ones first', () => {

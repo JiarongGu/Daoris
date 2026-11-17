@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LIMITS, checkTimes, limitFor, ratchetBreaches, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
+import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
 import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
 import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 
@@ -308,25 +308,4 @@ test('records on disk are scanned by their file and an absent folder holds nothi
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test('each test over its limit is a breach with its cause: an unlisted one fails, a listed one within its time and one no path reaches do not, load is load', () => {
-  const sources = {
-    'A.Tests.WaitsTests.a': { file: 'src/A/A.Tests/Loop/WaitsTests.cs', text: 'await Task.Delay(500);' },
-    'A.Tests.ListedTests.b': { file: 'src/A/A.Tests/Loop/ListedTests.cs', text: 'Thread.Sleep(10);' },
-  };
-  const breaches = ratchetBreaches({
-    found: { 'A.Tests.WaitsTests.a': { ms: 40_000, limit: 30_000 }, 'A.Tests.ListedTests.b': { ms: 35_000, limit: 30_000 } },
-    others: { 'B.Tests.Far.c': { ms: 31_000, limit: 30_000 } },
-    loaded: { 'C.Tests.Busy.d': { ms: 50_000, limit: 30_000 } },
-    list: { 'A.Tests.ListedTests': { ms: 36_000, why: 'a real wait the subject needs, cut by LAYERS1 c' } },
-    records: () => new Map([['A.Tests.WaitsTests.a', 'reached-driver-1.trx']]),
-    source: (key) => sources[key] ?? null,
-  });
-  assert.deepEqual(breaches.map((each) => [each.name, each.cause, each.fails]), [
-    ['A.Tests.WaitsTests.a', 'clock', true], ['A.Tests.ListedTests.b', 'clock', false], ['B.Tests.Far.c', 'unclassed', false], ['C.Tests.Busy.d', 'load', false],
-  ]);
-  assert.match(breaches[1].evidence, /listed at 36000 ms/);
-  assert.match(breaches[2].evidence, /not this merge's/);
-  assert.deepEqual(ratchetBreaches({ found: {}, list: {} }), [], 'nothing over, nothing read');
 });

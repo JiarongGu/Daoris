@@ -17,6 +17,10 @@ export type LoadSeam = { sample: () => { peak: () => number; stop: () => void };
 export declare function causeOf(given: { text?: string | undefined; file?: string | undefined; record?: string }): { cause: Cause; evidence: string; real?: true };
 export declare function domainOf(file: string): string;
 export declare function sourceReader(root: string, seams?: { files?: string[] | null; read?: (path: string) => string }): (key: string) => Source | null;
+type Over = Record<string, { ms: number; limit: number }>;
+export declare function ratchetBreaches(given: {
+  found: Over; others?: Over; loaded?: Over; listedAt?: (key: string) => number | undefined; records?: () => Map<string, string>; source?: (key: string) => Source | null;
+}): Breach[];
 export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null): Breach[];
 export declare function testBreach(given: {
   kind?: 'test' | 'census' | 'hang'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string;

@@ -1,11 +1,9 @@
 /**
  * The wall-clock budget of a gate: its declared `timeoutMinutes`, else five minutes in a merge and ten in the full set or the CI.
- * A gate past it is killed with what it started, and its kill is a breach that says why (`tools/time-why.mjs`). Where the load
- * sampler saw more heavy runs under way than the gate's own place while it ran, the kill is the load's: the gate fails nothing yet
- * and runs again once, whole and alone, after every other gate has ended and once the machine is free (`waitFree`: the admission's
- * places and other trees' test runs no more than its own, read every 15 s for up to 10 min). Only a kill alone fails as the gate's
- * time; a second kill under load fails as load, saying the machine was not free. The budget is never scaled by the load: a kill
- * alone is the one measure of the gate's own time. `--no-timeout` turns the budget off for an investigation and the summary says so.
+ * A gate past it is killed with what it started, a breach that says why (`tools/time-why.mjs`). A kill while the load sampler (from
+ * half the budget) saw more heavy runs than the gate's own fails nothing yet: the gate runs again once, whole and alone, after every
+ * other gate and once the machine is free (`waitFree`), and only a kill alone fails as its time. The budget never scales with the
+ * load: a kill alone is the one measure of the gate's own time. `--no-timeout` turns it off for an investigation, said in the summary.
  */
 import type { LoadSeam } from '../time-why.mjs';
 import { stepsLine, type Step } from './reached-steps.ts';
@@ -39,7 +37,7 @@ export function overBudgetNote(ranMs: number, budget: number, slowest: Slow[], s
   return `over-budget: killed after ${minutes(ranMs)} min, its budget is ${minutes(budget)} min${said}${slow ? `; slowest in its last record: ${slow}` : ''}`;
 }
 
-/** Until the machine is free, read every `everyMs` for up to `deadlineMs` or until `halted()`: whether it was, and how long that took. */
+/** Until the machine is free, read every `everyMs` for up to `deadlineMs` or until `halted()`: whether it is free, and the wait's length. */
 export async function waitFree(load: LoadSeam, halted: () => boolean = () => false, deadlineMs = FREE_WAIT_MS, everyMs = FREE_EVERY_MS): Promise<{ free: boolean; ms: number }> {
   const from = load.now();
   for (;;) {

@@ -4,7 +4,7 @@
  * A breach is a test over its time ratchet's limit (`tools/time-ratchet.mjs`), a unit test over the layers census's second
  * (`tools/layers-census.mjs`), a test the blame collector killed at its hang timeout (`hangBreaches`, read from a gate's log) or a
  * gate killed at its budget (`tools/merge/timeout.ts`). Each is one record: what breached, its time
- * and its limit, its cause, what the cause was read from (`evidence`), the fix path (the row that owns the fix) and whether it fails
+ * and its limit, its cause, what the cause is read from (`evidence`), the fix path (the row that owns the fix) and whether it fails
  * the run. A tool says each as a machine line (`time-breach: {…}`); the merge reads them from a gate's log and the ratchet's output,
  * writes them to `breaches.json` beside the run's gate logs, carries them in the merge record and the queue's scope-run record, and
  * prints a line each in its summary (`breachLines`).
@@ -16,16 +16,16 @@
  * - `network`: a listener, a socket, a pipe or a web host;
  * - `clock`: a wall-clock read or a real wait (the layers census's counter), or a node test's timer with no fake timers;
  * - `scan`: a walk of the repository's sources (`SourceFiles`, a compilation, `repositoryFiles`, `git ls-files`);
- * - `load`: timed only while other heavy runs were under way (`tools/time-load.mjs`);
+ * - `load`: timed only while other heavy runs are under way (`tools/time-load.mjs`);
  * - `unclassed`: none of these, or no source found for the class. Never a guess.
- * No test host records per test what it started, opened or waited on yet (UNITPURE1 adds that ledger), so the reading is the test's
- * category and its class's source. A gate killed at its budget is `load` where more than its own place was held at the load
+ * No test host records per test what it started, opened or waited on, so the reading is the test's category and its class's
+ * source; a ledger of what each test did, where one is kept, is the better reading. A gate killed at its budget is `load` where more than its own place is held at the load
  * sampler's peak during its run (the merge then runs it again alone once the machine is free); otherwise the cause is its longest
  * step's (reached's census and plan a scan; a restore, a build or a discovery a process; a suite's run its category), and with no
  * step clocks its own category's.
  *
  * Where three or more classes of one domain (a test project's first folder, a tool test's folder) share a cause other than load or
- * unclassed in one run, the domain is a separation candidate: a package of its own with its ports (COMPONENT1).
+ * unclassed in one run, the domain is a separation candidate: a package of its own with its ports.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -63,7 +63,7 @@ function categoryOf(text, file, record) {
   return null;
 }
 
-/** The cause of one test's time, read from its class's source `text` at `file`, and what it was read from. */
+/** The cause of one test's time, read from its class's source `text` at `file`, and the reading that names it. */
 export function causeOf({ text, file, record = '' }) {
   if (typeof text !== 'string' || !file) return { cause: 'unclassed', evidence: 'no source found for its class' };
   const cs = file.endsWith('.cs');
@@ -119,7 +119,11 @@ export function sourceReader(root, { files = null, read = (path) => readFileSync
       tracked ??= repositoryFiles(root);
       const name = unit.split('.').at(-1)?.split('+')[0];
       const found = tracked.filter((path) => path.endsWith(`/${name}.cs`));
-      file = found.length === 1 ? found[0] : found.find((path) => path.split('/').some((part) => part.includes('.') && unit.startsWith(`${part}.`))) ?? null;
+      // Among files of one name, the one under the folder the namespace names most of (`Daoris.Desktop.Driver.Tests`).
+      const named = (path) => Math.max(0, ...path.split('/').filter((part) => unit.startsWith(`${part}.`)).map((part) => part.length));
+      const best = Math.max(0, ...found.map(named));
+      const ranked = found.filter((path) => named(path) === best);
+      file = found.length === 1 ? found[0] : best > 0 && ranked.length === 1 ? ranked[0] : null;
     }
     if (!file) return null;
     try {
@@ -132,7 +136,7 @@ export function sourceReader(root, { files = null, read = (path) => readFileSync
 
 /**
  * One test's breach: `kind` `test` (the time ratchet's) or `census` (the layers census's second), its key, time and limit, whether it
- * fails the run, the record it was timed in, and `loaded` where it was timed only under load.
+ * fails the run, the record that times it, and `loaded` where only a run under load timed it.
  */
 export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', source = null, loaded = false, note = '' }) {
   const read = loaded ? { cause: 'load', evidence: 'timed only while other heavy runs were under way' } : causeOf({ text: source?.text, file: source?.file, record });
@@ -141,6 +145,24 @@ export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', 
     kind, name: key, ms, limit, cause: read.cause, evidence, fix: fixOf(read.cause, { file: source?.file, real: read.real === true, record }), fails,
     unit: unitOf(key), ...(source?.file ? { domain: domainOf(source.file) } : {}),
   };
+}
+
+/**
+ * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `others` (no path the merge
+ * changes reaches them) and `loaded` (timed only under load), each key -> { ms, limit }. `records()` maps a key to its record.
+ */
+export function ratchetBreaches({ found, others = {}, loaded = {}, listedAt = () => undefined, records = () => new Map(), source = () => null }) {
+  if (!Object.keys(found).length && !Object.keys(others).length && !Object.keys(loaded).length) return [];
+  const timedIn = records();
+  const one = (key, { ms, limit }, given) => testBreach({ key, ms, limit, record: timedIn.get(key) ?? '', source: source(key), ...given });
+  return [
+    ...Object.entries(found).map(([key, over]) => {
+      const listed = listedAt(key);
+      return one(key, over, { fails: !(listed >= over.ms), ...(listed === undefined ? {} : { note: `listed at ${listed} ms` }) });
+    }),
+    ...Object.entries(others).map(([key, over]) => one(key, over, { fails: false, note: "not this merge's: no path it changes reaches it" })),
+    ...Object.entries(loaded).map(([key, over]) => one(key, over, { fails: false, loaded: true })),
+  ];
 }
 
 const HANG = /The specified inactivity time of (\d+) (seconds?|minutes?) has elapsed/;
@@ -262,7 +284,8 @@ export function writeBreaches(dir, breaches, found = separations(breaches)) {
 
 /**
  * The machine's load as the merge reads it around a gate, over the admission of `home` (the Daoris home the tool started with) and
- * the test runs of trees other than `root`: a sampler of the peak while a gate runs, and whether the machine is free now.
+ * the test runs of trees other than `root`: a sampler of the peak while a gate runs (the merge starts it at half the gate's budget),
+ * and whether the machine is free now.
  */
 export function loadSeam(home, root) {
   const count = () => heldNow(home || '') + foreignTrees(root);

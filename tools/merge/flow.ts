@@ -124,7 +124,9 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const waited = first && deps.load ? await waitFree(deps.load, () => Boolean(trees?.ended)) : null;
   const started = Date.now();
   const budget = deps.timeoutMs(gate);
-  const sampler = budget === null ? null : deps.load?.sample() ?? null;
+  // The load is sampled over the second half of the budget only, so a gate that ends early never reads the machine.
+  const load = { sampler: null as ReturnType<LoadSeam['sample']> | null };
+  const watch = budget === null || !deps.load ? null : setTimeout(() => { load.sampler = deps.load?.sample() ?? null; }, budget / 2);
   const timer = budget === null ? null : setTimeout(() => {
     expired = 'over its budget';
     for (const pid of roots) deps.killTree(pid);
@@ -138,8 +140,9 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     result.note = `ended abnormally: ${error instanceof Error ? error.message : String(error)}; the run goes on with the next gate`;
   }
   if (timer) clearTimeout(timer);
-  const peak = sampler ? sampler.peak() : null;
-  sampler?.stop();
+  if (watch) clearTimeout(watch);
+  const peak = load.sampler ? load.sampler.peak() : null;
+  load.sampler?.stop();
   result.gate = gate;
   if (key) result.key = key;
   if (narrowed) result.classReplay = narrowed.replay;
