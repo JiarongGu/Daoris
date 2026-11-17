@@ -1,9 +1,8 @@
 /**
  * The merge's own record: one line per merge run in `local/merge-record.jsonl`, appended as the run ends. It carries the branch,
  * the run's wall time, each gate's time, steps and slowest classes (`ms` sums them, so gates run side by side count twice), the tests
- * that passed only when run again, whether the run is a branch's first pass, the reds set down as main's, what ran over
- * budget, and each time breach with its cause and fix path (`breaches`, `separations`: `tools/time-why.mjs`); `tools/dev-metrics.mjs`
- * reads it for the first-pass, wall-time, flake and reached-outside-its-tests figures.
+ * that passed only when run again, whether the run is a branch's first pass, the reds set down as main's, what ran over budget and
+ * the time breaches (`breaches`, `separations`); `tools/dev-metrics.mjs` reads it for the first-pass, wall-time, flake and reached-outside-its-tests figures.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';

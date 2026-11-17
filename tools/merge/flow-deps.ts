@@ -35,7 +35,6 @@ export type Seams = {
   readFindings: (home: string) => { findings: Finding[] };
   expired: (finding: Finding) => boolean;
   privateOf: (where: string) => string;
-  /** The Daoris home the tool started with, whose admission the load is read from; null, none. */
   home?: string | null;
 };
 

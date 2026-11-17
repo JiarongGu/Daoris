@@ -203,7 +203,6 @@ test('a gate past its budget has what it started killed, and fails as over-budge
   }
 });
 
-/** A gate that runs until the budget kills it, or passes at once, by the answers given in turn; and a machine whose load is given. */
 function loadHarness(runs: Array<'killed' | 'passes'>, peaks: number[], frees: boolean[]) {
   const handed: Array<Record<string, unknown>> = [];
   const polled: boolean[] = [];

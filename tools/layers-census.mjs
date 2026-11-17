@@ -9,8 +9,7 @@
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
  * 2. The ambient ports' reads per subdomain, a ratchet that only tightens; beside it the process and git sites' allowances, which only fall.
  * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
- *    (`--records <dir>` reads another folder; no records, nothing read). Beside it the wall clock's per-file allowance, which only falls.
- *    Each test over the second, listed or not, is said as a breach with its cause (`time-breach:` lines, `tools/time-why.mjs`).
+ *    (`--records <dir>` reads another folder; none, nothing read), each test over it said with its cause; beside it the clock's per-file allowance, which only falls.
  *
  * The compiler's check, the banned effects, is the build's: `src/BannedEffects.txt` through `src/Layers.props`.
  */

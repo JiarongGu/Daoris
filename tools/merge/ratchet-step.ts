@@ -1,8 +1,7 @@
 /**
  * The time ratchet as the merge's last check. Inside a merge the gates run beside each other and verify's ratchet stands aside, so
  * it is judged once here, after every gate has finished, on the timing records the merge's own gates wrote since it began. It
- * fails like any gate and is named in the summary. Its breaches, each with its cause (`time-breach:` lines), ride on its result for
- * the merge's breach report and stay out of its note.
+ * fails like any gate and is named in the summary; its breaches (`time-breach:` lines) ride on its result, out of its note.
  */
 
 import { spawnSync } from 'node:child_process';

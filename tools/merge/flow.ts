@@ -1,9 +1,7 @@
 /**
  * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, run after
  * the npm installs a moved lockfile owes, built once per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
- * settling: which failures are main's, what the record and the summary say. `tools/merge-branch.mjs` hands this its own seams.
- * Each gate's time breaches (the lines its log says, the tests its log says the hang timeout killed, and its own kill at its budget,
- * sampled for load) ride on its result, and the settling writes them to `breaches.json` beside the gates' logs.
+ * settling: which failures are main's, what the record, the summary and the time breaches say. `tools/merge-branch.mjs` hands this its own seams.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -50,7 +48,6 @@ export type FlowDeps = {
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
-  /** The machine's load around a gate with a budget: none read where absent. */
   load?: LoadSeam;
   replayAll?: boolean;
   privateOf?: (where: string) => string;
@@ -118,13 +115,11 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     release(pid) { return trees ? trees.release(pid) : false; },
     end(why) { trees?.end(why); },
   };
-  // The run again of a gate killed at its budget under load is a whole run, once the machine is free, never a memory death's.
   const first = (beside.again as GateResult | undefined)?.cause === 'load' ? beside.again as GateResult : null;
   const { again: _again, ...fresh } = beside;
   const waited = first && deps.load ? await waitFree(deps.load, () => Boolean(trees?.ended)) : null;
   const started = Date.now();
   const budget = deps.timeoutMs(gate);
-  // The load is sampled over the second half of the budget only, so a gate that ends early never reads the machine.
   const load = { sampler: null as ReturnType<LoadSeam['sample']> | null };
   const watch = budget === null || !deps.load ? null : setTimeout(() => { load.sampler = deps.load?.sample() ?? null; }, budget / 2);
   const timer = budget === null ? null : setTimeout(() => {
@@ -231,8 +226,7 @@ export function reportBreaches(results: readonly GateResult[], dir: string | nul
 
 /**
  * A merge's gates settled: each failure main already has (its test, its signature) set down as main's, the failed gates left
- * for the branch's, the record and the summary's lines built. `wallMs` is the time the merge's gating took on the clock; the time
- * breaches are written beside the gates' logs in `dir`.
+ * for the branch's, the record and the summary's lines built, the breaches written in `dir`. `wallMs` is the gating's wall time.
  */
 export function settleMerge({ branch, at, wallMs, results, mains, previous, dir = null }: {
   branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[]; dir?: string | null;
