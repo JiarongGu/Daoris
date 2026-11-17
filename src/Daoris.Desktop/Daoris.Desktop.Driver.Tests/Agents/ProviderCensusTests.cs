@@ -414,7 +414,7 @@ public sealed class ProviderCensusTests
                     continue;
                 }
 
-                yield return (Path.GetRelativePath(root, file).Replace('\\', '/'), File.ReadAllText(file).Replace("\r\n", "\n"));
+                yield return (Path.GetRelativePath(root, file).Replace('\\', '/'), SourceTexts.Of(file).Replace("\r\n", "\n"));
             }
         }
     }

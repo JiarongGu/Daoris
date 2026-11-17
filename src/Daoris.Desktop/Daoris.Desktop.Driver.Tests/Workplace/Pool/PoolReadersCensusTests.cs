@@ -21,7 +21,7 @@ public sealed class PoolReadersCensusTests
         {
             foreach (var file in SourceFiles.All(project, "*.cs"))
             {
-                read[Path.GetRelativePath(desktop, file).Replace('\\', '/')] = File.ReadAllText(file);
+                read[Path.GetRelativePath(desktop, file).Replace('\\', '/')] = SourceTexts.Of(file);
             }
         }
 

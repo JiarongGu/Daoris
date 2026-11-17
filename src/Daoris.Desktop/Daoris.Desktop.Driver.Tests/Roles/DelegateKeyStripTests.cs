@@ -57,7 +57,7 @@ public sealed class DelegateKeyStripTests
         var calls = 0;
         foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
-            var code = File.ReadAllText(file);
+            var code = SourceTexts.Of(file);
             foreach (var call in new[] { "SpawnRequests.Of(", "SpawnRequests.Chat(" })
             {
                 for (var at = code.IndexOf(call, StringComparison.Ordinal); at >= 0; at = code.IndexOf(call, at + 1, StringComparison.Ordinal))

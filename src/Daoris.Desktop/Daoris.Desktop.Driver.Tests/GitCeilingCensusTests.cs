@@ -48,7 +48,7 @@ public sealed class GitCeilingCensusTests
             var folder = SourceFiles.Project(project);
             foreach (var path in SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) is not (nameof(GitCeilingCensusTests) + ".cs" or nameof(TestGitCeilingTests) + ".cs")))
             {
-                var count = Uncapped(File.ReadAllText(path));
+                var count = Uncapped(SourceTexts.Of(path));
                 if (count > 0) found[project + "/" + Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/')] = count;
             }
         }

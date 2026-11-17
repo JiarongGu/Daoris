@@ -20,7 +20,7 @@ public sealed class PickerCensusTests
     {
         var found = Projects
             .SelectMany(project => SourceFiles.All(project, "*.cs"))
-            .Where(path => Picker.IsMatch(Regex.Replace(File.ReadAllText(path), @"//[^\n]*", "")))
+            .Where(path => Picker.IsMatch(Regex.Replace(SourceTexts.Of(path), @"//[^\n]*", "")))
             .Select(Path.GetFileName)
             .Distinct()
             .Order(StringComparer.Ordinal)

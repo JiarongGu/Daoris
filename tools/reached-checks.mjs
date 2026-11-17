@@ -47,7 +47,7 @@ import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
 import { inPlace } from './merge/reached-admit.ts';
 import { createAdmission } from './machine-admission.mjs';
-
+import { loadSampler, stampLoad } from './time-load.mjs';
 /** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. */
 const execAsync = (command, args, cwd) => new Promise((done) => {
   const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true });
@@ -145,12 +145,16 @@ async function main(argv) {
   const verdicts = readJson(join(checkout, CLASS_VERDICTS_FILE)).gates ?? {};
   const admission = builderAdmission();
   const processSuites = processSuitesOf(keyContextOf(root).gates);
+  const startedAt = Date.now();
+  const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
     root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say: (line) => console.log(line),
     exec: execAsync,
     inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
   });
+  load.stop();
+  stampLoad(join(root, '_fixtures', 'test-timing'), load.peak(), startedAt);
   if (!measure) store.save();
   return outcome.red.length ? 1 : 0;
 }
