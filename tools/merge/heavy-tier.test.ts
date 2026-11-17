@@ -25,7 +25,7 @@ describe('the tiers of a reached run', () => {
     expect(isHeavyUnit({ suite: 'driver-process-git' }, new Set())).toBe(false);
   });
 
-  it("defers the tools' end-to-end specs as it defers a Process class, and keeps the tools' unit tier fast (TOOLTIER1)", () => {
+  it("defers the tools' end-to-end specs as it defers a Process class, and keeps the tools' unit tier fast", () => {
     expect(isHeavyUnit({ suite: 'tool-e2e' }, new Set())).toBe(true);
     expect(isHeavyUnit({ suite: 'tool-tests' }, new Set())).toBe(false);
     const tools = [{ suite: 'tool-tests', unit: 'U' }, { suite: 'tool-e2e', unit: 'E' }];

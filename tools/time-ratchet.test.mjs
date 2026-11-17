@@ -54,7 +54,6 @@ test('a reached command\'s record, written when a class is measured again alone,
   assert.equal(limitFor('reached-driver-process-git-2-again.trx'), LIMITS.process);
   assert.equal(limitFor('reached-web-unit-1.json'), LIMITS.web);
   assert.equal(limitFor('reached-tool-tests-1.json'), LIMITS.tool);
-  // TOOLTIER1: the tools' end-to-end tier keeps the tool budget, in its own node record and a reached run of it.
   assert.equal(limitFor('tool-e2e.xml'), LIMITS.tool);
   assert.equal(limitFor('reached-tool-e2e-3.xml'), LIMITS.tool);
   assert.equal(limitFor('reached-cli-1.json'), LIMITS.toolUnit);

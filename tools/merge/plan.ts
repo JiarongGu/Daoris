@@ -41,10 +41,7 @@ export const isProcessGate = (gate: Named): boolean => /process\.runsettings/.te
  */
 export const isLongGate = (gate: Named): boolean => isProcessGate(gate) || /\brehearse:deploy\b/.test(gate.run);
 
-/**
- * The tools' end-to-end tier (TOOLTIER1), by the root script it runs: its specs seed scratch repositories and start real git and
- * the merge tool, the load-bound cases that ended the tool tests at their budget beside the suites, so it is a gate of its own.
- */
+/** The tools' end-to-end tier, by the root script it runs: its specs start real git and the merge tool. */
 export const END_TO_END_SCRIPTS: readonly string[] = Object.freeze(['tooltests:e2e']);
 
 /**

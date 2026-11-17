@@ -12,13 +12,9 @@ export const TIERS: readonly Tier[] = Object.freeze(['fast', 'heavy', 'all']);
 /** The tier named by a flag's value, or null where it names none. */
 export const tierNamed = (value: string | null): Tier | null => TIERS.find((tier) => tier === value) ?? null;
 
-/**
- * A suite of the heavy tier: its gate runs with the Process settings, it is a rehearsals project's, or it is an end-to-end tier
- * (`tool-e2e`: specs that seed scratch repositories and start real git and the merge tool, TOOLTIER1).
- */
+/** A suite of the heavy tier: its gate runs with the Process settings, it is a rehearsals project's, or an end-to-end tier. */
 export const isHeavySuite = (suite: string, processSuites: ReadonlySet<string>): boolean => processSuites.has(suite) || suite.endsWith('-rehearsals') || suite.endsWith('-e2e');
 
-/** A class of the heavy tier: one of a heavy suite. */
 export const isHeavyUnit = (unit: { suite: string }, processSuites: ReadonlySet<string>): boolean => isHeavySuite(unit.suite, processSuites);
 
 /** The units a tier runs, and (of the fast tier) the heavy ones it hands to the run after the landing. */

@@ -1,5 +1,5 @@
 /**
- * The merge queue end to end (TOOLTIER1's tier): a case reaches only its own scratch repository, and a gate sees none of the shell's Daoris or git variables.
+ * The merge queue end to end: a case reaches only its own scratch repository, and a gate sees none of the shell's Daoris or git variables.
  */
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,7 +12,7 @@ import { caseEnvironment, TRAILER, START_ENV, queueScratch, envGate, type SeenEn
 
 // A case's enqueue must not wait on the main checkout's queue or start a runner there from the tree's tool,
 // with the class-probe case's PATH. Its cases run one at a time here, so the variables it sets in the test process meet no other case.
-describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and queue', () => {
+describe('A case reaches only its own scratch repository and queue', () => {
   test("only the queue's own checkout queues to it or runs it, and a tree's tool never runs the main checkout's queue", () => {
     const home = 'X:/daoris';
     assert.equal(tool.queueHomeRefusal({ root: home, home }), null);
@@ -114,7 +114,7 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
   });
 });
 
-describe("INTEGRATE1a: a gate sees none of the shell's home, role or git locating variables, end to end in a scratch repository", { concurrency: true }, () => {
+describe("A gate sees none of the shell's home, role or git locating variables, end to end in a scratch repository", { concurrency: true }, () => {
   // The invoker's shell can hold the install's home, a role and git's locating variables; the runner it starts, and the gates
   // of every verb, must not inherit them, while the machine's admission is still found from the home the tool read at its start.
   const ownedGate = () => JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check', memoryGb: 0.1 }] });
@@ -131,7 +131,7 @@ describe("INTEGRATE1a: a gate sees none of the shell's home, role or git locatin
     assert.equal(seen.beside, '1', `${what}: the gate has the build servers of its own`);
   };
 
-  test("INTEGRATE1a: a gate the queue's runner starts sees no Daoris home, role or git locating variable the shell that started the runner held, and the admission is still found from the home", async () => {
+  test("a gate the queue's runner starts sees no Daoris home, role or git locating variable the shell that started the runner held, and the admission is still found from the home", async () => {
     const repo = queueScratch('gate-shell');
     try {
       const home = join(repo.root, 'local', 'install-home');
@@ -149,7 +149,7 @@ describe("INTEGRATE1a: a gate sees none of the shell's home, role or git locatin
     }
   });
 
-  test('INTEGRATE1a: a merge in place, a gate run again and a full run of the checkout start their gates the same way', async () => {
+  test('a merge in place, a gate run again and a full run of the checkout start their gates the same way', async () => {
     const repo = queueScratch('gate-shell-direct');
     try {
       const record = join(repo.root, 'local', 'gate-shell-direct.json');

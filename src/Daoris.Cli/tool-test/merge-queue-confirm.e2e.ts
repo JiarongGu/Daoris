@@ -1,5 +1,5 @@
 /**
- * The queue's confirm run and its unconfirmed policies end to end (TOOLTIER1's tier).
+ * The queue's confirm run and its unconfirmed policies end to end.
  */
 import { describe, test } from 'node:test';
 import { join, delimiter } from 'node:path';
@@ -10,7 +10,7 @@ import {
 } from './support/merge-queue-scratch.ts';
 import { machine, type ScopeRun, q, type Evidence, tool } from './support/merge-queue-kit.ts';
 
-describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end in a scratch repository", { concurrency: true }, () => {
+describe("The confirm run and the unconfirmed policies, end to end in a scratch repository", { concurrency: true }, () => {
   // The confirm run (design §4.5, §5.3 step 3) in the queue's runner, before any base or prefix run.
 
   /** Two branches queued into one candidate: the runner is held until both are queued, then forms them together. Answers both waits. */
@@ -29,7 +29,7 @@ describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end 
 
   for (const policy of ['split', 'land', 'hold'] as const) {
     const goes = { split: 'splits, and each member promotes alone', land: 'promotes as it stands, its pass standing for no other tip', hold: 'waits for a decide, which no door gives yet' }[policy];
-    test(`INTEGRATE1b: a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under ${policy}${policy === 'split' ? ', the default with no policy written,' : ''} the candidate ${goes}`, async () => {
+    test(`a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under ${policy}${policy === 'split' ? ', the default with no policy written,' : ''} the candidate ${goes}`, async () => {
       const repo = queueScratch(`confirm-${policy}`);
       const dir = join(repo.root, 'local', 'confirm');
       mkdirSync(dir, { recursive: true });
@@ -106,7 +106,7 @@ describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end 
     });
   }
 
-  test('INTEGRATE1b: a pollution within a class fails again as composed: the confirm run repeats the gate as it ran, and the failure is bisected as before', async () => {
+  test('a pollution within a class fails again as composed: the confirm run repeats the gate as it ran, and the failure is bisected as before', async () => {
     const repo = queueScratch('confirm-polluted');
     const shims = join(repo.root, 'local', 'shims');
     mkdirSync(shims, { recursive: true });
@@ -147,7 +147,7 @@ describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end 
     }
   });
 
-  test('INTEGRATE1b: another live hold beside the confirm run makes it inconclusive, read as split even under land: one of one is handed back unresolved, saying so, with no base run', async () => {
+  test('another live hold beside the confirm run makes it inconclusive, read as split even under land: one of one is handed back unresolved, saying so, with no base run', async () => {
     const repo = queueScratch('confirm-beside');
     const dir = join(repo.root, 'local', 'confirm');
     mkdirSync(dir, { recursive: true });
@@ -184,7 +184,7 @@ describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end 
     }
   });
 
-  test('INTEGRATE1b: an admission the confirm run cannot write is inconclusive: the gate is not run again, nothing runs on the base, and one of one is handed back unresolved', async () => {
+  test('an admission the confirm run cannot write is inconclusive: the gate is not run again, nothing runs on the base, and one of one is handed back unresolved', async () => {
     const repo = queueScratch('confirm-unwritable');
     const dir = join(repo.root, 'local', 'confirm');
     mkdirSync(dir, { recursive: true });
@@ -207,7 +207,7 @@ describe("INTEGRATE1b: the confirm run and the unconfirmed policies, end to end 
     }
   });
 
-  test('INTEGRATE1b: a drop ends a confirm run with its tree, starts no base or prefix run, and lets every place of the whole admission go', async () => {
+  test('a drop ends a confirm run with its tree, starts no base or prefix run, and lets every place of the whole admission go', async () => {
     const repo = queueScratch('confirm-drop');
     const dir = join(repo.root, 'local', 'drain');
     mkdirSync(dir, { recursive: true });

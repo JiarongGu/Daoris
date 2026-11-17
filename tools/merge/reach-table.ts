@@ -54,7 +54,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   { paths: ['tools/workflows/**'], gates: ['driver'], why: "the driver's tests read this repository's own workflow files and apply them as the install does" },
   // The tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
-  // The merge tool's own files reach its end-to-end tier as well (`tool-e2e`, TOOLTIER1): the gate declares the same files.
+  // The merge tool's own files reach its end-to-end tier as well (`tool-e2e`): the gate declares the same files.
   {
     paths: [
       'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reached-checks.mjs', 'tools/merge-backlog.mjs', 'tools/merge-queue.mjs',

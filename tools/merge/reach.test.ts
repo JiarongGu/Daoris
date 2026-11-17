@@ -73,7 +73,6 @@ const cases: [string, string[], string[]][] = [
     ["the family rehearsal's set-up kit", ['tools/setup-kit.mjs'], [...BASE, toolTests, family]],
     ["the rehearsals' kit", ['tools/rehearsal-kit.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
     ['a tool-test file', ['src/Daoris.Cli/tool-test/setup-kit.test.ts'], [...BASE, toolTests, toolE2e]],
-    // TOOLTIER1: a tool the merge tool only imports reaches the unit tier and not the end-to-end one.
     ['a tool outside the merge tool', ['tools/test-map.mjs'], [...BASE, toolTests]],
     ['the fixture the tool-tests share', ['src/Daoris.Cli/test/_fixture.ts'], [...BASE, toolTests]],
     ['the tarball reader the publish imports', ['src/Daoris.Cli/src/platform/tarball.ts'], [...BASE, toolTests, driver, rehearse, family, web, deployment]],

@@ -1,5 +1,5 @@
 /**
- * The merge tool as the declared runner end to end (TOOLTIER1's tier): its answer's schema, its inputs, and the run and plan modes.
+ * The merge tool as the declared runner end to end: its answer's schema, its inputs, and the run and plan modes.
  */
 import { describe, test } from 'node:test';
 import { writeFileSync, existsSync, readFileSync, mkdirSync, rmSync } from 'node:fs';
@@ -10,8 +10,8 @@ import {
 } from './support/merge-queue-scratch.ts';
 import { tool } from './support/merge-queue-kit.ts';
 
-describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to end in a scratch repository', { concurrency: true }, () => {
-  test('INTEGRATE1j: the declared runner answers D192\'s schema 1 when no mode is asked: each declared gate under its own name, the full commit, its verdict and exit, its log kept where it stays', async () => {
+describe('The declared runner, its schema and its inputs, end to end in a scratch repository', { concurrency: true }, () => {
+  test('the declared runner answers D192\'s schema 1 when no mode is asked: each declared gate under its own name, the full commit, its verdict and exit, its log kept where it stays', async () => {
     const repo = queueScratch('verify-answer');
     try {
       const commit = commitOnMain(repo, { 'break-check': '' }, 'a gate that fails');
@@ -45,7 +45,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
     }
   });
 
-  test('INTEGRATE1j: a member\'s edit of a gate\'s command in the tree does not run; the gates are the handed declaration\'s, and no DAORIS_VERIFY_* reaches one', async () => {
+  test('a member\'s edit of a gate\'s command in the tree does not run; the gates are the handed declaration\'s, and no DAORIS_VERIFY_* reaches one', async () => {
     const repo = queueScratch('verify-edit');
     try {
       const record = join(repo.root, 'local', 'recorded.json');
@@ -72,7 +72,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
   });
 
   // The declaration the runner is handed is the accepted blob (design §5.9), so its `env.pass` is the owner's.
-  test('INTEGRATE1d: the declared runner passes the names the declaration handed lists, from its start environment, and no Daoris name or other removed one', async () => {
+  test('the declared runner passes the names the declaration handed lists, from its start environment, and no Daoris name or other removed one', async () => {
     const repo = queueScratch('verify-pass');
     try {
       const record = join(repo.root, 'local', 'passed.json');
@@ -96,7 +96,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
     }
   });
 
-  test('INTEGRATE1j: a held gate-tree lock writes busy to the answer first and exits 75; without the flag the refusal is exit 2 as it was', async () => {
+  test('a held gate-tree lock writes busy to the answer first and exits 75; without the flag the refusal is exit 2 as it was', async () => {
     const repo = queueScratch('verify-busy');
     try {
       const commit = repo.git('rev-parse', 'HEAD');
@@ -117,7 +117,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
     }
   });
 
-  test('INTEGRATE1j: the commits mode is the commit check on base..tip, a schema-2 answer naming the declaration blob it read', async () => {
+  test('the commits mode is the commit check on base..tip, a schema-2 answer naming the declaration blob it read', async () => {
     const repo = queueScratch('verify-commits');
     try {
       const base = repo.git('rev-parse', 'HEAD');
@@ -154,7 +154,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
     }
   });
 
-  test('INTEGRATE1j: a tree the caller hands is the run\'s tree: the runner makes none, takes no lock and copies no private file; one at another commit is refused', async () => {
+  test('a tree the caller hands is the run\'s tree: the runner makes none, takes no lock and copies no private file; one at another commit is refused', async () => {
     const repo = queueScratch('verify-tree');
     try {
       const record = join(repo.root, 'local', 'recorded.json');
@@ -185,7 +185,7 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
     }
   });
 
-  test('INTEGRATE1j: the runner refuses a missing, malformed or contradicting input in a sentence with exit 2 and no answer, and the variable left in a shell retargets no run without the flag', async () => {
+  test('the runner refuses a missing, malformed or contradicting input in a sentence with exit 2 and no answer, and the variable left in a shell retargets no run without the flag', async () => {
     const repo = queueScratch('verify-refusals');
     try {
       const first = repo.git('rev-parse', 'HEAD');
@@ -217,8 +217,8 @@ describe('INTEGRATE1j: the declared runner, its schema and its inputs, end to en
   });
 });
 
-describe('INTEGRATE1j: the run, plan and probe modes, end to end in a scratch repository', { concurrency: true }, () => {
-  test('INTEGRATE1j: the run mode answers by gate, each with its composition kept beside its log and the failures read from it, beside what its plan kept and deferred', async () => {
+describe('The run, plan and probe modes, end to end in a scratch repository', { concurrency: true }, () => {
+  test('the run mode answers by gate, each with its composition kept beside its log and the failures read from it, beside what its plan kept and deferred', async () => {
     const repo = queueScratch('verify-run');
     try {
       const base = repo.git('rev-parse', 'HEAD');
@@ -256,7 +256,7 @@ describe('INTEGRATE1j: the run, plan and probe modes, end to end in a scratch re
     }
   });
 
-  test('INTEGRATE1j: the plan mode says what a run would run, keep and defer, running nothing and the same each time for a tree; a run then keeps what passed, on the commit and tree it passed on; DAORIS_VERIFY_GATES narrows both', async () => {
+  test('the plan mode says what a run would run, keep and defer, running nothing and the same each time for a tree; a run then keeps what passed, on the commit and tree it passed on; DAORIS_VERIFY_GATES narrows both', async () => {
     const repo = queueScratch('verify-plan');
     try {
       const record = join(repo.root, 'local', 'recorded.json');

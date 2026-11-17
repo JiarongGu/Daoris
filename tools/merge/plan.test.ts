@@ -97,7 +97,6 @@ test("this repository's Process lane is the real-process halves, the rehearsals 
   const laned = /process\.runsettings|^npm run rehearse|^npm run tooltests:e2e$/;
   assert.deepEqual(names(repoPlan.filter(isProcessLane)), names(byRun(laned)));
   assert.deepEqual([...names(light)].sort(), names(declared.filter((gate) => !laned.test(gate.run))).sort());
-  // TOOLTIER1: the end-to-end specs start real git and the merge tool, so they run in the lane, alone; the unit tier stays light.
   assert.ok(byRun(/^npm run tooltests:e2e$/).length === 1 && byRun(/^npm run tooltests$/).every((gate) => light.includes(gate)));
   assert.equal(isProcessLane({ name: 'renamed', run: 'npm run tooltests:e2e' }), true);
   assert.equal(isProcessLane({ name: 'renamed', run: 'npm run tooltests' }), false);

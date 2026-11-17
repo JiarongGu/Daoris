@@ -1,5 +1,5 @@
 /**
- * Nothing the merge tool and its tests start outlives what started it, end to end (TOOLTIER1's tier): PROCLEAK1 and QUEUEDROPLEAK1.
+ * Nothing the merge tool and its tests start outlives what started it, end to end, and what a dropped run's tests had left running under the scope tree.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { describe, test } from 'node:test';
@@ -23,7 +23,7 @@ function orphanNaming(marker: string): number {
   return Number(maker.stdout.trim());
 }
 
-describe('PROCLEAK1: nothing the merge tool and its tests start outlives what started it', { concurrency: true }, () => {
+describe('Nothing the merge tool and its tests start outlives what started it', { concurrency: true }, () => {
   const request = (branch: string, id: string): Member => ({ branch, tip: `${branch}-tip`, request: id });
   const asked = (member: Member) => ({ branch: member.branch, tip: member.tip, request: member.request! });
 
@@ -285,7 +285,7 @@ describe('PROCLEAK1: nothing the merge tool and its tests start outlives what st
 // A drop that says it ended the run "with everything it started" must leave no tool-tests gate process running with its parent
 // gone: a fixture's `tree.mjs`, or a `node qgate.mjs check` with two node children. The drop ends each step by its tree of
 // parent ids; a test killed with its step has already orphaned those, or never gets to end them.
-describe('QUEUEDROPLEAK1: a dropped run ends what its tests had left running under the scope tree', { concurrency: true }, () => {
+describe('A dropped run ends what its tests had left running under the scope tree', { concurrency: true }, () => {
   const row = (pid: number, ppid: number, created: number, command: string) => ({ pid, ppid, created, command });
   const FOLDER = 'D:/work/repo/local/scope-tree';
   const SINCE = 1_000_000;

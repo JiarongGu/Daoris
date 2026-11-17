@@ -1,5 +1,5 @@
 /**
- * The declared runner's probes and the queue's drains end to end (TOOLTIER1's tier).
+ * The declared runner's probes and the queue's drains end to end.
  */
 import { describe, test } from 'node:test';
 import { join, delimiter, dirname } from 'node:path';
@@ -13,8 +13,8 @@ import {
 import { type Candidate, type Failure, q, type Drained, sig } from './support/merge-queue-kit.ts';
 import { PATIENCE } from '../test/_fixture.ts';
 
-describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, and a drop ends it, end to end in a scratch repository', { concurrency: true }, () => {
-  test('INTEGRATE1j: a probe repeats a failure as composed, so a test its own class pollutes fails again with its signature where alone it passes; a composition that would differ, or is not the one kept, is refused', async () => {
+describe('A probe repeats a failure as composed, and a drop ends it, end to end in a scratch repository', { concurrency: true }, () => {
+  test('a probe repeats a failure as composed, so a test its own class pollutes fails again with its signature where alone it passes; a composition that would differ, or is not the one kept, is refused', async () => {
     const repo = queueScratch('verify-probe');
     const shims = join(repo.root, 'local', 'shims');
     mkdirSync(shims, { recursive: true });
@@ -75,7 +75,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
     }
   });
 
-  test('INTEGRATE1j: a run that started and did not finish (npm ci failing in its tree) answers so, each gate not run, and exits 2; D192\'s schema 1 does the same', async () => {
+  test('a run that started and did not finish (npm ci failing in its tree) answers so, each gate not run, and exits 2; D192\'s schema 1 does the same', async () => {
     const repo = queueScratch('verify-unfinished');
     try {
       const base = repo.git('rev-parse', 'HEAD');
@@ -100,7 +100,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
     }
   });
 
-  test('QUEUETESTLEAK1: a probe the runner starts gets the environment its process had at its start: a PATH and a variable set in it later reach no probe', async () => {
+  test('a probe the runner starts gets the environment its process had at its start: a PATH and a variable set in it later reach no probe', async () => {
     const repo = queueScratch('probe-env');
     const dir = join(repo.root, 'local', 'probe');
     const shims = join(dirname(repo.root), 'shims');
@@ -127,7 +127,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
 
   // A waiter whose request has left the queue (dropped while queued, or merged in another branch's
   // batch) must not start a runner every second.
-  test('QUEUEWAITEND1: a request dropped while queued is told to its waiter, which ends saying so; a request gone from every record ends its wait too', async () => {
+  test('a request dropped while queued is told to its waiter, which ends saying so; a request gone from every record ends its wait too', async () => {
     const repo = queueScratch('wait-ends');
     const hold = join(repo.root, 'local', 'go');
     try {
@@ -155,7 +155,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
     }
   });
 
-  test('QUEUEDRAIN1: a candidate dropped while its gate runs ends the gate, its child and grandchild; the scoped tier is released after; what is not its own survives; the next candidate forms at once', async () => {
+  test('a candidate dropped while its gate runs ends the gate, its child and grandchild; the scoped tier is released after; what is not its own survives; the next candidate forms at once', async () => {
     const repo = queueScratch('drain-gate');
     const dir = join(repo.root, 'local', 'drain');
     mkdirSync(dir, { recursive: true });
@@ -210,7 +210,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
     }
   });
 
-  test('QUEUEDRAIN1: a candidate dropped during a failure probe ends the probe with its tree, starts no more, and the runner is free', async () => {
+  test('a candidate dropped during a failure probe ends the probe with its tree, starts no more, and the runner is free', async () => {
     const repo = queueScratch('drain-probe');
     const dir = join(repo.root, 'local', 'drain');
     const hold = join(repo.root, 'local', 'go');
@@ -256,7 +256,7 @@ describe('INTEGRATE1j and QUEUEDRAIN1: a probe repeats a failure as composed, an
     }
   });
 
-  test('QUEUEDRAIN1: a class probe, which runs the gate narrowed to the failing class, is ended with its tree when the candidate is dropped, and none starts after', async () => {
+  test('a class probe, which runs the gate narrowed to the failing class, is ended with its tree when the candidate is dropped, and none starts after', async () => {
     const repo = queueScratch('drain-class');
     const dir = join(repo.root, 'local', 'drain');
     const shims = join(repo.root, 'local', 'shims');

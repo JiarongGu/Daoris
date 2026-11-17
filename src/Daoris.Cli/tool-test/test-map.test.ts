@@ -88,7 +88,7 @@ test('every edge kind reaches its unit, and a member added to a glob or a scanne
   assert.ok(!reaches('src/Daoris.Cli/test/text.test.ts', 'src/Daoris.Service/Daoris.Service.Core/Thing.cs'), 'and nothing else');
 });
 
-test("TOOLTIER1: an end-to-end spec is reached only by a path its gate declares, so a tools change outside the merge tool reaches no e2e spec", () => {
+test("an end-to-end spec is reached only by a path its gate declares, so a tools change outside the merge tool reaches no e2e spec", () => {
   const gates = { gates: [{ name: 'tool-e2e', run: 'npm run tooltests:e2e', paths: ['daoris.gates.json', 'tools/merge-branch.mjs', 'tools/merge/', 'src/Daoris.Cli/tool-test/'] }] };
   const { files, read } = treeOf({
     'daoris.gates.json': JSON.stringify(gates),

@@ -1,5 +1,5 @@
 /**
- * The merge queue end to end (TOOLTIER1's tier): preview, queue, candidates, contained members, drops and holds in a scratch repository.
+ * The merge queue end to end: preview, queue, candidates, contained members, drops and holds in a scratch repository.
  */
 import { describe, test } from 'node:test';
 import { join, dirname } from 'node:path';
@@ -10,7 +10,7 @@ import { queueScratch, TRAILER, treeGate, QUEUE_GATE, alive, HANG_MS, envGate } 
 import { q, type ScopeRun } from './support/merge-queue-kit.ts';
 
 describe('the queue, end to end in a scratch repository', { concurrency: true }, () => {
-  test('QUEUEDROP1: a dropped candidate cannot return when its held gate completes', async () => {
+  test('a dropped candidate cannot return when its held gate completes', async () => {
     const repo = queueScratch('drop-late');
     const hold = join(repo.root, 'local', 'release');
     const started = `${hold}.started`;
@@ -45,7 +45,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  test('QUEUEWAIT1: requeueing an unchanged rejected tip waits for its new promotion after a base repair', async () => {
+  test('requeueing an unchanged rejected tip waits for its new promotion after a base repair', async () => {
     const repo = queueScratch('requeue-same-tip');
     try {
       repo.branch('b1', { 'break-check': 'x\n' });
@@ -400,7 +400,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  test('TOOLTESTHANG1: a test that fails on a held index leaves no enqueue and no runner behind, and an enqueue without a verdict is ended at its bound', async () => {
+  test('a test that fails on a held index leaves no enqueue and no runner behind, and an enqueue without a verdict is ended at its bound', async () => {
     const repo = queueScratch('forced-lock');
     let enqueue: number[] = [];
     let runner = 0;
@@ -433,7 +433,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  test('TOOLTESTHANG1: an invocation with no verdict is ended at its bound, saying so', async () => {
+  test('an invocation with no verdict is ended at its bound, saying so', async () => {
     const repo = queueScratch('bound');
     try {
       repo.branch('b1', { 'a.txt': 'a\n' });
@@ -450,7 +450,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
   });
 
   // A runner started in a folder git reads as the session's tree would use the main checkout's queue home.
-  test('QUEUETESTLEAK1: a runner, a preview, an enqueue, a drop or a recheck started in a linked worktree of the repository is refused, saying whose the queue is, and its queue is left as it was', async () => {
+  test('a runner, a preview, an enqueue, a drop or a recheck started in a linked worktree of the repository is refused, saying whose the queue is, and its queue is left as it was', async () => {
     const repo = queueScratch('linked');
     try {
       repo.branch('b1', { 'a.txt': 'a\n' });
@@ -470,7 +470,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  test("QUEUETESTLEAK1: a stand-in gate's variable and the tool's switches a runner inherited from the enqueue that started it reach none of its gates", async () => {
+  test("a stand-in gate's variable and the tool's switches a runner inherited from the enqueue that started it reach none of its gates", async () => {
     const repo = queueScratch('gate-env');
     try {
       const record = join(repo.root, 'local', 'gate-env.json');

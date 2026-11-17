@@ -107,9 +107,8 @@ const GLOBS = new Map();
 export const TS_SUITES = Object.freeze([
   { suite: 'cli', runner: 'node', glob: 'src/Daoris.Cli/test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
   { suite: 'tool-tests', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.test.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
-  // The tools' end-to-end tier (TOOLTIER1): each spec seeds a scratch repository and starts real git and the merge tool. Its units
-  // are `bounded`: a path reaches one only where its gate's declared `paths` hold it (the merge tool's own files), so a change to a
-  // tool the merge tool merely imports reaches the unit tier and no end-to-end spec.
+  // The end-to-end tier's units are `bounded`: a path reaches one only where its gate's declared `paths` hold it, so a tool the merge
+  // tool merely imports reaches the unit tier and no end-to-end spec.
   { suite: 'tool-e2e', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.e2e.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'], bounded: true },
   // The merge tool's Vitest projects: the unit one runs in the CLI's verify, the end-to-end one in the end-to-end tier.
   { suite: 'cli', runner: 'vitest', glob: TOOL_PROJECTS.unit.include[0], whole: ['tools/vitest.config.ts'] },
