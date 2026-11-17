@@ -83,6 +83,7 @@ public sealed class CensusScopeTests
         var censuses = CensusScope.Censuses(typeof(CensusScopeTests).Assembly).ToList();
         Assert.Equal(censuses.Count, censuses.Distinct(StringComparer.Ordinal).Count());
         var problems = CensusScope.Unmarked(censuses, CensusMarks.Diff, CensusMarks.Whole).ToList();
+        problems.AddRange(CensusReach.Unexplained(CensusReach.Semantic(typeof(CensusScopeTests).Assembly), CensusMarks.Whole, CensusMarks.SemanticWhole));
 
         var sources = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Select(SourceTexts.Of).ToList();
         problems.AddRange(CensusMarks.Diff
