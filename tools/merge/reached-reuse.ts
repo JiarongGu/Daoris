@@ -24,6 +24,8 @@ export type TestMap = { dotnet: DotnetSuite[]; units: CensusUnit[] };
 export type Readers = {
   tsSuites: readonly { suite: string; whole?: readonly string[] }[];
   tsReaches: (reach: unknown, path: string) => boolean;
+  /** Whether a unit's `// reaches:` lines declare `path`, which holds even where its reach is wide. */
+  declaresRead: (reach: unknown, path: string) => boolean;
   unitReaches: (unit: ReachedUnit, path: string, map: TestMap) => boolean;
   pathReach: (path: string, census: DotnetSuite['census']) => { none?: boolean; whole?: boolean };
 };
@@ -114,9 +116,11 @@ export function reuseContext({ map, files, read, toolchain, gates, readers, memo
   const wholeOf = (suite: string): readonly string[] => readers.tsSuites.find((each) => each.suite === suite)?.whole ?? [];
   const tsUnitReaches = (unit: CensusUnit, path: string): boolean => {
     if (path === unit.file || wholeOf(unit.suite).includes(path)) return true;
-    // A unit whose reach the census cannot bound (it runs the tool whole) is reached by its subject's own files; a change to what
-    // it only uses is the CI's and the night's to run it for, since it is the slowest of the tool's tests.
-    if (unit.reach?.wide.length) return WIDE_ROOTS.test(path) && (path === unit.subject || path.startsWith(`${String(unit.subject).replace(/\.[^.]+$/, '')}/`));
+    // A unit whose reach the census cannot bound (it runs the tool whole, or imports what it lists) is reached by its subject's own
+    // files and by what its `// reaches:` lines declare it lists; a change to what it only uses is the CI's and the night's to run it for.
+    if (unit.reach?.wide.length) {
+      return (WIDE_ROOTS.test(path) && (path === unit.subject || path.startsWith(`${String(unit.subject).replace(/\.[^.]+$/, '')}/`))) || readers.declaresRead(unit.reach, path);
+    }
     return readers.tsReaches(unit.reach, path);
   };
   const fullOf = (unit: Unit): CensusUnit => unitOf.get(`${unit.suite}|${unit.unit}`) ?? (unit as CensusUnit);

@@ -6,7 +6,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { TS_SUITES, census, treeOf, tsReaches, tsReader, unitReaches } from '../test-map.mjs';
+import { TS_SUITES, census, declaresRead, treeOf, tsReaches, tsReader, unitReaches } from '../test-map.mjs';
 import { stagedTree } from '../fsx.mjs';
 import { CENSUS_CACHE, cachedCensus, treeSide } from '../merge/census-cache.ts';
 import { privateDigest } from '../private-gate-files.mjs';
@@ -17,7 +17,7 @@ import { planClasses, recordPasses, replayLine } from '../merge/full-replay.ts';
 import { reuseContext } from '../merge/reached-reuse.ts';
 
 /** The census's readers the key of a reached class asks (`merge/reached-reuse.ts` takes them, being typed). */
-export const READERS = { tsSuites: TS_SUITES, tsReaches, unitReaches, pathReach };
+export const READERS = { tsSuites: TS_SUITES, tsReaches, declaresRead, unitReaches, pathReach };
 
 /** The file the class passes are kept in: the main checkout's `local/reached-classes.json`, or the file `DAORIS_REACHED_STORE` names. */
 export const storeFile = (checkout) => process.env.DAORIS_REACHED_STORE || join(checkout, 'local', 'reached-classes.json');

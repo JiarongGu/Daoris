@@ -5,6 +5,10 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const TOOLS = fileURLToPath(new URL('..', import.meta.url));
+// reaches: tools/*.d.mts — it lists every declaration beside a script
+// reaches: tools/merge-branch/*.d.mts — and in the merge tool's script folder
+// reaches: tools/*.mjs — it imports the script beside each declaration, whose exports it reads
+// reaches: tools/merge-branch/*.mjs — and in the merge tool's script folder
 
 /** The names a declaration file exports. */
 const declaredNames =(text: string): string[] =>

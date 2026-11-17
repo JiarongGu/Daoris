@@ -13,8 +13,10 @@
  *   a fast half's filter is read from its command, and a solution gate's test projects each count. TypeScript: a closure over
  *   the repository: every relative import and literal `import(…)` followed wherever it leads, every string that names a
  *   tracked file or folder (from the root or the file), every basename string with an extension that names tracked files,
- *   `import.meta.glob`'s patterns, and `// reaches: <path or folder or *> — <why>` lines for an edge no string names; an
- *   import the census cannot follow (a computed `import(…)`) reaches its whole suite. A rehearsal: its tool's import closure.
+ *   `import.meta.glob`'s patterns, and `// reaches: <path or folder or glob or *> — <why>` lines for an edge no string names; an
+ *   import the census cannot follow (a computed `import(…)`) reaches its whole suite. A test that reads the tree by listing it (a
+ *   census) declares its listing so: a path a `reaches:` line declares is one read from the unit, and reaches it at a merge even
+ *   where its reach is wide (`declaresRead`, MAINRED1). A rehearsal: its tool's import closure.
  * - **its subject**: the module its own file sits in (§3.1): a test project's first folder, or the project at its root; the
  *   CLI's `test/<module>` is `src/<module>`'s; the page's tests sit beside their sources; a tool-test names its tool. A git-half
  *   class at its project's root carries `// subject: <module> — <why>`.
@@ -181,7 +183,7 @@ export function tsReader(files, read) {
   const ownOf = (file) => {
     if (own.has(file)) return own.get(file);
     const fact = factsOf(file);
-    const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [] };
+    const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [], declared: [] };
     for (const spec of fact.imports) {
       const resolved = resolveImport(file, spec, tracked);
       if (resolved) reach.imports.push(resolved);
@@ -205,6 +207,7 @@ export function tsReader(files, read) {
       reach.globs.push(absolute);
     }
     for (const { target, why } of fact.reaches) {
+      if (target !== '*') reach.declared.push(target.replace(/\/+$/, ''));
       if (target === '*') reach.wide.push(`${file} declares it reaches its whole suite: ${why}`);
       else if (tracked.has(target)) reach.files.add(target);
       else if (folders.has(target.replace(/\/+$/, ''))) reach.folders.add(target.replace(/\/+$/, ''));
@@ -217,7 +220,7 @@ export function tsReader(files, read) {
   const reachOf = (unit) => {
     const closure = new Set([unit]);
     const queue = [unit];
-    const reach = { files: new Set([unit]), folders: new Set(), globs: [], wide: [] };
+    const reach = { files: new Set([unit]), folders: new Set(), globs: [], wide: [], declared: [] };
     while (queue.length) {
       const file = queue.pop();
       if (!CODE.test(file)) continue;
@@ -231,8 +234,10 @@ export function tsReader(files, read) {
       for (const each of mine.folders) reach.folders.add(each);
       reach.globs.push(...mine.globs);
       reach.wide.push(...mine.wide);
+      reach.declared.push(...mine.declared);
     }
-    return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide };
+    const declared = [...new Set(reach.declared)].sort();
+    return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide, declared };
   };
   /** The files within `depth` reads of `unit` with their fewest reads: its own file 0, what it imports or names 1, and so on (never a folder or a glob). */
   const hopsFrom = (unit, depth) => {
@@ -263,6 +268,13 @@ export function tsReaches(reach, path) {
   if (reach.folders.some((folder) => path.startsWith(`${folder}/`))) return true;
   return reach.globs.some((glob) => globRegExp(glob).test(path));
 }
+
+/**
+ * Whether a unit's `// reaches:` lines (its closure's) declare `path`: a file, a folder above it or a glob. A census that lists the tree
+ * names its listing so, and a path it declares is one read from it (`unitHops`), and reaches it even where its reach is wide (MAINRED1).
+ */
+export const declaresRead = (reach, path) => (reach?.declared ?? [])
+  .some((target) => target === path || path.startsWith(`${target}/`) || (/[*?{[]/.test(target) && globRegExp(target).test(path)));
 
 /** Whether a gate's declared `paths` hold `path`: an entry ending in `/` is a folder, any other a file, as the declaration writes them. */
 const declaredHolds = (paths, path) => paths.some((entry) => (entry.endsWith('/') ? path.startsWith(entry) : path === entry));
@@ -391,7 +403,7 @@ export function unitHops(unit, paths, map, depth = 2) {
     return counts.length ? Math.min(...counts) : undefined;
   }
   const within = map.ts.hopsFrom(unit.file, depth);
-  const counts = paths.map((path) => within.get(path)).filter((each) => each !== undefined);
+  const counts = paths.map((path) => within.get(path) ?? (declaresRead(unit.reach, path) ? 1 : undefined)).filter((each) => each !== undefined);
   return counts.length ? Math.min(...counts) : undefined;
 }
 
