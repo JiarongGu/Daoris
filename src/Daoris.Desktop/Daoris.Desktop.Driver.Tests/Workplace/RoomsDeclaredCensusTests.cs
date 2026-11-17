@@ -5,10 +5,10 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// This repository's own rooms (its lanes file's <c>builds</c>) and rules (its <c>daoris.files.json</c>) pass the room
-/// check over its tracked files, and the report says its claim groups: nearly everything one group, since the contracts, the web's
-/// output, the generated types, the shared props and the doctrine join the desktop, service, web, tools, CLI and documents rooms, and
-/// the records beside it.
+/// This repository's own rooms (its lanes file's <c>builds</c>, and the assistant's lane listing the rooms whose units compile its
+/// files) and rules (its <c>daoris.files.json</c>) pass the room check over its tracked files, and the report says its claim groups:
+/// nearly everything one group, since the contracts, the web's output, the generated types, the shared props and the doctrine join the
+/// desktop, service, web, tools, CLI and documents rooms, and the records beside it.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)

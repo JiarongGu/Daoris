@@ -27,7 +27,7 @@ public sealed class KindLoweringTests
         return adapter with
         {
             Nodes = [.. adapter.Nodes.Select(node => node.Id == "check"
-                ? node with { Options = new Dictionary<string, string>(StringComparer.Ordinal) { ["gates"] = """["adapters-lock"]""" } }
+                ? node with { Options = new Dictionary<string, string>(StringComparer.Ordinal) { ["gates"] = """["packages-lock"]""" } }
                 : node)],
         };
     }
@@ -53,7 +53,7 @@ public sealed class KindLoweringTests
         var adapter = Tracked("daoris-adapter.json");
 
         Assert.Empty(KindLowering.Of(Involvement.StepsOf(adapter), adapter, Tracked("daoris-dev.json")));
-        Assert.Equal(["adapters-lock"], CheckNode.GatesOf(adapter.Nodes.Single(node => node.Id == "suite")));
+        Assert.Equal(["packages-lock"], CheckNode.GatesOf(adapter.Nodes.Single(node => node.Id == "suite")));
         Assert.True(CheckNode.ReachedChoice(adapter.Nodes.Single(node => node.Id == "check")));
     }
 
@@ -77,7 +77,7 @@ public sealed class KindLoweringTests
         {
             Binding = new WorkflowRunBinding("q1", "Daoris", "ws", "daoris-adapter", WorkflowLevels.RepositoryKind, DateTimeOffset.Parse("2026-11-16T10:00:00Z"))
             {
-                Version = 1, Kind = "adapter", Paths = ["src/Daoris.Adapters/**", "daoris.adapters.lock"],
+                Version = 1, Kind = "adapter", Paths = ["src/Daoris.Adapters/**", "daoris.packages.lock"],
             },
             Steps = Involvement.StepsOf(graph),
             Graph = graph,

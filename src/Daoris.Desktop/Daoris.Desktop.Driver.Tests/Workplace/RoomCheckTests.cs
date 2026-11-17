@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The check of a repository's rooms over its tracked files. Rooms whose build closures
 /// meet (a unit, a shared input, a generator's source, an output written into another room's paths) are one claim group; overlapping
 /// rooms, a unit or a lockfile split, a generated file written from two rooms and a path no room places are refused, naming the path
-/// and the rooms; a reference across rooms is listed.
+/// and the rooms; a reference across rooms is listed. A lane carved across units names their rooms, which it joins, and a file of it
+/// in no unit of theirs is refused.
 /// </summary>
 public sealed class RoomCheckTests
 {
@@ -148,6 +149,42 @@ public sealed class RoomCheckTests
         var joined = Check(Split.Replace("\"id\": \"web-settings\",", "\"id\": \"web-settings\", \"room\": \"web-shell\",", StringComparison.Ordinal), null, tracked);
         Assert.Empty(joined.Problems);
         Assert.Equal([["web-shell"]], Groups(joined));
+    }
+
+    [Fact]
+    public void A_lane_carved_across_units_names_their_rooms_each_file_in_its_units_room_and_joins_them()
+    {
+        const string Carved = """
+            {
+              "lanes": [
+                { "id": "driver", "paths": ["driver/**", "!driver/Help/**"], "builds": { "units": ["driver/Driver.csproj"] } },
+                { "id": "web", "paths": ["web/**", "!web/help/**"], "builds": { "units": ["web/package.json"] } },
+                { "id": "assistant", "paths": ["driver/Help/**", "web/help/**"] }
+              ]
+            }
+            """;
+        string[] tracked = ["driver/Driver.csproj", "driver/A.cs", "driver/Help/HelpRoom.cs", "web/package.json", "web/main.ts", "web/help/Ask.tsx"];
+
+        Assert.Contains("the unit driver/Driver.csproj of room driver has sources in no room: driver/Help/HelpRoom.cs", Check(Carved, null, tracked).Problems);
+        var named = Check(Carved.Replace("\"id\": \"assistant\",", "\"id\": \"assistant\", \"room\": [\"driver\", \"web\"],", StringComparison.Ordinal), null, tracked);
+        Assert.Empty(named.Problems);
+        Assert.Equal([["driver", "web"]], Groups(named));
+    }
+
+    [Fact]
+    public void A_file_of_a_lane_naming_several_rooms_in_no_unit_of_theirs_is_refused()
+    {
+        var report = Check("""
+            {
+              "lanes": [
+                { "id": "driver", "paths": ["driver/**"], "builds": { "units": ["driver/Driver.csproj"] } },
+                { "id": "web", "paths": ["web/**"], "builds": { "units": ["web/package.json"] } },
+                { "id": "assistant", "room": ["driver", "web"], "paths": ["help/**"] }
+              ]
+            }
+            """, null, "driver/Driver.csproj", "web/package.json", "help/a.md", "help/b.md");
+
+        Assert.Contains("help/a.md, of lane 'assistant', in rooms driver and web, lies in no unit of theirs, and 1 more", report.Problems);
     }
 
     [Fact]
