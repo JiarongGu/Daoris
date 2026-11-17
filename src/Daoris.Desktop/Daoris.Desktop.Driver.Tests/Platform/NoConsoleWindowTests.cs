@@ -49,7 +49,6 @@ public sealed class NoConsoleWindowTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            // This fact counts and names across files (each named inheriting spawn found once, the spawns found at all): the whole tree.
             foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")

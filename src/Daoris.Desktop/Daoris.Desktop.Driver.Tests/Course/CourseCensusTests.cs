@@ -34,7 +34,6 @@ public sealed class CourseCensusTests
     internal static string WithoutComments(string text) =>
         Uncommented.GetValue(text, each => string.Join('\n', each.Split('\n').Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal))));
 
-    // Made once for each text the shared scan holds: the census classes of the course read the same sources.
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<string, string> Uncommented = new();
 
     private static JsonElement Table()

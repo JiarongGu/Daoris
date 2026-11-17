@@ -57,7 +57,6 @@ public sealed class LineAccountCallersCensusTests
             if (!Regex.IsMatch(text, @"\b(LineAccount|LineKind|LineAnswer)\b") && !NotYetMoved.Contains(relative)) unread.Add(relative);
         }
 
-        // The patterns' reach is a fact of the whole tree: a scope holds a few of its files.
         Assert.True(CensusScope.Paths is not null || found >= 5, $"the census found {found} files that read an account's cool-off or resume: its patterns have drifted");
         Assert.True(unread.Count == 0, "read neither the account rule nor named not yet moved: " + string.Join(", ", unread));
         Assert.All(NotYetMoved, name => Assert.True(File.Exists(Path.Combine(root, name)), $"{name} is named not yet moved but is not there"));

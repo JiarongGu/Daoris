@@ -195,7 +195,6 @@ public sealed partial class CheckoutWritersCensusTests
     [Fact]
     public void Each_writer_of_a_checkout_holds_its_repository_alone_once_and_each_start_holds_it_shared()
     {
-        // Only a file naming something this fact looks for has its comments blanked: the others hold none of it, comments or code.
         string[] looks = ["TreeLock", "BesideAsync(", ".SyncAsync(", "new RefTransaction()", "GitAsync("];
         var sources = Sources().GroupBy(each => each.File).ToDictionary(group => group.Key, group =>
         {

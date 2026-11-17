@@ -6,11 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class CensusMarks
 {
-    /// <summary>
-    /// The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files. A
-    /// list held both ways judges the listed members of the scope's files; a count of the walk's reach (the walk still finds the
-    /// sources) is held by a run with no scope, and a class whose few file facts sit beside behaviour reads those facts through the scope.
-    /// </summary>
+    /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files.</summary>
     internal static readonly string[] Diff =
     [
         "CheckoutWritersCensusTests", "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",

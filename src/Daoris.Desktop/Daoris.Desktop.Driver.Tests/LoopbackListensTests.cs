@@ -52,7 +52,6 @@ public sealed class LoopbackListensTests
             .Select(path => (Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/'), SourceTexts.Of(path)))
             .ToList();
 
-        // The walk's reach is a fact of the whole tree: a scope holds a few of its files.
         Assert.True(projects.Count >= 4 && all.Count > 500, $"the walk found {projects.Count} test projects and {all.Count} sources: it no longer reaches them");
         var breaches = LoopbackListens.Check(sources);
         Assert.True(breaches.Count == 0, "each a listen on every interface, which makes Windows ask its firewall about the test host:\n" + string.Join('\n', breaches));

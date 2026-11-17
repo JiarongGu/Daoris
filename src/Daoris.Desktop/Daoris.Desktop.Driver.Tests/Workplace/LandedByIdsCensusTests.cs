@@ -39,7 +39,6 @@ public sealed class LandedByIdsCensusTests
             if (pattern.IsMatch(SourceTexts.Code(SourceTexts.Of(path)))) found.Add(relative);
         }
 
-        // The pattern's reach is a fact of the whole tree: a scope holds a few of its files.
         Assert.True(CensusScope.Paths is not null || found.Count >= 3, $"the census found {found.Count} files that count ids: its pattern has drifted");
         var unnamed = found.Where(file => !Counts.ContainsKey(file)).ToList();
         Assert.True(unnamed.Count == 0, "count commit ids to judge landed, and read neither the tree's work by patch nor are named here: " + string.Join(", ", unnamed));
