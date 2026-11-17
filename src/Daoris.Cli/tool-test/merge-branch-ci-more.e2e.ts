@@ -14,7 +14,6 @@ import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurrency: CASES_AT_ONCE }, () => {
 
-  // A Process half by reach is five cases, a mode each, each on a repository of its own.
   /** A desktop of its own whose Process half has three classes, the CI's stand-in `dotnet test` on the path, and what a case reads of its runs. */
   const reachScratch = (name: string) => {
     const repo = scratch(name, [
@@ -88,7 +87,6 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     reach.repo.cleanup();
   });
 
-  /** A time older than the day a kept class verdict, or a sweep, stands. */
   const aged = (iso: string) => new Date(Date.parse(iso) - 2 * tool.SWEEP_BOUND_MS).toISOString();
 
   test('--ci sweeps a half whole once a class it kept stands on a verdict older than a day, which the stage refuses before', async () => {

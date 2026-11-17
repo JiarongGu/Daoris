@@ -44,8 +44,7 @@ describe('the merge tool\'s flow, end to end in a scratch repository', { concurr
     const result = await repo.run(['feature/one']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /ended abnormally \(exit 255/);
-    // Light gates run side by side, so either may note itself first (the order failed a loaded run): both ran.
-    assert.deepEqual(unordered(repo.ran()), ['after', 'killed'], 'the run went on to the next gate');
+    assert.deepEqual(unordered(repo.ran()), ['after', 'killed'], 'the run went on to the next gate (light gates run side by side, in either order)');
     assert.match(result.out, /1 gate failed: killed/);
   });
 

@@ -614,7 +614,6 @@ export interface Scratch {
 }
 
 
-/** An empty repository, made once in this test process and guarded there; each scratch copies it rather than start git twice. */
 const copyEmpty = seeded(() => {
   const fx = makeFixture(`merge-branch-seed-${process.pid}`);
   const root = join(fx.root, 'repo');
@@ -630,7 +629,6 @@ export function scratch(name: string, gates: { name: string; run: string }[], fi
   const fx = makeFixture(`merge-branch-${name}`);
   const root = join(fx.root, 'repo');
   copyEmpty(root);
-  // The copy's own git storage, which git finds before any folder around it: the environment that finds it was guarded on the seed.
   assert.ok(existsSync(join(root, '.git', 'HEAD')), `${root} has a repository of its own`);
 
   const write = (path: string, text: string) => {
@@ -683,7 +681,6 @@ export function scratch(name: string, gates: { name: string; run: string }[], fi
 }
 
 
-/** A branch of one commit on `from` holding `files`, written in one git start; the checkout stays as it was, untouched. */
 export function branch(root: string, name: string, files: Record<string, string>, { trailer = true, from = 'main' } = {}): void {
   importBranch(root, { ...fixtureEnv(), ...GIT_ENV }, { name, from, files, message: `work on ${name}${trailer ? TRAILER : ''}` });
 }

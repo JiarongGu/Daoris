@@ -286,7 +286,6 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
   test('--ci --night runs every gate whole, the rehearsals included, whatever stands, and a night that finished, green or red, satisfies it', async () => {
     const { repo, read, clear, statusOf, tip, sha } = stageScratch('ci-night');
     try {
-      // A plain run first: its gate's pass stands on this tree.
       let result = await repo.run(['--ci']);
       assert.equal(result.status, 0, result.out);
       // The night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.

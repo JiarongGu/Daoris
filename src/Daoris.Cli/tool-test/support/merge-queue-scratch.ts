@@ -129,11 +129,7 @@ export const alive = (pid: number) => {
   }
 };
 
-/**
- * The repository every case of this test process starts from, built once: the stand-in gate, its two gates declared, a first
- * commit, and the guard that it is its own repository, its own git storage and its own queue home (the first worktree), never
- * the one around it.
- */
+/** Every case's first repository, built once, guarded as its own repository, git storage and queue home (the first worktree). */
 const copySeed = seeded(() => {
   const fx = makeFixture(`merge-queue-seed-${process.pid}`);
   const root = join(fx.root, 'repo');
@@ -177,8 +173,6 @@ export function queueScratch(name: string) {
     MERGE_BRANCH_QUEUE_OWNER: String(process.pid),
   });
   const git = (...args: string[]) => sh(env, root, ...args);
-  // The guard on the copy, in one git start: with the case's environment it is its own repository and its own git storage (the
-  // queue home is the first worktree of that storage, as the seed's guard read).
   const [top, common] = git('rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir').split('\n');
   assert.equal(realPath(top!), realPath(root));
   assert.equal(realPath(common!), realPath(join(root, '.git')));
@@ -210,7 +204,6 @@ export function queueScratch(name: string) {
         return undefined;
       }
     },
-    /** A branch of one commit on main holding `files`, written in one git start; the checkout stays on main, untouched. */
     branch(branchName: string, files: Record<string, string>) {
       importBranch(root, env, { name: branchName, from: 'main', files, message: `work on ${branchName}${TRAILER}` });
       writeFileSync(join(root, 'local', `${branchName}.msg`), `Merge ${branchName}: its words${TRAILER}\n`);
