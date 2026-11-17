@@ -109,7 +109,7 @@ public sealed class PlaceCastTests : IDisposable
         Assert.Equal(StepHolding.Already, StepHolding.Act(Records, Casts, Risk(), Run, "release", CastActs.Take, null, null, _now).Refused);
 
         // A word from the cast holder's ended epoch is refused through the door that settles the step, naming who holds it now.
-        var refused = RunNodeWords.Word(Records, Run, "release", NodeWordActs.Stop, "from alpha", () => _now, epoch: 1);
+        var refused = RunNodeWords.Word(Records, Run, "release", NodeWordActs.Stop, "from alpha", () => _now, epoch: 1, settle: new SettleBy("agent:alpha", 1));
         Assert.Equal(StepTenureFiles.EndedEpoch, refused.Refused);
         Assert.Contains("person", refused.Detail, StringComparison.Ordinal);
 

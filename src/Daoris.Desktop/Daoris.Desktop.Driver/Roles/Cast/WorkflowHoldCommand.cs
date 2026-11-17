@@ -1,7 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>What <c>daoris workflow take|hand|give-back</c> asks: the act, the run, its step, the holder handed to and the reason.</summary>
-public sealed record WorkflowHoldAsk(string Act, string Run, string Node, string? Holder, string? Why);
+public sealed record WorkflowHoldAsk(string Act, string Run, string Node, string? Holder, string? Why)
+{
+    /// <summary>The epoch of the step's tenure the press's row read; null names none.</summary>
+    public int? Epoch { get; init; }
+
+    /// <summary>Who presses where its channel names an agent (<see cref="SettleBy.OfChannel"/>): never sent, set by the route that runs the verb's path.</summary>
+    public SettleBy? By { get; init; }
+}
 
 /// <summary>
 /// <c>daoris workflow take &lt;run&gt; &lt;node&gt; ["…"]</c>, <c>workflow hand &lt;run&gt; &lt;node&gt; &lt;holder&gt; ["…"]</c> and <c>workflow give-back
@@ -50,7 +57,7 @@ public static class WorkflowHoldCommand
         Func<string, string?>? environment = null, CancellationToken ct = default)
     {
         var variables = environment ?? instance?.Environment ?? Environment.GetEnvironmentVariable;
-        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("holder", ask.Holder), ("why", ask.Why));
+        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("holder", ask.Holder), ("why", ask.Why), ("epoch", ask.Epoch));
         return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowHold, payload, () => Task.FromResult(Alone(ask, records, risk, output, variables, clock)), output, ct);
     }
 
@@ -62,7 +69,7 @@ public static class WorkflowHoldCommand
             return 1;
         }
 
-        var held = StepHolding.Act(records, new PlaceCastFiles(records.Home, records.HoldsLease), risk(), ask.Run, ask.Node, ask.Act, ask.Holder, ask.Why, clock());
+        var held = StepHolding.Act(records, new PlaceCastFiles(records.Home, records.HoldsLease), risk(), ask.Run, ask.Node, ask.Act, ask.Holder, ask.Why, clock(), ask.Epoch, ask.By);
         output.WriteLine(StepHolding.Said(held));
         return held.Done ? 0 : 1;
     }

@@ -593,7 +593,9 @@ public sealed class WorkflowRoutes(DriverContext context)
         if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output =>
-                WorkflowNodeCommand.RunAsync(new WorkflowNodeAsk(act, run, node, words, press.Revision) { Outcome = press.Outcome, Epoch = CastRoutes.EpochOf(press.Epoch) }, records, output, instance: null, _ => null, ct: cancellationToken))
+                WorkflowNodeCommand.RunAsync(
+                    new WorkflowNodeAsk(act, run, node, words, press.Revision) { Outcome = press.Outcome, Epoch = CastRoutes.EpochOf(press.Epoch), By = CastRoutes.SpeakerOf(press.Epoch) },
+                    records, output, instance: null, _ => null, ct: cancellationToken))
                 .ConfigureAwait(false);
             _loop.Nudge();
             return said;
@@ -616,7 +618,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             ? UncheckedAccepts.Keep(records, run, node, drawn)
             : await Task.Run(() => RunNodeWords.WordAsync(
                 records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken, attempt: press.Attempt is { } named ? (int)Math.Clamp(named, 0, int.MaxValue) : null, revision: press.Revision,
-                    part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch)),
+                    part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch)),
                 cancellationToken)
                 .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();

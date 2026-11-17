@@ -54,12 +54,14 @@ public sealed class CastRoutes(DriverContext context)
         PlaceRiskBook Risk() => DriverConfig.Load(_loop.ConfigPath).PlaceRisk;
         if (press.Said)
         {
+            var ask = new WorkflowHoldAsk(press.Act, press.Run, press.Node, press.Holder, press.Why) { Epoch = EpochOf(press.Epoch), By = SpeakerOf(press.Epoch) };
             return await TerminalSaid.RunAsync(output =>
-                WorkflowHoldCommand.RunAsync(new WorkflowHoldAsk(press.Act, press.Run, press.Node, press.Holder, press.Why), records, Risk, () => DateTimeOffset.UtcNow, output, instance: null, _ => null, ct: cancellationToken))
+                WorkflowHoldCommand.RunAsync(ask, records, Risk, () => DateTimeOffset.UtcNow, output, instance: null, _ => null, ct: cancellationToken))
                 .ConfigureAwait(false);
         }
 
-        var held = StepHolding.Act(records, new PlaceCastFiles(_loop.Home), Risk(), press.Run, press.Node, press.Act, press.Holder, press.Why, DateTimeOffset.UtcNow);
+        var held = StepHolding.Act(
+            records, new PlaceCastFiles(_loop.Home), Risk(), press.Run, press.Node, press.Act, press.Holder, press.Why, DateTimeOffset.UtcNow, EpochOf(press.Epoch), SpeakerOf(press.Epoch));
         if (held.Done) _loop.Nudge();
         return new
         {
@@ -69,6 +71,13 @@ public sealed class CastRoutes(DriverContext context)
 
     /// <summary>The holder's epoch a settling press names (<c>epoch</c>, a whole number), as its door takes it; null where it names none.</summary>
     public static int? EpochOf(long? epoch) => epoch is { } given ? (int)Math.Clamp(given, 0, int.MaxValue) : null;
+
+    /// <summary>
+    /// Who the press this call runs for speaks as, by the channel it came by (<see cref="PipeDoor.By"/>, <see cref="SettleBy.OfChannel"/>), in
+    /// the epoch it names: null for the person's own (the window, a card they confirmed, their terminal), an agent's for a working session's own
+    /// press, Ask Daoris's and an appointed role's. Never read from the payload, which any caller writes.
+    /// </summary>
+    public static SettleBy? SpeakerOf(long? epoch) => SettleBy.OfChannel(PipeDoor.By.By, PipeDoor.Role is not null, EpochOf(epoch));
 
     private object View(string? workspace, string? repository)
     {
@@ -89,5 +98,5 @@ public sealed record PlaceCastRead(string? Workspace, string? Repository);
 /// <summary>The owner's cast of a role at a place: no holder is its default.</summary>
 public sealed record SetPlaceCast(string? Workspace, string? Repository, string Role, string? Holder, string? Why);
 
-/// <summary>A step's holder changed: <c>take</c>, <c>hand</c> (naming the holder) or <c>give-back</c>, with the reason.</summary>
-public sealed record WorkflowHoldPress(string Run, string Node, string Act, string? Holder = null, string? Why = null, bool Said = false);
+/// <summary>A step's holder changed: <c>take</c>, <c>hand</c> (naming the holder) or <c>give-back</c>, with the reason and the epoch its row read.</summary>
+public sealed record WorkflowHoldPress(string Run, string Node, string Act, string? Holder = null, string? Why = null, bool Said = false, long? Epoch = null);

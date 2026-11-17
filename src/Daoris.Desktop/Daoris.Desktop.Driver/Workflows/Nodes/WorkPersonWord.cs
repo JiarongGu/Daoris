@@ -17,23 +17,36 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
         SettleBy? settle = null)
     {
         var by = settle ?? (resolution == HeldResolutions.Stop ? new SettleBy(SettleBy.Owner, epoch) : SettleBy.Person(epoch));
-        var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(unit, node, attempt);
-        // The person's word on a step another holder holds takes it first, journaled with the word, and settles it: one press.
-        var takes = StepHolding.TakesOnPress(holding, by);
-        if (!takes && SettleDoor.Admit(holding, by) is { } refused)
-        {
-            return new(unit, node, PerformedWhat.Refused, refused.Code) { Detail = refused.Detail };
-        }
-
-        if (resolution != HeldResolutions.DoneOutside && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
-        if (takes && StepHolding.TakeOnPress(records, RunUnits.Is(unit) ? unit[RunUnits.Prefix.Length..] : null, unit, holding!, resolution, clock()) is null)
-        {
-            return new(unit, node, PerformedWhat.Refused, StepHolding.Unwritable);
-        }
-
-        if (resolution == HeldResolutions.DoneOutside) return Outside(unit, node, attempt, outcome, link, note);
         var now = clock();
-        return records.Edited(unit, node, record =>
+        var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
+        // Judged and kept in one hold of the tenures' lock: no hand-over lands between the holder the door read and the word's write.
+        return tenures.Settling(unit, hold =>
+        {
+            var holding = hold.Current(node, attempt);
+            // The person's word on a step another holder holds takes it, journaled with the word, and settles it: one press.
+            var takes = StepHolding.TakesOnPress(holding, by);
+            if (!takes && SettleDoor.Admit(holding, by, hold.Unread) is { } refused)
+            {
+                if (refused.Code == StepTenureFiles.Unread) tenures.SayUnread(unit, $"{resolution} on {node} of {unit}");
+                return new WorkPerformed(unit, node, PerformedWhat.Refused, refused.Code) { Detail = refused.Detail };
+            }
+
+            if (resolution != HeldResolutions.DoneOutside && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
+
+            // The take is made only once the word is admitted by every check of its state, as the word is kept: a word refused takes nothing.
+            (NodeRecord?, WorkPerformed) Kept(NodeRecord edited, WorkPerformed worded) =>
+                takes && StepHolding.TakeOnPress(hold, records, RunUnits.Is(unit) ? unit[RunUnits.Prefix.Length..] : null, holding!, resolution, now) is null
+                    ? (null, new WorkPerformed(unit, node, PerformedWhat.Refused, StepHolding.Unwritable))
+                    : (edited, worded);
+
+            return resolution == HeldResolutions.DoneOutside ? Outside(unit, node, attempt, outcome, link, note, now, Kept) : Held(unit, node, attempt, resolution, outcome, now, Kept);
+        });
+    }
+
+    /// <summary>The word on a held attempt, a kept failure or a close found closed in part, written where its state takes it.</summary>
+    private WorkPerformed Held(
+        string unit, string node, int attempt, string resolution, string? outcome, DateTimeOffset now, Func<NodeRecord, WorkPerformed, (NodeRecord?, WorkPerformed)> kept) =>
+        records.Edited(unit, node, record =>
         {
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
 
@@ -44,7 +57,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
                 // A failed check's *Not now* settles it as the person's: the verdict stands, and nothing asks about it again.
                 var notNow = resolution == HeldResolutions.Stop && OnPort(held);
                 if (resolution != HeldResolutions.Again && !notNow) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
-                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+                return kept(With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
             }
 
             // A close found closed only in part, its node live again, takes the person's stop alone: the recovery is theirs.
@@ -52,7 +65,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
             {
                 if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
                 if (resolution != HeldResolutions.Stop) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, PartStop));
-                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+                return kept(With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
             }
 
             // An unknown close its node is still on is the person's too, with a held close's words.
@@ -66,19 +79,19 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
             // Each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
             // it, and `record` only where that answer is kept; a plugin's attempt keeps its three.
             if (WordRefused(held, resolution) is { } code) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, code));
-            return (With(record, held, held with { Resolution = resolution, ResolvedAt = now, Decision = resolution == HeldResolutions.Happened ? outcome : null }),
+            return kept(With(record, held, held with { Resolution = resolution, ResolvedAt = now, Decision = resolution == HeldResolutions.Happened ? outcome : null }),
                 new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
         });
-    }
 
     /// <summary>
     /// The holder's <i>Done outside Daoris</i> on an attempt under way, held or failed (<see cref="StandDowns.Outside"/>), with its link,
     /// required, and a note: kept as <c>happened</c> with the link, which an older build reads as the word it knows and passes the link over.
     /// </summary>
-    private WorkPerformed Outside(string unit, string node, int attempt, string? outcome, string? link, string? note)
+    private WorkPerformed Outside(
+        string unit, string node, int attempt, string? outcome, string? link, string? note, DateTimeOffset now,
+        Func<NodeRecord, WorkPerformed, (NodeRecord?, WorkPerformed)> kept)
     {
         if (string.IsNullOrWhiteSpace(link)) return new(unit, node, PerformedWhat.Refused, NoLink);
-        var now = clock();
         return records.Edited(unit, node, record =>
         {
             var on = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
@@ -89,7 +102,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
                 Resolution = HeldResolutions.Happened, ResolvedAt = now, Link = link.Trim(), Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
                 Decision = outcome,
             };
-            return (With(record, on, worded), new WorkPerformed(unit, node, PerformedWhat.Worded, HeldResolutions.DoneOutside));
+            return kept(With(record, on, worded), new WorkPerformed(unit, node, PerformedWhat.Worded, HeldResolutions.DoneOutside));
         });
     }
 

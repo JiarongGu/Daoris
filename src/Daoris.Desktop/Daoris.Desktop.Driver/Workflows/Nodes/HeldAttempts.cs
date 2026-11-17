@@ -210,8 +210,8 @@ public static class HeldAttempts
     /// </summary>
     public static WorkPerformed Word(
         NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null, string? outcome = null,
-        string? link = null, string? note = null, int? epoch = null) =>
-        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome, link, note, epoch);
+        string? link = null, string? note = null, int? epoch = null, SettleBy? settle = null) =>
+        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome, link, note, epoch, settle);
 
     /// <summary>A terminal sends nothing to a plugin: the word is recorded, and the loop holding the lease applies it.</summary>
     private sealed class Unperformed : IWorkPerformPort
@@ -237,6 +237,7 @@ public static class HeldAttempts
         (_, SettleDoor.NotHolder) or (_, StepTenureFiles.EndedEpoch) =>
             $"work: {done.Node} (attempt {attempt}) of {done.Unit} is {done.Detail}, so only its holder settles it: take it first (`daoris workflow take <run> {done.Node}`).",
         (_, SettleDoor.Marked) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} is {done.Detail}: only the owner role settles it.",
+        (_, StepTenureFiles.Unread) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} was not settled: {done.Detail}, so only your own word is taken until they are mended.",
         (_, WorkPerformer.NotHeld) => "work: this process does not hold the home, so it records nothing: the desktop holds it while it runs, so say it there, or close the desktop and run this again.",
         (_, WorkPerformer.Unreadable) => $"work: the node record of {done.Unit} does not read, so nothing on it is changed.",
         (_, WorkPerformer.Worded) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} already has your word, which the next look applies.",

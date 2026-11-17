@@ -211,18 +211,26 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
     role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person. Each holder's tenure
     of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
-    which no older build reads: a pass writes each standing attempt's first epoch (`AttemptTenures`, the cast's holder), *Take*, *Hand to…*
-    and *Give back* (`StepHolding`, `daoris workflow take|hand|give-back`, `WORKFLOW_HOLD`, shown on the run view's step and on
-    its *What needs you* row) each begin a new epoch and journal it, and a hand-over restarts nothing. One door settles a step
+    which no older build reads: a pass writes each standing attempt's first epoch before its rounds and after them (`AttemptTenures`, the
+    person where the step's own words say `you`, else the cast's holder, `AttemptTenures.FirstHolder`), and a unit's file drops only ended
+    attempts' tenures past its cap, never a standing one's. *Take*, *Hand to…* and *Give back* (`StepHolding`, `daoris workflow
+    take|hand|give-back`, `WORKFLOW_HOLD` with the `epoch` its row read, shown on the run view's step and on its *What needs you* row) each
+    begin a new epoch and journal it, written only where the epoch read still holds the step (else `ended-epoch`), and a hand-over restarts
+    nothing; an agent hands on only a step it holds and never takes one, the owner role is handed to nobody but the person (`owner-role`),
+    and *Give back* returns a step to its first holder. One door settles a step
     (`SettleDoor.Admit`, D312), asked by a run's word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its
-    channel's) and the epoch it read (every settling door takes `--epoch`, and the run view's and *What needs you*'s presses pass the epoch
-    their row read, `HeldStep.Epoch`), never the step's kind: a word naming an ended epoch is refused `ended-epoch`, one from a holder that
-    does not hold the step now `not-holder`, each naming who holds it and since when; a word naming no epoch is judged against the holder
-    now; the person's press on a step another holder holds, in the epoch it read, takes the step as the press is kept (a new epoch,
-    journaled *Take* with the reason `pressed <word>`, `StepHolding.TakeOnPress`) and settles it in one act, while an agent's word never
-    takes; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds the step; a supervisor's
-    held word stands in for a step the person holds alone; and an attempt no tenure holds yet refuses nothing. A marked approver is held by
-    the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
+    channel's and never the payload's: the window, a card the person confirmed and the person's terminal speak `person`; a working session's
+    own press, an appointed role's act and Ask Daoris's speak as agents, `SettleBy.OfChannel`) and the epoch it read (every settling door
+    takes `--epoch`, and the run view's and *What needs you*'s presses pass the epoch their row read, `HeldStep.Epoch`), never the step's
+    kind, judged and kept in one hold of the tenures' lock, so no hand-over lands between the read and the word's write: a word naming an
+    ended epoch is refused `ended-epoch`, one from a holder that does not hold the step now `not-holder`, each naming who holds it and since
+    when; a word naming no epoch is judged against the holder now; the person's press on a step another holder holds, in the epoch it read,
+    takes the step as the press is kept, once every check of its state admits it (a new epoch, journaled *Take* with the reason
+    `pressed <word>`, `StepHolding.TakeOnPress`), and settles it in one act, while an agent's word never takes; an observation settles
+    whoever made it; a stop and a decision's answer are the owner role's whoever holds the step and whichever epoch its row read; a
+    supervisor's held word stands in for a step the person holds alone; an attempt no tenure holds yet refuses nothing; and where the
+    tenures do not read only the person's word is taken and every hold act is refused (`tenure-unread`, said in the driver's log). A marked
+    approver is held by the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands

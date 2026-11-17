@@ -13,6 +13,9 @@ public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string
 
     /// <summary>The holder's epoch the word is given in (<c>--epoch</c>, <see cref="StepTenureFiles"/>): an ended one is refused; null names none.</summary>
     public int? Epoch { get; init; }
+
+    /// <summary>Who presses where its channel names an agent (<see cref="SettleBy.OfChannel"/>): never sent, set by the route that runs the verb's path.</summary>
+    public SettleBy? By { get; init; }
 }
 
 /// <summary>
@@ -125,7 +128,8 @@ public static class WorkflowNodeCommand
         }
 
         var done = await RunNodeWords.WordAsync(
-                records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision, outcome: ask.Outcome, epoch: ask.Epoch)
+                records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision, outcome: ask.Outcome, epoch: ask.Epoch,
+                settle: ask.By)
             .ConfigureAwait(false);
         output.WriteLine(RunNodeWords.Said(done));
         return done.Done ? 0 : 1;

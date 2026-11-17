@@ -516,6 +516,8 @@ public sealed class NodeRuntime(
             tip = scope.Branch is not null && !atEnd ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             await Keeping.ReopenSessionsAsync(governed, scope, said, ct).ConfigureAwait(false);
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
+            // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.
+            AttemptTenures.Keep(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config?.PlaceRisk, clock());
         }
 
         for (var round = 0; !atEnd && round <= governed.Graph.Nodes.Count; round++)

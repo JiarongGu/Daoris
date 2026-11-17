@@ -522,7 +522,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
         )}
         {/* The role's holder passed on or taken back: *Hand to…* and *Give back*, each a new epoch of the step's tenure. */}
         {item.step?.holds && item.step.holds.length > 0 && (
-          <StepHold run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} />
+          <StepHold run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} epoch={item.step.epoch} />
         )}
       </div>
       {(offered.length > 0 || onOpen || onRun || setAside) && (

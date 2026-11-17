@@ -140,6 +140,81 @@ public sealed class SettleDoorTests : IDisposable
     }
 
     /// <summary>
+    /// A press speaks as its channel: a working session's own press as its agent, Ask Daoris's as its own, an appointed role's as an agent; the
+    /// person's window, card and terminal as the person. A delegated approval of a marked step is refused, its stop too; the person's is taken.
+    /// </summary>
+    [Fact]
+    public void A_delegated_press_on_a_marked_approval_is_refused_and_the_persons_own_is_admitted()
+    {
+        Assert.Equal(CastHolders.Agent, SettleBy.OfChannel(TerminalTierBy.Session, false, 1)!.Who);
+        Assert.Equal(SettleBy.AskDaoris, SettleBy.OfChannel(TerminalTierBy.AskDaoris, false, 1)!.Who);
+        Assert.Equal(CastHolders.Agent, SettleBy.OfChannel(TerminalTierBy.Card, true, null)!.Who);
+        Assert.All(new[] { TerminalTierBy.Window, TerminalTierBy.Card, TerminalTierBy.Terminal }, by => Assert.Null(SettleBy.OfChannel(by, false, 1)));
+
+        var marked = Risk(PlaceMarks.ProductionReleases);
+        Start(StepRoles.Approver, "approved", marked);
+        foreach (var channel in new[] { TerminalTierBy.Session, TerminalTierBy.AskDaoris })
+        {
+            var delegated = SettleBy.OfChannel(channel, false, 1);
+            Assert.Equal(SettleDoor.Marked, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Approve, null, () => _now, epoch: 1, settle: delegated).Refused);
+            Assert.Equal(SettleDoor.Marked, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Stop, "end it", () => _now, epoch: 1, settle: delegated).Refused);
+        }
+
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Approve, null, () => _now, epoch: 1).Done);
+    }
+
+    [Fact]
+    public void An_owner_stop_from_a_stale_row_is_admitted()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1)).Done);
+
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Stop, "end it", () => _now, epoch: 1).Done);
+    }
+
+    [Fact]
+    public void The_lines_word_is_refused_on_an_agent_held_step_and_taken_on_a_person_held_one()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        Assert.Equal(SettleDoor.NotHolder, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, settle: new SettleBy(SettleBy.Line, 1)).Refused);
+
+        Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Take, null, null, _now.AddMinutes(1)).Done);
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, settle: new SettleBy(SettleBy.Line, 2)).Done);
+    }
+
+    /// <summary>
+    /// A hold act names the epoch its row read and the channel it came by: a row read before a hand-over moves nothing, and an agent hands on
+    /// only a step it holds and never takes one.
+    /// </summary>
+    [Fact]
+    public void A_hold_act_from_an_ended_epoch_or_an_agent_that_does_not_hold_the_step_moves_nothing()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        var agent = (string who) => new SettleBy(who, 1);
+
+        Assert.Equal(SettleDoor.NotHolder, StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Take, null, null, _now, 1, agent(CastHolders.Agent)).Refused);
+        Assert.Equal(SettleDoor.NotHolder, StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:gamma", null, _now, 1, agent("agent:beta")).Refused);
+        Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1), 1, agent("agent:alpha")).Done);
+
+        var stale = StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Take, null, null, _now.AddMinutes(2), epoch: 1);
+        Assert.Equal(StepTenureFiles.EndedEpoch, stale.Refused);
+        Assert.Equal(("agent:beta", 2), (stale.Tenure!.Holder, stale.Tenure.Epoch));
+    }
+
+    [Fact]
+    public void An_owner_role_step_is_handed_to_nobody_but_the_person()
+    {
+        var held = Start(StepRoles.Owner, "done", Risk());
+        Assert.Equal(CastHolders.Person, held.Holder);
+
+        Assert.Equal(SettleDoor.OwnerRole, StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1)).Refused);
+        Assert.Equal(CastHolders.Person, new StepTenureFiles(_home, () => true).Current(RunUnits.IdOf(Run), "step", 1)!.Holder);
+    }
+
+    /// <summary>
     /// The census: who may settle a step is the door's alone, and the door reads the tenure, the speaker and the mark, never the step's kind;
     /// every door that settles a run step's attempt asks it.
     /// </summary>
@@ -156,6 +231,18 @@ public sealed class SettleDoorTests : IDisposable
             // The epoch is judged by the door alone: no settle path reads an ended tenure for itself.
             Assert.DoesNotContain(".Ended(", source, StringComparison.Ordinal);
         }
+
+        // Every route that settles or passes on a step names its speaker by the caller's channel, never the person by default, and its epoch.
+        foreach (var route in new[] { "WorkflowRoutes.cs", "LinesRoutes.cs", "CastRoutes.cs" })
+        {
+            var source = Code(File.ReadAllText(SourceFiles.Find(SourceFiles.Project("Daoris.Desktop.Modules"), route)));
+            Assert.Contains("SpeakerOf(press.Epoch)", source, StringComparison.Ordinal);
+            Assert.Contains("EpochOf(press.Epoch)", source, StringComparison.Ordinal);
+        }
+
+        // Each standing attempt is cast its holder before the pass's rounds, not only after them.
+        var runtime = Code(File.ReadAllText(SourceFiles.Driver("NodeRuntime.cs")));
+        Assert.True(runtime.IndexOf("AttemptTenures.Keep(", StringComparison.Ordinal) < runtime.IndexOf("for (var round = 0;", StringComparison.Ordinal));
 
         static string Code(string text) => Regex.Replace(text, @"^\s*///.*$|//.*$", "", RegexOptions.Multiline);
     }

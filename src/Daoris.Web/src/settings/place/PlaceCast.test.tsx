@@ -3,7 +3,7 @@ import { render as draw, screen, fireEvent } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
-import { StepHoldPresses } from '../../workflow/wait/StepHold';
+import { StepHoldPresses, stepHoldAsk } from '../../workflow/wait/StepHold';
 import { PlaceCastSetting, type PlaceCastView } from './PlaceCast';
 
 const render = (ui: ReactElement) => draw(<Tooltip.Provider>{ui}</Tooltip.Provider>);
@@ -56,6 +56,11 @@ describe('a step’s holder presses', () => {
     expect(onHold).toHaveBeenLastCalledWith('hand', 'agent:beta');
     screen.getByRole('button', { name: 'Give back' }).click();
     expect(onHold).toHaveBeenLastCalledWith('give-back');
+  });
+
+  it('sends the epoch its row read, so a step passed on since moves nothing', () => {
+    expect(stepHoldAsk('q1', 'release', 'hand', 'agent:beta', 2)).toEqual({ run: 'q1', node: 'release', act: 'hand', holder: 'agent:beta', epoch: 2 });
+    expect(stepHoldAsk('q1', 'release', 'take', null, null)).not.toHaveProperty('epoch');
   });
 
   it('says them in Chinese', async () => {

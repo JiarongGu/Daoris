@@ -61,6 +61,23 @@ public sealed partial class HolderWordTests : IDisposable
         if (start == "you") Assert.Null(SettleDoor.Admit(current, SettleBy.Person(current!.Epoch)));
     }
 
+    /// <summary>One rule casts every first epoch, the pass's and a hold act's alike, and <i>Give back</i> returns the step to the holder it names.</summary>
+    [Fact]
+    public void A_you_step_handed_on_is_given_back_to_the_person_its_word_names()
+    {
+        var casts = new PlaceCastFiles(_home, () => true);
+        casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start("you");
+
+        Assert.True(StepHolding.Act(Records, casts, Risk(), Run, "ask", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1)).Done);
+        var tenures = new StepTenureFiles(_home, () => true);
+        Assert.Equal(CastHolders.Person, tenures.Of(RunUnits.IdOf(Run), "ask", 1)[0].Holder);
+
+        var back = StepHolding.Act(Records, casts, Risk(), Run, "ask", CastActs.GiveBack, null, null, _now.AddMinutes(2));
+        Assert.True(back.Done, back.Refused);
+        Assert.Equal((CastHolders.Person, TenureWhy.GiveBack), (back.Tenure!.Holder, back.Tenure.Why));
+    }
+
     /// <summary>The word is read in one place, which sets the first holder; no runtime source compares against it.</summary>
     [Fact]
     public void No_runtime_source_branches_on_you_beyond_the_holder_it_sets()

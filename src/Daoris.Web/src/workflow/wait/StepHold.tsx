@@ -3,8 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import { holderSaid } from '../../settings/place/PlaceCast';
 
-/** What `WORKFLOW_HOLD` is sent: the run, its step, the act, whom it is handed to and the reason. */
-export type StepHoldAsk = { run: string; node: string; act: string; holder?: string | null; why?: string | null };
+/** What `WORKFLOW_HOLD` is sent: the run, its step, the act, whom it is handed to, the reason and the epoch of the tenure its row read. */
+export type StepHoldAsk = { run: string; node: string; act: string; holder?: string | null; why?: string | null; epoch?: number | null };
+
+/** A press's ask, carrying the epoch its row read so a step passed on since moves nothing; none where the row read none. */
+export const stepHoldAsk = (run: string, node: string, act: string, holder: string | null, epoch?: number | null): StepHoldAsk =>
+  ({ run, node, act, holder, ...(epoch != null ? { epoch } : {}) });
 
 /** What it came to: done, or refused by its code with the driver's sentence. */
 export type StepHoldAnswer = { done: boolean; refused: string | null; message: string | null };

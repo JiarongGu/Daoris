@@ -296,9 +296,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
     rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A run step is settled only through one door (`SettleDoor`): by the holder its attempt's tenure names now, in its epoch, by an
-    observation, or by the owner role's stop and decision answer; a supervisor's held word only where the person holds the step. The
-    person's press on a step another holder holds takes it and settles it in one act, the take journaled with the press as its reason;
-    an agent's word never takes. A marked destination's approver is the owner role's from its attempt's start: its tenure reads `marked`, offers no Take, Hand or
+    observation, or by the owner role's stop and decision answer in any epoch; a supervisor's held word only where the person holds the
+    step. A press speaks as its channel, never as its payload says: the person's window, card and terminal as the person, a working
+    session's own press, an appointed role's act and Ask Daoris's as agents. The person's press on a step another holder holds takes it
+    and settles it in one act, the take journaled with the press as its reason and made only once the word is admitted; an agent's word
+    never takes, and an agent hands on only a step it holds. Every write of a tenure names the epoch it read, compared under the tenures'
+    lock; tenures that do not read take only the person's word and no hold act. The owner role is handed to nobody but the person. A marked destination's approver is the owner role's from its attempt's start: its tenure reads `marked`, offers no Take, Hand or
     Give back, and refuses every other holder's word and every hand-over (`marked`). (D312)
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`, each act naming its level) and listed to the hold that answers

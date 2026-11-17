@@ -48,8 +48,11 @@ public static class StepHolding
     /// <summary>The run's or the tenures' record does not read, or the lease is not held here: nothing is written.</summary>
     public const string Unwritable = PlaceCastFiles.Unwritable;
 
+    /// <param name="epoch">The epoch of the tenure the press's row read: a row read in an ended epoch moves nothing. Null names none.</param>
+    /// <param name="by">Who presses, where its channel names an agent (<see cref="SettleBy.OfChannel"/>); null for the person's own.</param>
     public static StepHeld Act(
-        NodeRecordFiles records, PlaceCastFiles casts, PlaceRiskBook risk, string run, string node, string act, string? holder, string? why, DateTimeOffset now)
+        NodeRecordFiles records, PlaceCastFiles casts, PlaceRiskBook risk, string run, string node, string act, string? holder, string? why, DateTimeOffset now,
+        int? epoch = null, SettleBy? by = null)
     {
         run = run.Trim().TrimStart('#');
         why = string.IsNullOrWhiteSpace(why) ? null : why.Trim();
@@ -67,22 +70,39 @@ public static class StepHolding
         var (workspace, repository) = (bound.Binding.Workspace, bound.Binding.Repository);
         var role = StepRoles.Of(declared);
         var cast = casts.Book().At(role, workspace, repository, risk.At(workspace, repository));
+        var first = AttemptTenures.FirstHolder(declared, cast);
         var target = act switch
         {
             CastActs.Take => CastHolders.Person,
             CastActs.Hand => holder!.Trim(),
-            _ => cast.Holder,
+            _ => first,
         };
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
+        // Tenures that do not read move nothing: who holds the step cannot be judged, so every hold act is refused, and said.
+        if (!tenures.Reads(bound.Unit))
+        {
+            tenures.SayUnread(bound.Unit, $"{act} on {node} of #{run}");
+            return Refuse(StepTenureFiles.Unread);
+        }
+
         var current = tenures.Current(bound.Unit, node, status.Attempt)
-            ?? tenures.Hold(bound.Unit, node, status.Attempt, role, cast.Holder, AttemptTenures.WhyOf(cast), status.Since ?? now);
+            ?? tenures.Hold(bound.Unit, node, status.Attempt, role, first, AttemptTenures.WhyOf(cast), status.Since ?? now);
         if (current is null) return Refuse(Unwritable);
-        if (current.Holder == target) return Refuse(Already) with { Detail = StepTenureFiles.Said(current), Tenure = current };
-        // At a destination the owner marked, the owner role is the step's only holder: no hand-over moves it.
-        if (SettleDoor.HandRefused(cast, target) || current.Why == TenureWhy.Marked) return Refuse(SettleDoor.Marked) with { Detail = StepTenureFiles.Said(current), Tenure = current };
+        StepHeld Held(string code) => Refuse(code) with { Detail = StepTenureFiles.Said(current), Tenure = current };
+        if (epoch is { } read && read != current.Epoch) return Held(StepTenureFiles.EndedEpoch);
+        // A take is the person's: an agent passes on only a step it holds.
+        if (by is { } agent && (act == CastActs.Take || !SettleDoor.Holds(current.Holder, agent.Who))) return Held(SettleDoor.NotHolder);
+        if (current.Holder == target) return Held(Already);
+        if (current.Why == TenureWhy.Marked) return Held(SettleDoor.Marked);
+        if (SettleDoor.HandRefused(cast, target) is { } owners) return Held(owners);
 
         var code = act switch { CastActs.Take => TenureWhy.TakeBack, CastActs.Hand => TenureWhy.HandOver, _ => TenureWhy.GiveBack };
-        if (tenures.HandOver(bound.Unit, node, status.Attempt, target, code, now) is not { } next) return Refuse(Unwritable);
+        var handed = tenures.HandOver(bound.Unit, node, status.Attempt, current.Epoch, target, code, now);
+        if (handed is not { Tenure: { } next, Refused: null })
+        {
+            return Refuse(handed.Refused ?? Unwritable) with { Detail = handed.Now is { } since ? StepTenureFiles.Said(since) : null, Tenure = handed.Now };
+        }
+
         casts.Keep(new CastEntry(now, act, next.Role, target, why) { Run = run, Node = node, Attempt = next.Attempt, Epoch = next.Epoch });
         return new StepHeld(run, node, act, null) { Tenure = next };
     }
@@ -96,12 +116,13 @@ public static class StepHolding
         by.Who == CastHolders.Person && SettleDoor.Admit(current, by) is { Code: SettleDoor.NotHolder };
 
     /// <summary>
-    /// The person's take of the step <paramref name="current"/> holds, made with their press of <paramref name="act"/> once the press is kept:
-    /// a new epoch held by the person, journaled as a <i>Take</i> whose reason is the press (<c>pressed &lt;act&gt;</c>). Null where nothing is written.
+    /// The person's take of the step <paramref name="current"/> holds, made with their press of <paramref name="act"/> once the press is kept,
+    /// in the hold of the tenures' lock that judges the press, from the epoch it read: a new epoch held by the person, journaled as a
+    /// <i>Take</i> whose reason is the press (<c>pressed &lt;act&gt;</c>). Null where nothing is written.
     /// </summary>
-    public static StepTenure? TakeOnPress(NodeRecordFiles records, string? run, string unit, StepTenure current, string act, DateTimeOffset now)
+    public static StepTenure? TakeOnPress(StepTenureFiles.TenureHold hold, NodeRecordFiles records, string? run, StepTenure current, string act, DateTimeOffset now)
     {
-        if (new StepTenureFiles(records.Home, records.HoldsLease).HandOver(unit, current.Node, current.Attempt, CastHolders.Person, TenureWhy.TakeBack, now) is not { } next) return null;
+        if (hold.HandOver(current.Node, current.Attempt, current.Epoch, CastHolders.Person, TenureWhy.TakeBack, now) is not { Tenure: { } next, Refused: null }) return null;
         new PlaceCastFiles(records.Home, records.HoldsLease).Keep(
             new CastEntry(now, CastActs.Take, next.Role, CastHolders.Person, $"pressed {act}") { Run = run, Node = current.Node, Attempt = next.Attempt, Epoch = next.Epoch });
         return next;
@@ -113,8 +134,13 @@ public static class StepHolding
         { Done: true, Tenure: { } now } => $"workflow: {held.Node} of #{held.Run} is held by {CastHolders.Said(now.Holder)} now (epoch {now.Epoch}); its earlier holder's word is refused.",
         { Refused: Already } => $"workflow: {held.Node} of #{held.Run} is {held.Detail} already; nothing changed.",
         { Refused: NotStanding } => $"workflow: {held.Node} of #{held.Run} has no attempt standing ({held.Detail}); only a step under way or held is handed on.",
+        // The step's holder now goes with an agent's refusal; a holder word that is none goes alone.
+        { Refused: SettleDoor.NotHolder, Tenure: not null } => $"workflow: {held.Node} of #{held.Run} is {held.Detail}: an agent hands on only a step it holds, and never takes one.",
         { Refused: PlaceCastFiles.NotHolder } => $"workflow: `{held.Detail}` is no holder: name `person`, `agent` or `agent:<name>`.",
         { Refused: SettleDoor.Marked } => $"workflow: {held.Node} of #{held.Run} is {held.Detail}, at a destination your mark keeps yours: nothing hands it on.",
+        { Refused: SettleDoor.OwnerRole } => $"workflow: {held.Node} of #{held.Run} is the owner role's, which is yours: it is handed to nobody else.",
+        { Refused: StepTenureFiles.EndedEpoch } => $"workflow: {held.Node} of #{held.Run} was passed on since you read it ({held.Detail}); nothing changed.",
+        { Refused: StepTenureFiles.Unread } => $"workflow: the tenures of #{held.Run} do not read, so who holds {held.Node} cannot be judged; nothing changed.",
         { Refused: NotAct } => $"workflow: `{held.Act}` is not take, hand or give-back.",
         _ => $"workflow: {held.Node} of #{held.Run} was not handed on ({held.Refused}).",
     };
