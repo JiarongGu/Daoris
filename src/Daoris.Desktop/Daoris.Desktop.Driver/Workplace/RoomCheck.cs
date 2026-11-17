@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The check of a repository's rooms, deterministic and stack-agnostic: it reads the lanes
-/// file's rooms, the repository's rule file and git's tracked paths, nothing else. It refuses two rooms holding one path, a tracked path
-/// no entry places, a unit that is not a tracked file of its room or whose folder holds another room's sources, a lockfile apart from
-/// the unit beside it, a file written from two rooms, and a read or a write naming nothing tracked or declared. It joins into one claim
-/// group the rooms whose build closures meet: a room's own paths, its units, and what its builds read and write, wherever another
-/// room's closure holds the same path, so one session at a time works in place in a group. Every reference across rooms is listed,
-/// so its lock is known. Nothing acts on the result yet.
+/// The check of a repository's rooms, deterministic and stack-agnostic: it reads the lanes file's rooms, the repository's rule file and
+/// git's tracked paths, nothing else. It refuses two rooms holding one path, a tracked path no entry places, a unit that is not a tracked
+/// file of its room or whose folder holds another room's sources, a lockfile apart from the unit beside it, a file written from two
+/// rooms, a file of a lane in several rooms in no unit of theirs, and a read or a write naming nothing tracked or declared. It joins into
+/// one claim group the rooms whose build closures meet (a room's own paths, its units, and what its builds read and write, wherever
+/// another room's closure holds the same path) and the rooms one lane is in, so one session at a time works in place in a group. Every
+/// reference across rooms is listed, so its lock is known. Nothing acts on the result yet.
 /// </summary>
 internal static class RoomCheck
 {
@@ -66,8 +66,12 @@ internal static class RoomCheck
             }
         }
 
-        // A path two rooms' builds touch, a roomless input among them, is where their closures meet.
+        // Rooms meet where their builds touch one path, a roomless input among them, and where one lane is in each.
         foreach (var (_, each) in touching) each.ForEach(room => groups.Join(each[0], room));
+        foreach (var each in rooms.SelectMany((room, i) => room.Members.Select(member => (member, i))).GroupBy(pair => pair.member, StringComparer.Ordinal))
+        {
+            foreach (var (_, i) in each) groups.Join(each.First().i, i);
+        }
         foreach (var (path, each) in writers.Where(pair => pair.Value.Distinct().Count() > 1))
         {
             problems.Add($"{path} is written from rooms {rooms[each[0]].Id} and {rooms[each.First(room => room != each[0])].Id}");
@@ -87,17 +91,20 @@ internal static class RoomCheck
     {
         var owner = new Dictionary<string, string?>(tracked.Count, StringComparer.Ordinal);
         var overlaps = new Dictionary<(string, string), List<string>>();
+        var astray = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var unplaced = new List<string>();
         foreach (var path in tracked)
         {
             var holding = read.Rooms.Where(room => room.Owns(path)).Take(2).ToList();
             if (holding.Count > 1) Add(overlaps, (holding[0].Id, holding[1].Id), path);
+            if (read.Astray(path) is { } entry) Add(astray, entry, path);
             var placed = read.RoomOf(path);
             if (placed is null) unplaced.Add(path);
             owner[path] = Room(placed);
         }
 
         foreach (var ((one, other), paths) in overlaps) problems.Add($"{paths[0]} is in rooms {one} and {other}{More(paths.Count)}");
+        foreach (var (entry, paths) in astray) problems.Add($"{paths[0]}, of {entry}, lies in no unit of theirs{More(paths.Count)}");
         problems.AddRange(unplaced.Take(Named).Select(path => $"{path} is in no room and no lane or laneless group says so"));
         if (unplaced.Count > Named) problems.Add($"{unplaced.Count - Named} more paths are in no room and no lane or laneless group says so");
         return owner;
@@ -150,7 +157,7 @@ internal static class RoomCheck
                     continue;
                 }
 
-                var folder = Folder(unit);
+                var folder = RoomPaths.Folder(unit);
                 var stray = tracked.Where(path => path.StartsWith(folder, StringComparison.Ordinal) && owner[path] != room.Id).ToList();
                 if (stray.Count > 0) problems.Add($"the unit {unit} of room {room.Id} has sources in {Said(owner[stray[0]])}: {stray[0]}{More(stray.Count)}");
             }
@@ -165,14 +172,12 @@ internal static class RoomCheck
         var keys = rules.Where(rule => rule.Kind == FileKind.Dependency).SelectMany(rule => rule.Key ?? []);
         foreach (var key in keys.Distinct(StringComparer.Ordinal).Where(owner.ContainsKey))
         {
-            foreach (var (unit, room) in units.Where(pair => Folder(pair.Key) == Folder(key) && pair.Value != owner[key]))
+            foreach (var (unit, room) in units.Where(pair => RoomPaths.Folder(pair.Key) == RoomPaths.Folder(key) && pair.Value != owner[key]))
             {
                 problems.Add($"the lockfile {key} is in {Said(owner[key])} and the unit beside it, {unit}, in room {room}");
             }
         }
     }
-
-    private static string Folder(string path) => path.LastIndexOf('/') is var slash and >= 0 ? path[..(slash + 1)] : "";
 
     private static string? Room(string? placed) => string.IsNullOrEmpty(placed) ? null : placed;
 

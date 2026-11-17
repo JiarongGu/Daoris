@@ -5,10 +5,11 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rooms a repository's lanes file declares. A lane that carries <c>builds</c> or a
-/// <c>room</c> is a room: its own, by its id, or the one its <c>room</c> names, so lanes keep their names and are one room. A laneless
-/// group that names a room is part of it. A lane or a group that is neither is said to be in none, and a repository whose entries are
-/// all neither declares no rooms. Read from the lanes file's text; the lanes' own rules are the registration's
+/// The rooms a repository's lanes file declares. A lane that carries <c>builds</c> or a <c>room</c> is a room: its own, by its id, or
+/// the one its <c>room</c> names, so lanes keep their names and are one room. A laneless group that names a room is part of it. One
+/// carved across units whose rooms differ lists them as its <c>room</c> and is in each, each path in the room of the deepest unit
+/// holding it among those. A lane or a group that is neither is said to be in none, and a repository whose entries are all neither
+/// declares no rooms. Read from the lanes file's text; the lanes' own rules are the registration's
 /// (<see cref="LineRegistration.LanesProblemsOf"/>), and a file they refuse declares no rooms.
 /// </summary>
 /// <remarks>
@@ -61,51 +62,66 @@ internal static partial class LaneRooms
 
             var name = $"laneless group {i + 1}";
             var entry = EntryOf(group, name, null, false, problems);
-            if (entry.Builds is not null && entry.Room is null) problems.Add($"{name}: it has builds and names no room");
+            if (entry.Builds is not null && entry.Rooms.Count == 0) problems.Add($"{name}: it has builds and names no room");
             entries.Add(entry);
         }
 
         if (problems.Count > 0) return LaneRoomsRead.None with { Problems = problems };
 
-        // A path is the first entry's that holds it, the steward's before the rest, as the merge tool places it.
+        // A path is the first entry's that holds it, the steward's before the rest, as the merge tool places it. An entry in several
+        // rooms places each path in the room of the deepest unit holding it, of the rooms it names (a builds entry is in one room).
         var placing = entries.Where(entry => entry.Steward).Concat(entries.Where(entry => !entry.Steward)).ToList();
-        var rooms = entries.Where(entry => entry.Room is not null).GroupBy(entry => entry.Room!, StringComparer.Ordinal)
+        var folders = entries.Where(entry => entry.Builds is not null)
+            .SelectMany(entry => entry.Builds!.Units.Select(unit => (Folder: RoomPaths.Folder(unit), Room: entry.Rooms[0]))).ToList();
+        string? In(Entry entry, string path) => entry.Rooms.Count < 2
+            ? entry.Rooms.FirstOrDefault()
+            : folders.Where(unit => entry.Rooms.Contains(unit.Room) && path.StartsWith(unit.Folder, StringComparison.Ordinal))
+                .OrderByDescending(unit => unit.Folder.Length).Select(unit => unit.Room).FirstOrDefault();
+        var rooms = entries.SelectMany(entry => entry.Rooms.Select(room => (Room: room, Entry: entry))).GroupBy(pair => pair.Room, StringComparer.Ordinal)
+            .Select(room => (room.Key, Entries: room.Select(pair => pair.Entry).ToList()))
             .Select(room => new DeclaredRoom(
                 room.Key,
-                [.. room.Select(entry => entry.Member)],
-                Any([.. room.Select(entry => entry.Owns)]),
-                [.. room.SelectMany(entry => entry.Builds?.Units ?? []).Distinct(StringComparer.Ordinal)],
-                [.. room.SelectMany(entry => entry.Builds?.Reads ?? []).Distinct(StringComparer.Ordinal)],
-                [.. room.SelectMany(entry => entry.Builds?.Writes ?? []).Distinct(StringComparer.Ordinal)]))
+                [.. room.Entries.Select(entry => entry.Member)],
+                path => room.Entries.Any(entry => entry.Owns(path) && In(entry, path) == room.Key),
+                [.. room.Entries.SelectMany(entry => entry.Builds?.Units ?? []).Distinct(StringComparer.Ordinal)],
+                [.. room.Entries.SelectMany(entry => entry.Builds?.Reads ?? []).Distinct(StringComparer.Ordinal)],
+                [.. room.Entries.SelectMany(entry => entry.Builds?.Writes ?? []).Distinct(StringComparer.Ordinal)]))
             .ToList();
         return new LaneRoomsRead(
             rooms,
-            [.. entries.Where(entry => entry.Room is null).Select(entry => entry.Said)],
-            path => placing.Find(entry => entry.Owns(path)) is { } owner ? owner.Room ?? "" : null,
-            []);
+            [.. entries.Where(entry => entry.Rooms.Count == 0).Select(entry => entry.Said)],
+            path => placing.Find(entry => entry.Owns(path)) is { } owner ? In(owner, path) ?? "" : null,
+            [])
+        {
+            Astray = path => placing.Find(entry => entry.Owns(path)) is { Rooms.Count: > 1 } owner && In(owner, path) is null
+                ? $"{owner.Name}, in rooms {string.Join(", ", owner.Rooms.SkipLast(1))} and {owner.Rooms[^1]}"
+                : null,
+        };
     }
-
-    private static Func<string, bool> Any(IReadOnlyList<Func<string, bool>> tests) => path => tests.Any(test => test(path));
 
     private static Entry EntryOf(JsonObject entry, string name, string? id, bool steward, List<string> problems)
     {
         var paths = (entry["paths"] as JsonArray ?? []).Where(path => path?.GetValueKind() == JsonValueKind.String)
             .Select(path => path!.GetValue<string>()).Where(path => path.Length > 0).ToList();
-        string? room = null;
+        List<string> rooms = [];
         if (entry["room"] is { } named)
         {
-            room = named.GetValueKind() == JsonValueKind.String ? named.GetValue<string>() : "";
-            if (!RoomId().IsMatch(room)) problems.Add($"{name}: its room must be lower-case letters, digits and dashes, starting with a letter");
+            rooms = named is JsonArray list
+                ? [.. list.Select(each => each?.GetValueKind() == JsonValueKind.String ? each.GetValue<string>() : "")]
+                : [named.GetValueKind() == JsonValueKind.String ? named.GetValue<string>() : ""];
+            if (rooms.Any(room => !RoomId().IsMatch(room))) problems.Add($"{name}: its room must be lower-case letters, digits and dashes, starting with a letter");
+            else if (named is JsonArray && (rooms.Count < 2 || rooms.Distinct(StringComparer.Ordinal).Count() < rooms.Count)) problems.Add($"{name}: a list of rooms names two or more, each once");
         }
 
         Builds? builds = null;
         if (entry["builds"] is { } declared)
         {
             builds = BuildsOf(declared, name, problems);
-            room ??= id;
+            if (rooms.Count > 1) problems.Add($"{name}: it names several rooms and has builds, which are one room's");
+            if (rooms.Count == 0 && id is not null) rooms = [id];
         }
 
-        return new Entry(id ?? name, steward, room, builds, RoomPaths.Lane(paths), id ?? string.Join(", ", paths.Where(path => !path.StartsWith('!'))));
+        return new Entry(id ?? name, name, steward, rooms, builds, RoomPaths.Lane(paths), id ?? string.Join(", ", paths.Where(path => !path.StartsWith('!'))));
     }
 
     private static Builds BuildsOf(JsonNode declared, string name, List<string> problems)
@@ -151,10 +167,11 @@ internal static partial class LaneRooms
     private sealed record Builds(IReadOnlyList<string> Units, IReadOnlyList<string> Reads, IReadOnlyList<string> Writes);
 
     /// <summary>
-    /// A lane or a laneless group: how its room names it (a lane by its id), its room or null for none, and how the report names it
-    /// where it is in none.
+    /// A lane or a laneless group: how its room names it (a lane by its id), how a problem names it, its rooms (none, one, or the
+    /// several its files' units lie in), and how the report names it where it is in none.
     /// </summary>
-    private sealed record Entry(string Member, bool Steward, string? Room, Builds? Builds, Func<string, bool> Owns, string Said);
+    private sealed record Entry(
+        string Member, string Name, bool Steward, IReadOnlyList<string> Rooms, Builds? Builds, Func<string, bool> Owns, string Said);
 }
 
 /// <summary>One room: its id, the lanes and groups it is made of, the paths they hold, and its builds' units, reads and writes.</summary>
@@ -176,4 +193,7 @@ internal sealed record LaneRoomsRead(
 
     /// <summary>Whether some lane or laneless group holds <paramref name="path"/>.</summary>
     internal bool Placed(string path) => RoomOf(path) is not null;
+
+    /// <summary>For a path held by a lane or group naming several rooms and in no unit of theirs, that entry and its rooms; else null.</summary>
+    internal Func<string, string?> Astray { get; init; } = _ => null;
 }

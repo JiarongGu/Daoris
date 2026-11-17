@@ -160,6 +160,7 @@ touched them. Split one when two branches next meet in it.
 | `web-settings` | Web settings | `SettingsView.tsx`, `settings/`, and their catalogue areas |
 | `driver` | Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
 | `modules` | Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
+| `assistant` | Assistant | Ask Daoris's files, carved out of the driver's, the modules' and the web shell's lanes where they lie: the room, the conversation's setup, the second check, their routes and their page (ASSISTPKG1a) |
 | `service` | Service | `src/Daoris.Service/` |
 | `layers` | Ports and testing | `src/Daoris.Ports/`, `src/Daoris.Testing/` and its tests, the shared layering props and banned-effects list, and the layers census (D286) |
 | `cli` | CLI | `src/Daoris.Cli/` |
