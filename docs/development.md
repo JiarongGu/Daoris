@@ -280,7 +280,16 @@ its paths reach the page's sources or its test configuration, the web's design a
 run check:web-rules`: the design, structure, provider-census, presentational and page-measure tests alone, a minute or two), which a story or a
 module broke twice before the CI beside's `web-unit` reached it (MERGEWEBRULES1); and, where its paths reach the desktop's sources, the
 desktop's censuses (`censuses`: every test class that reads the sources by text carries `[Trait("Category","Census")]`, and the gate runs
-`dotnet test <project> --filter Category=Census` for the driver's tests and the modules', REVIEW2 T6). Every other
+`dotnet test <project> --filter Category=Census` for the driver's tests and the modules', REVIEW2 T6; the fast halves filter
+`Category!=Process&Category!=Census`, so each census runs once a run). At a merge the censuses judge the diff (CENSUSDIFF1): the
+merge writes its changed paths to a file under `_fixtures/census-scope/` and names it in `CENSUS_SCOPE` (`tools/merge/census-scope.ts`),
+a census marked diff-able in its project's `CensusMarks.cs` judges only those files, and one marked whole (a rule across files, or
+one not yet reading through `CensusScope`) judges the tree; each project's census of censuses holds every census marked once. With
+no scope (the CI after the landing, a developer's run) every census judges the whole tree. A census class holds what a source says, never
+behaviour: a class whose few source-reading facts sat beside bridge or graph cases has those facts in a census class of its own
+(`ModuleSourcesCensusTests`), and its behaviour is the fast half's. What holds the gate past a minute is the semantic censuses (the
+structure classes, the declarations' and the provider census over one compile of each shipping project): they judge the whole tree
+whatever the scope, so diff-able text censuses shorten nothing until their walks read the scope too. Every other
 gate its paths reach is listed and skipped, "in the CI beside": the CI (`--ci`, below) gates main's
 tip after a merge or batch; fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).

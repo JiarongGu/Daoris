@@ -32,22 +32,22 @@ public sealed class GitKeepersCensusTests
     [Fact]
     public void Every_field_holding_a_git_answer_is_a_listed_holder_with_its_stamp_or_its_flow()
     {
-        var problems = SourceCensus.Problems(Found(SourceCensus.Driver()), Holders.Keys, What);
+        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(typeof(GitKeepersCensusTests))), SourceCensus.Listed(typeof(GitKeepersCensusTests), Holders.Keys), What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_holder_left_out_of_the_list_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver()), Holders.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(typeof(GitKeepersCensusTests))), SourceCensus.Listed(typeof(GitKeepersCensusTests), Holders.Keys), What));
     }
 
     [Fact]
     public void A_planted_field_of_a_git_answers_type_turns_the_census_red_naming_it()
     {
-        var planted = SourceCensus.Driver().Append(("Planted.cs",
+        var planted = SourceCensus.Driver(typeof(GitKeepersCensusTests)).Append(("Planted.cs",
             "internal static class Planted\n{\n    private static readonly Dictionary<string, (int Code, string Stdout, string Stderr)> s_kept = new();\n}\n"));
 
-        Assert.Equal(["Planted.cs s_kept holds a git answer and is not listed"], SourceCensus.Problems(Found(planted), Holders.Keys, What));
+        Assert.Equal(["Planted.cs s_kept holds a git answer and is not listed"], SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitKeepersCensusTests), Holders.Keys), What));
     }
 }

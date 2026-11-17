@@ -89,7 +89,7 @@ const cases: [string, string[], string[]][] = [
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, service, driver]],
     // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
     ["the participant's work table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'], [...BASE, service, driver, webUnit]],
-    ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, service, ...DESK]],
+    ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, service, censuses]],
     // The kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, driver, webUnit]],
     // The backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
