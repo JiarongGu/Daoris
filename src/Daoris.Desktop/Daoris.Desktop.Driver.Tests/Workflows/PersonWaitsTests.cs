@@ -34,6 +34,23 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Empty(PersonWaitReader.Read(_home));
     }
 
+    /// <summary>The reader reads the step's tenure, as What needs you does: a task handed to an agent waits on the agent, not the person. Seen failing first.</summary>
+    [Fact]
+    public async Task A_task_another_holder_holds_waits_on_that_holder_not_the_person()
+    {
+        BoundTo(TaskGraph);
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        await RunPassAsync(Runtime());
+        var unit = RunUnits.IdOf(RunId);
+        new StepTenureFiles(_home, () => true).Begin(unit, [("look", RunStatus("look").Attempt, StepRoles.Owner, CastHolders.Person, _now, TenureWhy.Cast)]);
+        Assert.Single(PersonWaitReader.Read(_home));
+
+        new StepTenureFiles(_home, () => true).HandOver(unit, "look", RunStatus("look").Attempt, "agent:beta", TenureWhy.HandOver, _now);
+
+        Assert.Empty(PersonWaitReader.Read(_home));
+    }
+
     private const string CopyGraph = """
         {"schemaVersion":2,"entries":["apart"],"end":"return",
          "nodes":[{"id":"apart","kind":"isolate","version":1,"reach":"observed","options":{"kind":"copy"}},{"id":"work","kind":"claimed","version":1,"reach":"observed"},

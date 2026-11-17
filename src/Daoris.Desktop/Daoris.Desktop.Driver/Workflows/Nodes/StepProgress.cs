@@ -43,9 +43,8 @@ public sealed record StepProgress(string? Actor, string? Words, string? Url, str
 public sealed record StepHolder(string Kind, string? Name = null);
 
 /// <summary>
-/// Who fills the actor a step waits on. The step names the actor, never who fills it: the place's roles and its risk choose, so the same
-/// step is held by the person or by an agent a role appoints, said alike. No role takes an actor yet, so the person fills each one; an
-/// approver at a destination marked as the person's stays theirs whatever a role says.
+/// The kinds of holder a step's wait names. The step names the actor, never who fills it: its tenure and the place's cast choose
+/// (<see cref="StepWaiting.HolderOf"/>), so the same step is held by the person or by an agent a role appoints, said alike.
 /// </summary>
 public static class StepHolders
 {
@@ -54,7 +53,4 @@ public static class StepHolders
 
     /// <summary>An agent a role appoints, named.</summary>
     public const string Agent = "agent";
-
-    /// <summary>The holder filling <paramref name="actor"/> now.</summary>
-    public static StepHolder Of(string actor) => new(Person);
 }

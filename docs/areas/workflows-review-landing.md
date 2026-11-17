@@ -575,8 +575,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     that settle it (never its stop; a skip reads *Not needed this run*), its tenure's epoch and the holder acts it offers (*Hand to…*, *Give back*), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
-    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"
-    with the same presses beside it (`RunWaitsHead`). A run's view and `daoris workflow show` say it the same way: a run step has one
+    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
+    with the same presses beside it, each passing the epoch its row read, and the row's *Take*, *Hand to…* and *Give back*
+    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. That an
