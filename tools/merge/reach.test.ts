@@ -25,7 +25,7 @@ const [
 );
 const BASE = [...BASELINE];
 const ALWAYS_REACHED = unnamedGates(REACH);
-const ADAPTERS = ALL.filter((name) => name.startsWith('adapters-'));
+const PACKAGES = ALL.filter((name) => name.startsWith('packages-'));
 const NET = [service, driver, modules];
 const PAGE = [webTypes, webRules, ...NET, web, webUnit];
 const DESK = [driver, modules, censuses];
@@ -158,7 +158,7 @@ const cases: [string, string[], string[]][] = [
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, service, driver, rehearse, family, web, deployment]],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, toolTests, toolE2e]],
     ['the ports and the fakes', ['src/Daoris.Ports/Git/IGitRunner.cs', 'src/Layers.props'],
-      [...BASE, layers, ...ADAPTERS, driverRehearsals, driver, modules, ...DRIVER_PROCESS, modulesProcess, family, deployment, service, serviceProcess]],
+      [...BASE, layers, ...PACKAGES, driverRehearsals, driver, modules, ...DRIVER_PROCESS, modulesProcess, family, deployment, service, serviceProcess]],
     ["the merge tool's typed module", ['tools/merge/flow.ts'], [...BASE, toolTests, toolE2e]],
     ["the merge tool's reach module", ['tools/merge/reach.ts'], [...BASE, toolTests, toolE2e]],
     ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, toolTests, toolE2e]],

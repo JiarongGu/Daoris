@@ -1,9 +1,9 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ADAPTERS_ROOT, manifestOf, type Sight } from './adapters.ts';
+import { gitSight, manifestAt } from './packages.ts';
 import { git } from './git.ts';
 import {
   BESIDE_GIT_HALF, LIGHT_WIDTH, SHARED_PROJECTS, dotnetComponent, gateComponents, gateKind, gatePlan, isGitHalf, isHeavyGate, isLongGate, isProcessGate,
@@ -264,13 +264,12 @@ test("this repository's light gates run three at once, never two that build one 
   }
 });
 
-test('an adapter is tested only in its own development: no gate runs its suite, and the lock is checked', () => {
-  const files = { text: (path: string) => { try { return readFileSync(join(repoRoot, path), 'utf8'); } catch { return null; } } } as Sight;
-  const adapters = readdirSync(join(repoRoot, ADAPTERS_ROOT), { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.endsWith('.Tests')).map((entry) => entry.name);
-  const adapterSuites = adapters.map((name) => manifestOf(name, files).tests);
-  assert.ok(adapterSuites.length > 0);
-  for (const gate of repoPlan) for (const tests of adapterSuites) assert.ok(!gate.run.includes(tests), `${gate.name} runs ${tests}`);
-  assert.ok(repoPlan.some((gate) => gate.name === 'adapters-lock' && gate.run === 'node tools/merge/adapters.ts check'));
+test('a package is tested only in its own development: no gate runs its suite, and the lock is checked', () => {
+  const files = { text: (path: string) => { try { return readFileSync(join(repoRoot, path), 'utf8'); } catch { return null; } } };
+  const suites = gitSight(repoRoot).packages().map((each) => manifestAt(each.folder, files).tests);
+  assert.ok(suites.length > 0);
+  for (const gate of repoPlan) for (const tests of suites) assert.ok(!gate.run.includes(tests), `${gate.name} runs ${tests}`);
+  assert.ok(repoPlan.some((gate) => gate.name === 'packages-lock' && gate.run === 'node tools/merge/packages.ts check'));
 });
 
 test("this repository's web gates build no component beside the .NET gates", () => {
