@@ -104,6 +104,9 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-12-test-diet-census.md`|Census: TESTDIET1, the test code and fixtures measured, with the cut in the order of what it saves
 |`2026-11-13-test-timing-census.md`|Census: TESTTIME1, each suite's time and its slowest classes from the gates' logs, their causes, and the cuts by minutes saved
+|`2026-11-17-test-scope-plan.md`|Plan: the test-time rows (TIMEWHY1 to TESTMEASURE1), each gate's time sinks measured and the cuts in order
+|`2026-11-17-assistant-package-plan.md`|Plan (proposed, D310 reserved): ASSISTPKG1, Ask Daoris as a package on its own ports, developed as the kind `assistant`
+|`2026-11-17-component-census.md`|Census: PACKAGES1, which subsystems get the adapters' treatment, the shared port set, and their order
 |`2026-11-11-start-load-database-design.md`|Proposed design: STARTPERF1, an index over the session events and a quests' change mark (D275)
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
