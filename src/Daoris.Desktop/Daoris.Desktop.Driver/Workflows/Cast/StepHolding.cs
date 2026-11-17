@@ -11,7 +11,7 @@ public sealed record StepHeld(string Run, string Node, string Act, string? Refus
     /// <summary>The words that go with a refusal: who holds the step now, or the step's state.</summary>
     public string? Detail { get; init; }
 
-    /// <summary>Why a done act's journal entry was not kept (the cast file's refusal), its tenure written all the same; null when kept.</summary>
+    /// <summary>Why a done act's journal entry is missing (the cast file's refusal), its tenure written all the same; null when kept.</summary>
     public string? Unjournaled { get; init; }
 }
 

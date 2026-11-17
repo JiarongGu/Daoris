@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.ChoiceArgs;
@@ -90,6 +91,11 @@ public static class DriverChoicesCommand
 
     internal const string Prefix = "daoris";
 
+    private static readonly ConcurrentDictionary<string, Func<IReadOnlyList<string>, bool>> Readings = new(StringComparer.Ordinal);
+
+    /// <summary>Answers whether a verb's words change the home, for a verb whose grammar the subdomain above the settings owns.</summary>
+    internal static void Answer(string verb, Func<IReadOnlyList<string>, bool> changes) => Readings[verb] = changes;
+
     /// <summary>
     /// Whether the words change the home: a verb this program has that is not <c>list</c>, and no plan or usage asked; <c>brainstorms</c>
     /// only where it sets or clears, and a workflow's only where it writes.
@@ -105,12 +111,12 @@ public static class DriverChoicesCommand
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
             "growth" => ChoiceGrammar.GrowthChanges(args),
             "risk" => PlaceRiskVerb.Changes(args),
-            "cast" => PlaceCastVerb.Changes(args),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read.
             "keep" => args.Count > 1,
             // `role` naming one role, or none, says it, a read.
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
+            _ when Readings.TryGetValue(verb, out var reading) => reading(args),
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }
