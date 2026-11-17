@@ -206,15 +206,21 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     done-outside press, and ending the work leaves its quest to close by the person's word. A performed attempt's `progress` (`work/step` bound to its
     invocation, the one non-outcome state) is kept on the attempt, the next replacing it, and settles nothing; where it names an actor
     the step reads `waiting` (`StepWaiting`): its wait names the actor, the holder filling it, the plugin's words and the page, one
-    rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
-    until a role takes one, and an approver at a destination marked as the person's stays theirs. Each holder's tenure of an attempt,
-    `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`), which no older
-    build reads: a hand-over is a new epoch and restarts nothing. One door settles a step (`SettleDoor.Admit`, D312), asked by a run's
-    word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its channel's) and its epoch, never the step's kind: a
-    word naming an ended epoch is refused `ended-epoch`, one from a holder that does not hold the step now `not-holder`, each naming who
-    holds it and since when; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds
-    the step; a supervisor's held word stands in for a step the person holds alone; and an attempt no tenure holds yet refuses nothing.
-    A marked approver is held by the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
+    rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is its place's cast (`PlaceCastBook.At`, kept in `workflows/casts.json` by
+    `PlaceCastFiles`: one holder per role, the workspace's and a repository's own over it, each choice journaled with its reason; the
+    owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
+    role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person. Each holder's tenure
+    of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
+    which no older build reads: a pass writes each standing attempt's first epoch (`AttemptTenures`, the cast's holder), *Take*, *Hand to…*
+    and *Give back* (`StepHolding`, `daoris workflow take|hand|give-back`, `WORKFLOW_HOLD`, shown on the run view's step and on
+    its *What needs you* row) each begin a new epoch and journal it, and a hand-over restarts nothing. One door settles a step
+    (`SettleDoor.Admit`, D312), asked by a run's word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its
+    channel's) and the epoch it read (every settling door takes `--epoch`, and the run view's and *What needs you*'s presses pass the epoch
+    their row read, `HeldStep.Epoch`), never the step's kind: a word naming an ended epoch is refused `ended-epoch`, one from a holder that
+    does not hold the step now `not-holder`, each naming who holds it and since when; a word naming no epoch is judged against the holder
+    now; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds the step; a supervisor's
+    held word stands in for a step the person holds alone; and an attempt no tenure holds yet refuses nothing. A marked approver is held by
+    the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands
@@ -551,7 +557,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
-    that settle it (never its stop; a skip reads *Not needed this run*), a plugin's words and page, *Done outside Daoris* on the attempt
+    that settle it (never its stop; a skip reads *Not needed this run*), its tenure's epoch and the holder acts it offers (*Hand to…*, *Give back*), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: you"

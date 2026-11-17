@@ -10,6 +10,7 @@ import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../../workflow/run';
 import { FailedStepHeld } from '../../workflow/wait/FailedStepHeld';
+import { StepHold } from '../../workflow/wait/StepHoldDoor';
 import {
   ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type StepWaitRow, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
   type QuietWait,
@@ -517,7 +518,11 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
         )}
         {/* A plugin's wait with no page: its holder's *Done outside Daoris…*, said on the attempt out now with its link. */}
         {item.step?.held && acts.doneOutside && (
-          <FailedStepHeld step={{ step: { id: item.step.node }, held: item.step.held } as unknown as RunStep} onHeld={acts.doneOutside} />
+          <FailedStepHeld step={{ step: { id: item.step.node }, held: item.step.held, epoch: item.step.epoch } as unknown as RunStep} onHeld={acts.doneOutside} />
+        )}
+        {/* The role's holder passed on or taken back: *Hand to…* and *Give back*, each a new epoch of the step's tenure. */}
+        {item.step?.holds && item.step.holds.length > 0 && (
+          <StepHold run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} />
         )}
       </div>
       {(offered.length > 0 || onOpen || onRun || setAside) && (

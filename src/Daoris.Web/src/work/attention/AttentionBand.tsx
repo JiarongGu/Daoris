@@ -387,7 +387,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       const node = item.step?.node ?? item.declined?.node;
       if (!node) { answered.done(); return; }
       run(item, async () => {
-        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
+        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null, epoch: item.step?.epoch ?? null });
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },

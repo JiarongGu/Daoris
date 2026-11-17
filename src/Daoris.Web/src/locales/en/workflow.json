@@ -263,5 +263,11 @@
   "workflow.role.operations": "Operations",
   "workflow.role.config-changer": "Config changer",
   "workflow.role.credentials-keeper": "Credentials keeper",
-  "workflow.role.owner": "Owner"
+  "workflow.role.owner": "Owner",
+  "workflow.hold.label": "Who holds this step",
+  "workflow.hold.heldBy": "Held by {{holder}}",
+  "workflow.hold.act.take": "Take",
+  "workflow.hold.act.hand": "Hand to…",
+  "workflow.hold.act.give-back": "Give back",
+  "workflow.hold.handTo": "Hand this step to"
 }

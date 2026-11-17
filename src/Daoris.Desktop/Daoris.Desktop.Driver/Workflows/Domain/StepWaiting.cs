@@ -169,6 +169,9 @@ public sealed record HeldStep(
     /// <summary>The epoch of the tenure the row reads: a press in an ended epoch is refused.</summary>
     public int? Epoch { get; init; }
 
+    /// <summary>The acts the step offers on its holder (<see cref="StepHoldActs.Of"/>): <i>Take</i>, <i>Hand to…</i>, <i>Give back</i>, by its tenure now.</summary>
+    public IReadOnlyList<string>? Holds { get; init; }
+
     /// <summary>
     /// The attempt out now of a plugin's role wait with no page, which its <i>Done outside Daoris</i> (<see cref="HeldResolutions.DoneOutside"/>)
     /// is said on; null on every other wait.
@@ -219,6 +222,7 @@ public static class HeldSteps
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
             Held = outside, Epoch = held is { } tenure && tenure.Attempt == status.Attempt ? tenure.Epoch : null,
+            Holds = StepHoldActs.Of(held is { } kept && kept.Attempt == status.Attempt ? kept : null),
         };
     }
 }

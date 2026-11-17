@@ -61,7 +61,7 @@ describe('a step’s holder presses', () => {
   it('says them in Chinese', async () => {
     await i18n.changeLanguage('zh');
     render(<StepHoldPresses holds={['take', 'hand']} roster={[]} onHold={vi.fn()} />);
-    expect(screen.getByRole('button', { name: '接手' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '接下' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '交给…' })).toBeInTheDocument();
   });
 });

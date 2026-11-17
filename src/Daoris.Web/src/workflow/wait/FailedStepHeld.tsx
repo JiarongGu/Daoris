@@ -34,7 +34,7 @@ export function FailedStepHeld({ step, onHeld }: {
   const tryAgain = () => {
     setSending(true);
     setRefused(null);
-    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution: 'again' })
+    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution: 'again', ...(step.epoch != null ? { epoch: step.epoch } : {}) })
       .then((answer) => { if (!answer.done) setRefused(answer.message ?? answer.refused ?? ''); })
       .catch((error: unknown) => setRefused(sentence(error)))
       .finally(() => setSending(false));
@@ -42,7 +42,7 @@ export function FailedStepHeld({ step, onHeld }: {
 
   const doneOutside = (answered: Answered) => {
     const said = note.trim();
-    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution: 'done-outside', link: link.trim(), ...(said ? { note: said } : {}) })
+    onHeld({ unit: held.unit, node: step.step.id, attempt: held.attempt, resolution: 'done-outside', link: link.trim(), ...(said ? { note: said } : {}), ...(step.epoch != null ? { epoch: step.epoch } : {}) })
       .then((answer) => (answer.done ? answered.done() : answered.refused(answer.message ?? answer.refused ?? '')))
       .catch((error: unknown) => answered.refused(sentence(error)));
   };

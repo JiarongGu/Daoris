@@ -86,6 +86,20 @@ describe("a person's task on What needs you", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'done', words: 'tagged by hand' } }));
   });
 
+  it('offers the holder presses of its step, and every settling press passes the epoch of the tenure it read', async () => {
+    start(['done'], null, { epoch: 2, holds: ['hand', 'give-back'] });
+    const item = await screen.findByRole('listitem', { name: '#q7' });
+    expect(within(item).getByRole('button', { name: 'Hand to…' })).toBeTruthy();
+    expect(within(item).queryByRole('button', { name: 'Take' })).toBeNull();
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Give back' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_HOLD', { payload: { run: 'q7', node: 'sign', act: 'give-back', holder: null } }));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Done…' }));
+    await userEvent.click(within(within(item).getByRole('group', { name: 'Done…' })).getByRole('button', { name: 'Done' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'done', epoch: 2 } }));
+  });
+
   it.each([
     ['en', 'Approve…', 'Approve', 'Reject…', 'Reject', 'sign: waiting on approver: you.'],
     ['zh', '批准…', '批准', '驳回…', '驳回', 'sign：等待 approver：你。'],
