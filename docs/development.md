@@ -301,7 +301,8 @@ kit: `src/Daoris.Cli/tool-test/`) are two gates (TOOLTIER1). The unit tier, `too
 repository and starts real git and the merge tool. It runs in the Process lane, alone, and a spec of the unit tier that takes
 over ten seconds alone moves there or is made pure. A case of it is its git and tool starts, each slower the more the machine
 starts at once, so each stays under two minutes (E2EFAST1, `tool-test/support/e2e-repository.ts`): a file runs three cases at
-once and the tier four files; a case copies the repository its file seeded once rather than build one, writes a branch in one
+once and the tier four files, since the files one at a time took 57 minutes on a loaded machine against 33 at four; the merge
+tool's start asks git once for each kind of fact (`tools/merge/home.ts`); a case copies the repository its file seeded once rather than build one, writes a branch in one
 `git fast-import`, runs stand-in gates, and proves one mode. An end-to-end spec is reached only by a path its gate's `paths` declare,
 the merge tool's own files (`tools/test-map.mjs`, `bounded`): a change to a tool the merge tool only imports reaches the unit
 tier and no end-to-end spec. A merge's reached checks defer the end-to-end specs to the run after the landing, as they defer a

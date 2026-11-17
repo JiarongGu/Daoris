@@ -44,7 +44,7 @@ const remember = (root: string, home: string): string => {
   return home;
 };
 
-/** The worktree listing `verdictsHome` read for `root` at the run's start, for a reader in the same short verb; null where none was read. */
+/** The worktree listing `verdictsHome` read for `root` at the run's start, for a reader in the same short verb; null where it read none. */
 export const startListing = (root: string): string | null => listings.get(root) ?? null;
 
 /** The folder holding the merge tool. */

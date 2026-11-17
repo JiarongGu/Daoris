@@ -36,10 +36,7 @@ export function ignoredVerdict({ status, err }: { status: number | null; err: st
 
 export const isIgnored = (cwd: string, path: string): boolean => ignoredVerdict(git(cwd, ['check-ignore', '-q', path], { allowFail: true }), path);
 
-/**
- * Which of `paths` git ignores in `cwd`, asked in one `git check-ignore --stdin` start: it names each ignored path as given,
- * status 0 where it names one and 1 where none; anything else is a tool error, as `ignoredVerdict` says of one path.
- */
+/** Which of `paths` git ignores in `cwd`, in one start: git names each as given; a status past 1 is a tool error, as for one path. */
 export function ignoredOf(cwd: string, paths: string[]): Set<string> {
   const ran = git(cwd, ['check-ignore', '-z', '--stdin'], { allowFail: true, input: `${paths.join('\0')}\0` });
   return ignoredVerdict(ran, paths.join(', ')) ? new Set(ran.out.split('\0').filter(Boolean)) : new Set();
@@ -54,8 +51,7 @@ export function requireIgnored(cwd: string, needs: Array<[string, string]>): voi
 
 export const lines = (text: string): string[] => text.split('\n').filter((line) => line.trim());
 
-// Each git start costs tens of milliseconds on Windows and seconds on a loaded machine, so the checkout's git folder and the
-// repository's common one are asked for once, with its top level, and an open merge is read from the MERGE_HEAD file git writes there.
+// A git start costs seconds on a loaded machine: the top, git and common folders are asked once; MERGE_HEAD is read as a file.
 export const gitDirs = new Map<string, string>();
 export const commonDirs = new Map<string, string>();
 export function locate(cwd: string): string {
@@ -115,17 +111,13 @@ export function requireMain(root: string): void {
   if (refusal) throw new Refusal(refusal);
 }
 
-/**
- * On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it), with each of `also`
- * (`[path, why]`) git must ignore here asked in the same start.
- */
+/** On main, no merge open, a clean tree, and a scratch folder git ignores (or the logs would dirty it), with `also` in that start. */
 export function preconditions(root: string, also: Array<[string, string]> = []): void {
   const merging = mergeInProgress(root);
   if (!merging) sweepAndSay(root);
   const facts = { ...treeState(root), merging, ignored: true };
   const refusal = startRefusal(facts);
   if (refusal) throw new Refusal(refusal);
-  // Asked last, and only of a checkout that passed the rest: it is one more git start.
   requireIgnored(root, [[`${SCRATCH}/merge-probe.log`, startRefusal({ ...facts, ignored: false }) as string], ...also]);
 }
 
