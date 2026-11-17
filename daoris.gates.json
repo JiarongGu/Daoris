@@ -79,8 +79,8 @@
     { "name": "packages-lock", "run": "node tools/merge/packages.ts check",
       "paths": [
         "daoris.packages.lock", "daoris.gates.json", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
-        "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/",
-        "tools/merge/packages.ts"
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Assistant/", "src/Daoris.Ports/",
+        "src/Daoris.Testing/", "tools/merge/packages.ts"
       ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },

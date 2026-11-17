@@ -45,6 +45,23 @@ test('a lane\'s references across its boundary are counted both ways per type, a
   assert.throws(() => scanBoundary(tree(sources()), 'nowhere'), /no lane 'nowhere'/);
 });
 
+test('ASSISTPKG1d: the lane\'s own package, which its build holds to its ports, is neither side of the count', () => {
+  const lanes = JSON.parse(sources()['daoris.lanes.json']);
+  lanes.lanes[0].paths.push('src/Daoris.Assistant/**');
+  const packaged = sources({
+    'daoris.lanes.json': JSON.stringify(lanes),
+    'src/Daoris.Assistant/Daoris.Assistant/Daoris.Assistant.csproj': PROJECT,
+    'src/Daoris.Assistant/Daoris.Assistant/Ports/IRooms.cs': 'public interface IRooms { Driver Driver { get; } RoleCatalog Roles { get; } } public sealed record PluginCatalog();',
+    'src/Daoris.Assistant/Daoris.Assistant.Tests/Daoris.Assistant.Tests.csproj': PROJECT,
+    'src/Daoris.Assistant/Daoris.Assistant.Tests/RoomsTests.cs': 'public sealed class RoomsTests { Driver driver; IRooms rooms; }',
+    'src/App/Loop/Rooms.cs': 'public sealed class Rooms { IRooms rooms; }',
+  });
+  const found = scanBoundary(tree(packaged), 'assistant');
+  const before = scanBoundary(tree(sources({ 'src/App/Loop/Rooms.cs': 'public sealed class Rooms { IRooms rooms; }' })), 'assistant');
+  assert.deepEqual({ ...found, files: found.files.inside }, { ...before, files: before.files.inside });
+  assert.deepEqual(found.files, { inside: 2, outside: 4 });
+});
+
 test('a planted new reference across the boundary is red either way, and a fall is told to write the list', () => {
   const held = scanBoundary(tree(sources()), 'assistant');
   const list = { assistant: { inbound: held.inbound, outbound: held.outbound } };

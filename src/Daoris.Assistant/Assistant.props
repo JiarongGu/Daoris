@@ -1,0 +1,26 @@
+<Project>
+
+  <Import Project="..\Layers.props" />
+
+  <!--
+    What every project of the assistant's package builds with: the layered libraries' settings and their banned effects (a process
+    start, a sleep, the wall clock or a socket is a compile error), and the package's boundary, which its build holds. A project of
+    the package references Daoris.Ports, Daoris.Testing and the package's own core and fakes, nothing else: a reference to the driver,
+    the modules, the service or an adapter fails the build before it is restored or built, naming it, so the core reaches the machine
+    through its ports alone (D310). The desktop adapter, which references the driver, takes none of this.
+  -->
+  <PropertyGroup>
+    <AssistantReferences>Daoris.Ports;Daoris.Testing;Daoris.Assistant;Daoris.Assistant.Testing</AssistantReferences>
+  </PropertyGroup>
+
+  <Target Name="AssistantBoundary" BeforeTargets="Restore;ResolveProjectReferences">
+    <ItemGroup>
+      <_AssistantReferenced Include="@(ProjectReference->'%(Filename)')" />
+      <_AssistantAllowed Include="$(AssistantReferences)" />
+      <_AssistantOutside Include="@(_AssistantReferenced)" Exclude="@(_AssistantAllowed)" />
+    </ItemGroup>
+    <Error Condition="'@(_AssistantOutside)' != ''" Code="ASSISTANT001"
+           Text="$(MSBuildProjectName) references @(_AssistantOutside, ', '): the assistant's package references Daoris.Ports, Daoris.Testing and its own projects alone, and reaches the rest through its ports (D310)" />
+  </Target>
+
+</Project>

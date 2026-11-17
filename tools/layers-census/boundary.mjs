@@ -1,4 +1,5 @@
 import { laneMatcher } from '../merge/lanes-file.ts';
+import { PACKAGE_ROOTS } from '../merge/packages.ts';
 import { blank } from '../partials.mjs';
 import { readProjects } from './projects.mjs';
 
@@ -9,7 +10,9 @@ import { readProjects } from './projects.mjs';
  * enum declared on one side, by its PascalCase name; a name declared on both sides is set aside, since its text cannot say which one is
  * meant. A reference is the name as an identifier that no dot qualifies (so a namespace's segment, a member and a nested type's own
  * name are not read, its outer type is), comments, strings and character literals blanked: the count is the text's, not the compiler's.
- * `inbound` is how often the outside names each inside type, `outbound` how often the inside names each outside type.
+ * `inbound` is how often the outside names each inside type, `outbound` how often the inside names each outside type. The lane's
+ * files under a package root are its package, whose build holds it to its ports (`src/Daoris.Assistant/Assistant.props`), so they
+ * are neither side: the count is of the code still to move.
  */
 const DECLARED = /\b(?:record\s+(?:class|struct)|class|record|struct|interface|enum)\s+([A-Z]\w*)/g;
 const NAMED = /(?<![.\w])[A-Z]\w*/g;
@@ -38,8 +41,9 @@ export function scanBoundary(tree, id) {
   const outside = [];
   for (const path of tree.files) {
     if (!path.endsWith('.cs') || /(^|\/)(bin|obj)\//.test(path)) continue;
-    if (inLane(path)) inside.push(path);
-    else if (production.some((folder) => path.startsWith(folder))) outside.push(path);
+    if (inLane(path)) {
+      if (!PACKAGE_ROOTS.some((root) => path.startsWith(`${root}/`))) inside.push(path);
+    } else if (production.some((folder) => path.startsWith(folder))) outside.push(path);
   }
   const code = new Map([...inside, ...outside].map((path) => [path, blank(tree.read(path))]));
   const declaredIn = (paths) => new Set(paths.flatMap((path) => [...code.get(path).matchAll(DECLARED)].map((match) => match[1])));

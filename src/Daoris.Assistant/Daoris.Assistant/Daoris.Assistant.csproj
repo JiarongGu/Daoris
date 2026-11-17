@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Assistant.props" />
+
+  <!--
+    Ask Daoris's core: the room, the conversation's setup, the second check and the capabilities, on the standard library and
+    Daoris.Ports alone. It reaches the machine, the conversations and the window through its own ports (Ports/), whose records carry
+    names and states only, and the desktop adapter implements them over the driver (D310).
+  -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Assistant</RootNamespace>
+    <AssemblyName>Daoris.Assistant</AssemblyName>
+    <Description>Ask Daoris's core and its ports</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>
