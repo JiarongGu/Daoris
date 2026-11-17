@@ -141,7 +141,7 @@ finishes first and the whole set runs once.
     holds into the landed record. New merge behaviour is typed
     TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`), which `merge-branch.mjs` calls,
     tested beside it on Vitest (`tools/vitest.config.ts`, a process per file): the `unit` project (`*.test.ts`) runs whole in `npm run
-    verify`, the `e2e` project (`*.e2e.ts`, a seeded scratch repository per case) in `npm run tooltests`, and their folders are made
+    verify`, the `e2e` project (`*.e2e.ts`, a seeded scratch repository per case) in the end-to-end tier's `npm run tooltests:e2e`, and their folders are made
     under `_fixtures/tool-tests/`. A typed module reaches an untyped script through a `.d.mts` beside the script, which
     `declarations.test.ts` holds to the script's exports (D287). (from D180, MERGEFLOW1, D287)
 20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
@@ -257,7 +257,7 @@ finishes first and the whole set runs once.
     "no reason", and `--classes` prints the 15 classes of each record with the most total time, each with its reason. A class slow in total with no test over a
     limit is listed under its class name as `{ ms, why, class: true }` and `--write` keeps it while the class runs. A test that needs longer says so and why where it is
     declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
-    `tool-tests.xml`, `tool-unit.json`, `tool-e2e.json`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
+    `tool-tests.xml`, `tool-e2e.xml`, `tool-unit.json`, `tool-e2e.json`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
     `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and
     `NeedsTraitTests` holds it; a test with no such trait is a unit test, with no process, git, clock wait or network. (from TESTTIME1)
 

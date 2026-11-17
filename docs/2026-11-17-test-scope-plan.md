@@ -360,7 +360,8 @@ full set still runs every row; a planted break at a middle boundary of a kind no
 **11. MERGETS1's end-to-end cases (f).**
 The tool tests' gate is 15 min and over budget in both of today's queue runs: `merge-queue.test.ts` (161 cases, 6,253 case-s) and seven
 `merge-branch-e2e-*` files (6,900 case-s) drive the whole tool in scratch repositories. MERGETS1's steps move each behaviour to a typed
-unit test and keep a few end-to-end cases on seeded fixtures; this plan only orders them by those files' minutes.
+unit test and keep a few end-to-end cases on seeded fixtures; this plan only orders them by those files' minutes. TOOLTIER1 has
+since moved those specs, the queue's split into six `merge-queue-*.e2e.ts`, to a gate of their own, `tool-e2e`, in the Process lane.
 
 ## 3. Targets, baselines and how they are measured
 

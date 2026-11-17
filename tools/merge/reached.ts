@@ -33,10 +33,10 @@ export type Command = { label: string; cwd: string; command: string; args: strin
 /**
  * The suites a merge runs units of, by the runner of each: the CLI's and the tools' unit tests are reached by the census like the
  * rest (the merge's `cli` gate holds the checks, `cli-tests` the whole run). Not the censuses (a path check of their own) nor the
- * browser suites. The Process halves and the rehearsals' classes are the heavy tier (`heavy-tier.ts`): the run after the landing.
+ * browser suites. The Process halves, rehearsals and end-to-end specs are the heavy tier (`heavy-tier.ts`): the run after the landing.
  */
 const SUITES: Readonly<Record<string, Runner>> = Object.freeze({
-  driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node', cli: 'node',
+  driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node', 'tool-e2e': 'node', cli: 'node',
   'driver-process': 'dotnet', 'driver-process-git': 'dotnet', 'driver-process-git-pinned': 'dotnet', 'modules-process': 'dotnet', 'service-process': 'dotnet',
   'driver-rehearsals': 'dotnet',
 });

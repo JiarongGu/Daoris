@@ -7,7 +7,7 @@
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
- * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
+ * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml` and `tool-e2e.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
@@ -26,6 +26,9 @@ export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_0
 
 const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
 
+/** The node reporter's records: the tools' unit tier's and their end-to-end tier's (TOOLTIER1). */
+const JUNIT_REPORTS = ['tool-tests.xml', 'tool-e2e.xml'];
+
 /** The suite a reached command's record (`reached-<suite>-<n>[-again].<ext>`, written when a class is measured again alone) is of, or null. */
 const reachedSuite = (file) => /^reached-(.+?)-\d+(-again)?\.(trx|json|xml)$/.exec(file)?.[1] ?? null;
 
@@ -34,11 +37,11 @@ export function limitFor(file) {
   const suite = reachedSuite(file);
   if (suite !== null) {
     if (file.endsWith('.trx')) return /process/i.test(suite) ? LIMITS.process : LIMITS.unit;
-    return suite === 'web-unit' ? LIMITS.web : suite === 'tool-tests' ? LIMITS.tool : LIMITS.toolUnit;
+    return suite === 'web-unit' ? LIMITS.web : suite === 'tool-tests' || suite === 'tool-e2e' ? LIMITS.tool : LIMITS.toolUnit;
   }
   if (file === 'web-unit.json') return LIMITS.web;
   if (file === 'tool-unit.json') return LIMITS.toolUnit;
-  if (file === 'tool-tests.xml' || file === 'tool-e2e.json') return LIMITS.tool;
+  if (JUNIT_REPORTS.includes(file) || file === 'tool-e2e.json') return LIMITS.tool;
   return /process/i.test(file) ? LIMITS.process : LIMITS.unit;
 }
 
@@ -106,7 +109,7 @@ export function readRecords(dir, root, { since = null } = {}) {
     const text = () => readFileSync(join(dir, file), 'utf8');
     const reached = reachedSuite(file);
     const vitest = VITEST_REPORTS.includes(file) || (reached !== null && file.endsWith('.json'));
-    const junit = file === 'tool-tests.xml' || (reached === 'tool-tests' && file.endsWith('.xml'));
+    const junit = JUNIT_REPORTS.includes(file) || ((reached === 'tool-tests' || reached === 'tool-e2e') && file.endsWith('.xml'));
     const tests = file.endsWith('.trx') ? readTrx(text()) : vitest ? readVitest(text(), root) : junit ? readJunit(text(), root) : [];
     return { file, at, tests, loaded: isLoaded(marks, file, at) };
   });

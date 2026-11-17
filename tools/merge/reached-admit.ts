@@ -3,6 +3,7 @@
  * gate share that admission (`tools/machine-admission.mjs`, one capacity), so a Process run, a rehearsal or a whole suite of
  * classes waits for its turn behind the others instead of loading the machine beside them. A light group runs at once.
  */
+import { isHeavySuite } from './heavy-tier.ts';
 import type { ReachedGroup } from './reached.ts';
 
 /** A group of this many classes or more builds and hosts as a whole suite does; fewer is a few fast classes. */
@@ -14,7 +15,7 @@ export type Admission = { take: (options: { what: string }) => Promise<{ release
 /** By the group's tier and suite, never by a class's name: real processes (the Process settings), a rehearsal, or a whole suite. */
 export function groupIsHeavy(group: ReachedGroup, processSuites: ReadonlySet<string>): boolean {
   if (group.runner === 'dotnet' && group.settings) return true;
-  if (processSuites.has(group.suite) || group.suite.endsWith('-rehearsals')) return true;
+  if (isHeavySuite(group.suite, processSuites)) return true;
   return group.units.length >= WHOLE_SUITE_CLASSES;
 }
 
