@@ -69,6 +69,18 @@ export function watchHold(runs: readonly WatchRun[], { mainTip, known, alive }: 
   return { hold: true, why, watchOn: watched ? null : mainTip };
 }
 
+/** The newest settled watch where it is red: what `--queue --known` names known; null where it is green or none settled. */
+export function lastRed(runs: readonly WatchRun[]): WatchRun | null {
+  const last = runs.filter((run) => run.state === 'green' || run.state === 'red').at(-1);
+  return last?.state === 'red' ? last : null;
+}
+
+/** Each failure of a red watch as the known-red record files a sighting of it (`fileSighting`'s input), at `at`. */
+export const sightingsOf = (red: WatchRun, at: string) => (red.failures ?? []).map((each) => ({
+  gate: each.gate, unit: each.unit, test: each.test, fingerprint: { test: each.test, exception: '', at: null, message: each.message },
+  signature: each.signature, message: each.message, lines: [each.message], commit: red.commit, at, kind: 'watch',
+}));
+
 /** The watch started in the background on `commit` through `start` (a detached node, its output in the log); answers the line to say. */
 export function startWatch(commit: string, { start }: { start: (args: string[], log: string) => number | null }): string[] {
   const log = `local/scratch/main-watch-${sha(commit)}.log`;

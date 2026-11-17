@@ -182,7 +182,9 @@ Main is the development branch, and the cycle's aim is main green and the instal
 2. **Land.** A finished branch lands through `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. Its default runs
    the blocking checks, the CLI's verify and the reached checks: the test units the merge's paths reach in the driver's, modules',
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
-   over named for the CI. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   over named for the CI. The gate reads the paths from the base the run hands it in its `{base}`: HEAD for a merge in place, the
+   candidate's base in the queue's committed scope tree, the merge base in a preflight's committed branch, so a committed tree's
+   reached units run as an open merge's do. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
    `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row

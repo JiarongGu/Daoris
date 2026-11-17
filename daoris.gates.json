@@ -95,7 +95,7 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
+    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"

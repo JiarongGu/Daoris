@@ -58,7 +58,8 @@
  * A builder's `--preflight` runs its merge's own gates in its worktree (`merge/preflight.ts`). A red of a merge, a candidate, a
  * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
  * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
- * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet.
+ * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet. A gate
+ * reading the changed paths names `{base}` (`withBase`): HEAD in place, the base in a committed tree.
  *
  * ## A fixed gate re-runs alone
  *
@@ -385,14 +386,14 @@ import { abnormalEnd } from './merge/processes.ts';
 import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
 import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mjs';
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
-import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
+import { runOne, settleMerge, verdictExtras, withBase } from './merge/flow.ts';
 import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
 import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
 import { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory } from './merge-branch/memory.mjs';
-import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, readWatch, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
+import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, lastRed, readWatch, sightingsOf, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { appendHeavy, hasRunner, heavyStanding, readHeavy, startAfterLanding, startDetached } from './merge/heavy-after.ts';
@@ -1962,7 +1963,8 @@ function endedResult(result, started, trees, before = '') {
  * given back here, runs it whole: `runAgain`). A Process half whose dead tests are named runs them alone in place, as a flake class's,
  * once `memory` (the run's wait) has its memory free.
  */
-export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null } = {}) {
+export async function runGate(root, given, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null, base } = {}) {
+  const gate = { ...given, run: withBase(given.run, base) };
   if (again) return (again.nodes ? runNodeAgain : again.timed ? runTimedAgain : runAgain)(root, gate, dir, again, guarded(step, trees), trees);
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
@@ -2534,7 +2536,7 @@ const flowSeams = () => ({
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(),
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(), base,
 } = {}) {
   // A time ratchet inside a gate judges only the records since this run began; no DAORIS_ variable may reach a gate to say so.
   if (isIgnored(root, '_fixtures/test-timing/run-start.json')) {
@@ -2564,7 +2566,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // A Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree), narrow: replaying?.narrow });
+      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree), narrow: replaying?.narrow, base });
       Object.assign(result, { tree, at: started });
       replaying?.settle(gate, result);
       if (result.verdict !== 'ENDED') {
@@ -2835,7 +2837,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     // whose budget deferred classes (`gateVerdict`).
     results = await runRecorded(root, plan, dir, {
       keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.verdictKind ?? options.runKind ?? 'checkout',
-      onStart: options.onGateStart, onResult: options.onGateResult, gateVerdict: options.gateVerdict, replay: options.replay !== false,
+      onStart: options.onGateStart, onResult: options.onGateResult, gateVerdict: options.gateVerdict, replay: options.replay !== false, base: options.base,
     });
   } finally {
     unwatch();
@@ -4162,7 +4164,7 @@ async function gateVerify(root, options) {
     let results = [];
     // The commit is the caller's: no newer tip of main supersedes it (no `watch`).
     const code = runPlan.length === 0 ? 0 : await gateCheckout(tree, {
-      ...options, runKind: 'full', givenPlan: runPlan, replay: false,
+      ...options, runKind: 'full', givenPlan: runPlan, replay: false, base: inputs.base,
       ...(mode === 'run' ? { verdictKind: named ? 'full' : 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length } : {}),
       onResults: (found) => { results = found; },
       onGateStart: (gate) => { started.set(gate.name, Date.now()); },
@@ -5504,7 +5506,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
     // A probe is a heavy run like its gate, and takes its place in the machine's admission before it starts.
-    const result = await admitted(startAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: gateStep }));
+    const result = await admitted(startAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: gateStep, base: candidate.base }));
     if (!result) throw new Drained();
     if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
@@ -5559,7 +5561,7 @@ async function preflightVerb(root, options) {
   const { gates } = scopedGates(home, root, plan, choice, dir);
   console.log(`the merge's gates: ${choice.set.run.map((entry) => entry.name).join(', ')}${choice.set.kept.length ? `; kept, their pass standing on this tree: ${choice.set.kept.map((entry) => entry.name).join(', ')}` : ''}`);
   for (const entry of choice.set.deferred) console.log(`  deferred, as its merge defers it: ${entry.name}, ${entry.why}`);
-  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true });
+  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from });
   const failed = results.filter((result) => result.verdict === 'FAIL');
   if (!failed.length) {
     console.log(`merge-branch: the preflight of ${facts.branch} passed: ${count(results.length, 'gate')} of its merge's ran green here.`);
@@ -5710,7 +5712,7 @@ function confirmOf({ tree, dir, plan, candidate, watch, gate, found, take, note 
     if (trx) rmSync(trx, { force: true });
     const again = trx ? { ...gate, name, run: gate.run.replace(gate.scopedTrx, () => trx), scopedTrx: trx } : { ...gate, name };
     console.log(`  ${what}, as composed: ${again.run}`);
-    const ran = await runGate(tree, again, dir, { trees: watch.trees, step: gateStep });
+    const ran = await runGate(tree, again, dir, { trees: watch.trees, step: gateStep, base: candidate.base });
     timing.ms = ran.ms ?? null;
     if (ran.verdict === 'ENDED') throw new Drained(name);
     if (ran.code === 0) return { result: 'pass', composition: composed };
@@ -5766,6 +5768,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
       keepGoing: candidate.members.some((each) => each.keepGoing) || 'blocking', byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
+      base: candidate.base,
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
@@ -6394,13 +6397,9 @@ function mainRedHold(home, mainTip) {
 
 /** `--queue --known`: each failure of main's red the watch found filed as a known red, so the queue's next merge goes on. */
 function nameKnown(home) {
-  const red = readWatch(home).filter((run) => run.state === 'green' || run.state === 'red').at(-1);
-  if (red?.state !== 'red') return console.log('merge-branch: the watch found no red on main to name') ?? 0;
-  let findings = readFindings(home);
-  for (const each of red.failures) {
-    findings = fileSighting(findings, { gate: each.gate, unit: each.unit, test: each.test, fingerprint: { test: each.test, exception: '', at: null, message: each.message }, signature: each.signature, message: each.message, lines: [each.message], commit: red.commit, at: nowIso(), kind: 'watch' }).record;
-  }
-  writeFindings(home, findings);
+  const red = lastRed(readWatch(home));
+  if (!red) return console.log('merge-branch: the watch found no red on main to name') ?? 0;
+  writeFindings(home, sightingsOf(red, nowIso()).reduce((findings, each) => fileSighting(findings, each).record, readFindings(home)));
   console.log(`merge-branch: ${count(red.failures.length, 'failure')} of ${MAIN} at ${red.commit.slice(0, 7)} named known red (local/ci-findings.json); the queue's next merge goes on, and the CI clears each once it passes`);
   return 0;
 }
