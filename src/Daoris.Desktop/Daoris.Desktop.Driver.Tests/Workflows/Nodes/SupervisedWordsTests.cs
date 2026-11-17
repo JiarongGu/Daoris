@@ -12,9 +12,9 @@ public sealed class SupervisedWordsTests : NodeRunFixture
     private const string ApprovalGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"sign","kind":"human","version":1,"reach":"pressed","outcomes":["approved"]},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"},
-                  {"id":"redo","kind":"human","version":1,"reach":"pressed","outcomes":["done"]}],
+                  {"id":"redo","kind":"task","version":1,"reach":"pressed","outcomes":["done"]}],
          "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
                   {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"approved"},
                   {"id":"s>r","kind":"rejected","from":"sign","to":"redo"}]}
@@ -162,10 +162,10 @@ public sealed class SupervisedWordsTests : NodeRunFixture
     public void A_review_and_an_approval_move_with_the_word_authors_source_and_cause()
     {
         var word = new NodeWord("sign", NodeWordActs.Reject, "no", _now) { By = Gatekeeper, Attempt = 1 };
-        var approval = new NodeDeclaration("sign", NodeKinds.Human, 1, NodeReach.Pressed) { Outcomes = ["approved"] };
+        var approval = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["approved"] };
         var status = NodeLifecycle.Start("run:q7", "sign") with { State = NodeStates.Active, Attempt = 1 };
 
-        var rejected = ((IPressed)NodeKit.Of(NodeKinds.Human)!).Move(approval, word, status, new NodeScope("digest", null!));
+        var rejected = ((IPressed)NodeKit.Of(NodeKinds.Task)!).Move(approval, word, status, new NodeScope("digest", null!));
         var accepted = ((IPressed)NodeKit.Of(NodeKinds.Review)!).Move(
             new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed), word with { Act = NodeWordActs.Accept }, status, new NodeScope("digest", null!));
 

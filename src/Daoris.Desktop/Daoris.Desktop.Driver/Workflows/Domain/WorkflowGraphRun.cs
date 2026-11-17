@@ -355,7 +355,7 @@ public static class WorkflowGraphRuns
     {
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
-        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
+        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Task or NodeKinds.Look or NodeKinds.Review =>
             (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         // A decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>

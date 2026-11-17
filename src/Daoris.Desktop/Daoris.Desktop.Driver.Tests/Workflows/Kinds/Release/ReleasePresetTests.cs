@@ -45,7 +45,7 @@ public sealed class ReleasePresetTests : NodeRunFixture
             ["daoris-azure-devops/release-target", "daoris-azure-devops/release-create", "daoris-azure-devops/release-start",
              "daoris-azure-devops/release-approve", "daoris-azure-devops/release-watch"],
             graph.Nodes.Where(node => node.Kind.Contains("/release-", StringComparison.Ordinal)).Select(node => node.Kind));
-        Assert.True(HumanDecisions.Is(graph.Nodes.Single(node => node.Id == "config-needed")));
+        Assert.True(TaskDecisions.Is(graph.Nodes.Single(node => node.Id == "config-needed")));
         Assert.Contains(graph.Wires, wire => wire.From?.Node == "release-watch" && wire.To?.Node == "config-needed");
         Assert.Contains(graph.Wires, wire => wire.Kind == WireKinds.When && wire.From?.Node == "config-needed" && wire.Outcome == "needed" && wire.To?.Node == "config-change");
         Assert.Equal("check-release", graph.End);

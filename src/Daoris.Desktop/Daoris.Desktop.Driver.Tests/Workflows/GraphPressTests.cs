@@ -22,7 +22,7 @@ public sealed class GraphPressTests
 
     private static readonly LandingGate Lands = Gate(new GraphGateState(GraphGateStates.Lands, "q7") { Handed = "land", Commit = "abc" }) with { Tip = "abc" };
 
-    private static readonly LandingGate Waits = Gate(new GraphGateState(GraphGateStates.Waits, "q7") { Handed = "land", Node = "qa", Kind = NodeKinds.Human });
+    private static readonly LandingGate Waits = Gate(new GraphGateState(GraphGateStates.Waits, "q7") { Handed = "land", Node = "qa", Kind = NodeKinds.Task });
 
     /// <summary>What the press did, in its order: the answer kept, each pass asked with its bound, each gate read.</summary>
     private readonly List<string> _did = [];

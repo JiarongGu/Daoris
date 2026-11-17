@@ -276,7 +276,7 @@ public sealed class WireEvaluationTests
     public void A_failure_receipt_is_read_by_its_failed_wire_alone()
     {
         var d = Node("d") with { Retry = new NodeRetry(2, [0]), Rejectable = true };
-        var g = new Graph([d, Node("roll", NodeKinds.Human), Node("next"), Node("redo", NodeKinds.Human)],
+        var g = new Graph([d, Node("roll", NodeKinds.Task), Node("next"), Node("redo", NodeKinds.Task)],
             [Failed("w1", "d", "roll"), After("w2", "d", "next"), Rejected("w3", "d", "redo")]);
         g.Start(g.Evaluate(), "d");
         g.Fail("d", transient: true);
@@ -313,7 +313,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_fork_starts_its_targets_within_the_limit()
     {
-        var g = new Graph([Node("s"), Node("t1"), Node("t2"), Node("t3"), Node("h", NodeKinds.Human)],
+        var g = new Graph([Node("s"), Node("t1"), Node("t2"), Node("t3"), Node("h", NodeKinds.Task)],
             [After("w1", "s", "t1"), After("w2", "s", "t2"), After("w3", "s", "t3"), After("w4", "s", "h")]) { Run = Base with { Limit = 2 } };
         g.Through("s");
 
@@ -335,7 +335,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_join_reaches_on_its_members_and_fails_on_one()
     {
-        NodeDeclaration[] nodes = [Node("m1"), Node("m2"), Node("j", NodeKinds.All), Node("n"), Node("sink", NodeKinds.Human)];
+        NodeDeclaration[] nodes = [Node("m1"), Node("m2"), Node("j", NodeKinds.All), Node("n"), Node("sink", NodeKinds.Task)];
         Wire[] wires = [After("w1", "m1", "j"), After("w2", "m2", "j"), After("w3", "j", "n"), Failed("w4", "j", "sink")];
 
         var g = new Graph(nodes, wires);
@@ -580,7 +580,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_failure_in_one_run_is_no_receipt_in_another()
     {
-        var g = new Graph([Node("d"), Node("roll", NodeKinds.Human)], [Failed("w1", "d", "roll")]);
+        var g = new Graph([Node("d"), Node("roll", NodeKinds.Task)], [Failed("w1", "d", "roll")]);
         g.Start(g.Evaluate(), "d");
         g.Fail("d");
 
@@ -599,7 +599,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_rejection_in_one_run_is_no_receipt_in_another()
     {
-        var g = new Graph([Node("d") with { Rejectable = true }, Node("redo", NodeKinds.Human)], [Rejected("w1", "d", "redo")]);
+        var g = new Graph([Node("d") with { Rejectable = true }, Node("redo", NodeKinds.Task)], [Rejected("w1", "d", "redo")]);
         g.Start(g.Evaluate(), "d");
         g.Reject("d");
 
@@ -751,7 +751,7 @@ public sealed class WireEvaluationTests
     public void Parked_waits_do_not_queue_a_performed_node()
     {
         string[] waits = ["u1", "u2", "u3", "u4", "u5"];
-        var g = new Graph([.. waits.Select(id => Node(id, NodeKinds.WaitUnit)), Node("h", NodeKinds.Human), Node("p")], [After("w1", "h", "p")])
+        var g = new Graph([.. waits.Select(id => Node(id, NodeKinds.WaitUnit)), Node("h", NodeKinds.Task), Node("p")], [After("w1", "h", "p")])
         {
             Run = Base with { WaitLimit = 4 },
         };

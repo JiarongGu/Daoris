@@ -52,7 +52,7 @@ public static class RunNodeWords
     /// <summary>A <c>send</c> of a request that is not ready to be sent, or that sends itself (<c>start: automatic</c>).</summary>
     public const string NotSendable = "not-sendable";
 
-    /// <summary>The word is <c>done</c>, <c>approve</c> or <c>reject</c>, which only a person's task (<c>human</c>) takes.</summary>
+    /// <summary>The word is <c>done</c>, <c>approve</c> or <c>reject</c>, which only a role's task (<c>task</c>) takes.</summary>
     public const string NotTask = "not-task";
 
     /// <summary>A <c>done</c>, <c>approve</c> or <c>reject</c> of a task that does not wait for that press where it stands now.</summary>
@@ -72,7 +72,7 @@ public static class RunNodeWords
 
     /// <summary>Why a <paramref name="word"/> cannot apply at <paramref name="status"/> beyond its press being offered: a decide's outcome and holder.</summary>
     private static string? Answer(NodeDeclaration node, NodeStatus status, NodeWord word) =>
-        word.Act == NodeWordActs.Decide ? HumanDecisions.Refused(node, status, word.Outcome, word.Holder) : null;
+        word.Act == NodeWordActs.Decide ? TaskDecisions.Refused(node, status, word.Outcome, word.Holder) : null;
 
     /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so.</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
@@ -336,7 +336,7 @@ public static class RunNodeWords
     {
         // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on; a decision's decide once per outcome.
         var acts = NodeKit.Of(node.Kind) is IPressed pressed
-            ? pressed.Acts(node, status).SelectMany(act => act == NodeWordActs.Decide ? HumanDecisions.Offered(node) : [act]).ToList()
+            ? pressed.Acts(node, status).SelectMany(act => act == NodeWordActs.Decide ? TaskDecisions.Offered(node) : [act]).ToList()
             : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated or NodeStates.Failed && !promoted) acts.Add(NodeWordActs.Stop);

@@ -48,7 +48,7 @@ public sealed class TidyNodeTests : IDisposable
         // A way on from the merged route still reaches it.
         var later = """{"id":"t","kind":"when","from":"monitor","to":"closed","outcome":"merged"},{"id":"y","kind":"after","from":"closed","to":"tidy"},"""
                     + """{"id":"x","kind":"when","from":"monitor","to":"note","outcome":"closed"}""";
-        var note = """,{"id":"note","kind":"human","version":1,"reach":"pressed"}""";
+        var note = """,{"id":"note","kind":"task","version":1,"reach":"pressed"}""";
         Assert.Empty(NodeGraphs.Read(MonitorNodeTests.Graph(MonitorNodeTests.Watching, watched + later, note), onSave: true).Problems);
     }
 

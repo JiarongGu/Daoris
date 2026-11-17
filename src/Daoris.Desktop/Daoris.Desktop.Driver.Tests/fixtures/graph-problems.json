@@ -3,14 +3,14 @@
   "wireBase": {
     "nodes": [
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-      { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1" },
+      { "id": "qa", "kind": "task", "version": 1, "reach": "pressed", "evidence": "qa-proof@1" },
       { "id": "dependency", "kind": "wait.unit", "version": 1, "reach": "waited" },
       { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1",
         "inputs": { "approval": "qa-proof@1" }, "outputs": { "preview": "acme.deploy/preview@1" } },
       { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed", "inputs": { "delivery": "acme.deploy/receipt@1" } },
       { "id": "announce", "kind": "acme.chat/announce", "version": 1, "reach": "performed", "inputs": { "preview": "acme.deploy/preview@1" } },
-      { "id": "rollback", "kind": "human", "version": 1, "reach": "pressed" },
-      { "id": "redo", "kind": "human", "version": 1, "reach": "pressed" }
+      { "id": "rollback", "kind": "task", "version": 1, "reach": "pressed" },
+      { "id": "redo", "kind": "task", "version": 1, "reach": "pressed" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "line", "to": "qa" },
@@ -28,7 +28,7 @@
     "schemaVersion": 2, "entries": ["line", "dependency"], "end": "close", "cleanup": { "until": "end" },
     "nodes": [
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-      { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1",
+      { "id": "qa", "kind": "task", "version": 1, "reach": "pressed", "evidence": "qa-proof@1",
         "options": { "brief": "Verify the release", "attachmentSchema": "qa-proof@1" } },
       { "id": "dependency", "kind": "wait.unit", "version": 1, "reach": "waited" },
       { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" } },
@@ -74,7 +74,7 @@
     { "name": "every problem named, in a stable order: the nodes', each wire's, the inputs', then cycles", "base": "wireBase",
       "remove": { "wires": ["d"] },
       "add": {
-        "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }],
+        "nodes": [{ "id": "qa", "kind": "task", "version": 1, "reach": "pressed" }],
         "wires": [
           { "id": "x", "kind": "after", "from": "line", "to": "nowhere" },
           { "id": "y", "kind": "trigger", "from": "redo", "to": "redo" }
@@ -90,7 +90,7 @@
       "problems": [{ "code": "no-id", "wire": "", "node": null, "words": "a wire has no id: its id is what a witness and a trigger's receipt are keyed on." }] },
     { "name": "two wires, one id", "base": "wireBase", "add": { "wires": [{ "id": "a", "kind": "after", "from": "line", "to": "rollback" }] },
       "problems": [{ "code": "wire-twice", "wire": "a", "node": null, "words": "wire `a`: another wire has this id; each wire's id is its own." }] },
-    { "name": "two nodes, one id", "base": "wireBase", "add": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }] },
+    { "name": "two nodes, one id", "base": "wireBase", "add": { "nodes": [{ "id": "qa", "kind": "task", "version": 1, "reach": "pressed" }] },
       "problems": [{ "code": "node-twice", "wire": null, "node": "qa", "words": "node `qa`: another node has this id, so a wire naming it would name either." }] },
     { "name": "a kind none of the eight", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "unless", "from": "line", "to": "rollback" }] },
       "problems": [{ "code": "unknown-kind", "wire": "x", "node": null, "words": "wire `x`: `unless` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected`, `when` or `back`." }] },
@@ -128,7 +128,7 @@
       "problems": [{ "code": "incompatible-schema", "wire": "e", "node": "close", "words": "wire `e`: `deploy`'s `preview` is `acme.deploy/preview@1`, and `close`'s input `delivery` takes `acme.deploy/receipt@1`." }] },
     { "name": "a wait into another kind", "base": "wireBase",
       "add": { "wires": [{ "id": "x", "kind": "wait", "from": { "unit": "u2", "revision": "r2", "end": true, "commitment": "q2/take-7" }, "to": "rollback" }] },
-      "problems": [{ "code": "not-wait-unit", "wire": "x", "node": "rollback", "words": "wire `x`: a `wait` wire gives a `wait.unit` what it waits on, and `rollback` is a `human`." }] },
+      "problems": [{ "code": "not-wait-unit", "wire": "x", "node": "rollback", "words": "wire `x`: a `wait` wire gives a `wait.unit` what it waits on, and `rollback` is a `task`." }] },
     { "name": "a wait with no revision", "base": "wireBase",
       "replace": { "wires": [{ "id": "b", "kind": "wait", "from": { "unit": "u2", "revision": " ", "end": true }, "to": "dependency" }] },
       "problems": [{ "code": "wait-target", "wire": "b", "node": "dependency", "words": "wire `b`: `dependency` waits on a unit at its agreed revision, and on one of its nodes or its end." }] },
@@ -179,7 +179,7 @@
     { "name": "a failure path from a proof", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "failed", "from": "line", "to": "rollback" }] },
       "problems": [{ "code": "never-fails", "wire": "x", "node": "line", "words": "wire `x`: nothing can fail `line`, a `line`: not yet is pending, so this path is never taken." }] },
     { "name": "a failure path from a person's task", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "failed", "from": "qa", "to": "rollback" }] },
-      "problems": [{ "code": "never-fails", "wire": "x", "node": "qa", "words": "wire `x`: nothing can fail `qa`, a `human`: not yet is pending, so this path is never taken." }] },
+      "problems": [{ "code": "never-fails", "wire": "x", "node": "qa", "words": "wire `x`: nothing can fail `qa`, a `task`: not yet is pending, so this path is never taken." }] },
     { "name": "a rejection path from a plugin's node not declared rejectable", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "rejected", "from": "deploy", "to": "redo" }] },
       "problems": [{ "code": "never-rejected", "wire": "x", "node": "deploy", "words": "wire `x`: no person may reject `deploy`, a `acme.deploy/deploy`, so this path is never taken." }] },
     { "name": "a rejection path from a proof", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "rejected", "from": "line", "to": "redo" }] },
@@ -194,7 +194,7 @@
       "add": {
         "nodes": [
           { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] },
-          { "id": "publish", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "publish", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "j", "kind": "after", "from": "line", "to": "find" },
@@ -251,7 +251,7 @@
       "problems": [{ "code": "back-never", "wire": "x", "node": "deploy", "words": "wire `x`: no person may reject `deploy`, a `acme.deploy/deploy`, so this way back is never taken." }] },
     { "name": "a back on a failure nothing gives (DECIDE1b)", "base": "wireBase",
       "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "on": "failed", "to": "line" }] },
-      "problems": [{ "code": "back-never", "wire": "x", "node": "qa", "words": "wire `x`: nothing can fail `qa`, a `human`, so this way back is never taken." }] },
+      "problems": [{ "code": "back-never", "wire": "x", "node": "qa", "words": "wire `x`: nothing can fail `qa`, a `task`, so this way back is never taken." }] },
     { "name": "a back on an outcome from a node that declares none (DECIDE1b)", "base": "wireBase",
       "add": { "wires": [{ "id": "x", "kind": "back", "from": "deploy", "on": "release", "to": "dependency" }] },
       "problems": [{ "code": "back-never", "wire": "x", "node": "deploy", "words": "wire `x`: `deploy`, a `acme.deploy/deploy`, declares no outcomes, so it is never `release`, and this way back is never taken." }] },
@@ -341,7 +341,7 @@
       "problems": [{ "code": "entry-wired", "wire": "a", "node": "qa", "words": "wire `a`: `qa` is an entry, which starts the graph and waits on nothing in it." }] },
     { "name": "an end naming no node", "base": "graphBase", "set": { "end": "nowhere" },
       "problems": [{ "code": "end", "wire": null, "node": "nowhere", "words": "the end `nowhere` names no node of this graph." }] },
-    { "name": "no end named", "graph": { "entries": ["qa"], "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }] },
+    { "name": "no end named", "graph": { "entries": ["qa"], "nodes": [{ "id": "qa", "kind": "task", "version": 1, "reach": "pressed" }] },
       "problems": [{ "code": "end", "wire": null, "node": null, "words": "the graph names no end." }] },
     { "name": "the agent's claim as the end", "graph": { "entries": ["done"], "end": "done", "nodes": [{ "id": "done", "kind": "claimed", "version": 1, "reach": "observed" }] },
       "problems": [{ "code": "end-kind", "wire": null, "node": "done", "words": "`done` is a `claimed`, which is never an end: it is reached on a claim, and an end on evidence." }] },
@@ -349,11 +349,11 @@
       "problems": [{ "code": "end-kind", "wire": null, "node": "stopped", "words": "`stopped` is a `stop`, which is never an end: a failure stops the run there, short of its end." }] },
     { "name": "a step setting the work apart that is not wired straight into the work",
       "graph": { "entries": ["apart"], "end": "close",
-        "nodes": [{ "id": "apart", "kind": "isolate", "version": 1, "reach": "observed" }, { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" },
+        "nodes": [{ "id": "apart", "kind": "isolate", "version": 1, "reach": "observed" }, { "id": "qa", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed" }],
         "wires": [{ "id": "a", "kind": "after", "from": "apart", "to": "qa" }, { "id": "b", "kind": "after", "from": "qa", "to": "close" }] },
       "problems": [{ "code": "isolate-entry", "wire": null, "node": "apart", "words": "node `apart`: an `isolate` sets the work apart, and it is wired by `after` straight into the work, a `claimed`." }] },
-    { "name": "a node no entry reaches", "base": "graphBase", "add": { "nodes": [{ "id": "orphan", "kind": "human", "version": 1, "reach": "pressed" }] },
+    { "name": "a node no entry reaches", "base": "graphBase", "add": { "nodes": [{ "id": "orphan", "kind": "task", "version": 1, "reach": "pressed" }] },
       "problems": [{ "code": "unreachable", "wire": null, "node": "orphan", "words": "node `orphan`: no entry reaches it, so it would never start." }] },
     { "name": "the look after the landing",
       "graph": { "entries": ["landing"], "end": "look",
@@ -367,7 +367,7 @@
     { "name": "a way to the landing past the look",
       "graph": { "entries": ["look", "bypass"], "end": "landing",
         "nodes": [
-          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "bypass", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "bypass", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
         ],
         "wires": [
@@ -425,7 +425,7 @@
     { "name": "the look reaching the landing only through another node: FABRIC-GRAPH1i",
       "graph": { "entries": ["look"], "end": "landing",
         "nodes": [
-          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "press", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "look", "kind": "look", "version": 1, "reach": "observed" }, { "id": "press", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "look", "to": "press" }, { "id": "b", "kind": "after", "from": "press", "to": "landing" }] },
@@ -463,7 +463,7 @@
     { "name": "the close not the end", "base": "graphBase", "set": { "end": "deploy" },
       "problems": [{ "code": "close-end", "wire": null, "node": "close", "words": "`close` closes the quest, so it is the graph's end, never `deploy`: the quest would read done while its work still moves." }] },
     { "name": "a node after the close", "base": "graphBase",
-      "add": { "nodes": [{ "id": "notify", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "x", "kind": "after", "from": "close", "to": "notify" }] },
+      "add": { "nodes": [{ "id": "notify", "kind": "task", "version": 1, "reach": "pressed" }], "wires": [{ "id": "x", "kind": "after", "from": "close", "to": "notify" }] },
       "problems": [{ "code": "after-close", "wire": "x", "node": "close", "words": "wire `x`: nothing comes after `close`, which closes the quest; only its failure's path leaves it." }] },
     { "name": "the quest's own done before its close", "base": "graphBase",
       "add": { "nodes": [{ "id": "done", "kind": "claimed", "version": 1, "reach": "observed" }], "wires": [{ "id": "x", "kind": "after", "from": "done", "to": "close" }] },
@@ -533,7 +533,7 @@
           { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
           { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
           { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
-          { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "closed", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "monitor" },
@@ -548,7 +548,7 @@
           { "id": "request", "kind": "acme-host/pull-request", "version": 1, "reach": "performed" },
           { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
           { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
-          { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "closed", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "request" },
@@ -608,7 +608,7 @@
     { "name": "a line with a way to it past the landing (INTEGRATE1n, F47)",
       "graph": { "entries": ["landing", "bypass"], "end": "line",
         "nodes": [
-          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }, { "id": "bypass", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }, { "id": "bypass", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
         ],
         "wires": [
@@ -750,7 +750,7 @@
           { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
           { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-          { "id": "rework", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "rework", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "a", "kind": "after", "from": "work", "to": "review" }, { "id": "b", "kind": "after", "from": "review", "to": "land" },
@@ -779,7 +779,7 @@
           { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
           { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
-          { "id": "note", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "note", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "review" },
@@ -809,7 +809,7 @@
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
           { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["held", "open"] },
           { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
-          { "id": "other", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "other", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "both", "kind": "all", "version": 1, "reach": "observed" },
           { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
         ],
@@ -825,8 +825,8 @@
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
           { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
           { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["held", "open"] },
-          { "id": "one", "kind": "human", "version": 1, "reach": "pressed" },
-          { "id": "other", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "one", "kind": "task", "version": 1, "reach": "pressed" },
+          { "id": "other", "kind": "task", "version": 1, "reach": "pressed" },
           { "id": "both", "kind": "all", "version": 1, "reach": "observed" },
           { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
         ],
@@ -844,7 +844,7 @@
           { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"],
             "outputs": { "release": "acme.release/release@1" }, "outputsOn": { "release": ["release"] } },
           { "id": "publish", "kind": "acme.release/publish", "version": 1, "reach": "performed", "inputs": { "release": "acme.release/release@1" } },
-          { "id": "note", "kind": "human", "version": 1, "reach": "pressed" }
+          { "id": "note", "kind": "task", "version": 1, "reach": "pressed" }
         ],
         "wires": [
           { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "publish" },
@@ -873,10 +873,10 @@
         "outputs": { "preview": "acme.deploy/preview@1" }, "outputsOn": { "preview": ["shipped"] } }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outputsOn` does not hold for a `acme.deploy/deploy`." }] },
     { "name": "a built-in declaring outcomes (DECIDE1b)", "base": "graphBase",
-      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed"] }] },
-      "problems": [{ "code": "declaration", "wire": null, "node": "qa", "words": "node `qa`: its `outcomes` does not hold for a `human`." }] },
+      "replace": { "nodes": [{ "id": "qa", "kind": "task", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed"] }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "qa", "words": "node `qa`: its `outcomes` does not hold for a `task`." }] },
     { "name": "a person's decision no when wire leaves on any of its outcomes (DECIDESTEP1)", "base": "graphBase",
-      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
+      "replace": { "nodes": [{ "id": "qa", "kind": "task", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
       "problems": [{ "code": "decision-unwired", "wire": null, "node": "qa", "words": "node `qa`: a decision routes its answer, and no `when` wire leaves it on any of its outcomes." }] },
     { "name": "a decision naming one outcome (DECIDE1b)", "base": "graphBase",
       "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" }, "outcomes": ["shipped"] }] },
@@ -887,23 +887,23 @@
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph is not a graph's shape: it holds no an object there." }] },
     { "name": "nodes that are no list", "value": { "nodes": {} },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `nodes` is not a graph's shape: it holds no list there." }] },
-    { "name": "a version written as text", "value": { "nodes": [{ "id": "a", "kind": "human", "version": "1", "reach": "pressed" }], "entries": ["a"], "end": "a" },
+    { "name": "a version written as text", "value": { "nodes": [{ "id": "a", "kind": "task", "version": "1", "reach": "pressed" }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `version` is not a graph's shape: it holds no whole number there." }] },
-    { "name": "a version written 1.0, which is no whole number's text", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1.0, "reach": "pressed" }], "entries": ["a"], "end": "a" },
+    { "name": "a version written 1.0, which is no whole number's text", "value": { "nodes": [{ "id": "a", "kind": "task", "version": 1.0, "reach": "pressed" }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `version` is not a graph's shape: it holds no whole number there." }] },
     { "name": "a delay past a whole number's bound", "value": { "nodes": [{ "id": "a", "kind": "acme/do", "version": 1, "reach": "performed", "retry": { "maxAttempts": 1, "delaysSeconds": [5, 9999999999] } }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `retry`'s `delaysSeconds` is not a graph's shape: it holds no whole number there." }] },
-    { "name": "a wire's source that is neither a node nor what a wait waits on", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "w", "kind": "after", "from": 3, "to": "a" }], "entries": ["a"], "end": "a" },
+    { "name": "a wire's source that is neither a node nor what a wait waits on", "value": { "nodes": [{ "id": "a", "kind": "task", "version": 1, "reach": "pressed" }], "wires": [{ "id": "w", "kind": "after", "from": 3, "to": "a" }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "wires[0]'s `from` is not a graph's shape: it holds no node, or what a wait waits on there." }] },
     { "name": "entries that are no list", "value": { "nodes": [], "entries": "a", "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `entries` is not a graph's shape: it holds no list there." }] },
     { "name": "a cleanup's days written as text", "value": { "nodes": [], "entries": [], "end": "a", "cleanup": { "until": "end", "days": "14" } },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `cleanup`'s `days` is not a graph's shape: it holds no whole number there." }] },
-    { "name": "a node declaring itself synthetic", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true }], "entries": ["a"], "end": "a" },
+    { "name": "a node declaring itself synthetic", "value": { "nodes": [{ "id": "a", "kind": "task", "version": 1, "reach": "pressed", "synthetic": true }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `synthetic` is not a graph's shape: it holds no field a person's graph declares there." }] },
     { "name": "the first place that does not read is said, in the reader's order: the nodes before the cleanup", "value": { "cleanup": 5, "nodes": 3 },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `nodes` is not a graph's shape: it holds no list there." }] },
-    { "name": "a node's fields in the reader's order: its inputs before its evidence", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1, "reach": "pressed", "evidence": 3, "inputs": 3 }], "entries": ["a"], "end": "a" },
+    { "name": "a node's fields in the reader's order: its inputs before its evidence", "value": { "nodes": [{ "id": "a", "kind": "task", "version": 1, "reach": "pressed", "evidence": 3, "inputs": 3 }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `inputs` is not a graph's shape: it holds no object there." }] },
     { "name": "an output's carrying outcomes that are no list (DECIDE1d)", "value": { "nodes": [{ "id": "a", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"], "outputs": { "release": "acme.release/release@1" }, "outputsOn": { "release": "release" } }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `outputsOn.release` is not a graph's shape: it holds no list of outcomes there." }] },

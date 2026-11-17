@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A per-run decision: a <c>human</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
+/// A per-run decision: a <c>task</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
 /// approval's <c>approved</c> or the <c>rejected</c> wire's name, answered by <c>decide</c> with one of them. A holder's proposal, with its
 /// reason, stands as the answer at once, held for the owner's word; the owner's same answer confirms it and another overrules it, and the
 /// owner may answer again until the run ends. Its record line names who proposed and who confirmed, and the step its answer's route closed is
 /// passed with that line (<see cref="WireDecisions"/>). Pure.
 /// </summary>
-public static class HumanDecisions
+public static class TaskDecisions
 {
     /// <summary>Who the owner actor's answer reads as on the record: the actor, whoever holds it.</summary>
     public const string Owner = "the owner";
@@ -19,7 +19,7 @@ public static class HumanDecisions
         outcomes.Count >= 2 && !outcomes.Intersect(Reserved, StringComparer.Ordinal).Any();
 
     /// <summary>Whether <paramref name="node"/> is a decision.</summary>
-    public static bool Is(NodeDeclaration node) => node.Kind == NodeKinds.Human && Takes(node.Outcomes);
+    public static bool Is(NodeDeclaration node) => node.Kind == NodeKinds.Task && Takes(node.Outcomes);
 
     /// <summary>
     /// Why a <c>decide</c> naming <paramref name="outcome"/> by <paramref name="holder"/> is refused at <paramref name="status"/>: an outcome

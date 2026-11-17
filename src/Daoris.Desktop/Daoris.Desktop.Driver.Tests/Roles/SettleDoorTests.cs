@@ -33,7 +33,7 @@ public sealed class SettleDoorTests : IDisposable
         var digest = RunHome.SaveGraph(_home, $$"""
             {"schemaVersion":2,"entries":["claimed"],"end":"step",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                      {"id":"step","kind":"human","version":1,"reach":"pressed","outcomes":["{{outcome}}"],"role":"{{role}}"}],
+                      {"id":"step","kind":"task","version":1,"reach":"pressed","outcomes":["{{outcome}}"],"role":"{{role}}"}],
              "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"step"}]}
             """);
         RunHome.Bind(_home, Run, digest, _now);

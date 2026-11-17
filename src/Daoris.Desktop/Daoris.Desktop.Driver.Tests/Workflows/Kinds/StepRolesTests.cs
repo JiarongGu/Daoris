@@ -26,7 +26,7 @@ public sealed class StepRolesTests : IDisposable
         [NodeKinds.Look] = StepRoles.Tester,
         [NodeKinds.Review] = StepRoles.Acceptor,
         [NodeKinds.GoAhead] = StepRoles.Approver,
-        [NodeKinds.Human] = StepRoles.Owner,
+        [NodeKinds.Task] = StepRoles.Owner,
         [NodeKinds.Isolate] = StepRoles.Operations,
         [NodeKinds.Push] = StepRoles.Operations,
         [NodeKinds.Line] = StepRoles.Operations,
@@ -162,7 +162,7 @@ public sealed class StepRolesTests : IDisposable
         var preset = WorkflowPresets.WithGraphGates(shipped.Graph(), opinion: true, look: true);
         var kinds = JsonNode.Parse(Json(StepRoles.Tester))!;
         kinds["end"] = "ask";
-        kinds["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "ask", ["kind"] = NodeKinds.Human, ["version"] = 1, ["reach"] = "pressed", ["role"] = StepRoles.Owner });
+        kinds["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "ask", ["kind"] = NodeKinds.Task, ["version"] = 1, ["reach"] = "pressed", ["role"] = StepRoles.Owner });
         kinds["wires"]!.AsArray().Add(new JsonObject { ["id"] = "w2", ["kind"] = "after", ["from"] = "look", ["to"] = "ask" });
 
         foreach (var graph in new[] { preset, kinds })

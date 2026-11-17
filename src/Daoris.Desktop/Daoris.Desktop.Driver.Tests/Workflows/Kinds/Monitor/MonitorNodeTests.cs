@@ -82,7 +82,7 @@ public sealed class MonitorNodeTests
           {"id":"pull-request","kind":"acme-host/pull-request","version":1,"reach":"performed"},
           {{{monitor}}},
           {"id":"tidy","kind":"tidy","version":1,"reach":"performed"},
-          {"id":"closed","kind":"human","version":1,"reach":"pressed"}{{{tail}}}],
+          {"id":"closed","kind":"task","version":1,"reach":"pressed"}{{{tail}}}],
          "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"push"},
                   {"id":"c","kind":"after","from":"push","to":"pull-request"},{{{wires}}}]}
         """;
@@ -130,7 +130,7 @@ public sealed class MonitorNodeTests
     {
         NodeDeclaration[] nodes =
         [
-            Request, Monitor, new("tidy", NodeKinds.Tidy, 1, NodeReach.Performed), new("closed", NodeKinds.Human, 1, NodeReach.Pressed),
+            Request, Monitor, new("tidy", NodeKinds.Tidy, 1, NodeReach.Performed), new("closed", NodeKinds.Task, 1, NodeReach.Pressed),
         ];
         Wire[] wires =
         [

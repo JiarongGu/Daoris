@@ -25,15 +25,15 @@
       { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
       { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
       { "id": "tree", "kind": "release", "version": 1, "reach": "performed" },
-      { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" },
+      { "id": "closed", "kind": "task", "version": 1, "reach": "pressed" },
       { "id": "release-target", "kind": "daoris-azure-devops/release-target", "version": 1, "reach": "performed", "role": "release-manager" },
       { "id": "release-create", "kind": "daoris-azure-devops/release-create", "version": 1, "reach": "performed", "role": "release-manager" },
       { "id": "release-start", "kind": "daoris-azure-devops/release-start", "version": 1, "reach": "performed", "role": "release-manager" },
       { "id": "release-approve", "kind": "daoris-azure-devops/release-approve", "version": 1, "reach": "performed", "role": "approver" },
       { "id": "release-watch", "kind": "daoris-azure-devops/release-watch", "version": 1, "reach": "performed" },
-      { "id": "config-needed", "kind": "human", "version": 1, "reach": "pressed", "outcomes": ["needed", "not-needed"], "role": "release-manager" },
-      { "id": "config-change", "kind": "human", "version": 1, "reach": "pressed", "role": "config-changer" },
-      { "id": "check-release", "kind": "human", "version": 1, "reach": "pressed", "role": "operations" }
+      { "id": "config-needed", "kind": "task", "version": 1, "reach": "pressed", "outcomes": ["needed", "not-needed"], "role": "release-manager" },
+      { "id": "config-change", "kind": "task", "version": 1, "reach": "pressed", "role": "config-changer" },
+      { "id": "check-release", "kind": "task", "version": 1, "reach": "pressed", "role": "operations" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },

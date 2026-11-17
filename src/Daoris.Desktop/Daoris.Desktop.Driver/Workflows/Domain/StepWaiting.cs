@@ -46,19 +46,25 @@ public static class StepWaiting
             NodeStates.Active => NodeKit.Of(node.Kind) switch
             {
                 ReviewNode => PersonWaits.Accept,
-                HumanNode => HumanNode.Presses(node).Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task,
                 GoAheadNode => PersonWaits.GoAhead,
                 ReturnNode when status.Code == ReturnNode.BothChanged => PersonWaits.Choose,
                 OpinionNode when status.Holds == OpinionGateReading.Vacant => PersonWaits.Vacant,
+                // A step offering its holder's settling word waits on its role, whoever holds it: an approval's Approve, else a Done or a decide.
+                IPressed pressed when pressed.Acts(node, status) is var acts && acts.Intersect(HoldersWords, StringComparer.Ordinal).Any() =>
+                    acts.Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task,
                 _ => null,
             },
             NodeStates.Failed when record is not null && Left(node, status, record) => PersonWaits.Left,
             _ => null,
         };
         if (why is null) return null;
-        var role = RoleOf(why);
+        // A step's own word waits on the role the step names (its kind's default where it names none); the other waits on their own.
+        var role = why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead ? StepRoles.Of(node) : RoleOf(why);
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
+
+    /// <summary>The words a step's holder settles it by, as a step offers them while it waits: Done, Approve, Reject and a decision's answer.</summary>
+    private static readonly string[] HoldersWords = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Decide];
 
     /// <summary>
     /// The role a wait is on where its step names none: until a step's declaration carries its role, each wait's own. A

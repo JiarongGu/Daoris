@@ -66,7 +66,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         // The pull request's monitor routes merged to the tidy and closed to a person's task.
         var routes = version.Graph.Wires.Where(wire => wire.Kind == WireKinds.When)
             .Select(wire => (wire.From!.Node, wire.Outcome, version.Graph.Nodes.Single(node => node.Id == wire.To.Node).Kind));
-        (string, string?, string)[] shipped = preset == "pull-request" ? [("monitor", "merged", NodeKinds.Tidy), ("monitor", "closed", NodeKinds.Human)] : [];
+        (string, string?, string)[] shipped = preset == "pull-request" ? [("monitor", "merged", NodeKinds.Tidy), ("monitor", "closed", NodeKinds.Task)] : [];
         Assert.Equal(shipped, routes);
         // The person's Accept is a review before the land, and a preset with no press holds none.
         Assert.Equal(preset != "integrated-no-press", kinds.Contains(NodeKinds.Review));

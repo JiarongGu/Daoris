@@ -42,7 +42,7 @@ public sealed class NodeKitTests
         Assert.Equal(
             [
                 "isolate", "claimed",
-                "review", "look", "go-ahead", "human",
+                "review", "look", "go-ahead", "task",
                 "check", "opinion", "work.requests", "quest.holds", "content.holds",
                 "land", "integrate", "push", "*/pull-request", "monitor", "tidy", "line", "rebase", "release", "resolve", "merge",
                 "apply", "request", "parts", "return", "wait.unit", "quest.close", "all", "stop",

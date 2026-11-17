@@ -30,7 +30,7 @@ public sealed class PlaceCastTests : IDisposable
         var digest = RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"release",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                      {"id":"release","kind":"human","version":1,"reach":"pressed","outcomes":["done"],"role":"release-manager"}],
+                      {"id":"release","kind":"task","version":1,"reach":"pressed","outcomes":["done"],"role":"release-manager"}],
              "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"release"}]}
             """);
         RunHome.Bind(_home, Run, digest, _now);

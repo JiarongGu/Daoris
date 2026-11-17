@@ -11,7 +11,7 @@ public sealed class AbandonRunsTests : NodeRunFixture
     private const string ReviewedGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"look","kind":"human","version":1,"reach":"pressed","outcomes":["done"]},
+                  {"id":"look","kind":"task","version":1,"reach":"pressed","outcomes":["done"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"look"},
                   {"id":"l>h","kind":"when","from":"look","to":"handed","outcome":"done"}]}

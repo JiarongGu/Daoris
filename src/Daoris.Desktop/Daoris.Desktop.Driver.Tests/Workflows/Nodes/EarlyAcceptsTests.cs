@@ -12,7 +12,7 @@ public sealed class EarlyAcceptsTests : NodeRunFixture
     private const string ReviewGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"sign","kind":"human","version":1,"reach":"pressed","outcomes":["approved"]},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"]},
                   {"id":"review","kind":"review","version":1,"reach":"pressed"},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},

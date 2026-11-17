@@ -274,18 +274,18 @@ public static class NodeWordActs
     public const string Send = "send";
 
     /// <summary>
-    /// The person's <i>Done</i> of a waiting task: a <c>human</c> node reached on their word, with its outcome <c>done</c> where it
+    /// The holder's <i>Done</i> of a waiting task: a <c>task</c> node reached on their word, with its outcome <c>done</c> where it
     /// declares one and their note where they gave one.
     /// </summary>
     public const string Done = "done";
 
-    /// <summary>The person's <i>Approve</i> of a waiting approval: a <c>human</c> node declaring <c>approved</c> and <c>rejected</c>, reached with <c>approved</c>.</summary>
+    /// <summary>The holder's <i>Approve</i> of a waiting approval: a <c>task</c> node declaring <c>approved</c> and <c>rejected</c>, reached with <c>approved</c>.</summary>
     public const string Approve = "approve";
 
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
-    /// <summary>A decision's answer with the outcome the word names, proposed by a holder or the owner's (<see cref="HumanDecisions"/>).</summary>
+    /// <summary>A decision's answer with the outcome the word names, proposed by a holder or the owner's (<see cref="TaskDecisions"/>).</summary>
     public const string Decide = "decide";
 
     /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>

@@ -20,7 +20,7 @@ public sealed class NodeWiresTests
     private static readonly NodeDeclaration[] Nodes =
     [
         Node("line", NodeKinds.Line),
-        Node("qa", NodeKinds.Human) with { Evidence = "qa-proof@1" },
+        Node("qa", NodeKinds.Task) with { Evidence = "qa-proof@1" },
         Node("dependency", NodeKinds.WaitUnit),
         Node("deploy", "acme.deploy/deploy") with
         {
@@ -30,8 +30,8 @@ public sealed class NodeWiresTests
         },
         Node("close", NodeKinds.QuestClose) with { Inputs = Ports("delivery", "acme.deploy/receipt@1") },
         Node("announce", "acme.chat/announce") with { Inputs = Ports("preview", "acme.deploy/preview@1") },
-        Node("rollback", NodeKinds.Human),
-        Node("redo", NodeKinds.Human),
+        Node("rollback", NodeKinds.Task),
+        Node("redo", NodeKinds.Task),
     ];
 
     private static Wire After(string id, string from, string to) => new(id, WireKinds.After, new(from), new(to));
@@ -127,7 +127,7 @@ public sealed class NodeWiresTests
         NodeDeclaration[] nodes =
         [
             Node("review", "acme.review/review") with { Outcomes = ["approved", "changes-asked"] },
-            Node("land", NodeKinds.Human), Node("rework", NodeKinds.Human), Node("tell", NodeKinds.Human), Node("line", NodeKinds.Line),
+            Node("land", NodeKinds.Task), Node("rework", NodeKinds.Task), Node("tell", NodeKinds.Task), Node("line", NodeKinds.Line),
         ];
         Wire[] wires =
         [
@@ -188,7 +188,7 @@ public sealed class NodeWiresTests
         Assert.Equal("daoris/line@1", NodeWires.SourceSchema(Node("line", NodeKinds.Line), WireEnd.Evidence));
         Assert.Equal("acme.deploy/preview@1", NodeWires.SourceSchema(Nodes[3], "preview"));
         Assert.Equal("acme.deploy/receipt@1", NodeWires.SourceSchema(Nodes[3], WireEnd.Evidence));
-        Assert.Null(NodeWires.SourceSchema(Node("rollback", NodeKinds.Human), WireEnd.Evidence));
+        Assert.Null(NodeWires.SourceSchema(Node("rollback", NodeKinds.Task), WireEnd.Evidence));
         Assert.Null(NodeWires.SourceSchema(Node("dependency", NodeKinds.WaitUnit), WireEnd.Evidence));
         Assert.Null(NodeWires.SourceSchema(Nodes[3], "approval"));
         Assert.Equal("outputs", NodeDeclarations.Problem(Node("tag", "acme.git/tag") with { Outputs = Ports(WireEnd.Evidence, "acme.git/tag@1") }));
