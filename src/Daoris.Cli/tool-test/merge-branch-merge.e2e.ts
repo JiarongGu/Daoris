@@ -5,13 +5,14 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { repoRoot } from './support/merge-branch.ts';
 import { git, TRAILER, unordered, scratch, branch, merging } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-merge)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-merge)', { concurrency: CASES_AT_ONCE }, () => {
 
   test('MAKERTRAIL1 a Codex stand-in commit passes the real git trailer check', async () => {
     const repo = scratch('codex-attribution', [{ name: 'first', run: 'node gate.mjs first' }]);

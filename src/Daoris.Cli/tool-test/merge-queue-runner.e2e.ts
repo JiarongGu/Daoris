@@ -9,8 +9,9 @@ import {
   queueScratch, commitOnMain, verifier, VERIFY, recorderGate, realPath, modes, type Answered,
 } from './support/merge-queue-scratch.ts';
 import { tool } from './support/merge-queue-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
-describe('The declared runner, its schema and its inputs, end to end in a scratch repository', { concurrency: true }, () => {
+describe('The declared runner, its schema and its inputs, end to end in a scratch repository', { concurrency: CASES_AT_ONCE }, () => {
   test('the declared runner answers D192\'s schema 1 when no mode is asked: each declared gate under its own name, the full commit, its verdict and exit, its log kept where it stays', async () => {
     const repo = queueScratch('verify-answer');
     try {
@@ -217,7 +218,7 @@ describe('The declared runner, its schema and its inputs, end to end in a scratc
   });
 });
 
-describe('The run, plan and probe modes, end to end in a scratch repository', { concurrency: true }, () => {
+describe('The run, plan and probe modes, end to end in a scratch repository', { concurrency: CASES_AT_ONCE }, () => {
   test('the run mode answers by gate, each with its composition kept beside its log and the failures read from it, beside what its plan kept and deferred', async () => {
     const repo = queueScratch('verify-run');
     try {

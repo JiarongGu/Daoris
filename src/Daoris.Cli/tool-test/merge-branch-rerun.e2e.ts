@@ -4,13 +4,14 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { type Verdict } from './support/merge-branch.ts';
 import { git, TRAILER, unordered, receipt, scratch, branch, merging } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-rerun)', { concurrency: CASES_AT_ONCE }, () => {
 
   test('--rerun runs a fixed gate again on the merge in place, and names the verdicts it kept and from when', async () => {
     const repo = scratch('rerun', [
