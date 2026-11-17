@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deferredLines, isHeavyUnit, splitTier, tierNamed } from './heavy-tier.ts';
+import { E2E_FAST, deferredLines, isHeavyUnit, nearEndToEnd, splitTier, tierNamed } from './heavy-tier.ts';
 
 const processSuites = new Set(['driver-process', 'modules-process']);
 const units = [
@@ -31,6 +31,17 @@ describe('the tiers of a reached run', () => {
     const tools = [{ suite: 'tool-tests', unit: 'U' }, { suite: 'tool-e2e', unit: 'E' }];
     expect(splitTier(tools, 'fast', new Set())).toEqual({ kept: [tools[0]], deferred: [tools[1]] });
     expect(splitTier(tools, 'heavy', new Set()).kept).toEqual([tools[1]]);
+  });
+
+  it('runs in the fast tier the end-to-end specs nearest the change, a spec named as a changed file first, and names each it defers', () => {
+    const spec = (file: string, hops: number | undefined) => ({ suite: 'tool-e2e', unit: file, file, hops });
+    const specs = [spec('t/a.e2e.ts', 1), spec('t/b.e2e.ts', 0), spec('t/plan.e2e.ts', 2), spec('t/c.e2e.ts', 1), spec('t/far.e2e.ts', 3), spec('t/none.e2e.ts', undefined)];
+    const near = { changed: ['tools/merge/plan.ts', 't/b.e2e.ts'], hopsOf: (unit: { hops: number | undefined }) => unit.hops };
+    expect(nearEndToEnd(specs, near).map((unit) => unit.file)).toEqual(['t/b.e2e.ts', 't/plan.e2e.ts', 't/a.e2e.ts']);
+    expect(E2E_FAST).toBe(3);
+    const { kept, deferred } = splitTier([...specs, { suite: 'cli', unit: 'U', file: 'u.test.ts', hops: 0 }], 'fast', new Set(), near);
+    expect(kept.map((unit) => unit.unit)).toEqual(['t/a.e2e.ts', 't/b.e2e.ts', 't/plan.e2e.ts', 'U']);
+    expect(deferredLines(deferred)[1]).toBe('reached: end-to-end specs deferred, past the 3 nearest the change: t/c.e2e.ts, t/far.e2e.ts, t/none.e2e.ts');
   });
 
   it('reads a tier by its name only', () => {

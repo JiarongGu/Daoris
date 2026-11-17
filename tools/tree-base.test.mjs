@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { PATIENCE } from '../src/Daoris.Cli/test/_fixture.ts';
 import { MARKER, baseAbove, build, guarded, sites } from './tree-base.mjs';
 
+// reaches: tools/**/*.{mjs,js,ts,cs,ps1} — `sites` lists every tracked code file under tools/ for a read of a build output
+// reaches: src/**/*.{mjs,js,ts,cs,ps1} — and under src/
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(root, '_fixtures', 'tree-base-test');
 rmSync(scratch, { recursive: true, force: true });

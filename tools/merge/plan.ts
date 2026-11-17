@@ -41,7 +41,10 @@ export const isProcessGate = (gate: Named): boolean => /process\.runsettings/.te
  */
 export const isLongGate = (gate: Named): boolean => isProcessGate(gate) || /\brehearse:deploy\b/.test(gate.run);
 
-/** The tools' end-to-end tier, by the root script it runs: its specs start real git and the merge tool. */
+/**
+ * The tools' end-to-end tier, by the root script it runs: its specs start real git and the merge tool. A merge never runs the gate
+ * whole; its `reached` gate runs the specs nearest the change (`heavy-tier.ts`).
+ */
 export const END_TO_END_SCRIPTS: readonly string[] = Object.freeze(['tooltests:e2e']);
 
 /**

@@ -6,7 +6,8 @@
  * ## The units
  *
  * A **unit** is what a runner selects: a .NET class of a declared `dotnet test` gate (each half, each test project of a
- * solution gate), a `node --test` file of the CLI's suite or the tool-tests, a vitest file, a Playwright spec, a rehearsal.
+ * solution gate), a `node --test` file of the CLI's suite, the tool-tests or a `tools/` test a gate lists (the CLI's verify's,
+ * `test-map/listed.mjs`), a vitest file, a Playwright spec, a rehearsal.
  * Each has:
  *
  * - **its reach**. .NET: the Process census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
@@ -48,6 +49,7 @@ import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
+import { listedUnits } from './test-map/listed.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';
 import { CHECK_STEPS } from './verify-checks/steps.mjs';
 export { literalsOf, tsFacts } from './test-map/ts-facts.mjs';
@@ -360,6 +362,8 @@ export function census(files, read, { suites = null } = {}) {
       units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
     }
   }
+  const bounded = (suite) => (TS_SUITES.some((each) => each.suite === suite && each.bounded) ? gates.find((gate) => gate.name === suite)?.paths ?? null : null);
+  units.push(...listedUnits({ gates, read, files, reachOf: ts.reachOf, wanted, within: bounded }));
   for (const rehearsal of REHEARSALS.filter((each) => wanted(each.suite))) {
     if (!files.includes(rehearsal.file)) continue;
     units.push({ suite: rehearsal.suite, kind: 'rehearsal', unit: rehearsal.file, name: posix.basename(rehearsal.file), file: rehearsal.file, subject: rehearsal.file, reach: ts.reachOf(rehearsal.file) });
