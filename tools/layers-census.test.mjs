@@ -9,6 +9,7 @@ import {
   scanGit, scanProcesses,
 } from './layers-census.mjs';
 import { clockSites } from './layers-census/clock.mjs';
+import { counts } from './layers-census/counts.mjs';
 import { gitSites } from './layers-census/git.mjs';
 import { processSites } from './layers-census/processes.mjs';
 
@@ -246,7 +247,7 @@ test('D294: a Process class\'s real waits, starts and git are not counted, and i
   assert.equal(gitSites(`public sealed class A {\n${body}`), 1);
 });
 
-test('--counts reddens on a real clock read in a unit test and reads no duration record', async () => {
+test('the counts redden on a real clock read in a unit test and read no duration record', async () => {
   mkdirSync('_fixtures', { recursive: true });
   const root = mkdtempSync(join('_fixtures', 'census-counts-'));
   try {
@@ -259,9 +260,10 @@ test('--counts reddens on a real clock read in a unit test and reads no duration
       [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
       [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/WaitsTests.cs`]: 'public sealed class WaitsTests { void Go() { var now = DateTime.UtcNow; } }',
     };
-    assert.equal(await census({ root, argv: ['--counts'], tree: tree(sources) }), 1, 'a clock read in a unit test is red');
+    const quiet = { say: () => {}, warn: () => {} };
+    assert.equal(counts({ root, tree: tree(sources), ...quiet }), 1, 'a clock read in a unit test is red');
     const clean = { ...sources, [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/WaitsTests.cs`]: 'public sealed class WaitsTests { }' };
-    assert.equal(await census({ root, argv: ['--counts'], tree: tree(clean) }), 0, 'a test over the budget on disk is not the counts\' to judge');
+    assert.equal(counts({ root, tree: tree(clean), ...quiet }), 0, 'a test over the budget on disk is not the counts\' to judge');
     assert.equal(await census({ root, argv: ['--records', records], tree: tree(clean) }), 1, 'the full census still judges the budget');
   } finally {
     rmSync(root, { recursive: true, force: true });

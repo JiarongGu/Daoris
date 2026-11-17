@@ -16,13 +16,13 @@ export type Runner = 'dotnet' | 'vitest' | 'node';
 /** A test unit as the census of test units answers it for a merge: where it lives, what runs it, and the path that reached it. */
 export type ReachedUnit = {
   suite: string; kind: string; unit: string; name: string; file: string; by?: string;
-  project?: string; settings?: string | null; needs?: string[];
+  project?: string; settings?: string | null; needs?: string[]; cwd?: string;
   /** The fewest reads between this unit and a changed file (its own file 0, an import 1), where the census can count them. */
   hops?: number;
 };
 
-/** The units of one suite and runner that one command runs. */
-export type ReachedGroup = { runner: Runner; suite: string; project?: string; settings?: string | null; units: ReachedUnit[] };
+/** The units of one suite and runner that one command runs, from one folder. */
+export type ReachedGroup = { runner: Runner; suite: string; project?: string; settings?: string | null; cwd?: string; units: ReachedUnit[] };
 
 /** What a plan decides: the groups to run, the count each suite left out, every unit reached, and the units replayed from a standing pass. */
 export type ReachedPlan = { groups: ReachedGroup[]; left: Record<string, number>; reached: number; replayed: Record<string, number> };
@@ -32,11 +32,13 @@ export type Command = { label: string; cwd: string; command: string; args: strin
 
 /**
  * The suites a merge runs units of, by the runner of each: the CLI's and the tools' unit tests are reached by the census like the
- * rest (the merge's `cli` gate holds the checks, `cli-tests` the whole run). Not the censuses (a path check of their own) nor the
- * browser suites. The Process halves, rehearsals and end-to-end specs are the heavy tier (`heavy-tier.ts`): the run after the landing.
+ * rest (the merge's `cli` gate holds the checks, `cli-tests` the whole run, whose `tools/` tests are units of `cli` too, as the
+ * `layers` gate's are of `layers`). Not the censuses (a path check of their own) nor the browser suites. The Process halves, rehearsals and end-to-end specs are
+ * the heavy tier (`heavy-tier.ts`): the run after the landing, but for the specs nearest the change.
  */
 const SUITES: Readonly<Record<string, Runner>> = Object.freeze({
   driver: 'dotnet', modules: 'dotnet', service: 'dotnet', 'web-unit': 'vitest', 'tool-tests': 'node', 'tool-e2e': 'node', cli: 'node',
+  layers: 'node',
   'driver-process': 'dotnet', 'driver-process-git': 'dotnet', 'driver-process-git-pinned': 'dotnet', 'modules-process': 'dotnet', 'service-process': 'dotnet',
   'driver-rehearsals': 'dotnet',
 });
@@ -96,7 +98,7 @@ const stemOf = (path: string): string => posix.basename(path).replace(/\.[^.]+$/
  * file, 2 where the unit is named for a changed file, 1 where it is in a changed file's folder (a class reaches by area, and
  * an area is wide), else 0.
  */
-function nearness(unit: ReachedUnit, changed: readonly string[]): number {
+export function nearness(unit: Pick<ReachedUnit, 'file'>, changed: readonly string[]): number {
   let best = 0;
   const own = stemOf(unit.file);
   for (const path of changed) {
@@ -152,19 +154,20 @@ export function reachedPlan(
   { bounds = {}, replayed = {}, processSuites }: { bounds?: Partial<Record<Runner, number>>; replayed?: Record<string, number>; processSuites: ReadonlySet<string> },
 ): ReachedPlan {
   const limit = { ...REACHED_BOUNDS, ...bounds };
-  const bySuite = new Map<string, { suite: string; runner: Runner; all: ReachedUnit[] }>();
+  const bySuite = new Map<string, { suite: string; runner: Runner; cwd: string | undefined; all: ReachedUnit[] }>();
   for (const unit of units) {
     const runner = runnerOf(unit);
     if (!runner || !SUITES[unit.suite] || (processSuites.has(unit.suite) && !isDependencyUnit(unit))) continue;
-    const key = `${unit.suite}|${runner}`;
-    const group = bySuite.get(key) ?? { suite: unit.suite, runner, all: [] };
+    const cwd = runner === 'node' ? unit.cwd ?? CLI : undefined;
+    const key = `${unit.suite}|${runner}|${cwd ?? ''}`;
+    const group = bySuite.get(key) ?? { suite: unit.suite, runner, cwd, all: [] };
     group.all.push(unit);
     bySuite.set(key, group);
   }
   const groups: ReachedGroup[] = [];
   const left: Record<string, number> = {};
   let reached = Object.values(replayed).reduce((sum, count) => sum + count, 0);
-  for (const { suite, runner, all } of bySuite.values()) {
+  for (const { suite, runner, cwd, all } of bySuite.values()) {
     reached += all.length;
     const ordered = all.map((unit, index) => ({ unit, index, near: nearness(unit, changed) }))
       .sort((a, b) => (a.unit.hops ?? Infinity) - (b.unit.hops ?? Infinity) || b.near - a.near || a.index - b.index).map((entry) => entry.unit);
@@ -176,7 +179,7 @@ export function reachedPlan(
         for (const units of byFilter(among)) groups.push({ runner, suite, ...(project === undefined ? {} : { project }), settings: among[0]?.settings ?? null, units });
       }
     } else {
-      for (const units of chunked(kept)) groups.push({ runner, suite, units });
+      for (const units of chunked(kept)) groups.push({ runner, suite, ...(cwd === undefined ? {} : { cwd }), units });
     }
   }
   groups.sort((a, b) => RUNNER_ORDER.indexOf(a.runner) - RUNNER_ORDER.indexOf(b.runner));
@@ -202,9 +205,10 @@ export function reachedCommands(plan: Pick<ReachedPlan, 'groups'>): Command[] {
     if (group.runner === 'vitest') {
       return { label: group.suite, cwd: '.', command: 'node', args: [VITEST, 'run', '--config', 'tools/vitest.config.ts', ...group.units.map((unit) => unit.file)] };
     }
+    const cwd = group.cwd ?? CLI;
     return {
-      label: group.suite, cwd: CLI, command: 'node',
-      args: ['--test', '--test-timeout=1800000', '--test-force-exit', ...group.units.map((unit) => posix.relative(CLI, unit.file))],
+      label: group.suite, cwd, command: 'node',
+      args: ['--test', '--test-timeout=1800000', '--test-force-exit', ...group.units.map((unit) => (cwd === '.' ? unit.file : posix.relative(cwd, unit.file)))],
     };
   });
 }

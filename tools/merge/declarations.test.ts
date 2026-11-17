@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const TOOLS = fileURLToPath(new URL('..', import.meta.url));
+// reaches: tools/{,merge-branch/}*.{d.mts,mjs} — it lists each declaration beside a script and imports the script, whose exports it reads
 
-/** The names a declaration file exports. */
 const declaredNames =(text: string): string[] =>
   [...new Set([...text.matchAll(/^export (?:declare )?(?:function|const|let|class) (\w+)/gm)].map((found) => found[1]!))].sort();
 
