@@ -30,7 +30,7 @@ public sealed class CastRoutes(DriverContext context)
     private object? SetPlaceCast(SetPlaceCast press)
     {
         var files = new PlaceCastFiles(_loop.Home);
-        if (files.Cast(PlaceRiskBook.KeyOf(press.Workspace, press.Repository), press.Role.Trim(), press.Holder?.Trim(), press.Why, DateTimeOffset.UtcNow) is { } refused)
+        if (AgentSettles.CastAt(files, PlaceRiskBook.KeyOf(press.Workspace, press.Repository), press.Role.Trim(), press.Holder?.Trim(), press.Why, DateTimeOffset.UtcNow) is { } refused)
         {
             throw new DriverException($"the cast of `{press.Role}` was refused: {refused}{(refused == PlaceCastFiles.Unreadable ? $" ({files.Problem()})" : "")}.");
         }
@@ -60,12 +60,12 @@ public sealed class CastRoutes(DriverContext context)
                 .ConfigureAwait(false);
         }
 
-        var held = StepHolding.Act(
+        var held = AgentSettles.Hold(
             records, new PlaceCastFiles(_loop.Home), Risk(), press.Run, press.Node, press.Act, press.Holder, press.Why, DateTimeOffset.UtcNow, EpochOf(press.Epoch), SpeakerOf(press.Epoch));
         if (held.Done) _loop.Nudge();
         return new
         {
-            held.Run, held.Node, held.Act, held.Done, held.Refused, held.Tenure?.Holder, held.Tenure?.Epoch, Message = StepHolding.Said(held),
+            held.Run, held.Node, held.Act, held.Done, held.Refused, held.Tenure?.Holder, held.Tenure?.Epoch, Message = AgentSettles.Said(held),
         };
     }
 

@@ -64,13 +64,13 @@ internal sealed class LandingKind : ISupervisorKind
         }
 
         if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, keeping.Subject, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        var step = LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt);
         var landing = new SupervisorLanding(
             keeping.Subject.Session, parts.Run, parts.Node, parts.Attempt, keeping.Generation, keeping.Do, keeping.Reasons, keeping.Holder, keeping.Bound)
         {
-            Revision = SupervisorReviewBinding.RevisionOf(loop.Home, parts.Run, parts.Node, parts.Attempt),
+            Revision = SupervisorReviewBinding.RevisionOf(loop.Home, parts.Run, parts.Node, parts.Attempt), Epoch = step?.Epoch,
         };
-        var refused = LandingJudge.Refused(
-            LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt), keeping.Do, OwnerHolds.Holds(record, loop.Look.Latest));
+        var refused = LandingJudge.Refused(step, keeping.Do, OwnerHolds.Holds(record, loop.Look.Latest));
         var kept = await loop.Supervisor.LandingAsync(landing, repository, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
     }

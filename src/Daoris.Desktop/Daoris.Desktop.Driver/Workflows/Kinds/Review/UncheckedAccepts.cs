@@ -27,7 +27,8 @@ public static class UncheckedAccepts
         if (review.Kind != NodeKinds.Review) return Refuse(RunNodeWords.NotReview);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
-        var (refused, result) = records.Edit(bound.Unit, record =>
+        // Judged and kept in one hold of the tenures' lock, as every word is: no hand-over lands between the holder read and the write.
+        var (refused, result) = new StepTenureFiles(records.Home, records.HoldsLease).Settling(bound.Unit, tenures => records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(RunNodeWords.Ended) with { Detail = ended.Quest });
             if (record.Pending.Any(word => word.Review == node)) return (null, Refuse(RunNodeWords.Worded));
@@ -41,6 +42,13 @@ public static class UncheckedAccepts
             foreach (var hold in holds)
             {
                 var status = WorkPerformer.StatusOf(record, hold.Id);
+                // Each pass is the person's word on its hold, through the one door: a hold another holder holds is not passed for them.
+                var holding = tenures.Current(hold.Id, status.Attempt);
+                if (SettleDoor.Admit(holding, SettleBy.Person()) is { } refusal)
+                {
+                    return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
+                }
+
                 var move = new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = Words, Scope = new NodeScope(digest, bound.Run) };
                 if (NodeLifecycle.Apply(hold, status, move) is { Moved: false } judged) return (null, Refuse(judged.Refused!) with { State = status.State });
                 passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision });
@@ -49,7 +57,7 @@ public static class UncheckedAccepts
             var accept = new NodeWord(node, NodeWordActs.Accept, null, now) { Kept = true, Review = node, Revision = revision };
             var named = passes.Select(each => each.Node).Append(node).ToHashSet(StringComparer.Ordinal);
             return (record with { Pending = [.. record.Pending.Where(each => !named.Contains(each.Node)), .. passes, accept] }, new NodeWorded(run, node, NodeWordActs.Accept, null) { Early = true });
-        });
+        }));
         return refused is null ? result! : Refuse(refused);
     }
 }

@@ -151,7 +151,9 @@ public sealed class NodeRuntime(
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
     /// <summary>The steps waiting on a role the person holds, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
-    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read, new StepTenureFiles(records.Home, records.HoldsLease)) : [];
+    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed
+        ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read, new StepTenureFiles(records.Home, records.HoldsLease), new PlaceCastFiles(records.Home).Book(), _config?.PlaceRisk)
+        : [];
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -160,7 +162,7 @@ public sealed class NodeRuntime(
 
     private readonly UnknownAttempts _unknown = new();
 
-    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
+    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read, records.Home, _config?.PlaceRisk);
 
     /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
     public IReadOnlyList<RunPassage> Passages() => RunPassageReader.Of(_graphRuns.Read(), records.Read);

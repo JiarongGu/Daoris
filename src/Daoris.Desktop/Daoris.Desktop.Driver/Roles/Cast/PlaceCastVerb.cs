@@ -43,7 +43,7 @@ public sealed class PlaceCastVerb : ChoiceVerb
         {
             if (agent) throw new ChoiceWords(PlaceRiskVerb.Alone, 1);
             var files = new PlaceCastFiles(home);
-            if (files.Cast(PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
+            if (AgentSettles.CastAt(files, PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
             {
                 throw new ChoiceWords($"the cast was refused ({refused}{(refused == PlaceCastFiles.Unreadable ? $": {files.Problem()}" : "")}) — {Usage}", 1);
             }

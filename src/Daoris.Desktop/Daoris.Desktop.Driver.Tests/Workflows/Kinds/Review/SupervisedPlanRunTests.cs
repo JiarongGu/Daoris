@@ -75,10 +75,10 @@ public sealed class SupervisedPlanRunTests : NodeRunFixture
         return runtime;
     }
 
-    private async Task<SupervisorKept> AcceptedAsync(string? revision)
+    private async Task<SupervisorKept> AcceptedAsync(string? revision, int? epoch = null)
     {
         var landing = new SupervisorLanding("s2", RunId, "review", 1, "g-1", SupervisorLandingActs.Accept,
-            [new SupervisorReason("The plan is the brief's.", "the record")], new SupervisorHolder(RoleHolders.Terminal, null)) { Revision = revision };
+            [new SupervisorReason("The plan is the brief's.", "the record")], new SupervisorHolder(RoleHolders.Terminal, null)) { Revision = revision, Epoch = epoch };
         var kept = await Decisions.LandingAsync(landing, "store", null, _now);
         Assert.True(kept.Kept, kept.Why);
         return kept;
@@ -86,6 +86,28 @@ public sealed class SupervisedPlanRunTests : NodeRunFixture
 
     private Task<IReadOnlyList<SupervisorState>> ReleaseAsync() =>
         Decisions.ReleaseLandingsAsync(LandingReleaseLine.Of(_home, Files, _ => false), _now.AddMinutes(11));
+
+    /// <summary>
+    /// A supervisor's word stands in only for a step the person holds (D312): a review handed to an agent is listed to no supervisor, and a
+    /// decision kept before a hand-over carries the epoch it read into its release, refused there though the person holds the step again.
+    /// Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_review_an_agent_holds_is_no_supervisors_and_a_decision_from_an_ended_epoch_goes_stale()
+    {
+        await ReviewingAsync(PlanGoAheadApply);
+        var step = LandingSteps.Find(_home, RunId, "review", 1);
+        Assert.Equal(1, step?.Epoch);
+        await AcceptedAsync(SupervisorReviewBinding.RevisionOf(_home, RunId, "review", 1), step!.Epoch);
+        var tenures = new StepTenureFiles(_home, () => true);
+
+        tenures.HandOver(RunUnits.IdOf(RunId), "review", 1, 1, "agent:beta", TenureWhy.HandOver, _now);
+        Assert.Null(LandingSteps.Find(_home, RunId, "review", 1));
+
+        tenures.HandOver(RunUnits.IdOf(RunId), "review", 1, 2, CastHolders.Person, TenureWhy.TakeBack, _now);
+        Assert.Equal(3, LandingSteps.Find(_home, RunId, "review", 1)?.Epoch);
+        Assert.Equal([SupervisorState.Stale], await ReleaseAsync());
+    }
 
     [Fact]
     public async Task A_go_ahead_after_the_review_holds_the_write_after_the_supervisors_accept_until_the_persons_yes()

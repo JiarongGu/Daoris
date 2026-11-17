@@ -11,7 +11,8 @@ internal static class LandingReleaseLine
         due => Task.FromResult(Why(home, records, due, ownerHeld)),
         due => RunNodeWords.Word(
             records, due.Run, due.Node, due.Do,
-            due.Do == SupervisorLandingActs.Reject ? due.Words : null, by: new NodeWordBy(due.Generation, due.Id), attempt: due.Attempt, revision: due.Revision).Refused);
+            due.Do == SupervisorLandingActs.Reject ? due.Words : null, by: new NodeWordBy(due.Generation, due.Id), attempt: due.Attempt, revision: due.Revision,
+            epoch: due.Epoch).Refused);
 
     private static string? Why(string home, NodeRecordFiles records, SupervisorLandingDue due, Func<SupervisorLandingDue, bool> ownerHeld)
     {

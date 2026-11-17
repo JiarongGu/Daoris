@@ -38,7 +38,7 @@ internal sealed class ChatAccepts(DriverLoop loop)
             return new { press.Run, press.Node, press.Act, Done = false, Refused = RunNodeWords.NotRun, Press = (string?)null, Landing = (object?)null, Message = refused };
         }
 
-        var pressed = await PressAsync(session!, tree!, press.Run, recordsJson, press.Answers, ct).ConfigureAwait(false);
+        var pressed = await PressAsync(session!, tree!, press.Run, recordsJson, press.Answers, ct, CastRoutes.EpochOf(press.Epoch)).ConfigureAwait(false);
         var landed = pressed.Landed;
         return new
         {
@@ -48,7 +48,7 @@ internal sealed class ChatAccepts(DriverLoop loop)
     }
 
     /// <summary>The press on the conversation's work in <paramref name="tree"/>, its record <paramref name="id"/> the line's newest.</summary>
-    public async Task<Pressed> PressAsync(string id, string tree, string chatRun, string recordsJson, string? answers, CancellationToken ct)
+    public async Task<Pressed> PressAsync(string id, string tree, string chatRun, string recordsJson, string? answers, CancellationToken ct, int? epoch = null)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var trees = new SessionTrees(loop.Home);
@@ -67,8 +67,8 @@ internal sealed class ChatAccepts(DriverLoop loop)
                 async held => await presses.PressedAsync(
                     id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), answers, tree, null, held, chatRun),
                 held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), loop.PassWholeAsync, token,
-                (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done),
-                (graph, _) => Task.FromResult(kept = EarlyAccepts.Keep(new NodeRecordFiles(loop.Home), graph.Run, graph.Commit).Done)),
+                (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null, epoch: epoch).Done),
+                (graph, _) => Task.FromResult(kept = EarlyAccepts.Keep(new NodeRecordFiles(loop.Home), graph.Run, graph.Commit, epoch: epoch).Done)),
             async (gate, token) => gate.Process is WorkflowProcess { LandsByRuntime: true } performed
                 ? kept && !gate.LetsGo && LandPresses.Kept(gate) is { } early ? early : await LandingAsync(id, gate, performed, accepted, token)
                 : RunLandHolds.Of(gate),
