@@ -103,11 +103,16 @@ aside since the `universal` gate runs it in every merge with the private pattern
 twenty-five steps. Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
 step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
 that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
-committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: the gates its merge
-would run (the queue's own choice, on the paths from the merge base), every one to its end, main and the queue untouched, each
-verdict kept where the merge of the same tree keeps it. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test
-or first error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in
-the worktree's `local/scratch/main-tree`. The branch-worker hands back on its pass or its brief.
+committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: its merge's fast plan
+(the queue's own choice, on the paths from the merge base, of which it runs the fast gates: never a Process or git half, a
+rehearsal, a browser spec or `tool-e2e`, a known red's half included, even where the branch changes `daoris.gates.json`; each is
+named deferred to the CI run on main), main and the queue untouched, each verdict kept where the merge of the same tree keeps it.
+It runs within its bound, 25 minutes unless `--bound <minutes>` says otherwise: a gate waiting for the machine's heavy-run
+admission says so as it starts to wait, with who holds the places, and again each minute; the preflight says each minute what
+runs and what waits; at the bound it ends what it started, starts nothing more, and says which gates passed, which failed, which
+it stopped and which never started, and why. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test or first
+error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in the
+worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
 a test the hang timeout killed and a gate killed at its budget are each one line of the merge's breach report, `breaches.json`
@@ -121,7 +126,13 @@ by the layers census's counters; a gate's is its longest step clock. Three or mo
 it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
 places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
 other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
-time; the budget itself never stretches with the load.
+time; the budget itself never stretches with the load. The hang bound is read the same way: a .NET gate whose blame
+collector killed a test while the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs
+again alone as above; a hang in that run again fails as the test's own. The bound is not raised under load: it is one fixed
+setting in `Directory.Build.props`, a longer one would make every real hang cost more, and a rerun costs only when a kill
+happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
+and modules halves) is sampled from its start and its records are marked with the peak (`stampLoad`, as `reached` marks its
+own), so the time ratchet judges only timings taken alone.
 
 | Change | Additional verification |
 |---|---|
@@ -236,7 +247,7 @@ resume/retry commands when a merge is already open:
 node tools/merge-branch.mjs <branch> --preview
 node tools/merge-branch.mjs <branch> --message <file under local/> [--keep-going]
 node tools/merge-branch.mjs --queue [--recheck | --known]
-node tools/merge-branch.mjs --preflight [--base <ref>]   (in the branch's worktree)
+node tools/merge-branch.mjs --preflight [--base <ref>] [--bound <minutes>]   (in the branch's worktree)
 node tools/merge-branch.mjs --drop-batch [<branch>]
 node tools/merge-branch.mjs --plan <branch>
 node tools/merge-branch.mjs --continue

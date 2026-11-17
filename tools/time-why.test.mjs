@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breachLines, domainOf, gateBreach, hangBreaches, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -100,10 +100,16 @@ test('a test the blame collector killed at its hang timeout is a breach of that 
     '',
     'This test may, or may not be the source of the crash.',
   ].join('\r\n');
-  const [hang, ...more] = hangBreaches(log, reader, 3);
+  const [hang, ...more] = hangBreaches(log, reader);
   assert.deepEqual(more, []);
   assert.deepEqual([hang.kind, hang.name, hang.ms, hang.cause, hang.fails], ['hang', 'Daoris.Desktop.Driver.Tests.WaitsTests.Runs', 60_000, 'clock', true]);
-  assert.match(hang.evidence, /killed by the hang timeout; 3 heavy runs under way/);
+  const [loaded] = hangBreaches(log, reader, 3);
+  assert.deepEqual([loaded.cause, loaded.fails], ['load', false], 'a kill under load is the load\'s: nothing fails, the gate runs again alone');
+  assert.match(loaded.evidence, /killed by the hang timeout; 3 heavy runs under way at the gate's peak: run again alone/);
+  const [again] = hangBreaches(log, reader, 3, { alone: true });
+  assert.deepEqual([again.cause, again.fails], ['clock', true], 'a kill in the run again alone is the test\'s own');
+  assert.equal(hungUnderLoad([loaded]), true);
+  assert.equal(hungUnderLoad([hang, again]), false);
   assert.match(breachLines([hang])[1], /WaitsTests\.Runs hung 60 s, its hang timeout 60 s: clock/);
   assert.equal(hangBreaches('5 minutes have passed', reader).length, 0, 'no hang said, none read');
   assert.equal(hangBreaches("The specified inactivity time of 5 minutes has elapsed.\nThe tests running when the crash occurred:\nA.B.c\nA.B.d(x: 1, y: 2)\n\n", () => null)[1].ms, 300_000);

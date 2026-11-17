@@ -6,8 +6,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  breachLines, gateBreach, hangBreaches, parseBreaches, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
+  breachLines, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
 } from '../time-why.mjs';
+import { stampLoad } from '../time-load.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { ClassReplay } from './full-replay.ts';
 import type { LockInstalls } from './lock-install.ts';
@@ -60,6 +61,9 @@ export type Narrowed = { run: string | null; replay: ClassReplay };
 const BY_DESIGN = /VBCSCompiler|MSBuild|build-server|nodeReuse/i;
 /** A gate shorter than this has no time to leave anything behind unless it failed. */
 const SWEEP_AFTER_MS = 30_000;
+const TIMING_DIR = '_fixtures/test-timing';
+const TIMING_FOLDER = /_fixtures\/test-timing/;
+const HANG_SAID = /The specified inactivity time of \d+ (?:seconds?|minutes?) has elapsed/;
 
 const keyFor = (deps: FlowDeps, where: string, gate: PlanGate, tree: string, base?: string): VerdictKey | null => {
   try {
@@ -121,7 +125,9 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const started = Date.now();
   const budget = deps.timeoutMs(gate);
   const load = { sampler: null as ReturnType<LoadSeam['sample']> | null };
-  const watch = budget === null || !deps.load ? null : setTimeout(() => { load.sampler = deps.load?.sample() ?? null; }, budget / 2);
+  const stamps = TIMING_FOLDER.test(logged.run) && deps.load !== undefined;
+  if (stamps) load.sampler = deps.load?.sample() ?? null;
+  const watch = stamps || budget === null || !deps.load ? null : setTimeout(() => { load.sampler = deps.load?.sample() ?? null; }, budget / 2);
   const timer = budget === null ? null : setTimeout(() => {
     expired = 'over its budget';
     for (const pid of roots) deps.killTree(pid);
@@ -136,16 +142,21 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   }
   if (timer) clearTimeout(timer);
   if (watch) clearTimeout(watch);
+  const said = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
+  if (!load.sampler && deps.load && HANG_SAID.test(said)) load.sampler = deps.load.sample();
   const peak = load.sampler ? load.sampler.peak() : null;
   load.sampler?.stop();
+  if (stamps && peak !== null) stampLoad(join(where, TIMING_DIR), peak, started);
   result.gate = gate;
   if (key) result.key = key;
   if (narrowed) result.classReplay = narrowed.replay;
-  const said = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
   const outcome = said ? parseOutcome(said) : null;
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
-  const breaches = [...parseBreaches(said), ...hangBreaches(said, sourceReader(where), peak)];
+  const breaches = [...parseBreaches(said), ...hangBreaches(said, sourceReader(where), peak, { alone: first !== null })];
+  if (hungUnderLoad(breaches) && expired === null && !first) {
+    Object.assign(result, { verdict: 'FAIL', again: true, cause: 'load', note: `${result.note}; killed by the hang bound under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`.replace(/^; /, '') });
+  }
   if (expired !== null && budget !== null && !trees?.ended) {
     const kill = gateBreach({ gate: gate.name, ms: Date.now() - started, budget, steps, peak, fails: true });
     const loaded = kill.cause === 'load';
@@ -155,11 +166,11 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     result.slowest = deps.lastSlowest(gate.name);
     breaches.push({ ...kill, fails: !again });
   } else if (first) {
-    result.note = againNote(result.verdict, waited ?? { free: true, ms: 0 }, result.note);
+    result.note = againNote(result.verdict, waited ?? { free: true, ms: 0 }, result.note, first.overBudget ? 'at its budget' : 'by its hang bound');
   }
   if (first) {
     const ran = result.overBudget ? 'killed again' : result.verdict === 'PASS' ? 'passed' : `ended ${result.verdict}`;
-    const carried = (first.breaches ?? []).map((each) => (each.kind === 'gate' && each.cause === 'load' ? { ...each, evidence: `${each.evidence}; run again alone: ${ran}` } : each));
+    const carried = (first.breaches ?? []).map((each) => ((each.kind === 'gate' || each.kind === 'hang') && each.cause === 'load' ? { ...each, evidence: `${each.evidence}; run again alone: ${ran}` } : each));
     breaches.unshift(...carried);
     result.ms = (first.ms ?? 0) + (result.ms ?? 0);
   }
@@ -193,7 +204,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
 
 /** Why a gate's first result runs it again alone once every other gate has ended, said in the run's line. */
 export const againWhy = (first: GateResult): string => (first.nodes ? 'whose node tests failed' : first.timed ? 'whose timed specs failed'
-  : first.cause === 'load' ? 'killed at its budget under load' : 'which died of memory');
+  : first.cause === 'load' ? (first.overBudget ? 'killed at its budget under load' : 'killed by its hang bound under load') : 'which died of memory');
 
 /** The fields a gate's verdict adds to the store beside its tree: the key it carries, and the signatures of a failure. */
 export function verdictExtras(result: GateResult): { key?: VerdictKey; signatures?: string[]; replayedFrom?: string } {
