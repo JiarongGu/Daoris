@@ -57,4 +57,49 @@ public sealed class StepWaitHoldersTests
         Assert.NotNull(row);
         Assert.Equal((StepRoles.CredentialsKeeper, StepHolders.Person), (row.Role, row.Holder));
     }
+
+    private static readonly NodeDeclaration Review = new("review", NodeKinds.Review, 1, NodeReach.Pressed);
+
+    /// <summary>A review handed to an agent waits with no settler, since no agent's channel speaks an Accept: it stays the person's row, to take.</summary>
+    [Fact]
+    public void A_step_an_agent_holds_that_no_agents_channel_settles_is_a_row_with_take()
+    {
+        var held = HeldBy("review", StepRoles.Acceptor, CastHolders.AgentNamed("beta"), epoch: 2, why: TenureWhy.HandOver);
+
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Review, Standing("review", Active("review")), held);
+
+        Assert.NotNull(row);
+        Assert.Equal((PersonWaits.Accept, StepRoles.Acceptor, StepHolders.Agent, "beta", 2), (row.Why, row.Role, row.Holder, row.HolderName, row.Epoch));
+        Assert.Contains(CastActs.Take, row.Holds!);
+    }
+
+    /// <summary>A plugin's act an agent holds is observed by its plugin, so it waits on the agent and is no row of the person's.</summary>
+    [Fact]
+    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons()
+    {
+        var release = Release with { Role = StepRoles.ReleaseManager };
+        var record = Standing("release", Active("release") with { Unreconciled = 1 }, SignIn().Attempts[0] with
+        {
+            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now),
+        });
+
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent)));
+    }
+
+    /// <summary>Settings and Hand refuse an agent for a step only a press settles, with the reason; a step settled by an observation or a plugin's act takes one.</summary>
+    [Fact]
+    public void A_cast_or_hand_over_of_an_agent_to_a_step_only_a_press_settles_is_refused()
+    {
+        Assert.Contains(StepRoles.Acceptor, AgentSettles.Roles);
+        Assert.Contains(StepRoles.Owner, AgentSettles.Roles);
+        Assert.DoesNotContain(StepRoles.Operations, AgentSettles.Roles);
+        Assert.DoesNotContain(StepRoles.Approver, AgentSettles.Roles);
+
+        Assert.NotNull(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, CastHolders.Person));
+        Assert.Null(AgentSettles.Cast(StepRoles.Operations, CastHolders.Agent));
+        Assert.Contains("`acceptor`", AgentSettles.Hand(Review, CastHolders.Agent));
+        Assert.Null(AgentSettles.Hand(Release, "agent:beta"));
+        Assert.Null(AgentSettles.Hand(Opinion, CastHolders.Agent));
+    }
 }

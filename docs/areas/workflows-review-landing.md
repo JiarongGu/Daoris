@@ -209,7 +209,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is its place's cast (`PlaceCastBook.At`, kept in `workflows/casts.json` by
     `PlaceCastFiles`: one holder per role, the workspace's and a repository's own over it, each choice journaled with its reason; the
     owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
-    role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person. Each holder's tenure
+    role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person, and neither casts
+    an agent to a role whose steps only their holder's press settles, nor does *Hand to…* hand such a step to one (`AgentSettles`, D312: no
+    agent's channel speaks an Accept, a task's Done, an approval or a decision yet; an agent settles a step by an observation or a plugin's
+    act, and the work and the second opinion by its session); through words take no step another holder holds. Each holder's tenure
     of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
     which no older build reads: a pass writes each standing attempt's first epoch (`AttemptTenures`, the cast's holder), *Take*, *Hand to…*
     and *Give back* (`StepHolding`, `daoris workflow take|hand|give-back`, `WORKFLOW_HOLD`, shown on the run view's step and on
@@ -563,7 +566,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     go-ahead) waits on the step's role (`StepRoles.Of`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
     the line's `lead`. A wait is answered by its own role (`StepWaiting.HolderOf`, D312): the step's own role by its attempt's tenure, any
     other role (a vacancy's line, a plugin's actor such as `credentials-keeper`) by the place's cast of that role (`CastReading`), never
-    by the step's holder. The waits whose role the person holds are theirs: Sessions places the run's newest
+    by the step's holder. A wait an agent holds that only a press settles (any but a plugin's actor and a go-ahead, `AgentSettles.Wait`)
+    has no settler yet, so it stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with *Take*, an Accept among them.
+    The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words

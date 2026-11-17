@@ -27,8 +27,19 @@ public static class ThroughAccepts
         return ask.Length == 0 ? null : new RunStepThrough(ask, words[Opening.Length..closing]);
     }
 
-    /// <summary>The step the through words act on now, with the act, or null where the run waits for the person.</summary>
-    public static (string Node, string Act)? Due(NodeGraph graph, NodeRecord record, IReadOnlyList<QuestView> quests)
+    /// <summary>
+    /// The step the through words act on now, with the act, or null where the run waits for the person or for the step's holder: the words
+    /// are the person's, so a step another holder holds now (<paramref name="holding"/>) is not theirs to settle, and never taken on them.
+    /// </summary>
+    public static (string Node, string Act)? Due(
+        NodeGraph graph, NodeRecord record, IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, StepTenure>? holding = null) =>
+        Next(graph, record, quests) is var (node, act)
+        && SettleDoor.Admit(holding?.GetValueOrDefault(node) is { } held && held.Attempt == WorkPerformer.StatusOf(record, node).Attempt ? held : null,
+            SettleBy.Person(holding?.GetValueOrDefault(node)?.Epoch)) is null
+            ? (node, act)
+            : null;
+
+    private static (string Node, string Act)? Next(NodeGraph graph, NodeRecord record, IReadOnlyList<QuestView> quests)
     {
         if (record.Ended is not null || record.Pending.Count > 0 || !Kept(quests)) return null;
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review) return null;
@@ -66,8 +77,10 @@ public static class ThroughAccepts
     {
         if (scope is not { Ask: { } ask, Through.Words: { } quote } || records.Read(governed.Unit.Id) is not { } record) return null;
         if (config is not null && Paused(config, ask, scope.Quests)) return null;
-        if (Due(governed.Graph, record, scope.Quests) is not var (node, act)) return null;
-        var kept = RunNodeWords.Word(records, governed.Run, node, act, Words(ask, quote), clock);
+        var holding = StepTenureFiles.HoldingOf(records.Home, governed.Run, record);
+        if (Due(governed.Graph, record, scope.Quests, holding) is not var (node, act)) return null;
+        // Said in the epoch read, so a hand-over between is refused at the door rather than taken for the person.
+        var kept = RunNodeWords.Word(records, governed.Run, node, act, Words(ask, quote), clock, epoch: holding.GetValueOrDefault(node)?.Epoch);
         return kept.Done
             ? $"work  {governed.Unit.Id}: `{node}` {(act == NodeWordActs.Accept ? "accepted" : "passed")} on the person's words kept on ask #{ask}."
             : null;

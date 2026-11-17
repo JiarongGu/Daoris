@@ -41,7 +41,7 @@ public sealed class PlaceCastVerb : ChoiceVerb
         return new("cast", ChoiceRoutes.PlaceCast, payload, _ =>
         {
             if (agent) throw new ChoiceWords(PlaceRiskVerb.Alone, 1);
-            if (new PlaceCastFiles(home).Cast(PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
+            if (AgentSettles.CastAt(new PlaceCastFiles(home), PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
             {
                 throw new ChoiceWords($"the cast was refused ({refused}) — {Usage}", 1);
             }

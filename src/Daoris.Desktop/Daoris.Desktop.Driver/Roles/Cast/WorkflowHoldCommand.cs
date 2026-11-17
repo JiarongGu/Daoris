@@ -62,8 +62,8 @@ public static class WorkflowHoldCommand
             return 1;
         }
 
-        var held = StepHolding.Act(records, new PlaceCastFiles(records.Home, records.HoldsLease), risk(), ask.Run, ask.Node, ask.Act, ask.Holder, ask.Why, clock());
-        output.WriteLine(StepHolding.Said(held));
+        var held = AgentSettles.Hold(records, new PlaceCastFiles(records.Home, records.HoldsLease), risk(), ask.Run, ask.Node, ask.Act, ask.Holder, ask.Why, clock());
+        output.WriteLine(AgentSettles.Said(held));
         return held.Done ? 0 : 1;
     }
 }

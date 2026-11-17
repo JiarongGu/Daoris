@@ -207,28 +207,31 @@ public static class HeldSteps
         return [.. steps.OrderBy(step => step.Run, StringComparer.Ordinal).ThenBy(step => step.Node, StringComparer.Ordinal)];
     }
 
-    /// <summary>The row of one step, or null where it waits on no role the person holds, a word of theirs is pending on it, or another row carries it.</summary>
+    /// <summary>
+    /// The row of one step, or null where a word is pending on it, another row carries it, or it waits on an agent whose channel settles it.
+    /// A wait an agent holds that only a press settles (<see cref="AgentSettles.Wait"/>) has no settler, so it stays the person's row, said
+    /// with its holder, to take (D312, amended).
+    /// </summary>
     public static HeldStep? Step(
         string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
-        if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || wait.Holder.Kind != StepHolders.Person
-            || wait.Why is PersonWaits.Accept or PersonWaits.Left or PersonWaits.Held
-            || record.Pending.Any(word => word.Node == node.Id))
-        {
-            return null;
-        }
+        if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
+        var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
+        if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
 
         var presses = RunNodeWords.Acts(node, status).Where(act => act != NodeWordActs.Stop).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
         if (outside is not null) presses.Add(HeldResolutions.DoneOutside);
+        var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
+        // The hold acts pass the step's own tenure on: offered on a wait on the step's own role, never on another role's.
+        var own = wait.Role == StepRoles.Of(node);
         return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, presses, work, wait.Since)
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
-            Held = outside, Epoch = held is { } tenure && tenure.Attempt == status.Attempt ? tenure.Epoch : null,
-            Holds = StepHoldActs.Of(held is { } kept && kept.Attempt == status.Attempt ? kept : null),
+            Held = outside, Epoch = tenure?.Epoch, Holds = own ? StepHoldActs.Of(tenure) : null,
         };
     }
 }
