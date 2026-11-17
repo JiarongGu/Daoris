@@ -10,6 +10,9 @@ public sealed record StepHeld(string Run, string Node, string Act, string? Refus
 
     /// <summary>The words that go with a refusal: who holds the step now, or the step's state.</summary>
     public string? Detail { get; init; }
+
+    /// <summary>Why a done act's journal entry was not kept (the cast file's refusal), its tenure written all the same; null when kept.</summary>
+    public string? Unjournaled { get; init; }
 }
 
 /// <summary>The acts a standing step offers on its holder, by its tenure now.</summary>
@@ -103,8 +106,23 @@ public static class StepHolding
             return Refuse(handed.Refused ?? Unwritable) with { Detail = handed.Now is { } since ? StepTenureFiles.Said(since) : null, Tenure = handed.Now };
         }
 
-        casts.Keep(new CastEntry(now, act, next.Role, target, why) { Run = run, Node = node, Attempt = next.Attempt, Epoch = next.Epoch });
-        return new StepHeld(run, node, act, null) { Tenure = next };
+        var lost = casts.Keep(new CastEntry(now, act, next.Role, target, why) { Run = run, Node = node, Attempt = next.Attempt, Epoch = next.Epoch });
+        if (lost is not null) SayUnjournaled(records.Home, lost, $"{act} on {node} of #{run}");
+        return new StepHeld(run, node, act, null) { Tenure = next, Unjournaled = lost };
+    }
+
+    /// <summary>A tenure written whose journal entry the cast file refused: said in the driver's log, since the act stands.</summary>
+    private static void SayUnjournaled(string home, string refused, string what)
+    {
+        try
+        {
+            using var log = new MachineLog(home, "driver");
+            log.Warn("cast.journal", ("refused", refused), ("act", what));
+        }
+        catch (IOException)
+        {
+            // The log is optional; the act's answer carries the refusal.
+        }
     }
 
     /// <summary>
@@ -123,8 +141,9 @@ public static class StepHolding
     public static StepTenure? TakeOnPress(StepTenureFiles.TenureHold hold, NodeRecordFiles records, string? run, StepTenure current, string act, DateTimeOffset now)
     {
         if (hold.HandOver(current.Node, current.Attempt, current.Epoch, CastHolders.Person, TenureWhy.TakeBack, now) is not { Tenure: { } next, Refused: null }) return null;
-        new PlaceCastFiles(records.Home, records.HoldsLease).Keep(
+        var lost = new PlaceCastFiles(records.Home, records.HoldsLease).Keep(
             new CastEntry(now, CastActs.Take, next.Role, CastHolders.Person, $"pressed {act}") { Run = run, Node = current.Node, Attempt = next.Attempt, Epoch = next.Epoch });
+        if (lost is not null) SayUnjournaled(records.Home, lost, $"pressed {act} on {current.Node} of #{run}");
         return next;
     }
 
