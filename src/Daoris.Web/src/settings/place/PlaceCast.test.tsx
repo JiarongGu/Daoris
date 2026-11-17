@@ -36,6 +36,12 @@ describe('a place’s cast in its Settings', () => {
     expect(onCast).toHaveBeenCalledWith({ role: 'approver', holder: 'person', why: 'I sign these' });
   });
 
+  it('says the saved casts do not read, keeps the last good reading and offers no choice', () => {
+    render(<PlaceCastSetting name="work" twin="twin" view={{ ...view, unreadable: 'the cast of `acceptor` does not read' }} onCast={vi.fn()} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/do not read.*last good reading.*the cast of acceptor does not read/);
+    expect(screen.getByRole('combobox', { name: /acceptor/ })).toBeDisabled();
+  });
+
   it('says it in Chinese with the glossary’s words', async () => {
     await i18n.changeLanguage('zh');
     render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={vi.fn()} />);

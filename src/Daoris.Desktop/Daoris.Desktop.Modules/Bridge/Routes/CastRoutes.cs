@@ -29,10 +29,10 @@ public sealed class CastRoutes(DriverContext context)
     [Publishes("SET_PLACE_CAST", StateScopes.Driver)]
     private object? SetPlaceCast(SetPlaceCast press)
     {
-        if (new PlaceCastFiles(_loop.Home).Cast(PlaceRiskBook.KeyOf(press.Workspace, press.Repository), press.Role.Trim(), press.Holder?.Trim(), press.Why, DateTimeOffset.UtcNow)
-            is { } refused)
+        var files = new PlaceCastFiles(_loop.Home);
+        if (files.Cast(PlaceRiskBook.KeyOf(press.Workspace, press.Repository), press.Role.Trim(), press.Holder?.Trim(), press.Why, DateTimeOffset.UtcNow) is { } refused)
         {
-            throw new DriverException($"the cast of `{press.Role}` was refused: {refused}.");
+            throw new DriverException($"the cast of `{press.Role}` was refused: {refused}{(refused == PlaceCastFiles.Unreadable ? $" ({files.Problem()})" : "")}.");
         }
 
         return View(press.Workspace, press.Repository);
@@ -72,11 +72,12 @@ public sealed class CastRoutes(DriverContext context)
 
     private object View(string? workspace, string? repository)
     {
-        var view = PlaceCastView.Of(new PlaceCastFiles(_loop.Home).Book(), DriverConfig.Load(_loop.ConfigPath).PlaceRisk, workspace, repository,
-            ProviderRegistry.Built().Agents, RoleCatalog.ReadHome(_loop.Home).Slots);
+        var read = new PlaceCastFiles(_loop.Home).Read();
+        var view = PlaceCastView.Of(read.Book, DriverConfig.Load(_loop.ConfigPath).PlaceRisk, workspace, repository,
+            ProviderRegistry.Built().Agents, RoleCatalog.ReadHome(_loop.Home).Slots, read.Problem);
         return new
         {
-            view.Place, view.Risk, view.RiskSource, view.Marks, view.Roster,
+            view.Place, view.Risk, view.RiskSource, view.Marks, view.Roster, view.Unreadable,
             Roles = view.Roles.Select(role => new { role.Role, role.Holder, role.Why, role.Source, role.Words }).ToArray(),
             Line = view.Line.Select(level => new { level.Level, level.Role, level.Holder, level.Why }).ToArray(),
         };

@@ -18,6 +18,7 @@
   "settings.cast.why.default": "未选定其他担任者，所以由你担任。",
   "settings.cast.roster": "可以担任角色的：{{holders}}。",
   "settings.cast.listJoin": "、",
+  "settings.cast.unreadable": "已保存的选择读取不了，所以显示的是上一次读取成功的内容，读取恢复前不会保存任何新的选择：{{problem}}",
   "settings.cast.reports": "这里的每个角色都向 {{line}} 汇报。",
   "settings.cast.level": "{{level}}（{{holder}}）",
   "settings.cast.vacant": "无人",

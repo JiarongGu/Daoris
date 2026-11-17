@@ -77,6 +77,73 @@ public sealed class PlaceCastTests : IDisposable
         Assert.Equal(3, Casts.Journal().Count);
     }
 
+    private string Plant(string json)
+    {
+        var path = PlaceCastFiles.PathOf(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, json);
+        return path;
+    }
+
+    [Fact]
+    public void A_journal_entry_that_does_not_read_is_skipped_and_counted_and_the_casts_stay()
+    {
+        Plant("""
+            {"places":{"machine":{"acceptor":{"holder":"agent:codex","why":"docs","since":"2026-11-17T09:00:00Z"}}},
+             "journal":[{"act":"cast","role":"acceptor"},{"at":"2026-11-17T09:00:00Z","act":"cast","role":"acceptor","holder":"agent:codex"},"junk"]}
+            """);
+
+        var read = Casts.Read();
+        Assert.Equal((1, 2, null), (read.Journal.Count, read.Skipped, read.Problem));
+        Assert.Equal("agent:codex", read.Book.At(StepRoles.Acceptor, null, null, Risk().At("work", null)).Holder);
+
+        // A rewrite keeps the entries it could not read, as written.
+        Assert.Null(Casts.Cast("machine", StepRoles.Tester, CastHolders.Person, null, _now));
+        Assert.Equal(2, Casts.Read().Skipped);
+    }
+
+    [Fact]
+    public void Casts_that_do_not_read_keep_the_last_good_read_and_refuse_writes_and_say_so()
+    {
+        Assert.Null(Casts.Cast("machine", StepRoles.Acceptor, "agent:codex", null, _now));
+        Assert.Equal("agent:codex", Casts.Book().At(StepRoles.Acceptor, null, null, Risk().At("work", null)).Holder);
+        var path = PlaceCastFiles.PathOf(_home);
+        Plant("""{"places":{"machine":{"acceptor":{"why":"no holder"}}},"journal":[]}""");
+        var broken = File.ReadAllText(path);
+
+        Assert.NotNull(Casts.Problem());
+        Assert.Equal("agent:codex", Casts.Book().At(StepRoles.Acceptor, null, null, Risk().At("work", null)).Holder);
+        Assert.Equal(PlaceCastFiles.Unreadable, Casts.Cast("machine", StepRoles.Tester, CastHolders.Person, null, _now));
+        Assert.Equal(PlaceCastFiles.Unreadable, Casts.Keep(new CastEntry(_now, CastActs.Take, StepRoles.Tester, CastHolders.Person, null)));
+        Assert.Equal(broken, File.ReadAllText(path));
+        Assert.Contains(PlaceCastFiles.PathOf(_home), PlaceCastView.Of(Casts.Book(), Risk(), "work", null, [], null, Casts.Problem()).Said().Last(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_rewrite_keeps_a_holder_word_and_fields_this_build_does_not_know_and_each_kind_of_act_keeps_its_own_newest()
+    {
+        var path = Plant("""
+            {"future":{"a":1},"places":{"machine":{"acceptor":{"holder":"channel:ops","why":"later","since":"2026-11-17T09:00:00Z","note":"n"}}},"journal":[]}
+            """);
+        Assert.Null(Casts.Cast("machine", StepRoles.Tester, CastHolders.Person, null, _now));
+        var text = File.ReadAllText(path);
+        Assert.Contains("\"channel:ops\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"note\":\"n\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"future\":{\"a\":1}", text, StringComparison.Ordinal);
+        // The unknown word reads as the person's while it stays.
+        Assert.Equal(CastHolders.Person, Casts.Book().At(StepRoles.Acceptor, null, null, Risk().At("work", null)).Holder);
+
+        for (var i = 0; i < PlaceCastFiles.Kept + 20; i++)
+        {
+            Assert.Null(Casts.Keep(new CastEntry(_now.AddSeconds(i), CastActs.Take, StepRoles.Tester, CastHolders.Person, null) { Run = Run, Epoch = i }));
+        }
+
+        var journal = Casts.Journal();
+        Assert.Equal(1, journal.Count(entry => entry.Act == CastActs.Cast));
+        Assert.Equal(PlaceCastFiles.Kept, journal.Count(entry => entry.Act == CastActs.Take));
+        Assert.Equal(20, journal.First(entry => entry.Act == CastActs.Take).Epoch);
+    }
+
     [Fact]
     public void The_view_says_every_role_the_risk_the_marks_the_roster_and_the_line()
     {

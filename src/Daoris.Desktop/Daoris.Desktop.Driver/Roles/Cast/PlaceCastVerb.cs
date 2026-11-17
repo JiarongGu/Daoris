@@ -24,8 +24,9 @@ public sealed class PlaceCastVerb : ChoiceVerb
     {
         var asked = Read(args);
         var home = DriverConfig.HomeOf(world.ConfigPath);
-        var view = PlaceCastView.Of(new PlaceCastFiles(home).Book(), before.PlaceRisk, asked.Workspace, asked.Repository, ProviderRegistry.Built().Agents,
-            RoleCatalog.ReadHome(home).Slots);
+        var read = new PlaceCastFiles(home).Read();
+        var view = PlaceCastView.Of(read.Book, before.PlaceRisk, asked.Workspace, asked.Repository, ProviderRegistry.Built().Agents,
+            RoleCatalog.ReadHome(home).Slots, read.Problem);
         foreach (var line in view.Said()) world.Instance.Out.WriteLine(line);
         return 0;
     }
@@ -41,9 +42,10 @@ public sealed class PlaceCastVerb : ChoiceVerb
         return new("cast", ChoiceRoutes.PlaceCast, payload, _ =>
         {
             if (agent) throw new ChoiceWords(PlaceRiskVerb.Alone, 1);
-            if (new PlaceCastFiles(home).Cast(PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
+            var files = new PlaceCastFiles(home);
+            if (files.Cast(PlaceRiskBook.KeyOf(asked.Workspace, asked.Repository), asked.Role!, asked.Holder, asked.Why, world.Now()) is { } refused)
             {
-                throw new ChoiceWords($"the cast was refused ({refused}) — {Usage}", 1);
+                throw new ChoiceWords($"the cast was refused ({refused}{(refused == PlaceCastFiles.Unreadable ? $": {files.Problem()}" : "")}) — {Usage}", 1);
             }
 
             return Task.FromResult<object?>(null);

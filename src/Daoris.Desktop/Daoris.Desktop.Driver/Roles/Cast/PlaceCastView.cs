@@ -6,13 +6,13 @@ namespace Daoris.Driver;
 /// to: the place's supervisor, the machine's, the owner.
 /// </summary>
 public sealed record PlaceCastView(
-    string Place, string Risk, string RiskSource, IReadOnlyList<string> Marks, IReadOnlyList<CastNow> Roles, IReadOnlyList<string> Roster, IReadOnlyList<LineLevel> Line)
+    string Place, string Risk, string RiskSource, IReadOnlyList<string> Marks, IReadOnlyList<CastNow> Roles, IReadOnlyList<string> Roster, IReadOnlyList<LineLevel> Line, string? Unreadable = null)
 {
     /// <summary>The view at the place <paramref name="workspace"/> and <paramref name="repository"/> name, neither the machine.</summary>
     /// <param name="agents">The agents this machine has (<see cref="ProviderRegistry.Agents"/>), each a holder <c>agent:&lt;name&gt;</c> a cast may name.</param>
     /// <param name="slots">The role catalogue's slots the reporting line is read from; none reads the line as the owner's alone.</param>
     public static PlaceCastView Of(
-        PlaceCastBook book, PlaceRiskBook risk, string? workspace, string? repository, IReadOnlyList<string> agents, IReadOnlyList<RoleSlot>? slots)
+        PlaceCastBook book, PlaceRiskBook risk, string? workspace, string? repository, IReadOnlyList<string> agents, IReadOnlyList<RoleSlot>? slots, string? unreadable = null)
     {
         var standing = risk.At(workspace, repository);
         var roles = StepRoles.All.Select(role => book.At(role, workspace, repository, standing)).ToList();
@@ -20,7 +20,7 @@ public sealed record PlaceCastView(
         IReadOnlyList<LineLevel> line = slots is null
             ? [ReportingLine.Owner]
             : ReportingLine.Of(slots, SupervisorKinds.Question, new RolePlace(workspace, repository), risk: risk) is var read ? [read.Place, read.Machine, ReportingLine.Owner] : [];
-        return new(PlaceRiskBook.KeyOf(workspace, repository), standing.Risk, standing.Source, standing.Marks, roles, roster, line);
+        return new(PlaceRiskBook.KeyOf(workspace, repository), standing.Risk, standing.Source, standing.Marks, roles, roster, line, unreadable);
     }
 
     /// <summary>The terminal's lines: the risk and marks, each role's holder and why, the roster and the line.</summary>
@@ -40,5 +40,6 @@ public sealed record PlaceCastView(
 
         yield return $"  roster: {string.Join(", ", Roster)}";
         yield return $"  reports to: {string.Join(" → ", Line.Select(level => $"{LineLevels.Said(level.Level)}: {(level.Vacant ? "nobody" : level.Said())}"))}";
+        if (Unreadable is { } problem) yield return $"  the casts do not read, so none is changed until they do (the last good read is shown): {problem}";
     }
 }

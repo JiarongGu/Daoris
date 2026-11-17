@@ -18,6 +18,7 @@
   "settings.cast.why.default": "Nobody else is chosen, so you hold it.",
   "settings.cast.roster": "Who can hold a role: {{holders}}.",
   "settings.cast.listJoin": ", ",
+  "settings.cast.unreadable": "The saved choices do not read, so what is shown is the last good reading and no choice is kept until they do: {{problem}}",
   "settings.cast.reports": "Every role here reports to {{line}}.",
   "settings.cast.level": "{{level}} ({{holder}})",
   "settings.cast.vacant": "nobody",
