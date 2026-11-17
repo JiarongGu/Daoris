@@ -37,7 +37,7 @@ const GATE = [
   '',
 ].join('\n');
 
-test('a preflight in the branch\'s worktree runs the gates its merge would, every one to its end, and briefs each red marked by main', async () => {
+test('a preflight in the branch\'s worktree runs the fast gates its merge would, each to its end within its bound, and briefs each red marked by main', async () => {
   const { dir, remove } = fixtureFolder('preflight-e2e');
   try {
     const env = toolEnvironment();
@@ -83,7 +83,9 @@ test('a preflight in the branch\'s worktree runs the gates its merge would, ever
     const status = await new Promise((done) => child.on('close', done));
 
     assert.equal(status, 1, out);
-    assert.match(out, new RegExp(`the merge's gates: ${gates.join(', ')}\\n`), 'the preflight picks what the merge picks');
+    assert.match(out, new RegExp(`the merge's fast plan: ${gates.join(', ')}\\n`), 'the preflight picks what the merge picks');
+    assert.match(out, /its bound: 25 min \(--bound <minutes>\)/);
+    assert.match(out, /merge-branch: the preflight of feature\/pre failed 2 of 3 gates in \d+ min: one, two\. Fix the branch's reds/);
     assert.deepEqual(choose().set.kept.map((entry) => entry.name), ['three'], "the preflight's pass stands for the merge of the same tree");
     assert.match(out, /FAIL\s+one\s/);
     assert.match(out, /FAIL\s+two\s/);
