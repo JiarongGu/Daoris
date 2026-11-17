@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { census } from './layers-census.mjs';
+import { counts } from './layers-census/counts.mjs';
 import { quickSteps } from './quick/steps.mjs';
 import { CHECK_STEPS } from './verify-checks/steps.mjs';
 import { checkTimes, scanRecords } from './time-ratchet.mjs';
@@ -16,9 +17,10 @@ const scratch = () => {
   return mkdtempSync(join('_fixtures', 'quick-'));
 };
 
-test('the steps are the index, the contracts, each check of the cli gate once but the time ratchet, and the census\'s counts', () => {
+test('the steps are the index, the contracts, and each check of the cli gate once but the time ratchet, the census\'s counts among them', () => {
   const checks = CHECK_STEPS.map((step) => step.run).filter((run) => run !== 'node tools/orient-index.mjs' && run !== 'node tools/time-ratchet.mjs');
-  assert.deepEqual(quickSteps(), ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale', ...checks, 'node tools/layers-census.mjs --counts']);
+  assert.deepEqual(quickSteps(), ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale', ...checks]);
+  assert.ok(checks.includes('node tools/layers-census/counts.mjs'));
 });
 
 test('the writers run alone before the rest, which run side by side', async () => {
@@ -52,7 +54,7 @@ test('a red time record on disk leaves quick green, and the gates that judge tim
     const exits = {
       'node tools/time-ratchet.mjs': () => (checkTimes(scanRecords(records, root).over, {}).length > 0 ? 1 : 0),
       'node tools/layers-census.mjs': () => census({ root, argv: ['--records', records], tree }),
-      'node tools/layers-census.mjs --counts': () => census({ root, argv: ['--counts'], tree }),
+      'node tools/layers-census/counts.mjs': () => counts({ root, tree }),
     };
     const steps = async (list) => Object.fromEntries(await Promise.all(list.map(async (step) => [step, (await exits[step]?.()) ?? 0])));
     const ran = await steps(quickSteps());

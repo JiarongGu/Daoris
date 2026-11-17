@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { census } from './layers-census.mjs';
 import { checkBoundaries, scanBoundary } from './layers-census/boundary.mjs';
+import { counts } from './layers-census/counts.mjs';
 
 const PROJECT = '<Project Sdk="Microsoft.NET.Sdk"></Project>';
 
@@ -79,11 +80,11 @@ test('the census takes any lane as its argument, and holds each lane its list na
     const list = JSON.parse(readFileSync(join(root, 'tools', 'layers-census.json'), 'utf8'));
     assert.deepEqual(Object.keys(list.boundaries), ['assistant', 'plugins']);
     assert.deepEqual(list.boundaries.plugins, { inbound: { PluginCatalog: 1 }, outbound: { RoleCatalog: 1 } });
-    assert.equal(await census({ root, argv: ['--counts'], tree: tree(sources()) }), 0);
+    assert.equal(counts({ root, tree: tree(sources()) }), 0);
 
     const planted = sources({ 'src/App/Help/HelpPlugins.cs': 'public sealed class HelpPlugins { PluginCatalog catalog; }' });
     console.log = log;
-    assert.equal(await census({ root, argv: ['--counts'], tree: tree(planted) }), 1, 'the reference crosses both lanes\' boundaries, so both are red');
+    assert.equal(counts({ root, tree: tree(planted), warn: () => {} }), 1, 'the reference crosses both lanes\' boundaries, so both are red');
     console.log = (line) => said.push(line);
     assert.equal(await census({ root, argv: ['--boundary', 'plugins'], tree: tree(planted) }), 1, 'the argument judges the lane the list holds');
   } finally {
