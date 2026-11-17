@@ -37,7 +37,7 @@ public sealed class CensusScopeTests
     [Fact]
     public void A_full_path_is_judged_as_the_scope_holds_it_and_a_listed_member_by_its_file()
     {
-        var full = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Broken.cs");
+        var full = Path.GetFullPath(Path.Combine(WorkspaceRoot.Folder, "src/Daoris.Desktop/Daoris.Desktop.Driver/Broken.cs"));
         Assert.Equal([full], CensusScope.Judged(CensusScope.Judging.Diff, [full, Path.Combine(WorkspaceRoot.Folder, "Other.cs")], path => path, Scope("src/Daoris.Desktop/Daoris.Desktop.Driver/Broken.cs")));
 
         string[] listed = ["Broken.cs _field", "Kept.cs", "Gone.cs _old"];
