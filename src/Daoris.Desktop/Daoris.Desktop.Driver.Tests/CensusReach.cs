@@ -185,7 +185,6 @@ internal static class ReferenceMap
     /// <summary>How many trees this run read from their syntax, not from the map.</summary>
     internal static int Read => s_read;
 
-    /// <summary>Whether the map's file is read into this run.</summary>
     internal static bool Loaded => Kept.IsValueCreated;
 
     /// <summary>The key of a tree whose text is <paramref name="text"/>: the hash of the format and the text.</summary>
@@ -196,11 +195,7 @@ internal static class ReferenceMap
     /// <summary>Each source's names, in order, from the map where its key is there, else parsed from its text; a parse writes the map again.</summary>
     internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts) => Of(texts, Kept.Value, Stored);
 
-    /// <summary>
-    /// Fewer texts than this to parse are parsed on the caller's thread, and a map that holds every text answers there: a parallel
-    /// query's parts wait for the pool's threads, which a census binding beside it holds for most of a minute, and the hashes and a few
-    /// parses take milliseconds.
-    /// </summary>
+    /// <summary>Fewer texts to parse are parsed on the caller's thread, as a warm map answers: a parallel query waits for pool threads a binding holds.</summary>
     internal const int ParsedApart = 32;
 
     /// <summary>As <see cref="Of(IReadOnlyList{string})"/> over <paramref name="kept"/>, written to <paramref name="store"/> unless it is null.</summary>

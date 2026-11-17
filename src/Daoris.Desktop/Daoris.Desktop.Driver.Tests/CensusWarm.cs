@@ -10,9 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// What the censuses share, made once a run before any census case's clock starts: the say door's scan of the driver, its host and the
 /// modules (<see cref="SayDoorSources"/>), the comment-stripped text of each source it and the shipping projects hold
 /// (<see cref="SourceTexts.Code"/>), the driver's compile, the reference map over every shipping source (<see cref="ReferenceMap"/>),
-/// and under a scope the compiles of the projects it reaches. A case is timed from its own start, so a case that asked for one of them
-/// first was charged its making, and each case that asked beside it the rest of the wait, its queries' work queued behind the making's;
-/// the ratchet read that wait as the case's own. xUnit 2 has no assembly fixture, so the assembly's runner
+/// and under a scope the compiles of the projects it reaches. A case is timed from its own start, so a case that asks for one of them
+/// first would pay for its making, and each that asks beside it the rest of the wait, its queries' work queued behind the making's, and
+/// the ratchet would read that wait as the case's own. xUnit 2 has no assembly fixture, so the assembly's runner
 /// (<see cref="CensusWarmFramework"/>) makes them once the run has started and before its first class, in a run that holds a census
 /// case. The binding stays the semantic classes' fixtures' (<see cref="DesktopCompilationsWarm"/>, <see cref="DriverTreeWarm"/>), whose
 /// time is no case's either: made before the first class, its minute would pass with no case started, which risks the run's hang bound,
@@ -94,15 +94,18 @@ public sealed class CensusWarmFramework(IMessageSink diagnostics) : XunitTestFra
         {
             await base.AfterTestAssemblyStartingAsync();
             if (!CensusWarm.Wanted(TestCases.Select(each => each.Traits))) return;
-            var warm = Task.Run(CensusWarm.Make);
-            if (await Task.WhenAny(warm, Task.Delay(CensusWarm.Patience)) != warm)
+            try
+            {
+                await Task.Run(CensusWarm.Make).WaitAsync(CensusWarm.Patience);
+            }
+            catch (TimeoutException)
             {
                 CensusWarm.Late = true;
                 DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"the censuses' shared reading took longer than {CensusWarm.Patience.TotalSeconds} s and goes on beside the cases"));
             }
-            else if (warm.Exception is { } failed)
+            catch (Exception failed)
             {
-                DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"the censuses' shared reading failed, and each case that reads it says why: {failed.GetBaseException().Message}"));
+                DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"the censuses' shared reading failed, and each case that reads it says why: {failed.Message}"));
             }
 
             if (CensusWarm.Binds(TestCases.Select(each => each.TestMethod.TestClass.Class.Name).Distinct())) CensusWarm.BeginBinding();

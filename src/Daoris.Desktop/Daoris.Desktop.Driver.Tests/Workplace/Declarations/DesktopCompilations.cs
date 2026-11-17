@@ -49,10 +49,7 @@ internal static class DesktopCompilations
     /// <summary>Each shipping project's compilation, made once a run; the driver's is the one the structure classes read too.</summary>
     internal static ImmutableArray<CSharpCompilation> Each => Built.Value;
 
-    /// <summary>
-    /// The compilations a census under <paramref name="scope"/> judges: every one with no scope, else those of the projects it reaches. The
-    /// reach is read on the caller's thread, from the reference map (<see cref="ReferenceMap"/>); only the compiles go side by side.
-    /// </summary>
+    /// <summary>The compilations a census under <paramref name="scope"/> judges, the reach read on the caller's thread and only the compiles side by side.</summary>
     internal static ImmutableArray<CSharpCompilation> Judged(IReadOnlySet<string>? scope)
     {
         if (scope is null) return Each;
@@ -80,7 +77,6 @@ internal static class DesktopCompilations
     /// <summary>How many compilations of <paramref name="project"/>'s sources this run has made.</summary>
     internal static int Compiles(string project) => Made.GetValueOrDefault(project);
 
-    /// <summary>Whether <paramref name="project"/>'s one compilation is made, not only begun.</summary>
     internal static bool IsMade(string project) => Compiled.TryGetValue(project, out var compiled) && compiled.IsValueCreated;
 
     /// <summary>The one compilation of <paramref name="project"/>'s sources a run, made at its first ask and read by every census after.</summary>
