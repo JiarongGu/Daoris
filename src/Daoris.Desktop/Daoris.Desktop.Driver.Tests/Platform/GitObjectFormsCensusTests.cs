@@ -32,14 +32,14 @@ public sealed class GitObjectFormsCensusTests
     [Fact]
     public void Every_object_read_is_the_one_question_or_listed()
     {
-        var problems = SourceCensus.Problems(Found(SourceCensus.Driver()), Readers.Keys, What);
+        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(typeof(GitObjectFormsCensusTests))), SourceCensus.Listed(typeof(GitObjectFormsCensusTests), Readers.Keys), What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_reader_left_out_of_the_list_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver()), Readers.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(typeof(GitObjectFormsCensusTests))), SourceCensus.Listed(typeof(GitObjectFormsCensusTests), Readers.Keys), What));
     }
 
     [Theory]
@@ -51,16 +51,16 @@ public sealed class GitObjectFormsCensusTests
     [InlineData("""header.EndsWith(" missing", StringComparison.Ordinal)""")]
     public void A_planted_form_turns_the_census_red_naming_it(string form)
     {
-        var planted = SourceCensus.Driver().Append(("Planted.cs", $"internal static class Planted\n{{\n    public static object Read(string root) => {form};\n}}\n"));
+        var planted = SourceCensus.Driver(typeof(GitObjectFormsCensusTests)).Append(("Planted.cs", $"internal static class Planted\n{{\n    public static object Read(string root) => {form};\n}}\n"));
 
-        Assert.Equal(["Planted.cs reads an object or its answer and is not listed"], SourceCensus.Problems(Found(planted), Readers.Keys, What));
+        Assert.Equal(["Planted.cs reads an object or its answer and is not listed"], SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitObjectFormsCensusTests), Readers.Keys), What));
     }
 
     [Fact]
     public void A_verb_flag_named_batch_is_no_object_read()
     {
-        var planted = SourceCensus.Driver().Append(("Planted.cs", "internal static class Planted\n{\n    public static string? Read(string[] args) => FlagValue(args, \"--batch\");\n}\n"));
+        var planted = SourceCensus.Driver(typeof(GitObjectFormsCensusTests)).Append(("Planted.cs", "internal static class Planted\n{\n    public static string? Read(string[] args) => FlagValue(args, \"--batch\");\n}\n"));
 
-        Assert.Empty(SourceCensus.Problems(Found(planted), Readers.Keys, What));
+        Assert.Empty(SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitObjectFormsCensusTests), Readers.Keys), What));
     }
 }

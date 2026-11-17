@@ -10,7 +10,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (none before its needs answered, none later than they answered), no two Π reads may run together, the answer must be today's chain's on
 /// the same world, and the commands the chain's but for the graph's wasted speculative starts and the shared <c>--show-toplevel</c>.
 /// </summary>
-[Trait(Category.Name, Category.Census)]
 public sealed class ReviewGraphCensusTests : IDisposable
 {
     private const string Session = "aurora";
