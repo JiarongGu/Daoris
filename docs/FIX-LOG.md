@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-17 - The session reads bench grew its service host and testhost past 12 GB (BENCHMEM1)
+
+- **Symptom:** `SessionReadsBenchProcessTests` failed in every heavy run since merge 4f78e29; alone on 2026-11-17 its service host
+  reached 12.6 GB private memory and its testhost 12.4 GB in about a minute, and the machine ran out of memory. The last frames were
+  the groups' look reading the session list through the kept list's change door.
+- **Root cause:** e5152ef534 (merged in 4f78e29) made the session list answer each record its whole line's turns
+  (`SessionTurnLines`), so a line of n parts answers n² turns. The bench's generator (`BenchHome.Copy`, since 07e5689e55) copies one
+  ended chat's row column for column, its `line` and `entry` included, so its 2,998 copies and the template were one line of 2,999
+  parts: about nine million turns in every list answer, each record written apart and held four answers deep by the change door
+  (`ListChanges`), then parsed by the driver's kept list. The service answers as the driving area's rule 46a says; the bench's
+  records were no longer three thousand chats. The square stays the list's cost of a long line.
+- **Fix:** the copies are written by `BenchCopies`, each copy a line and a landing entry of its own (`line` its id, `entry` naming
+  it), as a chat opened alone is. `SessionChangeBenchProcessTests` and `HomeSizeBenchProcessTests` read the same home.
+- **Verification:** `BenchCopiesTests` failed before the fix (each copy's line was the template's) and passes; the bench class
+  alone passed twice with `process.runsettings`, its peak private memory 277 and 273 MB in the testhost and 96 and 95 MB in the
+  service host.
+
 ## 2026-11-17 - Three Loop ticks still expected an agent's done to end its session
 
 - **Symptom:** `SessionTreeLockTickTests`, `AskAndWaitTickTests`' resumed case and `AcpTurnFailureTickTests`' carry-on case failed
