@@ -16,19 +16,19 @@ public sealed class GitStartsCensusTests
     [Fact]
     public void Each_starting_file_left_out_of_the_list_turns_the_census_red_naming_it()
     {
-        var found = Found(SourceCensus.Driver());
+        var found = Found(SourceCensus.Driver(typeof(GitStartsCensusTests)));
 
-        Assert.Empty(SourceCensus.Problems(found, GitLaunchTests.StartingFiles, What));
-        Assert.Empty(SourceCensus.Unproved(found, GitLaunchTests.StartingFiles, What));
+        Assert.Empty(SourceCensus.Problems(found, SourceCensus.Listed(typeof(GitStartsCensusTests), GitLaunchTests.StartingFiles), What));
+        Assert.Empty(SourceCensus.Unproved(found, SourceCensus.Listed(typeof(GitStartsCensusTests), GitLaunchTests.StartingFiles), What));
     }
 
     [Fact]
     public void A_planted_site_starting_a_variable_file_turns_the_census_red_naming_it()
     {
-        var planted = SourceCensus.Driver().Append(("PlantedToolRuns.cs",
+        var planted = SourceCensus.Driver(typeof(GitStartsCensusTests)).Append(("PlantedToolRuns.cs",
             "internal static class PlantedToolRuns\n{\n    public static Task<ChildRun> RunAsync(string file, CancellationToken ct) =>\n"
             + "        ChildProcess.RunAsync(new ProcessStartInfo(file), TimeSpan.FromSeconds(5), ct, closeInput: true);\n}\n"));
 
-        Assert.Equal(["PlantedToolRuns.cs starts a process and is not listed"], SourceCensus.Problems(Found(planted), GitLaunchTests.StartingFiles, What));
+        Assert.Equal(["PlantedToolRuns.cs starts a process and is not listed"], SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitStartsCensusTests), GitLaunchTests.StartingFiles), What));
     }
 }

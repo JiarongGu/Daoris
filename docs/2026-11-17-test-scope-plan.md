@@ -197,6 +197,10 @@ tree's analysis), `ProviderConformanceTests` 19 s (517 cases), `DeclarationBound
 also pays `test-map` (0.8) and `universal` (0.8), and the queue pays `layers` (5 to 14 min: it measures each slow unit class again
 alone), which the CI killed at 10.
 
+Since CENSUSDIFF1 the census classes leave the fast halves (`Category!=Process&Category!=Census`) and the CI's cover of the gate by them
+goes; a merge names its changed paths in `CENSUS_SCOPE`, and a census marked diff-able judges only those. `ReviewGraphCensusTests` and
+`ProviderConformanceTests` judge behaviour, not the sources, and left the category for the fast half (`CensusTraitTests.Behaviour`).
+
 ### 1.7 How far a component boundary would reach
 
 `StructureTests` binds every driver file through Roslyn and holds the 24 subdomains of `fixtures/structure.json` in order with
