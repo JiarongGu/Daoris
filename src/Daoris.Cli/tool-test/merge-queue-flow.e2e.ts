@@ -8,8 +8,9 @@ import { existsSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'node
 import { spawnSync } from 'node:child_process';
 import { queueScratch, TRAILER, treeGate, QUEUE_GATE, alive, HANG_MS, envGate } from './support/merge-queue-scratch.ts';
 import { q, type ScopeRun } from './support/merge-queue-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
-describe('the queue, end to end in a scratch repository', { concurrency: true }, () => {
+describe('the queue, end to end in a scratch repository', { concurrency: CASES_AT_ONCE }, () => {
   test('a dropped candidate cannot return when its held gate completes', async () => {
     const repo = queueScratch('drop-late');
     const hold = join(repo.root, 'local', 'release');

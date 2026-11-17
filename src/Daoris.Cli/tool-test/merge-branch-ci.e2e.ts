@@ -4,17 +4,21 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { tool, type Verdict, type GateResult, publish, type CiStatus } from './support/merge-branch.ts';
 import { git, TRAILER, CI_GATE, unordered, scratch } from './support/merge-branch-kit.ts';
+import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
-describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency: true }, () => {
+describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency: CASES_AT_ONCE }, () => {
 
-  // A release's verification runs every gate at publish time when nothing verified main between.
-  test("--ci gates main's tip in the gate tree: every gate at first, then what the paths since reach; a failure stays owed; its status and logs are the main checkout's, and the stage reads its verdicts", async () => {
-    const repo = scratch('ci', [
+  // A release's verification runs every gate at publish time when nothing verified main between: three cases, a mode each,
+  // each on a repository of its own whose first run is green.
+  type Filed = { gate: string; test: string; state: string; firstSeen: { commit: string }; lastSeen: { commit: string }; cleared: { commit: string; kind: string } | null };
+  /** A repository of three CI gates, what a case reads of its runs, and its first commit. */
+  const ciScratch = (name: string) => {
+    const repo = scratch(name, [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
       { name: 'service', run: 'node ci-gate.mjs service' },
       { name: 'tool-tests', run: 'node ci-gate.mjs tool-tests' },
@@ -33,7 +37,26 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
       return git(repo.root, 'rev-parse', 'HEAD');
     };
     const first = git(repo.root, 'rev-parse', 'HEAD');
+    const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string }[] };
+    const findings = () => (JSON.parse(readFileSync(join(repo.root, 'local', 'ci-findings.json'), 'utf8')) as { findings: Filed[] }).findings;
+    return { repo, gateTree, ranFile, ranThere, statusOf, states, commit, first, record, findings };
+  };
 
+  /** A failure on a change to the docs after the first green run: every gate it reaches runs, and it is filed; the failing commit. */
+  const failing = async ({ repo, ranThere, statusOf, commit, findings }: ReturnType<typeof ciScratch>) => {
+    const third = commit('docs/b.md', 'b\n');
+    const result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(ranThere(), ['service', 'universal'], 'a CI run keeps going past a failure');
+    assert.match(result.out, new RegExp(`merge-branch: CI did NOT pass ${third.slice(0, 7)}: universal failed`));
+    assert.equal(statusOf(third).state, 'failed');
+    // The failure is filed as known red, by its gate's step where it names no test, first seen on this commit.
+    assert.deepEqual(findings().map((each) => [each.gate, each.test, each.state, each.firstSeen.commit]), [['universal', 'universal', 'red', third]]);
+    return third;
+  };
+
+  test("--ci gates main's tip in the gate tree: every gate at first, then what the paths since reach; its status and logs are the main checkout's, and the stage reads its verdicts", async () => {
+    const { repo, gateTree, ranThere, statusOf, states, commit, first, record } = ciScratch('ci');
     // The first run: no gate has a verdict, so every gate runs.
     let result = await repo.run(['--ci']);
     assert.equal(result.status, 0, result.out);
@@ -49,7 +72,6 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     assert.deepEqual(states(status), ['universal done PASS', 'service done PASS', 'tool-tests done PASS']);
     assert.match(readFileSync(join(repo.root, status.gates[1]!.log!), 'utf8'), /service line 3/);
     assert.equal(status.light.width > 0 && /MERGE_BRANCH_MEMORY=off/.test(status.light.why), true, status.light.why);
-    const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string }[] };
     assert.equal(record().lastGreen!.commit, first);
     assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
     assert.deepEqual(git(repo.root, 'status', '--porcelain'), '', 'the main checkout is untouched: only its ignored local/ was written');
@@ -83,34 +105,39 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     assert.deepEqual(receipts()[1]!.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict} ${gate.kind}`), ['universal done PASS ci', 'service done PASS ci', 'tool-tests kept PASS ci']);
     const verdictKinds = (JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { verdicts: Verdict[] }).verdicts.map((each) => (each as Verdict & { kind?: string }).kind);
     assert.deepEqual([...new Set(verdictKinds)], ['ci'], 'every verdict carries the kind of run that gave it');
+    repo.cleanup();
+  });
 
+  test('--ci runs nothing on a commit whose every verdict stands; a failure runs every gate it reaches, stays owed and filed, and the stage refuses it', async () => {
+    const ci = ciScratch('ci-owed');
+    const { repo, gateTree, ranFile, ranThere, first, record } = ci;
+    assert.equal((await repo.run(['--ci'])).status, 0);
     // Again on the same commit: nothing is owed and nothing runs.
     rmSync(ranFile, { force: true });
-    result = await repo.run(['--ci', second.slice(0, 7)]);
+    let result = await repo.run(['--ci', first.slice(0, 7)]);
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(ranThere(), []);
     assert.match(result.out, /nothing to run: every gate's verdict stands on this tree/);
 
     // A failure: the run goes on to every gate, says it, and the stage refuses the commit.
-    const third = commit('docs/b.md', 'b\n');
-    result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
-    assert.equal(result.status, 1, result.out);
-    assert.deepEqual(ranThere(), ['service', 'universal'], 'a CI run keeps going past a failure');
-    assert.match(result.out, new RegExp(`merge-branch: CI did NOT pass ${third.slice(0, 7)}: universal failed`));
-    assert.equal(statusOf(third).state, 'failed');
-    assert.equal(record().lastGreen!.commit, second, 'the last green run is still the one before');
+    const third = await failing(ci);
+    assert.equal(record().lastGreen!.commit, first, 'the last green run is still the one before');
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 1, 'a failed commit is still refused at the stage');
-    // The failure is filed as known red, by its gate's step where it names no test, first seen on this commit.
-    type Filed = { gate: string; test: string; state: string; firstSeen: { commit: string }; lastSeen: { commit: string }; cleared: { commit: string; kind: string } | null };
-    const findings = () => (JSON.parse(readFileSync(join(repo.root, 'local', 'ci-findings.json'), 'utf8')) as { findings: Filed[] }).findings;
-    assert.deepEqual(findings().map((each) => [each.gate, each.test, each.state, each.firstSeen.commit]), [['universal', 'universal', 'red', third]]);
     assert.match(result.out, /universal\s+FAIL/);
     assert.match(readFileSync(join(repo.root, 'local', 'scratch', `ci-${third.slice(0, 7)}`, 'status.json'), 'utf8'), /"knownRed"/);
+    repo.cleanup();
+  });
+
+  test('--ci runs a failed gate whatever the change, and its pass on a later commit clears the finding, which a late failure on the older commit restores', async () => {
+    const ci = ciScratch('ci-cleared');
+    const { repo, ranFile, ranThere, statusOf, states, commit, first, record, findings } = ci;
+    assert.equal((await repo.run(['--ci'])).status, 0);
+    const third = await failing(ci);
 
     // A change that reaches only the tool tests: the failed gate runs with it, owed whatever the change.
     const fourth = commit('tools/merge-branch.mjs', '// the scratch repository\'s own\n');
-    result = await repo.run(['--ci']);
+    let result = await repo.run(['--ci']);
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(ranThere(), ['tool-tests', 'universal']);
     assert.deepEqual(states(statusOf(fourth)), ['universal done PASS', 'service kept PASS', 'tool-tests done PASS']);
@@ -124,7 +151,7 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     assert.equal(result.status, 1, result.out);
     assert.deepEqual(findings().map((each) => [each.state, each.firstSeen.commit, each.lastSeen.commit]), [['red', third, third]]);
     assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
-      [first, second, second, third, fourth, third].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 || i === 5 ? 'failed' : 'green'}`));
+      [first, third, fourth, third].map((sha, i) => `${sha.slice(0, 7)} ${i === 1 || i === 3 ? 'failed' : 'green'}`));
     repo.cleanup();
   });
 
@@ -186,8 +213,9 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
   });
 
   // A CI run takes 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
-  test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
-    const repo = scratch('ci-stage', [
+  /** A repository whose CI owes its two rehearsals a stage (stand-ins that note their start and end), and what a case reads of its runs. */
+  const stageScratch = (name: string) => {
+    const repo = scratch(name, [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
       { name: 'rehearse-family', run: 'npm run rehearse:family' },
       { name: 'deployment', run: 'npm run rehearse:deploy' },
@@ -214,7 +242,11 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     const states = (status: CiStatus) => status.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict}`);
     const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string; at: string; stage?: boolean; owed?: string[] }[] };
     const tip = git(repo.root, 'rev-parse', 'HEAD');
-    const sha = tip.slice(0, 7);
+    return { repo, gateTree, read, clear, statusOf, states, record, tip, sha: tip.slice(0, 7) };
+  };
+
+  test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and one that failed stays owed', async () => {
+    const { repo, gateTree, read, clear, statusOf, states, record, tip, sha } = stageScratch('ci-stage');
     try {
       // A plain run: the rehearsals are owed, not run; it is green on the rest, and says what pays them.
       let result = await repo.run(['--ci']);
@@ -224,7 +256,7 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
       assert.match(result.out, new RegExp(`owed, not run \\(CIFAST1\\): rehearse-family, deployment, which node tools/merge-branch\\.mjs --ci --stage ${sha} runs before a stage`));
       assert.match(result.out, new RegExp(`CI green on ${sha}: 1 gate run and passed, 0 verdicts kept; rehearse-family and deployment owed for a stage, neither failed nor passed`));
       assert.doesNotMatch(result.out, /Stage it from the gate tree/);
-      let status = statusOf(tip);
+      const status = statusOf(tip);
       assert.deepEqual([status.state, status.stage, status.owed], ['green', false, ['rehearse-family', 'deployment']]);
       assert.deepEqual(states(status), ['universal done PASS', 'rehearse-family owed null', 'deployment owed null']);
       assert.deepEqual(record().runs.at(-1), { commit: tip, state: 'green', at: record().runs.at(-1)!.at, status: `local/scratch/ci-${sha}/status.json`, kind: 'ci', owed: ['rehearse-family', 'deployment'] });
@@ -249,15 +281,26 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
       assert.deepEqual(read('rehearsals.txt'), []);
       assert.deepEqual(states(statusOf(tip)), ['universal kept PASS', 'rehearse-family kept PASS', 'deployment owed null']);
       assert.equal((await repo.run(['--passed'], {}, gateTree)).status, 1, 'the stage still refuses it');
+    } finally {
+      repo.cleanup();
+    }
+  });
 
+  test('--ci --stage after a failed stage runs only what it lacks, the stage takes its pass and receipt, and a plain run after owes nothing', async () => {
+    const { repo, gateTree, read, clear, statusOf, record, tip, sha } = stageScratch('ci-staged');
+    try {
+      assert.equal((await repo.run(['--ci'])).status, 0);
+      clear();
+      assert.equal((await repo.run(['--ci', '--stage'], { CI_FAIL: 'deployment' })).status, 1);
+      assert.equal((await repo.run(['--ci'])).status, 0);
       // The stage's path, passing: what it lacks runs, and the stage stands.
       clear();
-      result = await repo.run(['--ci', '--stage', sha]);
+      let result = await repo.run(['--ci', '--stage', sha]);
       assert.equal(result.status, 0, result.out);
       assert.deepEqual(read('rehearsals.txt'), ['deployment start', 'deployment end']);
       assert.match(result.out, new RegExp(`CI green on ${sha}: 1 gate run and passed, 2 verdicts kept; every gate's verdict stands on this tree`));
       assert.match(result.out, new RegExp(`--stage --from-gated ${sha}`));
-      status = statusOf(tip);
+      const status = statusOf(tip);
       assert.deepEqual([status.state, status.stage, status.owed], ['green', true, []]);
       assert.deepEqual(record().runs.at(-1)!.stage, true);
       result = await repo.run(['--passed'], {}, gateTree);
@@ -272,7 +315,16 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
       assert.equal(result.status, 0, result.out);
       assert.match(result.out, /nothing to run/);
       assert.deepEqual(statusOf(tip).owed, []);
+    } finally {
+      repo.cleanup();
+    }
+  });
 
+  test('--ci --night runs every gate whole, the rehearsals included, whatever stands, and a night that finished, green or red, satisfies it', async () => {
+    const { repo, read, clear, statusOf, tip, sha } = stageScratch('ci-night');
+    try {
+      let result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
       // The night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.
       clear();
       result = await repo.run(['--ci', '--night']);
