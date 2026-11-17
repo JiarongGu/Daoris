@@ -13,8 +13,8 @@ import { mergeChanges } from './changes.ts';
 /** The variable the census scan reads: the path of the scope's file. */
 export const CENSUS_SCOPE = 'CENSUS_SCOPE';
 
-/** Where a merge's scopes are written, in the merge's checkout: the tools' scratch. */
-export const SCOPE_FOLDER = ['_fixtures', 'census-scope'];
+/** Where a merge's scopes are written, in the merge's checkout: `local/`, which every checkout ignores, a test's scratch repository too. */
+export const SCOPE_FOLDER = ['local', 'scratch', 'census-scope'];
 
 /**
  * The scope's file for `paths` under `root`, one path a line, named by its content: every gate of a merge names the same file, and a
