@@ -3,18 +3,29 @@ import { useShenora } from '@shenora/react';
 import type { PlaceCastBridge, PlaceCastChange, PlaceCastView } from '../../settings/place/PlaceCast';
 import type { StepHoldAnswer, StepHoldAsk, StepHoldBridge } from '../../workflow/wait/StepHold';
 import { call } from '../call';
+import { askHeld } from '../state/held';
 
 // A place's cast and a step's holder, over the records `daoris settings cast` and `daoris workflow take|hand|give-back` edit: each press the
 // owner's, an agent's of the same route on the owner's card in every mode. A refusal is the driver's sentence, verbatim.
 
 const castKey = (workspace?: string | null, repository?: string | null) => ['PLACE_CAST', workspace ?? '', repository ?? ''] as const;
 
-/** A place's cast as its Settings draw it: each role's holder now and why, the risk and marks, the roster and the reporting line. */
+/** The cast an answer holds, or none while the shell holds nothing yet: its event brings the cast. */
+const readPlaceCast = (answer: unknown): PlaceCastView | null =>
+  typeof answer === 'object' && answer !== null && Array.isArray((answer as { roles?: unknown }).roles) ? (answer as PlaceCastView) : null;
+
+/**
+ * A place's cast as its Settings draw it: each role's holder now and why, the risk and marks, the roster and the reporting line. The shell tells
+ * it by event (`PLACE_CAST`), so the page shows none until the first is held.
+ */
 export const usePlaceCast = (workspace?: string | null, repository?: string | null, { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = castKey(workspace, repository);
   return useQuery({
-    queryKey: castKey(workspace, repository),
-    queryFn: () => call('PLACE_CAST', { workspace: workspace ?? null, repository: repository ?? null }) as Promise<PlaceCastView>,
+    queryKey,
+    queryFn: () => askHeld('PLACE_CAST', client, queryKey, { workspace: workspace ?? null, repository: repository ?? null }, readPlaceCast),
+    select: (view) => view ?? undefined,
     enabled: isAvailable && enabled,
   });
 };

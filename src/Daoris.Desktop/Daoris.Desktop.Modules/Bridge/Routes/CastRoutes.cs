@@ -16,6 +16,7 @@ public sealed class CastRoutes(DriverContext context)
     /// (each <c>{role, holder, why, source, words}</c>), the <c>roster</c> a cast may name and the reporting <c>line</c>. Read-only.
     /// </summary>
     [DriverRoute("PLACE_CAST", PipeClass.Open)]
+    [ByEvent("PLACE_CAST", Untold = "the role store's casts, driver.json's risk and marks and the roster, which no scope or slice tells")]
     private object? PlaceCast(PlaceCastRead press) => View(press.Workspace, press.Repository);
 
     /// <summary>
@@ -23,7 +24,7 @@ public sealed class CastRoutes(DriverContext context)
     /// where none is named, journaled with <c>why</c>; answers the place's view, or throws the refusal's code with nothing written.
     /// </summary>
     [DriverRoute("SET_PLACE_CAST", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("SET_PLACE_CAST", None = OwnerNone.MachineSetting)]
+    [Owner("SET_PLACE_CAST", Repository = "repository", Workspace = "workspace")]
     [GroundRead("SET_PLACE_CAST", nameof(PipeReads.PlaceCast))]
     [NotAlready("SET_PLACE_CAST", "each cast is journaled with its reason, so the same holder cast again keeps the new reason")]
     [Publishes("SET_PLACE_CAST", StateScopes.Driver)]
@@ -44,7 +45,7 @@ public sealed class CastRoutes(DriverContext context)
     /// terminal's verb, it runs that verb's own path.
     /// </summary>
     [DriverRoute("WORKFLOW_HOLD", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("WORKFLOW_HOLD", None = OwnerNone.NamesNothing)]
+    [Owner("WORKFLOW_HOLD", Quest = "run")]
     [GroundWait("WORKFLOW_HOLD", "workflow-node", "run", "node")]
     [Says("WORKFLOW_HOLD", "run:quest", "act:form", "why:words")]
     [Publishes("WORKFLOW_HOLD", StateScopes.Driver)]
