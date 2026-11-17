@@ -50,10 +50,7 @@ public sealed class DelegateKeyStripTests
         Assert.False(bare.Identity.ContainsKey(DelegateKey.Variable));
     }
 
-    /// <summary>
-    /// A start keeps the name of the agent it runs beside its key, the roster's name for its door (its account key: <c>codex-acp</c> runs as
-    /// <c>codex</c>), which its press's speaker says (<c>agent:&lt;name&gt;</c>); a start naming none, or no record, keeps none.
-    /// </summary>
+    /// <summary>A start keeps the roster's name of the agent it runs beside its key (<c>codex-acp</c> runs as <c>codex</c>); one naming none keeps none.</summary>
     [Fact]
     public void A_start_keeps_the_name_of_the_agent_it_runs_beside_its_key()
     {

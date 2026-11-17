@@ -11,9 +11,8 @@ public static class HolderWords
 
     private static readonly string[] Options = ["start", "accept"];
 
-    /// <summary>The holder <paramref name="node"/>'s own words cast its first epoch to, or null where they say none and the place's cast holds it.</summary>
+    /// <summary>The holder a node's (or a version's step's) own words cast its first epoch to, or null where they say none and the place's cast holds it.</summary>
     public static string? First(NodeDeclaration node) => Options.Any(name => NodeOptions.Text(node, name) == You) ? CastHolders.Person : null;
 
-    /// <summary>The holder a version's <paramref name="step"/> casts its first epoch to by the same words, as its fields read them, or null.</summary>
     public static string? First(NamedStep? step) => step is not null && Options.Any(name => step.Field(name) as string == You) ? CastHolders.Person : null;
 }

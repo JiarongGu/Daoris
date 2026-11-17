@@ -2,15 +2,10 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The word <c>you</c> is read in one place, which sets the first holder; no runtime source compares against it, nor does a reader of a
-/// version's steps (<c>Workflows/Domain</c>: the named steps' reading, gate and diff, the chart's and a preset's words), each asking that
-/// place for the holder a step's words cast.
-/// </summary>
+/// <summary>The word <c>you</c> is read in one place, which sets the first holder; no runtime source nor reader of a version's steps compares against it.</summary>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class HolderWordCensusTests
 {
-    /// <summary>The named steps' reading, gate and diff, each a file of <c>Workflows/Domain</c>.</summary>
     private static readonly string[] NamedReaders = ["NamedStepReading.cs", "WorkflowGate.cs", "WorkflowDiff.cs"];
 
     [Fact]

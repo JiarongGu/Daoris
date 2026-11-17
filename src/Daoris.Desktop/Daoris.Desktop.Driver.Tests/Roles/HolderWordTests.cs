@@ -61,10 +61,7 @@ public sealed class HolderWordTests : IDisposable
         if (start == "you") Assert.Null(SettleDoor.Admit(current, SettleBy.Person(current!.Epoch)));
     }
 
-    /// <summary>
-    /// A named step reads <c>you</c> as the runtime does: the holder its words cast (<see cref="HolderWords.First(NamedStep)"/>) is the one its
-    /// attempt's tenure begins with, the person through its tenure where it says <c>you</c> and the place's cast where it does not.
-    /// </summary>
+    /// <summary>A named step reads <c>you</c> as the runtime does: the holder its words cast is the one its attempt's tenure begins with.</summary>
     [Theory]
     [InlineData("you")]
     [InlineData("automatic")]
