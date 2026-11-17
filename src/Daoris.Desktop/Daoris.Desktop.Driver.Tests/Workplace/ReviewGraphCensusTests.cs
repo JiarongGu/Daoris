@@ -954,25 +954,20 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
     }
 
-    public static TheoryData<string, string> LinesAndRecords()
-    {
-        var data = new TheoryData<string, string>();
-        foreach (var line in new[] { "set", "origin", "dangling", "main", "master", "none" })
-        foreach (var record in new[] { "held", "grown-held", "grown-not", "displaced", "no-id" })
-            data.Add(line, record);
-        return data;
-    }
+    public static TheoryData<string> Lines() => new(["set", "origin", "dangling", "main", "master", "none"]);
 
     /// <summary>
-    /// A line and a record's six combinations of the bases, each at its own place and all at once: a combination is a chain of rounds
-    /// that each wait on the thread pool, so one after another the hundred and eighty took ten seconds alone and ninety under a loaded
-    /// run's queue, and side by side they wait together. A failure names each world it failed on.
+    /// A line's thirty combinations of the record and the bases, each at its own place and all at once: a combination is a chain of
+    /// rounds that each wait on the thread pool, so one after another the hundred and eighty took ten seconds alone and ninety-seven
+    /// under the census gate's queue (six at once, sixty-four), and side by side they wait together. A failure names each world it
+    /// failed on.
     /// </summary>
     [Theory]
-    [MemberData(nameof(LinesAndRecords))]
-    public async Task Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today(string line, string record)
+    [MemberData(nameof(Lines))]
+    public async Task Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today(string line)
     {
         var combinations =
+            from record in new[] { "held", "grown-held", "grown-not", "displaced", "no-id" }
             from bases in new[] { "same", "both", "here", "origin", "none" }
             from incomparable in new[] { false, true }
             where !incomparable || bases == "both"
