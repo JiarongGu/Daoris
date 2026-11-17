@@ -73,6 +73,16 @@ internal static class AskConsole
             if (read.GoAhead is { } goAhead)
             {
                 if (GoAheadCommand.Read(read.Words, out var answerProblem) is not { } answer) return Usage(answerProblem!);
+                // In a role's terminal the answer is the role's, admitted by the role it holds and held for the owner's overrule.
+                if (HolderKey.RoleTerminal)
+                {
+                    var configPath = DriverConfig.ResolvePath();
+                    var config = DriverConfig.Load(configPath);
+                    var home = DriverConfig.HomeOf(configPath);
+                    var world = new SessionsWorld(service, home, config, SetupWorld.Unadopted(config, home), null) { Instance = InstanceHost.World(home, "ask") };
+                    return await GoAheadRoleDoor.RunAsync(world, goAhead, answer.Number, answer.Approved, answer.Words, Console.Out).ConfigureAwait(false);
+                }
+
                 // The ask page's twin: the answer that leaves none of a parked session's go-aheads waiting sends it on.
                 var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words, goesOn: true)
                     .ConfigureAwait(false);
