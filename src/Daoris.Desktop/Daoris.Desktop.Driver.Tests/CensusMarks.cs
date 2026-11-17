@@ -25,7 +25,7 @@ internal static class CensusMarks
     internal static readonly string[] Whole =
     [
         "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
-        "CensusReachTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
+        "CensusReachTests", "CensusWarmTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
         "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",

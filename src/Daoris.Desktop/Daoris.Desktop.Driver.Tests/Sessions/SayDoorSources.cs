@@ -33,4 +33,7 @@ internal static partial class SayDoorSources
 
     /// <summary>Every source, project by project, each project's files in path order.</summary>
     internal static IReadOnlyList<Source> All => Read.Value;
+
+    /// <summary>Whether the scan is made: before any census case in a census run (<see cref="CensusWarm"/>).</summary>
+    internal static bool Made => Read.IsValueCreated;
 }

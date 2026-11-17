@@ -185,6 +185,9 @@ internal static class ReferenceMap
     /// <summary>How many trees this run read from their syntax, not from the map.</summary>
     internal static int Read => s_read;
 
+    /// <summary>Whether the map's file is read into this run.</summary>
+    internal static bool Loaded => Kept.IsValueCreated;
+
     /// <summary>The key of a tree whose text is <paramref name="text"/>: the hash of the format and the text.</summary>
     internal static string Key(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Format + "\n" + text)))[..32];
 
@@ -193,20 +196,35 @@ internal static class ReferenceMap
     /// <summary>Each source's names, in order, from the map where its key is there, else parsed from its text; a parse writes the map again.</summary>
     internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts) => Of(texts, Kept.Value, Stored);
 
+    /// <summary>
+    /// Fewer texts than this to parse are parsed on the caller's thread, and a map that holds every text answers there: a parallel
+    /// query's parts wait for the pool's threads, which a census binding beside it holds for most of a minute, and the hashes and a few
+    /// parses take milliseconds.
+    /// </summary>
+    internal const int ParsedApart = 32;
+
     /// <summary>As <see cref="Of(IReadOnlyList{string})"/> over <paramref name="kept"/>, written to <paramref name="store"/> unless it is null.</summary>
     internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts, ConcurrentDictionary<string, SpelledNames> kept, string? store)
     {
         var before = s_read;
-        SpelledNames[] names = [.. texts.AsParallel().AsOrdered().Select(text =>
+        var keys = new string[texts.Count];
+        var names = new SpelledNames[texts.Count];
+        var missing = new List<int>();
+        for (var at = 0; at < texts.Count; at++)
         {
-            var key = Key(text);
-            Used.TryAdd(key, 0);
-            return kept.GetOrAdd(key, _ =>
-            {
-                Interlocked.Increment(ref s_read);
-                return SpelledNames.Read(CSharpSyntaxTree.ParseText(text, Parse).GetRoot());
-            });
-        })];
+            keys[at] = Key(texts[at]);
+            Used.TryAdd(keys[at], 0);
+            if (kept.TryGetValue(keys[at], out var found)) names[at] = found;
+            else missing.Add(at);
+        }
+
+        void Parsed(int at) => names[at] = kept.GetOrAdd(keys[at], _ =>
+        {
+            Interlocked.Increment(ref s_read);
+            return SpelledNames.Read(CSharpSyntaxTree.ParseText(texts[at], Parse).GetRoot());
+        });
+        if (missing.Count < ParsedApart) missing.ForEach(Parsed);
+        else missing.AsParallel().ForAll(Parsed);
         if (store is not null && s_read != before) Save(store, kept.Count > MostKept ? kept.Where(each => Used.ContainsKey(each.Key)) : kept);
         return names;
     }

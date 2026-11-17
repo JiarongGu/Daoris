@@ -49,8 +49,16 @@ internal static class DesktopCompilations
     /// <summary>Each shipping project's compilation, made once a run; the driver's is the one the structure classes read too.</summary>
     internal static ImmutableArray<CSharpCompilation> Each => Built.Value;
 
-    internal static ImmutableArray<CSharpCompilation> Judged(IReadOnlySet<string>? scope) =>
-        scope is null ? Each : [.. Shipping.AsParallel().AsOrdered().Where(project => CensusReach.Reaches(project, scope)).Select(Of)];
+    /// <summary>
+    /// The compilations a census under <paramref name="scope"/> judges: every one with no scope, else those of the projects it reaches. The
+    /// reach is read on the caller's thread, from the reference map (<see cref="ReferenceMap"/>); only the compiles go side by side.
+    /// </summary>
+    internal static ImmutableArray<CSharpCompilation> Judged(IReadOnlySet<string>? scope)
+    {
+        if (scope is null) return Each;
+        string[] reached = [.. Shipping.Where(project => CensusReach.Reaches(project, scope))];
+        return reached.Length == 0 ? [] : [.. reached.AsParallel().AsOrdered().Select(Of)];
+    }
 
     /// <summary>A path's form in every census: relative to the desktop tree, <c>/</c> between its parts.</summary>
     internal static string Relative(string path) => Path.GetRelativePath(Desktop, path).Replace('\\', '/');
@@ -71,6 +79,9 @@ internal static class DesktopCompilations
 
     /// <summary>How many compilations of <paramref name="project"/>'s sources this run has made.</summary>
     internal static int Compiles(string project) => Made.GetValueOrDefault(project);
+
+    /// <summary>Whether <paramref name="project"/>'s one compilation is made, not only begun.</summary>
+    internal static bool IsMade(string project) => Compiled.TryGetValue(project, out var compiled) && compiled.IsValueCreated;
 
     /// <summary>The one compilation of <paramref name="project"/>'s sources a run, made at its first ask and read by every census after.</summary>
     internal static CSharpCompilation Of(string project) => Compiled.GetOrAdd(project, named => new(() =>

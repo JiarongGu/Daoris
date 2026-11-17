@@ -159,8 +159,9 @@ public sealed partial class CheckoutWritersCensusTests
         var found = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
         foreach (var (file, source) in sources)
         {
-            if (!StartsGit().IsMatch(source)) continue;
-            var code = Code(source);
+            // A start names git or asks: the plain search passes over most files before the pattern reads a word.
+            if (!source.Contains("Git", StringComparison.Ordinal) && !source.Contains("AskAsync(", StringComparison.Ordinal)) continue;
+            var code = SourceTexts.Code(source);
             if (!StartsGit().IsMatch(code)) continue;
             foreach (Match call in Write().Matches(code))
             {

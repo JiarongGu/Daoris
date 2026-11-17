@@ -38,6 +38,9 @@ internal static partial class SourceTexts
     /// </summary>
     internal static string Code(string source) => Stripped.GetValue(source, text => LineComment().Replace(text.Replace("\r\n", "\n"), ""));
 
+    /// <summary>Whether <paramref name="source"/>'s stripped text is made already.</summary>
+    internal static bool IsStripped(string source) => Stripped.TryGetValue(source, out _);
+
     [GeneratedRegex(@"//[^\n]*")]
     private static partial Regex LineComment();
 }
