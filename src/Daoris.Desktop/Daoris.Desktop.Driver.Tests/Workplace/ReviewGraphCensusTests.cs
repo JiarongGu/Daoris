@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Driver;
+using Place = Daoris.Desktop.Driver.Tests.ReviewGraphPlace;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -21,36 +22,13 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     private readonly string _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "census", Guid.NewGuid().ToString("N")[..8]);
     private readonly Place _place;
-    private readonly string _tree;
 
-    public ReviewGraphCensusTests()
-    {
-        _place = Place.Make(Path.Combine(_scratch, "case"));
-        _tree = _place.Tree;
-    }
+    public ReviewGraphCensusTests() => _place = Place.Make(Path.Combine(_scratch, "case"), Session);
 
     public void Dispose()
     {
         GitSeed.Discard(_scratch);
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Where one review is read: its scratch, the Daoris home under it and the session's tree. Each combination a case runs beside
-    /// another has its own, so the config and the grown record one world writes are never another's.
-    /// </summary>
-    private sealed record Place(string Scratch, string Home, string Tree)
-    {
-        public static Place Make(string scratch)
-        {
-            var home = Path.Combine(scratch, "daoris-home");
-            Directory.CreateDirectory(home);
-            var tree = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), "games", "engine", Session);
-            // A git directory the untracked read's private index is named in, and the untracked files the worlds list.
-            Directory.CreateDirectory(Path.Combine(tree, ".git"));
-            foreach (var name in new[] { "own.txt", "u0.txt", "u1.txt" }) File.WriteAllText(Path.Combine(tree, name), "mine\n");
-            return new(scratch, home, tree);
-        }
     }
 
     /// <summary>One review's conditions: what each of its git reads answers.</summary>
@@ -167,7 +145,6 @@ public sealed class ReviewGraphCensusTests : IDisposable
     /// <summary>One combination through the census: the chain on the world at once, then the graph held, round by round.</summary>
     private Task<ReviewGraph> CensusAsync(World world, string? baseCommit = Recorded) => CensusAsync(_place, world, baseCommit);
 
-    /// <summary>One combination through the census at <paramref name="place"/>, which no combination running beside it shares.</summary>
     private static async Task<ReviewGraph> CensusAsync(Place place, World world, string? baseCommit = Recorded)
     {
         var tree = place.Tree;
@@ -920,7 +897,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
             {
                 using (GitLaunch.Within(GitBudget.Review))
                 {
-                    read = OutcomeAsync(() => ReviewGraphReads.ReadAsync(graph, Session, _tree, Recorded, trees,
+                    read = OutcomeAsync(() => ReviewGraphReads.ReadAsync(graph, Session, _place.Tree, Recorded, trees,
                         (_, _) => Task.FromResult<string?>(null), owned.Token));
                 }
                 await arrived.WaitAsync(Poll.Patience);
@@ -956,12 +933,6 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     public static TheoryData<string> Lines() => new(["set", "origin", "dangling", "main", "master", "none"]);
 
-    /// <summary>
-    /// A line's thirty combinations of the record and the bases, each at its own place and all at once: a combination is a chain of
-    /// rounds that each wait on the thread pool, so one after another the hundred and eighty took ten seconds alone and ninety-seven
-    /// under the census gate's queue (six at once, sixty-four), and side by side they wait together. A failure names each world it
-    /// failed on.
-    /// </summary>
     [Theory]
     [MemberData(nameof(Lines))]
     public async Task Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today(string line)
@@ -976,20 +947,10 @@ public sealed class ReviewGraphCensusTests : IDisposable
                 Grown: record switch { "grown-held" => "held", "grown-not" => "not", _ => "none" }, Bases: bases, Incomparable: incomparable,
                 Untracked: 2), Base: record == "no-id" ? "HEAD~1" : Recorded);
 
-        var failures = await Task.WhenAll(combinations.Select((each, at) => Task.Run(async () =>
-        {
-            try
-            {
-                await CensusAsync(Place.Make(Path.Combine(_scratch, $"c{at}")), each.World, each.Base);
-                return null;
-            }
-            catch (Exception error)
-            {
-                return $"{each.World} on {each.Base}: {error.Message}";
-            }
-        })));
-
-        Assert.True(failures.All(failure => failure is null), string.Join('\n', failures.OfType<string>()));
+        var failed = await Task.WhenAll(combinations.Select((each, at) => Task.Run(async () =>
+            await Record.ExceptionAsync(() => CensusAsync(Place.Make(Path.Combine(_scratch, $"c{at}"), Session), each.World, each.Base))
+                is { } error ? $"{each.World} on {each.Base}: {error.Message}" : null)));
+        Assert.True(failed.All(each => each is null), string.Join('\n', failed.OfType<string>()));
     }
 
     [Theory]
