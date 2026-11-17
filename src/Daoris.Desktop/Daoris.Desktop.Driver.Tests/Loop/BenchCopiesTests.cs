@@ -7,6 +7,8 @@ public sealed class BenchCopiesTests : IDisposable
 {
     private const string Template = "chat-template";
 
+    private static readonly DateTimeOffset Now = new(2026, 11, 17, 9, 0, 0, TimeSpan.Zero);
+
     private readonly SqliteConnection _store = new("Data Source=:memory:");
 
     public BenchCopiesTests()
@@ -21,7 +23,7 @@ public sealed class BenchCopiesTests : IDisposable
     [Fact]
     public void Each_copy_is_a_line_and_an_entry_of_its_own()
     {
-        BenchCopies.Insert(_store, Template, 3, DateTimeOffset.UtcNow);
+        BenchCopies.Insert(_store, Template, 3, Now);
 
         var copies = Rows("SELECT id, line, entry FROM sessions WHERE id <> $template ORDER BY id");
         Assert.Equal(["00000000", "00000001", "00000002"], copies.Select(row => row[0]));
@@ -33,7 +35,7 @@ public sealed class BenchCopiesTests : IDisposable
     [Fact]
     public void Each_copy_keeps_the_template_s_state_with_no_tree_and_a_revision_of_its_own()
     {
-        BenchCopies.Insert(_store, Template, 2, DateTimeOffset.UtcNow);
+        BenchCopies.Insert(_store, Template, 2, Now);
 
         var copies = Rows("SELECT state, tree, base_commit, revision FROM sessions WHERE id <> $template ORDER BY id");
         Assert.All(copies, row => Assert.Equal(("Completed", (string?)null, (string?)null), (row[0], row[1], row[2])));
