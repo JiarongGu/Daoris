@@ -30,10 +30,7 @@ internal static class BannedNames
     internal static IEnumerable<string> Unresolved(Compilation compilation, IEnumerable<string> ids) =>
         ids.Where(id => DocumentationCommentId.GetSymbolsForDeclarationId(id, compilation).IsEmpty);
 
-    /// <summary>
-    /// Every reference in <paramref name="compilation"/>'s sources to a symbol <paramref name="ids"/> lists, in order of file and line: in
-    /// every source with no scope, else in the sources <paramref name="scope"/> reaches (<see cref="CensusReach"/>).
-    /// </summary>
+    /// <summary>Every reference in <paramref name="compilation"/>'s sources to a symbol <paramref name="ids"/> lists, in order of file and line.</summary>
     internal static List<BannedUse> Uses(Compilation compilation, IReadOnlyCollection<string> ids, IReadOnlySet<string>? scope = null)
     {
         if (ids.Count == 0) return [];

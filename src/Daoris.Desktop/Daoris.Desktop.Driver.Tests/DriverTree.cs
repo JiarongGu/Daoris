@@ -7,8 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The one Roslyn analysis of the driver's own tree, shared by every structure case, over the compilation the declarations' censuses
 /// read too (<see cref="DesktopCompilations.Of"/>): two classes that each compiled paid the gate's cost twice. The <c>Layer/</c>
-/// folders need Lyntai's local build, so the analysis reads none of them and names none of their types. A census marked diff-able
-/// under a scope binds the trees the scope reaches (<see cref="CensusReach"/>); every other run binds the whole tree.
+/// folders need Lyntai's local build, so the analysis reads none of them and names none of their types.
 /// </summary>
 internal static class DriverTree
 {
@@ -27,7 +26,6 @@ internal static class DriverTree
 
     private static readonly Lazy<DriverTreeRead> Scoped = new(() => Read(CensusScope.Paths));
 
-    /// <summary>The analysis <paramref name="census"/> reads in this run: the reached trees' for a diff-able census under a scope, else the whole tree's.</summary>
     internal static DriverTreeRead Of(Type census) => (CensusScope.ScopeOf(census) is null ? Whole : Scoped).Value;
 
     private static DriverTreeRead Read(IReadOnlySet<string>? scope)

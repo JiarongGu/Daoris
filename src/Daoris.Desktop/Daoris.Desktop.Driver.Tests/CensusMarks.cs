@@ -6,21 +6,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class CensusMarks
 {
-    /// <summary>
-    /// The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files, and
-    /// for a semantic census (one that binds the compilations) each file that names a type of theirs too (<see cref="CensusReach"/>);
-    /// the keepers' flow, which crosses the files of one project, runs whole in each project the scope reaches.
-    /// </summary>
+    /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files.</summary>
     internal static readonly string[] Diff =
     [
         "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitEndingsCensusTests", "GitKeepersCensusTests",
         "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "ShellStructureTests", "StructureTests",
     ];
 
-    /// <summary>
-    /// The semantic censuses marked whole, each with why its rule compares across the whole tree, so its walk binds every tree at a merge
-    /// too; a semantic census not here reads the scope. None today.
-    /// </summary>
     internal static readonly Dictionary<string, string> SemanticWhole = new(StringComparer.Ordinal);
 
     /// <summary>

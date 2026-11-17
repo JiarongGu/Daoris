@@ -72,7 +72,6 @@ public sealed class DeclarationBoundaryTests : IClassFixture<DesktopCompilations
     [Fact]
     public void Every_banned_reference_in_every_shipping_project_is_in_the_store_or_an_allowance_row_and_every_row_is_used()
     {
-        // At a merge, the uses in the sources the merge's files reach, and the rows of those files.
         var scope = CensusScope.ScopeOf(typeof(DeclarationBoundaryTests));
         var ids = BannedNames.Listed();
         var uses = DesktopCompilations.Judged(scope).SelectMany(compilation => BannedNames.Uses(compilation, ids, scope)).Distinct();

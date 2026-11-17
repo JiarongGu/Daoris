@@ -67,8 +67,6 @@ public sealed class DeclarationKeepersCensusTests : IClassFixture<DesktopCompila
             """),
     ];
 
-    // An answer flows across the files of one project, never into another's sources, so at a merge the flow runs whole in each project
-    // the merge's files reach, and the holders of those projects are judged.
     private static readonly IReadOnlySet<string>? Scope = CensusScope.ScopeOf(typeof(DeclarationKeepersCensusTests));
 
     private static readonly Lazy<SortedSet<string>> Found = new(() =>

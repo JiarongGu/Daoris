@@ -108,8 +108,7 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <item><c>mirror</c>: a test folder is a subdomain's, one <c>testFolders</c> lists, or support.</item>
 /// <item><c>namespace</c>: no global using names a subdomain's namespace.</item>
 /// </list>
-/// A comment or a string names nothing, a <c>cref</c> included. Over a scoped analysis a census list's entry (an edge family's edge,
-/// a <c>pure</c> crossing, a Loop rule) is judged only where the walk reads its file (<see cref="StructureAnalysis.Judges"/>).
+/// A comment or a string names nothing, a <c>cref</c> included.
 /// </summary>
 internal static class StructureCheck
 {

@@ -18,8 +18,7 @@ internal static class DeclarationAllowances
     /// <summary>
     /// The walk's judgement: red on a banned use outside the two places no row names (a second banned symbol in an allowed file among
     /// them, since a section quiets its file whole), on a name the walk could not follow, on a row's symbol its file no longer names, on
-    /// a row whose file is gone, on a row with no section, and on a section that is no row's. A row's symbols are judged only where
-    /// <paramref name="judged"/> holds its file: at a merge, where the walk read it.
+    /// a row whose file is gone, on a row with no section, and on a section that is no row's.
     /// </summary>
     internal static List<string> Problems(
         IEnumerable<BannedUse> uses, IReadOnlyCollection<Allowance> rows, IReadOnlyCollection<string> sections, Func<string, bool> exists, Func<string, bool>? judged = null)

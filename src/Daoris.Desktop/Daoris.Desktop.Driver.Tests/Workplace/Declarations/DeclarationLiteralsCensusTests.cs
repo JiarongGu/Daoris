@@ -32,7 +32,6 @@ public sealed class DeclarationLiteralsCensusTests : IClassFixture<DesktopCompil
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Lanes"] = "the one holder of the names",
     };
 
-    // At a merge, the sources the merge's files reach, and the rows of those files.
     private static readonly IReadOnlySet<string>? Scope = CensusScope.ScopeOf(typeof(DeclarationLiteralsCensusTests));
 
     private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Judged(Scope).AsParallel().SelectMany(compilation => DeclarationLiterals.Hits(compilation, Scope))));

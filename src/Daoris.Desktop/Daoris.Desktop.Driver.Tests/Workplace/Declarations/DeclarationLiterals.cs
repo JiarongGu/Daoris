@@ -32,10 +32,7 @@ internal static class DeclarationLiterals
     private static readonly ImmutableHashSet<string> Members =
         [.. typeof(string).GetMethods().Concat(typeof(Path).GetMethods()).Select(method => method.Name)];
 
-    /// <summary>
-    /// Every string of <paramref name="compilation"/>'s sources outside the store's folder that names a declaration: of every source with
-    /// no scope, else of the sources <paramref name="scope"/> reaches (<see cref="CensusReach"/>), a constant they read folded wherever it is declared.
-    /// </summary>
+    /// <summary>Every string of <paramref name="compilation"/>'s sources outside the store's folder that names a declaration.</summary>
     internal static List<LiteralHit> Hits(Compilation compilation, IReadOnlySet<string>? scope = null)
     {
         var trees = DesktopCompilations.Trees(compilation).Where(tree => !tree.FilePath.StartsWith("Daoris.Desktop.Driver/Workplace/Declarations/", StringComparison.Ordinal)).ToList();

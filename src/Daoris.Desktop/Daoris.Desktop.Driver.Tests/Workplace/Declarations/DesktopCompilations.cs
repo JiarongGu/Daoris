@@ -49,10 +49,6 @@ internal static class DesktopCompilations
     /// <summary>Each shipping project's compilation, made once a run; the driver's is the one the structure classes read too.</summary>
     internal static ImmutableArray<CSharpCompilation> Each => Built.Value;
 
-    /// <summary>
-    /// The compilations a census under <paramref name="scope"/> reads: every shipping project's with no scope, else those of the projects
-    /// the scope reaches (<see cref="CensusReach.Reaches"/>), so a project no change names is not compiled.
-    /// </summary>
     internal static ImmutableArray<CSharpCompilation> Judged(IReadOnlySet<string>? scope) =>
         scope is null ? Each : [.. Shipping.AsParallel().AsOrdered().Where(project => CensusReach.Reaches(project, scope)).Select(Of)];
 
